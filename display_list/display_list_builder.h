@@ -14,8 +14,10 @@
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_path_effect.h"
 #include "flutter/display_list/display_list_sampling_options.h"
+#include "flutter/display_list/display_list_utils.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
+#include "include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -202,11 +204,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
   /// Returns the 4x4 full perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
-  SkM44 getTransformFullPerspective() { return current_layer_->matrix; }
+  SkM44 getTransformFullPerspective() const { return current_layer_->matrix; }
   /// Returns the 3x3 partial perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
-  SkMatrix getTransform() { return current_layer_->matrix.asM33(); }
+  SkMatrix getTransform() const { return current_layer_->matrix33; }
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
@@ -370,24 +372,32 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   struct LayerInfo {
-    LayerInfo(const SkM44& matrix,
-              const SkRect& clip_bounds,
-              size_t save_layer_offset = 0,
-              bool has_layer = false)
+    explicit LayerInfo(const SkM44& matrix,
+                       const SkMatrix& matrix33,
+                       const SkRect& clip_bounds,
+                       size_t save_layer_offset = 0,
+                       bool has_layer = false,
+                       std::shared_ptr<const DlImageFilter> filter = nullptr)
         : save_layer_offset(save_layer_offset),
           has_layer(has_layer),
           cannot_inherit_opacity(false),
           has_compatible_op(false),
           matrix(matrix),
-          clip_bounds(clip_bounds) {}
+          matrix33(matrix33),
+          clip_bounds(clip_bounds),
+          filter_(filter),
+          is_unbounded_(false) {}
 
-    LayerInfo(const LayerInfo* current_layer,
-              size_t save_layer_offset = 0,
-              bool has_layer = false)
+    explicit LayerInfo(const LayerInfo* current_layer,
+                       size_t save_layer_offset = 0,
+                       bool has_layer = false,
+                       std::shared_ptr<const DlImageFilter> filter = nullptr)
         : LayerInfo(current_layer->matrix,
+                    current_layer->matrix33,
                     current_layer->clip_bounds,
                     save_layer_offset,
-                    has_layer) {}
+                    has_layer,
+                    filter) {}
 
     // The offset into the memory buffer where the saveLayer DLOp record
     // for this saveLayer() call is placed. This may be needed if the
@@ -402,7 +412,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
     bool has_compatible_op;
 
     SkM44 matrix;
+    SkMatrix matrix33;
     SkRect clip_bounds;
+
+    std::shared_ptr<const DlImageFilter> filter_;
+    bool is_unbounded_;
 
     bool is_group_opacity_compatible() const { return !cannot_inherit_opacity; }
 
@@ -422,10 +436,47 @@ class DisplayListBuilder final : public virtual Dispatcher,
         }
       }
     }
+
+    // The filter to apply to the layer bounds when it is restored
+    std::shared_ptr<const DlImageFilter> filter() { return filter_; }
+
+    // is_unbounded should be set to true if we ever encounter an operation
+    // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
+    // or cannot compute its bounds (some effects and filters) and there
+    // was no outstanding clip op at the time.
+    // When the layer is restored, the outer layer may then process this
+    // unbounded state by accumulating its own clip or transferring the
+    // unbounded state to its own outer layer.
+    // Typically the DisplayList will have been constructed with a cull
+    // rect which will act as a default clip for the outermost layer and
+    // the unbounded state of all sub layers will eventually be caught by
+    // that cull rect so that the overall unbounded state of the entire
+    // DisplayList will never be true.
+    //
+    // SkPicture treats these same conditions as a Nop (they accumulate
+    // the SkPicture cull rect, but if it was not specified then it is an
+    // empty Rect and so has no effect on the bounds).
+    // If the Calculator object accumulates this flag into the root layer,
+    // then at least we can make the caller aware of that exceptional
+    // condition via the |DisplayListBoundsCalculator::isUnbounded| call.
+    //
+    // Flutter is unlikely to ever run into this as the Dart mechanisms
+    // all supply a non-null cull rect for all Dart Picture objects,
+    // even if that cull rect is kGiantRect.
+    void set_unbounded() { is_unbounded_ = true; }
+
+    // |is_unbounded| should be called after |getLayerBounds| in case
+    // a problem was found during the computation of those bounds,
+    // the layer will have one last chance to flag an unbounded state.
+    bool is_unbounded() const { return is_unbounded_; }
   };
 
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
+  RectBoundsAccumulator rect_bounds_accumulator_;
+  RTreeBoundsAccumulator rtree_bounds_accumulator_;
+  CombineBoundsAccumulator combine_bounds_accumulator_;
+  BoundsAccumulator* accumulator() { return &combine_bounds_accumulator_; }
 
   // This flag indicates whether or not the current rendering attributes
   // are compatible with rendering ops applying an inherited opacity.
@@ -501,9 +552,74 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void onSetMaskFilter(const DlMaskFilter* filter);
   void onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma);
 
+  // The DisplayList had an unbounded call with no cull rect or clip
+  // to contain it. Should only be called after the stream is fully
+  // dispatched.
+  // Unbounded operations are calls like |drawColor| which are defined
+  // to flood the entire surface, or calls that relied on a rendering
+  // attribute which is unable to compute bounds (should be rare).
+  // In those cases the bounds will represent only the accumulation
+  // of the bounded calls and this flag will be set to indicate that
+  // condition.
+  bool is_unbounded() const {
+    FML_DCHECK(layer_stack_.size() == 1);
+    return layer_stack_.front().is_unbounded();
+  }
+
+  SkRect bounds() const {
+    FML_DCHECK(layer_stack_.size() == 1);
+    if (is_unbounded()) {
+      FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
+    }
+    return rect_bounds_accumulator_.bounds();
+  }
+
+  std::unique_ptr<std::vector<SkRect>> rtree_rects() {
+    FML_DCHECK(layer_stack_.size() == 1);
+    if (is_unbounded()) {
+      FML_LOG(INFO) << "returning partial rtree for unbounded DisplayList";
+    }
+    return rtree_bounds_accumulator_.rects();
+  }
+
+  bool paint_nops_on_transparency();
+
+  // Computes the bounds of an operation adjusted for a given ImageFilter
+  static bool ComputeFilteredBounds(SkRect& bounds,
+                                    const DlImageFilter* filter);
+
+  // Adjusts the indicated bounds for the given flags and returns true if
+  // the calculation was possible, or false if it could not be estimated.
+  bool AdjustBoundsForPaint(SkRect& bounds, DisplayListAttributeFlags flags);
+
+  // Records the fact that we encountered an op that either could not
+  // estimate its bounds or that fills all of the destination space.
+  void AccumulateUnbounded();
+
+  // Records the bounds for an op after modifying them according to the
+  // supplied attribute flags and transforming by the current matrix.
+  void AccumulateOpBounds(const SkRect& bounds,
+                          DisplayListAttributeFlags flags) {
+    SkRect safe_bounds = bounds;
+    AccumulateOpBounds(safe_bounds, flags);
+  }
+
+  // Records the bounds for an op after modifying them according to the
+  // supplied attribute flags and transforming by the current matrix
+  // and clipping against the current clip.
+  void AccumulateOpBounds(SkRect& bounds, DisplayListAttributeFlags flags);
+
+  // Records the given bounds after transforming by the current matrix
+  // and clipping against the current clip.
+  void AccumulateBounds(SkRect& bounds);
+
   DlPaint current_;
   // If |current_blender_| is set then ignore |current_.getBlendMode()|
   sk_sp<SkBlender> current_blender_;
+  static constexpr SkScalar kMinStrokeWidth = 0.01;
+  std::optional<DlBlendMode> blend_mode_ = DlBlendMode::kSrcOver;
+  SkScalar half_stroke_width_ = kMinStrokeWidth;
+  SkScalar miter_limit_ = 4.0;
 };
 
 }  // namespace flutter

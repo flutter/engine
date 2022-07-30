@@ -5,7 +5,10 @@
 #include "flutter/display_list/display_list_builder.h"
 
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_ops.h"
+#include "flutter/display_list/display_list_paint.h"
+#include "include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -58,15 +61,17 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
-                                            nested_bytes, nested_count,
-                                            cull_rect_, compatible));
+  return sk_sp<DisplayList>(new DisplayList(
+      storage_.release(), bytes, count, nested_bytes, nested_count, bounds(),
+      cull_rect_, compatible, rtree_rects()));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
     : cull_rect_(cull_rect) {
-  layer_stack_.emplace_back(SkM44(), cull_rect);
+  layer_stack_.emplace_back(SkM44(), SkMatrix::I(), cull_rect);
   current_layer_ = &layer_stack_.back();
+  combine_bounds_accumulator_.push_back(&rect_bounds_accumulator_);
+  combine_bounds_accumulator_.push_back(&rtree_bounds_accumulator_);
 }
 
 DisplayListBuilder::~DisplayListBuilder() {
@@ -103,10 +108,12 @@ void DisplayListBuilder::onSetStyle(DlDrawStyle style) {
 }
 void DisplayListBuilder::onSetStrokeWidth(float width) {
   current_.setStrokeWidth(width);
+  half_stroke_width_ = std::max(width * 0.5f, kMinStrokeWidth);
   Push<SetStrokeWidthOp>(0, 0, width);
 }
 void DisplayListBuilder::onSetStrokeMiter(float limit) {
   current_.setStrokeMiter(limit);
+  miter_limit_ = std::max(limit, 1.0f);
   Push<SetStrokeMiterOp>(0, 0, limit);
 }
 void DisplayListBuilder::onSetColor(DlColor color) {
@@ -116,6 +123,7 @@ void DisplayListBuilder::onSetColor(DlColor color) {
 void DisplayListBuilder::onSetBlendMode(DlBlendMode mode) {
   current_blender_ = nullptr;
   current_.setBlendMode(mode);
+  blend_mode_ = mode;
   Push<SetBlendModeOp>(0, 0, mode);
   UpdateCurrentOpacityCompatibility();
 }
@@ -125,9 +133,11 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
   FML_DCHECK(blender);
   SkPaint p;
   p.setBlender(blender);
-  if (p.asBlendMode()) {
-    setBlendMode(ToDl(p.asBlendMode().value()));
+  auto blend_mode = p.asBlendMode();
+  if (blend_mode.has_value()) {
+    setBlendMode(ToDl(blend_mode.value()));
   } else {
+    blend_mode_ = std::nullopt;
     // |current_blender_| supersedes any value of |current_blend_mode_|
     (current_blender_ = blender)  //
         ? Push<SetBlenderOp>(0, 0, std::move(blender))
@@ -135,6 +145,7 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
     UpdateCurrentOpacityCompatibility();
   }
 }
+
 void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
   if (source == nullptr) {
     current_.setColorSource(nullptr);
@@ -417,15 +428,45 @@ void DisplayListBuilder::save() {
   Push<SaveOp>(0, 1);
   layer_stack_.emplace_back(current_layer_);
   current_layer_ = &layer_stack_.back();
+  accumulator()->save();
 }
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
     // Grab the current layer info before we push the restore
     // on the stack.
     LayerInfo layer_info = layer_stack_.back();
+
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
+    bool is_unbounded = layer_info.is_unbounded();
+
+    // Before we pop_back we will get the current layer bounds from the
+    // current accumulator and adjust ot as required based on the filter.
+    std::shared_ptr<const DlImageFilter> filter = layer_info.filter();
+    const SkRect* clip = &current_layer_->clip_bounds;
+    if (filter) {
+      if (!accumulator()->restore(
+              [filter = filter, matrix = getTransform()](const SkRect& input,
+                                                         SkRect& output) {
+                SkIRect output_bounds;
+                bool ret = filter->map_device_bounds(input.roundOut(), matrix,
+                                                     output_bounds);
+                output.set(output_bounds);
+                return ret;
+              },
+              clip)) {
+        is_unbounded = true;
+      }
+    } else {
+      accumulator()->restore();
+    }
+
     Push<RestoreOp>(0, 1);
+
+    if (is_unbounded) {
+      AccumulateUnbounded();
+    }
+
     if (layer_info.has_layer) {
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
@@ -476,7 +517,22 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
         : Push<SaveLayerOp>(0, 1, options);
   }
   CheckLayerOpacityCompatibility(options.renders_with_attributes());
-  layer_stack_.emplace_back(current_layer_, save_layer_offset, true);
+
+  if (options.renders_with_attributes()) {
+    // The actual flood of the outer layer clip will occur after the
+    // (eventual) corresponding restore is called, but rather than
+    // remember this information in the LayerInfo until the restore
+    // method is processed, we just mark the unbounded state up front.
+    if (!paint_nops_on_transparency()) {
+      // We will fill the clip of the outer layer when we restore
+      AccumulateUnbounded();
+    }
+    layer_stack_.emplace_back(current_layer_, save_layer_offset, true,
+                              current_.getImageFilter());
+  } else {
+    layer_stack_.emplace_back(current_layer_, save_layer_offset, true, nullptr);
+  }
+  accumulator()->save();
   current_layer_ = &layer_stack_.back();
   if (options.renders_with_attributes()) {
     // |current_opacity_compatibility_| does not take an ImageFilter into
@@ -487,6 +543,17 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
         current_.getImageFilter() != nullptr) {
       UpdateLayerOpacityCompatibility(false);
     }
+  }
+
+  // Even though Skia claims that the bounds are only a hint, they actually
+  // use them as the temporary layer bounds during rendering the layer, so
+  // we set them as if a clip operation were performed.
+  if (bounds) {
+    intersect(*bounds);
+  }
+  if (backdrop) {
+    // A backdrop will affect up to the entire surface, bounded by the clip
+    AccumulateUnbounded();
   }
 }
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
@@ -506,6 +573,7 @@ void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
       (tx != 0.0 || ty != 0.0)) {
     Push<TranslateOp>(0, 1, tx, ty);
     current_layer_->matrix.preTranslate(tx, ty);
+    current_layer_->matrix33 = current_layer_->matrix.asM33();
   }
 }
 void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
@@ -513,12 +581,14 @@ void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
       (sx != 1.0 || sy != 1.0)) {
     Push<ScaleOp>(0, 1, sx, sy);
     current_layer_->matrix.preScale(sx, sy);
+    current_layer_->matrix33 = current_layer_->matrix.asM33();
   }
 }
 void DisplayListBuilder::rotate(SkScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
     Push<RotateOp>(0, 1, degrees);
     current_layer_->matrix.preConcat(SkMatrix::RotateDeg(degrees));
+    current_layer_->matrix33 = current_layer_->matrix.asM33();
   }
 }
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
@@ -526,6 +596,7 @@ void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
       (sx != 0.0 || sy != 0.0)) {
     Push<SkewOp>(0, 1, sx, sy);
     current_layer_->matrix.preConcat(SkMatrix::Skew(sx, sy));
+    current_layer_->matrix33 = current_layer_->matrix.asM33();
   }
 }
 
@@ -547,6 +618,7 @@ void DisplayListBuilder::transform2DAffine(
                                            myx, myy,  0,  myt,
                                             0,   0,   1,   0,
                                             0,   0,   0,   1));
+    current_layer_->matrix33 = current_layer_->matrix.asM33();
   }
 }
 // full 4x4 transform in row major order
@@ -574,12 +646,14 @@ void DisplayListBuilder::transformFullPerspective(
                                            myx, myy, myz, myt,
                                            mzx, mzy, mzz, mzt,
                                            mwx, mwy, mwz, mwt));
+    current_layer_->matrix33 = current_layer_->matrix.asM33();
   }
 }
 // clang-format on
 void DisplayListBuilder::transformReset() {
   Push<TransformResetOp>(0, 0);
   current_layer_->matrix.setIdentity();
+  current_layer_->matrix33 = current_layer_->matrix.asM33();
 }
 void DisplayListBuilder::transform(const SkMatrix* matrix) {
   if (matrix != nullptr) {
@@ -681,6 +755,7 @@ SkRect DisplayListBuilder::getLocalClipBounds() {
 void DisplayListBuilder::drawPaint() {
   Push<DrawPaintOp>(0, 1);
   CheckLayerOpacityCompatibility();
+  AccumulateUnbounded();
 }
 void DisplayListBuilder::drawPaint(const DlPaint& paint) {
   setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawPaintFlags);
@@ -689,10 +764,16 @@ void DisplayListBuilder::drawPaint(const DlPaint& paint) {
 void DisplayListBuilder::drawColor(DlColor color, DlBlendMode mode) {
   Push<DrawColorOp>(0, 1, color, mode);
   CheckLayerOpacityCompatibility(mode);
+  AccumulateUnbounded();
 }
 void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
   Push<DrawLineOp>(0, 1, p0, p1);
   CheckLayerOpacityCompatibility();
+  SkRect bounds = SkRect::MakeLTRB(p0.fX, p0.fY, p1.fX, p1.fY).makeSorted();
+  DisplayListAttributeFlags flags =
+      (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
+                                                        : kDrawHVLineFlags;
+  AccumulateOpBounds(bounds, flags);
 }
 void DisplayListBuilder::drawLine(const SkPoint& p0,
                                   const SkPoint& p1,
@@ -703,6 +784,7 @@ void DisplayListBuilder::drawLine(const SkPoint& p0,
 void DisplayListBuilder::drawRect(const SkRect& rect) {
   Push<DrawRectOp>(0, 1, rect);
   CheckLayerOpacityCompatibility();
+  AccumulateOpBounds(rect, kDrawRectFlags);
 }
 void DisplayListBuilder::drawRect(const SkRect& rect, const DlPaint& paint) {
   setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawRectFlags);
@@ -711,6 +793,7 @@ void DisplayListBuilder::drawRect(const SkRect& rect, const DlPaint& paint) {
 void DisplayListBuilder::drawOval(const SkRect& bounds) {
   Push<DrawOvalOp>(0, 1, bounds);
   CheckLayerOpacityCompatibility();
+  AccumulateOpBounds(bounds, kDrawOvalFlags);
 }
 void DisplayListBuilder::drawOval(const SkRect& bounds, const DlPaint& paint) {
   setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawOvalFlags);
@@ -719,6 +802,9 @@ void DisplayListBuilder::drawOval(const SkRect& bounds, const DlPaint& paint) {
 void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
   Push<DrawCircleOp>(0, 1, center, radius);
   CheckLayerOpacityCompatibility();
+  AccumulateOpBounds(SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
+                                      center.fX + radius, center.fY + radius),
+                     kDrawCircleFlags);
 }
 void DisplayListBuilder::drawCircle(const SkPoint& center,
                                     SkScalar radius,
@@ -734,6 +820,7 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   } else {
     Push<DrawRRectOp>(0, 1, rrect);
     CheckLayerOpacityCompatibility();
+    AccumulateOpBounds(rrect.getBounds(), kDrawRRectFlags);
   }
 }
 void DisplayListBuilder::drawRRect(const SkRRect& rrect, const DlPaint& paint) {
@@ -744,6 +831,7 @@ void DisplayListBuilder::drawDRRect(const SkRRect& outer,
                                     const SkRRect& inner) {
   Push<DrawDRRectOp>(0, 1, outer, inner);
   CheckLayerOpacityCompatibility();
+  AccumulateOpBounds(outer.getBounds(), kDrawDRRectFlags);
 }
 void DisplayListBuilder::drawDRRect(const SkRRect& outer,
                                     const SkRRect& inner,
@@ -754,6 +842,11 @@ void DisplayListBuilder::drawDRRect(const SkRRect& outer,
 void DisplayListBuilder::drawPath(const SkPath& path) {
   Push<DrawPathOp>(0, 1, path);
   CheckLayerOpacityHairlineCompatibility();
+  if (path.isInverseFillType()) {
+    AccumulateUnbounded();
+  } else {
+    AccumulateOpBounds(path.getBounds(), kDrawPathFlags);
+  }
 }
 void DisplayListBuilder::drawPath(const SkPath& path, const DlPaint& paint) {
   setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawPathFlags);
@@ -770,6 +863,13 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
   } else {
     CheckLayerOpacityCompatibility();
   }
+  // This could be tighter if we compute where the start and end
+  // angles are and then also consider the quadrants swept and
+  // the center if specified.
+  AccumulateOpBounds(bounds,
+                     useCenter  //
+                         ? kDrawArcWithCenterFlags
+                         : kDrawArcNoCenterFlags);
 }
 void DisplayListBuilder::drawArc(const SkRect& bounds,
                                  SkScalar start,
@@ -807,6 +907,25 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
   // bounds of every sub-primitive.
   // See: https://fiddle.skia.org/c/228459001d2de8db117ce25ef5cedb0c
   UpdateLayerOpacityCompatibility(false);
+
+  if (count > 0) {
+    RectBoundsAccumulator ptBounds;
+    for (size_t i = 0; i < count; i++) {
+      ptBounds.accumulate(pts[i]);
+    }
+    SkRect point_bounds = ptBounds.bounds();
+    switch (mode) {
+      case SkCanvas::kPoints_PointMode:
+        AccumulateOpBounds(point_bounds, kDrawPointsAsPointsFlags);
+        break;
+      case SkCanvas::kLines_PointMode:
+        AccumulateOpBounds(point_bounds, kDrawPointsAsLinesFlags);
+        break;
+      case SkCanvas::kPolygon_PointMode:
+        AccumulateOpBounds(point_bounds, kDrawPointsAsPolygonFlags);
+        break;
+    }
+  }
 }
 void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
                                     uint32_t count,
@@ -838,6 +957,7 @@ void DisplayListBuilder::drawSkVertices(const sk_sp<SkVertices> vertices,
   // Although, examination of the |mode| might find some predictable
   // cases.
   UpdateLayerOpacityCompatibility(false);
+  AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags);
 }
 void DisplayListBuilder::drawVertices(const DlVertices* vertices,
                                       DlBlendMode mode) {
@@ -848,6 +968,7 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
   // Although, examination of the |mode| might find some predictable
   // cases.
   UpdateLayerOpacityCompatibility(false);
+  AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags);
 }
 void DisplayListBuilder::drawVertices(const DlVertices* vertices,
                                       DlBlendMode mode,
@@ -864,6 +985,12 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
       ? Push<DrawImageWithAttrOp>(0, 1, std::move(image), point, sampling)
       : Push<DrawImageOp>(0, 1, std::move(image), point, sampling);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
+                                   image->width(), image->height());
+  DisplayListAttributeFlags flags = render_with_attributes  //
+                                        ? kDrawImageWithPaintFlags
+                                        : kDrawImageFlags;
+  AccumulateOpBounds(bounds, flags);
 }
 void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    const SkPoint point,
@@ -886,6 +1013,10 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
   Push<DrawImageRectOp>(0, 1, std::move(image), src, dst, sampling,
                         render_with_attributes, constraint);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  DisplayListAttributeFlags flags = render_with_attributes
+                                        ? kDrawImageRectWithPaintFlags
+                                        : kDrawImageRectFlags;
+  AccumulateOpBounds(dst, flags);
 }
 void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& src,
@@ -911,6 +1042,10 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                       filter)
       : Push<DrawImageNineOp>(0, 1, std::move(image), center, dst, filter);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  DisplayListAttributeFlags flags = render_with_attributes
+                                        ? kDrawImageNineWithPaintFlags
+                                        : kDrawImageNineFlags;
+  AccumulateOpBounds(dst, flags);
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                        const SkIRect& center,
@@ -946,6 +1081,10 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
   CopyV(pod, lattice.fXDivs, xDivCount, lattice.fYDivs, yDivCount,
         lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
   CheckLayerOpacityCompatibility(render_with_attributes);
+  DisplayListAttributeFlags flags = render_with_attributes
+                                        ? kDrawImageLatticeWithPaintFlags
+                                        : kDrawImageLatticeFlags;
+  AccumulateOpBounds(dst, flags);
 }
 void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const SkRSXform xform[],
@@ -984,6 +1123,22 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   // on it to distribute the opacity without overlap without checking all
   // of the transforms and texture rectangles.
   UpdateLayerOpacityCompatibility(false);
+
+  SkPoint quad[4];
+  RectBoundsAccumulator atlasBounds;
+  for (int i = 0; i < count; i++) {
+    const SkRect& src = tex[i];
+    xform[i].toQuad(src.width(), src.height(), quad);
+    for (int j = 0; j < 4; j++) {
+      atlasBounds.accumulate(quad[j]);
+    }
+  }
+  if (atlasBounds.is_not_empty()) {
+    DisplayListAttributeFlags flags = render_with_attributes  //
+                                          ? kDrawAtlasWithPaintFlags
+                                          : kDrawAtlasFlags;
+    AccumulateOpBounds(atlasBounds.bounds(), flags);
+  }
 }
 void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const SkRSXform xform[],
@@ -1008,6 +1163,18 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
 void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
                                      bool render_with_attributes) {
+  // TODO(flar) cull rect really cannot be trusted in general, but it will
+  // work for SkPictures generated from our own PictureRecorder or any
+  // picture captured with an SkRTreeFactory or accurate bounds estimate.
+  SkRect bounds = picture->cullRect();
+  if (matrix) {
+    matrix->mapRect(&bounds);
+  }
+  DisplayListAttributeFlags flags = render_with_attributes  //
+                                        ? kDrawPictureWithPaintFlags
+                                        : kDrawPictureFlags;
+  AccumulateOpBounds(bounds, flags);
+
   matrix  //
       ? Push<DrawSkPictureMatrixOp>(0, 1, std::move(picture), *matrix,
                                     render_with_attributes)
@@ -1024,6 +1191,7 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
+  AccumulateOpBounds(display_list->bounds(), kDrawDisplayListFlags);
   Push<DrawDisplayListOp>(0, 1, std::move(display_list));
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawDisplayList| for non-nested op count metrics.
@@ -1038,6 +1206,7 @@ void DisplayListBuilder::drawDisplayList(
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
                                       SkScalar y) {
+  AccumulateOpBounds(blob->bounds().makeOffset(x, y), kDrawTextBlobFlags);
   Push<DrawTextBlobOp>(0, 1, std::move(blob), x, y);
   CheckLayerOpacityCompatibility();
 }
@@ -1046,10 +1215,177 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const SkScalar elevation,
                                     bool transparent_occluder,
                                     SkScalar dpr) {
+  SkRect shadow_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+      path, elevation, dpr, getTransform());
+  AccumulateOpBounds(shadow_bounds, kDrawShadowFlags);
+
   transparent_occluder  //
       ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation, dpr)
       : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
   UpdateLayerOpacityCompatibility(false);
 }
 
+bool DisplayListBuilder::ComputeFilteredBounds(SkRect& bounds,
+                                               const DlImageFilter* filter) {
+  if (filter) {
+    if (!filter->map_local_bounds(bounds, bounds)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
+                                              DisplayListAttributeFlags flags) {
+  if (flags.ignores_paint()) {
+    return true;
+  }
+
+  if (flags.is_geometric()) {
+    // Path effect occurs before stroking...
+    DisplayListSpecialGeometryFlags special_flags =
+        flags.WithPathEffect(current_.getPathEffectPtr());
+    if (current_.getPathEffect()) {
+      auto effect_bounds = current_.getPathEffect()->effect_bounds(bounds);
+      if (!effect_bounds.has_value()) {
+        return false;
+      }
+      bounds = effect_bounds.value();
+    }
+
+    if (flags.is_stroked(current_.getDrawStyle())) {
+      // Determine the max multiplier to the stroke width first.
+      SkScalar pad = 1.0f;
+      if (current_.getStrokeJoin() == DlStrokeJoin::kMiter &&
+          special_flags.may_have_acute_joins()) {
+        pad = std::max(pad, miter_limit_);
+      }
+      if (current_.getStrokeCap() == DlStrokeCap::kSquare &&
+          special_flags.may_have_diagonal_caps()) {
+        pad = std::max(pad, SK_ScalarSqrt2);
+      }
+      pad *= half_stroke_width_;
+      bounds.outset(pad, pad);
+    }
+  }
+
+  if (flags.applies_mask_filter()) {
+    if (current_.getMaskFilter()) {
+      const DlBlurMaskFilter* blur_filter = current_.getMaskFilter()->asBlur();
+      if (blur_filter) {
+        SkScalar mask_sigma_pad = blur_filter->sigma() * 3.0;
+        bounds.outset(mask_sigma_pad, mask_sigma_pad);
+      } else {
+        SkPaint p;
+        p.setMaskFilter(current_.getMaskFilter()->skia_object());
+        if (!p.canComputeFastBounds()) {
+          return false;
+        }
+        bounds = p.computeFastBounds(bounds, &bounds);
+      }
+    }
+  }
+
+  if (flags.applies_image_filter()) {
+    return ComputeFilteredBounds(bounds, current_.getImageFilter().get());
+  }
+
+  return true;
+}
+
+void DisplayListBuilder::AccumulateUnbounded() {
+  accumulator()->accumulate(current_layer_->clip_bounds);
+}
+
+void DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
+                                            DisplayListAttributeFlags flags) {
+  if (AdjustBoundsForPaint(bounds, flags)) {
+    AccumulateBounds(bounds);
+  } else {
+    AccumulateUnbounded();
+  }
+}
+void DisplayListBuilder::AccumulateBounds(SkRect& bounds) {
+  getTransform().mapRect(&bounds);
+  if (bounds.intersect(current_layer_->clip_bounds)) {
+    accumulator()->accumulate(bounds);
+  }
+}
+
+bool DisplayListBuilder::paint_nops_on_transparency() {
+  // SkImageFilter::canComputeFastBounds tests for transparency behavior
+  // This test assumes that the blend mode checked down below will
+  // NOP on transparent black.
+  if (current_.getImageFilter() &&
+      current_.getImageFilter()->modifies_transparent_black()) {
+    return false;
+  }
+
+  // We filter the transparent black that is used for the background of a
+  // saveLayer and make sure it returns transparent black. If it does, then
+  // the color filter will leave all area surrounding the contents of the
+  // save layer untouched out to the edge of the output surface.
+  // This test assumes that the blend mode checked down below will
+  // NOP on transparent black.
+  if (current_.getColorFilter() &&
+      current_.getColorFilter()->modifies_transparent_black()) {
+    return false;
+  }
+
+  if (!blend_mode_) {
+    return false;  // can we query other blenders for this?
+  }
+  // Unusual blendmodes require us to process a saved layer
+  // even with operations outisde the clip.
+  // For example, DstIn is used by masking layers.
+  // https://code.google.com/p/skia/issues/detail?id=1291
+  // https://crbug.com/401593
+  switch (blend_mode_.value()) {
+    // For each of the following transfer modes, if the source
+    // alpha is zero (our transparent black), the resulting
+    // blended pixel is not necessarily equal to the original
+    // destination pixel.
+    // Mathematically, any time in the following equations where
+    // the result is not d assuming source is 0
+    case DlBlendMode::kClear:     // r = 0
+    case DlBlendMode::kSrc:       // r = s
+    case DlBlendMode::kSrcIn:     // r = s * da
+    case DlBlendMode::kDstIn:     // r = d * sa
+    case DlBlendMode::kSrcOut:    // r = s * (1-da)
+    case DlBlendMode::kDstATop:   // r = d*sa + s*(1-da)
+    case DlBlendMode::kModulate:  // r = s*d
+      return false;
+      break;
+
+    // And in these equations, the result must be d if the
+    // source is 0
+    case DlBlendMode::kDst:         // r = d
+    case DlBlendMode::kSrcOver:     // r = s + (1-sa)*d
+    case DlBlendMode::kDstOver:     // r = d + (1-da)*s
+    case DlBlendMode::kDstOut:      // r = d * (1-sa)
+    case DlBlendMode::kSrcATop:     // r = s*da + d*(1-sa)
+    case DlBlendMode::kXor:         // r = s*(1-da) + d*(1-sa)
+    case DlBlendMode::kPlus:        // r = min(s + d, 1)
+    case DlBlendMode::kScreen:      // r = s + d - s*d
+    case DlBlendMode::kOverlay:     // multiply or screen, depending on dest
+    case DlBlendMode::kDarken:      // rc = s + d - max(s*da, d*sa),
+                                    // ra = kSrcOver
+    case DlBlendMode::kLighten:     // rc = s + d - min(s*da, d*sa),
+                                    // ra = kSrcOver
+    case DlBlendMode::kColorDodge:  // brighten destination to reflect source
+    case DlBlendMode::kColorBurn:   // darken destination to reflect source
+    case DlBlendMode::kHardLight:   // multiply or screen, depending on source
+    case DlBlendMode::kSoftLight:   // lighten or darken, depending on source
+    case DlBlendMode::kDifference:  // rc = s + d - 2*(min(s*da, d*sa)),
+                                    // ra = kSrcOver
+    case DlBlendMode::kExclusion:   // rc = s + d - two(s*d), ra = kSrcOver
+    case DlBlendMode::kMultiply:    // r = s*(1-da) + d*(1-sa) + s*d
+    case DlBlendMode::kHue:         // ra = kSrcOver
+    case DlBlendMode::kSaturation:  // ra = kSrcOver
+    case DlBlendMode::kColor:       // ra = kSrcOver
+    case DlBlendMode::kLuminosity:  // ra = kSrcOver
+      return true;
+      break;
+  }
+}
 }  // namespace flutter
