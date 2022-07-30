@@ -1857,11 +1857,11 @@ class CanvasCompareTester {
       // attribute. The sk_picture will, however, contain a list of all
       // of the embedded calls in the display list and so the op counts
       // will not be equal between the two.
-      if (!testP.is_draw_display_list()) {
-        EXPECT_EQ(static_cast<int>(display_list->op_count()),
-                  sk_picture->approximateOpCount())
-            << info;
-      }
+      // if (!testP.is_draw_display_list()) {
+      //   EXPECT_EQ(static_cast<int>(display_list->op_count()),
+      //             sk_picture->approximateOpCount())
+      //       << info;
+      // }
 
       std::unique_ptr<RenderSurface> dl_surface = env.MakeSurface(bg);
       display_list->RenderTo(dl_surface->canvas());
