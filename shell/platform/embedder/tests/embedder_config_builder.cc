@@ -160,6 +160,7 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
   // SetOpenGLRendererConfig must be called before this.
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
+    // passing a placeholder fbo_id.
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
         FlutterPresentInfo{
             .fbo_id = 0,
@@ -313,6 +314,10 @@ void EmbedderConfigBuilder::SetupVsyncCallback() {
     auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
     context->RunVsyncCallback(baton);
   };
+}
+
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
 }
 
 void EmbedderConfigBuilder::SetRenderTaskRunner(
