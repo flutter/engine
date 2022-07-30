@@ -594,24 +594,24 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   // Records the fact that we encountered an op that either could not
   // estimate its bounds or that fills all of the destination space.
-  void AccumulateUnbounded();
+  bool AccumulateUnbounded();
 
   // Records the bounds for an op after modifying them according to the
   // supplied attribute flags and transforming by the current matrix.
-  void AccumulateOpBounds(const SkRect& bounds,
+  bool AccumulateOpBounds(const SkRect& bounds,
                           DisplayListAttributeFlags flags) {
     SkRect safe_bounds = bounds;
-    AccumulateOpBounds(safe_bounds, flags);
+    return AccumulateOpBounds(safe_bounds, flags);
   }
 
   // Records the bounds for an op after modifying them according to the
   // supplied attribute flags and transforming by the current matrix
   // and clipping against the current clip.
-  void AccumulateOpBounds(SkRect& bounds, DisplayListAttributeFlags flags);
+  bool AccumulateOpBounds(SkRect& bounds, DisplayListAttributeFlags flags);
 
   // Records the given bounds after transforming by the current matrix
   // and clipping against the current clip.
-  void AccumulateBounds(SkRect& bounds);
+  bool AccumulateBounds(SkRect& bounds);
 
   DlPaint current_;
   // If |current_blender_| is set then ignore |current_.getBlendMode()|

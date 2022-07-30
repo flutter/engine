@@ -782,9 +782,10 @@ void DisplayListBuilder::drawLine(const SkPoint& p0,
   drawLine(p0, p1);
 }
 void DisplayListBuilder::drawRect(const SkRect& rect) {
-  Push<DrawRectOp>(0, 1, rect);
+  if (AccumulateOpBounds(rect, kDrawRectFlags)) {
+    Push<DrawRectOp>(0, 1, rect);
+  }
   CheckLayerOpacityCompatibility();
-  AccumulateOpBounds(rect, kDrawRectFlags);
 }
 void DisplayListBuilder::drawRect(const SkRect& rect, const DlPaint& paint) {
   setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawRectFlags);
@@ -1293,23 +1294,26 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
   return true;
 }
 
-void DisplayListBuilder::AccumulateUnbounded() {
+bool DisplayListBuilder::AccumulateUnbounded() {
   accumulator()->accumulate(current_layer_->clip_bounds);
+  return true;
 }
 
-void DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
+bool DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
                                             DisplayListAttributeFlags flags) {
   if (AdjustBoundsForPaint(bounds, flags)) {
-    AccumulateBounds(bounds);
+    return AccumulateBounds(bounds);
   } else {
-    AccumulateUnbounded();
+    return AccumulateUnbounded();
   }
 }
-void DisplayListBuilder::AccumulateBounds(SkRect& bounds) {
+bool DisplayListBuilder::AccumulateBounds(SkRect& bounds) {
   getTransform().mapRect(&bounds);
   if (bounds.intersect(current_layer_->clip_bounds)) {
     accumulator()->accumulate(bounds);
+    return true;
   }
+  return false;
 }
 
 bool DisplayListBuilder::paint_nops_on_transparency() {
