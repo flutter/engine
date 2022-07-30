@@ -433,6 +433,16 @@ typedef struct {
   FlutterSize lower_left_corner_radius;
 } FlutterRoundedRect;
 
+/// A structure to represent a damage region.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterDamage).
+  size_t struct_size;
+  /// The number of rectangles within the damage region.
+  size_t num_rects;
+  /// The actual damage region(s) in question.
+  FlutterRect* damage;
+} FlutterDamage;
+
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
