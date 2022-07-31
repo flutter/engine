@@ -645,46 +645,48 @@ sk_sp<SkTypeface> matchTypeface(const char* family_name,
 
 }  // namespace
 
-void Canvas::drawGlyphRun(const tonic::Uint16List& glyphs,
-                          const tonic::Float32List& positions,
+void Canvas::drawGlyphRun(Dart_Handle glyphs_handle,
+                          Dart_Handle positions_handle,
                           double originX,
                           double originY,
-                          const char* font_family_name,
+                          Dart_Handle font_family_name_handle,
                           int font_weight_index,
                           int font_slant_index,
                           double font_size,
-                          const Paint& paint,
-                          const PaintData& paint_data) {
+                          Dart_Handle paint_objects,
+                          Dart_Handle paint_data) {
+  Paint paint(paint_objects, paint_data);
   FML_DCHECK(paint.isNotNull());
-  auto sk_glyphs = reinterpret_cast<const SkGlyphID*>(glyphs.data());
-  auto sk_points = reinterpret_cast<const SkPoint*>(positions.data());
-  // font_weight_index is from txt::FontWeight (lib/ui/text.dart::FontWeight
-  // in dart side)
-  //
-  // Convert txt::FontWeight values (ranging from 0-8) to SkFontStyle:Weight
-  // values (ranging from 100-900)
-  SkFontStyle::Weight font_weight =
-      static_cast<SkFontStyle::Weight>(font_weight_index * 100 + 100);
-  // Convert txt::FontStyle to SkFontFontStyle::Slant
-  SkFontStyle::Slant font_slant = font_slant_index == 0
-                                      ? SkFontStyle::Slant::kUpright_Slant
-                                      : SkFontStyle::Slant::kItalic_Slant;
-  SkFontStyle font_style(font_weight, SkFontStyle::Width::kNormal_Width,
-                         font_slant);
-  sk_sp<SkTypeface> sk_typeface = matchTypeface(font_family_name, font_style);
-
-  const SkFont sk_font(sk_typeface, font_size);
-  auto sk_textblob = SkTextBlob::MakeFromPosText(
-      sk_glyphs, glyphs.num_elements() * sizeof(SkGlyphID), sk_points, sk_font,
-      SkTextEncoding::kGlyphID);
-
   if (display_list_recorder_) {
+    tonic::Uint16List glyphs(glyphs_handle);
+    tonic::Float32List positions(positions_handle);
+    std::string font_family_name =
+        tonic::StdStringFromDart(font_family_name_handle);
+    auto sk_glyphs = reinterpret_cast<const SkGlyphID*>(glyphs.data());
+    auto sk_points = reinterpret_cast<const SkPoint*>(positions.data());
+    // font_weight_index is from txt::FontWeight (lib/ui/text.dart::FontWeight
+    // in dart side)
+    //
+    // Convert txt::FontWeight values (ranging from 0-8) to SkFontStyle:Weight
+    // values (ranging from 100-900)
+    SkFontStyle::Weight font_weight =
+        static_cast<SkFontStyle::Weight>(font_weight_index * 100 + 100);
+    // Convert txt::FontStyle to SkFontFontStyle::Slant
+    SkFontStyle::Slant font_slant = font_slant_index == 0
+                                        ? SkFontStyle::Slant::kUpright_Slant
+                                        : SkFontStyle::Slant::kItalic_Slant;
+    SkFontStyle font_style(font_weight, SkFontStyle::Width::kNormal_Width,
+                           font_slant);
+    sk_sp<SkTypeface> sk_typeface =
+        matchTypeface(font_family_name.c_str(), font_style);
+
+    const SkFont sk_font(sk_typeface, font_size);
+    auto sk_textblob = SkTextBlob::MakeFromPosText(
+        sk_glyphs, glyphs.num_elements() * sizeof(SkGlyphID), sk_points,
+        sk_font, SkTextEncoding::kGlyphID);
+
     paint.sync_to(builder(), kDrawTextBlobFlags);
     builder()->drawTextBlob(sk_textblob, originX, originY);
-  } else if (canvas_) {
-    SkPaint sk_paint;
-    canvas_->drawTextBlob(sk_textblob, originX, originY,
-                          *paint.paint(sk_paint));
   }
 }
 

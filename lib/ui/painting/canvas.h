@@ -155,16 +155,26 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                             int bitmapSamplingIndex);
 
   void drawPicture(Picture* picture);
-  void drawGlyphRun(const tonic::Uint16List& glyphs,
-                    const tonic::Float32List& positions,
+  //  void drawGlyphRun(const tonic::Uint16List& glyphs,
+  //                    const tonic::Float32List& positions,
+  //                    double originX,
+  //                    double originY,
+  //                    const char font_family_name[],
+  //                    int font_weight_index,
+  //                    int font_slant_index,
+  //                    double font_size,
+  //                    const Paint& paint,
+  //                    const PaintData& paint_data);
+  void drawGlyphRun(Dart_Handle glyphs_handle,
+                    Dart_Handle positions_handle,
                     double originX,
                     double originY,
-                    const char font_family_name[],
+                    Dart_Handle font_family_name_handle,
                     int font_weight_index,
                     int font_slant_index,
                     double font_size,
-                    const Paint& paint,
-                    const PaintData& paint_data);
+                    Dart_Handle paint_objects,
+                    Dart_Handle paint_data);
 
   // The paint argument is first for the following functions because Paint
   // unwraps a number of C++ objects. Once we create a view unto a
