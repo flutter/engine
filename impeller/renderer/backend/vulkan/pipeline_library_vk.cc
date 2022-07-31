@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 
+#include <array>
 #include <optional>
 
 #include "flutter/fml/trace_event.h"
@@ -12,6 +13,9 @@
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
+#include "impeller/renderer/shader_types.h"
+#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -222,6 +226,40 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   }
   pipeline_info.setStages(shader_stages);
 
+  // TODO(WIP)
+  // only 1 stream of data.
+  const size_t BINDING_INDEX = 0;
+  vk::VertexInputBindingDescription binding_description = {};
+  binding_description.setBinding(BINDING_INDEX);
+  binding_description.setInputRate(vk::VertexInputRate::eVertex);
+
+  std::vector<vk::VertexInputAttributeDescription> attr_descs;
+
+  uint32_t stride = 0;
+  const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
+  for (const ShaderStageIOSlot& stage_in : stage_inputs) {
+    vk::VertexInputAttributeDescription attr_desc;
+    attr_desc.setBinding(BINDING_INDEX);
+    attr_desc.setLocation(stage_in.location);
+    attr_desc.setFormat(vk::Format::eR8G8B8A8Unorm);
+    attr_desc.setOffset(stride);
+
+    attr_descs.push_back(attr_desc);
+    stride += stage_in.bit_width * stage_in.vec_size;
+  }
+
+  binding_description.setStride(stride);
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state;
+  vertex_input_state.setVertexBindingDescriptionCount(1);
+  vertex_input_state.setPVertexBindingDescriptions(&binding_description);
+  vertex_input_state.setVertexAttributeDescriptionCount(attr_descs.size());
+  vertex_input_state.setPVertexAttributeDescriptions(attr_descs.data());
+
+  pipeline_info.setPVertexInputState(&vertex_input_state);
+
+  // TODO (kaushikiska): uniforms!!
+
   //----------------------------------------------------------------------------
   /// Rasterization State
   /// TODO(106380): Move front face and cull mode to pipeline state instead of
@@ -283,10 +321,29 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
-  std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
+  // TODO (kaushikiska): support multiple uniforms.
+  vk::DescriptorSetLayoutBinding desc_set_layout_binding;
+  desc_set_layout_binding.setBinding(BINDING_INDEX);
+  desc_set_layout_binding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+  desc_set_layout_binding.setDescriptorCount(1);
+  desc_set_layout_binding.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+
+  vk::DescriptorSetLayoutCreateInfo descriptor_set_create;
+  descriptor_set_create.setBindingCount(1);
+  descriptor_set_create.setPBindings(&desc_set_layout_binding);
+
+  auto desc_sec_create_res =
+      device_.createDescriptorSetLayoutUnique(descriptor_set_create);
+  if (desc_sec_create_res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "unable to create uniform descriptors";
+    return nullptr;
+  }
+
   // TODO(106377): Wire this up from the C++ generated headers.
+  auto desc_set_layout = std::move(desc_sec_create_res.value);
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
-  pipeline_layout_info.setSetLayouts(descriptor_set_layouts);
+  pipeline_layout_info.setSetLayouts(desc_set_layout.get());
+
   auto pipeline_layout =
       device_.createPipelineLayoutUnique(pipeline_layout_info);
   if (pipeline_layout.result != vk::Result::eSuccess) {
@@ -297,8 +354,6 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   }
   pipeline_info.setLayout(pipeline_layout.value.get());
 
-  // TODO(WIP)
-  // pipeline_info.setPVertexInputState(&vertex_input_state);
   // pipeline_info.setPDepthStencilState(&depth_stencil_state_);
 
   // See the note in the header about why this is a reader lock.
@@ -311,7 +366,8 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   }
 
   return std::make_unique<PipelineCreateInfoVK>(std::move(pipeline.value),
-                                                std::move(render_pass.value()));
+                                                std::move(render_pass.value()),
+                                                std::move(desc_set_layout));
 }
 
 }  // namespace impeller

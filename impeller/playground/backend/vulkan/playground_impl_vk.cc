@@ -6,6 +6,7 @@
 
 #include "impeller/renderer/backend/vulkan/vk.h"
 
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include "flutter/fml/logging.h"
@@ -34,13 +35,35 @@ ShaderLibraryMappingsForPlayground() {
   };
 }
 
+void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
+  if (!handle) {
+    return;
+  }
+  ::glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(handle));
+}
+
 PlaygroundImplVK::PlaygroundImplVK()
-    : concurrent_loop_(fml::ConcurrentMessageLoop::Create()) {
+    : handle_(nullptr, &DestroyWindowHandle),
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create()) {
   if (!::glfwVulkanSupported()) {
     VALIDATION_LOG << "Attempted to initialize a Vulkan playground on a system "
                       "that does not support Vulkan.";
     return;
   }
+
+  ::glfwDefaultWindowHints();
+  ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+  // TODO (kaushikiska): consider making this resizable.
+  auto window = ::glfwCreateWindow(800, 600, "Test vkWindow", nullptr, nullptr);
+  if (!window) {
+    VALIDATION_LOG << "Unable to create glfw window";
+    return;
+  }
+
+  handle_.reset(window);
+
   auto context = ContextVK::Create(reinterpret_cast<PFN_vkGetInstanceProcAddr>(
                                        &::glfwGetInstanceProcAddress),    //
                                    ShaderLibraryMappingsForPlayground(),  //
@@ -66,7 +89,7 @@ std::shared_ptr<Context> PlaygroundImplVK::GetContext() const {
 
 // |PlaygroundImpl|
 PlaygroundImpl::WindowHandle PlaygroundImplVK::GetWindowHandle() const {
-  FML_UNREACHABLE();
+  return handle_.get();
 }
 
 // |PlaygroundImpl|

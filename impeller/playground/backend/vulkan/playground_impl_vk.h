@@ -7,6 +7,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_impl.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
@@ -17,6 +18,10 @@ class PlaygroundImplVK final : public PlaygroundImpl {
   ~PlaygroundImplVK();
 
  private:
+  static void DestroyWindowHandle(WindowHandle handle);
+  using UniqueHandle = std::unique_ptr<void, decltype(&DestroyWindowHandle)>;
+  UniqueHandle handle_;
+
   std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
   std::shared_ptr<Context> context_;
 

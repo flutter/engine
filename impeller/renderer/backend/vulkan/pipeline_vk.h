@@ -16,7 +16,8 @@ namespace impeller {
 class PipelineCreateInfoVK {
  public:
   PipelineCreateInfoVK(vk::UniquePipeline pipeline,
-                       vk::UniqueRenderPass render_pass);
+                       vk::UniqueRenderPass render_pass,
+                       vk::UniqueDescriptorSetLayout desc_set_layout);
 
   bool IsValid() const;
 
@@ -28,6 +29,7 @@ class PipelineCreateInfoVK {
   bool is_valid_ = false;
   vk::UniquePipeline pipeline_;
   vk::UniqueRenderPass render_pass_;
+  vk::UniqueDescriptorSetLayout desc_set_layout_;
 };
 
 class PipelineVK final : public Pipeline,

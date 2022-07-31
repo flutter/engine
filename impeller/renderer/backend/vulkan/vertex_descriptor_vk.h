@@ -5,6 +5,8 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 
@@ -13,6 +15,13 @@ class VertexDescriptorVK {
   VertexDescriptorVK();
 
   ~VertexDescriptorVK();
+
+  bool SetStageInputs(const std::vector<ShaderStageIOSlot>& inputs);
+
+  vk::VertexInputBindingDescription GetVKVertexDesc() const;
+
+  std::vector<vk::VertexInputAttributeDescription> GetVKVertexAttributeDesc()
+      const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptorVK);

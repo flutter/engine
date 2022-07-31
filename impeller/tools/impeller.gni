@@ -509,8 +509,7 @@ template("impeller_shaders_vk") {
     shaders = invoker.shaders
     sl_file_extension = "vkspv"
 
-    # Metal reflectors generate a superset of information.
-    if (impeller_enable_metal) {
+    if (impeller_enable_vulkan) {
       intermediates_subdir = "vk"
     }
     shader_target_flag = "--vulkan"
