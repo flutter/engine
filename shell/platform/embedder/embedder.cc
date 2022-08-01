@@ -228,6 +228,7 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
+#ifdef SHELL_ENABLE_GL
 // Auxiliary function used to translate rectangles of type SkIRect to
 // FlutterRect.
 static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
@@ -240,13 +241,14 @@ static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
 
 // Auxiliary function used to translate rectangles of type FlutterRect to
 // SkIRect.
-static inline const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
   SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
                   static_cast<int32_t>(flutter_rect.top),
                   static_cast<int32_t>(flutter_rect.right),
                   static_cast<int32_t>(flutter_rect.bottom)};
   return rect;
 }
+#endif
 
 static inline flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
