@@ -205,7 +205,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // After this function, all critical keys except for the target key will have
   // their toggled state and pressed state matched with their true states. The
   // target key's pressed state will be updated immediately after this.
-  SynchronizeCritialPressedStates(key, physical_key, is_event_down, event_key_can_be_repeat);
+  SynchronizeCritialPressedStates(key, physical_key, is_event_down,
+                                  event_key_can_be_repeat);
 
   // The resulting event's `type`.
   FlutterKeyEventType type;
