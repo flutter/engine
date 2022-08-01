@@ -12,8 +12,8 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <array>
-#include <list>
 #include <cstring>
+#include <list>
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 #include "embedder.h"
@@ -158,9 +158,8 @@ bool RunFlutter(GLFWwindow* window,
     // Retrieve the set damage region function.
     PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ = nullptr;
     if (HasExtension(extensions, "EGL_KHR_partial_update")) {
-      set_damage_region_ =
-        reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
-            eglGetProcAddress("eglSetDamageRegionKHR"));
+      set_damage_region_ = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+          eglGetProcAddress("eglSetDamageRegionKHR"));
     }
 
     // Retrieve the swap buffers with damage function.
@@ -177,8 +176,8 @@ bool RunFlutter(GLFWwindow* window,
 
     if (set_damage_region_) {
       // Set the buffer damage as the damage region.
-      auto buffer_rects = RectToInts(
-          display, surface, info->buffer_damage.damage[0]);
+      auto buffer_rects =
+          RectToInts(display, surface, info->buffer_damage.damage[0]);
       set_damage_region_(display, surface, buffer_rects.data(), 1);
     }
 
@@ -190,7 +189,8 @@ bool RunFlutter(GLFWwindow* window,
 
     if (swap_buffers_with_damage_) {
       // Swap buffers with frame damage.
-      auto frame_rects = RectToInts(display, surface, info->frame_damage.damage[0]);
+      auto frame_rects =
+          RectToInts(display, surface, info->frame_damage.damage[0]);
       return swap_buffers_with_damage_(display, surface, frame_rects.data(), 1);
     } else {
       // If the required extensions for partial repaint were not provided, do
@@ -202,7 +202,8 @@ bool RunFlutter(GLFWwindow* window,
     return 0;  // FBO0
   };
   config.open_gl.fbo_with_damage_callback =
-      [](void* userdata, intptr_t fbo_id, FlutterDamage* existing_damage) -> void {
+      [](void* userdata, intptr_t fbo_id,
+         FlutterDamage* existing_damage) -> void {
     // Get the display and surface variables.
     GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
     EGLDisplay display = glfwGetEGLDisplay();
@@ -218,7 +219,8 @@ bool RunFlutter(GLFWwindow* window,
     }
 
     existing_damage->num_rects = 1;
-    std::array<FlutterRect, 1> existing_damage_rect = {FlutterRect{0, 0, kInitialWindowWidth, kInitialWindowHeight}};
+    std::array<FlutterRect, 1> existing_damage_rect = {
+        FlutterRect{0, 0, kInitialWindowWidth, kInitialWindowHeight}};
     existing_damage->damage = existing_damage_rect.data();
 
     if (age > 1) {
