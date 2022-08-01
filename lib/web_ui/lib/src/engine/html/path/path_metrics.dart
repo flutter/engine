@@ -693,7 +693,6 @@ class _PathSegment {
 
 // Evaluates A * t^3 + B * t^2 + Ct + D = 0 for cubic curve.
 class _SkCubicCoefficients {
-  final double ax, ay, bx, by, cx, cy, dx, dy;
   _SkCubicCoefficients(double x0, double y0, double x1, double y1, double x2,
       double y2, double x3, double y3)
       : ax = x3 + (3 * (x1 - x2)) - x0,
@@ -704,6 +703,8 @@ class _SkCubicCoefficients {
         cy = 3 * (y1 - y0),
         dx = x0,
         dy = y0;
+
+  final double ax, ay, bx, by, cx, cy, dx, dy;
 
   double evalX(double t) => (((ax * t + bx) * t) + cx) * t + dx;
 

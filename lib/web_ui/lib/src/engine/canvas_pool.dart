@@ -45,6 +45,10 @@ import 'window.dart';
 /// can be reused, [CanvasPool] will move canvas(s) from pool to reusablePool
 /// to prevent reallocation.
 class CanvasPool extends _SaveStackTracking {
+  /// Initializes canvas pool for target size and dpi.
+  CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels,
+      this._density);
+
   DomCanvasRenderingContext2D? _context;
   ContextStateHandle? _contextHandle;
   final int _widthInBitmapPixels, _heightInBitmapPixels;
@@ -58,10 +62,6 @@ class CanvasPool extends _SaveStackTracking {
   DomHTMLElement? _rootElement;
   int _saveContextCount = 0;
   final double _density;
-
-  /// Initializes canvas pool for target size and dpi.
-  CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels,
-      this._density);
 
   /// Initializes canvas pool to be hosted on a surface.
   void mount(DomHTMLElement rootElement) {
@@ -872,14 +872,14 @@ class CanvasPool extends _SaveStackTracking {
 /// See https://www.w3.org/TR/2dcontext/ for defaults used in this class
 /// to initialize current values.
 class ContextStateHandle {
+  /// Initializes context state for a [CanvasPool].
+  ContextStateHandle(this._canvasPool, this.context, this.density);
+
   /// Associated canvas element context tracked by this context state.
   final DomCanvasRenderingContext2D context;
   final CanvasPool _canvasPool;
   /// Dpi of context.
   final double density;
-
-  /// Initializes context state for a [CanvasPool].
-  ContextStateHandle(this._canvasPool, this.context, this.density);
   ui.BlendMode? _currentBlendMode = ui.BlendMode.srcOver;
   ui.StrokeCap? _currentStrokeCap = ui.StrokeCap.butt;
   ui.StrokeJoin? _currentStrokeJoin = ui.StrokeJoin.miter;

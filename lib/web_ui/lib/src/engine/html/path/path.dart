@@ -35,35 +35,8 @@ import 'tangent.dart';
 ///   3. if we encounter Move without a preceding Close, and forceClose is true, goto #2
 ///   4. if we encounter Line | Quad | Cubic after Close, cons up a Move
 class SurfacePath implements ui.Path {
-  // Initial valid of last move to index so we can detect if a move to
-  // needs to be inserted after contour closure. See [close].
-  static const int kInitialLastMoveToIndexValue = 0;
-
-  PathRef pathRef;
-  ui.PathFillType _fillType = ui.PathFillType.nonZero;
-  // Skia supports inverse winding as part of path fill type.
-  // For Flutter inverse is always false.
-  final bool _isInverseFillType = false;
-  // Store point index + 1 of last moveTo instruction.
-  // If contour has been closed or path is in initial state, the value is
-  // negated.
-  int fLastMoveToIndex = kInitialLastMoveToIndexValue;
-  int _convexityType = SPathConvexityType.kUnknown;
-  int _firstDirection = SPathDirection.kUnknown;
-
   SurfacePath() : pathRef = PathRef() {
     _resetFields();
-  }
-
-  void _resetFields() {
-    fLastMoveToIndex = kInitialLastMoveToIndexValue;
-    _fillType = ui.PathFillType.nonZero;
-    _resetAfterEdit();
-  }
-
-  void _resetAfterEdit() {
-    _convexityType = SPathConvexityType.kUnknown;
-    _firstDirection = SPathDirection.kUnknown;
   }
 
   /// Creates a copy of another [Path].
@@ -81,6 +54,33 @@ class SurfacePath implements ui.Path {
   SurfacePath.shallowCopy(SurfacePath source)
       : pathRef = PathRef.shallowCopy(source.pathRef) {
     _copyFields(source);
+  }
+
+  // Initial valid of last move to index so we can detect if a move to
+  // needs to be inserted after contour closure. See [close].
+  static const int kInitialLastMoveToIndexValue = 0;
+
+  PathRef pathRef;
+  ui.PathFillType _fillType = ui.PathFillType.nonZero;
+  // Skia supports inverse winding as part of path fill type.
+  // For Flutter inverse is always false.
+  final bool _isInverseFillType = false;
+  // Store point index + 1 of last moveTo instruction.
+  // If contour has been closed or path is in initial state, the value is
+  // negated.
+  int fLastMoveToIndex = kInitialLastMoveToIndexValue;
+  int _convexityType = SPathConvexityType.kUnknown;
+  int _firstDirection = SPathDirection.kUnknown;
+
+  void _resetFields() {
+    fLastMoveToIndex = kInitialLastMoveToIndexValue;
+    _fillType = ui.PathFillType.nonZero;
+    _resetAfterEdit();
+  }
+
+  void _resetAfterEdit() {
+    _convexityType = SPathConvexityType.kUnknown;
+    _firstDirection = SPathDirection.kUnknown;
   }
 
   void _copyFields(SurfacePath source) {

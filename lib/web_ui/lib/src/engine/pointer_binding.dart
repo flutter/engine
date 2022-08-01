@@ -73,6 +73,15 @@ class SafariPointerEventWorkaround {
 }
 
 class PointerBinding {
+  PointerBinding(this.glassPaneElement)
+    : _pointerDataConverter = PointerDataConverter(),
+      _detector = const PointerSupportDetector() {
+    if (isIosSafari) {
+      SafariPointerEventWorkaround.instance.workAroundMissingPointerEvents();
+    }
+    _adapter = _createAdapter();
+  }
+
   /// The singleton instance of this object.
   static PointerBinding? get instance => _instance;
   static PointerBinding? _instance;
@@ -92,15 +101,6 @@ class PointerBinding {
   void dispose() {
     _adapter.clearListeners();
     _pointerDataConverter.clearPointerState();
-  }
-
-  PointerBinding(this.glassPaneElement)
-    : _pointerDataConverter = PointerDataConverter(),
-      _detector = const PointerSupportDetector() {
-    if (isIosSafari) {
-      SafariPointerEventWorkaround.instance.workAroundMissingPointerEvents();
-    }
-    _adapter = _createAdapter();
   }
 
   final DomElement glassPaneElement;
