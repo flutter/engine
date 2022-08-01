@@ -3578,8 +3578,8 @@ class _ComposeImageFilter implements ImageFilter {
 class _ImageFilter extends NativeFieldWrapperClass1 {
   /// Creates an image filter that applies a Gaussian blur.
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
-      : assert(filter != null),
-        creator = filter { // ignore: prefer_initializing_formals
+    : assert(filter != null),
+      creator = filter { // ignore: prefer_initializing_formals
     _constructor();
     _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
   }
@@ -3587,8 +3587,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// Creates an image filter that dilates each input pixel's channel values
   /// to the max value within the given radii along the x and y axes.
   _ImageFilter.dilate(_DilateImageFilter filter)
-      : assert(filter != null),
-        creator = filter {    // ignore: prefer_initializing_formals
+    : assert(filter != null),
+      creator = filter {    // ignore: prefer_initializing_formals
     _constructor();
     _initDilate(filter.radiusX, filter.radiusY);
   }
@@ -3596,8 +3596,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// Create a filter that erodes each input pixel's channel values
   /// to the minimum channel value within the given radii along the x and y axes.
   _ImageFilter.erode(_ErodeImageFilter filter)
-      : assert(filter != null),
-        creator = filter {    // ignore: prefer_initializing_formals
+    : assert(filter != null),
+      creator = filter {    // ignore: prefer_initializing_formals
     _constructor();
     _initErode(filter.radiusX, filter.radiusY);
   }
@@ -3607,8 +3607,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   _ImageFilter.matrix(_MatrixImageFilter filter)
-      : assert(filter != null),
-        creator = filter { // ignore: prefer_initializing_formals
+    : assert(filter != null),
+      creator = filter { // ignore: prefer_initializing_formals
     if (filter.data.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
@@ -3618,8 +3618,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
 
   /// Converts a color filter to an image filter.
   _ImageFilter.fromColorFilter(ColorFilter filter)
-      : assert(filter != null),
-        creator = filter { // ignore: prefer_initializing_formals
+    : assert(filter != null),
+      creator = filter { // ignore: prefer_initializing_formals
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
     _initColorFilter(nativeFilter);
@@ -3627,8 +3627,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
 
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
-      : assert(filter != null),
-        creator = filter { // ignore: prefer_initializing_formals
+    : assert(filter != null),
+      creator = filter { // ignore: prefer_initializing_formals
     _constructor();
     final _ImageFilter nativeFilterInner = filter.innerFilter._toNativeImageFilter();
     final _ImageFilter nativeFilterOuter = filter.outerFilter._toNativeImageFilter();
@@ -3879,19 +3879,19 @@ class Gradient extends Shader {
   /// provided and not equal to `center`, at least one of the two offsets must
   /// not be equal to [Offset.zero].
   Gradient.radial(
-      Offset center,
-      double radius,
-      List<Color> colors, [
-        List<double>? colorStops,
-        TileMode tileMode = TileMode.clamp,
-        Float64List? matrix4,
-        Offset? focal,
-        double focalRadius = 0.0
-      ]) : assert(_offsetIsValid(center)),
-        assert(colors != null),
-        assert(tileMode != null),
-        assert(matrix4 == null || _matrix4IsValid(matrix4)),
-        super._() {
+    Offset center,
+    double radius,
+    List<Color> colors, [
+    List<double>? colorStops,
+    TileMode tileMode = TileMode.clamp,
+    Float64List? matrix4,
+    Offset? focal,
+    double focalRadius = 0.0
+  ]) : assert(_offsetIsValid(center)),
+       assert(colors != null),
+       assert(tileMode != null),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
+       super._() {
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
@@ -3936,21 +3936,21 @@ class Gradient extends Shader {
   /// specified 4x4 matrix relative to the local coordinate system. `matrix4` must
   /// be a column-major matrix packed into a list of 16 values.
   Gradient.sweep(
-      Offset center,
-      List<Color> colors, [
-        List<double>? colorStops,
-        TileMode tileMode = TileMode.clamp,
-        double startAngle = 0.0,
-        double endAngle = math.pi * 2,
-        Float64List? matrix4,
-      ]) : assert(_offsetIsValid(center)),
-        assert(colors != null),
-        assert(tileMode != null),
-        assert(startAngle != null),
-        assert(endAngle != null),
-        assert(startAngle < endAngle),
-        assert(matrix4 == null || _matrix4IsValid(matrix4)),
-        super._() {
+    Offset center,
+    List<Color> colors, [
+    List<double>? colorStops,
+    TileMode tileMode = TileMode.clamp,
+    double startAngle = 0.0,
+    double endAngle = math.pi * 2,
+    Float64List? matrix4,
+  ]) : assert(_offsetIsValid(center)),
+       assert(colors != null),
+       assert(tileMode != null),
+       assert(startAngle != null),
+       assert(endAngle != null),
+       assert(startAngle < endAngle),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
+       super._() {
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
@@ -6023,12 +6023,12 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
   /// by the number of bytes per pixel in the provided `format`.
   // Not async because there's no expensive work to do here.
   ImageDescriptor.raw(
-      ImmutableBuffer buffer, {
-        required int width,
-        required int height,
-        int? rowBytes,
-        required PixelFormat pixelFormat,
-      }) {
+    ImmutableBuffer buffer, {
+    required int width,
+    required int height,
+    int? rowBytes,
+    required PixelFormat pixelFormat,
+  }) {
     _width = width;
     _height = height;
     // We only support 4 byte pixel formats in the PixelFormat enum.

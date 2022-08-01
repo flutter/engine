@@ -629,7 +629,6 @@ class OneOffHandler {
 /// This is in charge of telling the browser which test suites to load and
 /// converting its responses into [Suite] objects.
 class BrowserManager {
-
   /// Creates a new BrowserManager that communicates with the browser over
   /// [webSocket].
   BrowserManager._(this.packageConfig, this._browser, this._browserEnvironment,
@@ -670,6 +669,7 @@ class BrowserManager {
         (dynamic message) => _onMessage(message as Map<dynamic, dynamic>),
         onDone: close);
   }
+
   final PackageConfig packageConfig;
 
   /// The browser instance that this is connected to via [_channel].
@@ -954,9 +954,9 @@ class BrowserManager {
 ///
 /// All methods forward directly to [BrowserManager].
 class _BrowserEnvironment implements Environment {
-
   _BrowserEnvironment(this._manager, this.observatoryUrl,
       this.remoteDebuggerUrl, this.onRestart);
+
   final BrowserManager _manager;
 
   @override

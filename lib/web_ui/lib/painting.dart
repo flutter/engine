@@ -801,6 +801,7 @@ class ImageDescriptor {
         _height = null,
         _rowBytes = null,
         _format = null;
+
   static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
     final ImageDescriptor descriptor = ImageDescriptor._();
     descriptor._data = buffer._list;

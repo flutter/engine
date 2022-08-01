@@ -20,7 +20,7 @@ import 'shaders/vertex_shaders.dart';
 
 GlRenderer? glRenderer;
 
-class SurfaceVertices implements ui.Vertices { // ignore: unused_field
+class SurfaceVertices implements ui.Vertices {
   SurfaceVertices(
     this.mode,
     List<ui.Offset> positions, {
@@ -50,7 +50,7 @@ class SurfaceVertices implements ui.Vertices { // ignore: unused_field
   final ui.VertexMode mode;
   final Float32List positions;
   final Int32List? colors;
-  final Uint16List? indices;
+  final Uint16List? indices; // ignore: unused_field
 
   static Int32List _int32ListFromColors(List<ui.Color> colors) {
     final Int32List list = Int32List(colors.length);

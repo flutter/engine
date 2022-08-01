@@ -1039,6 +1039,7 @@ class _ParagraphCommand {
       _CkParagraphPlaceholder placeholderStyle)
       : this._(
             _ParagraphCommandType.addPlaceholder, null, null, placeholderStyle);
+
   final _ParagraphCommandType type;
   final String? text;
   final CkTextStyle? style;
