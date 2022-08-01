@@ -14,7 +14,6 @@ import '../shadow.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
-import 'bitmap_canvas.dart';
 import 'painting.dart';
 import 'path/path.dart';
 import 'path/path_utils.dart';
@@ -33,30 +32,6 @@ double _measureBorderRadius(double x, double y) {
   final double clampedX = x < 0 ? 0 : x;
   final double clampedY = y < 0 ? 0 : y;
   return clampedX * clampedX + clampedY * clampedY;
-}
-
-class RawRecordingCanvas extends BitmapCanvas implements ui.PictureRecorder {
-  RawRecordingCanvas(ui.Size size)
-      : super(ui.Offset.zero & size, RenderStrategy());
-
-  @override
-  void dispose() {
-    clear();
-  }
-
-  RecordingCanvas beginRecording(ui.Rect bounds) => throw UnsupportedError('');
-
-  @override
-  ui.Picture endRecording() => throw UnsupportedError('');
-
-  late RecordingCanvas _canvas; // ignore: unused_field
-
-  final bool _isRecording = true; // ignore: unused_field
-
-  @override
-  bool get isRecording => true;
-
-  ui.Rect? cullRect;
 }
 
 /// Records canvas commands to be applied to a [EngineCanvas].

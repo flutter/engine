@@ -28,12 +28,12 @@ typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 class SurfaceFrame {
   SurfaceFrame(this.skiaSurface, this.submitCallback)
       : _submitted = false,
-        assert(skiaSurface != null), // ignore: unnecessary_null_comparison
+        assert(skiaSurface != null),
         assert(submitCallback != null);
 
   final CkSurface skiaSurface;
   final SubmitCallback submitCallback;
-  final bool _submitted; // ignore: unnecessary_null_comparison
+  final bool _submitted;
 
   /// Submit this frame to be drawn.
   bool submit() {
