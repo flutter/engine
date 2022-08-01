@@ -43,7 +43,7 @@ class SurfacePath implements ui.Path {
   ui.PathFillType _fillType = ui.PathFillType.nonZero;
   // Skia supports inverse winding as part of path fill type.
   // For Flutter inverse is always false.
-  bool _isInverseFillType = false;
+  final bool _isInverseFillType = false;
   // Store point index + 1 of last moveTo instruction.
   // If contour has been closed or path is in initial state, the value is
   // negated.

@@ -106,7 +106,7 @@ class PointerBinding {
   final DomElement glassPaneElement;
 
   PointerSupportDetector _detector;
-  PointerDataConverter _pointerDataConverter;
+  final PointerDataConverter _pointerDataConverter;
   late _BaseAdapter _adapter;
 
   /// Should be used in tests to define custom detection of pointer support.
@@ -245,8 +245,8 @@ abstract class _BaseAdapter {
 
   final List<_Listener> _listeners = <_Listener>[];
   final DomElement glassPaneElement;
-  _PointerDataCallback _callback;
-  PointerDataConverter _pointerDataConverter;
+  final _PointerDataCallback _callback;
+  final PointerDataConverter _pointerDataConverter;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.

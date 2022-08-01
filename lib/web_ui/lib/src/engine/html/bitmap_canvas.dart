@@ -1036,7 +1036,7 @@ class BitmapCanvas extends EngineCanvas {
   /// Stores paint data used by [drawPoints]. We cannot use the original paint
   /// data object because painting style is determined by [ui.PointMode] and
   /// not by [SurfacePointData.style].
-  static SurfacePaintData _drawPointsPaint = SurfacePaintData()
+  static final SurfacePaintData _drawPointsPaint = SurfacePaintData()
     ..strokeCap = ui.StrokeCap.round
     ..strokeJoin = ui.StrokeJoin.round
     ..blendMode = ui.BlendMode.srcOver;

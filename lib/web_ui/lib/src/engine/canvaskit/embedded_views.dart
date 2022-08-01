@@ -92,10 +92,10 @@ class HtmlViewEmbedder {
   final Set<int> _viewsToRecomposite = <int>{};
 
   /// The list of view ids that should be composited, in order.
-  List<int> _compositionOrder = <int>[];
+  final List<int> _compositionOrder = <int>[];
 
   /// The most recent composition order.
-  List<int> _activeCompositionOrder = <int>[];
+  final List<int> _activeCompositionOrder = <int>[];
 
   /// The size of the frame, in physical pixels.
   ui.Size _frameSize = ui.window.physicalSize;
@@ -398,7 +398,7 @@ class HtmlViewEmbedder {
   DomElement? _svgPathDefs;
 
   /// The nodes containing the SVG clip definitions needed to clip this view.
-  Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
+  final Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
 
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
@@ -715,7 +715,7 @@ class HtmlViewEmbedder {
 /// * The number of clipping elements used last time the view was composited.
 class ViewClipChain {
   DomElement _root;
-  DomElement _slot;
+  final DomElement _slot;
   int _clipCount = -1;
 
   ViewClipChain({required DomElement view})

@@ -73,7 +73,7 @@ class Keyboard {
   /// Initializing with `0x0` which means no meta keys are pressed.
   int _lastMetaState = 0x0;
 
-  bool _onMacOs;
+  final bool _onMacOs;
 
   // When the user enters a browser/system shortcut (e.g. `cmd+alt+i`) on macOS,
   // the browser doesn't send a keyup for it. This puts the framework in a

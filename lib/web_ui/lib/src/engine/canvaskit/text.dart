@@ -637,7 +637,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   //                lot of paragraphs are laid out _and_ rendered. To support
   //                this use-case without blowing up memory usage we need this:
   //                https://github.com/flutter/flutter/issues/81224
-  static SynchronousSkiaObjectCache _paragraphCache =
+  static final SynchronousSkiaObjectCache _paragraphCache =
       SynchronousSkiaObjectCache(500);
 
   /// Marks this paragraph as having been used this frame.

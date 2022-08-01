@@ -607,7 +607,7 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   // Float buffer used for path iteration.
-  static Float32List _runBuffer = Float32List(PathRefIterator.kMaxBufferSize);
+  static final Float32List _runBuffer = Float32List(PathRefIterator.kMaxBufferSize);
 
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
   void _runPath(DomCanvasRenderingContext2D ctx, SurfacePath path) {

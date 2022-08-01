@@ -52,7 +52,7 @@ class _SurfacePathMeasure {
         _pathIterator = PathIterator(_path, forceClosed);
 
   final PathRef _path;
-  PathIterator _pathIterator;
+  final PathIterator _pathIterator;
   final List<_PathContourMeasure> _contours = <_PathContourMeasure>[];
 
   // If the contour ends with a call to [Path.close] (which may
@@ -494,7 +494,7 @@ class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
   SurfacePathMetricIterator._(this._pathMeasure);
 
   SurfacePathMetric? _pathMetric;
-  _SurfacePathMeasure _pathMeasure;
+  final _SurfacePathMeasure _pathMeasure;
 
   @override
   SurfacePathMetric get current => _pathMetric!;

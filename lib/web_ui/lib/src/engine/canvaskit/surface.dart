@@ -28,7 +28,7 @@ typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 class SurfaceFrame {
   final CkSurface skiaSurface;
   final SubmitCallback submitCallback;
-  bool _submitted;
+  final bool _submitted;
 
   SurfaceFrame(this.skiaSurface, this.submitCallback)
       : _submitted = false,
