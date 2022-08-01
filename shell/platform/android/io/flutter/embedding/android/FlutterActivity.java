@@ -164,12 +164,14 @@ import java.util.List;
  *
  * <p><strong>Launch Screen and Splash Screen</strong>
  *
- * <p>{@code FlutterActivity} supports the display of an Android "launch screen" as well as a
- * Flutter-specific "splash screen". The launch screen is displayed while the Android application
- * loads. It is only applicable if {@code FlutterActivity} is the first {@code Activity} displayed
- * upon loading the app. After the launch screen passes, a splash screen is optionally displayed.
- * The splash screen is displayed for as long as it takes Flutter to initialize and render its first
- * frame.
+ * <p>{@code FlutterActivity} supports the display of an Android "launch screen", which is displayed
+ * while the Android application loads. It is only applicable if {@code FlutterActivity} is the
+ * first {@code Activity} displayed upon loading the app.
+ *
+ * <p>Prior to Flutter 2.5, {@code FlutterActivity} supported the display of a Flutter-specific
+ * "splash screen" that would be displayed after the launch screen passes; this has since been
+ * deprecated. If a launch screen is specified, it will automatically persist for as long as it
+ * takes Flutter to initialize and render its first frame.
  *
  * <p>Use Android themes to display a launch screen. Create two themes: a launch theme and a normal
  * theme. In the launch theme, set {@code windowBackground} to the desired {@code Drawable} for the
@@ -195,9 +197,8 @@ import java.util.List;
  * screen until the Android application is initialized.
  *
  * <p>Flutter also requires initialization time. To specify a splash screen for Flutter
- * initialization, Do not subclass {@code FlutterActivity} and override {@link
- * #provideSplashScreen()}. Instead, use the instructions above to specify a launch screen that
- * Flutter will automatically display until the Flutter UI is initialized.
+ * initialization, subclass {@code FlutterActivity} and override {@link #provideSplashScreen()}. See
+ * {@link SplashScreen} for details on implementing a splash screen.
  *
  * <p><strong>Alternative Activity</strong> {@link FlutterFragmentActivity} is also available, which
  * is similar to {@code FlutterActivity} but it extends {@code FragmentActivity}. You should use
