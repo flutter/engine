@@ -186,6 +186,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
 
   const bool is_event_down = action == WM_KEYDOWN || action == WM_SYSKEYDOWN;
 
+  bool event_key_can_be_repeat = true;
   UpdateLastSeenCritialKey(key, physical_key, sequence_logical_key);
   // Synchronize the toggled states of critical keys (such as whether CapsLocks
   // is enabled). Toggled states can only be changed upon a down event, so if
@@ -197,14 +198,14 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // updated to the true state, while the critical keys whose toggled state have
   // been changed will be pressed regardless of their true pressed state.
   // Updating the pressed state will be done by SynchronizeCritialPressedStates.
-  SynchronizeCritialToggledStates(key, is_event_down);
+  SynchronizeCritialToggledStates(key, is_event_down, &event_key_can_be_repeat);
   // Synchronize the pressed states of critical keys (such as whether CapsLocks
   // is pressed).
   //
   // After this function, all critical keys except for the target key will have
   // their toggled state and pressed state matched with their true states. The
   // target key's pressed state will be updated immediately after this.
-  SynchronizeCritialPressedStates(key, physical_key, is_event_down);
+  SynchronizeCritialPressedStates(key, physical_key, is_event_down, event_key_can_be_repeat);
 
   // The resulting event's `type`.
   FlutterKeyEventType type;
@@ -340,7 +341,8 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
     int event_virtual_key,
-    bool is_event_down) {
+    bool is_event_down,
+    bool* event_key_can_be_repeat) {
   //    NowState ---------------->  PreEventState --------------> TrueState
   //              Synchronization                      Event
   for (auto& kv : critical_keys_) {
@@ -364,6 +366,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       // Pressed   0          1          0         1
       // Toggled   0          1          1         0
       const bool true_toggled = get_key_state_(virtual_key) & kStateMaskToggled;
+      const bool true_pressed = get_key_state_(virtual_key) & kStateMaskPressed;
       bool pre_event_toggled = true_toggled;
       // Check if the main event's key is the key being checked. If it's the
       // non-repeat down event, toggle the state.
@@ -385,6 +388,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
                                         key_info.physical_key,
                                         key_info.logical_key, empty_character),
                   nullptr, nullptr);
+        *event_key_can_be_repeat = false;
       }
       key_info.toggled_on = true_toggled;
     }
@@ -394,7 +398,8 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
     int event_virtual_key,
     int event_physical_key,
-    bool is_event_down) {
+    bool is_event_down,
+    bool event_key_can_be_repeat) {
   // During an incoming event, there might be a synthesized Flutter event for
   // each key of each pressing goal, followed by an eventual main Flutter
   // event.
@@ -424,8 +429,17 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
       if (is_event_down) {
         // For down events, this key is the event key if they have the same
         // virtual key, because virtual key represents "functionality."
+        //
+        // In that case, normally Flutter should synthesize nothing since the
+        // resulting event can be a down or a repeat depending on the current
+        // state. However, in certain cases (when Flutter has just synchronized
+        // the key's toggling state) the event must not be a repeat event.
         if (virtual_key == event_virtual_key) {
-          pre_event_pressed = false;
+          if (event_key_can_be_repeat) {
+            continue;
+          } else {
+            pre_event_pressed = false;
+          }
         }
       } else {
         // For up events, this key is the event key if they have the same
