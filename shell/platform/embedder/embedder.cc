@@ -240,7 +240,7 @@ static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
 
 // Auxiliary function used to translate rectangles of type FlutterRect to
 // SkIRect.
-static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+static inline const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
   SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
                   static_cast<int32_t>(flutter_rect.top),
                   static_cast<int32_t>(flutter_rect.right),
@@ -248,7 +248,7 @@ static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
   return rect;
 }
 
-static flutter::Shell::CreateCallback<flutter::PlatformView>
+static inline flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -282,9 +282,9 @@ InferOpenGLPlatformViewCreationCallback(
       // contain the number of damage rectangles.
       const size_t num_rects = 1;
 
-      std::array<FlutterRect,num_rects> frame_damage_rect = {
+      std::array<FlutterRect, num_rects> frame_damage_rect = {
           SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
-      std::array<FlutterRect,num_rects> buffer_damage_rect = {
+      std::array<FlutterRect, num_rects> buffer_damage_rect = {
           SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
 
       FlutterDamage frame_damage{
