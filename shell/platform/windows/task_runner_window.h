@@ -22,7 +22,7 @@ class TaskRunnerWindow {
     // Executes expired task, and returns the duration until the next task
     // deadline if exists, otherwise returns `std::chrono::nanoseconds::max()`.
     //
-    // Each platform implementations must call this to schedule the tasks.
+    // Each platform implementation must call this to schedule the tasks.
     virtual std::chrono::nanoseconds ProcessTasks() = 0;
   };
 
