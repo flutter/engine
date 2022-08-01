@@ -6,6 +6,7 @@
 
 #include <array>
 #include <optional>
+#include <vector>
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
@@ -322,15 +323,29 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
   // TODO (kaushikiska): support multiple uniforms.
-  vk::DescriptorSetLayoutBinding desc_set_layout_binding;
-  desc_set_layout_binding.setBinding(BINDING_INDEX);
-  desc_set_layout_binding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
-  desc_set_layout_binding.setDescriptorCount(1);
-  desc_set_layout_binding.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+  vk::DescriptorSetLayoutBinding desc_set_layout_binding_vert;
+  desc_set_layout_binding_vert.setBinding(BINDING_INDEX);
+  desc_set_layout_binding_vert.setDescriptorType(
+      vk::DescriptorType::eUniformBuffer);
+  desc_set_layout_binding_vert.setDescriptorCount(1);
+  desc_set_layout_binding_vert.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+
+  vk::DescriptorSetLayoutBinding desc_set_layout_binding_frag;
+  desc_set_layout_binding_frag.setBinding(128);
+  desc_set_layout_binding_frag.setDescriptorType(
+      vk::DescriptorType::eUniformBuffer);
+  desc_set_layout_binding_frag.setDescriptorCount(1);
+  desc_set_layout_binding_frag.setStageFlags(
+      vk::ShaderStageFlagBits::eFragment);
+
+  std::vector<vk::DescriptorSetLayoutBinding> bindings = {
+      desc_set_layout_binding_vert,
+      desc_set_layout_binding_frag,
+  };
 
   vk::DescriptorSetLayoutCreateInfo descriptor_set_create;
-  descriptor_set_create.setBindingCount(1);
-  descriptor_set_create.setPBindings(&desc_set_layout_binding);
+  descriptor_set_create.setBindingCount(bindings.size());
+  descriptor_set_create.setPBindings(bindings.data());
 
   auto desc_sec_create_res =
       device_.createDescriptorSetLayoutUnique(descriptor_set_create);
