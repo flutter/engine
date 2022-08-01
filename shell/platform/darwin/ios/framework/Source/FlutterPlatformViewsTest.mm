@@ -549,7 +549,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   // Push backdrop filters
   for (int i = 0; i < 5; i++) {
     if (i == 3) {
-      auto filter2 = std::make_shared<flutter::DlBlurImageFilter>(2, 5, flutter::DlTileMode::kClamp);
+      auto filter2 =
+          std::make_shared<flutter::DlBlurImageFilter>(2, 5, flutter::DlTileMode::kClamp);
 
       stack2.PushBackdropFilter(filter2);
       continue;
@@ -590,7 +591,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   // Push backdrop filters
   for (int i = 0; i < 5; i++) {
     if (i == 0) {
-      auto filter2 = std::make_shared<flutter::DlBlurImageFilter>(2, 5, flutter::DlTileMode::kClamp);
+      auto filter2 =
+          std::make_shared<flutter::DlBlurImageFilter>(2, 5, flutter::DlTileMode::kClamp);
       stack2.PushBackdropFilter(filter2);
       continue;
     }
@@ -630,7 +632,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   // Push backdrop filters
   for (int i = 0; i < 5; i++) {
     if (i == 4) {
-      auto filter2 = std::make_shared<flutter::DlBlurImageFilter>(2, 5, flutter::DlTileMode::kClamp);
+      auto filter2 =
+          std::make_shared<flutter::DlBlurImageFilter>(2, 5, flutter::DlTileMode::kClamp);
       stack2.PushBackdropFilter(filter2);
       continue;
     }
@@ -763,7 +766,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   // Push backdrop filters and dilate filter
   auto blurFilter = std::make_shared<flutter::DlBlurImageFilter>(5, 2, flutter::DlTileMode::kClamp);
 
-  
   for (int i = 0; i < 5; i++) {
     if (i == 2) {
       stack2.PushBackdropFilter(dilateFilter);
