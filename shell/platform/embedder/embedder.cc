@@ -132,10 +132,11 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
     return false;
   }
 
-  if (!SAFE_EXISTS(open_gl_config, fbo_with_damage_callback)) {
-    FML_LOG(INFO) << "fbo_with_damage_callback was not defined, disabling "
-                     "partial repaint. If you wish to enable partial repaint, "
-                     "please define this callback.";
+  if (!SAFE_EXISTS(open_gl_config, populate_existing_damage_callback)) {
+    FML_LOG(INFO)
+        << "populate_existing_damage_callback was not defined, disabling "
+           "partial repaint. If you wish to enable partial repaint, "
+           "please define this callback.";
   }
 
   return true;
@@ -327,11 +328,13 @@ InferOpenGLPlatformViewCreationCallback(
     }
   };
 
-  auto gl_fbo_with_damage_callback =
-      [fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
+  auto gl_populate_existing_damage_callback =
+      [populate_existing_damage_callback =
+           config->open_gl.populate_existing_damage_callback,
        user_data](intptr_t id) -> flutter::GLFBOInfo {
-    // If no fbo_with_damage_callback was provided, disable partial repaint.
-    if (!fbo_with_damage_callback) {
+    // If no populate_existing_damage_callback was provided, disable partial
+    // repaint.
+    if (!populate_existing_damage_callback) {
       return flutter::GLFBOInfo{
           .fbo_id = static_cast<uint32_t>(id),
           .partial_repaint_enabled = false,
@@ -341,7 +344,7 @@ InferOpenGLPlatformViewCreationCallback(
 
     // Given the FBO's ID, get its existing damage.
     FlutterDamage existing_damage;
-    fbo_with_damage_callback(user_data, id, &existing_damage);
+    populate_existing_damage_callback(user_data, id, &existing_damage);
 
     bool partial_repaint_enabled = true;
     SkIRect existing_damage_rect;
@@ -427,7 +430,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
-      gl_fbo_with_damage_callback,         // gl_fbo_with_damage_callback
+      gl_populate_existing_damage_callback,  // gl_populate_existing_damage_callback
   };
 
   return fml::MakeCopyable(

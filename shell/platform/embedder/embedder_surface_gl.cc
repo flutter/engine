@@ -20,7 +20,7 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
       !gl_dispatch_table_.gl_clear_current_callback ||
       !gl_dispatch_table_.gl_present_callback ||
       !gl_dispatch_table_.gl_fbo_callback ||
-      !gl_dispatch_table_.gl_fbo_with_damage_callback) {
+      !gl_dispatch_table_.gl_populate_existing_damage_callback) {
     return;
   }
 
@@ -54,8 +54,8 @@ bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
 // |GPUSurfaceGLDelegate|
 GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   // Get the FBO ID using the gl_fbo_callback and then get exiting damage by
-  // passing that ID to the gl_fbo_with_damage_callback.
-  return gl_dispatch_table_.gl_fbo_with_damage_callback(
+  // passing that ID to the gl_populate_existing_damage_callback.
+  return gl_dispatch_table_.gl_populate_existing_damage_callback(
       gl_dispatch_table_.gl_fbo_callback(frame_info));
 }
 

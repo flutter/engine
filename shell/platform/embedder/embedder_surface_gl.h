@@ -22,9 +22,10 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
     std::function<intptr_t(GLFrameInfo)> gl_fbo_callback;         // required
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
     std::function<SkMatrix(void)>
-        gl_surface_transformation_callback;                          // optional
-    std::function<void*(const char*)> gl_proc_resolver;              // optional
-    std::function<GLFBOInfo(intptr_t)> gl_fbo_with_damage_callback;  // required
+        gl_surface_transformation_callback;              // optional
+    std::function<void*(const char*)> gl_proc_resolver;  // optional
+    std::function<GLFBOInfo(intptr_t)>
+        gl_populate_existing_damage_callback;  // required
   };
 
   EmbedderSurfaceGL(

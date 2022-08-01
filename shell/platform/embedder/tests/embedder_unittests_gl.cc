@@ -3106,35 +3106,36 @@ TEST_F(EmbedderTest, MustNotRunWithBothPresentCallbacksSet) {
   ASSERT_FALSE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, MustStillRunWhenFBOWithDamageIsNotProvided) {
+TEST_F(EmbedderTest, MustStillRunWhenPopulateExistingDamageIsNotProvided) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback = nullptr;
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+      nullptr;
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, MustRunWhenFBOWithDamageIsProvided) {
+TEST_F(EmbedderTest, MustRunWhenPopulateExistingDamageIsProvided) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, MustRunWithFBOWithDamageAndFBOCallback) {
+TEST_F(EmbedderTest, MustRunWithPopulateExistingDamageAndFBOCallback) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
@@ -3142,29 +3143,30 @@ TEST_F(EmbedderTest, MustRunWithFBOWithDamageAndFBOCallback) {
   builder.GetRendererConfig().open_gl.fbo_callback =
       [](void* context) -> uint32_t { return 0; };
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, MustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
+TEST_F(EmbedderTest,
+       MustNotRunWhenPopulateExistingDamageButNoOtherFBOCallback) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   auto engine = builder.LaunchEngine();
@@ -3221,22 +3223,23 @@ TEST_F(EmbedderTest,
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   // Return existing damage as the entire screen on purpose.
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
-      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-        const size_t num_rects = 1;
-        FlutterRect existing_damage_rects[num_rects] = {
-            FlutterRect{0, 0, 800, 600}};
-        existing_damage_ptr->num_rects = num_rects;
-        existing_damage_ptr->damage = existing_damage_rects;
-      });
+  static_cast<EmbedderTestContextGL&>(context)
+      .SetGLPopulateExistingDamageCallback(
+          [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+            const size_t num_rects = 1;
+            FlutterRect existing_damage_rects[num_rects] = {
+                FlutterRect{0, 0, 800, 600}};
+            existing_damage_ptr->num_rects = num_rects;
+            existing_damage_ptr->damage = existing_damage_rects;
+          });
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -3296,22 +3299,23 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   // Return no existing damage on purpose.
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
-      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-        const size_t num_rects = 1;
-        FlutterRect existing_damage_rects[num_rects] = {
-            FlutterRect{0, 0, 0, 0}};
-        existing_damage_ptr->num_rects = num_rects;
-        existing_damage_ptr->damage = existing_damage_rects;
-      });
+  static_cast<EmbedderTestContextGL&>(context)
+      .SetGLPopulateExistingDamageCallback(
+          [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+            const size_t num_rects = 1;
+            FlutterRect existing_damage_rects[num_rects] = {
+                FlutterRect{0, 0, 0, 0}};
+            existing_damage_ptr->num_rects = num_rects;
+            existing_damage_ptr->damage = existing_damage_rects;
+          });
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -3370,22 +3374,23 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   // Return existing damage as only part of the screen on purpose.
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
-      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-        const size_t num_rects = 1;
-        FlutterRect existing_damage_rects[num_rects] = {
-            FlutterRect{200, 150, 400, 300}};
-        existing_damage_ptr->num_rects = num_rects;
-        existing_damage_ptr->damage = existing_damage_rects;
-      });
+  static_cast<EmbedderTestContextGL&>(context)
+      .SetGLPopulateExistingDamageCallback(
+          [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+            const size_t num_rects = 1;
+            FlutterRect existing_damage_rects[num_rects] = {
+                FlutterRect{200, 150, 400, 300}};
+            existing_damage_ptr->num_rects = num_rects;
+            existing_damage_ptr->damage = existing_damage_rects;
+          });
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -3439,17 +3444,17 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
             kSuccess);
 }
 
-TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
+TEST_F(EmbedderTest, PopulateExistingDamageReceivesValidID) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   auto engine = builder.LaunchEngine();
@@ -3457,11 +3462,12 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
 
   const uint32_t window_fbo_id =
       static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
-      [window_fbo_id = window_fbo_id](intptr_t id,
-                                      FlutterDamage* existing_damage) {
-        ASSERT_EQ(id, window_fbo_id);
-      });
+  static_cast<EmbedderTestContextGL&>(context)
+      .SetGLPopulateExistingDamageCallback(
+          [window_fbo_id = window_fbo_id](intptr_t id,
+                                          FlutterDamage* existing_damage) {
+            ASSERT_EQ(id, window_fbo_id);
+          });
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
@@ -3473,17 +3479,17 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
             kSuccess);
 }
 
-TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
+TEST_F(EmbedderTest, PopulateExistingDamageReceivesInvalidID) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
-        ->GLGetFBOWithDamage(id, existing_damage);
+        ->GLPopulateExistingDamage(id, existing_damage);
   };
 
   // Return a bad FBO ID on purpose.
@@ -3502,11 +3508,12 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
 
   const uint32_t window_fbo_id =
       static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
-      [window_fbo_id = window_fbo_id](intptr_t id,
-                                      FlutterDamage* existing_damage) {
-        ASSERT_NE(id, window_fbo_id);
-      });
+  static_cast<EmbedderTestContextGL&>(context)
+      .SetGLPopulateExistingDamageCallback(
+          [window_fbo_id = window_fbo_id](intptr_t id,
+                                          FlutterDamage* existing_damage) {
+            ASSERT_NE(id, window_fbo_id);
+          });
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
