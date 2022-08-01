@@ -1,4 +1,4 @@
-Signature: 363cd6b73024a5065b31a06418739f00
+Signature: e3bd2f2fed908d3abff03d8b74fe28a8
 
 UNUSED LICENSES:
 
@@ -1034,6 +1034,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench_DDLTotal_9x9.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-Flutter_Android.json
+FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-NoPatch.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Win10-Clang-x86_64-Release-NoDEPS.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel2XL-GPU-Adreno540-arm-Debug-All-Android_ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel2XL-GPU-Adreno540-arm64-Debug-All-Android.json
@@ -1331,10 +1332,9 @@ FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_vert.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_runtime.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_shared.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/BUILD.bazel
@@ -1346,6 +1346,7 @@ FILE: ../../../third_party/skia/src/sksl/sksl_graphite_frag.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_graphite_vert.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_shared.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 FILE: ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/transform/BUILD.bazel
@@ -5634,6 +5635,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/render/TextDirectRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TextDirectRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TextSDFRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TextSDFRenderStep.h
+FILE: ../../../third_party/skia/src/gpu/graphite/render/VerticesRenderStep.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/render/VerticesRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/text/AtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/text/AtlasManager.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.cpp
@@ -5646,8 +5649,10 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetComputeShaderMainParams
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsSameExpressionTree.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsTrivialExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLNoOpErrorReporter.h
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.h
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLAddConstToVarModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateEmptyStatements.cpp
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinFunctions.cpp
 FILE: ../../../third_party/skia/src/text/StrikeForGPU.cpp
 FILE: ../../../third_party/skia/src/text/gpu/GlyphVector.cpp
 FILE: ../../../third_party/skia/src/text/gpu/GlyphVector.h
@@ -6193,8 +6198,6 @@ FILE: ../../../third_party/skia/src/utils/SkCharToGlyphCache.cpp
 FILE: ../../../third_party/skia/src/utils/SkCharToGlyphCache.h
 FILE: ../../../third_party/skia/src/utils/SkClipStackUtils.cpp
 FILE: ../../../third_party/skia/src/utils/SkClipStackUtils.h
-FILE: ../../../third_party/skia/src/utils/SkShaperJSONWriter.cpp
-FILE: ../../../third_party/skia/src/utils/SkShaperJSONWriter.h
 FILE: ../../../third_party/skia/src/utils/win/SkObjBase.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 Google Inc.
@@ -6281,7 +6284,7 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPoison.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVariable.cpp
-FILE: ../../../third_party/skia/src/sksl/transform/SkSLBuiltinVariableScanner.cpp
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinVariables.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLTransform.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC.
