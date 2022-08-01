@@ -463,8 +463,8 @@ typedef uint32_t (*UIntFrameInfoCallback)(
 /// information for partial repaint.
 typedef void (*FlutterFrameBufferWithDamageCallback)(
     void* /* user data */,
-    const intptr_t id,
-    FlutterDamage* existing_damage);
+    const intptr_t /* fbo id */,
+    FlutterDamage* /* existing damage */);
 
 /// This information is passed to the embedder when a surface is presented.
 ///
