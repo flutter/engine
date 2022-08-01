@@ -89,7 +89,10 @@ def main():
       'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
   ])
   if result.returncode != 0:
-    print('Error processing command with stdout[%s] and stderr[%s]' % (result.stdout, result.stderr))
+    print(
+        'Error processing command with stdout[%s] and stderr[%s]' %
+        (result.stdout, result.stderr)
+    )
     return 1
   process_framework(args, fat_framework, fat_framework_binary)
 
