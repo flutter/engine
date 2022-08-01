@@ -430,9 +430,10 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
         // virtual key, because virtual key represents "functionality."
         //
         // In that case, normally Flutter should synthesize nothing since the
-        // resulting event can be a down or a repeat depending on the current
-        // state. However, in certain cases (when Flutter has just synchronized
-        // the key's toggling state) the event must not be a repeat event.
+        // resulting event can adapt to the current state by flexing between a
+        // down and a repeat event. However, in certain cases (when Flutter has
+        // just synchronized the key's toggling state) the event must not be a
+        // repeat event.
         if (virtual_key == event_virtual_key) {
           if (event_key_can_be_repeat) {
             continue;
