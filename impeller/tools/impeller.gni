@@ -240,15 +240,22 @@ template("impellerc") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.shader_target_flag),
          "The flag to impellerc for target selection must be specified.")
+  assert(defined(invoker.sl_file_extension),
+         "The extension of the SL file must be specified (metal, glsl, etc..).")
 
-  flutter_spirv = invoker.shader_target_flag == "--flutter-spirv"
   sksl = invoker.shader_target_flag == "--sksl"
-  if (!flutter_spirv) {
-    assert(
-        defined(invoker.sl_file_extension),
-        "The extension of the SL file must be specified (metal, glsl, etc..).")
+  iplr = false
+  if (defined(invoker.iplr) && invoker.iplr) {
+    iplr = invoker.iplr
   }
 
+  # Not needed on every path.
+  not_needed([
+               "iplr",
+               "sksl",
+             ])
+
+  # Optional: invoker.iplr Causes --sl output to be in iplr format.
   # Optional: invoker.defines specifies a list of valueless macro definitions.
   # Optional: invoker.intermediates_subdir specifies the subdirectory in which
   #           to put intermediates.
@@ -280,11 +287,7 @@ template("impellerc") {
       "$shader_target_flag",
     ]
 
-    if (flutter_spirv) {
-      not_needed([ "sksl" ])
-      args += [ "--spirv=$spirv_intermediate_path" ]
-      outputs = [ spirv_intermediate ]
-    } else if (sksl) {
+    if (sksl) {
       sl_intermediate =
           "$generated_dir/{{source_file_part}}.${invoker.sl_file_extension}"
       sl_intermediate_path = rebase_path(sl_intermediate, root_build_dir)
@@ -292,6 +295,9 @@ template("impellerc") {
         "--sl=$sl_intermediate_path",
         "--spirv=$spirv_intermediate_path",
       ]
+      if (iplr) {
+        args += [ "--iplr" ]
+      }
 
       outputs = [ sl_intermediate ]
     } else {
@@ -316,6 +322,9 @@ template("impellerc") {
         "--reflection-header=$reflection_header_path",
         "--reflection-cc=$reflection_cc_path",
       ]
+      if (iplr) {
+        args += [ "--iplr" ]
+      }
 
       outputs = [
         sl_intermediate,

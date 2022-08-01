@@ -24,8 +24,8 @@ void main(List<String> args) async {
     ..addOption('out-dir', help: 'out directory', mandatory: true);
 
   final ArgResults results = parser.parse(args);
-  final Directory outDir = Directory(results['out-dir']);
-  final File adb = File(results['adb']);
+  final Directory outDir = Directory(results['out-dir'] as String);
+  final File adb = File(results['adb'] as String);
 
   if (!outDir.existsSync()) {
     panic(<String>['out-dir does not exist: $outDir', 'make sure to build the selected engine variant']);
@@ -76,7 +76,8 @@ void main(List<String> args) async {
         log('wrote ${goldenFile.absolute.path}');
         if (isSkiaGoldClientAvailable) {
           final Future<void> comparison = skiaGoldClient!
-            .addImg(fileName, goldenFile, screenshotSize: fileContent.lengthInBytes)
+            .addImg(fileName, goldenFile,
+                    screenshotSize: screenshot.pixelCount)
             .catchError((dynamic err) {
               panic(<String>['skia gold comparison failed: ${err.toString()}']);
             });

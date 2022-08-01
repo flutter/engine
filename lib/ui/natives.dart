@@ -47,11 +47,26 @@ const Endian _kFakeHostEndian = Endian.little;
 // A service protocol extension to schedule a frame to be rendered into the
 // window.
 Future<developer.ServiceExtensionResponse> _scheduleFrame(
-    String method,
-    Map<String, String> parameters
-    ) async {
+  String method,
+  Map<String, String> parameters,
+) async {
   // Schedule the frame.
   PlatformDispatcher.instance.scheduleFrame();
+  // Always succeed.
+  return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
+    'type': 'Success',
+  }));
+}
+
+Future<developer.ServiceExtensionResponse> _reinitializeShader(
+  String method,
+  Map<String, String> parameters,
+) async {
+  final String? assetKey = parameters['assetKey'];
+  if (assetKey != null) {
+    FragmentProgram._reinitializeShader(assetKey);
+  }
+
   // Always succeed.
   return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
     'type': 'Success',
@@ -63,6 +78,12 @@ void _setupHooks() {
   assert(() {
     // In debug mode, register the schedule frame extension.
     developer.registerExtension('ext.ui.window.scheduleFrame', _scheduleFrame);
+
+    // In debug mode, allow shaders to be reinitialized.
+    developer.registerExtension(
+      'ext.ui.window.reinitializeShader',
+      _reinitializeShader,
+    );
     return true;
   }());
 }
@@ -79,7 +100,7 @@ void _setupHooks() {
 ///
 /// Here are some examples:
 ///
-/// ```
+/// ```csv
 /// dart:core,Duration,get:inMilliseconds
 /// package:flutter/src/widgets/binding.dart,::,runApp
 /// file:///.../my_app.dart,::,main
@@ -114,6 +135,6 @@ typedef _ScheduleImmediateClosure = void Function(void Function());
 _ScheduleImmediateClosure _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 
 // Used internally to indicate whether the Engine is using Impeller for
-// rendering
+// rendering.
 @pragma('vm:entry-point')
 bool _impellerEnabled = false;

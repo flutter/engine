@@ -86,8 +86,9 @@ class SkiaGoldClient {
   ///
   /// This ensures that the `goldctl` tool is authorized and ready for testing.
   Future<void> auth() async {
-    if (_isAuthorized)
+    if (_isAuthorized) {
       return;
+    }
     final List<String> authCommand = <String>[
       _goldctl,
       'auth',
@@ -185,11 +186,11 @@ class SkiaGoldClient {
   /// ```
   ///
   /// [differentPixelsRate] is the fraction of accepted pixels to be wrong in the range [0.0, 1.0].
-  /// Defaults to 0.1. A value of 0.1 means that 10% of the pixels are allowed to change.
+  /// Defaults to 0.01. A value of 0.01 means that 1% of the pixels are allowed to change.
   Future<void> addImg(
     String testName,
     File goldenFile, {
-    double differentPixelsRate = 0.1,
+    double differentPixelsRate = 0.01,
     int pixelColorDelta = 0,
     required int screenshotSize,
   }) async {
@@ -380,8 +381,9 @@ class SkiaGoldClient {
         final HttpClientResponse response = await request.close();
         rawResponse = await utf8.decodeStream(response);
         final dynamic jsonResponse = json.decode(rawResponse);
-        if (jsonResponse is! Map<String, dynamic>)
+        if (jsonResponse is! Map<String, dynamic>) {
           throw const FormatException('Skia gold expectations do not match expected format.');
+        }
         expectation = jsonResponse['digest'] as String?;
       } on FormatException catch (error) {
         print(

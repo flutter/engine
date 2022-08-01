@@ -101,20 +101,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 @end
 
-// The following conditional compilation defines an API 13 concept on earlier API targets so that
-// a compiler compiling against API 12 or below does not blow up due to non-existent members.
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
-typedef enum UIAccessibilityContrast : NSInteger {
-  UIAccessibilityContrastUnspecified = 0,
-  UIAccessibilityContrastNormal = 1,
-  UIAccessibilityContrastHigh = 2
-} UIAccessibilityContrast;
-
-@interface UITraitCollection (MethodsFromNewerSDK)
-- (UIAccessibilityContrast)accessibilityContrast;
-@end
-#endif
-
 @interface FlutterKeyboardManager (Tests)
 @property(nonatomic, retain, readonly)
     NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
@@ -445,6 +431,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
   UIView* view = viewController.view;
   XCTAssertNotNil(view);
   OCMVerify(never(), [mockEngine attachView]);
+}
+
+- (void)testSplashScreenViewRemoveNotCrash {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"engine" project:nil];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  [flutterViewController setSplashScreenView:[[UIView alloc] init]];
+  [flutterViewController setSplashScreenView:nil];
 }
 
 - (void)testInternalPluginsWeakPtrNotCrash {
@@ -1149,4 +1144,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   XCTAssertTrue(interval_micros / 1000 < tolerance_millis,
                 @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
+
+- (void)testSplashScreenViewCanSetNil {
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithProject:nil nibName:nil bundle:nil];
+  [flutterViewController setSplashScreenView:nil];
+}
+
 @end

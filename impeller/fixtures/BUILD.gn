@@ -16,6 +16,8 @@ impeller_shaders("shader_fixtures") {
     "impeller.vert",
     "instanced_draw.frag",
     "instanced_draw.vert",
+    "mipmaps.frag",
+    "mipmaps.vert",
     "simple.vert",
     "test_texture.frag",
     "test_texture.vert",
@@ -26,6 +28,7 @@ impellerc("runtime_stages") {
   shaders = [ "ink_sparkle.frag" ]
   sl_file_extension = "iplr"
   shader_target_flag = "--runtime-stage-metal"
+  iplr = true
 }
 
 test_fixtures("file_fixtures") {
