@@ -56,7 +56,7 @@ class Mutator {
         alpha_ = other.alpha_;
         break;
       case kBackdropFilter:
-        filter_ = other.filter_->shared();
+        filter_ = other.filter_;
         break;
       default:
         break;
@@ -121,7 +121,6 @@ class Mutator {
 
  private:
   MutatorType type_;
-  std::shared_ptr<DlImageFilter> filter_;
 
   // TODO(cyanglaz): Remove union.
   //  https://github.com/flutter/flutter/issues/108470
