@@ -92,7 +92,7 @@ class IntervalTree<T> {
 
 class IntervalTreeNode<T> {
   IntervalTreeNode(this.value, this.low, this.high) : computedHigh = high;
-  
+
   final T value;
   final int low;
   final int high;

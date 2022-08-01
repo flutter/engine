@@ -11,7 +11,7 @@ import 'scenario.dart';
 class TouchesScenario extends Scenario {
   /// Constructor for `TouchesScenario`.
   TouchesScenario(PlatformDispatcher dispatcher) : super(dispatcher);
-  
+
   final Map<int, int> _knownDevices = <int, int>{};
   int _sequenceNo = 0;
 
