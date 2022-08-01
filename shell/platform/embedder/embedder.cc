@@ -282,20 +282,20 @@ InferOpenGLPlatformViewCreationCallback(
       // contain the number of damage rectangles.
       const size_t num_rects = 1;
 
-      FlutterRect frame_damage_rect[num_rects] = {
+      std::array<FlutterRect,num_rects> frame_damage_rect = {
           SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
-      FlutterRect buffer_damage_rect[num_rects] = {
+      std::array<FlutterRect,num_rects> buffer_damage_rect = {
           SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
 
       FlutterDamage frame_damage{
           .struct_size = sizeof(FlutterDamage),
-          .num_rects = num_rects,
-          .damage = frame_damage_rect,
+          .num_rects = frame_damage_rect.size(),
+          .damage = frame_damage_rect.data(),
       };
       FlutterDamage buffer_damage{
           .struct_size = sizeof(FlutterDamage),
-          .num_rects = num_rects,
-          .damage = buffer_damage_rect,
+          .num_rects = buffer_damage_rect.size(),
+          .damage = buffer_damage_rect.data(),
       };
 
       // Construct the present information concerning the frame being rendered.
