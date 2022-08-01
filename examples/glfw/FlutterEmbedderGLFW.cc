@@ -201,7 +201,7 @@ bool RunFlutter(GLFWwindow* window,
   config.open_gl.fbo_callback = [](void*) -> uint32_t {
     return 0;  // FBO0
   };
-  config.open_gl.fbo_with_damage_callback =
+  config.open_gl.populate_existing_damage_callback =
       [](void* userdata, intptr_t fbo_id,
          FlutterDamage* existing_damage) -> void {
     // Get the display and surface variables.
