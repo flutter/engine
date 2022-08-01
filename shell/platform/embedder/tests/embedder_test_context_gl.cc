@@ -64,10 +64,10 @@ void EmbedderTestContextGL::SetGLGetFBOCallback(GLGetFBOCallback callback) {
   gl_get_fbo_callback_ = callback;
 }
 
-void EmbedderTestContextGL::SetGLGetFBOWithDamageCallback(
-    GLGetFBOWithDamageCallback callback) {
+void EmbedderTestContextGL::SetGLPopulateExistingDamageCallback(
+    GLPopulateExistingDamageCallback callback) {
   std::scoped_lock lock(gl_callback_mutex_);
-  gl_get_fbo_with_damage_callback_ = callback;
+  gl_populate_existing_damage_callback_ = callback;
 }
 
 void EmbedderTestContextGL::SetGLPresentCallback(GLPresentCallback callback) {
@@ -92,14 +92,15 @@ uint32_t EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   return gl_surface_->GetFramebuffer(size.width, size.height);
 }
 
-void EmbedderTestContextGL::GLGetFBOWithDamage(const intptr_t id,
-                                               FlutterDamage* existing_damage) {
+void EmbedderTestContextGL::GLPopulateExistingDamage(
+    const intptr_t id,
+    FlutterDamage* existing_damage) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
 
-  GLGetFBOWithDamageCallback callback;
+  GLPopulateExistingDamageCallback callback;
   {
     std::scoped_lock lock(gl_callback_mutex_);
-    callback = gl_get_fbo_with_damage_callback_;
+    callback = gl_populate_existing_damage_callback_;
   }
 
   if (callback) {
