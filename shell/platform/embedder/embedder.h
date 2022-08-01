@@ -492,7 +492,10 @@ typedef struct {
   BoolCallback clear_current;
   /// Specifying one (and only one) of `present` or `present_with_info` is
   /// required. Specifying both is an error and engine initialization will be
-  /// terminated. The return value indicates success of the present call.
+  /// terminated. The return value indicates success of the present call. If
+  /// the intent is to use dirty region management, present_with_info must be
+  /// defined as present will not succeed in communicating information about
+  /// damage.
   BoolCallback present;
   /// Specifying one (and only one) of the `fbo_callback` or
   /// `fbo_with_frame_info_callback` is required. Specifying both is an error
@@ -541,11 +544,26 @@ typedef struct {
   /// required. Specifying both is an error and engine initialization will be
   /// terminated. When using this variant, the embedder is passed a
   /// `FlutterPresentInfo` struct that the embedder can use to release any
-  /// resources. The return value indicates success of the present call.
+  /// resources. The return value indicates success of the present call. This
+  /// callback is essential for dirty region management. If not defined, all the
+  /// pixels on the screen will be rendered at every frame (regardless of
+  /// whether damage is actually being computed or not). This is because the
+  /// information that is passed along to the callback contains the frame and
+  /// buffer damage that are essential for dirty region management.
   BoolPresentInfoCallback present_with_info;
-  /// Specifying this callback is a requirement for dirty region management. The
-  /// callback will return a FlutterFrameBuffer containing information about the
-  /// buffer whose ID was passed to it.
+  /// Specifying this callback is a requirement for dirty region management.
+  /// Dirty region management will only render the areas of the screen that have
+  /// changed in between frames, greatly reducing rendering times and energy
+  /// consumption. To take advantage of these benefits, it is necessary to
+  /// define fbo_with_damage_callback as a callback that takes user data, an FBO
+  /// ID, and an existing damage FlutterDamage. The callback should use the
+  /// given FBO ID to identify the FBO's exisiting damage (i.e. areas that have
+  /// changed since the FBO was last used) and use it to populate the given
+  /// existing damage variable. This callback is dependent on either
+  /// fbo_callback or fbo_with_frame_info_callback being defined as they are
+  /// responsible for providing fbo_with_damage_callback with the FBO's ID. Not
+  /// specifying fbo_with_damage_callback will result in full repaint (i.e.
+  /// rendering all the pixels on the screen at every frame).
   FlutterFrameBufferWithDamageCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 
