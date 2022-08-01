@@ -156,7 +156,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
-  task_runner_ = TaskRunner::Create(
+  task_runner_ = std::make_unique<TaskRunner>(
       embedder_api_.GetCurrentTime, [this](const auto* task) {
         if (!engine_) {
           std::cerr << "Cannot post an engine task when engine is not running."
@@ -187,8 +187,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
   // https://github.com/flutter/flutter/issues/71099
-  settings_plugin_ =
-      SettingsPlugin::Create(messenger_wrapper_.get(), task_runner_.get());
+  settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
+                                                      task_runner_.get());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {

@@ -81,7 +81,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, ui.Offset.zero);
 
       await matchPictureGolden(
         'canvaskit_font_fallback_arabic.png',
@@ -160,7 +160,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, ui.Offset.zero);
 
       await matchPictureGolden(
         'canvaskit_font_fallback_emoji.png',
