@@ -43,9 +43,9 @@ float SquircleDistance(vec2 sample_position, float n) {
 }
 
 void main() {
-  float dist = RRectDistance(v_position - frag_info.rect_size / 2.0,
-                             frag_info.rect_size, frag_info.corner_radius);
-  float shadow_mask =
-      Sigmoid(clamp(1.0 - length(dist / frag_info.corner_radius), 0.0, 1.0));
+  vec2 center = v_position - frag_info.rect_size / 2.0;
+  float dist =
+      RRectDistance(center, frag_info.rect_size / 2.0, frag_info.corner_radius);
+  float shadow_mask = Sigmoid(-dist / frag_info.blur_radius);
   frag_color = frag_info.color * shadow_mask;
 }

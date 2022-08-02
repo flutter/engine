@@ -1201,7 +1201,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     ImGui::End();
 
     auto [top_left, bottom_right] = IMPELLER_PLAYGROUND_LINE(
-        Point(200, 200), Point(600, 400), 30, Color::Black(), Color::White());
+        Point(200, 200), Point(600, 400), 30, Color::White(), Color::White());
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 

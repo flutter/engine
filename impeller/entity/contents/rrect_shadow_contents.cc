@@ -59,12 +59,13 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
-  auto radius = Radius{sigma_}.radius;
+  auto blur_radius = Radius{sigma_}.radius;
+  auto positive_rect = rect_->GetPositive();
   {
-    auto left = -radius;
-    auto top = -radius;
-    auto right = rect_->size.width + radius;
-    auto bottom = rect_->size.height + radius;
+    auto left = -blur_radius;
+    auto top = -blur_radius;
+    auto right = positive_rect.size.width + blur_radius;
+    auto bottom = positive_rect.size.height + blur_radius;
 
     vtx_builder.AddVertices({
         {Point(left, top)},
@@ -88,14 +89,17 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                   entity.GetTransformation() *
-                  Matrix::MakeTranslation({rect_->origin});
+                  Matrix::MakeTranslation({positive_rect.origin});
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));
 
   FS::FragInfo frag_info;
   frag_info.color = color_;
-  frag_info.blur_radius = radius;
-  frag_info.rect_size = Point(rect_->size);
-  frag_info.corner_radius = corner_radius_;
+  frag_info.blur_radius = blur_radius;
+  frag_info.rect_size = Point(positive_rect.size);
+  frag_info.corner_radius =
+      std::min(corner_radius_, std::min(positive_rect.size.width / 2.0f,
+                                        positive_rect.size.height / 2.0f));
+  ;
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
