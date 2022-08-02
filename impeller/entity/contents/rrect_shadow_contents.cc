@@ -10,6 +10,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
@@ -18,11 +19,13 @@ RRectShadowContents::RRectShadowContents() = default;
 
 RRectShadowContents::~RRectShadowContents() = default;
 
-void RRectShadowContents::SetRect(std::optional<Rect> rect) {
+void RRectShadowContents::SetRRect(std::optional<Rect> rect,
+                                   Scalar corner_radius) {
   rect_ = rect;
+  corner_radius_ = corner_radius;
 }
 
-void RRectShadowContents::SetSigma(FilterContents::Sigma sigma) {
+void RRectShadowContents::SetSigma(Sigma sigma) {
   sigma_ = sigma;
 }
 
@@ -36,36 +39,11 @@ std::optional<Rect> RRectShadowContents::GetCoverage(
     return std::nullopt;
   }
 
-  Scalar border = FilterContents::Radius{sigma_}.radius;
-  Rect bounds =
-      Rect::MakeLTRB(rect_->GetLeft() - border, rect_->GetTop() - border,
-                     rect_->GetRight() + border, rect_->GetBottom() + border);
-  return bounds.TransformBounds(entity.GetTransformation());
-};
+  Scalar radius = Radius{sigma_}.radius;
 
-/// The box shadow consists of 9 quads built from 16 vertices; 4 inner vertices
-/// and 12 outset border vertices.
-///
-///   04---05----06---07
-///   |    |      |    |
-///   15---00----01---08
-///   |    |      |    |
-///   |    |      |    |
-///   14---03----02---09
-///   |    |      |    |
-///   13---12----11---10
-///
-const static size_t kIndexCount = 9 * 6;
-const static uint16_t kIndices[kIndexCount] = {
-    4,  5, 0,  4,  0,  15,  // Top left
-    5,  6, 1,  5,  1,  0,   // Top middle
-    6,  7, 8,  6,  8,  1,   // Top right
-    15, 0, 3,  15, 3,  14,  // Middle left
-    0,  1, 2,  1,  2,  3,   // Middle middle
-    1,  8, 9,  1,  9,  2,   // Middle right
-    14, 3, 12, 14, 12, 13,  // Bottom left
-    3,  2, 11, 3,  11, 12,  // Bottom middle
-    2,  9, 10, 2,  10, 11,  // Bottom right
+  Rect bounds = Rect::MakeLTRB(-radius, -radius, rect_->size.width + radius,
+                               rect_->size.height + radius);
+  return bounds.TransformBounds(entity.GetTransformation());
 };
 
 bool RRectShadowContents::Render(const ContentContext& renderer,
@@ -75,48 +53,27 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  if (color_.IsTransparent()) {
-    return true;
-  }
-
   using VS = RRectBlurPipeline::VertexShader;
   using FS = RRectBlurPipeline::FragmentShader;
 
-  auto radius = FilterContents::Radius{sigma_}.radius;
-  auto box = rect_->GetPoints();
-  VS::PerVertexData vertices[16] = {
-      // Middle box
-      {box[0], Point()},
-      {box[1], Point()},
-      {box[3], Point()},
-      {box[2], Point()},
+  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
-      // Outset border
-      {box[0] + Point(-radius, -radius), Point(1, 1)},
-      {box[0] + Point(0, -radius), Point(0, 1)},
-      {box[1] + Point(0, -radius), Point(0, 1)},
+  auto radius = Radius{sigma_}.radius;
+  {
+    auto left = -radius;
+    auto top = -radius;
+    auto right = rect_->size.width + radius;
+    auto bottom = rect_->size.height + radius;
 
-      {box[1] + Point(radius, -radius), Point(1, 1)},
-      {box[1] + Point(radius, 0), Point(1, 0)},
-      {box[2] + Point(radius, 0), Point(1, 0)},
-
-      {box[3] + Point(radius, radius), Point(1, 1)},
-      {box[3] + Point(0, radius), Point(0, 1)},
-      {box[2] + Point(0, radius), Point(0, 1)},
-
-      {box[2] + Point(-radius, radius), Point(1, 1)},
-      {box[2] + Point(-radius, 0), Point(1, 0)},
-      {box[0] + Point(-radius, 0), Point(1, 0)},
-  };
-
-  VertexBuffer vertex_buffer = {
-      .vertex_buffer = pass.GetTransientsBuffer().Emplace(
-          &vertices, sizeof(vertices), alignof(VS::PerVertexData)),
-      .index_buffer = pass.GetTransientsBuffer().Emplace(
-          &kIndices, sizeof(kIndices), alignof(uint16_t)),
-      .index_count = kIndexCount,
-      .index_type = IndexType::k16bit,
-  };
+    vtx_builder.AddVertices({
+        {Point(left, top)},
+        {Point(right, top)},
+        {Point(left, bottom)},
+        {Point(left, bottom)},
+        {Point(right, top)},
+        {Point(right, bottom)},
+    });
+  }
 
   Command cmd;
   cmd.label = "Box Shadow";
@@ -125,18 +82,20 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
 
   cmd.primitive_type = PrimitiveType::kTriangle;
-  cmd.BindVertices(vertex_buffer);
+  cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-  VS::VertexInfo vertex_info;
-  vertex_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                    entity.GetTransformation();
-  VS::BindVertexInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(vertex_info));
+  VS::VertInfo vert_info;
+  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                  entity.GetTransformation() *
+                  Matrix::MakeTranslation({rect_->origin});
+  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));
 
-  FS::FragmentInfo fragment_info;
-  fragment_info.color = color_;
-  FS::BindFragmentInfo(
-      cmd, pass.GetTransientsBuffer().EmplaceUniform(fragment_info));
+  FS::FragInfo frag_info;
+  frag_info.color = color_;
+  frag_info.blur_radius = radius;
+  frag_info.rect_size = Point(rect_->size);
+  frag_info.corner_radius = corner_radius_;
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
     return false;

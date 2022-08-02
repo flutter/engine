@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-uniform VertexInfo {
+uniform VertInfo {
   mat4 mvp;
 }
-vertex_info;
+vert_info;
 
 in vec2 position;
-in vec2 border;
 
-out vec2 v_border;
+out vec2 v_position;
 
 void main() {
-  gl_Position = vertex_info.mvp * vec4(position, 0.0, 1.0);
-  v_border = border;
+  gl_Position = vert_info.mvp * vec4(position, 0.0, 1.0);
+  // The fragment stage uses local coordinates to compute the blur.
+  v_position = position;
 }

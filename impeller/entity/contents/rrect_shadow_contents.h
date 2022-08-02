@@ -24,9 +24,9 @@ class RRectShadowContents final : public Contents {
 
   ~RRectShadowContents() override;
 
-  void SetRect(std::optional<Rect> rect);
+  void SetRRect(std::optional<Rect> rect, Scalar corner_radius = 0);
 
-  void SetSigma(FilterContents::Sigma sigma);
+  void SetSigma(Sigma sigma);
 
   void SetColor(Color color);
 
@@ -40,7 +40,8 @@ class RRectShadowContents final : public Contents {
 
  private:
   std::optional<Rect> rect_;
-  FilterContents::Sigma sigma_;
+  Scalar corner_radius_;
+  Sigma sigma_;
 
   Color color_;
 
