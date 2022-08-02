@@ -266,7 +266,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       // there's no need to set up the "origin" and "flutter" entries, we can
       // safely assume they are already set up.
       _setupOriginEntry(strategy);
-      _setupFlutterEntry(strategy, replace: false, path: path);
+      _setupFlutterEntry(strategy, path: path);
     }
   }
 
@@ -287,7 +287,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     return originState['state'];
   }
 
-  Map<String, bool> _flutterState = <String, bool>{_kFlutterTag: true};
+  final Map<String, bool> _flutterState = <String, bool>{_kFlutterTag: true};
 
   /// The origin entry is the history entry that the Flutter app landed on. It's
   /// created by the browser when the user navigates to the url of the app.

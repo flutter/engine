@@ -8,7 +8,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:image/image.dart';
-import 'package:webdriver/io.dart' show createDriver, WebDriver;
+import 'package:webdriver/io.dart' show WebDriver, createDriver;
 
 import 'browser.dart';
 
@@ -79,13 +79,13 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
 }
 
 class WebDriverBrowser extends Browser {
-  final WebDriver _driver;
-  final Uri _url;
-  final Completer<void> _onExitCompleter = Completer<void>();
-
   WebDriverBrowser(this._driver, this._url) {
     _driver.get(_url);
   }
+
+  final WebDriver _driver;
+  final Uri _url;
+  final Completer<void> _onExitCompleter = Completer<void>();
 
   @override
   Future<void> close() async {

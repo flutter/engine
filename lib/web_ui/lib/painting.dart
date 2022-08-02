@@ -22,11 +22,13 @@ bool _matrix4IsValid(Float32List matrix4) {
 
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
-    if (colors.length != 2)
+    if (colors.length != 2) {
       throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
+    }
   } else {
-    if (colors.length != colorStops.length)
+    if (colors.length != colorStops.length) {
       throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
+    }
   }
 }
 
@@ -420,8 +422,9 @@ class ImageFilter {
   }
 
   factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
     }
@@ -559,7 +562,7 @@ Future<Codec> _createBmp(
   final int bufferSize = headerSize + (width * height * 4);
   final ByteData bmpData = ByteData(bufferSize);
   // 'BM' header
-  bmpData.setUint16(0x00, 0x424D, Endian.big);
+  bmpData.setUint16(0x00, 0x424D);
   // Size of data
   bmpData.setUint32(0x02, bufferSize, Endian.little);
   // Offset where pixel array begins
@@ -712,10 +715,12 @@ class Shadow {
     b ??= <Shadow>[];
     final List<Shadow> result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
-    for (int i = 0; i < commonLength; i += 1)
+    for (int i = 0; i < commonLength; i += 1) {
       result.add(Shadow.lerp(a[i], b[i], t)!);
-    for (int i = commonLength; i < a.length; i += 1)
+    }
+    for (int i = commonLength; i < a.length; i += 1) {
       result.add(a[i].scale(1.0 - t));
+    }
     for (int i = commonLength; i < b.length; i += 1) {
       result.add(b[i].scale(t));
     }
@@ -763,7 +768,7 @@ class ImmutableBuffer {
   Uint8List? _list;
 
   int get length => _length;
-  int _length;
+  final int _length;
 
   bool get debugDisposed {
     late bool disposed;
@@ -777,17 +782,6 @@ class ImmutableBuffer {
 }
 
 class ImageDescriptor {
-  ImageDescriptor._()
-      : _width = null,
-        _height = null,
-        _rowBytes = null,
-        _format = null;
-  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
-    final ImageDescriptor descriptor = ImageDescriptor._();
-    descriptor._data = buffer._list;
-    return descriptor;
-  }
-
   // Not async because there's no expensive work to do here.
   ImageDescriptor.raw(
     ImmutableBuffer buffer, {
@@ -800,6 +794,18 @@ class ImageDescriptor {
         _rowBytes = rowBytes,
         _format = pixelFormat {
     _data = buffer._list;
+  }
+
+  ImageDescriptor._()
+      : _width = null,
+        _height = null,
+        _rowBytes = null,
+        _format = null;
+
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    descriptor._data = buffer._list;
+    return descriptor;
   }
 
   Uint8List? _data;
@@ -835,6 +841,8 @@ class ImageDescriptor {
 }
 
 class FragmentProgram {
+  FragmentProgram._();
+
   static Future<FragmentProgram> fromAsset(String assetKey) {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
@@ -842,8 +850,6 @@ class FragmentProgram {
   static Future<FragmentProgram> fromAssetAsync(String assetKey) {
     return Future<FragmentProgram>.microtask(() => FragmentProgram.fromAsset(assetKey));
   }
-
-  FragmentProgram._();
 
   Shader shader({
     Float32List? floatUniforms,
