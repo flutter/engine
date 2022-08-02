@@ -51,6 +51,8 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
 
   const std::vector<ShaderStageIOSlot>& GetStageInputs() const;
 
+  const std::vector<DescriptorSetLayout>& GetDescriptorSetLayouts() const;
+
   // |Comparable<VertexDescriptor>|
   std::size_t GetHash() const override;
 
