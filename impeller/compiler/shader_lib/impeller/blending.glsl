@@ -64,11 +64,12 @@ vec3 IPBlendScreen(vec3 dst, vec3 src) {
 }
 
 vec3 IPBlendHardLight(vec3 dst, vec3 src) {
+  // https://www.w3.org/TR/compositing-1/#blendinghardlight
   return IPVec3Choose(dst * (2 * src), IPBlendScreen(dst, 2 * src - 1), src);
 }
 
 vec3 IPBlendOverlay(vec3 dst, vec3 src) {
-  // https://www.w3.org/TR/compositing-1/#blendinghardlight
+  // https://www.w3.org/TR/compositing-1/#blendingoverlay
   // HardLight, but with reversed parameters.
   return IPBlendHardLight(src, dst);
 }
