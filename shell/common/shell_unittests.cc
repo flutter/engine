@@ -820,7 +820,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[1], 75);
   ASSERT_TRUE(external_view_embedder->GetStack(75).is_empty());
   ASSERT_FALSE(external_view_embedder->GetStack(50).is_empty());
-  
+
   auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   auto mutator = *external_view_embedder->GetStack(50).Begin();
   ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
