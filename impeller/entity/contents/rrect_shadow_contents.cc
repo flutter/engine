@@ -78,7 +78,7 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
   }
 
   Command cmd;
-  cmd.label = "Box Shadow";
+  cmd.label = "RRect Shadow";
   cmd.pipeline =
       renderer.GetRRectBlurPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();

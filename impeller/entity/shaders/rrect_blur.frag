@@ -19,27 +19,10 @@ float Sigmoid(float x) {
   return 1.03731472073 / (1 + exp(-4 * x)) - 0.0186573603638;
 }
 
-float CircleDistance(vec2 sample_position,
-                     vec2 sphere_position,
-                     float sphere_size) {
-  return length(sample_position - sphere_position) - sphere_size;
-}
-
-float RectDistance(vec2 sample_position, vec2 rect_size) {
-  vec2 space = abs(sample_position) - rect_size;
-  return length(max(space, 0.0)) + min(max(space.x, space.y), 0.0);
-}
-
 float RRectDistance(vec2 sample_position, vec2 rect_size, float corner_radius) {
   vec2 space = abs(sample_position) - rect_size + corner_radius;
   return length(max(space, 0.0)) + min(max(space.x, space.y), 0.0) -
          corner_radius;
-}
-
-float SquircleDistance(vec2 sample_position, float n) {
-  return pow(pow(abs(sample_position.x), n) + pow(abs(sample_position.y), n),
-             1.0 / n) -
-         1.0;
 }
 
 void main() {

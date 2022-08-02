@@ -1184,14 +1184,14 @@ TEST_P(EntityTest, RRectShadowTest) {
     }
 
     static Color color = Color::Red();
-    static float corner_radius = 10;
-    static float blur_radius = 10;
+    static float corner_radius = 100;
+    static float blur_radius = 100;
     static bool show_coverage = false;
     static Color coverage_color = Color::Green().WithAlpha(0.2);
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Corner radius", &corner_radius, 0, 100);
-    ImGui::SliderFloat("Blur radius", &blur_radius, 0, 100);
+    ImGui::SliderFloat("Corner radius", &corner_radius, 0, 300);
+    ImGui::SliderFloat("Blur radius", &blur_radius, 0, 300);
     ImGui::ColorEdit4("Color", reinterpret_cast<Scalar*>(&color));
     ImGui::Checkbox("Show coverage", &show_coverage);
     if (show_coverage) {
