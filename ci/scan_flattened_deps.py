@@ -100,15 +100,20 @@ def ParseDepsFile(deps_flat_file):
 
     os.system(f'mkdir clone-test')
 
+    failed_deps = []
+
     # Extract commit hash, save in dictionary
     for line in Lines:
         os.chdir(CHECKOUT_ROOT)
         dep = line.strip().split('@')
-        commit_hash = dep[1]
         # @jseales TODO -- this is the pinned hash, but we need to calculate the common ancestor hash
         common_commit = getCommonAncestorCommit(dep)
-        queries.append({"commit" : common_commit})
+        if common_commit is not None:
+          queries.append({"commit" : common_commit})
+        else:
+          failed_deps.append(dep[0])
 
+    print("Dependencies that could not be parsed for ancestor commits: " + failed_deps)
     json = {"queries": queries}
     print(json)
     responses = requests.post(osv_url, headers=headers, json=json, allow_redirects=True)
@@ -152,18 +157,15 @@ def getCommonAncestorCommit(dep):
             default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True)
             default_branch = default_branch.decode()
             os.system(f'git checkout -b upstream --track upstream/{default_branch}')
-            output = subprocess.check_output("git for-each-ref --format=\'%(refname:short) %(objectname:short)\' refs/heads", shell=True)
-            output = output.decode()
-            print(output)
-            branches = output.splitlines()
-            commit1 = branches[0].split(' ')[1]
-            commit2 = branches[1].split(' ')[1]
-            ancestorCommit = subprocess.check_output(f'git merge-base {commit1} {commit2}', shell=True)
+            commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
+            commit = commit.decode()
+            print(commit)
+            ancestorCommit = subprocess.check_output(f'git merge-base {commit} {dep[1]}', shell=True)
             ancestorCommit = ancestorCommit.decode().strip()
             print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
             return ancestorCommit
           except:
-            print("exception occurred") 
+            print("exception occurred")
         else:
           print("did not find dep: " + dep_name)
 
