@@ -201,7 +201,6 @@ void DisplayListBuilder::buildVirtualLayerTree() {
       }
     }
   }
-  
   virtual_layer_tree_.insert(virtual_layer_tree_.begin(),
                              DisplayVirtualLayerInfo{0, "_k", true, 0});
   virtual_layer_tree_.push_back(DisplayVirtualLayerInfo{
