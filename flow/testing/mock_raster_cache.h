@@ -122,10 +122,15 @@ struct PaintContextHolder {
 };
 
 PrerollContextHolder GetSamplePrerollContextHolder(
-    RasterCache* raster_cache = nullptr);
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time,
+    MutatorsStack* mutators_stack);
 
 PaintContextHolder GetSamplePaintContextHolder(
-    RasterCache* raster_cache = nullptr);
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time);
 
 bool RasterCacheItemPrerollAndTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,

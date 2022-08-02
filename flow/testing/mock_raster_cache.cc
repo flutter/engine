@@ -56,7 +56,9 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   recorder.drawPath(path, SkPaint());
   sk_sp<DisplayList> display_list = recorder.Build();
 
-  PaintContextHolder holder = GetSamplePaintContextHolder(this);
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  PaintContextHolder holder = GetSamplePaintContextHolder(this, &raster_time, &ui_time);
   holder.paint_context.dst_color_space = color_space_;
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
@@ -81,10 +83,11 @@ void MockRasterCache::AddMockPicture(int width, int height) {
                    });
 }
 
-PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  MutatorsStack mutators_stack;
+PrerollContextHolder GetSamplePrerollContextHolder(
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time,
+    MutatorsStack* mutators_stack) {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
 
   PrerollContextHolder holder = {
@@ -93,12 +96,12 @@ PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
           .raster_cache                  = raster_cache,
           .gr_context                    = nullptr,
           .view_embedder                 = nullptr,
-          .mutators_stack                = mutators_stack,
+          .mutators_stack                = *mutators_stack,
           .dst_color_space               = srgb.get(),
           .cull_rect                     = kGiantRect,
           .surface_needs_readback        = false,
-          .raster_time                   = raster_time,
-          .ui_time                       = ui_time,
+          .raster_time                   = *raster_time,
+          .ui_time                       = *ui_time,
           .texture_registry              = nullptr,
           .checkerboard_offscreen_layers = false,
           .frame_device_pixel_ratio      = 1.0f,
@@ -112,10 +115,10 @@ PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
   return holder;
 }
 
-PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  MutatorsStack mutators_stack;
+PaintContextHolder GetSamplePaintContextHolder(
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time) {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
   PaintContextHolder holder = {// clang-format off
     {
@@ -124,8 +127,8 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
           .gr_context                    = nullptr,
           .dst_color_space               = srgb.get(),
           .view_embedder                 = nullptr,
-          .raster_time                   = raster_time,
-          .ui_time                       = ui_time,
+          .raster_time                   = *raster_time,
+          .ui_time                       = *ui_time,
           .texture_registry              = nullptr,
           .raster_cache                  = raster_cache,
           .checkerboard_offscreen_layers = false,
