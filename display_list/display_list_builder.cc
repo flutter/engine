@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
+
 #include "flutter/display_list/display_list_builder.h"
 
 #include "flutter/display_list/display_list_blend_mode.h"
@@ -43,6 +45,7 @@ void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   op->type = T::kType;
   op->size = size;
   op_count_ += op_inc;
+  storage_op_count_ += 1;
   return op + 1;
 }
 
@@ -50,6 +53,8 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
+
+  buildVirtualLayerTree();
   size_t bytes = used_;
   int count = op_count_;
   size_t nested_bytes = nested_bytes_;
@@ -57,10 +62,150 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   used_ = allocated_ = op_count_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
+  auto tree = virtual_layer_tree_;
+  virtual_layer_tree_.clear();
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
-                                            nested_bytes, nested_count,
-                                            cull_rect_, compatible));
+  return sk_sp<DisplayList>(
+      new DisplayList(storage_.release(), bytes, count, nested_bytes,
+                      nested_count, cull_rect_, compatible, std::move(tree)));
+}
+
+void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
+  virtual_layer_tree_.push_back(
+      DisplayVirtualLayerInfo{storage_op_count_, type, true, 0});
+}
+
+void DisplayListBuilder::saveVirtualLayer(std::string type) {
+  FML_DCHECK(!virtual_layer_tree_.empty());
+  if (virtual_layer_tree_.empty()) {
+    return;
+  }
+  virtual_layer_tree_.push_back(
+      DisplayVirtualLayerInfo{storage_op_count_, type, false, 0});
+}
+
+void DisplayListBuilder::buildVirtualLayerTree() {
+  if (virtual_layer_tree_.empty() || virtual_layer_tree_.back().index == 0) {
+    virtual_layer_tree_.clear();
+    return;
+  }
+
+  FML_DCHECK(virtual_layer_tree_[0].index == 0);
+
+  std::vector<std::string> stack;
+  for (unsigned long i = 0; i < virtual_layer_tree_.size(); i++) {
+    if (virtual_layer_tree_[i].isStart) {
+      stack.push_back(virtual_layer_tree_[i].type);
+    } else {
+      if (stack.empty()) {
+        virtual_layer_tree_.clear();
+        return;
+      }
+      std::string t = stack[stack.size() - 1];
+      stack.pop_back();
+      if (t != virtual_layer_tree_[i].type) {
+        virtual_layer_tree_.clear();
+        return;
+      }
+    }
+  }
+
+  if (!stack.empty()) {
+    auto op_count = virtual_layer_tree_.back().index;
+    for (int i = stack.size() - 1; i >= 0; i--) {
+      virtual_layer_tree_.push_back(
+          DisplayVirtualLayerInfo{op_count, stack[i], false, 0});
+    }
+    stack.clear();
+    for (unsigned long i = 0; i < virtual_layer_tree_.size(); i++) {
+      if (virtual_layer_tree_[i].isStart) {
+        stack.push_back(virtual_layer_tree_[i].type);
+      } else {
+        if (stack.empty()) {
+          virtual_layer_tree_.clear();
+          return;
+        }
+        std::string t = stack[stack.size() - 1];
+        stack.pop_back();
+        if (t != virtual_layer_tree_[i].type) {
+          virtual_layer_tree_.clear();
+          return;
+        }
+      }
+    }
+    if (!stack.empty()) {
+      virtual_layer_tree_.clear();
+      return;
+    }
+  }
+
+  std::vector<int> garbage;
+  for (uint32_t i = 0; i < virtual_layer_tree_.size(); i++) {
+    if (virtual_layer_tree_[i].isStart) {
+      if (virtual_layer_tree_[i + 1].isStart &&
+          virtual_layer_tree_[i].index == virtual_layer_tree_[i + 1].index) {
+        // [[
+        uint32_t flag = 0;
+        for (uint32_t j = i + 1; j < virtual_layer_tree_.size(); j++) {
+          if (virtual_layer_tree_[j].type == virtual_layer_tree_[i].type) {
+            if (virtual_layer_tree_[j].isStart) {
+              flag += 1;
+            } else {
+              if (flag == 0) {
+                garbage.push_back(i);
+                garbage.push_back(j);
+                break;
+              } else {
+                flag -= 1;
+              }
+            }
+          }
+        }
+      } else if (!virtual_layer_tree_[i + 1].isStart &&
+                 virtual_layer_tree_[i].index ==
+                     virtual_layer_tree_[i + 1].index &&
+                 virtual_layer_tree_[i + 1].type ==
+                     virtual_layer_tree_[i].type) {
+        // []
+        garbage.push_back(i);
+        garbage.push_back(i + 1);
+      }
+    }
+  }
+  std::sort(garbage.begin(), garbage.end());
+  for (int i = garbage.size() - 1; i >= 0; i--) {
+    virtual_layer_tree_.erase(virtual_layer_tree_.begin() + garbage[i]);
+  }
+
+  virtual_layer_tree_[0].depth = 1;
+  virtual_layer_tree_[virtual_layer_tree_.size() - 1].depth = 1;
+  uint32_t currDepth = 1;
+  for (uint32_t i = 1; i < virtual_layer_tree_.size(); i++) {
+    if (virtual_layer_tree_[i].isStart) {
+      if (virtual_layer_tree_[i - 1].isStart) {
+        // [[
+        currDepth += 1;
+        virtual_layer_tree_[i].depth = currDepth;
+      } else {
+        // ][
+        virtual_layer_tree_[i].depth = currDepth;
+      }
+    } else {
+      if (virtual_layer_tree_[i - 1].isStart) {
+        // []
+        virtual_layer_tree_[i].depth = currDepth;
+      } else {
+        // ]]
+        currDepth -= 1;
+        virtual_layer_tree_[i].depth = currDepth;
+      }
+    }
+  }
+  virtual_layer_tree_.insert(virtual_layer_tree_.begin(),
+                             DisplayVirtualLayerInfo{0, "_k", true, 0});
+  virtual_layer_tree_.push_back(DisplayVirtualLayerInfo{
+      virtual_layer_tree_[virtual_layer_tree_.size() - 1].index, "_k", false,
+      0});
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)

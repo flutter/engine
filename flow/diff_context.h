@@ -68,6 +68,8 @@ class DiffContext {
     DiffContext* context_;
   };
 
+  void MarkDirty();
+
   // Pushes additional transform for current subtree
   void PushTransform(const SkMatrix& transform);
 

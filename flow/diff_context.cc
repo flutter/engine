@@ -210,6 +210,10 @@ PaintRegion DiffContext::CurrentSubtreeRegion() const {
                      state_.has_texture);
 }
 
+void DiffContext::MarkDirty() {
+  state_.dirty = true;
+}
+
 void DiffContext::AddDamage(const PaintRegion& damage) {
   FML_DCHECK(damage.is_valid());
   for (const auto& r : damage) {

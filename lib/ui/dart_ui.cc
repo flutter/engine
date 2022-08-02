@@ -151,6 +151,8 @@ typedef CanvasPath Path;
   V(Canvas, save, 1)                                   \
   V(Canvas, saveLayer, 7)                              \
   V(Canvas, saveLayerWithoutBounds, 3)                 \
+  V(Canvas, startRecordVirtualLayer, 2)                \
+  V(Canvas, saveVirtualLayer, 2)                       \
   V(Canvas, scale, 3)                                  \
   V(Canvas, skew, 3)                                   \
   V(Canvas, transform, 2)                              \

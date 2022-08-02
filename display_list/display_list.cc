@@ -32,7 +32,8 @@ DisplayList::DisplayList(uint8_t* ptr,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
                          const SkRect& cull_rect,
-                         bool can_apply_group_opacity)
+                         bool can_apply_group_opacity,
+                         std::vector<DisplayVirtualLayerInfo> indexes)
     : storage_(ptr),
       byte_count_(byte_count),
       op_count_(op_count),
@@ -40,7 +41,9 @@ DisplayList::DisplayList(uint8_t* ptr,
       nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
       bounds_cull_(cull_rect),
-      can_apply_group_opacity_(can_apply_group_opacity) {
+      can_apply_group_opacity_(can_apply_group_opacity),
+      virtual_layer_tree_(indexes) {
+  virtual_bounds_valid_ = false;
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -216,4 +219,297 @@ bool DisplayList::Equals(const DisplayList* other) const {
   return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other->byte_count_);
 }
 
+static uint8_t* getNPtr(uint8_t* ptr, uint8_t* end, int n) {
+  int i = 0;
+  while (ptr < end) {
+    if (n == i) {
+      return ptr;
+    }
+    auto op = reinterpret_cast<const DLOp*>(ptr);
+    ptr += op->size;
+    i += 1;
+  }
+  return end;
+}
+
+void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
+  uint8_t* ptr = storage_.get();
+  uint8_t* opEnd = ptr + byte_count_;
+  Dispatch(ctx, getNPtr(ptr, opEnd, start), getNPtr(ptr, opEnd, end));
+}
+
+const SkRect& DisplayList::virtualBounds() {
+  if (!virtual_layer_tree_.empty() && virtual_bounds_valid_) {
+    virtual_bounds_valid_ = false;
+    return virtual_bounds_;
+  }
+  if (bounds_.width() < 0.0) {
+    // ComputeBounds() will leave the variable with a
+    // non-negative width and height
+    ComputeBounds();
+  }
+  return bounds_;
+}
+
+const SkRect& DisplayList::bounds() {
+  if (bounds_.width() < 0.0) {
+    // ComputeBounds() will leave the variable with a
+    // non-negative width and height
+    ComputeBounds();
+  }
+  return bounds_;
+}
+
+const SkRect DisplayList::partBounds(int start, int end) {
+  RectBoundsAccumulator accumulator;
+  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
+  DispatchPart(calculator, start, end);
+  return accumulator.bounds();
+}
+
+void DisplayList::Compare(DisplayList* dl) {
+  if (storage_ == nullptr) {
+    return;
+  }
+
+  SkRect damage;
+  auto newTree = virtual_layer_tree();
+  auto oldTree = dl->virtual_layer_tree();
+
+  if (newTree.empty() || oldTree.empty() ||
+      newTree[0].type != oldTree[0].type) {
+    damage = bounds();
+    setVirtualBounds(damage);
+    return;
+  }
+
+  // debug check virtual_indexes_.
+
+  std::function<bool(const std::vector<DisplayVirtualLayerInfo>& tree)>
+      checkTree =
+          [&](const std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
+    std::vector<std::string> stack;
+    //    bool isLegal = true;
+    for (unsigned long i = 0; i < tree.size(); i++) {
+      if (tree[i].isStart) {
+        stack.push_back(tree[i].type);
+      } else {
+        if (stack.empty()) {
+          return false;
+        }
+        std::string t = stack[stack.size() - 1];
+        stack.pop_back();
+        if (t != tree[i].type) {
+          return false;
+        }
+      }
+    }
+    if (!stack.empty()) {
+      return false;
+    }
+    return true;
+  };
+
+  if (!checkTree(newTree) || !checkTree(oldTree)) {
+    damage = bounds();
+    setVirtualBounds(damage);
+    return;
+  }
+
+  uint8_t* newOpHead = storage_.get();
+  uint8_t* newOpTail = newOpHead + byte_count_;
+  uint8_t* oldOpHead = dl->storage_.get();
+  uint8_t* oldOpTail = dl->storage_.get() + dl->byte_count_;
+
+  std::function<int(int, const std::vector<DisplayVirtualLayerInfo>&)>
+      findHeadWithTail =
+          [&](int tailIndex,
+              const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    for (int i = tailIndex - 1; i >= 0; i--) {
+      if (vec[i].isStart && vec[i].type == vec[tailIndex].type &&
+          vec[i].depth == vec[tailIndex].depth) {
+        return i;
+      }
+    }
+    return 0;
+  };
+
+  std::function<int(int, const std::vector<DisplayVirtualLayerInfo>&)>
+      findTailWithHead =
+          [&](int headIndex,
+              const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    for (unsigned long i = headIndex + 1; i < vec.size(); i++) {
+      if (!vec[i].isStart && vec[i].type == vec[headIndex].type &&
+          vec[i].depth == vec[headIndex].depth) {
+        return i;
+      }
+    }
+    return 0;
+  };
+
+  // jump with given head / tail.
+  std::function<int(int, bool, const std::vector<DisplayVirtualLayerInfo>&)>
+      treeJump = [&](int index, bool isHead,
+                     const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    if (isHead) {
+      for (unsigned long i = index + 1; i < vec.size(); i++) {
+        if (vec[i].depth == vec[index].depth && vec[i].isStart) {
+          return i;
+        }
+      }
+    } else {
+      for (int i = index - 1; i > 0; i--) {
+        if (vec[i].depth == vec[index].depth && !vec[i].isStart) {
+          return i;
+        }
+      }
+    }
+    return 0;
+  };
+
+  std::function<void(int, int, int, int)> diffTree =
+      [&](int newH, int newT, int oldH, int oldT) -> void {
+    auto h1 = getNPtr(newOpHead, newOpTail, newTree[newH].index);
+    auto t1 = getNPtr(newOpHead, newOpTail, newTree[newH + 1].index);
+    auto h2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH].index);
+    auto t2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH + 1].index);
+
+    // Compare the parent node.
+    if (!(t1 - h1 == t2 - h2 && CompareOps(h1, t1, h2, t2))) {
+      auto r1 = partBounds(newTree[newH].index, newTree[newT].index);
+      auto r2 = dl->partBounds(oldTree[oldH].index, oldTree[oldT].index);
+      damage.join(r1);
+      damage.join(r2);
+      return;
+    }
+
+    // when the newTree has no subTree.
+    if (newT - newH == 1 && oldT - oldH != 1) {
+      auto r1 =
+          dl->partBounds(oldTree[oldH + 1].index, oldTree[oldT - 1].index);
+      damage.join(r1);
+      return;
+    }
+
+    // when the oldTree has no subTree
+    if (oldT - oldH == 1 && newT - newH != 1) {
+      auto r1 = partBounds(newTree[newH + 1].index, newTree[newT - 1].index);
+      damage.join(r1);
+      return;
+    }
+
+    // both leaf nodes.
+    if (oldT - oldH == 1 && newT - oldH == 1) {
+      return;
+    }
+
+    // At this point, the parent node has been compared, now
+    // we need to compare the subTrees.
+    int newTreeHead = 0;
+    int newTreeTail = 0;
+    int oldTreeHead = 0;
+    int oldTreeTail = 0;
+
+    // 1. recursive the subtree from left to right.
+
+    int lEdgeNewTreeHead = 0;
+    int lEdgeOldTreeHead = 0;
+
+    while (newTreeTail != newT - 1 && oldTreeTail != oldT - 1) {
+      if (newTreeHead == 0) {
+        newTreeHead = newH + 1;
+        oldTreeHead = oldH + 1;
+      } else {
+        newTreeHead = treeJump(newTreeHead, true, newTree);
+        oldTreeHead = treeJump(oldTreeHead, true, oldTree);
+      }
+      newTreeTail = findTailWithHead(newTreeHead, newTree);
+      oldTreeTail = findTailWithHead(oldTreeHead, oldTree);
+      if (newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+        lEdgeNewTreeHead = newTreeHead;
+        lEdgeOldTreeHead = oldTreeHead;
+        diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
+      } else {
+        break;
+      }
+    }
+
+    // 2. Recursive subtree from right to left.
+
+    int rEdgeNewTreeHead = 0;
+    int rEdgeOldTreeHead = 0;
+
+    oldTreeTail = oldT;
+    newTreeTail = newT;
+    newTreeHead = 0;
+    oldTreeHead = 0;
+
+    while (newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead) {
+      if (oldTreeTail == oldT) {
+        oldTreeTail = oldT - 1;
+        newTreeTail = newT - 1;
+      } else {
+        oldTreeTail = oldTreeHead - 1;
+        newTreeTail = newTreeHead - 1;
+      }
+      newTreeHead = findHeadWithTail(newTreeTail, newTree);
+      oldTreeHead = findHeadWithTail(oldTreeTail, oldTree);
+      if (newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead &&
+          newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+        rEdgeNewTreeHead = newTreeHead;
+        rEdgeOldTreeHead = oldTreeHead;
+        diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
+      } else {
+        break;
+      }
+    }
+
+    // 3. mark the middle dirty.
+
+    if (rEdgeNewTreeHead - lEdgeNewTreeHead > 1) {
+      int garbageNewTreeHead = 0;
+      int garbageNewTreeTail = newTreeHead - 1;
+      if (lEdgeNewTreeHead == 0) {
+        garbageNewTreeHead = 1;
+      } else {
+        garbageNewTreeHead = findTailWithHead(lEdgeNewTreeHead, newTree) - 1;
+      }
+      if (rEdgeNewTreeHead == 0) {
+        garbageNewTreeTail = newT;
+      } else {
+        garbageNewTreeTail = rEdgeNewTreeHead - 1;
+      }
+      SkRect rect = partBounds(newTree[garbageNewTreeHead].index,
+                               newTree[garbageNewTreeTail].index);
+      damage.join(rect);
+    }
+
+    if (rEdgeOldTreeHead - lEdgeNewTreeHead > 1) {
+      int garbageOldTreeHead = 0;
+      int garbageOldTreeTail = oldTreeHead - 1;
+      if (lEdgeOldTreeHead == 0) {
+        garbageOldTreeHead = 1;
+      } else {
+        garbageOldTreeHead = findTailWithHead(lEdgeOldTreeHead, oldTree) - 1;
+      }
+      if (rEdgeOldTreeHead == 0) {
+        garbageOldTreeTail = oldT;
+      } else {
+        garbageOldTreeTail = rEdgeOldTreeHead - 1;
+      }
+      SkRect rect = dl->partBounds(oldTree[garbageOldTreeHead].index,
+                                   oldTree[garbageOldTreeTail].index);
+      damage.join(rect);
+    }
+  };
+
+  if (!newTree.empty() && !oldTree.empty() &&
+      newTree[0].type == oldTree[0].type) {
+    diffTree(0, newTree.size() - 1, 0, oldTree.size() - 1);
+  } else {
+    damage = bounds();
+  }
+
+  setVirtualBounds(damage);
+}
 }  // namespace flutter

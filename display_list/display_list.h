@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_sampling_options.h"
@@ -214,6 +215,13 @@ class SaveLayerOptions {
   };
 };
 
+struct DisplayVirtualLayerInfo {
+  uint32_t index;
+  std::string type;
+  bool isStart;
+  uint32_t depth;
+};
+
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
@@ -227,6 +235,8 @@ class DisplayList : public SkRefCnt {
     uint8_t* ptr = storage_.get();
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
+
+  void DispatchPart(Dispatcher& ctx, int start, int end) const;
 
   void RenderTo(DisplayListBuilder* builder,
                 SkScalar opacity = SK_Scalar1) const;
@@ -247,14 +257,9 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() {
-    if (bounds_.width() < 0.0) {
-      // ComputeBounds() will leave the variable with a
-      // non-negative width and height
-      ComputeBounds();
-    }
-    return bounds_;
-  }
+  const SkRect& bounds();
+  const SkRect& virtualBounds();
+  const SkRect partBounds(int start, int end);
 
   sk_sp<const DlRTree> rtree() {
     if (!rtree_) {
@@ -273,6 +278,17 @@ class DisplayList : public SkRefCnt {
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_tree() {
+    return virtual_layer_tree_;
+  }
+
+  void setVirtualBounds(SkRect rect) {
+    virtual_bounds_ = rect;
+    virtual_bounds_valid_ = true;
+  }
+
+  void Compare(DisplayList* dl);
+
  private:
   DisplayList(uint8_t* ptr,
               size_t byte_count,
@@ -280,7 +296,8 @@ class DisplayList : public SkRefCnt {
               size_t nested_byte_count,
               unsigned int nested_op_count,
               const SkRect& cull_rect,
-              bool can_apply_group_opacity);
+              bool can_apply_group_opacity,
+              std::vector<DisplayVirtualLayerInfo> indexes);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t byte_count_;
@@ -297,6 +314,12 @@ class DisplayList : public SkRefCnt {
   SkRect bounds_cull_;
 
   bool can_apply_group_opacity_;
+
+  bool virtual_bounds_valid_;
+
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_tree_;
+
+  SkRect virtual_bounds_;
 
   void ComputeBounds();
   void ComputeRTree();

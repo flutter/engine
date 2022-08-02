@@ -173,6 +173,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
   int getSaveCount() { return layer_stack_.size(); }
   void restoreToCount(int restore_count);
 
+  void startRecordVirtualLayer(std::string type);
+  void saveVirtualLayer(std::string type);
+
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
   void rotate(SkScalar degrees) override;
@@ -348,6 +351,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
   size_t allocated_ = 0;
   int op_count_ = 0;
 
+  uint32_t storage_op_count_ = 0;
+  uint32_t virtual_layer_depth_ = 1;
+
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
   int nested_op_count_ = 0;
@@ -362,6 +368,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void setAttributesFromDlPaint(const DlPaint& paint,
                                 const DisplayListAttributeFlags flags);
   void intersect(const SkRect& rect);
+
+  void buildVirtualLayerTree();
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
@@ -425,6 +433,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   };
 
   std::vector<LayerInfo> layer_stack_;
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_tree_;
   LayerInfo* current_layer_;
 
   // This flag indicates whether or not the current rendering attributes
