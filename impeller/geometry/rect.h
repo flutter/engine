@@ -146,7 +146,7 @@ struct TRect {
   }
 
   /// @brief  Get the points that represent the 4 corners of this rectangle. The
-  ///         order is: Top left, top right, bottom left, bottom right.=
+  ///         order is: Top left, top right, bottom left, bottom right.
   constexpr std::array<TPoint<T>, 4> GetPoints() const {
     auto [left, top, right, bottom] = GetLTRB();
     return {TPoint(left, top), TPoint(right, top), TPoint(left, bottom),
