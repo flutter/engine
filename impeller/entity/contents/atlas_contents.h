@@ -27,6 +27,8 @@ class AtlasContents final : public Contents {
 
   void SetXForm(std::vector<Matrix> xform);
 
+  void SetBlendMode(Entity::BlendMode blend_mode);
+
   void SetTextureCoordinates(std::vector<Rect> texture_coords);
 
   void SetColors(std::vector<Color> colors);
@@ -51,6 +53,7 @@ class AtlasContents final : public Contents {
   std::vector<Color> colors_;
   std::vector<Matrix> xform_;
   Path path_;
+  Entity::BlendMode blend_mode_;
   SamplerDescriptor sampler_descriptor_ = {};
 
   FML_DISALLOW_COPY_AND_ASSIGN(AtlasContents);
