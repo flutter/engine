@@ -157,10 +157,14 @@ def getCommonAncestorCommit(dep):
           branches = output.splitlines()
           commit1 = branches[0].split(' ')[1]
           commit2 = branches[1].split(' ')[1]
-          ancestorCommit = subprocess.check_output(f'git merge-base {commit1} {commit2}', shell=True)
-          ancestorCommit = ancestorCommit.decode()
-          print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
-          return ancestorCommit
+          try:
+            ancestorCommit = subprocess.check_output(f'git merge-base {commit1} {commit2}', shell=True)
+            ancestorCommit = ancestorCommit.decode().strip()
+            print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
+            return ancestorCommit
+          except:
+            print("exception occurred")
+          
           # cloned_repo = Repo.clone_from(dep[0], f'./clone-test/{dep_name}')
           # assert cloned_repo.__class__ is Repo
           # cloned_repo.create_remote("upstream", dep[0])
@@ -171,7 +175,6 @@ def getCommonAncestorCommit(dep):
           # upstream.set_tracking_branch(data[dep_name])
           # print(cloned_repo.heads)
           # cloned_repo.merge_base(ORIGIN_COMMIT, MIRROR COMMIT)
-
         else:
           print("did not find dep: " + dep_name)
 
