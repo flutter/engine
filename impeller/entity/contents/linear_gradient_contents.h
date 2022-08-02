@@ -13,6 +13,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "impeller/geometry/tile_mode.h"
 
 namespace impeller {
 
@@ -36,6 +37,8 @@ class LinearGradientContents final : public PathContents {
 
   void SetColors(std::vector<Color> colors);
 
+  void SetTileMode(TileMode tile_mode);
+
   const std::vector<Color>& GetColors() const;
 
  private:
@@ -43,6 +46,7 @@ class LinearGradientContents final : public PathContents {
   Point start_point_;
   Point end_point_;
   std::vector<Color> colors_;
+  TileMode tile_mode_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LinearGradientContents);
 };

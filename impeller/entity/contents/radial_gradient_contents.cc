@@ -7,6 +7,7 @@
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/tile_mode.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/tessellator/tessellator.h"
 
@@ -33,6 +34,10 @@ void RadialGradientContents::SetColors(std::vector<Color> colors) {
   } else if (colors_.size() < 2u) {
     colors_.push_back(colors_.back());
   }
+}
+
+void RadialGradientContents::SetTileMode(TileMode tile_mode) {
+  tile_mode_ = tile_mode;
 }
 
 const std::vector<Color>& RadialGradientContents::GetColors() const {
@@ -77,6 +82,7 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
   gradient_info.radius = radius_;
   gradient_info.center_color = colors_[0].Premultiply();
   gradient_info.edge_color = colors_[1].Premultiply();
+  gradient_info.tile_mode = static_cast<float>(tile_mode_);
 
   Command cmd;
   cmd.label = "RadialGradientFill";

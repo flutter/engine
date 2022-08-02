@@ -22,6 +22,7 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
+#include "impeller/geometry/tile_mode.h"
 #include "impeller/geometry/vertices.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -218,6 +219,7 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(linear->colors()[i]));
       }
       contents->SetColors(std::move(colors));
+      contents->SetTileMode(static_cast<TileMode>(linear->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
@@ -233,6 +235,7 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
       }
       contents->SetColors(std::move(colors));
+      contents->SetTileMode(static_cast<TileMode>(radialGradient->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
