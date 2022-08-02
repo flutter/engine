@@ -148,7 +148,7 @@ def getCommonAncestorCommit(dep):
           try:
             print("attempting to clone from: " + dep[0])
             os.chdir('./clone-test')
-            os.system(f'git clone {dep[0]}')
+            os.system(f'git clone {dep[0]} --quiet')
             os.chdir(f'./{dep_name}')
             os.system(f'git for-each-ref --format=\'%(refname:short) %(objectname:short)\' refs/heads')
             print('attempting to add upstream remote from: ' + data[dep_name])
