@@ -69,21 +69,21 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-    auto texture_descriptor = impeller::TextureDescriptor{};
-    texture_descriptor.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
-    texture_descriptor.size = {width, height};
-    texture_descriptor.mip_count = 1u;
+    // auto texture_descriptor = impeller::TextureDescriptor{};
+    // texture_descriptor.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+    // texture_descriptor.size = {width, height};
+    // texture_descriptor.mip_count = 1u;
 
-    bd->font_texture = context->GetPermanentsAllocator()->CreateTexture(
-        impeller::StorageMode::kHostVisible, texture_descriptor);
-    IM_ASSERT(bd->font_texture != nullptr &&
-              "Could not allocate ImGui font texture.");
-    bd->font_texture->SetLabel("ImGui Font Texture");
+    // bd->font_texture = context->GetPermanentsAllocator()->CreateTexture(
+    //     impeller::StorageMode::kHostVisible, texture_descriptor);
+    // IM_ASSERT(bd->font_texture != nullptr &&
+    //           "Could not allocate ImGui font texture.");
+    // bd->font_texture->SetLabel("ImGui Font Texture");
 
-    [[maybe_unused]] bool uploaded = bd->font_texture->SetContents(
-        pixels, texture_descriptor.GetByteSizeOfBaseMipLevel());
-    IM_ASSERT(uploaded &&
-              "Could not upload ImGui font texture to device memory.");
+    // [[maybe_unused]] bool uploaded = bd->font_texture->SetContents(
+    //     pixels, texture_descriptor.GetByteSizeOfBaseMipLevel());
+    // IM_ASSERT(uploaded &&
+    //           "Could not upload ImGui font texture to device memory.");
   }
 
   // Build the raster pipeline.

@@ -14,11 +14,48 @@
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
+#include "impeller/renderer/descriptor_set_layout.h"
 #include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
+
+static vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
+  switch (stage) {
+    case ShaderStage::kUnknown:
+      return vk::ShaderStageFlagBits::eAll;
+    case ShaderStage::kFragment:
+      return vk::ShaderStageFlagBits::eFragment;
+    case ShaderStage::kTessellationControl:
+      return vk::ShaderStageFlagBits::eTessellationControl;
+    case ShaderStage::kTessellationEvaluation:
+      return vk::ShaderStageFlagBits::eTessellationEvaluation;
+    case ShaderStage::kCompute:
+      return vk::ShaderStageFlagBits::eCompute;
+    case ShaderStage::kVertex:
+      return vk::ShaderStageFlagBits::eVertex;
+  }
+}
+
+static vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
+    const DescriptorSetLayout& layout) {
+  vk::DescriptorSetLayoutBinding binding;
+  binding.binding = layout.binding;
+  binding.descriptorCount = layout.descriptor_count;
+  vk::DescriptorType desc_type;
+  switch (layout.descriptor_type) {
+    case DescriptorType::kSampledImage:
+      desc_type = vk::DescriptorType::eCombinedImageSampler;
+      break;
+    case DescriptorType::kUniformBuffer:
+      desc_type = vk::DescriptorType::eUniformBuffer;
+      break;
+  }
+  binding.descriptorType = desc_type;
+  binding.stageFlags = ToVkShaderStage(layout.shader_stage);
+  return binding;
+}
 
 PipelineLibraryVK::PipelineLibraryVK(
     const vk::Device& device,
@@ -129,45 +166,46 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
     const PipelineDescriptor& desc) {
   std::vector<vk::AttachmentDescription> render_pass_attachments;
   const auto sample_count = desc.GetSampleCount();
-  // Set the color attachment.
-  render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-      vk::Format::eR8G8B8A8Unorm, sample_count));
 
   std::vector<vk::AttachmentReference> color_attachment_references;
   std::vector<vk::AttachmentReference> resolve_attachment_references;
   std::optional<vk::AttachmentReference> depth_stencil_attachment_reference;
 
+  // Set the color attachment.
+  render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+      vk::Format::eR8G8B8A8Unorm, sample_count));
   // TODO (kaushikiska): consider changing the image layout to
   // eColorAttachmentOptimal.
   color_attachment_references.push_back(vk::AttachmentReference(
       render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
 
   // Set the resolve attachment if MSAA is enabled.
-  if (sample_count != SampleCount::kCount1) {
-    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1));
-    resolve_attachment_references.push_back(vk::AttachmentReference(
-        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
-  }
+  //   if (sample_count != SampleCount::kCount1) {
+  //     render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+  //         vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1));
+  //     resolve_attachment_references.push_back(vk::AttachmentReference(
+  //         render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
+  //   }
 
-  if (desc.HasStencilAttachmentDescriptors()) {
-    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eS8Uint, sample_count));
-    depth_stencil_attachment_reference = vk::AttachmentReference(
-        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
-  }
+  //   if (desc.HasStencilAttachmentDescriptors()) {
+  //     render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+  //         vk::Format::eS8Uint, sample_count));
+  //     depth_stencil_attachment_reference = vk::AttachmentReference(
+  //         render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
+  //   }
 
   vk::SubpassDescription subpass_info;
   subpass_info.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
   subpass_info.setColorAttachments(color_attachment_references);
-  subpass_info.setResolveAttachments(resolve_attachment_references);
-  if (depth_stencil_attachment_reference.has_value()) {
-    subpass_info.setPDepthStencilAttachment(
-        &depth_stencil_attachment_reference.value());
-  }
+  //   subpass_info.setResolveAttachments(resolve_attachment_references);
+  //   if (depth_stencil_attachment_reference.has_value()) {
+  //     subpass_info.setPDepthStencilAttachment(
+  //         &depth_stencil_attachment_reference.value());
+  //   }
 
   vk::RenderPassCreateInfo render_pass_info;
   render_pass_info.setSubpasses(subpass_info);
+  render_pass_info.setSubpassCount(1);
   render_pass_info.setAttachments(render_pass_attachments);
   auto render_pass = device_.createRenderPassUnique(render_pass_info);
   if (render_pass.result != vk::Result::eSuccess) {
@@ -323,28 +361,15 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
   // TODO (kaushikiska): support multiple uniforms.
-  vk::DescriptorSetLayoutBinding desc_set_layout_binding_vert;
-  desc_set_layout_binding_vert.setBinding(BINDING_INDEX);
-  desc_set_layout_binding_vert.setDescriptorType(
-      vk::DescriptorType::eUniformBuffer);
-  desc_set_layout_binding_vert.setDescriptorCount(1);
-  desc_set_layout_binding_vert.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+  std::vector<vk::DescriptorSetLayoutBinding> bindings = {};
 
+  FML_LOG(ERROR) << "creating pipeline: " << desc.GetLabel();
 
-    desc.GetVertexDescriptor()->SetDescriptorSetLayouts()
-
-  vk::DescriptorSetLayoutBinding desc_set_layout_binding_frag;
-  desc_set_layout_binding_frag.setBinding(128);
-  desc_set_layout_binding_frag.setDescriptorType(
-      vk::DescriptorType::eUniformBuffer);
-  desc_set_layout_binding_frag.setDescriptorCount(1);
-  desc_set_layout_binding_frag.setStageFlags(
-      vk::ShaderStageFlagBits::eFragment);
-
-  std::vector<vk::DescriptorSetLayoutBinding> bindings = {
-      desc_set_layout_binding_vert,
-      desc_set_layout_binding_frag,
-  };
+  for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
+    auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
+    FML_LOG(ERROR) << "binding: " << layout.binding;
+    bindings.push_back(vk_desc_layout);
+  }
 
   vk::DescriptorSetLayoutCreateInfo descriptor_set_create;
   descriptor_set_create.setBindingCount(bindings.size());
@@ -381,6 +406,8 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   if (pipeline.result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
     return nullptr;
+  } else {
+    FML_LOG(ERROR) << "========= Created pipeline: " << desc.GetLabel();
   }
 
   return std::make_unique<PipelineCreateInfoVK>(std::move(pipeline.value),

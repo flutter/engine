@@ -44,7 +44,8 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
 
 PlaygroundImplVK::PlaygroundImplVK()
     : handle_(nullptr, &DestroyWindowHandle),
-      concurrent_loop_(fml::ConcurrentMessageLoop::Create()) {
+      // TODO (kaushikiska): remove "1"
+      concurrent_loop_(fml::ConcurrentMessageLoop::Create(1)) {
   if (!::glfwVulkanSupported()) {
     VALIDATION_LOG << "Attempted to initialize a Vulkan playground on a system "
                       "that does not support Vulkan.";
