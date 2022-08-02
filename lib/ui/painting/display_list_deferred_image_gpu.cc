@@ -6,21 +6,23 @@
 
 #include <atomic>
 
+#include "third_party/skia/include/core/SkColorSpace.h"
+
 namespace flutter {
 
 sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(
-    SkISize size,
+    const SkImageInfo& image_info,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPU>(new DlDeferredImageGPU(
-      size, std::move(raster_task_runner), std::move(unref_queue)));
+      image_info, std::move(raster_task_runner), std::move(unref_queue)));
 }
 
 DlDeferredImageGPU::DlDeferredImageGPU(
-    SkISize size,
+    const SkImageInfo& image_info,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue)
-    : size_(size),
+    : image_info_(image_info),
       raster_task_runner_(std::move(raster_task_runner)),
       unref_queue_(std::move(unref_queue)) {}
 
@@ -33,13 +35,8 @@ DlDeferredImageGPU::~DlDeferredImageGPU() {
         if (!image_wrapper) {
           return;
         }
-        auto image = image_wrapper->image;
-        if (image) {
-          GrBackendTexture texture = image->releaseBackendTexture(true);
-          if (!texture.isValid()) {
-            return;
-          }
-
+        auto texture = image_wrapper->texture();
+        if (texture.isValid()) {
           unref_queue->DeleteTexture(std::move(texture));
         }
       });
@@ -48,7 +45,7 @@ DlDeferredImageGPU::~DlDeferredImageGPU() {
 // |DlImage|
 sk_sp<SkImage> DlDeferredImageGPU::skia_image() const {
   auto image_wrapper = std::atomic_load(&image_wrapper_);
-  return image_wrapper ? image_wrapper->image : nullptr;
+  return image_wrapper ? image_wrapper->CreateSkiaImage(image_info_) : image_;
 };
 
 // |DlImage|
@@ -59,40 +56,43 @@ std::shared_ptr<impeller::Texture> DlDeferredImageGPU::impeller_texture()
 
 // |DlImage|
 bool DlDeferredImageGPU::isTextureBacked() const {
-  if (auto image = skia_image()) {
-    return image->isTextureBacked();
+  if (auto image_wrapper = std::atomic_load(&image_wrapper_)) {
+    return image_wrapper->isTextureBacked();
   }
   return false;
 }
 
 // |DlImage|
 SkISize DlDeferredImageGPU::dimensions() const {
-  return size_;
+  return image_info_.dimensions();
 }
 
 // |DlImage|
 size_t DlDeferredImageGPU::GetApproximateByteSize() const {
   // This call is accessed on the UI thread, and image_ may not be available
-  // yet. The image is not mipmapped and it's created using N32 pixels, so this
-  // is safe.
-  if (size_.isEmpty()) {
-    return sizeof(this);
-  }
-  return sizeof(this) + size_.width() * size_.height() * 4;
+  // yet. The image is not mipmapped.
+  return sizeof(this) + image_info_.computeMinByteSize();
 }
 
-void DlDeferredImageGPU::set_image(
-    sk_sp<SkImage> image,
+void DlDeferredImageGPU::set_texture(
+    const GrBackendTexture& texture,
+    sk_sp<GrDirectContext> context,
     std::shared_ptr<TextureRegistry> texture_registry) {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
-  FML_DCHECK(image);
-  FML_DCHECK(image->dimensions() == size_);
+  FML_DCHECK(texture.isValid());
+  FML_DCHECK(context);
 
+  image_ = nullptr;
   auto image_wrapper = std::make_shared<ImageWrapper>(
-      std::move(image), raster_task_runner_, unref_queue_);
+      texture, std::move(context), raster_task_runner_, unref_queue_);
   texture_registry_ = std::move(texture_registry);
   texture_registry_->RegisterContextDestroyedListener(image_wrapper);
   std::atomic_store(&image_wrapper_, image_wrapper);
+}
+
+void DlDeferredImageGPU::set_image(sk_sp<SkImage> image) {
+  FML_DCHECK(image && !image->isTextureBacked());
+  image_ = std::move(image);
 }
 
 void DlDeferredImageGPU::set_error(const std::string& error) {
@@ -106,23 +106,36 @@ std::optional<std::string> DlDeferredImageGPU::get_error() const {
 }
 
 DlDeferredImageGPU::ImageWrapper::ImageWrapper(
-    sk_sp<SkImage> p_image,
-    fml::RefPtr<fml::TaskRunner> p_raster_task_runner,
-    fml::RefPtr<SkiaUnrefQueue> p_unref_queue)
-    : image(std::move(p_image)),
-      raster_task_runner(std::move(p_raster_task_runner)),
-      unref_queue(std::move(p_unref_queue)) {}
+    const GrBackendTexture& texture,
+    sk_sp<GrDirectContext> context,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    fml::RefPtr<SkiaUnrefQueue> unref_queue)
+    : texture_(texture),
+      context_(std::move(context)),
+      raster_task_runner_(std::move(raster_task_runner)),
+      unref_queue_(std::move(unref_queue)) {}
 
 void DlDeferredImageGPU::ImageWrapper::OnGrContextDestroyed() {
-  FML_DCHECK(raster_task_runner->RunsTasksOnCurrentThread());
-  if (image) {
-    GrBackendTexture texture = image->releaseBackendTexture(true);
-    image.reset();
-    if (!texture.isValid()) {
-      return;
-    }
-    unref_queue->DeleteTexture(std::move(texture));
+  FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
+
+  if (texture_.isValid()) {
+    unref_queue_->DeleteTexture(std::move(texture_));
   }
+}
+
+sk_sp<SkImage> DlDeferredImageGPU::ImageWrapper::CreateSkiaImage(
+    const SkImageInfo& image_info) {
+  FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
+  FML_DCHECK(texture_.isValid());
+  FML_DCHECK(context_.get());
+
+  return SkImage::MakeFromTexture(
+      context_.get(), texture_, kTopLeft_GrSurfaceOrigin,
+      kRGBA_8888_SkColorType, kPremul_SkAlphaType, image_info.refColorSpace());
+}
+
+bool DlDeferredImageGPU::ImageWrapper::isTextureBacked() {
+  return texture_.isValid();
 }
 
 }  // namespace flutter

@@ -60,21 +60,6 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
   DartInvoke(callback->value(), {dart_data});
 }
 
-static void ConvertGpuImageToRaster(
-    sk_sp<DlImage> dl_image,
-    std::function<void(sk_sp<SkImage>)> encode_task,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner) {
-  fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner, [dl_image, encode_task = std::move(encode_task)]() {
-        auto image = dl_image->skia_image();
-        if (image == nullptr) {
-          encode_task(nullptr);
-          return;
-        }
-        encode_task(image->makeRasterImage());
-      });
-}
-
 void ConvertImageToRaster(
     sk_sp<DlImage> dl_image,
     std::function<void(sk_sp<SkImage>)> encode_task,
@@ -83,42 +68,46 @@ void ConvertImageToRaster(
     fml::WeakPtr<GrDirectContext> resource_context,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
-  auto image = dl_image->skia_image();
+  // If the owning_context is kRaster, we can't access it on this task runner.
+  if (dl_image->owning_context() != DlImage::OwningContext::kRaster) {
+    auto image = dl_image->skia_image();
 
-  // Check validity of the image.
-  if (image == nullptr) {
-    FML_LOG(ERROR) << "Image was null.";
-    encode_task(nullptr);
-    return;
-  }
+    // Check validity of the image.
+    if (image == nullptr) {
+      FML_LOG(ERROR) << "Image was null.";
+      encode_task(nullptr);
+      return;
+    }
 
-  auto dimensions = image->dimensions();
+    auto dimensions = image->dimensions();
 
-  if (dimensions.isEmpty()) {
-    FML_LOG(ERROR) << "Image dimensions were empty.";
-    encode_task(nullptr);
-    return;
-  }
+    if (dimensions.isEmpty()) {
+      FML_LOG(ERROR) << "Image dimensions were empty.";
+      encode_task(nullptr);
+      return;
+    }
 
-  SkPixmap pixmap;
-  if (image->peekPixels(&pixmap)) {
-    // This is already a raster image.
-    encode_task(image);
-    return;
-  }
+    SkPixmap pixmap;
+    if (image->peekPixels(&pixmap)) {
+      // This is already a raster image.
+      encode_task(image);
+      return;
+    }
 
-  if (sk_sp<SkImage> raster_image = image->makeRasterImage()) {
-    // The image can be converted to a raster image.
-    encode_task(raster_image);
-    return;
+    if (sk_sp<SkImage> raster_image = image->makeRasterImage()) {
+      // The image can be converted to a raster image.
+      encode_task(raster_image);
+      return;
+    }
   }
 
   // Cross-context images do not support makeRasterImage. Convert these images
   // by drawing them into a surface.  This must be done on the raster thread
   // to prevent concurrent usage of the image on both the IO and raster threads.
-  raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
+  raster_task_runner->PostTask([dl_image, encode_task = std::move(encode_task),
                                 resource_context, snapshot_delegate,
                                 io_task_runner, is_gpu_disabled_sync_switch]() {
+    auto image = dl_image->skia_image();
     if (!snapshot_delegate) {
       io_task_runner->PostTask(
           [encode_task = std::move(encode_task)]() mutable {
@@ -244,17 +233,9 @@ void EncodeImageAndInvokeDataCallback(
   };
 
   FML_DCHECK(image);
-  switch (image->owning_context()) {
-    case DlImage::OwningContext::kRaster:
-      ConvertGpuImageToRaster(std::move(image), encode_task,
-                              raster_task_runner);
-      break;
-    case DlImage::OwningContext::kIO:
-      ConvertImageToRaster(std::move(image), encode_task, raster_task_runner,
-                           io_task_runner, resource_context, snapshot_delegate,
-                           is_gpu_disabled_sync_switch);
-      break;
-  }
+  ConvertImageToRaster(std::move(image), encode_task, raster_task_runner,
+                       io_task_runner, resource_context, snapshot_delegate,
+                       is_gpu_disabled_sync_switch);
 }
 
 }  // namespace

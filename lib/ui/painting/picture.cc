@@ -67,22 +67,23 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
 
   auto image = CanvasImage::Create();
-  auto dl_image = DlDeferredImageGPU::Make(
-      SkISize::Make(width, height), raster_task_runner, std::move(unref_queue));
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(width, height);
+  auto dl_image = DlDeferredImageGPU::Make(image_info, raster_task_runner,
+                                           std::move(unref_queue));
   image->set_image(dl_image);
 
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner, [snapshot_delegate, dl_image = std::move(dl_image),
                            display_list = std::move(display_list)]() {
-        sk_sp<SkImage> sk_image;
-        std::string error;
-        std::tie(sk_image, error) = snapshot_delegate->MakeGpuImage(
-            display_list, dl_image->dimensions());
-        if (sk_image) {
-          dl_image->set_image(std::move(sk_image),
-                              snapshot_delegate->GetTextureRegistry());
+        auto result = snapshot_delegate->MakeGpuImage(display_list,
+                                                      dl_image->image_info());
+        if (result->texture.isValid()) {
+          dl_image->set_texture(result->texture, std::move(result->context),
+                                snapshot_delegate->GetTextureRegistry());
+        } else if (result->image) {
+          dl_image->set_image(std::move(result->image));
         } else {
-          dl_image->set_error(std::move(error));
+          dl_image->set_error(std::move(result->error));
         }
       });
 

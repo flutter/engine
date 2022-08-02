@@ -19,7 +19,7 @@ namespace flutter {
 class DlDeferredImageGPU final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPU> Make(
-      SkISize size,
+      const SkImageInfo& image_info,
       fml::RefPtr<fml::TaskRunner> raster_task_runner,
       fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
@@ -28,6 +28,7 @@ class DlDeferredImageGPU final : public DlImage {
 
   // |DlImage|
   // This method is only safe to call from the raster thread.
+  // The image created here must not be added to the unref queue.
   sk_sp<SkImage> skia_image() const override;
 
   // |DlImage|
@@ -43,8 +44,11 @@ class DlDeferredImageGPU final : public DlImage {
   virtual size_t GetApproximateByteSize() const override;
 
   // This method must only be called from the raster thread.
-  void set_image(sk_sp<SkImage> image,
-                 std::shared_ptr<TextureRegistry> texture_registry);
+  void set_texture(const GrBackendTexture& texture,
+                   sk_sp<GrDirectContext> context,
+                   std::shared_ptr<TextureRegistry> texture_registry);
+
+  void set_image(sk_sp<SkImage> image);
 
   // This method is safe to call from any thread.
   void set_error(const std::string& error);
@@ -53,36 +57,50 @@ class DlDeferredImageGPU final : public DlImage {
   // This method is safe to call from any thread.
   std::optional<std::string> get_error() const override;
 
+  const SkImageInfo& image_info() { return image_info_; }
+
   // |DlImage|
   OwningContext owning_context() const override {
     return OwningContext::kRaster;
   }
 
  private:
-  struct ImageWrapper final : public ContextDestroyedListener {
-    ImageWrapper(sk_sp<SkImage> p_image,
-                 fml::RefPtr<fml::TaskRunner> p_raster_task_runner,
-                 fml::RefPtr<SkiaUnrefQueue> p_unref_queue);
+  class ImageWrapper final : public ContextDestroyedListener {
+   public:
+    ImageWrapper(const GrBackendTexture& texture,
+                 sk_sp<GrDirectContext> context,
+                 fml::RefPtr<fml::TaskRunner> raster_task_runner,
+                 fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
-    sk_sp<SkImage> image;
-    fml::RefPtr<fml::TaskRunner> raster_task_runner;
-    fml::RefPtr<SkiaUnrefQueue> unref_queue;
+    sk_sp<SkImage> CreateSkiaImage(const SkImageInfo& image_info);
+
+    const GrBackendTexture& texture() { return texture_; }
+
+    bool isTextureBacked();
+
+   private:
+    GrBackendTexture texture_;
+    sk_sp<GrDirectContext> context_;
+    fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+    fml::RefPtr<SkiaUnrefQueue> unref_queue_;
 
     // |ContextDestroyedListener|
     void OnGrContextDestroyed() override;
   };
 
-  SkISize size_;
+  const SkImageInfo image_info_;
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
   // Must be accessed using atomics.
   // TODO(dnfield): When c++20 is available use std::atomic<std::shared_ptr>
   std::shared_ptr<ImageWrapper> image_wrapper_;
   std::shared_ptr<TextureRegistry> texture_registry_;
+  // May be used if this image is not texture backed.
+  sk_sp<SkImage> image_;
   mutable std::mutex error_mutex_;
   std::optional<std::string> error_;
 
-  DlDeferredImageGPU(SkISize size,
+  DlDeferredImageGPU(const SkImageInfo& image_info,
                      fml::RefPtr<fml::TaskRunner> raster_task_runner,
                      fml::RefPtr<SkiaUnrefQueue> unref_queue);
 

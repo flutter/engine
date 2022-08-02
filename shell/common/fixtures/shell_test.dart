@@ -341,8 +341,11 @@ Future<void> toImageSync() async {
 
   final ByteData data = (await image.toByteData())!;
   expect(data.lengthInBytes, 20 * 25 * 4);
-  expect(data.buffer.asUint32List().every((int byte) => byte == 0xFFAAAAAA), true);
+  for (final int byte in data.buffer.asUint32List()) {
+    expect(byte, 0xFFAAAAAA);
+  }
 
+  // Verify that the image can be drawn successfully.
   final PictureRecorder recorder2 = PictureRecorder();
   final Canvas canvas2 = Canvas(recorder2);
   canvas2.drawImage(image, Offset.zero, Paint());

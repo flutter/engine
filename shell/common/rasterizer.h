@@ -462,9 +462,9 @@ class Rasterizer final : public SnapshotDelegate,
 
  private:
   // |SnapshotDelegate|
-  std::pair<sk_sp<SkImage>, std::string> MakeGpuImage(
+  std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeGpuImage(
       sk_sp<DisplayList> display_list,
-      SkISize picture_size) override;
+      const SkImageInfo& image_info) override;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(

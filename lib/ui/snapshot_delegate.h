@@ -18,6 +18,29 @@ namespace flutter {
 
 class SnapshotDelegate {
  public:
+  struct GpuImageResult {
+    GpuImageResult(const GrBackendTexture& p_texture,
+                   sk_sp<GrDirectContext> p_context,
+                   sk_sp<SkImage> p_image = nullptr,
+                   const std::string& p_error = "")
+        : texture(p_texture),
+          context(std::move(p_context)),
+          image(std::move(p_image)),
+          error(p_error) {}
+
+    const GrBackendTexture texture;
+    // If texture.isValid() == true, this is a pointer to a GrDirectContext that
+    // can be used to create an image from the texture.
+    sk_sp<GrDirectContext> context;
+    // If MakeGpuImage could not create a GPU resident image, a raster copy
+    // is available in this member and texture.isValid() is false.
+    sk_sp<SkImage> image;
+
+    // A non-empty string containing an error message if neither a GPU backed
+    // texture nor a raster backed image could be created.
+    const std::string error;
+  };
+
   //----------------------------------------------------------------------------
   /// @brief      Gets the registry of external textures currently in use by the
   ///             rasterizer. These textures may be updated at a cadence
@@ -29,9 +52,9 @@ class SnapshotDelegate {
   ///
   virtual std::shared_ptr<TextureRegistry> GetTextureRegistry() = 0;
 
-  virtual std::pair<sk_sp<SkImage>, std::string> MakeGpuImage(
+  virtual std::unique_ptr<GpuImageResult> MakeGpuImage(
       sk_sp<DisplayList> display_list,
-      SkISize picture_size) = 0;
+      const SkImageInfo& image_info) = 0;
 
   virtual sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,

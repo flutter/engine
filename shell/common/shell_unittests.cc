@@ -3763,10 +3763,10 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
 }
 
 TEST_F(ShellTest, PictureToImageSync) {
-#if !SHELL_ENABLE_GL
-  // GL emulation does not exist on Fuchsia.
-  GTEST_SKIP();
-#endif  // !SHELL_ENABLE_GL
+  #if !SHELL_ENABLE_GL
+    // This test uses the GL backend.
+    GTEST_SKIP();
+  #endif  // !SHELL_ENABLE_GL
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell =
       CreateShell(settings,                                       //
