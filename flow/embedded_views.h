@@ -243,7 +243,7 @@ class EmbeddedViewParams {
   // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
-  // This method pushes the stored DlImageFilter object to the mutators stack.
+  // Pushes the stored DlImageFilter object to the mutators stack.
   void PushImageFilter(std::shared_ptr<const DlImageFilter> filter) {
     mutators_stack_.PushBackdropFilter(filter);
   }

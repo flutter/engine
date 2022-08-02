@@ -28,6 +28,14 @@ SkISize ShellTestExternalViewEmbedder::GetLastSubmittedFrameSize() {
   return last_submitted_frame_size_;
 }
 
+std::vector<int64_t> ShellTestExternalViewEmbedder::GetVisitedPlatformViews() {
+  return visited_platform_views_;
+}
+
+MutatorsStack ShellTestExternalViewEmbedder::GetStack(int64_t view_id) {
+  return mutators_stacks_[view_id];
+}
+
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::CancelFrame() {}
 
@@ -41,7 +49,10 @@ void ShellTestExternalViewEmbedder::BeginFrame(
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
-    std::unique_ptr<EmbeddedViewParams> params) {}
+    std::unique_ptr<EmbeddedViewParams> params) {
+  picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
+  picture_recorders_[view_id]->beginRecording(SkRect::MakeEmpty());
+}
 
 // |ExternalViewEmbedder|
 PostPrerollResult ShellTestExternalViewEmbedder::PostPrerollAction(
@@ -57,7 +68,23 @@ std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
 
 // |ExternalViewEmbedder|
 SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return nullptr;
+  return picture_recorders_[view_id]->getRecordingCanvas();
+}
+
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
+  visited_platform_views_.push_back(view_id);
+}
+
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter) {
+  for (int64_t id : visited_platform_views_) {
+    EmbeddedViewParams params = current_composition_params_[id];
+    params.PushImageFilter(filter);
+    current_composition_params_[id] = params;
+    mutators_stacks_[id] = params.mutatorsStack();
+  }
 }
 
 // |ExternalViewEmbedder|
