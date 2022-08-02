@@ -99,7 +99,6 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
   frag_info.corner_radius =
       std::min(corner_radius_, std::min(positive_rect.size.width / 2.0f,
                                         positive_rect.size.height / 2.0f));
-  ;
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {

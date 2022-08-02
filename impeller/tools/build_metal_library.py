@@ -93,11 +93,6 @@ def main():
     command += [
         '--std=macos-metal1.2',
     ]
-  elif args.platform == 'ios':
-    command += [
-        '--std=ios-metal1.2',
-        '-mios-version-min=10.0',
-    ]
 
   if args.optimize:
     command += [
