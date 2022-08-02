@@ -48,4 +48,9 @@ const std::vector<ShaderStageIOSlot>& VertexDescriptor::GetStageInputs() const {
   return inputs_;
 }
 
+const std::vector<DescriptorSetLayout>&
+VertexDescriptor::GetDescriptorSetLayouts() const {
+  return desc_set_layouts_;
+}
+
 }  // namespace impeller
