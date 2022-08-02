@@ -41,7 +41,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [vsyncClient setAllowPauseAfterVsync:NO];
   [vsyncClient await];
   [vsyncClient onDisplayLink:link];
-  XCTAssertTrue(!link.isPaused);
+  XCTAssertFalse(link.isPaused);
 
   [vsyncClient setAllowPauseAfterVsync:YES];
   [vsyncClient await];
