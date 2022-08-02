@@ -15,8 +15,11 @@ from fileinput import close
 import json
 import os
 import sys
+import subprocess
+from turtle import clone, up
 import requests
 from typing import Any, Dict, Optional
+from git import Repo
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
@@ -24,6 +27,7 @@ CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 HELP_STR = "To find complete information on this vulnerability, navigate to "
 # TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
+DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdeps.json')
 
 sarif_log = {
   "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -94,11 +98,16 @@ def ParseDepsFile(deps_flat_file):
     headers = { 'Content-Type': 'application/json',}
     osv_url = 'https://api.osv.dev/v1/querybatch'
 
+    os.system(f'mkdir clone-test')
+
     # Extract commit hash, save in dictionary
     for line in Lines:
+        os.chdir(CHECKOUT_ROOT)
         dep = line.strip().split('@')
         commit_hash = dep[1]
-        queries.append({"commit" : commit_hash})
+        # @jseales TODO -- this is the pinned hash, but we need to calculate the common ancestor hash
+        common_commit = getCommonAncestorCommit(dep)
+        queries.append({"commit" : common_commit})
 
     json = {"queries": queries}
     print(json)
@@ -117,6 +126,54 @@ def ParseDepsFile(deps_flat_file):
             print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
             return filtered_results
     return {}
+
+def getCommonAncestorCommit(dep):
+    # check if dep is found in upstream map. if found, proceed.
+    # proceed with upstream cloning
+    # git merge-base
+    # return commit
+    # Opening JSON file
+
+    # dep[0] is the mirror repo
+    # data[dep_name] is the origin repo
+    dep_name = dep[0].split('/')[-1].split('.')[0]
+    with open(DEPS_UPSTREAM_MAP,'r', encoding='utf-8') as f:
+        data = json.load(f)
+        if dep_name in data:
+          print("attempting to clone from: " + dep[0])
+          os.chdir('./clone-test')
+          os.system(f'git clone {dep[0]}')
+          os.chdir(f'./{dep_name}')
+          os.system(f'git for-each-ref --format=\'%(refname:short) %(objectname:short)\' refs/heads')
+          print('attempting to add upstream remote from: ' + data[dep_name])
+          os.system(f'git remote add upstream {data[dep_name]}')
+          os.system(f'git fetch upstream')
+          default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True)
+          default_branch = default_branch.decode()
+          os.system(f'git checkout -b upstream --track upstream/{default_branch}')
+          output = subprocess.check_output("git for-each-ref --format=\'%(refname:short) %(objectname:short)\' refs/heads", shell=True)
+          output = output.decode()
+          print(output)
+          branches = output.splitlines()
+          commit1 = branches[0].split(' ')[1]
+          commit2 = branches[1].split(' ')[1]
+          ancestorCommit = subprocess.check_output(f'git merge-base {commit1} {commit2}', shell=True)
+          ancestorCommit = ancestorCommit.decode()
+          print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
+          return ancestorCommit
+          # cloned_repo = Repo.clone_from(dep[0], f'./clone-test/{dep_name}')
+          # assert cloned_repo.__class__ is Repo
+          # cloned_repo.create_remote("upstream", dep[0])
+          # cloned_repo.remote("upstream").fetch()
+          # print(cloned_repo.heads)
+          # upstream = cloned_repo.create_head("upstream")
+          # upstream.checkout()
+          # upstream.set_tracking_branch(data[dep_name])
+          # print(cloned_repo.heads)
+          # cloned_repo.merge_base(ORIGIN_COMMIT, MIRROR COMMIT)
+
+        else:
+          print("did not find dep: " + dep_name)
 
 def WriteSarif(responses, manifest_file):
     data = sarif_log
