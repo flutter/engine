@@ -114,9 +114,6 @@ class Mutator {
     if (type_ == kClipPath) {
       delete path_;
     }
-    // if(type_ == kBackdropFilter) {
-    //   delete filter_;
-    // }
   };
 
  private:

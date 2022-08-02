@@ -19,6 +19,7 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @implementation UIView (FirstResponder)
+
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
     return YES;
@@ -33,6 +34,8 @@
 @end
 
 namespace flutter {
+// Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
+BOOL canApplyBlurBackdrop = YES;
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
@@ -198,7 +201,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
-
+  
   result(nil);
 }
 
@@ -404,7 +407,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
 
   // TODO EMILY: this line is for visual simulator tests, delete before landing PR
-  //            int numFilters = 0;
+//              int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -415,16 +418,16 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
         //             TODO EMILY: these lines are for visual simulator tests, delete before landing
         //             PR
-        //                        if(numFilters < 1) {
-        //                          flutter::DlBlurImageFilter filter =
-        //                              flutter::DlBlurImageFilter(5, 5,
-        //                              flutter::DlTileMode::kDecal);
-        //
-        //                          NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
-        //                          [blurRadii addObject:blurRadius];
-        //
-        //                          numFilters++;
-        //                        }
+//                                if(numFilters < 1) {
+//                                  flutter::DlBlurImageFilter filter =
+//                                      flutter::DlBlurImageFilter(5, 5,
+//                                      flutter::DlTileMode::kDecal);
+//
+//                                  NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
+//                                  [blurRadii addObject:blurRadius];
+//
+//                                  numFilters++;
+//                                }
         break;
       }
       case kClipRect:
@@ -441,7 +444,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       case kBackdropFilter: {
         // We only support DlBlurImageFilter for BackdropFilter.
-        if ((*iter)->GetFilter().asBlur()) {
+        if ((*iter)->GetFilter().asBlur() && canApplyBlurBackdrop) {
           // Sigma X is arbitrarily chosen as the radius value because Quartz only supports 1D
           // rendering. DlBlurImageFilter's Tile Mode is not supported in Quartz's gaussianBlur
           // CAFilter, so it is not used to blur the PlatformView.
@@ -452,8 +455,11 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     }
     ++iter;
   }
-
-  [clipView applyBackdropFilters:blurRadii];
+  
+  if(canApplyBlurBackdrop) {
+    canApplyBlurBackdrop = [clipView applyBlurBackdropFilters:blurRadii];
+  }
+    
 
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
-#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -49,11 +48,9 @@
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
-// The gaussianFilters currently applied to this ChildClippingView.
-@property(nonatomic, retain) NSMutableArray* activeGaussianFilters;
-
-// Adds a blur filter to its layers.
-- (void)applyBackdropFilters:(NSArray*)blurRadii;
+// Adds a blur filter to its layers. Returns false if Apple's API has changed and
+// the blur backdrop filters cannot be applied, otherwise returns true.
+- (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
 
 @end
 
