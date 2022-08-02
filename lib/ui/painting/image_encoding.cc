@@ -106,7 +106,8 @@ void ConvertImageToRaster(
   // to prevent concurrent usage of the image on both the IO and raster threads.
   raster_task_runner->PostTask([dl_image, encode_task = std::move(encode_task),
                                 resource_context, snapshot_delegate,
-                                io_task_runner, is_gpu_disabled_sync_switch]() {
+                                io_task_runner, is_gpu_disabled_sync_switch,
+                                raster_task_runner]() {
     auto image = dl_image->skia_image();
     if (!image || !snapshot_delegate) {
       io_task_runner->PostTask(
@@ -121,8 +122,9 @@ void ConvertImageToRaster(
 
     io_task_runner->PostTask([image, encode_task = std::move(encode_task),
                               raster_image = std::move(raster_image),
-                              resource_context,
-                              is_gpu_disabled_sync_switch]() mutable {
+                              resource_context, is_gpu_disabled_sync_switch,
+                              owning_context = dl_image->owning_context(),
+                              raster_task_runner]() mutable {
       if (!raster_image) {
         // The rasterizer was unable to render the cross-context image
         // (presumably because it does not have a GrContext).  In that case,
@@ -131,6 +133,9 @@ void ConvertImageToRaster(
             image, resource_context, is_gpu_disabled_sync_switch);
       }
       encode_task(raster_image);
+      if (owning_context == DlImage::OwningContext::kRaster) {
+        raster_task_runner->PostTask([image = std::move(image)]() {});
+      }
     });
   });
 }

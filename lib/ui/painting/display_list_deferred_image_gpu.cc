@@ -31,9 +31,14 @@ DlDeferredImageGPU::~DlDeferredImageGPU() {
   auto image_wrapper = std::atomic_load(&image_wrapper_);
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner_, [image_wrapper = std::move(image_wrapper),
-                            unref_queue = std::move(unref_queue_)]() {
+                            unref_queue = std::move(unref_queue_),
+                            texture_registry = std::move(texture_registry_)]() {
         if (!image_wrapper) {
           return;
+        }
+        if (texture_registry) {
+          texture_registry->UnregisterContextDestroyedListener(
+              reinterpret_cast<uintptr_t>(image_wrapper.get()));
         }
         auto texture = image_wrapper->texture();
         if (texture.isValid()) {
@@ -86,7 +91,8 @@ void DlDeferredImageGPU::set_texture(
   auto image_wrapper = std::make_shared<ImageWrapper>(
       texture, std::move(context), raster_task_runner_, unref_queue_);
   texture_registry_ = std::move(texture_registry);
-  texture_registry_->RegisterContextDestroyedListener(image_wrapper);
+  texture_registry_->RegisterContextDestroyedListener(
+      reinterpret_cast<uintptr_t>(image_wrapper.get()), image_wrapper);
   std::atomic_store(&image_wrapper_, image_wrapper);
 }
 
@@ -131,7 +137,8 @@ sk_sp<SkImage> DlDeferredImageGPU::ImageWrapper::CreateSkiaImage(
 
   return SkImage::MakeFromTexture(
       context_.get(), texture_, kTopLeft_GrSurfaceOrigin,
-      kRGBA_8888_SkColorType, kPremul_SkAlphaType, image_info.refColorSpace());
+      image_info.colorType(), image_info.alphaType(),
+      image_info.refColorSpace());
 }
 
 bool DlDeferredImageGPU::ImageWrapper::isTextureBacked() {

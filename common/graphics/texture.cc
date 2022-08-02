@@ -24,8 +24,9 @@ void TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
 }
 
 void TextureRegistry::RegisterContextDestroyedListener(
+    uintptr_t id,
     std::weak_ptr<ContextDestroyedListener> image) {
-  images_.push_back(std::move(image));
+  images_[id] = std::move(image);
 }
 
 void TextureRegistry::UnregisterTexture(int64_t id) {
@@ -35,6 +36,10 @@ void TextureRegistry::UnregisterTexture(int64_t id) {
   }
   found->second->OnTextureUnregistered();
   mapping_.erase(found);
+}
+
+void TextureRegistry::UnregisterContextDestroyedListener(uintptr_t id) {
+  images_.erase(id);
 }
 
 void TextureRegistry::OnGrContextCreated() {
@@ -48,7 +53,7 @@ void TextureRegistry::OnGrContextDestroyed() {
     it.second->OnGrContextDestroyed();
   }
 
-  for (auto& weak_image : images_) {
+  for (const auto& [id, weak_image] : images_) {
     if (auto image = weak_image.lock()) {
       image->OnGrContextDestroyed();
     }

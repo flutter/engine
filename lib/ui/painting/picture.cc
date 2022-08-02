@@ -67,7 +67,8 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
 
   auto image = CanvasImage::Create();
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(width, height);
+  const SkImageInfo image_info = SkImageInfo::Make(
+      width, height, kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
   auto dl_image = DlDeferredImageGPU::Make(image_info, raster_task_runner,
                                            std::move(unref_queue));
   image->set_image(dl_image);

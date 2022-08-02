@@ -281,6 +281,13 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> Rasterizer::MakeGpuImage(
   TRACE_EVENT0("flutter", "Rasterizer::MakeGpuImage");
   FML_DCHECK(display_list);
 
+// TODO(dnfield): the Linux embedding is in a rough state right now and
+// I can't seem to get the GPU path working on it.
+// https://github.com/flutter/flutter/issues/108835
+#if FML_OS_LINUX
+  return MakeBitmapImage(std::move(display_list), image_info);
+#endif
+
   std::unique_ptr<SnapshotDelegate::GpuImageResult> result;
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()

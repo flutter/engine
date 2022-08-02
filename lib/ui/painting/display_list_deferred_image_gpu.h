@@ -28,7 +28,9 @@ class DlDeferredImageGPU final : public DlImage {
 
   // |DlImage|
   // This method is only safe to call from the raster thread.
-  // The image created here must not be added to the unref queue.
+  // Callers must not hold long term references to this image and
+  // only use it for the immediate painting operation. It must be
+  // collected on the raster task runner.
   sk_sp<SkImage> skia_image() const override;
 
   // |DlImage|

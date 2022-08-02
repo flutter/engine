@@ -163,7 +163,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
   std::vector<RasterCacheItem*>& cacheable_items() { return cacheable_items_; }
 
-  std::shared_ptr<TextureRegistry> texture_regitry() {
+  std::shared_ptr<TextureRegistry> texture_registry() {
     return texture_registry_;
   }
   RasterCache* raster_cache() { return raster_cache_.get(); }
