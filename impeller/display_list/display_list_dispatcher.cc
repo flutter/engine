@@ -876,7 +876,7 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       bool render_with_attributes) {
   canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
                     ToRSXForms(xform, count), ToRects(tex, count),
-                    ToColors(colors, count), count, ToBlendMode(mode),
+                    ToColors(colors, count), ToBlendMode(mode),
                     ToSamplerDescriptor(sampling), ToRect(cull_rect), paint_);
 }
 

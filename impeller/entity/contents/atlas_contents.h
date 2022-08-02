@@ -25,7 +25,7 @@ class AtlasContents final : public Contents {
 
   std::shared_ptr<Texture> GetTexture() const;
 
-  void SetXForm(std::vector<Matrix> xform);
+  void SetTransforms(std::vector<Matrix> transforms);
 
   void SetBlendMode(Entity::BlendMode blend_mode);
 
@@ -49,8 +49,7 @@ class AtlasContents final : public Contents {
   std::shared_ptr<Texture> texture_;
   std::vector<Rect> texture_coords_;
   std::vector<Color> colors_;
-  std::vector<Matrix> xform_;
-  Path path_;
+  std::vector<Matrix> transforms_;
   Entity::BlendMode blend_mode_;
   SamplerDescriptor sampler_descriptor_ = {};
 

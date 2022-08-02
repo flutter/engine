@@ -101,7 +101,6 @@ class Canvas {
                  std::vector<Matrix> xform,
                  std::vector<Rect> tex,
                  std::vector<Color> colors,
-                 int count,
                  Entity::BlendMode blend_mode,
                  SamplerDescriptor sampler,
                  std::optional<Rect> cull_rect,
