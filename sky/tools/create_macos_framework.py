@@ -94,10 +94,10 @@ def main():
         (result.stdout, result.stderr)
     )
     return 1
-  process_framework(args, fat_framework, fat_framework_binary)
+  process_framework(dst, args, fat_framework, fat_framework_binary)
 
 
-def process_framework(args, fat_framework, fat_framework_binary):
+def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
