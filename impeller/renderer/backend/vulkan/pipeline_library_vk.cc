@@ -330,6 +330,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   desc_set_layout_binding_vert.setDescriptorCount(1);
   desc_set_layout_binding_vert.setStageFlags(vk::ShaderStageFlagBits::eVertex);
 
+
+    desc.GetVertexDescriptor()->SetDescriptorSetLayouts()
+
   vk::DescriptorSetLayoutBinding desc_set_layout_binding_frag;
   desc_set_layout_binding_frag.setBinding(128);
   desc_set_layout_binding_frag.setDescriptorType(
