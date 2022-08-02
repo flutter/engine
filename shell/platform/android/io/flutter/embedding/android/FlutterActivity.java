@@ -169,7 +169,7 @@ import java.util.List;
  * first {@code Activity} displayed upon loading the app.
  *
  * <p>Prior to Flutter 2.5, {@code FlutterActivity} supported the display of a Flutter-specific
- * "splash screen" that would be displayed after the launch screen passes; this has since been
+ * "splash screen" that would be displayed after the launch screen passes. This has since been
  * deprecated. If a launch screen is specified, it will automatically persist for as long as it
  * takes Flutter to initialize and render its first frame.
  *
