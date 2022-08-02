@@ -818,12 +818,13 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
             (const unsigned long)2);
   ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[0], 50);
   ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[1], 75);
-
+  ASSERT_TRUE(external_view_embedder->GetStack(75).is_empty());
+  ASSERT_FALSE(external_view_embedder->GetStack(50).is_empty());
+  
   auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   auto mutator = *external_view_embedder->GetStack(50).Begin();
   ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
   ASSERT_EQ(mutator->GetFilter(), filter);
-  ASSERT_TRUE(external_view_embedder->GetStack(75).is_empty());
 
   DestroyShell(std::move(shell));
 }
