@@ -103,6 +103,14 @@ void Canvas::saveLayer(double left,
   }
 }
 
+void Canvas::startRecordVirtualLayer(std::string type) {
+  builder()->startRecordVirtualLayer(type);
+}
+
+void Canvas::saveVirtualLayer(std::string type) {
+  builder()->saveVirtualLayer(type);
+}
+
 void Canvas::restore() {
   if (display_list_recorder_) {
     builder()->restore();

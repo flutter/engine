@@ -57,7 +57,7 @@ class DisplayListLayer : public Layer {
 
   flutter::SkiaGPUObject<DisplayList> display_list_;
 
-  static bool Compare(DiffContext::Statistics& statistics,
+  static bool Compare(DiffContext* context,
                       const DisplayListLayer* l1,
                       const DisplayListLayer* l2);
 
