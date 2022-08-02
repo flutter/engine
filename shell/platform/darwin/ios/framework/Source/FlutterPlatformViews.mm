@@ -445,9 +445,10 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case kBackdropFilter: {
         // We only support DlBlurImageFilter for BackdropFilter.
         if ((*iter)->GetFilter().asBlur() && canApplyBlurBackdrop) {
-          // Sigma X is arbitrarily chosen as the radius value because Quartz only supports 1D
-          // rendering. DlBlurImageFilter's Tile Mode is not supported in Quartz's gaussianBlur
-          // CAFilter, so it is not used to blur the PlatformView.
+          // sigma_x is arbitrarily chosen as the radius value because Quartz sets
+          // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
+          // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
+          // to blur the PlatformView.
           [blurRadii addObject:@((*iter)->GetFilter().asBlur()->sigma_x())];
         }
         break;

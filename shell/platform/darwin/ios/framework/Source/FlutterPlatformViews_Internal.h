@@ -48,8 +48,8 @@
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
-// Adds a blur filter to its layers. Returns false if Apple's API has changed and
-// the blur backdrop filters cannot be applied, otherwise returns true.
+// Adds a blur filter to its layers. Returns NO if Apple's API has changed and
+// blurred backdrop filters cannot be applied, otherwise returns YES.
 - (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
 
 @end

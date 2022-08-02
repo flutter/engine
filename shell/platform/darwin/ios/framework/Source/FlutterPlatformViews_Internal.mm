@@ -80,93 +80,60 @@ void ResetAnchor(CALayer* layer) {
 }
 
 // Creates and initializes a UIVisualEffectView with a UIBlurEffect. Extracts and returns its
-// gaussianFilter. Logs errors and returns if Apple's API has changed and the filter can't be
-// extracted.
-+ (NSObject*)extractGaussianFilter { // TODO would pass by reference make more sense?
-  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+// gaussianFilter. Returns nil if Apple's API has changed and the filter cannot be extracted.
++ (NSObject*)extractGaussianFilter {
+  UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
+                                           initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
 
-  NSObject* gaussianFilter; //TODO EMILY: Weiyu's for loop works, but only if retain is included, why?
-  for(CIFilter* filter in [visualEffectView.subviews firstObject].layer.filters) {
-    if([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-      gaussianFilter = filter;
-      [gaussianFilter retain];
+  NSObject* gaussianFilter = nil;
+  
+  for(UIView* view in visualEffectView.subviews) {
+    if([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+      for(CIFilter* filter in view.layer.filters) {
+        if([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
+          if ([[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
+            gaussianFilter = filter;
+          }
+          // No need to look at other CIFilters. If the API structure has not changed, the gaussianBlur
+          // filter was succesfully saved. Otherwise, still exit the loop because the filter cannot
+          // be extracted.
+          break;
+        }
+      }
+      // No need to look at other UIViews. If the API structure has not changed, the gaussianBlur
+      // filter was succesfully saved. Otherwise, still exit the loop because the filter cannot
+      // be extracted.
       break;
     }
   }
 
-  if (!gaussianFilter) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                       "access the Gaussian blur filter. ";
-    return nil;
-  }
-
-  [visualEffectView release];
-
-  if (![[gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation "
-                       "access the Gaussian blur filter's properties.";
-    [gaussianFilter release];
-    return nil;
-  }
-
-//  [gaussianFilter release];
   return gaussianFilter;
 }
 
-// TODO EMILY: pass by reference works, but only if retain is still included
-//- (void)extractGaussianFilter:(NSObject**)gaussianFilter {
-//  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-//      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-//
-////  NSObject* gaussianFilter;
-////  for(CIFilter* filter in [visualEffectView.subviews firstObject].layer.filters) {
-////    if([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-////      gaussianFilter = filter;
-//////      [gaussianFilter retain];
-////      break;
-////    }
-////  }
-//
-//  NSObject* extractedGaussianFilter =
-//      [[visualEffectView.subviews firstObject].layer.filters firstObject]; // TODO why do we retain? -> make a note
-//  if (!extractedGaussianFilter || ![[extractedGaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-//    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-//                       "access the Gaussian blur filter. ";
-//  }
-//
-//  [visualEffectView release];
-//
-//  if (![[extractedGaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-//    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation "
-//                       "access the Gaussian blur filter's properties.";
-//  }
-//
-//  *gaussianFilter = extractedGaussianFilter;
-//}
 
 - (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii {
   if (!_activeGaussianFilters) {
     _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
 
-//    [self extractGaussianFilter:&_gaussianFilter];
     _gaussianFilter = [ChildClippingView extractGaussianFilter];
     if (!_gaussianFilter) {
-      return false;
+      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                                       "access the gaussianBlur CAFilter.";
+      return NO;
     }
   }
 
-  bool updatedFilters = false;
+  BOOL updatedFilters = NO;
 
   // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
   while ([blurRadii count] > [_activeGaussianFilters count]) {
     // copy returns a deep copy of _gaussianFilter
     [_activeGaussianFilters addObject:[_gaussianFilter copy]];
-    updatedFilters = true;
+    updatedFilters = YES;
   }
   while ([blurRadii count] < [_activeGaussianFilters count]) {
     [_activeGaussianFilters removeLastObject];
-    updatedFilters = true;
+    updatedFilters = YES;
   }
 
   for (NSUInteger i = 0; i < [blurRadii count]; i++) {
@@ -174,21 +141,21 @@ void ResetAnchor(CALayer* layer) {
       continue;
     }
     [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
-    updatedFilters = true;
+    updatedFilters = YES;
   }
 
   if (updatedFilters) {
     self.layer.filters = _activeGaussianFilters;
   }
-  return true;
+  return YES;
 }
 
 - (void)dealloc {
   [_activeGaussianFilters release];
   _activeGaussianFilters = nil;
 
-  [_gaussianFilter release];
-  _gaussianFilter = nil;
+//  [_gaussianFilter release];
+//  _gaussianFilter = nil;
   [super dealloc];
 }
 
