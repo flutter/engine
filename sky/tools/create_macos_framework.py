@@ -104,7 +104,7 @@ def process_framework(args, fat_framework, fat_framework_binary):
 
   if args.strip:
     # copy unstripped
-    unstripped_out = os.path.join(args.dst, 'FlutterMacOS.unstripped')
+    unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
     shutil.copyfile(fat_framework_binary, unstripped_out)
 
     subprocess.check_call(["strip", "-x", "-S", fat_framework_binary])
