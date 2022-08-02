@@ -126,7 +126,9 @@ void DlDeferredImageGPU::ImageWrapper::OnGrContextDestroyed() {
 
   if (texture_.isValid()) {
     unref_queue_->DeleteTexture(std::move(texture_));
+    texture_ = GrBackendTexture();
   }
+  context_.reset();
 }
 
 sk_sp<SkImage> DlDeferredImageGPU::ImageWrapper::CreateSkiaImage(
