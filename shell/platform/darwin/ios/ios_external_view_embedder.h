@@ -60,14 +60,14 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   void EndFrame(
       bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
-     
+
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
-  
+
   // |ExternalViewEmbedder|
   void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter) override;
-  
+
   // |ExternalViewEmbedder|
   void PushVisitedPlatformView(int64_t view_id) override;
 
