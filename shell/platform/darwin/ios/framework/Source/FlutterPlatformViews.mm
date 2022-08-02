@@ -201,7 +201,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
-  
+
   result(nil);
 }
 
@@ -407,7 +407,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
 
   // TODO EMILY: this line is for visual simulator tests, delete before landing PR
-//              int numFilters = 0;
+  //              int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -418,16 +418,16 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
         //             TODO EMILY: these lines are for visual simulator tests, delete before landing
         //             PR
-//                                if(numFilters < 1) {
-//                                  flutter::DlBlurImageFilter filter =
-//                                      flutter::DlBlurImageFilter(5, 5,
-//                                      flutter::DlTileMode::kDecal);
-//
-//                                  NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
-//                                  [blurRadii addObject:blurRadius];
-//
-//                                  numFilters++;
-//                                }
+        //                                if(numFilters < 1) {
+        //                                  flutter::DlBlurImageFilter filter =
+        //                                      flutter::DlBlurImageFilter(5, 5,
+        //                                      flutter::DlTileMode::kDecal);
+        //
+        //                                  NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
+        //                                  [blurRadii addObject:blurRadius];
+        //
+        //                                  numFilters++;
+        //                                }
         break;
       }
       case kClipRect:
@@ -456,11 +456,10 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     }
     ++iter;
   }
-  
-  if(canApplyBlurBackdrop) {
+
+  if (canApplyBlurBackdrop) {
     canApplyBlurBackdrop = [clipView applyBlurBackdropFilters:blurRadii];
   }
-    
 
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.

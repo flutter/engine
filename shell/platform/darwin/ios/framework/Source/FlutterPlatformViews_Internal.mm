@@ -57,7 +57,7 @@ void ResetAnchor(CALayer* layer) {
 
 }  // namespace flutter
 
-@interface ChildClippingView()
+@interface ChildClippingView ()
 // The gaussianFilters currently applied to this ChildClippingView.
 @property(nonatomic, retain) NSMutableArray* activeGaussianFilters;
 @end
@@ -83,20 +83,20 @@ void ResetAnchor(CALayer* layer) {
 // gaussianFilter. Returns nil if Apple's API has changed and the filter cannot be extracted.
 + (NSObject*)extractGaussianFilter {
   UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
-                                           initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
 
   NSObject* gaussianFilter = nil;
-  
-  for(UIView* view in visualEffectView.subviews) {
-    if([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      for(CIFilter* filter in view.layer.filters) {
-        if([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
+
+  for (UIView* view in visualEffectView.subviews) {
+    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+      for (CIFilter* filter in view.layer.filters) {
+        if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
           if ([[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
             gaussianFilter = filter;
           }
-          // No need to look at other CIFilters. If the API structure has not changed, the gaussianBlur
-          // filter was succesfully saved. Otherwise, still exit the loop because the filter cannot
-          // be extracted.
+          // No need to look at other CIFilters. If the API structure has not changed, the
+          // gaussianBlur filter was succesfully saved. Otherwise, still exit the loop because the
+          // filter cannot be extracted.
           break;
         }
       }
@@ -110,7 +110,6 @@ void ResetAnchor(CALayer* layer) {
   return gaussianFilter;
 }
 
-
 - (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii {
   if (!_activeGaussianFilters) {
     _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
@@ -118,7 +117,7 @@ void ResetAnchor(CALayer* layer) {
     _gaussianFilter = [ChildClippingView extractGaussianFilter];
     if (!_gaussianFilter) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                                       "access the gaussianBlur CAFilter.";
+                         "access the gaussianBlur CAFilter.";
       return NO;
     }
   }
@@ -154,8 +153,8 @@ void ResetAnchor(CALayer* layer) {
   [_activeGaussianFilters release];
   _activeGaussianFilters = nil;
 
-//  [_gaussianFilter release];
-//  _gaussianFilter = nil;
+  [_gaussianFilter release];
+  _gaussianFilter = nil;
   [super dealloc];
 }
 
