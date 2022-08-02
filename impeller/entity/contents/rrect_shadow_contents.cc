@@ -41,8 +41,9 @@ std::optional<Rect> RRectShadowContents::GetCoverage(
 
   Scalar radius = Radius{sigma_}.radius;
 
-  Rect bounds = Rect::MakeLTRB(-radius, -radius, rect_->size.width + radius,
-                               rect_->size.height + radius);
+  auto ltrb = rect_->GetLTRB();
+  Rect bounds = Rect::MakeLTRB(ltrb[0] - radius, ltrb[1] - radius,
+                               ltrb[2] + radius, ltrb[3] + radius);
   return bounds.TransformBounds(entity.GetTransformation());
 };
 
