@@ -175,7 +175,9 @@ class CompositorContext {
 
   RasterCache& raster_cache() { return raster_cache_; }
 
-  std::shared_ptr<TextureRegistry> texture_registry() { return texture_registry_; }
+  std::shared_ptr<TextureRegistry> texture_registry() {
+    return texture_registry_;
+  }
 
   const Stopwatch& raster_time() const { return raster_time_; }
 
