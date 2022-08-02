@@ -108,7 +108,7 @@ void ConvertImageToRaster(
                                 resource_context, snapshot_delegate,
                                 io_task_runner, is_gpu_disabled_sync_switch]() {
     auto image = dl_image->skia_image();
-    if (!snapshot_delegate) {
+    if (!image || !snapshot_delegate) {
       io_task_runner->PostTask(
           [encode_task = std::move(encode_task)]() mutable {
             encode_task(nullptr);
