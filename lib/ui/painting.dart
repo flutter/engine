@@ -4742,6 +4742,13 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
+  @FfiNative<Void Function(Pointer<Void>, Handle)>(
+      'Canvas::startRecordVirtualLayer')
+  external void startRecordVirtualLayer(String type);
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::saveVirtualLayer')
+  external void saveVirtualLayer(String type);
+
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>(
       'Canvas::saveLayerWithoutBounds')
   external void _saveLayerWithoutBounds(
