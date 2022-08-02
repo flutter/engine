@@ -44,7 +44,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
  public:
   LayerTestBase()
-      : preroll_context_{
+      : texture_registry_(std::make_shared<TextureRegistry>()),
+        preroll_context_{
             // clang-format off
             .raster_cache                  = nullptr,
             .gr_context                    = nullptr,

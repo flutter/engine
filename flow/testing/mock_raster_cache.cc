@@ -58,7 +58,8 @@ void MockRasterCache::AddMockPicture(int width, int height) {
 
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
-  PaintContextHolder holder = GetSamplePaintContextHolder(this, &raster_time, &ui_time);
+  PaintContextHolder holder =
+      GetSamplePaintContextHolder(this, &raster_time, &ui_time);
   holder.paint_context.dst_color_space = color_space_;
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
