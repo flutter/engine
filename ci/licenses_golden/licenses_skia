@@ -1,4 +1,4 @@
-Signature: 41083524f0171db170b1d098932f3014
+Signature: 7bd2e3ac6fef0ec49357b9a49c832df5
 
 UNUSED LICENSES:
 
@@ -839,7 +839,6 @@ FILE: ../../../third_party/skia/infra/bots/assets/armhf_sysroot/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel_build_task_driver/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk/VERSION
-FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_mac_arm64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bloaty/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cast_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ccache_linux/VERSION
