@@ -323,8 +323,8 @@ void Canvas::DrawVertices(Vertices vertices,
 }
 
 void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
-                       std::vector<Matrix> xform,
-                       std::vector<Rect> tex,
+                       std::vector<Matrix> transforms,
+                       std::vector<Rect> texture_coordinates,
                        std::vector<Color> colors,
                        Entity::BlendMode blend_mode,
                        SamplerDescriptor sampler,
@@ -341,8 +341,8 @@ void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
 
   std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
   contents->SetColors(std::move(colors));
-  contents->SetTransforms(std::move(xform));
-  contents->SetTextureCoordinates(std::move(tex));
+  contents->SetTransforms(std::move(transforms));
+  contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas->GetTexture());
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetBlendMode(blend_mode);

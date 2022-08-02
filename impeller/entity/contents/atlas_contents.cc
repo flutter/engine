@@ -47,7 +47,7 @@ void AtlasContents::SetBlendMode(Entity::BlendMode blend_mode) {
 }
 
 std::optional<Rect> AtlasContents::GetCoverage(const Entity& entity) const {
-  Rect bounding_box = Rect::MakeLTRB(0, 0, 0, 0);
+  Rect bounding_box = {};
   for (size_t i = 0; i < texture_coords_.size(); i++) {
     auto matrix = transforms_[i];
     auto sample_rect = texture_coords_[i];
