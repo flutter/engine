@@ -49,24 +49,9 @@ void AtlasContents::SetBlendMode(Entity::BlendMode blend_mode) {
   blend_mode_ = blend_mode;
 }
 
-void AtlasContents::ComputeCoverage() {
-  auto pathBuilder = PathBuilder{};
-  for (size_t i = 0; i < texture_coords_.size(); i++) {
-    auto rect = texture_coords_[i];
-    auto matrix = xform_[i];
-    auto tps = rect.GetTransformedPoints(matrix);
-    pathBuilder.MoveTo(tps[0]);
-    pathBuilder.LineTo(tps[1]);
-    pathBuilder.LineTo(tps[3]);
-    pathBuilder.LineTo(tps[2]);
-    pathBuilder.LineTo(tps[0]);
-    pathBuilder.Close();
-  }
-  path_ = pathBuilder.TakePath();
-}
-
 std::optional<Rect> AtlasContents::GetCoverage(const Entity& entity) const {
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
+  // TODO(jonahwilliams): compute coverage of atlas.
+  return std::nullopt;
 }
 
 void AtlasContents::SetSamplerDescriptor(SamplerDescriptor desc) {

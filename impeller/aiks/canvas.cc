@@ -347,7 +347,6 @@ void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
   contents->SetTexture(atlas->GetTexture());
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetBlendMode(blend_mode);
-  contents->ComputeCoverage();
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());

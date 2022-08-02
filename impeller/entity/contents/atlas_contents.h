@@ -35,8 +35,6 @@ class AtlasContents final : public Contents {
 
   void SetSamplerDescriptor(SamplerDescriptor desc);
 
-  void ComputeCoverage();
-
   const SamplerDescriptor& GetSamplerDescriptor() const;
 
   // |Contents|
