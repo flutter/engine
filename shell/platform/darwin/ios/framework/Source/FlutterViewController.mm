@@ -1279,7 +1279,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVsyncClient];
   [self setupKeyboardAnimationVsyncClient];
-  __block VSyncClient* currentVsyncClient = self.keyboardAnimationVsyncClient;
+  __block VSyncClient* currentVsyncClient = _keyboardAnimationVsyncClient;
 
   [UIView animateWithDuration:duration
       animations:^{
@@ -1287,7 +1287,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
-        if (self.keyboardAnimationVsyncClient == currentVsyncClient) {
+        if (_keyboardAnimationVsyncClient == currentVsyncClient) {
           // Indicates the vsync client captured by this block is the original one, which also
           // indicates the animation has not been interrupted from its beginning. Moreover,
           // indicates the animation is over and there is no more to execute.
@@ -1311,15 +1311,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
-  self.keyboardAnimationVsyncClient =
+  _keyboardAnimationVsyncClient =
       [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
                                      callback:callback];
-  [self.keyboardAnimationVsyncClient setAllowPauseAfterVsync:NO];
-  [self.keyboardAnimationVsyncClient await];
+  [_keyboardAnimationVsyncClient setAllowPauseAfterVsync:NO];
+  [_keyboardAnimationVsyncClient await];
 }
 
 - (void)invalidateKeyboardAnimationVsyncClient {
-  [self.keyboardAnimationVsyncClient invalidate];
+  [_keyboardAnimationVsyncClient invalidate];
 }
 
 - (void)removeKeyboardAnimationView {
