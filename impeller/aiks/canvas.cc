@@ -5,11 +5,13 @@
 #include "impeller/aiks/canvas.h"
 
 #include <algorithm>
+#include <optional>
 
 #include "flutter/fml/logging.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
@@ -151,8 +153,29 @@ void Canvas::DrawRect(Rect rect, Paint paint) {
 }
 
 void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
-  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
-           std::move(paint));
+  if (paint.mask_blur_descriptor.has_value() &&
+      paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kNormal &&
+      paint.style == Paint::Style::kFill) {
+    // For symmetrically mask blurred solid RRects, absorb the mask blur and use
+    // a faster SDF approximation.
+    auto contents = std::make_shared<RRectShadowContents>();
+    contents->SetColor(paint.color);
+    contents->SetSigma(paint.mask_blur_descriptor->sigma);
+    contents->SetRRect(rect, corner_radius);
+
+    paint.mask_blur_descriptor = std::nullopt;
+
+    Entity entity;
+    entity.SetTransformation(GetCurrentTransformation());
+    entity.SetStencilDepth(GetStencilDepth());
+    entity.SetBlendMode(paint.blend_mode);
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+
+    GetCurrentPass().AddEntity(std::move(entity));
+  } else {
+    DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
+             std::move(paint));
+  }
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
