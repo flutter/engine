@@ -30,6 +30,9 @@ static const int kMaxHistorySize = 10;
 // be easily computed.
 std::list<FlutterRect> damage_history_;
 
+EGLDisplay display_;
+EGLSurface surface_;
+
 static_assert(FLUTTER_ENGINE_VERSION == 1,
               "This Flutter Embedder was authored against the stable Flutter "
               "API at version 1. There has been a serious breakage in the "
@@ -100,11 +103,9 @@ void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
 
 // Auxiliary function used to transform a FlutterRect into the format that is
 // expected by the EGL functions (i.e. array of EGLint).
-static std::array<EGLint, 4> RectToInts(EGLDisplay display,
-                                        EGLSurface surface,
-                                        const FlutterRect rect) {
+static std::array<EGLint, 4> RectToInts(const FlutterRect rect) {
   EGLint height;
-  eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+  eglQuerySurface(display_, surface_, EGL_HEIGHT, &height);
 
   std::array<EGLint, 4> res{
       static_cast<int>(rect.left), height - static_cast<int>(rect.bottom),
@@ -147,13 +148,8 @@ bool RunFlutter(GLFWwindow* window,
   };
   config.open_gl.present_with_info =
       [](void* userdata, const FlutterPresentInfo* info) -> bool {
-    // Get the display and surface variables.
-    GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
-    EGLDisplay display = glfwGetEGLDisplay();
-    EGLSurface surface = glfwGetEGLSurface(window);
-
     // Get list of extensions.
-    const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
+    const char* extensions = eglQueryString(display_, EGL_EXTENSIONS);
 
     // Retrieve the set damage region function.
     PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ = nullptr;
@@ -176,9 +172,8 @@ bool RunFlutter(GLFWwindow* window,
 
     if (set_damage_region_) {
       // Set the buffer damage as the damage region.
-      auto buffer_rects =
-          RectToInts(display, surface, info->buffer_damage.damage[0]);
-      set_damage_region_(display, surface, buffer_rects.data(), 1);
+      auto buffer_rects = RectToInts(info->buffer_damage.damage[0]);
+      set_damage_region_(display_, surface_, buffer_rects.data(), 1);
     }
 
     // Add frame damage to damage history
@@ -189,13 +184,12 @@ bool RunFlutter(GLFWwindow* window,
 
     if (swap_buffers_with_damage_) {
       // Swap buffers with frame damage.
-      auto frame_rects =
-          RectToInts(display, surface, info->frame_damage.damage[0]);
-      return swap_buffers_with_damage_(display, surface, frame_rects.data(), 1);
+      auto frame_rects = RectToInts(info->frame_damage.damage[0]);
+      return swap_buffers_with_damage_(display_, surface_, frame_rects.data(), 1);
     } else {
       // If the required extensions for partial repaint were not provided, do
       // full repaint.
-      return eglSwapBuffers(display, surface);
+      return eglSwapBuffers(display_, surface_);
     }
   };
   config.open_gl.fbo_callback = [](void*) -> uint32_t {
@@ -204,16 +198,11 @@ bool RunFlutter(GLFWwindow* window,
   config.open_gl.populate_existing_damage_callback =
       [](void* userdata, intptr_t fbo_id,
          FlutterDamage* existing_damage) -> void {
-    // Get the display and surface variables.
-    GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
-    EGLDisplay display = glfwGetEGLDisplay();
-    EGLSurface surface = glfwGetEGLSurface(window);
-
     // Given the FBO age, create existing damage region by joining all frame
     // damages since FBO was last used
     EGLint age;
     if (glfwExtensionSupported("GL_EXT_buffer_age") == GLFW_TRUE) {
-      eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
+      eglQuerySurface(display_, surface_, EGL_BUFFER_AGE_EXT, &age);
     } else {
       age = 4;  // Virtually no driver should have a swapchain length > 4.
     }
@@ -267,7 +256,7 @@ bool RunFlutter(GLFWwindow* window,
 }
 
 void printUsage() {
-  std::cout << "usage: embedder_example <path to project> <path to icudtl.dat>"
+  std::cout << "usage: embedder_example_drm <path to project> <path to icudtl.dat>"
             << std::endl;
 }
 
@@ -306,6 +295,10 @@ int main(int argc, const char* argv[]) {
   int framebuffer_width, framebuffer_height;
   glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
   g_pixelRatio = framebuffer_width / kInitialWindowWidth;
+
+  // Get the display and surface variables.
+  display_ = glfwGetEGLDisplay();
+  surface_ = glfwGetEGLSurface(window);
 
   bool run_result = RunFlutter(window, project_path, icudtl_path);
   if (!run_result) {
