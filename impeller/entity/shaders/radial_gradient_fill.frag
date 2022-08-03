@@ -19,13 +19,11 @@ out vec4 frag_color;
 void main() {
   float len = length(interpolated_vertices - gradient_info.center);
   float t = len / gradient_info.radius;
-
   if ((t < 0.0 || t > 1.0) && gradient_info.tile_mode == kTileModeDecal) {
     frag_color = vec4(0);
     return;
   }
 
   t = GetInterpolantValue(t, gradient_info.tile_mode);
-
   frag_color = mix(gradient_info.center_color, gradient_info.edge_color, t);
 }

@@ -23,13 +23,11 @@ void main() {
     gradient_info.end_point - gradient_info.start_point
   );
   float t = dot / (len * len);
-
   if ((t < 0.0 || t > 1.0) && gradient_info.tile_mode == kTileModeDecal) {
     frag_color = vec4(0);
     return;
   }
 
   t = GetInterpolantValue(t, gradient_info.tile_mode);
-
   frag_color = mix(gradient_info.start_color, gradient_info.end_color, t);
 }

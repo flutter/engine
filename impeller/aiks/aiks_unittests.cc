@@ -13,7 +13,6 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/geometry/tile_mode.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -211,8 +210,7 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
       {0, 0, 0}, {0, 300, 0}, {300, 0, 0}, {300, 300, 0}};
   std::vector<TileMode> tile_modes = {TileMode::kClamp, TileMode::kRepeat,
                                       TileMode::kMirror, TileMode::kDecal};
-
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);
     auto contents = std::make_shared<LinearGradientContents>();
@@ -230,14 +228,11 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
 
 TEST_P(AiksTest, CanRenderRadialGradient) {
   Canvas canvas;
-
   Paint paint;
-
   std::vector<Vector3> offsets = {
       {0, 0, 0}, {0, 300, 0}, {300, 0, 0}, {300, 300, 0}};
   std::vector<TileMode> tile_modes = {TileMode::kClamp, TileMode::kRepeat,
                                       TileMode::kMirror, TileMode::kDecal};
-
   for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);

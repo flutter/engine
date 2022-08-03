@@ -627,6 +627,7 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/tile_mode_utils.glsl
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
 FILE: ../../../flutter/impeller/entity/shaders/vertices.vert
 FILE: ../../../flutter/impeller/geometry/color.cc
@@ -658,6 +659,8 @@ FILE: ../../../flutter/impeller/geometry/sigma.cc
 FILE: ../../../flutter/impeller/geometry/sigma.h
 FILE: ../../../flutter/impeller/geometry/size.cc
 FILE: ../../../flutter/impeller/geometry/size.h
+FILE: ../../../flutter/impeller/geometry/tile_mode.cc
+FILE: ../../../flutter/impeller/geometry/tile_mode.h
 FILE: ../../../flutter/impeller/geometry/type_traits.cc
 FILE: ../../../flutter/impeller/geometry/type_traits.h
 FILE: ../../../flutter/impeller/geometry/vector.cc

@@ -81,7 +81,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   gradient_info.end_point = end_point_;
   gradient_info.start_color = colors_[0].Premultiply();
   gradient_info.end_color = colors_[1].Premultiply();
-  gradient_info.tile_mode = static_cast<float>(tile_mode_);
+  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
 
   Command cmd;
   cmd.label = "LinearGradientFill";
