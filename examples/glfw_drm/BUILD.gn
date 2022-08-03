@@ -5,7 +5,7 @@
 import("//flutter/examples/examples.gni")
 
 if (build_embedder_examples) {
-  executable("glfw") {
+  executable("glfw_drm") {
     output_name = "embedder_example_drm"
 
     sources = [ "FlutterEmbedderGLFW.cc" ]
