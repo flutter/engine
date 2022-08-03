@@ -141,10 +141,10 @@ class PlatformDispatcher {
   ///
   /// If any of their configurations change, [onMetricsChanged] will be called.
   Iterable<FlutterView> get views => _views.values;
-  Map<Object, FlutterView> _views = <Object, FlutterView>{};
+  final Map<Object, FlutterView> _views = <Object, FlutterView>{};
 
   // A map of opaque platform view identifiers to view configurations.
-  Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
+  final Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -523,8 +523,9 @@ class PlatformDispatcher {
   void sendPlatformMessage(String name, ByteData? data, PlatformMessageResponseCallback? callback) {
     final String? error =
         _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
-    if (error != null)
+    if (error != null) {
       throw Exception(error);
+    }
   }
 
   String? _sendPlatformMessage(String name,PlatformMessageResponseCallback? callback, ByteData? data) =>
@@ -823,8 +824,9 @@ class PlatformDispatcher {
   void _updateLifecycleState(String state) {
     // We do not update the state if the state has already been used to initialize
     // the lifecycleState.
-    if (!_initialLifecycleStateAccessed)
+    if (!_initialLifecycleStateAccessed) {
       _initialLifecycleState = state;
+    }
   }
 
   /// The setting indicating whether time should always be shown in the 24-hour
@@ -1452,8 +1454,6 @@ class FrameTiming {
     ]);
   }
 
-  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
-
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
   /// List [timestamps] must have the same number of elements as
@@ -1461,8 +1461,9 @@ class FrameTiming {
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [PlatformDispatcher.onReportTimings].
-  FrameTiming._(this._data)
-      : assert(_data.length == _dataLength);
+  FrameTiming._(this._data) : assert(_data.length == _dataLength);
+
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
@@ -1703,10 +1704,12 @@ class DisplayFeature {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is DisplayFeature
         && bounds == other.bounds
         && type == other.type
@@ -2026,8 +2029,9 @@ class Locale {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     if (other is! Locale) {
       return false;
     }
@@ -2070,10 +2074,12 @@ class Locale {
 
   String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null && scriptCode!.isNotEmpty)
+    if (scriptCode != null && scriptCode!.isNotEmpty) {
       out.write('$separator$scriptCode');
-    if (_countryCode != null && _countryCode!.isNotEmpty)
+    }
+    if (_countryCode != null && _countryCode!.isNotEmpty) {
       out.write('$separator$countryCode');
+    }
     return out.toString();
   }
 }

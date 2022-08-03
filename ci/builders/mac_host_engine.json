@@ -4,6 +4,7 @@
             "archives": [
                 {
                     "base_path": "out/host_debug/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_debug/zip_archives/darwin-x64/FlutterMacOS.framework.zip",
                         "out/host_debug/zip_archives/darwin-x64/gen_snapshot.zip",
@@ -49,6 +50,7 @@
             "archives": [
                 {
                     "base_path": "out/host_profile/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_profile/zip_archives/darwin-x64-profile/FlutterMacOS.framework.zip",
                         "out/host_profile/zip_archives/darwin-x64-profile/gen_snapshot.zip",
@@ -102,6 +104,7 @@
             "archives": [
                 {
                     "base_path": "out/host_release/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_release/zip_archives/darwin-x64-release/FlutterMacOS.framework.zip",
                         "out/host_release/zip_archives/darwin-x64-release/gen_snapshot.zip",
@@ -142,6 +145,7 @@
             "archives": [
                 {
                     "base_path": "out/mac_debug_arm64/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/mac_debug_arm64/zip_archives/dart-sdk-darwin-arm64.zip",
                         "out/mac_debug_arm64/zip_archives/darwin-x64/gen_snapshot.zip"
@@ -172,7 +176,8 @@
                 "config": "mac_debug_arm64",
                 "targets": [
                     "flutter/build/archives:dart_sdk_archive",
-                    "flutter/build/archives:archive_gen_snapshot"
+                    "flutter/build/archives:archive_gen_snapshot",
+                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             },
             "tests": []
@@ -181,6 +186,7 @@
             "archives": [
                 {
                     "base_path": "out/mac_profile_arm64/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/mac_profile_arm64/zip_archives/darwin-x64-profile/gen_snapshot.zip"
                     ],
@@ -208,7 +214,8 @@
             "ninja": {
                 "config": "mac_profile_arm64",
                 "targets": [
-                    "flutter/build/archives:archive_gen_snapshot"
+                    "flutter/build/archives:archive_gen_snapshot",
+                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             },
             "tests": []
@@ -217,6 +224,7 @@
             "archives": [
                 {
                     "base_path": "out/mac_release_arm64/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/mac_release_arm64/zip_archives/darwin-x64-release/gen_snapshot.zip"
                     ],
@@ -244,11 +252,36 @@
             "ninja": {
                 "config": "mac_release_arm64",
                 "targets": [
-                    "flutter/build/archives:archive_gen_snapshot"
+                    "flutter/build/archives:archive_gen_snapshot",
+                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             },
             "tests": []
         }
     ],
-    "tests": []
+    "tests": [],
+    "generators": {
+        "tasks": [
+            {
+                "name": "Release-FlutterMacOS.framework",
+                "parameters": [
+                    "--dst",
+                    "out/release",
+                    "--arm64-out-dir",
+                    "out/mac_release_arm64",
+                    "--x64-out-dir",
+                    "out/host_release",
+                    "--dsym",
+                    "--strip"
+                ],
+                "script": "flutter/sky/tools/create_macos_framework.py"
+            }
+        ]
+    },
+    "archives": [
+        {
+            "source": "out/release/FlutterMacOS.dSYM.zip",
+            "destination": "darwin-x64-release/FlutterMacOS.dSYM.zip"
+        }
+    ]
 }

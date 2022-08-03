@@ -21,11 +21,6 @@ import 'shaders/vertex_shaders.dart';
 GlRenderer? glRenderer;
 
 class SurfaceVertices implements ui.Vertices {
-  final ui.VertexMode mode;
-  final Float32List positions;
-  final Int32List? colors;
-  final Uint16List? indices; // ignore: unused_field
-
   SurfaceVertices(
     this.mode,
     List<ui.Offset> positions, {
@@ -51,6 +46,11 @@ class SurfaceVertices implements ui.Vertices {
         assert(positions != null) { // ignore: unnecessary_null_comparison
     initWebGl();
   }
+
+  final ui.VertexMode mode;
+  final Float32List positions;
+  final Int32List? colors;
+  final Uint16List? indices; // ignore: unused_field
 
   static Int32List _int32ListFromColors(List<ui.Color> colors) {
     final Int32List list = Int32List(colors.length);
@@ -91,7 +91,7 @@ abstract class GlRenderer {
       int widthInPixels,
       int heightInPixels);
 
-  void drawHairline(DomCanvasRenderingContext2D? _ctx, Float32List positions);
+  void drawHairline(DomCanvasRenderingContext2D? ctx, Float32List positions);
 }
 
 /// Treeshakeable backend for rendering webgl on canvas.
@@ -446,11 +446,11 @@ class _WebGlRenderer implements GlRenderer {
 
   @override
   void drawHairline(
-      DomCanvasRenderingContext2D? _ctx, Float32List positions) {
+      DomCanvasRenderingContext2D? ctx, Float32List positions) {
     assert(positions != null); // ignore: unnecessary_null_comparison
     final int pointCount = positions.length ~/ 2;
-    _ctx!.lineWidth = 1.0;
-    _ctx.beginPath();
+    ctx!.lineWidth = 1.0;
+    ctx.beginPath();
     final int len = pointCount * 2;
     for (int i = 0; i < len;) {
       for (int triangleVertexIndex = 0;
@@ -460,15 +460,15 @@ class _WebGlRenderer implements GlRenderer {
         final double dy = positions[i + 1];
         switch (triangleVertexIndex) {
           case 0:
-            _ctx.moveTo(dx, dy);
+            ctx.moveTo(dx, dy);
             break;
           case 1:
-            _ctx.lineTo(dx, dy);
+            ctx.lineTo(dx, dy);
             break;
           case 2:
-            _ctx.lineTo(dx, dy);
-            _ctx.closePath();
-            _ctx.stroke();
+            ctx.lineTo(dx, dy);
+            ctx.closePath();
+            ctx.stroke();
         }
       }
     }

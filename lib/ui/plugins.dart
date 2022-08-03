@@ -23,8 +23,9 @@ class CallbackHandle {
 
   @override
   bool operator ==(Object other) {
-    if (runtimeType != other.runtimeType)
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
     return other is CallbackHandle
         && other._handle == _handle;
   }
@@ -44,9 +45,9 @@ class PluginUtilities {
   // extended directly.
   factory PluginUtilities._() => throw UnsupportedError('Namespace');
 
-  static Map<Function, CallbackHandle?> _forwardCache =
+  static final Map<Function, CallbackHandle?> _forwardCache =
       <Function, CallbackHandle?>{};
-  static Map<CallbackHandle, Function?> _backwardCache =
+  static final Map<CallbackHandle, Function?> _backwardCache =
       <CallbackHandle, Function?>{};
 
   /// Get a handle to a named top-level or static callback function which can

@@ -1,4 +1,4 @@
-Signature: cb16c70e09471d8b620ef96bff03da83
+Signature: dc555eec561bf2ffbcf7b205d7e3bf31
 
 UNUSED LICENSES:
 
@@ -839,6 +839,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/armhf_sysroot/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel_build_task_driver/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_mac_arm64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bloaty/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cast_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ccache_linux/VERSION
@@ -2928,8 +2929,6 @@ FILE: ../../../third_party/skia/src/core/SkFontMgr.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.h
 FILE: ../../../third_party/skia/src/core/SkLocalMatrixImageFilter.cpp
-FILE: ../../../third_party/skia/src/core/SkMiniRecorder.cpp
-FILE: ../../../third_party/skia/src/core/SkMiniRecorder.h
 FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.cpp
 FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.h
 FILE: ../../../third_party/skia/src/core/SkNextID.h
@@ -2937,7 +2936,6 @@ FILE: ../../../third_party/skia/src/core/SkOpts.cpp
 FILE: ../../../third_party/skia/src/core/SkOpts.h
 FILE: ../../../third_party/skia/src/core/SkPathBuilder.cpp
 FILE: ../../../third_party/skia/src/core/SkPathPriv.h
-FILE: ../../../third_party/skia/src/core/SkPictureCommon.h
 FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmap.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmapPriv.h
@@ -5652,6 +5650,7 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLNoOpErrorReporter.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.h
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLAddConstToVarModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateEmptyStatements.cpp
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinFunctions.cpp
 FILE: ../../../third_party/skia/src/text/StrikeForGPU.cpp
 FILE: ../../../third_party/skia/src/text/gpu/GlyphVector.cpp
 FILE: ../../../third_party/skia/src/text/gpu/GlyphVector.h
@@ -6283,7 +6282,7 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPoison.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVariable.cpp
-FILE: ../../../third_party/skia/src/sksl/transform/SkSLBuiltinVariableScanner.cpp
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinVariables.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLTransform.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC.

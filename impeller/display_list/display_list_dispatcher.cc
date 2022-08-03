@@ -21,6 +21,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/sigma.h"
 #include "impeller/geometry/vertices.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -189,6 +190,34 @@ static Color ToColor(const SkColor& color) {
   };
 }
 
+static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
+  auto result = std::vector<Color>();
+  if (colors == nullptr) {
+    return result;
+  }
+  for (int i = 0; i < count; i++) {
+    result.push_back(ToColor(colors[i]));
+  }
+  return result;
+}
+
+static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
+  auto result = std::vector<Matrix>();
+  for (int i = 0; i < count; i++) {
+    auto form = xform[i];
+    // clang-format off
+    auto matrix = Matrix{
+      form.fSCos, form.fSSin, 0, 0,
+     -form.fSSin, form.fSCos, 0, 0,
+      0,          0,          1, 0,
+      form.fTx,   form.fTy,   0, 1
+    };
+    // clang-format on
+    result.push_back(matrix);
+  }
+  return result;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
@@ -324,7 +353,7 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
       auto blur = filter->asBlur();
 
       auto style = ToBlurStyle(blur->style());
-      auto sigma = FilterContents::Sigma(blur->sigma());
+      auto sigma = Sigma(blur->sigma());
 
       paint_.mask_filter = [style, sigma](FilterInput::Ref input,
                                           bool is_solid_color) {
@@ -350,8 +379,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
-      auto sigma_x = FilterContents::Sigma(blur->sigma_x());
-      auto sigma_y = FilterContents::Sigma(blur->sigma_y());
+      auto sigma_x = Sigma(blur->sigma_x());
+      auto sigma_y = Sigma(blur->sigma_y());
 
       if (blur->tile_mode() != flutter::DlTileMode::kClamp) {
         // TODO(105072): Implement tile mode for blur filter.
@@ -390,6 +419,14 @@ static std::optional<Rect> ToRect(const SkRect* rect) {
     return std::nullopt;
   }
   return Rect::MakeLTRB(rect->fLeft, rect->fTop, rect->fRight, rect->fBottom);
+}
+
+static std::vector<Rect> ToRects(const SkRect tex[], int count) {
+  auto result = std::vector<Rect>();
+  for (int i = 0; i < count; i++) {
+    result.push_back(ToRect(&tex[i]).value());
+  }
+  return result;
 }
 
 // |flutter::Dispatcher|
@@ -838,8 +875,10 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
+  canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
+                    ToRSXForms(xform, count), ToRects(tex, count),
+                    ToColors(colors, count), ToBlendMode(mode),
+                    ToSamplerDescriptor(sampling), ToRect(cull_rect), paint_);
 }
 
 // |flutter::Dispatcher|

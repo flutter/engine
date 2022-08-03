@@ -84,7 +84,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, ui.Offset.zero);
 
       await matchPictureGolden(
         'canvaskit_font_fallback_arabic.png',
@@ -194,7 +194,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, ui.Offset.zero);
 
       await matchPictureGolden(
         'canvaskit_font_fallback_emoji.png',
@@ -374,9 +374,9 @@ class TestDownloader extends NotoDownloader {
 }
 
 class LoggingDownloader implements NotoDownloader {
-  final List<String> log = <String>[];
-
   LoggingDownloader(this.delegate);
+
+  final List<String> log = <String>[];
 
   final NotoDownloader delegate;
 
