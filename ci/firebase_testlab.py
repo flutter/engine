@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-BUCKET = 'gs://flutter_firebase_testlab'
+BUCKET = 'gs://flutter_firebase_testlab_staging'
 script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
