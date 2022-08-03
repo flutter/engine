@@ -3,9 +3,16 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
+#include "impeller/renderer/sampler.h"
 
 namespace impeller {
 
-//
+SamplerVK::~SamplerVK() = default;
+
+SamplerVK::SamplerVK(SamplerDescriptor desc) : Sampler(desc) {}
+
+bool SamplerVK::IsValid() const {
+  return true;
+}
 
 }  // namespace impeller

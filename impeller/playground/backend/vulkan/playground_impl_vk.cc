@@ -78,7 +78,9 @@ PlaygroundImplVK::PlaygroundImplVK()
     return;
   }
 
-  context_ = std::move(context);
+  context_ = context;
+
+  SetupSwapchain();
 }
 
 PlaygroundImplVK::~PlaygroundImplVK() = default;
@@ -91,6 +93,21 @@ std::shared_ptr<Context> PlaygroundImplVK::GetContext() const {
 // |PlaygroundImpl|
 PlaygroundImpl::WindowHandle PlaygroundImplVK::GetWindowHandle() const {
   return handle_.get();
+}
+
+ContextVK* PlaygroundImplVK::GetContextVK() const {
+  return reinterpret_cast<ContextVK*>(context_.get());
+}
+
+void PlaygroundImplVK::SetupSwapchain() {
+  ContextVK* context_vk = GetContextVK();
+
+  vk::SurfaceKHR surface{};
+  auto psurf = VkSurfaceKHR(surface);
+  auto window = reinterpret_cast<GLFWwindow*>(handle_.get());
+  ::glfwCreateWindowSurface(context_vk->GetInstance(), window, nullptr, &psurf);
+
+  swapchain_ = context_vk->CreateSwapchain(surface);
 }
 
 // |PlaygroundImpl|

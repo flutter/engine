@@ -17,6 +17,8 @@ class SamplerLibraryVK final
     : public SamplerLibrary,
       public BackendCast<SamplerLibraryVK, SamplerLibrary> {
  public:
+  explicit SamplerLibraryVK(vk::Device device);
+
   // |SamplerLibrary|
   ~SamplerLibraryVK() override;
 
@@ -25,8 +27,6 @@ class SamplerLibraryVK final
 
   vk::Device device_;
   SamplerMap samplers_;
-
-  SamplerLibraryVK(vk::Device device);
 
   // |SamplerLibrary|
   std::shared_ptr<const Sampler> GetSampler(

@@ -14,15 +14,13 @@ class SamplerLibraryVK;
 
 class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
  public:
-  SamplerVK();
+  explicit SamplerVK(SamplerDescriptor desc);
 
   // |Sampler|
   ~SamplerVK() override;
 
  private:
   friend SamplerLibraryVK;
-
-  SamplerVK(SamplerDescriptor desc);
 
   // |Sampler|
   bool IsValid() const override;

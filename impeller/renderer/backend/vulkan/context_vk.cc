@@ -14,6 +14,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -308,6 +309,8 @@ ContextVK::ContextVK(
   auto compute_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eCompute);
 
+  physical_device_ = physical_device.value();
+
   if (!graphics_queue.has_value() || !transfer_queue.has_value() ||
       !compute_queue.has_value()) {
     VALIDATION_LOG << "Could not pick device queues.";
@@ -421,6 +424,24 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateRenderCommandBuffer() const {
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateTransferCommandBuffer() const {
   FML_UNREACHABLE();
+}
+
+vk::Device ContextVK::GetDevice() {
+  return *device_;
+}
+
+vk::Instance ContextVK::GetInstance() {
+  return *instance_;
+}
+
+std::shared_ptr<SwapchainVK> ContextVK::CreateSwapchain(
+    vk::SurfaceKHR surface) {
+  auto swapchain_details =
+      SwapchainDetailsVK::Create(surface, physical_device_);
+  if (!swapchain_details) {
+    return nullptr;
+  }
+  return SwapchainVK::Create(*device_, surface, *swapchain_details);
 }
 
 }  // namespace impeller

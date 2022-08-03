@@ -13,6 +13,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
 
@@ -54,10 +55,17 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
     return true;
   }
 
+  vk::Device GetDevice();
+
+  vk::Instance GetInstance();
+
+  std::shared_ptr<impeller::SwapchainVK> CreateSwapchain(vk::SurfaceKHR surface);
+
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   vk::UniqueInstance instance_;
   vk::UniqueDebugUtilsMessengerEXT debug_messenger_;
+  vk::PhysicalDevice physical_device_;
   vk::UniqueDevice device_;
   std::shared_ptr<Allocator> allocator_;
   std::shared_ptr<ShaderLibraryVK> shader_library_;

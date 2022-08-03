@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
 
@@ -12,11 +13,15 @@ namespace impeller {
 
 class SurfaceVK final : public Surface {
  public:
+  SurfaceVK(RenderTarget target, vk::UniqueSurfaceKHR surface);
+
   // |Surface|
   ~SurfaceVK() override;
 
+  vk::SurfaceKHR GetSurface() const;
+
  private:
-  SurfaceVK(RenderTarget target);
+  vk::UniqueSurfaceKHR surface_;
 
   // |Surface|
   bool Present() const override;
