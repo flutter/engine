@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -272,15 +273,25 @@ public class FlutterEngineGroupComponentTest {
     // Create a new FlutterEngineGroup because the first engine created in engineGroupUnderTest was
     // changed to firstEngineUnderTest in `setUp()`, so can't use it to validate params.
     FlutterEngineGroup engineGroup = new FlutterEngineGroup(ctx);
+
     PlatformViewsController controller = new PlatformViewsController();
     boolean waitForRestorationData = true;
+    boolean automaticallyRegisterPlugins = true;
+
+    when(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins())
+        .thenReturn(true);
+    assertTrue(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins());
+    assertEquals(0, GeneratedPluginRegistrant.getRegisteredEngines().size());
+
     FlutterEngine firstEngine =
         engineGroup.createAndRunEngine(
             new FlutterEngineGroup.Options(ctx)
                 .setDartEntrypoint(mock(DartEntrypoint.class))
                 .setPlatformViewsController(controller)
-                .setWaitForRestorationData(waitForRestorationData));
+                .setWaitForRestorationData(waitForRestorationData)
+                .setAutomaticallyRegisterPlugins(automaticallyRegisterPlugins));
 
+    assertEquals(1, GeneratedPluginRegistrant.getRegisteredEngines().size());
     assertEquals(controller, firstEngine.getPlatformViewsController());
     assertEquals(
         waitForRestorationData, firstEngine.getRestorationChannel().waitForRestorationData);
@@ -314,17 +325,25 @@ public class FlutterEngineGroupComponentTest {
             nullable(List.class));
 
     PlatformViewsController controller = new PlatformViewsController();
-    boolean waitForRestorationData = true;
+    boolean waitForRestorationData = false;
+    boolean automaticallyRegisterPlugins = false;
+
+    when(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins())
+        .thenReturn(true);
+    assertTrue(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins());
+    assertEquals(0, GeneratedPluginRegistrant.getRegisteredEngines().size());
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
             new FlutterEngineGroup.Options(ctx)
                 .setDartEntrypoint(mock(DartEntrypoint.class))
                 .setWaitForRestorationData(waitForRestorationData)
-                .setPlatformViewsController(controller));
+                .setPlatformViewsController(controller)
+                .setAutomaticallyRegisterPlugins(automaticallyRegisterPlugins));
 
-    assertEquals(controller, secondEngine.getPlatformViewsController());
     assertEquals(
         waitForRestorationData, secondEngine.getRestorationChannel().waitForRestorationData);
+    assertEquals(controller, secondEngine.getPlatformViewsController());
+    assertEquals(0, GeneratedPluginRegistrant.getRegisteredEngines().size());
   }
 }
