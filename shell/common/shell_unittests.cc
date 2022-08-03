@@ -798,8 +798,6 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto platform_view_layer = std::make_shared<PlatformViewLayer>(
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
     root->Add(platform_view_layer);

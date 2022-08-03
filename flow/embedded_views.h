@@ -375,6 +375,8 @@ class ExternalViewEmbedder {
 
   // This method pushes a DlImageFilter object to each platform view within a
   // list of visited platform views.
+  // See also: |PushVisitedPlatformView| for pushing platform view ids to the
+  // visited platform views list.
   virtual void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter) {}
 
