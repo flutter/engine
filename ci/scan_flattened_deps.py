@@ -19,7 +19,6 @@ import subprocess
 from turtle import clone, up
 import requests
 from typing import Any, Dict, Optional
-from git import Repo
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
