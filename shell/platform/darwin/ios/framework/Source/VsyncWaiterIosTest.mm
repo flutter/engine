@@ -34,9 +34,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
 - (void)testSetAllowPauseAfterVsyncCorrect {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
-  auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {};
-  VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                             callback:callback] autorelease];
+  VSyncClient* vsyncClient = [[[VSyncClient alloc]
+      initWithTaskRunner:thread_task_runner
+                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}]
+      autorelease];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   [vsyncClient setAllowPauseAfterVsync:NO];
   [vsyncClient await];

@@ -35,6 +35,12 @@
 
 - (void)await;
 
+//------------------------------------------------------------------------------
+/// @brief      This method can avoid VsyncClient pausing or not after receiving a vsync signal.
+///
+///
+/// @param allowPause allow vsync client to pause after receiving vsync signal.
+///
 - (void)setAllowPauseAfterVsync:(BOOL)allowPause;
 
 - (void)invalidate;

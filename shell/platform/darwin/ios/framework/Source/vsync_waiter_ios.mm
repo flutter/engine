@@ -45,11 +45,16 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 
 }  // namespace flutter
 
+@interface VSyncClient ()
+
+@property(nonatomic, assign) BOOL allowPauseAfterVsync;
+
+@end
+
 @implementation VSyncClient {
   flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;
   double current_refresh_rate_;
-  BOOL allow_pause_after_vsync_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
@@ -58,7 +63,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 
   if (self) {
     current_refresh_rate_ = [DisplayLinkManager displayRefreshRate];
-    allow_pause_after_vsync_ = true;
+    _allowPauseAfterVsync = YES;
     callback_ = std::move(callback);
     display_link_ = fml::scoped_nsobject<CADisplayLink> {
       [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
@@ -99,7 +104,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 }
 
 - (void)setAllowPauseAfterVsync:(BOOL)allowPause {
-  allow_pause_after_vsync_ = allowPause;
+  _allowPauseAfterVsync = allowPause;
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
@@ -117,7 +122,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   current_refresh_rate_ = round(1 / (frame_target_time - frame_start_time).ToSecondsF());
 
   recorder->RecordVsync(frame_start_time, frame_target_time);
-  if (allow_pause_after_vsync_) {
+  if (_allowPauseAfterVsync) {
     display_link_.get().paused = YES;
   }
   callback_(std::move(recorder));
