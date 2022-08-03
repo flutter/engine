@@ -70,10 +70,10 @@ void ResetAnchor(CALayer* layer) {
 // Lazy initializes viewToExtractFrom as the expected UIVisualEffectView. The backdropFilter blur
 // requires this UIVisualEffectView initialization. The lazy initalization is only used to allow
 // custom unit tests.
-- (UIView*) viewToExtractFrom {
-  if(!_viewToExtractFrom) {
+- (UIView*)viewToExtractFrom {
+  if (!_viewToExtractFrom) {
     _viewToExtractFrom = [[[UIVisualEffectView alloc]
-                           initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
   }
   return _viewToExtractFrom;
 }

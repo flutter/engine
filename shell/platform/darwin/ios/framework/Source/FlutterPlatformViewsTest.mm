@@ -890,33 +890,33 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 }
 
 - (void)testApplyBackdropFilterAPIChanged {
-  NSArray* blurRadii = @[@(1), @(5), @(10)];
-  
+  NSArray* blurRadii = @[ @(1), @(5), @(10) ];
+
   // The gaussianBlur filter is extracted once for each childClippingView.
   // Each test requires a new childClippingView
   // Valid UIVisualEffectView API
   ChildClippingView* childClippingView1 = [[ChildClippingView alloc] init];
   childClippingView1.viewToExtractFrom = [[UIVisualEffectView alloc]
-                                         initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   XCTAssertTrue([childClippingView1 applyBlurBackdropFilters:blurRadii]);
-  
+
   // Invalid UIVisualEffectView initialization
   ChildClippingView* childClippingView2 = [[ChildClippingView alloc] init];
   childClippingView2.viewToExtractFrom = [[UIVisualEffectView alloc] init];
   XCTAssertFalse([childClippingView2 applyBlurBackdropFilters:blurRadii]);
-  
+
   // Invalid UIView
   ChildClippingView* childClippingView3 = [[ChildClippingView alloc] init];
   childClippingView3.viewToExtractFrom = [[UIView alloc] init];
   XCTAssertFalse([childClippingView3 applyBlurBackdropFilters:blurRadii]);
-  
+
   // Invalid UIVisualEffectView API for "name"
   UIVisualEffectView* editedUIVisualEffectView1 = [[UIVisualEffectView alloc]
-                                                  initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   NSArray* subviews1 = editedUIVisualEffectView1.subviews;
-  for(UIView* view in subviews1) {
+  for (UIView* view in subviews1) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      for(CIFilter* filter in view.layer.filters) {
+      for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
           [filter setValue:@"notGaussianBlur" forKey:@"name"];
           break;
@@ -932,11 +932,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   // Invalid UIVisualEffectView API for "inputRadius"
   UIVisualEffectView* editedUIVisualEffectView2 = [[UIVisualEffectView alloc]
-                                                  initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   NSArray* subviews2 = editedUIVisualEffectView2.subviews;
-  for(UIView* view in subviews2) {
+  for (UIView* view in subviews2) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      for(CIFilter* filter in view.layer.filters) {
+      for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
           [filter setValue:@"invalidInputRadius" forKey:@"inputRadius"];
           break;
