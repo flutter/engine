@@ -369,12 +369,13 @@ class ExternalViewEmbedder {
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
-  // This method pushes the platform view id of a visited platform view to a
-  // list of visited platform views.
+  // Pushes the platform view id of a visited platform view to a list of
+  // visited platform views.
   virtual void PushVisitedPlatformView(int64_t view_id) {}
 
-  // This method pushes a DlImageFilter object to each platform view within a
-  // list of visited platform views.
+  // Pushes a DlImageFilter object to each platform view within a list of
+  // visited platform views.
+  //
   // See also: |PushVisitedPlatformView| for pushing platform view ids to the
   // visited platform views list.
   virtual void PushFilterToVisitedPlatformViews(
