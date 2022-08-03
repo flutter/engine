@@ -144,7 +144,8 @@ public class FlutterEngineGroup {
     String initialRoute = options.getInitialRoute();
     List<String> dartEntrypointArgs = options.getDartEntrypointArgs();
     PlatformViewsController platformViewsController = options.getPlatformViewsController();
-    if (platformViewsController == null) platformViewsController = new PlatformViewsController();
+    platformViewsController =
+        platformViewsController != null ? platformViewsController : new PlatformViewsController();
     boolean automaticallyRegisterPlugins = options.getAutomaticallyRegisterPlugins();
     boolean waitForRestorationData = options.getWaitForRestorationData();
 
