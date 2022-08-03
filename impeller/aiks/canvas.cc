@@ -346,7 +346,7 @@ void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
   contents->SetTexture(atlas->GetTexture());
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetBlendMode(blend_mode);
-  // TODO(jonahwilliams): set cull rect.
+  contents->SetCullRect(cull_rect);
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
