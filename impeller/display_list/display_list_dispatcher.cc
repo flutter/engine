@@ -727,7 +727,11 @@ void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRRect(const SkRRect& rrect) {
-  canvas_.DrawPath(ToPath(rrect), paint_);
+  if (rrect.isSimple()) {
+    canvas_.DrawRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX, paint_);
+  } else {
+    canvas_.DrawPath(ToPath(rrect), paint_);
+  }
 }
 
 // |flutter::Dispatcher|

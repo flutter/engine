@@ -70,6 +70,8 @@ class Canvas {
 
   void DrawRect(Rect rect, Paint paint);
 
+  void DrawRRect(Rect rect, Scalar corner_radius, Paint paint);
+
   void DrawCircle(Point center, Scalar radius, Paint paint);
 
   void DrawImage(std::shared_ptr<Image> image,

@@ -150,6 +150,11 @@ void Canvas::DrawRect(Rect rect, Paint paint) {
   DrawPath(PathBuilder{}.AddRect(rect).TakePath(), std::move(paint));
 }
 
+void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
+  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
+           std::move(paint));
+}
+
 void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
   DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(),
            std::move(paint));
