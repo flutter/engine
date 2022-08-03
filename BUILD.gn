@@ -83,8 +83,13 @@ group("flutter") {
     public_deps += [
       "//flutter/examples/glfw",
       "//flutter/examples/vulkan_glfw",
-      "//flutter/examples/glfw_drm",
     ]
+
+    if (!is_mac) {
+      public_deps += [
+        "//flutter/examples/glfw_drm",
+      ]
+    }
   }
 
   # If enbaled, compile the SDK / snapshot.
