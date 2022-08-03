@@ -185,7 +185,8 @@ bool RunFlutter(GLFWwindow* window,
     if (swap_buffers_with_damage_) {
       // Swap buffers with frame damage.
       auto frame_rects = RectToInts(info->frame_damage.damage[0]);
-      return swap_buffers_with_damage_(display_, surface_, frame_rects.data(), 1);
+      return swap_buffers_with_damage_(display_, surface_, frame_rects.data(),
+                                       1);
     } else {
       // If the required extensions for partial repaint were not provided, do
       // full repaint.
@@ -256,8 +257,9 @@ bool RunFlutter(GLFWwindow* window,
 }
 
 void printUsage() {
-  std::cout << "usage: embedder_example_drm <path to project> <path to icudtl.dat>"
-            << std::endl;
+  std::cout
+      << "usage: embedder_example_drm <path to project> <path to icudtl.dat>"
+      << std::endl;
 }
 
 void GLFW_ErrorCallback(int error, const char* description) {
