@@ -28,7 +28,7 @@ def run_firebase_test(apk, results_dir):
       [
           'gcloud',
           '--project',
-          'flutter-infra',
+          'flutter-infra-staging',
           'firebase',
           'test',
           'android',
