@@ -833,6 +833,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [_keyboardAnimationVsyncClient release];
+  _keyboardAnimationVsyncClient = nil;
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
@@ -1279,7 +1280,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVsyncClient];
   [self setupKeyboardAnimationVsyncClient];
-  __block VSyncClient* currentVsyncClient = _keyboardAnimationVsyncClient;
+  VSyncClient* currentVsyncClient = _keyboardAnimationVsyncClient;
 
   [UIView animateWithDuration:duration
       animations:^{
@@ -1300,6 +1301,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)setupKeyboardAnimationVsyncClient {
   auto callback = [self](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    if (!self) {
+      return;
+    }
     if ([self keyboardAnimationView].superview == nil) {
       // Ensure the keyboardAnimationView is in view hierarchy when animation running.
       [self.view addSubview:[self keyboardAnimationView]];
