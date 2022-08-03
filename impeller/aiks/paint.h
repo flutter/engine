@@ -10,25 +10,28 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
+#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 
 namespace impeller {
 
-struct MaskBlur {
-  FilterContents::BlurStyle blur_style;
-  FilterContents::Sigma sigma;
-};
-
 struct Paint {
+  using ImageFilterProc =
+      std::function<std::shared_ptr<FilterContents>(FilterInput::Ref)>;
+  using ColorFilterProc = ImageFilterProc;
+  using MaskFilterProc =
+      std::function<std::shared_ptr<FilterContents>(FilterInput::Ref,
+                                                    bool is_solid_color)>;
+
   enum class Style {
     kFill,
     kStroke,
   };
 
   Color color = Color::Black();
-  std::shared_ptr<LinearGradientContents> contents;
+  std::shared_ptr<PathContents> contents;
 
   Scalar stroke_width = 0.0;
   SolidStrokeContents::Cap stroke_cap = SolidStrokeContents::Cap::kButt;
@@ -36,7 +39,10 @@ struct Paint {
   Scalar stroke_miter = 4.0;
   Style style = Style::kFill;
   Entity::BlendMode blend_mode = Entity::BlendMode::kSourceOver;
-  std::optional<MaskBlur> mask_blur;
+
+  std::optional<ImageFilterProc> image_filter;
+  std::optional<ColorFilterProc> color_filter;
+  std::optional<MaskFilterProc> mask_filter;
 
   /// @brief      Wrap this paint's configured filters to the given contents.
   /// @param[in]  input           The contents to wrap with paint's filters.

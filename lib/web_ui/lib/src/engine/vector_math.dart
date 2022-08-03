@@ -8,41 +8,6 @@ import 'dart:typed_data';
 import 'util.dart';
 
 class Matrix4 {
-  final Float32List _m4storage;
-
-  /// The components of the matrix.
-  Float32List get storage => _m4storage;
-
-  /// Returns a matrix that is the inverse of [other] if [other] is invertible,
-  /// otherwise `null`.
-  static Matrix4? tryInvert(Matrix4 other) {
-    final Matrix4 r = Matrix4.zero();
-    final double determinant = r.copyInverse(other);
-    if (determinant == 0.0) {
-      return null;
-    }
-    return r;
-  }
-
-  /// Return index in storage for [row], [col] value.
-  int index(int row, int col) => (col * 4) + row;
-
-  /// Value at [row], [col].
-  double entry(int row, int col) {
-    assert((row >= 0) && (row < dimension));
-    assert((col >= 0) && (col < dimension));
-
-    return _m4storage[index(row, col)];
-  }
-
-  /// Set value at [row], [col] to be [v].
-  void setEntry(int row, int col, double v) {
-    assert((row >= 0) && (row < dimension));
-    assert((col >= 0) && (col < dimension));
-
-    _m4storage[index(row, col)] = v;
-  }
-
   /// Constructs a new mat4.
   factory Matrix4(
           double arg0,
@@ -128,6 +93,41 @@ class Matrix4 {
   /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
   Matrix4.fromBuffer(ByteBuffer buffer, int offset)
       : _m4storage = Float32List.view(buffer, offset, 16);
+
+  final Float32List _m4storage;
+
+  /// The components of the matrix.
+  Float32List get storage => _m4storage;
+
+  /// Returns a matrix that is the inverse of [other] if [other] is invertible,
+  /// otherwise `null`.
+  static Matrix4? tryInvert(Matrix4 other) {
+    final Matrix4 r = Matrix4.zero();
+    final double determinant = r.copyInverse(other);
+    if (determinant == 0.0) {
+      return null;
+    }
+    return r;
+  }
+
+  /// Return index in storage for [row], [col] value.
+  int index(int row, int col) => (col * 4) + row;
+
+  /// Value at [row], [col].
+  double entry(int row, int col) {
+    assert((row >= 0) && (row < dimension));
+    assert((col >= 0) && (col < dimension));
+
+    return _m4storage[index(row, col)];
+  }
+
+  /// Set value at [row], [col] to be [v].
+  void setEntry(int row, int col, double v) {
+    assert((row >= 0) && (row < dimension));
+    assert((col >= 0) && (col < dimension));
+
+    _m4storage[index(row, col)] = v;
+  }
 
   /// Sets the matrix with specified values.
   void setValues(
@@ -1087,6 +1087,34 @@ class Matrix4 {
 
 /// 3D column vector.
 class Vector3 {
+  /// Construct a new vector with the specified values.
+  factory Vector3(double x, double y, double z) =>
+      Vector3.zero()..setValues(x, y, z);
+
+  /// Zero vector.
+  Vector3.zero() : _v3storage = Float32List(3);
+
+  /// Splat [value] into all lanes of the vector.
+  factory Vector3.all(double value) => Vector3.zero()..splat(value);
+
+  /// Copy of [other].
+  factory Vector3.copy(Vector3 other) => Vector3.zero()..setFrom(other);
+
+  /// Constructs Vector3 with given Float32List as [storage].
+  Vector3.fromFloat32List(this._v3storage);
+
+  /// Constructs Vector3 with a [storage] that views given [buffer] starting at
+  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
+  Vector3.fromBuffer(ByteBuffer buffer, int offset)
+      : _v3storage = Float32List.view(buffer, offset, 3);
+
+  /// Generate random vector in the range (0, 0, 0) to (1, 1, 1). You can
+  /// optionally pass your own random number generator.
+  factory Vector3.random([math.Random? rng]) {
+    rng ??= math.Random();
+    return Vector3(rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
+  }
+
   final Float32List _v3storage;
 
   /// The components of the vector.
@@ -1115,34 +1143,6 @@ class Vector3 {
       ..x = min.x + a * (max.x - min.x)
       ..y = min.y + a * (max.y - min.y)
       ..z = min.z + a * (max.z - min.z);
-  }
-
-  /// Construct a new vector with the specified values.
-  factory Vector3(double x, double y, double z) =>
-      Vector3.zero()..setValues(x, y, z);
-
-  /// Zero vector.
-  Vector3.zero() : _v3storage = Float32List(3);
-
-  /// Splat [value] into all lanes of the vector.
-  factory Vector3.all(double value) => Vector3.zero()..splat(value);
-
-  /// Copy of [other].
-  factory Vector3.copy(Vector3 other) => Vector3.zero()..setFrom(other);
-
-  /// Constructs Vector3 with given Float32List as [storage].
-  Vector3.fromFloat32List(this._v3storage);
-
-  /// Constructs Vector3 with a [storage] that views given [buffer] starting at
-  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
-  Vector3.fromBuffer(ByteBuffer buffer, int offset)
-      : _v3storage = Float32List.view(buffer, offset, 3);
-
-  /// Generate random vector in the range (0, 0, 0) to (1, 1, 1). You can
-  /// optionally pass your own random number generator.
-  factory Vector3.random([math.Random? rng]) {
-    rng ??= math.Random();
-    return Vector3(rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
   }
 
   /// Set the values of the vector.
@@ -1427,6 +1427,39 @@ Float32List toMatrix32(Float64List matrix64) {
   matrix32[1] = matrix64[1];
   matrix32[0] = matrix64[0];
   return matrix32;
+}
+
+/// Converts a matrix represented using [Float32List] to one represented using
+/// [Float64List].
+///
+/// 32-bit precision is sufficient because Flutter Engine itself (as well as
+/// Skia) use 32-bit precision under the hood anyway.
+///
+/// 32-bit matrices require 2x less memory and in V8 they are allocated on the
+/// JavaScript heap, thus avoiding a malloc.
+///
+/// See also:
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=9199
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=2022
+Float64List toMatrix64(Float32List matrix32) {
+  final Float64List matrix64 = Float64List(16);
+  matrix64[15] = matrix32[15];
+  matrix64[14] = matrix32[14];
+  matrix64[13] = matrix32[13];
+  matrix64[12] = matrix32[12];
+  matrix64[11] = matrix32[11];
+  matrix64[10] = matrix32[10];
+  matrix64[9] = matrix32[9];
+  matrix64[8] = matrix32[8];
+  matrix64[7] = matrix32[7];
+  matrix64[6] = matrix32[6];
+  matrix64[5] = matrix32[5];
+  matrix64[4] = matrix32[4];
+  matrix64[3] = matrix32[3];
+  matrix64[2] = matrix32[2];
+  matrix64[1] = matrix32[1];
+  matrix64[0] = matrix32[0];
+  return matrix64;
 }
 
 // Stores matrix in a form that allows zero allocation transforms.

@@ -84,7 +84,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, ui.Offset.zero);
 
       await matchPictureGolden(
         'canvaskit_font_fallback_arabic.png',
@@ -93,7 +93,7 @@ void testMain() {
       );
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-    }, skip: isIosSafari || isFirefox);
+    }, skip: isSafari || isFirefox);
 
     test('will put the Noto Emoji font before other fallback fonts in the list',
         () async {
@@ -194,7 +194,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, ui.Offset.zero);
 
       await matchPictureGolden(
         'canvaskit_font_fallback_emoji.png',
@@ -203,7 +203,7 @@ void testMain() {
       );
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-    }, skip: isIosSafari || isFirefox);
+    }, skip: isSafari || isFirefox);
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
         () async {
@@ -357,7 +357,7 @@ void testMain() {
       }
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  }, skip: isSafari);
 }
 
 class TestDownloader extends NotoDownloader {
@@ -374,9 +374,9 @@ class TestDownloader extends NotoDownloader {
 }
 
 class LoggingDownloader implements NotoDownloader {
-  final List<String> log = <String>[];
-
   LoggingDownloader(this.delegate);
+
+  final List<String> log = <String>[];
 
   final NotoDownloader delegate;
 

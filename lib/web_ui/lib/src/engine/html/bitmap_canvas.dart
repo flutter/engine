@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -32,6 +31,39 @@ import 'shaders/image_shader.dart';
 
 /// A raw HTML canvas that is directly written to.
 class BitmapCanvas extends EngineCanvas {
+  /// Allocates a canvas with enough memory to paint a picture within the given
+  /// [bounds].
+  ///
+  /// This canvas can be reused by pictures with different paint bounds as long
+  /// as the [Rect.size] of the bounds fully fit within the size used to
+  /// initialize this canvas.
+  BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
+      {double density = 1.0})
+      : assert(_bounds != null), // ignore: unnecessary_null_comparison
+        _density = density,
+        _renderStrategy = renderStrategy,
+        widthInBitmapPixels = widthToPhysical(_bounds.width),
+        heightInBitmapPixels = heightToPhysical(_bounds.height),
+        _canvasPool = CanvasPool(widthToPhysical(_bounds.width),
+            heightToPhysical(_bounds.height), density) {
+    rootElement.style.position = 'absolute';
+    // Adds one extra pixel to the requested size. This is to compensate for
+    // _initializeViewport() snapping canvas position to 1 pixel, causing
+    // painting to overflow by at most 1 pixel.
+    _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
+    _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
+    _updateRootElementTransform();
+    _canvasPool.mount(rootElement as DomHTMLElement);
+    _setupInitialTransform();
+  }
+
+  /// Constructs bitmap canvas to capture image data.
+  factory BitmapCanvas.imageData(ui.Rect bounds) {
+    final BitmapCanvas bitmapCanvas = BitmapCanvas(bounds, RenderStrategy());
+    bitmapCanvas._preserveImageData = true;
+    return bitmapCanvas;
+  }
+
   /// The rectangle positioned relative to the parent layer's coordinate
   /// system's origin, within which this canvas paints.
   ///
@@ -136,39 +168,6 @@ class BitmapCanvas extends EngineCanvas {
   final double _density;
 
   final RenderStrategy _renderStrategy;
-
-  /// Allocates a canvas with enough memory to paint a picture within the given
-  /// [bounds].
-  ///
-  /// This canvas can be reused by pictures with different paint bounds as long
-  /// as the [Rect.size] of the bounds fully fit within the size used to
-  /// initialize this canvas.
-  BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
-      {double density = 1.0})
-      : assert(_bounds != null), // ignore: unnecessary_null_comparison
-        _density = density,
-        _renderStrategy = renderStrategy,
-        widthInBitmapPixels = widthToPhysical(_bounds.width),
-        heightInBitmapPixels = heightToPhysical(_bounds.height),
-        _canvasPool = CanvasPool(widthToPhysical(_bounds.width),
-            heightToPhysical(_bounds.height), density) {
-    rootElement.style.position = 'absolute';
-    // Adds one extra pixel to the requested size. This is to compensate for
-    // _initializeViewport() snapping canvas position to 1 pixel, causing
-    // painting to overflow by at most 1 pixel.
-    _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
-    _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
-    _updateRootElementTransform();
-    _canvasPool.mount(rootElement as html.HtmlElement);
-    _setupInitialTransform();
-  }
-
-  /// Constructs bitmap canvas to capture image data.
-  factory BitmapCanvas.imageData(ui.Rect bounds) {
-    final BitmapCanvas bitmapCanvas = BitmapCanvas(bounds, RenderStrategy());
-    bitmapCanvas._preserveImageData = true;
-    return bitmapCanvas;
-  }
 
   /// Setup cache for reusing DOM elements across frames.
   void setElementCache(CrossFrameCache<DomHTMLElement>? cache) {
@@ -586,7 +585,7 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
       _applyFilter(svgElm, paint);
-      _drawElement(svgElm, const ui.Offset(0, 0), paint);
+      _drawElement(svgElm, ui.Offset.zero, paint);
     } else {
       setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
       if (paint.style == null && paint.strokeWidth != null) {
@@ -640,12 +639,11 @@ class BitmapCanvas extends EngineCanvas {
       }
     }
     // Can't reuse, create new instance.
-    final html.ImageElement newImageElement = htmlImage.cloneImageElement();
+    final DomHTMLImageElement newImageElement = htmlImage.cloneImageElement();
     if (_elementCache != null) {
-      _elementCache!.cache(cacheKey, newImageElement as DomHTMLImageElement,
-          _onEvictElement);
+      _elementCache!.cache(cacheKey, newImageElement, _onEvictElement);
     }
-    return newImageElement as DomHTMLImageElement;
+    return newImageElement;
   }
 
   static void _onEvictElement(DomHTMLElement element) {
@@ -853,8 +851,8 @@ class BitmapCanvas extends EngineCanvas {
       SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
     final SvgFilter svgFilter = svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
-    rootElement.append(svgFilter.element as DomElement);
-    _children.add(svgFilter.element as DomElement);
+    rootElement.append(svgFilter.element);
+    _children.add(svgFilter.element);
     final DomHTMLElement imgElement = _reuseOrCreateImage(image);
     imgElement.style.filter = 'url(#${svgFilter.id})';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
@@ -868,8 +866,8 @@ class BitmapCanvas extends EngineCanvas {
       HtmlImage image, List<double> matrix, SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
     final SvgFilter svgFilter = svgFilterFromColorMatrix(matrix);
-    rootElement.append(svgFilter.element as DomElement);
-    _children.add(svgFilter.element as DomElement);
+    rootElement.append(svgFilter.element);
+    _children.add(svgFilter.element);
     final DomHTMLElement imgElement = _reuseOrCreateImage(image);
     imgElement.style.filter = 'url(#${svgFilter.id})';
     return imgElement;
@@ -893,18 +891,18 @@ class BitmapCanvas extends EngineCanvas {
 
   void setCssFont(String cssFont) {
     if (cssFont != _cachedLastCssFont) {
-      final html.CanvasRenderingContext2D ctx = _canvasPool.context;
+      final DomCanvasRenderingContext2D ctx = _canvasPool.context;
       ctx.font = cssFont;
       _cachedLastCssFont = cssFont;
     }
   }
 
-  /// Measures the given [text] and returns a [html.TextMetrics] object that
+  /// Measures the given [text] and returns a [DomTextMetrics] object that
   /// contains information about the measurement.
   ///
   /// The text is measured using the font set by the most recent call to
   /// [setCssFont].
-  html.TextMetrics measureText(String text) {
+  DomTextMetrics measureText(String text) {
     return _canvasPool.context.measureText(text);
   }
 
@@ -913,11 +911,11 @@ class BitmapCanvas extends EngineCanvas {
   /// The text is drawn starting at coordinates ([x], [y]). It uses the current
   /// font set by the most recent call to [setCssFont].
   void drawText(String text, double x, double y, {ui.PaintingStyle? style, List<ui.Shadow>? shadows}) {
-    final html.CanvasRenderingContext2D ctx = _canvasPool.context;
+    final DomCanvasRenderingContext2D ctx = _canvasPool.context;
     if (shadows != null) {
       ctx.save();
       for (final ui.Shadow shadow in shadows) {
-        ctx.shadowColor = colorToCssString(shadow.color)!;
+        ctx.shadowColor = colorToCssString(shadow.color);
         ctx.shadowBlur = shadow.blurRadius;
         ctx.shadowOffsetX = shadow.offset.dx;
         ctx.shadowOffsetY = shadow.offset.dy;
@@ -1014,8 +1012,7 @@ class BitmapCanvas extends EngineCanvas {
         'Linear/Radial/SweepGradient not supported yet');
     final Int32List? colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
-    final DomCanvasRenderingContext2D ctx = _canvasPool.context as
-        DomCanvasRenderingContext2D;
+    final DomCanvasRenderingContext2D ctx = _canvasPool.context;
     if (colors == null &&
         paint.style != ui.PaintingStyle.fill &&
         paint.shader == null) {
@@ -1039,7 +1036,7 @@ class BitmapCanvas extends EngineCanvas {
   /// Stores paint data used by [drawPoints]. We cannot use the original paint
   /// data object because painting style is determined by [ui.PointMode] and
   /// not by [SurfacePointData.style].
-  static SurfacePaintData _drawPointsPaint = SurfacePaintData()
+  static final SurfacePaintData _drawPointsPaint = SurfacePaintData()
     ..strokeCap = ui.StrokeCap.round
     ..strokeJoin = ui.StrokeJoin.round
     ..blendMode = ui.BlendMode.srcOver;

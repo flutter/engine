@@ -31,10 +31,13 @@ class ImageDecoderImpeller final : public ImageDecoder {
               uint32_t target_height,
               const ImageResult& result) override;
 
+  static std::shared_ptr<SkBitmap> DecompressTexture(
+      ImageDescriptor* descriptor,
+      SkISize target_size);
+
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
   FutureContext context_;
-  size_t label_count_ = 1u;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderImpeller);
 };

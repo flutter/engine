@@ -1033,26 +1033,33 @@ void _canvasTests() {
 
   test('clipPath', () {
     canvas.clipPath(
-      _testClosedSkPath(),
+      SkPath()
+        ..moveTo(10.9, 10.9)
+        ..lineTo(19.1, 10.9)
+        ..lineTo(19.1, 19.1)
+        ..lineTo(10.9, 19.1),
       canvasKit.ClipOp.Intersect,
       true,
     );
+    expect(canvas.getDeviceClipBounds(), <int>[10, 10, 20, 20]);
   });
 
   test('clipRRect', () {
     canvas.clipRRect(
-      Float32List.fromList(<double>[0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8]),
+      Float32List.fromList(<double>[0.9, 0.9, 99.1, 99.1, 1, 2, 3, 4, 5, 6, 7, 8]),
       canvasKit.ClipOp.Intersect,
       true,
     );
+    expect(canvas.getDeviceClipBounds(), <int>[0, 0, 100, 100]);
   });
 
   test('clipRect', () {
     canvas.clipRect(
-      Float32List.fromList(<double>[0, 0, 100, 100]),
+      Float32List.fromList(<double>[0.9, 0.9, 99.1, 99.1]),
       canvasKit.ClipOp.Intersect,
       true,
     );
+    expect(canvas.getDeviceClipBounds(), <int>[0, 0, 100, 100]);
   });
 
   test('drawArc', () {
@@ -1249,23 +1256,65 @@ void _canvasTests() {
   });
 
   test('rotate', () {
-    canvas.rotate(5, 10, 20);
+    canvas.rotate(90, 10, 20);
+    expect(canvas.getLocalToDevice(), <double>[
+      0, -1, 0, 30, // tx = 10 - (-20) == 30
+      1, 0, 0, 10,  // ty = 20 - 10 == 10
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('scale', () {
     canvas.scale(2, 3);
+    expect(canvas.getLocalToDevice(), <double>[
+      2, 0, 0, 0,
+      0, 3, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('skew', () {
     canvas.skew(4, 5);
+    expect(canvas.getLocalToDevice(), <double>[
+      1, 4, 0, 0,
+      5, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('concat', () {
-    canvas.concat(toSkMatrixFromFloat32(Matrix4.identity().storage));
+    canvas.concat(toSkM44FromFloat32(Matrix4.identity().storage));
+    expect(canvas.getLocalToDevice(), <double>[
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
+    canvas.concat(Float32List.fromList(<double>[
+      11, 12, 13, 14,
+      21, 22, 23, 24,
+      31, 32, 33, 34,
+      41, 42, 43, 44,
+    ]));
+    expect(canvas.getLocalToDevice(), <double>[
+      11, 12, 13, 14,
+      21, 22, 23, 24,
+      31, 32, 33, 34,
+      41, 42, 43, 44,
+    ]);
   });
 
   test('translate', () {
     canvas.translate(4, 5);
+    expect(canvas.getLocalToDevice(), <double>[
+      1, 0, 0, 4,
+      0, 1, 0, 5,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('drawPicture', () {
@@ -1306,7 +1355,7 @@ void _canvasTests() {
         CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
-        await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        await image.toByteData();
     expect(rawData.lengthInBytes, greaterThan(0));
     expect(
       rawData.buffer.asUint32List(),
@@ -1559,22 +1608,17 @@ void _paragraphTests() {
 
   test('TextHeightBehavior', () {
     expect(
-      toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        applyHeightToFirstAscent: true,
-        applyHeightToLastDescent: true,
-      )),
+      toSkTextHeightBehavior(const ui.TextHeightBehavior()),
       canvasKit.TextHeightBehavior.All,
     );
     expect(
       toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: false,
-        applyHeightToLastDescent: true,
       )),
       canvasKit.TextHeightBehavior.DisableFirstAscent,
     );
     expect(
       toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        applyHeightToFirstAscent: true,
         applyHeightToLastDescent: false,
       )),
       canvasKit.TextHeightBehavior.DisableLastDescent,

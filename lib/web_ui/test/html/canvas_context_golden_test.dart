@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
@@ -23,7 +21,7 @@ Future<void> testMain() async {
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
   // Commit a recording canvas to a bitmap, and compare with the expected
-  Future<void> _checkScreenshot(engine.RecordingCanvas rc, String fileName,
+  Future<void> checkScreenshot(engine.RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
     final engine.EngineCanvas engineCanvas = engine.BitmapCanvas(screenRect,
         engine.RenderStrategy());
@@ -32,7 +30,7 @@ Future<void> testMain() async {
     rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final engine.DomElement sceneElement = engine.createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -41,8 +39,8 @@ Future<void> testMain() async {
     }
 
     try {
-      sceneElement.append(engineCanvas.rootElement as html.Element);
-      html.document.body!.append(sceneElement);
+      sceneElement.append(engineCanvas.rootElement);
+      engine.domDocument.body!.append(sceneElement);
       // TODO(yjbanov): 10% diff rate is excessive. Update goldens.
       await matchGoldenFile('$fileName.png', region: region);
     } finally {
@@ -85,7 +83,7 @@ Future<void> testMain() async {
     // The rectangle should paint without clipping since we restored
     // context.
     rc.drawRect(const Rect.fromLTWH(0, 0, 4, 200), paint);
-    await _checkScreenshot(rc, 'context_save_restore_transform');
+    await checkScreenshot(rc, 'context_save_restore_transform');
   });
 
   test('Should restore clip path', () async {
@@ -110,6 +108,6 @@ Future<void> testMain() async {
     // The rectangle should paint without clipping since we restored
     // context.
     rc.drawRect(const Rect.fromLTWH(0, 0, 200, 200), goodPaint as engine.SurfacePaint);
-    await _checkScreenshot(rc, 'context_save_restore_clip');
+    await checkScreenshot(rc, 'context_save_restore_clip');
   });
 }

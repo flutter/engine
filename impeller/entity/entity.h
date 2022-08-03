@@ -43,10 +43,23 @@ class Entity {
     // pipelines on most graphics devices without extensions, and so they are
     // only able to be used via `BlendFilterContents`.
     kScreen,
+    kOverlay,
+    kDarken,
+    kLighten,
+    kColorDodge,
     kColorBurn,
+    kHardLight,
+    kSoftLight,
+    kDifference,
+    kExclusion,
+    kMultiply,
+    kHue,
+    kSaturation,
+    kColor,
+    kLuminosity,
 
     kLastPipelineBlendMode = kModulate,
-    kLastAdvancedBlendMode = kColorBurn,
+    kLastAdvancedBlendMode = kLuminosity,
   };
 
   enum class ClipOperation {
@@ -67,6 +80,8 @@ class Entity {
   bool AddsToCoverage() const;
 
   std::optional<Rect> GetCoverage() const;
+
+  bool ShouldRender(const ISize& target_size) const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 

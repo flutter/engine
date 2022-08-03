@@ -18,7 +18,7 @@ class Texture {
  public:
   virtual ~Texture();
 
-  virtual void SetLabel(const std::string_view& label) = 0;
+  virtual void SetLabel(std::string_view label) = 0;
 
   [[nodiscard]] bool SetContents(const uint8_t* contents,
                                  size_t length,
@@ -31,7 +31,13 @@ class Texture {
 
   virtual ISize GetSize() const = 0;
 
+  size_t GetMipCount() const;
+
   const TextureDescriptor& GetTextureDescriptor() const;
+
+  TextureIntent GetIntent() const;
+
+  virtual Scalar GetYCoordScale() const;
 
  protected:
   Texture(TextureDescriptor desc);
@@ -45,6 +51,7 @@ class Texture {
       size_t slice) = 0;
 
  private:
+  TextureIntent intent_ = TextureIntent::kRenderToTexture;
   const TextureDescriptor desc_;
 
   bool IsSliceValid(size_t slice) const;

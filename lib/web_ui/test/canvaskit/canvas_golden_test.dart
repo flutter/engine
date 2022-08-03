@@ -816,7 +816,7 @@ void testMain() {
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-  }, skip: isIosSafari || isFirefox);
+  }, skip: isSafari || isFirefox);
 }
 
 Future<void> testSampleText(String language, String text,
@@ -959,7 +959,7 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.translate(0, 60);
   canvas.save();
 
-  canvas.drawLine(const ui.Offset(0, 0), const ui.Offset(40, 30), CkPaint());
+  canvas.drawLine(ui.Offset.zero, const ui.Offset(40, 30), CkPaint());
 
   canvas.translate(60, 0);
   canvas.drawOval(

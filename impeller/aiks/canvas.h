@@ -35,7 +35,10 @@ class Canvas {
 
   void Save();
 
-  void SaveLayer(Paint paint, std::optional<Rect> bounds = std::nullopt);
+  void SaveLayer(
+      Paint paint,
+      std::optional<Rect> bounds = std::nullopt,
+      std::optional<Paint::ImageFilterProc> backdrop_filter = std::nullopt);
 
   bool Restore();
 
@@ -90,7 +93,18 @@ class Canvas {
 
   void DrawTextFrame(TextFrame text_frame, Point position, Paint paint);
 
-  void DrawVertices(Vertices vertices, Entity::BlendMode mode, Paint paint);
+  void DrawVertices(Vertices vertices,
+                    Entity::BlendMode blend_mode,
+                    Paint paint);
+
+  void DrawAtlas(std::shared_ptr<Image> atlas,
+                 std::vector<Matrix> transforms,
+                 std::vector<Rect> texture_coordinates,
+                 std::vector<Color> colors,
+                 Entity::BlendMode blend_mode,
+                 SamplerDescriptor sampler,
+                 std::optional<Rect> cull_rect,
+                 Paint paint);
 
   Picture EndRecordingAsPicture();
 

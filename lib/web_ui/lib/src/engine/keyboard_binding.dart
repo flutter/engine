@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';
-import 'key_map.dart';
+import 'dom.dart';
+import 'key_map.g.dart';
 import 'platform_dispatcher.dart';
+import 'safe_browser_api.dart';
 import 'semantics.dart';
 
 typedef _VoidCallback = void Function();
@@ -88,11 +88,15 @@ Duration _eventTimeStampToDuration(num milliseconds) {
 }
 
 class KeyboardBinding {
+  KeyboardBinding._(this.glassPaneElement) {
+    _setup();
+  }
+
   /// The singleton instance of this object.
   static KeyboardBinding? get instance => _instance;
   static KeyboardBinding? _instance;
 
-  static void initInstance(html.Element glassPaneElement) {
+  static void initInstance(DomElement glassPaneElement) {
     if (_instance == null) {
       _instance = KeyboardBinding._(glassPaneElement);
       assert(() {
@@ -102,16 +106,12 @@ class KeyboardBinding {
     }
   }
 
-  KeyboardBinding._(this.glassPaneElement) {
-    _setup();
-  }
-
-  final html.Element glassPaneElement;
+  final DomElement glassPaneElement;
   late KeyboardConverter _converter;
-  final Map<String, html.EventListener> _listeners = <String, html.EventListener>{};
+  final Map<String, DomEventListener> _listeners = <String, DomEventListener>{};
 
-  void _addEventListener(String eventName, html.EventListener handler) {
-    dynamic loggedHandler(html.Event event) {
+  void _addEventListener(String eventName, DomEventListener handler) {
+    dynamic loggedHandler(DomEvent event) {
       if (_debugLogKeyEvents) {
         print(event.type);
       }
@@ -121,15 +121,16 @@ class KeyboardBinding {
       return null;
     }
 
+    final DomEventListener wrappedHandler = allowInterop(loggedHandler);
     assert(!_listeners.containsKey(eventName));
-    _listeners[eventName] = loggedHandler;
-    html.window.addEventListener(eventName, loggedHandler, true);
+    _listeners[eventName] = wrappedHandler;
+    domWindow.addEventListener(eventName, wrappedHandler, true);
   }
 
   /// Remove all active event listeners.
   void _clearListeners() {
-    _listeners.forEach((String eventName, html.EventListener listener) {
-      html.window.removeEventListener(eventName, listener, true);
+    _listeners.forEach((String eventName, DomEventListener listener) {
+      domWindow.removeEventListener(eventName, listener, true);
     });
     _listeners.clear();
   }
@@ -143,12 +144,12 @@ class KeyboardBinding {
   }
 
   void _setup() {
-    _addEventListener('keydown', (html.Event event) {
-      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as html.KeyboardEvent));
-    });
-    _addEventListener('keyup', (html.Event event) {
-      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as html.KeyboardEvent));
-    });
+    _addEventListener('keydown', allowInterop((DomEvent event) {
+      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
+    }));
+    _addEventListener('keyup', allowInterop((DomEvent event) {
+      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
+    }));
     _converter = KeyboardConverter(_onKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
   }
 
@@ -168,12 +169,12 @@ class AsyncKeyboardDispatching {
   final _VoidCallback? callback;
 }
 
-// A wrapper of [html.KeyboardEvent] with reduced methods delegated to the event
+// A wrapper of [DomKeyboardEvent] with reduced methods delegated to the event
 // for the convenience of testing.
 class FlutterHtmlKeyboardEvent {
   FlutterHtmlKeyboardEvent(this._event);
 
-  final html.KeyboardEvent _event;
+  final DomKeyboardEvent _event;
 
   String get type => _event.type;
   String? get code => _event.code;
@@ -190,7 +191,7 @@ class FlutterHtmlKeyboardEvent {
   void preventDefault() => _event.preventDefault();
 }
 
-// Reads [html.KeyboardEvent], then [dispatches ui.KeyData] accordingly.
+// Reads [DomKeyboardEvent], then [dispatches ui.KeyData] accordingly.
 //
 // The events are read through [handleEvent], and dispatched through the
 // [dispatchKeyData] as given in the constructor. Some key data might be
@@ -323,8 +324,9 @@ class KeyboardConverter {
   final Map<int, _VoidCallback> _keyGuards = <int, _VoidCallback>{};
   // Call this method on the down or repeated event of a non-modifier key.
   void _startGuardingKey(int physicalKey, int logicalKey, Duration currentTimeStamp) {
-    if (!_shouldDoKeyGuard())
+    if (!_shouldDoKeyGuard()) {
       return;
+    }
     final _VoidCallback cancelingCallback = _scheduleAsyncEvent(
       _kKeydownCancelDurationMac,
       () => ui.KeyData(
@@ -356,15 +358,17 @@ class KeyboardConverter {
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
     final String? character = logicalKeyIsCharacter ? eventKey : null;
     final int logicalKey = () {
-      if (kWebLogicalLocationMap.containsKey(event.key!)) {
+      if (kWebLogicalLocationMap.containsKey(event.key)) {
         final int? result = kWebLogicalLocationMap[event.key!]?[event.location!];
         assert(result != null, 'Invalid modifier location: ${event.key}, ${event.location}');
         return result!;
       }
-      if (character != null)
+      if (character != null) {
         return _characterToLogicalKey(character);
-      if (eventKey == _kLogicalDead)
+      }
+      if (eventKey == _kLogicalDead) {
         return _deadKeyToLogicalKey(physicalKey, event);
+      }
       return _otherLogicalKey(eventKey);
     }();
 
@@ -486,8 +490,9 @@ class KeyboardConverter {
       }
       if (_pressingRecords.containsValue(testeeLogicalKey) && !getModifier(event)) {
         _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
-          if (logicalRecord != testeeLogicalKey)
+          if (logicalRecord != testeeLogicalKey) {
             return false;
+          }
 
           _dispatchKeyData!(ui.KeyData(
             timeStamp: timeStamp,

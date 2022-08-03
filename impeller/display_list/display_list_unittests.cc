@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gtest/gtest.h"
-#include "third_party/imgui/imgui.h"
-#include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkPathBuilder.h"
-
+#include "display_list/display_list_blend_mode.h"
+#include "display_list/display_list_color.h"
+#include "display_list/display_list_color_filter.h"
+#include "display_list/display_list_image_filter.h"
+#include "display_list/display_list_paint.h"
+#include "display_list/display_list_tile_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_mask_filter.h"
 #include "flutter/display_list/types.h"
@@ -15,6 +16,10 @@
 #include "impeller/display_list/display_list_playground.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "third_party/imgui/imgui.h"
+#include "third_party/skia/include/core/SkClipOp.h"
+#include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkPathBuilder.h"
 
 namespace impeller {
 namespace testing {
@@ -41,7 +46,7 @@ TEST_P(DisplayListTest, CanDrawImage) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    SkSamplingOptions{}, true);
+                    flutter::DlImageSampling::kNearestNeighbor, true);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -113,6 +118,9 @@ TEST_P(DisplayListTest, CanDrawArc) {
         Point(200, 200), Point(400, 400), 20, Color::White(), Color::White());
 
     flutter::DisplayListBuilder builder;
+
+    Vector2 scale = GetContentScale();
+    builder.scale(scale.x, scale.y);
     builder.setStyle(flutter::DlDrawStyle::kStroke);
     builder.setStrokeCap(flutter::DlStrokeCap::kRound);
     builder.setStrokeJoin(flutter::DlStrokeJoin::kMiter);
@@ -176,6 +184,21 @@ TEST_P(DisplayListTest, StrokedPathsDrawCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawWithOddPathWinding) {
+  flutter::DisplayListBuilder builder;
+  builder.setColor(SK_ColorRED);
+  builder.setStyle(flutter::DlDrawStyle::kFill);
+
+  builder.translate(300, 300);
+  SkPath path;
+  path.setFillType(SkPathFillType::kEvenOdd);
+  path.addCircle(0, 0, 100);
+  path.addCircle(0, 0, 50);
+  builder.drawPath(path);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
@@ -185,7 +208,7 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
     auto filter = flutter::DlBlurMaskFilter(kNormal_SkBlurStyle, 10.0f);
     builder.setMaskFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                      SkSamplingOptions{}, true);
+                      flutter::DlImageSampling::kNearestNeighbor, true);
   }
 
   // Mask blurred filled path.
@@ -205,6 +228,133 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+
+  // Pipeline blended image.
+  {
+    auto filter = flutter::DlBlendColorFilter(SK_ColorYELLOW,
+                                              flutter::DlBlendMode::kModulate);
+    builder.setColorFilter(&filter);
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                      flutter::DlImageSampling::kNearestNeighbor, true);
+  }
+
+  // Advanced blended image.
+  {
+    auto filter =
+        flutter::DlBlendColorFilter(SK_ColorRED, flutter::DlBlendMode::kScreen);
+    builder.setColorFilter(&filter);
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(250, 250),
+                      flutter::DlImageSampling::kNearestNeighbor, true);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+
+  bool first_frame = true;
+  auto callback = [&]() {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowSize({400, 100});
+      ImGui::SetNextWindowPos({300, 550});
+    }
+
+    static float sigma[] = {10, 10};
+
+    ImGui::Begin("Controls");
+    ImGui::SliderFloat2("Sigma", sigma, 0, 100);
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+
+    auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
+                                             flutter::DlTileMode::kClamp);
+    builder.setImageFilter(&filter);
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
+                      flutter::DlImageSampling::kNearestNeighbor, true);
+
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, CanDrawBackdropFilter) {
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+
+  bool first_frame = true;
+  auto callback = [&]() {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowPos({10, 10});
+    }
+
+    static float sigma[] = {10, 10};
+    static bool use_bounds = true;
+    static bool draw_circle = true;
+    static bool add_clip = true;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat2("Sigma", sigma, 0, 100);
+    ImGui::NewLine();
+    ImGui::TextWrapped(
+        "If everything is working correctly, none of the options below should "
+        "impact the filter's appearance.");
+    ImGui::Checkbox("Use SaveLayer bounds", &use_bounds);
+    ImGui::Checkbox("Draw child element", &draw_circle);
+    ImGui::Checkbox("Add pre-clip", &add_clip);
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+
+    Vector2 scale = GetContentScale();
+    builder.scale(scale.x, scale.y);
+
+    auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
+                                             flutter::DlTileMode::kClamp);
+
+    std::optional<SkRect> bounds;
+    if (use_bounds) {
+      auto [p1, p2] = IMPELLER_PLAYGROUND_LINE(
+          Point(350, 150), Point(800, 600), 20, Color::White(), Color::White());
+      bounds = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
+    }
+
+    // Insert a clip to test that the backdrop filter handles stencil depths > 0
+    // correctly.
+    if (add_clip) {
+      builder.clipRect(SkRect::MakeLTRB(0, 0, 99999, 99999),
+                       SkClipOp::kIntersect, true);
+    }
+
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
+                      flutter::DlImageSampling::kNearestNeighbor, true);
+    builder.saveLayer(bounds.has_value() ? &bounds.value() : nullptr, nullptr,
+                      &filter);
+
+    if (draw_circle) {
+      auto circle_center =
+          IMPELLER_PLAYGROUND_POINT(Point(500, 400), 20, Color::Red());
+
+      builder.setStyle(flutter::DlDrawStyle::kStroke);
+      builder.setStrokeCap(flutter::DlStrokeCap::kButt);
+      builder.setStrokeJoin(flutter::DlStrokeJoin::kBevel);
+      builder.setStrokeWidth(10);
+      builder.setColor(flutter::DlColor::kRed().withAlpha(100));
+      builder.drawCircle({circle_center.x, circle_center.y}, 100);
+    }
+
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing

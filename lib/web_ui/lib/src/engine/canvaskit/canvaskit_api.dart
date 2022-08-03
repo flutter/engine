@@ -13,7 +13,7 @@
 library canvaskit_api;
 
 import 'dart:async';
-import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
@@ -1241,10 +1241,11 @@ Float32List toSkMatrixFromFloat32(Float32List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1255,10 +1256,11 @@ Float32List toSkMatrixFromFloat64(Float64List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1569,6 +1571,15 @@ ui.Rect fromSkRect(Float32List skRect) {
   return ui.Rect.fromLTRB(skRect[0], skRect[1], skRect[2], skRect[3]);
 }
 
+ui.Rect rectFromSkIRect(Int32List skIRect) {
+  return ui.Rect.fromLTRB(
+    skIRect[0].toDouble(),
+    skIRect[1].toDouble(),
+    skIRect[2].toDouble(),
+    skIRect[3].toDouble(),
+  );
+}
+
 // TODO(hterkelsen): Use a shared malloc'ed array for performance.
 Float32List toSkRRect(ui.RRect rrect) {
   final Float32List skRRect = Float32List(12);
@@ -1683,6 +1694,7 @@ extension SkCanvasExtension on SkCanvas {
     SkClipOp clipOp,
     bool doAntiAlias,
   );
+  external Int32List getDeviceClipBounds();
   external void drawArc(
     Float32List oval,
     double startAngleDegrees,
@@ -1816,6 +1828,7 @@ extension SkCanvasExtension on SkCanvas {
   external void skew(double x, double y);
   external void concat(Float32List matrix);
   external void translate(double x, double y);
+  external List<dynamic> getLocalToDevice();
   external void drawPicture(SkPicture picture);
   external void drawParagraph(
     SkParagraph paragraph,
@@ -2264,7 +2277,7 @@ abstract class Collector {
 class ProductionCollector implements Collector {
   ProductionCollector() {
     _skObjectFinalizationRegistry =
-        SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+        SkObjectFinalizationRegistry(allowInterop((SkDeletable deletable) {
       // This is called when GC decides to collect the wrapper object and
       // notify us, which may happen after the object is already deleted
       // explicitly, e.g. when its ref count drops to zero. When that happens
@@ -2519,6 +2532,28 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
   external int get width;
 }
 
+/// Helper interop methods for [patchCanvasKitModule].
+@JS()
+external set _flutterWebCachedModule(Object? module);
+
+@JS()
+external Object? get _flutterWebCachedModule;
+
+@JS()
+external set _flutterWebCachedExports(Object? exports);
+
+@JS()
+external Object? get _flutterWebCachedExports;
+
+@JS('Object')
+external Object get objectConstructor;
+
+@JS()
+external Object? get exports;
+
+@JS()
+external Object? get module;
+
 /// Monkey-patch the top-level `module` and `exports` objects so that
 /// CanvasKit doesn't attempt to register itself as an anonymous module.
 ///
@@ -2542,40 +2577,39 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
 void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   // First check if `exports` and `module` are already defined. If so, then
   // CommonJS is being used, and we shouldn't have any problems.
-  final js.JsFunction objectConstructor = js.context['Object'] as js.JsFunction;
-  if (js.context['exports'] == null) {
-    final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
+  if (exports == null) {
+    final Object? exportsAccessor = js_util.jsify(<String, dynamic>{
       'get': allowInterop(() {
         if (domDocument.currentScript == canvasKitScript) {
-          return js.JsObject(objectConstructor);
+          return objectConstructor;
         } else {
-          return js.context['_flutterWebCachedExports'];
+          return _flutterWebCachedExports;
         }
       }),
       'set': allowInterop((dynamic value) {
-        js.context['_flutterWebCachedExports'] = value;
+        _flutterWebCachedExports = value;
       }),
       'configurable': true,
     });
-    objectConstructor.callMethod(
-        'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
+    js_util.callMethod(objectConstructor,
+        'defineProperty', <dynamic>[domWindow, 'exports', exportsAccessor]);
   }
-  if (js.context['module'] == null) {
-    final js.JsObject moduleAccessor = js.JsObject.jsify(<String, dynamic>{
+  if (module == null) {
+    final Object? moduleAccessor = js_util.jsify(<String, dynamic>{
       'get': allowInterop(() {
         if (domDocument.currentScript == canvasKitScript) {
-          return js.JsObject(objectConstructor);
+          return objectConstructor;
         } else {
-          return js.context['_flutterWebCachedModule'];
+          return _flutterWebCachedModule;
         }
       }),
       'set': allowInterop((dynamic value) {
-        js.context['_flutterWebCachedModule'] = value;
+        _flutterWebCachedModule = value;
       }),
       'configurable': true,
     });
-    objectConstructor.callMethod(
-        'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+    js_util.callMethod(objectConstructor,
+        'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
   domDocument.head!.appendChild(canvasKitScript);
 }

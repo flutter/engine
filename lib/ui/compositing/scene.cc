@@ -21,12 +21,6 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
-#define FOR_EACH_BINDING(V) \
-  V(Scene, toImage)         \
-  V(Scene, dispose)
-
-DART_BIND_ALL(Scene, FOR_EACH_BINDING)
-
 void Scene::create(Dart_Handle scene_handle,
                    std::shared_ptr<flutter::Layer> rootLayer,
                    uint32_t rasterizerTracingThreshold,
@@ -64,6 +58,24 @@ Scene::~Scene() {}
 void Scene::dispose() {
   layer_tree_.reset();
   ClearDartWrapper();
+}
+
+Dart_Handle Scene::toImageSync(uint32_t width,
+                               uint32_t height,
+                               Dart_Handle raw_image_handle) {
+  TRACE_EVENT0("flutter", "Scene::toImageSync");
+
+  if (!layer_tree_) {
+    return tonic::ToDart("Scene did not contain a layer tree.");
+  }
+
+  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
+  if (!picture) {
+    return tonic::ToDart("Could not flatten scene into a layer tree.");
+  }
+
+  Picture::RasterizeToImageSync(picture, width, height, raw_image_handle);
+  return Dart_Null();
 }
 
 Dart_Handle Scene::toImage(uint32_t width,

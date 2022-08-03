@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -21,9 +23,9 @@ void testMain() {
     });
 
     test('Surface allocates canvases efficiently', () {
-      final Surface surface = SurfaceFactory.instance.getSurface();
+      final Surface? surface = SurfaceFactory.instance.getOverlay();
       final CkSurface originalSurface =
-          surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
+          surface!.acquireFrame(const ui.Size(9, 19)).skiaSurface;
       final DomCanvasElement original = surface.htmlCanvas!;
 
       // Expect exact requested dimensions.
@@ -102,8 +104,8 @@ void testMain() {
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
-        final Surface surface = SurfaceFactory.instance.getSurface();
-        expect(surface.debugForceNewContext, isTrue);
+        final Surface? surface = SurfaceFactory.instance.getOverlay();
+        expect(surface!.debugForceNewContext, isTrue);
         final CkSurface before =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
         expect(surface.debugForceNewContext, isFalse);

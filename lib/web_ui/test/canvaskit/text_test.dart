@@ -22,22 +22,18 @@ void testMain() {
         fontSize: 16,
         shadows: <ui.Shadow>[
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(3.0, 3.0),
           ),
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(-3.0, 3.0),
           ),
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(3.0, -3.0),
           ),
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(-3.0, -3.0),
           ),
@@ -53,6 +49,22 @@ void testMain() {
         final ui.Paragraph paragraph = builder.build();
         expect(paragraph, isNotNull);
       }
+    });
+
+    // Regression test for https://github.com/flutter/flutter/issues/78550
+    test('getBoxesForRange works for LTR text in an RTL paragraph', () {
+      // Create builder for an RTL paragraph.
+      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+          ui.ParagraphStyle(fontSize: 16, textDirection: ui.TextDirection.rtl));
+      builder.addText('hello');
+      final ui.Paragraph paragraph = builder.build();
+      paragraph.layout(const ui.ParagraphConstraints(width: 100));
+      expect(paragraph, isNotNull);
+      final List<ui.TextBox> boxes = paragraph.getBoxesForRange(0, 1);
+      expect(boxes, hasLength(1));
+      // The direction for this span is LTR even though the paragraph is RTL
+      // because the directionality of the 'h' is LTR.
+      expect(boxes.single.direction, equals(ui.TextDirection.ltr));
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);

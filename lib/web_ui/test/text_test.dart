@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html';
+// This is testing some of the named constants.
+// ignore_for_file: use_named_constants
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -224,8 +225,8 @@ Future<void> testMain() async {
     final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 800.0));
     expect(paragraph.plainText, 'abcdef');
-    final List<Element> spans =
-        paragraph.toDomElement().querySelectorAll('flt-span').cast<Element>();
+    final List<DomElement> spans =
+        paragraph.toDomElement().querySelectorAll('flt-span').toList();
     expect(spans[0].style.fontFamily, 'Ahem, $fallback, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
     expect(spans[1].style.fontFamily, 'Ahem, $fallback, sans-serif');
@@ -291,7 +292,7 @@ Future<void> testMain() async {
   group('TextRange', () {
     test('empty ranges are correct', () {
       const TextRange range = TextRange(start: -1, end: -1);
-      expect(range, equals(const TextRange.collapsed(-1)));
+      expect(range, equals(TextRange.collapsed(-1))); // ignore: prefer_const_constructors
       expect(range, equals(TextRange.empty));
     });
     test('isValid works', () {

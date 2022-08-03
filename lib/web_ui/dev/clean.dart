@@ -21,7 +21,6 @@ class CleanCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'ninja',
-        defaultsTo: false,
         help: 'Also clean up the engine out directory with ninja output. Disabled by default.',
       );
   }
@@ -41,7 +40,7 @@ class CleanCommand extends Command<bool> with ArgUtils<bool> {
     final List<io.FileSystemEntity> thingsToBeCleaned = <io.FileSystemEntity>[
       environment.webUiDartToolDir,
       environment.webUiBuildDir,
-      io.File(path.join(environment.webUiRootDir.path, '.packages')),
+      io.File(path.join(environment.webUiRootDir.path, '.dart_tool', 'package_config.json')),
       io.File(path.join(environment.webUiRootDir.path, 'pubspec.lock')),
       if (_alsoCleanNinja)
         environment.outDir,

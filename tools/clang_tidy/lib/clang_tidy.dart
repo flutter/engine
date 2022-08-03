@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:convert' show jsonDecode;
-import 'dart:io' as io show Directory, File, stdout, stderr;
+import 'dart:io' as io show Directory, File, stderr, stdout;
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -229,6 +229,10 @@ class ClangTidy {
       }
       _errSink.writeln('❌ Failures for ${job.name}:');
       _errSink.writeln(job.result.stdout);
+      final Exception? exception = job.exception;
+      if (exception != null) {
+        _errSink.writeln(exception);
+      }
       result = 1;
     }
     return result;

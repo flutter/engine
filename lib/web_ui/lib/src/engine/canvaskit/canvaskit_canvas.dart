@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
 import '../validators.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
@@ -20,8 +21,6 @@ import 'vertices.dart';
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
 class CanvasKitCanvas implements ui.Canvas {
-  final CkCanvas _canvas;
-
   factory CanvasKitCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) {
     assert(recorder != null); // ignore: unnecessary_null_comparison
     if (recorder.isRecording) {
@@ -34,6 +33,8 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   CanvasKitCanvas._(this._canvas);
+
+  final CkCanvas _canvas;
 
   @override
   void save() {
@@ -105,6 +106,11 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   @override
+  Float64List getTransform() {
+    return toMatrix64(_canvas.getLocalToDevice());
+  }
+
+  @override
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     assert(rectIsValid(rect));
@@ -134,6 +140,21 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(path != null); // path is checked on the engine side
     assert(doAntiAlias != null); // ignore: unnecessary_null_comparison
     _canvas.clipPath(path as CkPath, doAntiAlias);
+  }
+
+  @override
+  ui.Rect getLocalClipBounds() {
+    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getLocalToDevice());
+    if (transform.invert() == 0) {
+      // non-invertible transforms collapse space to a line or point
+      return ui.Rect.zero;
+    }
+    return transformRect(transform, _canvas.getDeviceClipBounds());
+  }
+
+  @override
+  ui.Rect getDestinationClipBounds() {
+    return _canvas.getDeviceClipBounds();
   }
 
   @override
@@ -405,14 +426,17 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(paint != null); // ignore: unnecessary_null_comparison
 
     final int rectCount = rects.length;
-    if (rstTransforms.length != rectCount)
+    if (rstTransforms.length != rectCount) {
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
-    if (rectCount % 4 != 0)
+    }
+    if (rectCount % 4 != 0) {
       throw ArgumentError(
           '"rstTransforms" and "rects" lengths must be a multiple of four.');
-    if (colors != null && colors.length * 4 != rectCount)
+    }
+    if (colors != null && colors.length * 4 != rectCount) {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+    }
 
     _drawAtlas(paint, atlas, rstTransforms, rects,
         colors?.buffer.asUint32List(), blendMode ?? ui.BlendMode.src);

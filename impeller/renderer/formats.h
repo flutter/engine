@@ -154,6 +154,11 @@ enum class TextureUsage : TextureUsageMask {
   kRenderTarget = 1 << 2,
 };
 
+enum class TextureIntent {
+  kUploadFromHost,
+  kRenderToTexture,
+};
+
 enum class CullMode {
   kNone,
   kFrontFace,
@@ -191,6 +196,16 @@ enum class MinMagFilter {
   kNearest,
   /// Select two points and linearly interpolate between them. Some formats
   /// may not support this.
+  kLinear,
+};
+
+enum class MipFilter {
+  /// Always sample from mip level 0. Other mip levels are ignored.
+  kNone,
+  /// Sample from the nearest mip level.
+  kNearest,
+  /// Sample from the two nearest mip levels and linearly interpolate between
+  /// them.
   kLinear,
 };
 

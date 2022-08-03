@@ -16,8 +16,6 @@ import 'recording_canvas.dart';
 import 'render_vertices.dart';
 
 class SurfaceCanvas implements ui.Canvas {
-  RecordingCanvas _canvas;
-
   factory SurfaceCanvas(EnginePictureRecorder recorder, [ui.Rect? cullRect]) {
     if (recorder.isRecording) {
       throw ArgumentError(
@@ -28,6 +26,8 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   SurfaceCanvas._(this._canvas);
+
+  RecordingCanvas _canvas;
 
   @override
   void save() {
@@ -97,6 +97,11 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   @override
+  Float64List getTransform() {
+    return Float64List.fromList(_canvas.getCurrentMatrixUnsafe());
+  }
+
+  @override
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     assert(rectIsValid(rect));
@@ -130,6 +135,34 @@ class SurfaceCanvas implements ui.Canvas {
 
   void _clipPath(ui.Path path, bool doAntiAlias) {
     _canvas.clipPath(path, doAntiAlias: doAntiAlias);
+  }
+
+  @override
+  ui.Rect getDestinationClipBounds() {
+    return _canvas.getDestinationClipBounds() ?? ui.Rect.largest;
+  }
+
+  ui.Rect _roundOut(ui.Rect rect) {
+    return ui.Rect.fromLTRB(
+      rect.left.floorToDouble(),
+      rect.top.floorToDouble(),
+      rect.right.ceilToDouble(),
+      rect.bottom.ceilToDouble(),
+    );
+  }
+
+  @override
+  ui.Rect getLocalClipBounds() {
+    final ui.Rect? destBounds = _canvas.getDestinationClipBounds();
+    if (destBounds == null) {
+      return ui.Rect.largest;
+    }
+    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
+    if (transform.invert() == 0) {
+      // non-invertible transforms collapse space to a line or point
+      return ui.Rect.zero;
+    }
+    return transformRect(transform, _roundOut(destBounds));
   }
 
   @override
@@ -348,8 +381,9 @@ class SurfaceCanvas implements ui.Canvas {
     assert(rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
 
-    if (dst.isEmpty)
+    if (dst.isEmpty) {
       return;
+    }
 
     final List<double> hSlices = _initSlices(
       0,

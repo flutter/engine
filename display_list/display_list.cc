@@ -16,15 +16,6 @@ const SaveLayerOptions SaveLayerOptions::kNoAttributes = SaveLayerOptions();
 const SaveLayerOptions SaveLayerOptions::kWithAttributes =
     kNoAttributes.with_renders_with_attributes();
 
-const SkSamplingOptions DisplayList::NearestSampling =
-    SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
-const SkSamplingOptions DisplayList::LinearSampling =
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
-const SkSamplingOptions DisplayList::MipmapSampling =
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
-const SkSamplingOptions DisplayList::CubicSampling =
-    SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
-
 DisplayList::DisplayList()
     : byte_count_(0),
       op_count_(0),
@@ -62,9 +53,23 @@ DisplayList::~DisplayList() {
 }
 
 void DisplayList::ComputeBounds() {
-  DisplayListBoundsCalculator calculator(&bounds_cull_);
+  RectBoundsAccumulator accumulator;
+  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
   Dispatch(calculator);
-  bounds_ = calculator.bounds();
+  if (calculator.is_unbounded()) {
+    FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
+  }
+  bounds_ = accumulator.bounds();
+}
+
+void DisplayList::ComputeRTree() {
+  RTreeBoundsAccumulator accumulator;
+  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
+  Dispatch(calculator);
+  if (calculator.is_unbounded()) {
+    FML_LOG(INFO) << "returning partial rtree for unbounded DisplayList";
+  }
+  rtree_ = accumulator.rtree();
 }
 
 void DisplayList::Dispatch(Dispatcher& dispatcher,

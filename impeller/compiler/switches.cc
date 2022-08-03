@@ -15,21 +15,45 @@ namespace compiler {
 static const std::map<std::string, TargetPlatform> kKnownPlatforms = {
     {"metal-desktop", TargetPlatform::kMetalDesktop},
     {"metal-ios", TargetPlatform::kMetalIOS},
+    {"vulkan", TargetPlatform::kVulkan},
     {"opengl-es", TargetPlatform::kOpenGLES},
     {"opengl-desktop", TargetPlatform::kOpenGLDesktop},
     {"flutter-spirv", TargetPlatform::kFlutterSPIRV},
+    {"sksl", TargetPlatform::kSkSL},
+    {"runtime-stage-metal", TargetPlatform::kRuntimeStageMetal},
+    {"runtime-stage-gles", TargetPlatform::kRuntimeStageGLES},
+};
+
+static const std::map<std::string, SourceType> kKnownSourceTypes = {
+    {"vert", SourceType::kVertexShader},
+    {"frag", SourceType::kFragmentShader},
+    {"tesc", SourceType::kTessellationControlShader},
+    {"tese", SourceType::kTessellationEvaluationShader},
+    {"comp", SourceType::kComputeShader},
 };
 
 void Switches::PrintHelp(std::ostream& stream) {
-  stream << std::endl << "Valid Argument are:" << std::endl;
+  stream << std::endl;
+  stream << "ImpellerC is an offline shader processor and reflection engine."
+         << std::endl;
+  stream << "---------------------------------------------------------------"
+         << std::endl;
+  stream << "Valid Argument are:" << std::endl;
   stream << "One of [";
   for (const auto& platform : kKnownPlatforms) {
     stream << " --" << platform.first;
   }
   stream << " ]" << std::endl;
   stream << "--input=<glsl_file>" << std::endl;
+  stream << "[optional] --input-kind={";
+  for (const auto& source_type : kKnownSourceTypes) {
+    stream << source_type.first << ", ";
+  }
+  stream << "}" << std::endl;
   stream << "--sl=<sl_output_file>" << std::endl;
   stream << "--spirv=<spirv_output_file>" << std::endl;
+  stream << "[optional] --iplr (causes --sl file to be emitted in iplr format)"
+         << std::endl;
   stream << "[optional] --reflection-json=<reflection_json_file>" << std::endl;
   stream << "[optional] --reflection-header=<reflection_header_file>"
          << std::endl;
@@ -61,6 +85,17 @@ static TargetPlatform TargetPlatformFromCommandLine(
   return target;
 }
 
+static SourceType SourceTypeFromCommandLine(
+    const fml::CommandLine& command_line) {
+  auto source_type_option =
+      command_line.GetOptionValueWithDefault("input-type", "");
+  auto source_type_search = kKnownSourceTypes.find(source_type_option);
+  if (source_type_search == kKnownSourceTypes.end()) {
+    return SourceType::kUnknown;
+  }
+  return source_type_search->second;
+}
+
 Switches::Switches(const fml::CommandLine& command_line)
     : target_platform(TargetPlatformFromCommandLine(command_line)),
       working_directory(std::make_shared<fml::UniqueFD>(fml::OpenDirectory(
@@ -68,7 +103,9 @@ Switches::Switches(const fml::CommandLine& command_line)
           false,  // create if necessary,
           fml::FilePermission::kRead))),
       source_file_name(command_line.GetOptionValueWithDefault("input", "")),
+      input_type(SourceTypeFromCommandLine(command_line)),
       sl_file_name(command_line.GetOptionValueWithDefault("sl", "")),
+      iplr(command_line.HasOption("iplr")),
       spirv_file_name(command_line.GetOptionValueWithDefault("spirv", "")),
       reflection_json_name(
           command_line.GetOptionValueWithDefault("reflection-json", "")),
@@ -85,8 +122,15 @@ Switches::Switches(const fml::CommandLine& command_line)
     if (!include_dir_path.data()) {
       continue;
     }
+
+    // fml::OpenDirectoryReadOnly for Windows doesn't handle relative paths
+    // beginning with `../` well, so we build an absolute path.
+    auto include_dir_absolute =
+        ToUtf8(std::filesystem::absolute(std::filesystem::current_path() /
+                                         include_dir_path)
+                   .native());
     auto dir = std::make_shared<fml::UniqueFD>(fml::OpenDirectoryReadOnly(
-        *working_directory, include_dir_path.data()));
+        *working_directory, include_dir_absolute.c_str()));
     if (!dir || !dir->is_valid()) {
       continue;
     }

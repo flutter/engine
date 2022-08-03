@@ -61,7 +61,7 @@ struct PipelineBuilder {
       const Context& context,
       PipelineDescriptor& desc) {
     // Setup debug instrumentation.
-    desc.SetLabel(SPrintF("%s Pipeline", VertexShader::kLabel.data()));
+    desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
 
     // Resolve pipeline entrypoints.
     {
@@ -91,6 +91,13 @@ struct PipelineBuilder {
         VALIDATION_LOG
             << "Could not configure vertex descriptor for pipeline named '"
             << VertexShader::kLabel << "'.";
+        return false;
+      }
+      if (!vertex_descriptor->SetDescriptorSetLayouts(
+              VertexShader::kDescriptorSetLayouts)) {
+        VALIDATION_LOG << "Cound not configure vertex descriptor set layout for"
+                          " pipeline named '"
+                       << VertexShader::kLabel << "'.";
         return false;
       }
       desc.SetVertexDescriptor(std::move(vertex_descriptor));

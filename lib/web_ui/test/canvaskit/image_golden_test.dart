@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
@@ -56,7 +55,7 @@ void testMain() {
       );
     });
   // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  }, skip: isSafari);
 }
 
 void _testForImageCodecs({required bool useBrowserImageDecoder}) {
@@ -415,7 +414,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         } else {
           expect(
             exception.toString(),
-            'ImageCodecException: Image file format (unsupported/image-type) is not supported by this browser\'s ImageDecoder API.\n'
+            "ImageCodecException: Image file format (unsupported/image-type) is not supported by this browser's ImageDecoder API.\n"
             'Image source: encoded image bytes'
           );
         }
@@ -423,10 +422,10 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('decodeImageFromPixels', () async {
-      Future<ui.Image> _testDecodeFromPixels(int width, int height) async {
+      Future<ui.Image> testDecodeFromPixels(int width, int height) async {
         final Completer<ui.Image> completer = Completer<ui.Image>();
         ui.decodeImageFromPixels(
-          Uint8List.fromList(List<int>.filled(width * height * 4, 0, growable: false)),
+          Uint8List.fromList(List<int>.filled(width * height * 4, 0)),
           width,
           height,
           ui.PixelFormat.rgba8888,
@@ -437,12 +436,12 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         return completer.future;
       }
 
-      final ui.Image image1 = await _testDecodeFromPixels(10, 20);
+      final ui.Image image1 = await testDecodeFromPixels(10, 20);
       expect(image1, isNotNull);
       expect(image1.width, 10);
       expect(image1.height, 20);
 
-      final ui.Image image2 = await _testDecodeFromPixels(40, 100);
+      final ui.Image image2 = await testDecodeFromPixels(40, 100);
       expect(image2, isNotNull);
       expect(image2.width, 40);
       expect(image2.height, 100);
@@ -533,7 +532,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     test('the same image can be rendered on difference surfaces', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -609,7 +608,7 @@ void _testCkAnimatedImage() {
     ];
     for (int i = 0; i < image.frameCount; i++) {
       final ui.FrameInfo frame = await image.getNextFrame();
-      final ByteData? rgba = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final ByteData? rgba = await frame.image.toByteData();
       expect(rgba, isNotNull);
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
@@ -648,7 +647,7 @@ void _testCkBrowserImageDecoder() {
     ];
     for (int i = 0; i < image.frameCount; i++) {
       final ui.FrameInfo frame = await image.getNextFrame();
-      final ByteData? rgba = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final ByteData? rgba = await frame.image.toByteData();
       expect(rgba, isNotNull);
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }

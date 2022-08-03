@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: avoid_dynamic_calls
+
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -47,7 +48,7 @@ void testMain() {
     final JsUrlStrategy jsUrlStrategy = JsUrlStrategy(
         getPath: allowInterop(() => '/initial'),
         getState: allowInterop(() => state),
-        addPopStateListener: allowInterop((html.EventListener listener) => () {}),
+        addPopStateListener: allowInterop((DomEventListener listener) => () {}),
         prepareExternalUrl: allowInterop((String value) => ''),
         pushState: allowInterop((Object? newState, String title, String url) {
           expect(newState is Map, true);
@@ -144,7 +145,6 @@ void testMain() {
       await window.handleNavigationMessage(
         const JSONMethodCodec().encodeMethodCall(const MethodCall(
           'routeUpdated',
-          null, // boom
         ))
       );
     }, throwsAssertionError);
@@ -153,7 +153,6 @@ void testMain() {
       await window.handleNavigationMessage(
         const JSONMethodCodec().encodeMethodCall(const MethodCall(
           'routeInformationUpdated',
-          null, // boom
         ))
       );
     }, throwsAssertionError);
@@ -169,7 +168,6 @@ void testMain() {
     await window.handleNavigationMessage(
       const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectSingleEntryHistory',
-        null,
       ))
     ).then<void>((bool data) {
       executionOrder.add('1');
@@ -177,7 +175,6 @@ void testMain() {
     await window.handleNavigationMessage(
       const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectMultiEntryHistory',
-        null,
       ))
     ).then<void>((bool data) {
       executionOrder.add('2');
@@ -185,7 +182,6 @@ void testMain() {
     await window.handleNavigationMessage(
         const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectSingleEntryHistory',
-        null,
       ))
     ).then<void>((bool data) {
       executionOrder.add('3');
@@ -296,7 +292,7 @@ void testMain() {
     await callback.future;
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
     expect(window.browserHistory.urlStrategy!.getPath(), '/baz');
-    final dynamic wrappedState = window.browserHistory.urlStrategy!.getState()!;
+    final dynamic wrappedState = window.browserHistory.urlStrategy!.getState();
     final dynamic actualState = wrappedState['state'];
     expect(actualState['state1'], true);
     expect(actualState['state2'], 1);
@@ -472,7 +468,7 @@ void testMain() {
 
 void jsSetUrlStrategy(dynamic strategy) {
   js_util.callMethod<void>(
-    html.window,
+    domWindow,
     '_flutter_web_set_location_strategy',
     <dynamic>[strategy],
   );

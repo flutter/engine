@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../util.dart';
 import 'measurement.dart';
@@ -74,12 +73,12 @@ class TextHeightStyle {
   }
 
   @override
-  late final int hashCode = ui.hashValues(
+  late final int hashCode = Object.hash(
     fontFamily,
     fontSize,
     height,
-    ui.hashList(fontFeatures),
-    ui.hashList(fontVariations),
+    fontFeatures == null ? null : Object.hashAll(fontFeatures!),
+    fontVariations == null ? null : Object.hashAll(fontVariations!),
   );
 }
 
@@ -98,8 +97,8 @@ class TextHeightStyle {
 class TextDimensions {
   TextDimensions(this._element);
 
-  final html.Element _element;
-  html.Rectangle<num>? _cachedBoundingClientRect;
+  final DomElement _element;
+  DomRect? _cachedBoundingClientRect;
 
   void _invalidateBoundsCache() {
     _cachedBoundingClientRect = null;
@@ -114,10 +113,10 @@ class TextDimensions {
   void applyHeightStyle(TextHeightStyle textHeightStyle) {
     final String fontFamily = textHeightStyle.fontFamily;
     final double fontSize = textHeightStyle.fontSize;
-    final html.CssStyleDeclaration style = _element.style;
+    final DomCSSStyleDeclaration style = _element.style;
     style
       ..fontSize = '${fontSize.floor()}px'
-      ..fontFamily = canonicalizeFontFamily(fontFamily);
+      ..fontFamily = canonicalizeFontFamily(fontFamily)!;
 
     final double? height = textHeightStyle.height;
     if (height != null) {
@@ -128,12 +127,12 @@ class TextDimensions {
 
   /// Appends element and probe to hostElement that is set up for a specific
   /// TextStyle.
-  void appendToHost(html.HtmlElement hostElement) {
+  void appendToHost(DomHTMLElement hostElement) {
     hostElement.append(_element);
     _invalidateBoundsCache();
   }
 
-  html.Rectangle<num> _readAndCacheMetrics() =>
+  DomRect _readAndCacheMetrics() =>
       _cachedBoundingClientRect ??= _element.getBoundingClientRect();
 
   /// The height of the paragraph being measured.
@@ -166,9 +165,9 @@ class TextHeightRuler {
   final RulerHost rulerHost;
 
   // Elements used to measure the line-height metric.
-  late final html.HtmlElement _probe = _createProbe();
-  late final html.HtmlElement _host = _createHost();
-  final TextDimensions _dimensions = TextDimensions(html.document.createElement('flt-paragraph'));
+  late final DomHTMLElement _probe = _createProbe();
+  late final DomHTMLElement _host = _createHost();
+  final TextDimensions _dimensions = TextDimensions(domDocument.createElement('flt-paragraph'));
 
   /// The alphabetic baseline for this ruler's [textHeightStyle].
   late final double alphabeticBaseline = _probe.getBoundingClientRect().bottom.toDouble();
@@ -181,8 +180,8 @@ class TextHeightRuler {
     _host.remove();
   }
 
-  html.HtmlElement _createHost() {
-    final html.DivElement host = html.DivElement();
+  DomHTMLElement _createHost() {
+    final DomHTMLDivElement host = createDomHTMLDivElement();
     host.style
       ..visibility = 'hidden'
       ..position = 'absolute'
@@ -208,12 +207,15 @@ class TextHeightRuler {
     _dimensions.updateTextToSpace();
 
     _dimensions.appendToHost(host);
+
+    // [rulerHost] is not migrated yet so add a cast to [html.HtmlElement].
+    // This cast will be removed after the migration is complete.
     rulerHost.addElement(host);
     return host;
   }
 
-  html.HtmlElement _createProbe() {
-    final html.HtmlElement probe = html.DivElement();
+  DomHTMLElement _createProbe() {
+    final DomHTMLElement probe = createDomHTMLDivElement();
     _host.append(probe);
     return probe;
   }

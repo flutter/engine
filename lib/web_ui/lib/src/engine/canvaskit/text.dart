@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
@@ -44,7 +45,6 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           ellipsis,
           locale,
         ),
-        _textDirection = textDirection ?? ui.TextDirection.ltr,
         _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
         _fontSize = fontSize,
         _height = height,
@@ -53,7 +53,6 @@ class CkParagraphStyle implements ui.ParagraphStyle {
         _fontStyle = fontStyle;
 
   final SkParagraphStyle skParagraphStyle;
-  final ui.TextDirection? _textDirection;
   final String? _fontFamily;
   final double? _fontSize;
   final double? _height;
@@ -504,7 +503,7 @@ class CkStrutStyle implements ui.StrutStyle {
   }
 
   @override
-  int get hashCode => ui.hashValues(
+  int get hashCode => Object.hash(
         _fontFamily,
         _fontFamilyFallback,
         _fontSize,
@@ -638,7 +637,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   //                lot of paragraphs are laid out _and_ rendered. To support
   //                this use-case without blowing up memory usage we need this:
   //                https://github.com/flutter/flutter/issues/81224
-  static SynchronousSkiaObjectCache _paragraphCache =
+  static final SynchronousSkiaObjectCache _paragraphCache =
       SynchronousSkiaObjectCache(500);
 
   /// Marks this paragraph as having been used this frame.
@@ -699,8 +698,8 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   double _width = 0;
 
   @override
-  List<ui.TextBox> getBoxesForPlaceholders() => _boxesForPlaceholders!;
-  List<ui.TextBox>? _boxesForPlaceholders;
+  List<ui.TextBox> getBoxesForPlaceholders() => _boxesForPlaceholders;
+  late List<ui.TextBox> _boxesForPlaceholders;
 
   @override
   List<ui.TextBox> getBoxesForRange(
@@ -729,12 +728,14 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
 
     for (int i = 0; i < skRects.length; i++) {
       final Float32List rect = skRects[i];
+      final int skTextDirection =
+          getJsProperty(getJsProperty(rect, 'direction'), 'value');
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],
         rect[2],
         rect[3],
-        _paragraphStyle._textDirection!,
+        ui.TextDirection.values[skTextDirection],
       ));
     }
 
@@ -782,7 +783,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         return ui.TextRange(start: metric.startIndex, end: metric.endIndex);
       }
     }
-    return const ui.TextRange(start: -1, end: -1);
+    return ui.TextRange.empty;
   }
 
   @override
@@ -834,13 +835,6 @@ class CkLineMetrics implements ui.LineMetrics {
 }
 
 class CkParagraphBuilder implements ui.ParagraphBuilder {
-  final SkParagraphBuilder _paragraphBuilder;
-  final CkParagraphStyle _style;
-  final List<_ParagraphCommand> _commands;
-  int _placeholderCount;
-  final List<double> _placeholderScales;
-  final List<CkTextStyle> _styleStack;
-
   CkParagraphBuilder(ui.ParagraphStyle style)
       : _commands = <_ParagraphCommand>[],
         _style = style as CkParagraphStyle,
@@ -853,6 +847,13 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         ) {
     _styleStack.add(_style.getTextStyle());
   }
+
+  final SkParagraphBuilder _paragraphBuilder;
+  final CkParagraphStyle _style;
+  final List<_ParagraphCommand> _commands;
+  int _placeholderCount;
+  final List<double> _placeholderScales;
+  final List<CkTextStyle> _styleStack;
 
   @override
   void addPlaceholder(
@@ -1018,11 +1019,6 @@ class _CkParagraphPlaceholder {
 }
 
 class _ParagraphCommand {
-  final _ParagraphCommandType type;
-  final String? text;
-  final CkTextStyle? style;
-  final _CkParagraphPlaceholder? placeholderStyle;
-
   const _ParagraphCommand._(
     this.type,
     this.text,
@@ -1043,6 +1039,11 @@ class _ParagraphCommand {
       _CkParagraphPlaceholder placeholderStyle)
       : this._(
             _ParagraphCommandType.addPlaceholder, null, null, placeholderStyle);
+
+  final _ParagraphCommandType type;
+  final String? text;
+  final CkTextStyle? style;
+  final _CkParagraphPlaceholder? placeholderStyle;
 }
 
 enum _ParagraphCommandType {

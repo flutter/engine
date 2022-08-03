@@ -75,7 +75,8 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
 
   // |flutter::Dispatcher|
   void saveLayer(const SkRect* bounds,
-                 const flutter::SaveLayerOptions options) override;
+                 const flutter::SaveLayerOptions options,
+                 const flutter::DlImageFilter* backdrop) override;
 
   // |flutter::Dispatcher|
   void restore() override;
@@ -179,14 +180,14 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
   // |flutter::Dispatcher|
   void drawImage(const sk_sp<flutter::DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 flutter::DlImageSampling sampling,
                  bool render_with_attributes) override;
 
   // |flutter::Dispatcher|
   void drawImageRect(const sk_sp<flutter::DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     flutter::DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
 
@@ -194,14 +195,14 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
   void drawImageNine(const sk_sp<flutter::DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     flutter::DlFilterMode filter,
                      bool render_with_attributes) override;
 
   // |flutter::Dispatcher|
   void drawImageLattice(const sk_sp<flutter::DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        flutter::DlFilterMode filter,
                         bool render_with_attributes) override;
 
   // |flutter::Dispatcher|
@@ -211,7 +212,7 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
                  const flutter::DlColor colors[],
                  int count,
                  flutter::DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 flutter::DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override;
 

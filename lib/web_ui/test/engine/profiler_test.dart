@@ -2,14 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
 
 import '../spy.dart';
 
@@ -138,7 +135,7 @@ class BenchmarkDatapoint {
   final num value;
 
   @override
-  int get hashCode => hashValues(name, value);
+  int get hashCode => Object.hash(name, value);
 
   @override
   bool operator ==(Object other) {
@@ -161,10 +158,10 @@ class BenchmarkDatapoint {
 
 void jsOnBenchmark(dynamic listener) {
   js_util.setProperty(
-    html.window,
+    domWindow,
     '_flutter_internal_on_benchmark',
     listener is Function
-      ? js.allowInterop(listener)
+      ? allowInterop(listener)
       : listener,
   );
 }

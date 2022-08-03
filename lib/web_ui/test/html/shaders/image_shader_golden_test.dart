@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -32,7 +31,7 @@ Future<void> testMain() async {
     await fontCollection.ensureFontsLoaded();
   });
 
-  void _drawShapes(RecordingCanvas rc, SurfacePaint paint, Rect shaderRect) {
+  void drawShapes(RecordingCanvas rc, SurfacePaint paint, Rect shaderRect) {
     /// Rect.
     rc.drawRect(shaderRect, paint);
     shaderRect = shaderRect.translate(100, 0);
@@ -77,7 +76,7 @@ Future<void> testMain() async {
         ImageShader(testImage, tmx, tmy, Matrix4.identity().toFloat64()
             , filterQuality: FilterQuality.high);
 
-    _drawShapes(rc, paint, shaderRect);
+    drawShapes(rc, paint, shaderRect);
 
     expect(rc.renderStrategy.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, fileName,
@@ -131,9 +130,9 @@ HtmlImage createTestImage() {
   const int width = 16;
   const int width2 = width ~/ 2;
   const int height = 16;
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width2, width2);
   ctx.fill();
@@ -143,7 +142,7 @@ HtmlImage createTestImage() {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(width2, width2, width2, width2);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

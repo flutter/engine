@@ -33,14 +33,19 @@ class TextureGLES final : public Texture,
   // |Texture|
   ~TextureGLES() override;
 
+  std::optional<GLuint> GetGLHandle() const;
+
   [[nodiscard]] bool Bind() const;
+
+  [[nodiscard]] bool GenerateMipmaps() const;
 
   enum class AttachmentPoint {
     kColor0,
     kDepth,
     kStencil,
   };
-  [[nodiscard]] bool SetAsFramebufferAttachment(GLuint fbo,
+  [[nodiscard]] bool SetAsFramebufferAttachment(GLenum target,
+                                                GLuint fbo,
                                                 AttachmentPoint point) const;
 
   Type GetType() const;
@@ -62,7 +67,7 @@ class TextureGLES final : public Texture,
               bool is_wrapped);
 
   // |Texture|
-  void SetLabel(const std::string_view& label) override;
+  void SetLabel(std::string_view label) override;
 
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
@@ -78,6 +83,9 @@ class TextureGLES final : public Texture,
 
   // |Texture|
   ISize GetSize() const override;
+
+  // |Texture|
+  Scalar GetYCoordScale() const override;
 
   void InitializeContentsIfNecessary() const;
 

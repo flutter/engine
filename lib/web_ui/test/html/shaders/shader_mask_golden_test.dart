@@ -2,12 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart'
-    hide ClipRectEngineLayer, BackdropFilterEngineLayer;
+    hide BackdropFilterEngineLayer, ClipRectEngineLayer;
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
@@ -38,8 +36,8 @@ Future<void> testMain() async {
 
   setUp(() async {
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final html.Node scene in
-        flutterViewEmbedder.sceneHostElement!.querySelectorAll('flt-scene')) {
+    for (final DomNode scene in
+        flutterViewEmbedder.sceneHostElement!.querySelectorAll('flt-scene').cast<DomNode>()) {
       scene.remove();
     }
     initWebGl();
@@ -157,14 +155,12 @@ void _renderCirclesScene(BlendMode blendMode) {
       Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
       colors, stops, TileMode.clamp, Matrix4.identity().storage);
 
-  builder.pushShaderMask(shader, shaderBounds, blendMode,
-      oldLayer: null);
+  builder.pushShaderMask(shader, shaderBounds, blendMode);
   final Picture circles2 = _drawTestPictureWithCircles(region, 180, 10);
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
 
-  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!
-      as html.Element);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
 }
 
 Picture _drawTestPictureWithText(
@@ -213,13 +209,11 @@ void _renderTextScene(BlendMode blendMode) {
       Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
       colors, stops, TileMode.clamp, Matrix4.identity().storage);
 
-  builder.pushShaderMask(shader, shaderBounds, blendMode,
-      oldLayer: null);
+  builder.pushShaderMask(shader, shaderBounds, blendMode);
 
   final Picture textPicture2 = _drawTestPictureWithText(region, 180, 10);
   builder.addPicture(Offset.zero, textPicture2);
   builder.pop();
 
-  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!
-      as html.Element);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
 }

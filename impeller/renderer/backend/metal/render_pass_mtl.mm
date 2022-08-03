@@ -186,7 +186,8 @@ bool RenderPassMTL::EncodeCommands(
 ///             absent.
 ///
 struct PassBindingsCache {
-  PassBindingsCache(id<MTLRenderCommandEncoder> encoder) : encoder_(encoder) {}
+  explicit PassBindingsCache(id<MTLRenderCommandEncoder> encoder)
+      : encoder_(encoder) {}
 
   PassBindingsCache(const PassBindingsCache&) = delete;
 
@@ -407,14 +408,13 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       auto_pop_debug_marker.Release();
     }
 
-    if (target_sample_count !=
-        command.pipeline->GetDescriptor().GetSampleCount()) {
+    const auto& pipeline_desc = command.pipeline->GetDescriptor();
+    if (target_sample_count != pipeline_desc.GetSampleCount()) {
       VALIDATION_LOG << "Pipeline for command and the render target disagree "
                         "on sample counts (target was "
                      << static_cast<uint64_t>(target_sample_count)
                      << " but pipeline wanted "
-                     << static_cast<uint64_t>(
-                            command.pipeline->GetDescriptor().GetSampleCount())
+                     << static_cast<uint64_t>(pipeline_desc.GetSampleCount())
                      << ").";
       return false;
     }
@@ -423,33 +423,34 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
         PipelineMTL::Cast(*command.pipeline).GetMTLRenderPipelineState());
     pass_bindings.SetDepthStencilState(
         PipelineMTL::Cast(*command.pipeline).GetMTLDepthStencilState());
-    [encoder setFrontFacingWinding:command.winding == WindingOrder::kClockwise
+    [encoder setFrontFacingWinding:pipeline_desc.GetWindingOrder() ==
+                                           WindingOrder::kClockwise
                                        ? MTLWindingClockwise
                                        : MTLWindingCounterClockwise];
-    [encoder setCullMode:ToMTLCullMode(command.cull_mode)];
+    [encoder setCullMode:ToMTLCullMode(pipeline_desc.GetCullMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
-    if (command.viewport.has_value()) {
-      auto v = command.viewport.value();
-      MTLViewport viewport = {
-          .originX = v.rect.origin.x,
-          .originY = v.rect.origin.y,
-          .width = v.rect.size.width,
-          .height = v.rect.size.height,
-          .znear = v.depth_range.z_near,
-          .zfar = v.depth_range.z_far,
-      };
-      [encoder setViewport:viewport];
-    }
-    if (command.scissor.has_value()) {
-      auto s = command.scissor.value();
-      MTLScissorRect scissor = {
-          .x = static_cast<NSUInteger>(s.origin.x),
-          .y = static_cast<NSUInteger>(s.origin.y),
-          .width = static_cast<NSUInteger>(s.size.width),
-          .height = static_cast<NSUInteger>(s.size.height),
-      };
-      [encoder setScissorRect:scissor];
-    }
+
+    auto v = command.viewport.value_or<Viewport>(
+        {.rect = Rect::MakeSize(GetRenderTargetSize())});
+    MTLViewport viewport = {
+        .originX = v.rect.origin.x,
+        .originY = v.rect.origin.y,
+        .width = v.rect.size.width,
+        .height = v.rect.size.height,
+        .znear = v.depth_range.z_near,
+        .zfar = v.depth_range.z_far,
+    };
+    [encoder setViewport:viewport];
+
+    auto s = command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize()));
+    MTLScissorRect scissor = {
+        .x = static_cast<NSUInteger>(s.origin.x),
+        .y = static_cast<NSUInteger>(s.origin.y),
+        .width = static_cast<NSUInteger>(s.size.width),
+        .height = static_cast<NSUInteger>(s.size.height),
+    };
+    [encoder setScissorRect:scissor];
+
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
       return false;
     }

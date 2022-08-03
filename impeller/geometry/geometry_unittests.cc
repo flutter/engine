@@ -7,6 +7,7 @@
 #include <limits>
 
 #include "flutter/testing/testing.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -28,7 +29,7 @@ TEST(GeometryTest, ScalarNearlyEqual) {
 }
 
 TEST(GeometryTest, RotationMatrix) {
-  auto rotation = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto expect = Matrix{0.707,  0.707, 0, 0,  //
                        -0.707, 0.707, 0, 0,  //
                        0,      0,     1, 0,  //
@@ -38,7 +39,7 @@ TEST(GeometryTest, RotationMatrix) {
 
 TEST(GeometryTest, InvertMultMatrix) {
   {
-    auto rotation = Matrix::MakeRotationZ(Radians{M_PI_4});
+    auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
     auto invert = rotation.Invert();
     auto expect = Matrix{0.707, -0.707, 0, 0,  //
                          0.707, 0.707,  0, 0,  //
@@ -71,7 +72,7 @@ TEST(GeometryTest, MatrixBasis) {
 }
 
 TEST(GeometryTest, MutliplicationMatrix) {
-  auto rotation = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto invert = rotation.Invert();
   ASSERT_MATRIX_NEAR(rotation * invert, Matrix{});
 }
@@ -98,7 +99,7 @@ TEST(GeometryTest, InvertMatrix) {
 }
 
 TEST(GeometryTest, TestDecomposition) {
-  auto rotated = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotated = Matrix::MakeRotationZ(Radians{kPiOver4});
 
   auto result = rotated.Decompose();
 
@@ -106,12 +107,12 @@ TEST(GeometryTest, TestDecomposition) {
 
   MatrixDecomposition res = result.value();
 
-  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
   ASSERT_QUATERNION_NEAR(res.rotation, quaternion);
 }
 
 TEST(GeometryTest, TestDecomposition2) {
-  auto rotated = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotated = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto scaled = Matrix::MakeScale({2.0, 3.0, 1.0});
   auto translated = Matrix::MakeTranslation({-200, 750, 20});
 
@@ -121,7 +122,7 @@ TEST(GeometryTest, TestDecomposition2) {
 
   MatrixDecomposition res = result.value();
 
-  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
 
   ASSERT_QUATERNION_NEAR(res.rotation, quaternion);
 
@@ -138,7 +139,7 @@ TEST(GeometryTest, TestRecomposition) {
   /*
    *  Decomposition.
    */
-  auto rotated = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotated = Matrix::MakeRotationZ(Radians{kPiOver4});
 
   auto result = rotated.Decompose();
 
@@ -146,7 +147,7 @@ TEST(GeometryTest, TestRecomposition) {
 
   MatrixDecomposition res = result.value();
 
-  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
 
   ASSERT_QUATERNION_NEAR(res.rotation, quaternion);
 
@@ -158,7 +159,7 @@ TEST(GeometryTest, TestRecomposition) {
 
 TEST(GeometryTest, TestRecomposition2) {
   auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                Matrix::MakeRotationZ(Radians{M_PI_4}) *
+                Matrix::MakeRotationZ(Radians{kPiOver4}) *
                 Matrix::MakeScale({2.0, 2.0, 2.0});
 
   auto result = matrix.Decompose();
@@ -171,7 +172,7 @@ TEST(GeometryTest, TestRecomposition2) {
 TEST(GeometryTest, MatrixVectorMultiplication) {
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector4(10, 20, 30, 2);
 
@@ -182,7 +183,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector3(10, 20, 30);
 
@@ -193,7 +194,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Point(10, 20);
 
@@ -206,7 +207,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
 TEST(GeometryTest, MatrixTransformDirection) {
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector4(10, 20, 30, 2);
 
@@ -217,7 +218,7 @@ TEST(GeometryTest, MatrixTransformDirection) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector3(10, 20, 30);
 
@@ -228,7 +229,7 @@ TEST(GeometryTest, MatrixTransformDirection) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Point(10, 20);
 
@@ -253,13 +254,61 @@ TEST(GeometryTest, MatrixGetMaxBasisLength) {
   }
 }
 
+TEST(GeometryTest, MatrixMakeOrthographic) {
+  {
+    auto m = Matrix::MakeOrthographic(Size(100, 200));
+    auto expect = Matrix{
+        0.02, 0,     0,   0,  //
+        0,    -0.01, 0,   0,  //
+        0,    0,     1,   0,  //
+        -1,   1,     0.5, 1,  //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+
+  {
+    auto m = Matrix::MakeOrthographic(Size(400, 100));
+    auto expect = Matrix{
+        0.005, 0,     0,   0,  //
+        0,     -0.02, 0,   0,  //
+        0,     0,     1,   0,  //
+        -1,    1,     0.5, 1,  //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+}
+
+TEST(GeometryTest, MatrixMakePerspective) {
+  {
+    auto m = Matrix::MakePerspective(Degrees(60), Size(100, 200), 1, 10);
+    auto expect = Matrix{
+        3.4641, 0,       0,        0,   //
+        0,      1.73205, 0,        0,   //
+        0,      0,       -1.22222, -1,  //
+        0,      0,       -2.22222, 0,   //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+
+  {
+    auto m = Matrix::MakePerspective(Radians(1), 2, 10, 20);
+    auto expect = Matrix{
+        0.915244, 0,       0,   0,   //
+        0,        1.83049, 0,   0,   //
+        0,        0,       -3,  -1,  //
+        0,        0,       -40, 0,   //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+}
+
 TEST(GeometryTest, QuaternionLerp) {
   auto q1 = Quaternion{{0.0, 0.0, 1.0}, 0.0};
-  auto q2 = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto q2 = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
 
   auto q3 = q1.Slerp(q2, 0.5);
 
-  auto expected = Quaternion{{0.0, 0.0, 1.0}, M_PI_4 / 2.0};
+  auto expected = Quaternion{{0.0, 0.0, 1.0}, kPiOver4 / 2.0};
 
   ASSERT_QUATERNION_NEAR(q3, expected);
 }
@@ -724,6 +773,40 @@ TEST(GeometryTest, PointAbs) {
   ASSERT_POINT_NEAR(a_abs, expected);
 }
 
+TEST(GeometryTest, CanUseVector3AssignmentOperators) {
+  {
+    Vector3 p(1, 2, 4);
+    p += Vector3(1, 2, 4);
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 4u);
+    ASSERT_EQ(p.z, 8u);
+  }
+
+  {
+    Vector3 p(3, 6, 8);
+    p -= Vector3(1, 2, 3);
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 4u);
+    ASSERT_EQ(p.z, 5u);
+  }
+
+  {
+    Vector3 p(1, 2, 3);
+    p *= Vector3(2, 3, 4);
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 6u);
+    ASSERT_EQ(p.z, 12u);
+  }
+
+  {
+    Vector3 p(2, 6, 12);
+    p /= Vector3(2, 3, 4);
+    ASSERT_EQ(p.x, 1u);
+    ASSERT_EQ(p.y, 2u);
+    ASSERT_EQ(p.z, 3u);
+  }
+}
+
 TEST(GeometryTest, ColorPremultiply) {
   {
     Color a(1.0, 0.5, 0.2, 0.5);
@@ -752,6 +835,36 @@ TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
     auto deg = Degrees{90.0};
     Radians rad = deg;
     ASSERT_FLOAT_EQ(rad.radians, kPiOver2);
+  }
+}
+
+TEST(GeometryTest, RectMakeSize) {
+  {
+    Size s(100, 200);
+    Rect r = Rect::MakeSize(s);
+    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_RECT_NEAR(r, expected);
+  }
+
+  {
+    ISize s(100, 200);
+    Rect r = Rect::MakeSize(s);
+    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_RECT_NEAR(r, expected);
+  }
+
+  {
+    Size s(100, 200);
+    IRect r = IRect::MakeSize(s);
+    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_EQ(r, expected);
+  }
+
+  {
+    ISize s(100, 200);
+    IRect r = IRect::MakeSize(s);
+    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_EQ(r, expected);
   }
 }
 
@@ -819,6 +932,32 @@ TEST(GeometryTest, RectIntersection) {
     Rect b(100, 100, 100, 100);
     auto u = a.Intersection(b);
     ASSERT_FALSE(u.has_value());
+  }
+}
+
+TEST(GeometryTest, RectIntersectsWithRect) {
+  {
+    Rect a(100, 100, 100, 100);
+    Rect b(0, 0, 0, 0);
+    ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a(100, 100, 100, 100);
+    Rect b(10, 10, 0, 0);
+    ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a(0, 0, 100, 100);
+    Rect b(10, 10, 100, 100);
+    ASSERT_TRUE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a(0, 0, 100, 100);
+    Rect b(100, 100, 100, 100);
+    ASSERT_FALSE(a.IntersectsWithRect(b));
   }
 }
 
@@ -907,6 +1046,20 @@ TEST(GeometryTest, RectMakePointBounds) {
   {
     std::optional<Rect> r = Rect::MakePointBounds({});
     ASSERT_FALSE(r.has_value());
+  }
+}
+
+TEST(GeometryTest, RectGetPositive) {
+  {
+    Rect r{100, 200, 300, 400};
+    auto actual = r.GetPositive();
+    ASSERT_RECT_NEAR(r, actual);
+  }
+  {
+    Rect r{100, 200, -100, -100};
+    auto actual = r.GetPositive();
+    Rect expected(0, 100, 100, 100);
+    ASSERT_RECT_NEAR(expected, actual);
   }
 }
 
@@ -1095,7 +1248,7 @@ TEST(GeometryTest, VerticesConstructorAndGetters) {
                                Rect(0, 0, 4, 4));
 
   ASSERT_EQ(vertices.GetBoundingBox().value(), Rect(0, 0, 4, 4));
-  ASSERT_EQ(vertices.GetPoints(), points);
+  ASSERT_EQ(vertices.GetPositions(), points);
   ASSERT_EQ(vertices.GetIndices(), indices);
   ASSERT_EQ(vertices.GetColors(), colors);
   ASSERT_EQ(vertices.GetMode(), VertexMode::kTriangle);

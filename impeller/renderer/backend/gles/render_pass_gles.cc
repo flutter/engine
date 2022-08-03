@@ -174,19 +174,19 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              fbo, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kColor0)) {
         return false;
       }
     }
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              fbo, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              fbo, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kStencil)) {
         return false;
       }
     }
@@ -281,14 +281,20 @@ struct RenderPassData {
       gl.Disable(GL_DEPTH_TEST);
     }
 
+    // Both the viewport and scissor are specified in framebuffer coordinates.
+    // Impeller's framebuffer coordinate system is top left origin, but OpenGL's
+    // is bottom left origin, so we convert the coordinates here.
+    auto target_size = pass_data.color_attachment->GetSize();
+
     //--------------------------------------------------------------------------
     /// Setup the viewport.
     ///
     const auto& viewport = command.viewport.value_or(pass_data.viewport);
-    gl.Viewport(viewport.rect.origin.x,    // x
-                viewport.rect.origin.y,    // y
-                viewport.rect.size.width,  // width
-                viewport.rect.size.height  // height
+    gl.Viewport(viewport.rect.origin.x,  // x
+                target_size.height - viewport.rect.origin.y -
+                    viewport.rect.size.height,  // y
+                viewport.rect.size.width,       // width
+                viewport.rect.size.height       // height
     );
     if (pass_data.depth_attachment) {
       gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
@@ -300,10 +306,11 @@ struct RenderPassData {
     if (command.scissor.has_value()) {
       const auto& scissor = command.scissor.value();
       gl.Enable(GL_SCISSOR_TEST);
-      gl.Scissor(scissor.origin.x,    // x
-                 scissor.origin.y,    // y
-                 scissor.size.width,  // width
-                 scissor.size.width   // height
+      gl.Scissor(
+          scissor.origin.x,                                             // x
+          target_size.height - scissor.origin.y - scissor.size.height,  // y
+          scissor.size.width,                                           // width
+          scissor.size.height  // height
       );
     } else {
       gl.Disable(GL_SCISSOR_TEST);
@@ -312,7 +319,7 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Setup culling.
     ///
-    switch (command.cull_mode) {
+    switch (pipeline.GetDescriptor().GetCullMode()) {
       case CullMode::kNone:
         gl.Disable(GL_CULL_FACE);
         break;
@@ -328,7 +335,7 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Setup winding order.
     ///
-    switch (command.winding) {
+    switch (pipeline.GetDescriptor().GetWindingOrder()) {
       case WindingOrder::kClockwise:
         gl.FrontFace(GL_CW);
         break;
@@ -466,7 +473,7 @@ bool RenderPassGLES::EncodeCommands(
 
   auto pass_data = std::make_shared<RenderPassData>();
   pass_data->label = label_;
-  pass_data->viewport.rect = Rect::MakeSize(Size(GetRenderTargetSize()));
+  pass_data->viewport.rect = Rect::MakeSize(GetRenderTargetSize());
 
   //----------------------------------------------------------------------------
   /// Setup color data.

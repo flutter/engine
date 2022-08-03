@@ -197,14 +197,16 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first
- * frame rendered by the Flutter application might not immediately appear when theFlutter view is
+ * frame rendered by the Flutter application might not immediately appear when the Flutter view is
  * initially placed in the view hierarchy. The splash screen view will be used as
  * a replacement until the first frame is rendered.
  *
  * The view used should be appropriate for multiple sizes; an autoresizing mask to
  * have a flexible width and height will be applied automatically.
+ *
+ * Set to nil to remove the splash screen view.
  */
-@property(strong, nonatomic) UIView* splashScreenView;
+@property(strong, nonatomic, nullable) UIView* splashScreenView;
 
 /**
  * Attempts to set the `splashScreenView` property from the `UILaunchStoryboardName` from the

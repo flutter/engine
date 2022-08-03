@@ -4,18 +4,23 @@
 
 #include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
+#include "impeller/base/strings.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
+#include "impeller/fixtures/colors.frag.h"
+#include "impeller/fixtures/colors.vert.h"
 #include "impeller/fixtures/impeller.frag.h"
 #include "impeller/fixtures/impeller.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
 #include "impeller/fixtures/instanced_draw.vert.h"
+#include "impeller/fixtures/mipmaps.frag.h"
+#include "impeller/fixtures/mipmaps.vert.h"
 #include "impeller/fixtures/test_texture.frag.h"
 #include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/image/decompressed_image.h"
-#include "impeller/playground/playground.h"
+#include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
@@ -28,11 +33,12 @@
 #include "impeller/renderer/surface.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
+#include "third_party/imgui/imgui.h"
 
 namespace impeller {
 namespace testing {
 
-using RendererTest = Playground;
+using RendererTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(RendererTest);
 
 TEST_P(RendererTest, CanCreateBoxPrimitive) {
@@ -76,7 +82,8 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     cmd.BindVertices(vertex_buffer);
 
     VS::UniformBuffer uniforms;
-    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   Matrix::MakeScale(GetContentScale());
     VS::BindUniformBuffer(cmd,
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
@@ -90,6 +97,105 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
+
+    cmd.primitive_type = PrimitiveType::kTriangle;
+    if (!pass.AddCommand(std::move(cmd))) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanRenderPerspectiveCube) {
+  using VS = ColorsVertexShader;
+  using FS = ColorsFragmentShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetCullMode(CullMode::kBackFace);
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(pipeline);
+
+  struct Cube {
+    VS::PerVertexData vertices[8] = {
+        // -Z
+        {{-1, -1, -1}, Color::Red()},
+        {{1, -1, -1}, Color::Yellow()},
+        {{1, 1, -1}, Color::Green()},
+        {{-1, 1, -1}, Color::Blue()},
+        // +Z
+        {{-1, -1, 1}, Color::Green()},
+        {{1, -1, 1}, Color::Blue()},
+        {{1, 1, 1}, Color::Red()},
+        {{-1, 1, 1}, Color::Yellow()},
+    };
+    uint16_t indices[36] = {
+        1, 5, 2, 2, 5, 6,  // +X
+        4, 0, 7, 7, 0, 3,  // -X
+        4, 5, 0, 0, 5, 1,  // +Y
+        3, 2, 7, 7, 2, 6,  // -Y
+        5, 4, 6, 6, 4, 7,  // +Z
+        0, 1, 3, 3, 1, 2,  // -Z
+    };
+  } cube;
+
+  VertexBuffer vertex_buffer;
+  {
+    auto device_buffer =
+        context->GetPermanentsAllocator()->CreateBufferWithCopy(
+            reinterpret_cast<uint8_t*>(&cube), sizeof(cube));
+    vertex_buffer.vertex_buffer = {
+        .buffer = device_buffer,
+        .range = Range(offsetof(Cube, vertices), sizeof(Cube::vertices))};
+    vertex_buffer.index_buffer = {
+        .buffer = device_buffer,
+        .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
+    vertex_buffer.index_count = 36;
+    vertex_buffer.index_type = IndexType::k16bit;
+  }
+
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  Vector3 euler_angles;
+  bool first_frame = true;
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowSize({400, 80});
+      ImGui::SetNextWindowPos({20, 20});
+    }
+
+    static Degrees fov_y(60);
+    static Scalar distance = 10;
+
+    ImGui::Begin("Controls");
+    ImGui::SliderFloat("Field of view", &fov_y.degrees, 0, 180);
+    ImGui::SliderFloat("Camera distance", &distance, 0, 30);
+    ImGui::End();
+
+    Command cmd;
+    cmd.label = "Perspective Cube";
+    cmd.pipeline = pipeline;
+
+    cmd.BindVertices(vertex_buffer);
+
+    VS::UniformBuffer uniforms;
+    Scalar time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    euler_angles = Vector3(0.19 * time, 0.7 * time, 0.43 * time);
+
+    uniforms.mvp =
+        Matrix::MakePerspective(fov_y, pass.GetRenderTargetSize(), 0, 10) *
+        Matrix::MakeTranslation({0, 0, -distance}) *
+        Matrix::MakeRotationX(Radians(euler_angles.x)) *
+        Matrix::MakeRotationY(Radians(euler_angles.y)) *
+        Matrix::MakeRotationZ(Radians(euler_angles.z));
+    VS::BindUniformBuffer(cmd,
+                          pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
     cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
@@ -158,6 +264,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
       for (size_t j = 0; j < 1; j++) {
         VS::UniformBuffer uniforms;
         uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                       Matrix::MakeScale(GetContentScale()) *
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
         VS::BindUniformBuffer(
             cmd, pass.GetTransientsBuffer().EmplaceUniform(uniforms));
@@ -181,9 +288,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
-  auto box_pipeline = context->GetPipelineLibrary()
-                          ->GetRenderPipeline(std::move(pipeline_desc))
-                          .get();
+  auto box_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(pipeline_desc).get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -278,7 +384,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
 
 #if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, CanRenderInstanced) {
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP_("Instancing is only supported on Metal.");
   }
   using VS = InstancedDrawVertexShader;
@@ -324,7 +430,8 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     VS::BindInstanceInfo(
@@ -337,6 +444,237 @@ TEST_P(RendererTest, CanRenderInstanced) {
   }));
 }
 #endif  // IMPELLER_ENABLE_METAL
+
+TEST_P(RendererTest, CanBlitTextureToTexture) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  using VS = MipmapsVertexShader;
+  using FS = MipmapsFragmentShader;
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto mipmaps_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(mipmaps_pipeline);
+
+  TextureDescriptor texture_desc;
+  texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_desc.size = {800, 600};
+  texture_desc.mip_count = 1u;
+  texture_desc.usage =
+      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
+      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  auto texture = context->GetPermanentsAllocator()->CreateTexture(
+      StorageMode::kHostVisible, texture_desc);
+  ASSERT_TRUE(texture);
+
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(bridge && boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  auto size = Point(boston->GetSize());
+  vertex_builder.AddVertices({
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, 0}, {1.0, 0.0}},       // 2
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, size.y}, {0.0, 1.0}},       // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetTransientsAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    auto buffer = context->CreateRenderCommandBuffer();
+    if (!buffer) {
+      return false;
+    }
+    buffer->SetLabel("Playground Command Buffer");
+
+    {
+      auto pass = buffer->CreateBlitPass();
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+
+      if (render_target.GetColorAttachments().empty()) {
+        return false;
+      }
+
+      // Blit `bridge` to the top left corner of the texture.
+      pass->AddCopy(bridge, texture);
+
+      pass->EncodeCommands(context->GetTransientsAllocator());
+    }
+
+    {
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Render Pass");
+      {
+        Command cmd;
+        cmd.label = "Image";
+        cmd.pipeline = mipmaps_pipeline;
+
+        cmd.BindVertices(vertex_buffer);
+
+        VS::VertInfo vert_info;
+        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                        Matrix::MakeScale(GetContentScale());
+        VS::BindVertInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+
+        FS::FragInfo frag_info;
+        frag_info.lod = 0;
+        FS::BindFragInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+
+        auto sampler = context->GetSamplerLibrary()->GetSampler({});
+        FS::BindTex(cmd, texture, sampler);
+
+        pass->AddCommand(std::move(cmd));
+      }
+      pass->EncodeCommands(context->GetTransientsAllocator());
+    }
+
+    if (!buffer->SubmitCommands()) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanGenerateMipmaps) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  using VS = MipmapsVertexShader;
+  using FS = MipmapsFragmentShader;
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto mipmaps_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(mipmaps_pipeline);
+
+  auto boston = CreateTextureForFixture("boston.jpg", true);
+  ASSERT_TRUE(boston);
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  auto size = Point(boston->GetSize());
+  vertex_builder.AddVertices({
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, 0}, {1.0, 0.0}},       // 2
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, size.y}, {0.0, 1.0}},       // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetPermanentsAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  bool first_frame = true;
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    if (first_frame) {
+      ImGui::SetNextWindowPos({10, 10});
+    }
+
+    const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
+    const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
+                                     MipFilter::kLinear};
+    const char* min_filter_names[] = {"Nearest", "Linear"};
+    const MinMagFilter min_filters[] = {MinMagFilter::kNearest,
+                                        MinMagFilter::kLinear};
+
+    // UI state.
+    static int selected_mip_filter = 2;
+    static int selected_min_filter = 0;
+    static float lod = 4.5;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Combo("Mip filter", &selected_mip_filter, mip_filter_names,
+                 sizeof(mip_filter_names) / sizeof(char*));
+    ImGui::Combo("Min filter", &selected_min_filter, min_filter_names,
+                 sizeof(min_filter_names) / sizeof(char*));
+    ImGui::SliderFloat("LOD", &lod, 0, boston->GetMipCount() - 1);
+    ImGui::End();
+
+    auto buffer = context->CreateRenderCommandBuffer();
+    if (!buffer) {
+      return false;
+    }
+    buffer->SetLabel("Playground Command Buffer");
+
+    if (first_frame) {
+      auto pass = buffer->CreateBlitPass();
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+
+      pass->GenerateMipmap(boston, "Boston Mipmap");
+
+      pass->EncodeCommands(context->GetTransientsAllocator());
+    }
+
+    first_frame = false;
+
+    {
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Render Pass");
+      {
+        Command cmd;
+        cmd.label = "Image LOD";
+        cmd.pipeline = mipmaps_pipeline;
+
+        cmd.BindVertices(vertex_buffer);
+
+        VS::VertInfo vert_info;
+        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                        Matrix::MakeScale(GetContentScale());
+        VS::BindVertInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+
+        FS::FragInfo frag_info;
+        frag_info.lod = lod;
+        FS::BindFragInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+
+        SamplerDescriptor sampler_desc;
+        sampler_desc.mip_filter = mip_filters[selected_mip_filter];
+        sampler_desc.min_filter = min_filters[selected_min_filter];
+        auto sampler = context->GetSamplerLibrary()->GetSampler(sampler_desc);
+        FS::BindTex(cmd, boston, sampler);
+
+        pass->AddCommand(std::move(cmd));
+      }
+      pass->EncodeCommands(context->GetTransientsAllocator());
+    }
+
+    if (!buffer->SubmitCommands()) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
 
 TEST_P(RendererTest, TheImpeller) {
   using VS = ImpellerVertexShader;
@@ -379,7 +717,6 @@ TEST_P(RendererTest, TheImpeller) {
                          {Point(0, size.height)},
                          {Point(size.width, size.height)}});
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
-    cmd.cull_mode = CullMode::kNone;
 
     VS::FrameInfo vs_uniform;
     vs_uniform.mvp = Matrix::MakeOrthographic(size);

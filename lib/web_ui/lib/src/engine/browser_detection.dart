@@ -47,7 +47,7 @@ abstract class WebGLVersion {
 }
 
 /// Lazily initialized current browser engine.
-late final BrowserEngine _browserEngine = _detectBrowserEngine();
+final BrowserEngine _browserEngine = _detectBrowserEngine();
 
 /// Override the value of [browserEngine].
 ///
@@ -142,7 +142,7 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-late final OperatingSystem _operatingSystem = detectOperatingSystem();
+final OperatingSystem _operatingSystem = detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
@@ -185,7 +185,7 @@ OperatingSystem detectOperatingSystem({
     return OperatingSystem.iOs;
   } else if (userAgent.contains('Android')) {
     // The Android OS reports itself as "Linux armv8l" in
-    // [html.window.navigator.platform]. So we have to check the user-agent to
+    // [domWindow.navigator.platform]. So we have to check the user-agent to
     // determine if the OS is Android or not.
     return OperatingSystem.android;
   } else if (platform.startsWith('Linux')) {

@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -19,10 +18,10 @@ void main() {
 Future<void> testMain() async {
   await initializeTestFlutterViewEmbedder();
   group('loadFontFromList', () {
-    const String _testFontUrl = '/assets/fonts/ahem.ttf';
+    const String testFontUrl = '/assets/fonts/ahem.ttf';
 
     tearDown(() {
-      html.document.fonts!.clear();
+      domDocument.fonts!.clear();
     });
 
     test('surfaces error from invalid font buffer', () async {
@@ -38,8 +37,8 @@ Future<void> testMain() async {
     test('loads Blehm font from buffer', () async {
       expect(_containsFontFamily('Blehm'), isFalse);
 
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
+      final DomXMLHttpRequest response = await domHttpRequest(
+          testFontUrl,
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
@@ -64,8 +63,8 @@ Future<void> testMain() async {
 
       // Now, loads a new font using loadFontFromList. This should clear the
       // cache
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
+      final DomXMLHttpRequest response = await domHttpRequest(
+          testFontUrl,
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
@@ -91,13 +90,13 @@ Future<void> testMain() async {
             buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
         message = utf8.decode(list);
       };
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
+      final DomXMLHttpRequest response = await domHttpRequest(
+          testFontUrl,
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
       final Completer<void> completer = Completer<void>();
-      html.window.requestAnimationFrame( (_) { completer.complete(); } );
+      domWindow.requestAnimationFrame(allowInterop((_) { completer.complete();}) );
       await (completer.future); // ignore: unnecessary_parenthesis
       window.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
@@ -112,11 +111,11 @@ Future<void> testMain() async {
 
 bool _containsFontFamily(String family) {
   bool found = false;
-  html.document.fonts!.forEach((html.FontFace fontFace,
-      html.FontFace fontFaceAgain, html.FontFaceSet fontFaceSet) {
+  domDocument.fonts!.forEach(allowInterop((DomFontFace fontFace,
+      DomFontFace fontFaceAgain, DomFontFaceSet fontFaceSet) {
     if (fontFace.family == family) {
       found = true;
     }
-  });
+  }));
   return found;
 }

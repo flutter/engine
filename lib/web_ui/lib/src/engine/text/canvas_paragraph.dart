@@ -75,6 +75,8 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   bool get didExceedMaxLines => _layoutService.didExceedMaxLines;
 
+  List<ParagraphLine> get lines => _layoutService.lines;
+
   /// The bounds that contain the text painted inside this paragraph.
   ui.Rect get paintBounds => _layoutService.paintBounds;
 
@@ -166,10 +168,8 @@ class CanvasParagraph implements ui.Paragraph {
     // 2. Append all spans to the paragraph.
 
     DomHTMLElement? lastSpanElement;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
-
     for (int i = 0; i < lines.length; i++) {
-      final EngineLineMetrics line = lines[i];
+      final ParagraphLine line = lines[i];
       final List<RangeBox> boxes = line.boxes;
       final StringBuffer buffer = StringBuffer();
 
@@ -237,27 +237,26 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
     final int index = position.offset;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
 
     int i;
     for (i = 0; i < lines.length - 1; i++) {
-      final EngineLineMetrics line = lines[i];
+      final ParagraphLine line = lines[i];
       if (index >= line.startIndex && index < line.endIndex) {
         break;
       }
     }
 
-    final EngineLineMetrics line = lines[i];
+    final ParagraphLine line = lines[i];
     return ui.TextRange(start: line.startIndex, end: line.endIndex);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
-    return _layoutService.lines;
+    return lines.map((ParagraphLine line) => line.lineMetrics).toList();
   }
 }
 
-void _positionSpanElement(DomElement element, EngineLineMetrics line, RangeBox box) {
+void _positionSpanElement(DomElement element, ParagraphLine line, RangeBox box) {
   final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
   element.style
     ..position = 'absolute'
@@ -316,20 +315,13 @@ class FlatTextSpan implements ParagraphSpan {
 class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
   PlaceholderSpan(
     int index,
-    double width,
-    double height,
-    ui.PlaceholderAlignment alignment, {
-    required double baselineOffset,
-    required ui.TextBaseline baseline,
+    super.width,
+    super.height,
+    super.alignment, {
+    required super.baselineOffset,
+    required super.baseline,
   })   : start = index,
-        end = index,
-        super(
-          width,
-          height,
-          alignment,
-          baselineOffset: baselineOffset,
-          baseline: baseline,
-        );
+        end = index;
 
   @override
   final int start;
@@ -575,7 +567,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   final List<ParagraphSpan> _spans = <ParagraphSpan>[];
   final List<StyleNode> _styleStack = <StyleNode>[];
 
-  RootStyleNode _rootStyleNode;
+  final RootStyleNode _rootStyleNode;
   StyleNode get _currentStyleNode => _styleStack.isEmpty
       ? _rootStyleNode
       : _styleStack[_styleStack.length - 1];

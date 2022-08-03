@@ -24,6 +24,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
@@ -67,10 +68,15 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
   }
 }
 
+#pragma mark - Public exported constants
+
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
-NSString* const FlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
-NSString* const FlutterKeyDataChannel = @"flutter/keydata";
+
+#pragma mark - Internal constants
+
+NSString* const kFlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
+NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -111,6 +117,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
   fml::scoped_nsobject<FlutterUndoManagerPlugin> _undoManagerPlugin;
+  fml::scoped_nsobject<FlutterSpellCheckPlugin> _spellCheckPlugin;
   fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
@@ -119,6 +126,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
@@ -233,7 +241,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     }
   }];
 
-  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterEngineWillDealloc
+  [[NSNotificationCenter defaultCenter] postNotificationName:kFlutterEngineWillDealloc
                                                       object:self
                                                     userInfo:nil];
 
@@ -352,7 +360,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     callback(handled, userData);
   };
 
-  [self sendOnChannel:FlutterKeyDataChannel message:message binaryReply:response];
+  [self sendOnChannel:kFlutterKeyDataChannel message:message binaryReply:response];
 }
 
 - (void)ensureSemanticsEnabled {
@@ -385,7 +393,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)attachView {
   self.iosPlatformView->attachView();
-  [_textInputPlugin.get() setupIndirectScribbleInteraction:self.viewController];
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
@@ -464,6 +471,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterMethodChannel*)undoManagerChannel {
   return _undoManagerChannel.get();
 }
+- (FlutterMethodChannel*)spellCheckChannel {
+  return _spellCheckChannel.get();
+}
 - (FlutterBasicMessageChannel*)lifecycleChannel {
   return _lifecycleChannel.get();
 }
@@ -493,6 +503,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _systemChannel.reset();
   _settingsChannel.reset();
   _keyEventChannel.reset();
+  _spellCheckChannel.reset();
 }
 
 - (void)startProfiler {
@@ -561,6 +572,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
+  _spellCheckChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/spellcheck"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
   _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/lifecycle"
       binaryMessenger:self.binaryMessenger
@@ -595,6 +611,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
       restorationEnabled:_restorationEnabled]);
+  _spellCheckPlugin.reset([[FlutterSpellCheckPlugin alloc] init]);
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -621,6 +638,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [_undoManagerChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           [undoManagerPlugin handleMethodCall:call result:result];
+        }];
+
+    FlutterSpellCheckPlugin* spellCheckPlugin = _spellCheckPlugin.get();
+    [_spellCheckChannel.get()
+        setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+          [spellCheckPlugin handleMethodCall:call result:result];
         }];
   }
 }
@@ -694,7 +717,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::BACKGROUND);
+                                fml::Thread::ThreadPriority::NORMAL);
 
   return (flutter::ThreadHost){host_config};
 }
@@ -984,6 +1007,36 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
        removeTextPlaceholder:(int)client {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.removeTextPlaceholder"
                               arguments:@[ @(client) ]];
+}
+
+- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {
+  // Platform view's first responder detection logic:
+  //
+  // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view
+  // in the TextInputPlugin. When this dummy UITextInput view resigns first responder,
+  // check if any platform view becomes first responder. If any platform view becomes
+  // first responder, send a "viewFocused" channel message to inform the framework to un-focus
+  // the previously focused text input.
+  //
+  // Caveat:
+  // 1. This detection logic does not cover the scenario when a platform view becomes
+  // first responder without any flutter text input resigning its first responder status
+  // (e.g. user tapping on platform view first). For now it works fine because the TextInputPlugin
+  // does not track the focused platform view id (which is different from Android implementation).
+  //
+  // 2. This detection logic assumes that all text input widgets are backed by a dummy
+  // UITextInput view in the TextInputPlugin, which may not hold true in the future.
+
+  // Have to check in the next run loop, because iOS requests the previous first responder to
+  // resign before requesting the next view to become first responder.
+  dispatch_async(dispatch_get_main_queue(), ^(void) {
+    long platform_view_id = self.platformViewsController->FindFirstResponderPlatformViewId();
+    if (platform_view_id == -1) {
+      return;
+    }
+
+    [_platformViewsChannel.get() invokeMethod:@"viewFocused" arguments:@(platform_view_id)];
+  });
 }
 
 #pragma mark - Undo Manager Delegate

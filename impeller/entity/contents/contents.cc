@@ -57,4 +57,11 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
                   .transform = Matrix::MakeTranslation(bounds->origin)};
 }
 
+bool Contents::ShouldRender(const Entity& entity,
+                            const ISize& target_size) const {
+  auto coverage = GetCoverage(entity);
+  return coverage.has_value() &&
+         Rect::MakeSize(target_size).IntersectsWithRect(coverage.value());
+}
+
 }  // namespace impeller

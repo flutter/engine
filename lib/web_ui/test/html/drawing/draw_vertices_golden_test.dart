@@ -3,14 +3,13 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' hide TextStyle, ImageShader;
+import 'package:ui/ui.dart' hide ImageShader, TextStyle;
 
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -24,7 +23,7 @@ Future<void> testMain() async {
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
   // Commit a recording canvas to a bitmap, and compare with the expected
-  Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
+  Future<void> checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
       double maxDiffRatePercent = 0.0,
       bool write = false}) async {
@@ -70,14 +69,14 @@ Future<void> testMain() async {
     glRenderer = null;
   });
 
-  Future<void> _testVertices(
+  Future<void> testVertices(
       String fileName, Vertices vertices, BlendMode blendMode, Paint paint,
       {bool write = false}) async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.drawVertices(
         vertices as SurfaceVertices, blendMode, paint as SurfacePaint);
-    await _checkScreenshot(rc, fileName, write: write);
+    await checkScreenshot(rc, fileName, write: write);
   }
 
   test('Should draw green hairline triangles when colors array is null.',
@@ -98,7 +97,7 @@ Future<void> testMain() async {
           200.0,
           420.0
         ]));
-    await _testVertices('draw_vertices_hairline_triangle', vertices,
+    await testVertices('draw_vertices_hairline_triangle', vertices,
         BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -136,7 +135,7 @@ Future<void> testMain() async {
           200.0,
           420.0
         ]));
-    await _testVertices('draw_vertices_hairline_triangle_black', vertices,
+    await testVertices('draw_vertices_hairline_triangle_black', vertices,
         BlendMode.srcOver, Paint());
   });
 
@@ -175,7 +174,7 @@ Future<void> testMain() async {
           200.0,
           420.0
         ]));
-    await _testVertices(
+    await testVertices(
         'draw_vertices_triangle_green_filled',
         vertices,
         BlendMode.srcOver,
@@ -204,7 +203,7 @@ Future<void> testMain() async {
           420.0
         ]));
 
-    await _testVertices('draw_vertices_hairline_triangle_fan', vertices,
+    await testVertices('draw_vertices_hairline_triangle_fan', vertices,
         BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -225,7 +224,7 @@ Future<void> testMain() async {
           200.0,
           420.0
         ]));
-    await _testVertices('draw_vertices_hairline_triangle_strip', vertices,
+    await testVertices('draw_vertices_hairline_triangle_strip', vertices,
         BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -256,7 +255,7 @@ Future<void> testMain() async {
         ]),
         colors: colors);
 
-    await _testVertices('draw_vertices_triangles', vertices, BlendMode.srcOver,
+    await testVertices('draw_vertices_triangles', vertices, BlendMode.srcOver,
         Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   },
   // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
@@ -290,7 +289,7 @@ Future<void> testMain() async {
     rc.drawVertices(
         vertices as SurfaceVertices, BlendMode.srcOver, SurfacePaint());
 
-    await _checkScreenshot(rc, 'draw_vertices_triangles_indexed');
+    await checkScreenshot(rc, 'draw_vertices_triangles_indexed');
   },
   // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
   skip: isFirefox);
@@ -322,7 +321,7 @@ Future<void> testMain() async {
         ]),
         colors: colors);
 
-    await _testVertices('draw_vertices_triangle_fan', vertices,
+    await testVertices('draw_vertices_triangle_fan', vertices,
         BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   },
   // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
@@ -354,7 +353,7 @@ Future<void> testMain() async {
           420.0
         ]),
         colors: colors);
-    await _testVertices('draw_vertices_triangle_strip', vertices,
+    await testVertices('draw_vertices_triangle_strip', vertices,
         BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   },
   // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
@@ -393,7 +392,7 @@ Future<void> testMain() async {
     paint.shader = imgShader;
 
     rc.drawVertices(vertices as SurfaceVertices, BlendMode.srcOver, paint);
-    await _checkScreenshot(rc, filename, maxDiffRatePercent: 1.0);
+    await checkScreenshot(rc, filename, maxDiffRatePercent: 1.0);
   }
 
   test('Should draw triangle with texture and indices', () async {
@@ -416,9 +415,9 @@ Future<void> testMain() async {
 }
 
 Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
   ctx.fill();
@@ -428,11 +427,11 @@ Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   final Completer<HtmlImage> completer = Completer<HtmlImage>();
-  imageElement.onLoad.listen((html.Event event) {
+  imageElement.addEventListener('load', allowInterop((DomEvent event) {
     completer.complete(HtmlImage(imageElement, width, height));
-  });
+  }));
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return completer.future;
 }

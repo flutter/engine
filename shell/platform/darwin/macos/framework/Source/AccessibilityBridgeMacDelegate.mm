@@ -128,7 +128,7 @@ AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Eve
         // first responder.
         FlutterTextField* native_text_field = (FlutterTextField*)focused;
         if (native_text_field == mac_platform_node_delegate->GetFocus()) {
-          [native_text_field becomeFirstResponder];
+          [native_text_field startEditing];
         }
         break;
       }
@@ -172,7 +172,7 @@ AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Eve
             (FlutterTextField*)mac_platform_node_delegate->GetNativeViewAccessible();
         id focused = mac_platform_node_delegate->GetFocus();
         if (!focused || native_text_field == focused) {
-          [native_text_field becomeFirstResponder];
+          [native_text_field startEditing];
         }
         break;
       }
@@ -181,17 +181,14 @@ AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Eve
           .target = native_node,
           .user_info = nil,
       });
-      if (@available(macOS 10.11, *)) {
-        if (ax_node.data().HasState(ax::mojom::State::kEditable)) {
-          events.push_back({
-              .name = NSAccessibilityValueChangedNotification,
-              .target =
-                  bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId)
-                      .lock()
-                      ->GetNativeViewAccessible(),
-              .user_info = nil,
-          });
-        }
+      if (ax_node.data().HasState(ax::mojom::State::kEditable)) {
+        events.push_back({
+            .name = NSAccessibilityValueChangedNotification,
+            .target = bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId)
+                          .lock()
+                          ->GetNativeViewAccessible(),
+            .user_info = nil,
+        });
       }
       break;
     }

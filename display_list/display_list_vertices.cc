@@ -86,7 +86,7 @@ size_t DlVertices::size() const {
 }
 
 static SkRect compute_bounds(const SkPoint* points, int count) {
-  BoundsAccumulator accumulator;
+  RectBoundsAccumulator accumulator;
   for (int i = 0; i < count; i++) {
     accumulator.accumulate(points[i]);
   }
@@ -117,7 +117,7 @@ DlVertices::DlVertices(DlVertexMode mode,
       offset += bytes;
       return ret;
     } else {
-      return size_t(0);
+      return static_cast<size_t>(0);
     }
   };
 
@@ -158,7 +158,7 @@ DlVertices::DlVertices(DlVertexMode mode,
       offset += bytes;
       return ret;
     } else {
-      return size_t(0);
+      return static_cast<size_t>(0);
     }
   };
 

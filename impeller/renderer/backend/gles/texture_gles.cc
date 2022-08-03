@@ -11,6 +11,8 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/formats_gles.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -79,7 +81,7 @@ bool TextureGLES::IsValid() const {
 }
 
 // |Texture|
-void TextureGLES::SetLabel(const std::string_view& label) {
+void TextureGLES::SetLabel(std::string_view label) {
   reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
 }
 
@@ -89,7 +91,7 @@ struct TexImage2DData {
   GLenum type = GL_NONE;
   std::shared_ptr<const fml::Mapping> data;
 
-  TexImage2DData(PixelFormat pixel_format) {
+  explicit TexImage2DData(PixelFormat pixel_format) {
     switch (pixel_format) {
       case PixelFormat::kA8UNormInt:
         internal_format = GL_ALPHA;
@@ -344,28 +346,19 @@ void TextureGLES::InitializeContentsIfNecessary() const {
                                size.height                    // height
         );
       }
-
       break;
   }
 }
 
-static std::optional<GLenum> ToTextureTarget(TextureType type) {
-  switch (type) {
-    case TextureType::kTexture2D:
-      return GL_TEXTURE_2D;
-    case TextureType::kTexture2DMultisample:
-      return std::nullopt;
-    case TextureType::kTextureCube:
-      return GL_TEXTURE_CUBE_MAP;
+std::optional<GLuint> TextureGLES::GetGLHandle() const {
+  if (!IsValid()) {
+    return std::nullopt;
   }
-  FML_UNREACHABLE();
+  return reactor_->GetGLHandle(handle_);
 }
 
 bool TextureGLES::Bind() const {
-  if (!IsValid()) {
-    return false;
-  }
-  auto handle = reactor_->GetGLHandle(handle_);
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
@@ -387,6 +380,37 @@ bool TextureGLES::Bind() const {
   return true;
 }
 
+bool TextureGLES::GenerateMipmaps() const {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto type = GetTextureDescriptor().type;
+  switch (type) {
+    case TextureType::kTexture2D:
+      break;
+    case TextureType::kTexture2DMultisample:
+      VALIDATION_LOG << "Generating mipmaps for multisample textures is not "
+                        "supported in the GLES backend.";
+      return false;
+    case TextureType::kTextureCube:
+      break;
+  }
+
+  if (!Bind()) {
+    return false;
+  }
+
+  auto handle = GetGLHandle();
+  if (!handle.has_value()) {
+    return false;
+  }
+
+  const auto& gl = reactor_->GetProcTable();
+  gl.GenerateMipmap(ToTextureType(type));
+  return true;
+}
+
 TextureGLES::Type TextureGLES::GetType() const {
   return type_;
 }
@@ -402,20 +426,21 @@ static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
   }
 }
 
-bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
+bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
+                                             GLuint fbo,
                                              AttachmentPoint point) const {
   if (!IsValid()) {
     return false;
   }
   InitializeContentsIfNecessary();
-  auto handle = reactor_->GetGLHandle(handle_);
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
     case Type::kTexture:
-      gl.FramebufferTexture2D(GL_FRAMEBUFFER,            // target
+      gl.FramebufferTexture2D(target,                    // target
                               ToAttachmentPoint(point),  // attachment
                               GL_TEXTURE_2D,             // textarget
                               handle.value(),            // texture
@@ -423,7 +448,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
       );
       break;
     case Type::kRenderBuffer:
-      gl.FramebufferRenderbuffer(GL_FRAMEBUFFER,            // target
+      gl.FramebufferRenderbuffer(target,                    // target
                                  ToAttachmentPoint(point),  // attachment
                                  GL_RENDERBUFFER,  // render-buffer target
                                  handle.value()    // render-buffer
@@ -431,6 +456,17 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
       break;
   }
   return true;
+}
+
+// |Texture|
+Scalar TextureGLES::GetYCoordScale() const {
+  switch (GetIntent()) {
+    case TextureIntent::kUploadFromHost:
+      return 1.0;
+    case TextureIntent::kRenderToTexture:
+      return -1.0;
+  }
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller

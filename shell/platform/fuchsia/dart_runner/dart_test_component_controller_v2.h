@@ -11,6 +11,7 @@
 #include <fuchsia/sys/cpp/fidl.h>
 #include <fuchsia/test/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
+#include <lib/async/cpp/executor.h>
 #include <lib/async/cpp/wait.h>
 #include <lib/fdio/namespace.h>
 #include <lib/sys/cpp/component_context.h>
@@ -66,9 +67,8 @@ class DartTestComponentControllerV2
   }
 
  private:
-  /// Helper for actually running the Dart main. Returns true if successful,
-  /// false otherwise.
-  bool RunDartMain();
+  /// Helper for actually running the Dart main. Returns Returns a promise.
+  fpromise::promise<> RunDartMain();
 
   /// Creates and binds the namespace for this component. Returns true if
   /// successful, false otherwise.
@@ -96,6 +96,7 @@ class DartTestComponentControllerV2
    public:
     CaseIterator(fidl::InterfaceRequest<fuchsia::test::CaseIterator> request,
                  async_dispatcher_t* dispatcher,
+                 std::string test_component_name,
                  fit::function<void(CaseIterator*)> done_callback);
 
     void GetNext(GetNextCallback callback) override;
@@ -103,6 +104,7 @@ class DartTestComponentControllerV2
    private:
     bool first_case_ = true;
     fidl::Binding<fuchsia::test::CaseIterator> binding_;
+    std::string test_component_name_;
     fit::function<void(CaseIterator*)> done_callback_;
   };
 
@@ -117,12 +119,14 @@ class DartTestComponentControllerV2
   // |Suite|
 
   /// Exposes suite protocol on behalf of test component.
+  std::string test_component_name_;
   std::unique_ptr<sys::ComponentContext> suite_context_;
   fidl::BindingSet<fuchsia::test::Suite> suite_bindings_;
 
   // The loop must be the first declared member so that it gets destroyed after
   // binding_ which expects the existence of a loop.
   std::unique_ptr<async::Loop> loop_;
+  async::Executor executor_;
 
   std::string label_;
   std::string url_;
@@ -134,6 +138,7 @@ class DartTestComponentControllerV2
   fidl::Binding<fuchsia::component::runner::ComponentController> binding_;
   DoneCallback done_callback_;
 
+  zx::socket out_, err_, out_client_, err_client_;
   fdio_ns_t* namespace_ = nullptr;
   int stdout_fd_ = -1;
   int stderr_fd_ = -1;

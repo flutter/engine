@@ -8,13 +8,13 @@ typedef VoidCallback = void Function();
 typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
-typedef KeyDataCallback = bool Function(KeyData packet);
+typedef KeyDataCallback = bool Function(KeyData data);
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-typedef ErrorCallback = bool Function(Object exception, StackTrace? stackTrace);
+typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
@@ -265,10 +265,10 @@ class FrameTiming {
     ]);
   }
 
-  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
-
   FrameTiming._(this._data)
       : assert(_data.length == _dataLength);
+
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
   int timestampInMicroseconds(FramePhase phase) => _data[phase.index];
 
@@ -359,16 +359,18 @@ class DisplayFeature {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is DisplayFeature && bounds == other.bounds &&
         type == other.type && state == other.state;
   }
 
   @override
-  int get hashCode => hashValues(bounds, type, state);
+  int get hashCode => Object.hash(bounds, type, state);
 
   @override
   String toString() {
@@ -523,7 +525,7 @@ class Locale {
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => Object.hash(languageCode, scriptCode, countryCode);
 
   @override
   String toString() => _rawToString('_');
