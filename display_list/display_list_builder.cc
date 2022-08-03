@@ -581,6 +581,7 @@ void DisplayListBuilder::transformFullPerspective(
              SkScalarsAreFinite(myx, myy) && SkScalarsAreFinite(myz, myt) &&
              SkScalarsAreFinite(mzx, mzy) && SkScalarsAreFinite(mzz, mzt) &&
              SkScalarsAreFinite(mwx, mwy) && SkScalarsAreFinite(mwz, mwt)) {
+    checkForDeferredSave();
     Push<TransformFullPerspectiveOp>(0, 1,
                                      mxx, mxy, mxz, mxt,
                                      myx, myy, myz, myt,
@@ -594,6 +595,7 @@ void DisplayListBuilder::transformFullPerspective(
 }
 // clang-format on
 void DisplayListBuilder::transformReset() {
+  checkForDeferredSave();
   Push<TransformResetOp>(0, 0);
   current_layer_->matrix.setIdentity();
 }
@@ -632,10 +634,10 @@ void DisplayListBuilder::clipRect(const SkRect& rect,
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
                                    SkClipOp clip_op,
                                    bool is_aa) {
-  checkForDeferredSave();
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
   } else {
+    checkForDeferredSave();
     switch (clip_op) {
       case SkClipOp::kIntersect:
         Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
@@ -650,7 +652,6 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
 void DisplayListBuilder::clipPath(const SkPath& path,
                                   SkClipOp clip_op,
                                   bool is_aa) {
-  checkForDeferredSave();
   if (!path.isInverseFillType()) {
     SkRect rect;
     if (path.isRect(&rect)) {
@@ -668,6 +669,7 @@ void DisplayListBuilder::clipPath(const SkPath& path,
       return;
     }
   }
+  checkForDeferredSave();
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectPathOp>(0, 1, path, is_aa);

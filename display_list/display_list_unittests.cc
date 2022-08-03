@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
@@ -1708,27 +1711,175 @@ TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
 }
 
 TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
-  DisplayListBuilder builder1;
-  builder1.save();
-  builder1.saveLayer(nullptr, false);
-  builder1.translate(10, 10);
-  builder1.scale(2, 2);
-  builder1.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
-  builder1.drawRect({0, 0, 100, 100});
-  builder1.restore();
-  builder1.restore();
-  auto display_list1 = builder1.Build();
+  // Translate
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.saveLayer(nullptr, false);
+    builder1.translate(10, 10);
+    builder1.scale(2, 2);
+    builder1.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    builder1.restore();
+    auto display_list1 = builder1.Build();
 
-  DisplayListBuilder builder2;
-  builder2.saveLayer(nullptr, false);
-  builder2.translate(10, 10);
-  builder2.scale(2, 2);
-  builder2.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
-  builder2.drawRect({0, 0, 100, 100});
-  builder2.restore();
-  auto display_list2 = builder2.Build();
+    DisplayListBuilder builder2;
+    builder2.saveLayer(nullptr, false);
+    builder2.translate(10, 10);
+    builder2.scale(2, 2);
+    builder2.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    auto display_list2 = builder2.Build();
 
-  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+  // Transform
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.transform(SkM44::Translate(10, 100));
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    builder1.transform(SkM44::Translate(10, 100));
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.save();
+    builder2.transform(SkM44::Translate(10, 100));
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    builder2.save();
+    builder2.transform(SkM44::Translate(10, 100));
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+  // Skew
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.skew(10, 10);
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.save();
+    builder2.skew(10, 10);
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+
+  // Scale
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.scale(0.5, 0.5);
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.save();
+    builder2.scale(0.5, 0.5);
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.transform(SkM44());
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    builder1.transform(SkM44());
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.drawRect({0, 0, 100, 100});
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+  // Clip
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
+                      true);
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    builder1.transform(SkM44());
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.save();
+    builder2.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
+                      true);
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    builder2.transform(SkM44());
+    builder2.drawRect({0, 0, 100, 100});
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+
+  std::unordered_set<std::string> function_names = {"Translate",
+                                                    "Scale",
+                                                    "Skew",
+                                                    "Transform2d",
+                                                    "TransformFullPerspective",
+                                                    "ClipRect",
+                                                    "ClipPath",
+                                                    "ClipRRect"};
+
+  for (auto& group : allGroups) {
+    if (function_names.find(group.op_name) == function_names.cend()) {
+      continue;
+    }
+    for (size_t i = 0; i < group.variants.size(); i++) {
+      auto& invocation = group.variants[i];
+      DisplayListBuilder builder1;
+      builder1.save();
+      builder1.save();
+      invocation.invoker(builder1);
+      builder1.drawRect({0, 0, 100, 100});
+      builder1.restore();
+
+      auto display_list1 = builder1.Build();
+
+      DisplayListBuilder builder2;
+      builder2.save();
+      invocation.invoker(builder2);
+      builder2.drawRect({0, 0, 100, 100});
+      builder2.restore();
+      auto display_list2 = builder2.Build();
+      ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+    }
+  }
 }
 
 TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
