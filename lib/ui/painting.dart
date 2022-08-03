@@ -221,7 +221,9 @@ class Color {
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
   static double _linearizeColorComponent(double component) {
-    if (component <= 0.03928) return component / 12.92;
+    if (component <= 0.03928) {
+      return component / 12.92;
+    }
     return math.pow((component + 0.055) / 1.055, 2.4) as double;
   }
 
@@ -331,8 +333,12 @@ class Color {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other.runtimeType != runtimeType) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is Color && other.value == value;
   }
 
@@ -1144,8 +1150,7 @@ class Paint {
   List<Object?>? _objects;
 
   List<Object?> _ensureObjectsInitialized() {
-    return _objects ??=
-        List<Object?>.filled(_kObjectCount, null, growable: false);
+    return _objects ??= List<Object?>.filled(_kObjectCount, null);
   }
 
   static const int _kShaderIndex = 0;
@@ -1526,7 +1531,7 @@ class Paint {
 
   @override
   String toString() {
-    if (const bool.fromEnvironment('dart.vm.product', defaultValue: false)) {
+    if (const bool.fromEnvironment('dart.vm.product')) {
       return super.toString();
     }
     final StringBuffer result = StringBuffer();
@@ -1534,15 +1539,19 @@ class Paint {
     result.write('Paint(');
     if (style == PaintingStyle.stroke) {
       result.write('$style');
-      if (strokeWidth != 0.0)
+      if (strokeWidth != 0.0) {
         result.write(' ${strokeWidth.toStringAsFixed(1)}');
-      else
+      } else {
         result.write(' hairline');
-      if (strokeCap != StrokeCap.butt) result.write(' $strokeCap');
+      }
+      if (strokeCap != StrokeCap.butt) {
+        result.write(' $strokeCap');
+      }
       if (strokeJoin == StrokeJoin.miter) {
-        if (strokeMiterLimit != _kStrokeMiterLimitDefault)
+        if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
           result.write(
               ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+        }
       } else {
         result.write(' $strokeJoin');
       }
@@ -1580,8 +1589,12 @@ class Paint {
       result.write('${semicolon}imageFilter: $imageFilter');
       semicolon = '; ';
     }
-    if (invertColors) result.write('${semicolon}invert: $invertColors');
-    if (_dither) result.write('${semicolon}dither: $_dither');
+    if (invertColors) {
+      result.write('${semicolon}invert: $invertColors');
+    }
+    if (_dither) {
+      result.write('${semicolon}dither: $_dither');
+    }
     result.write(')');
     return result.toString();
   }
@@ -3336,7 +3349,9 @@ class ColorFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is ColorFilter &&
         other._type == _type &&
         _listEquals<double>(other._matrix, _matrix) &&
@@ -3376,7 +3391,7 @@ class ColorFilter implements ImageFilter {
       case _kTypeSrgbToLinearGamma:
         return 'ColorFilter.srgbToLinearGamma()';
       default:
-        return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
+        return "Unknown ColorFilter type. This is an error. If you're seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.";
     }
   }
 }
@@ -3486,8 +3501,9 @@ abstract class ImageFilter {
       {FilterQuality filterQuality = FilterQuality.low}) {
     assert(matrix4 != null);
     assert(filterQuality != null);
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     return _MatrixImageFilter(
         data: Float64List.fromList(matrix4), filterQuality: filterQuality);
   }
@@ -3531,7 +3547,9 @@ class _MatrixImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _MatrixImageFilter &&
         other.filterQuality == filterQuality &&
         _listEquals<double>(other.data, data);
@@ -3575,7 +3593,9 @@ class _GaussianBlurImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _GaussianBlurImageFilter &&
         other.sigmaX == sigmaX &&
         other.sigmaY == sigmaY &&
@@ -3604,7 +3624,9 @@ class _DilateImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _DilateImageFilter &&
         other.radiusX == radiusX &&
         other.radiusY == radiusY;
@@ -3632,7 +3654,9 @@ class _ErodeImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _ErodeImageFilter &&
         other.radiusX == radiusX &&
         other.radiusY == radiusY;
@@ -3663,7 +3687,9 @@ class _ComposeImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _ComposeImageFilter &&
         other.innerFilter == innerFilter &&
         other.outerFilter == outerFilter;
@@ -3732,8 +3758,9 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
       : assert(filter != null),
         creator = filter {
     // ignore: prefer_initializing_formals
-    if (filter.data.length != 16)
+    if (filter.data.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _constructor();
     _initMatrix(filter.data, filter.filterQuality.index);
   }
@@ -3749,7 +3776,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     // ignore: prefer_initializing_formals
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
-    _initColorFilter(nativeFilter!);
+    _initColorFilter(nativeFilter);
   }
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>(
@@ -3881,7 +3908,9 @@ enum TileMode {
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
-  for (int i = 0; i < colorCount; ++i) result[i] = colors[i].value;
+  for (int i = 0; i < colorCount; ++i) {
+    result[i] = colors[i].value;
+  }
   return result;
 }
 
@@ -4141,13 +4170,15 @@ class Gradient extends Shader {
   static void _validateColorStops(
       List<Color> colors, List<double>? colorStops) {
     if (colorStops == null) {
-      if (colors.length != 2)
+      if (colors.length != 2) {
         throw ArgumentError(
             '"colors" must have length 2 if "colorStops" is omitted.');
+      }
     } else {
-      if (colors.length != colorStops.length)
+      if (colors.length != colorStops.length) {
         throw ArgumentError(
             '"colors" and "colorStops" arguments must have equal length.');
+      }
     }
   }
 }
@@ -4173,8 +4204,9 @@ class ImageShader extends Shader {
         assert(tmy != null),
         assert(matrix4 != null),
         super._() {
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _constructor();
     final String? error = _initWithImage(image._image, tmx.index, tmy.index,
         filterQuality?.index ?? -1, matrix4);
@@ -4233,7 +4265,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     _constructor();
     final String result = _initFromAsset(assetKey);
     if (result.isNotEmpty) {
-      throw result;
+      throw result; // ignore: only_throw_errors
     }
   }
 
@@ -4254,7 +4286,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 
     final String result = program._initFromAsset(assetKey);
     if (result.isNotEmpty) {
-      throw result;
+      throw result; // ignore: only_throw_errors
     }
   }
 
@@ -4373,8 +4405,12 @@ class _FragmentShader extends Shader {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other.runtimeType != runtimeType) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _FragmentShader &&
         other._builder == _builder &&
         _listEquals<double>(other._floatUniforms, _floatUniforms) &&
@@ -4428,15 +4464,18 @@ class Vertices extends NativeFieldWrapperClass1 {
   })  : assert(mode != null),
         assert(positions != null) {
     if (textureCoordinates != null &&
-        textureCoordinates.length != positions.length)
+        textureCoordinates.length != positions.length) {
       throw ArgumentError(
           '"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length != positions.length)
+    }
+    if (colors != null && colors.length != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length))
+        indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
+    }
 
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
@@ -4448,8 +4487,9 @@ class Vertices extends NativeFieldWrapperClass1 {
         indices != null ? Uint16List.fromList(indices) : null;
 
     if (!_init(this, mode.index, encodedPositions, encodedTextureCoordinates,
-        encodedColors, encodedIndices))
+        encodedColors, encodedIndices)) {
       throw ArgumentError('Invalid configuration for vertices.');
+    }
   }
 
   /// Creates a set of vertex data for use with [Canvas.drawVertices], directly
@@ -4488,19 +4528,23 @@ class Vertices extends NativeFieldWrapperClass1 {
   })  : assert(mode != null),
         assert(positions != null) {
     if (textureCoordinates != null &&
-        textureCoordinates.length != positions.length)
+        textureCoordinates.length != positions.length) {
       throw ArgumentError(
           '"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length * 2 != positions.length)
+    }
+    if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length))
+        indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
+    }
 
     if (!_init(
-        this, mode.index, positions, textureCoordinates, colors, indices))
+        this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
+    }
   }
 
   @FfiNative<Bool Function(Handle, Int32, Handle, Handle, Handle, Handle)>(
@@ -4590,9 +4634,10 @@ class Canvas extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   Canvas(PictureRecorder recorder, [Rect? cullRect])
       : assert(recorder != null) {
-    if (recorder.isRecording)
+    if (recorder.isRecording) {
       throw ArgumentError(
           '"recorder" must not already be associated with another Canvas.');
+    }
     _recorder = recorder;
     _recorder!._canvas = this;
     cullRect ??= Rect.largest;
@@ -4742,13 +4787,6 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>(
-      'Canvas::startRecordVirtualLayer')
-  external void startRecordVirtualLayer(String type);
-
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::saveVirtualLayer')
-  external void saveVirtualLayer(String type);
-
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>(
       'Canvas::saveLayerWithoutBounds')
   external void _saveLayerWithoutBounds(
@@ -4815,8 +4853,9 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// specified as a list of values in column-major order.
   void transform(Float64List matrix4) {
     assert(matrix4 != null);
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _transform(matrix4);
   }
 
@@ -5366,8 +5405,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    if (points.length % 2 != 0)
+    if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
+    }
     _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
 
@@ -5549,11 +5589,13 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
 
     final int rectCount = rects.length;
-    if (transforms.length != rectCount)
+    if (transforms.length != rectCount) {
       throw ArgumentError('"transforms" and "rects" lengths must match.');
-    if (colors != null && colors.isNotEmpty && colors.length != rectCount)
+    }
+    if (colors != null && colors.isNotEmpty && colors.length != rectCount) {
       throw ArgumentError(
           'If non-null, "colors" length must match that of "transforms" and "rects".');
+    }
 
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);
@@ -5753,14 +5795,17 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
 
     final int rectCount = rects.length;
-    if (rstTransforms.length != rectCount)
+    if (rstTransforms.length != rectCount) {
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
-    if (rectCount % 4 != 0)
+    }
+    if (rectCount % 4 != 0) {
       throw ArgumentError(
           '"rstTransforms" and "rects" lengths must be a multiple of four.');
-    if (colors != null && colors.length * 4 != rectCount)
+    }
+    if (colors != null && colors.length * 4 != rectCount) {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+    }
     final int qualityIndex = paint.filterQuality.index;
 
     final String? error = _drawAtlas(
@@ -5836,7 +5881,9 @@ class Picture extends NativeFieldWrapperClass1 {
   /// `height` (bottom) bounds. Content outside these bounds is clipped.
   Future<Image> toImage(int width, int height) {
     assert(!_disposed);
-    if (width <= 0 || height <= 0) throw Exception('Invalid image dimensions.');
+    if (width <= 0 || height <= 0) {
+      throw Exception('Invalid image dimensions.');
+    }
     return _futurize(
       (_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
         if (image == null) {
@@ -5958,8 +6005,9 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
   Picture endRecording() {
-    if (_canvas == null)
+    if (_canvas == null) {
       throw StateError('PictureRecorder did not start recording.');
+    }
     final Picture picture = Picture._();
     _endRecording(picture);
     _canvas!._recorder = null;
@@ -6109,22 +6157,30 @@ class Shadow {
   /// {@macro dart.ui.shadow.lerp}
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
     assert(t != null);
-    if (a == null && b == null) return null;
+    if (a == null && b == null) {
+      return null;
+    }
     a ??= <Shadow>[];
     b ??= <Shadow>[];
     final List<Shadow> result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
-    for (int i = 0; i < commonLength; i += 1)
+    for (int i = 0; i < commonLength; i += 1) {
       result.add(Shadow.lerp(a[i], b[i], t)!);
-    for (int i = commonLength; i < a.length; i += 1)
+    }
+    for (int i = commonLength; i < a.length; i += 1) {
       result.add(a[i].scale(1.0 - t));
-    for (int i = commonLength; i < b.length; i += 1) result.add(b[i].scale(t));
+    }
+    for (int i = commonLength; i < b.length; i += 1) {
+      result.add(b[i].scale(t));
+    }
     return result;
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     return other is Shadow &&
         other.color == color &&
         other.offset == offset &&
@@ -6138,7 +6194,9 @@ class Shadow {
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow
   // bytes for each shadow.
   static ByteData _encodeShadows(List<Shadow>? shadows) {
-    if (shadows == null) return ByteData(0);
+    if (shadows == null) {
+      return ByteData(0);
+    }
 
     final int byteCount = shadows.length * _kBytesPerShadow;
     final ByteData shadowsData = ByteData(byteCount);
@@ -6439,7 +6497,9 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
     }
   });
   sync = false;
-  if (error != null) throw Exception(error);
+  if (error != null) {
+    throw Exception(error);
+  }
   return completer.future;
 }
 
