@@ -6,9 +6,9 @@
 
 namespace flutter {
 
-ContextDestroyedListener::ContextDestroyedListener() = default;
+ContextListener::ContextListener() = default;
 
-ContextDestroyedListener::~ContextDestroyedListener() = default;
+ContextListener::~ContextListener() = default;
 
 Texture::Texture(int64_t id) : id_(id) {}
 
@@ -23,9 +23,9 @@ void TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
   mapping_[texture->Id()] = texture;
 }
 
-void TextureRegistry::RegisterContextDestroyedListener(
+void TextureRegistry::RegisterContextListener(
     uintptr_t id,
-    std::weak_ptr<ContextDestroyedListener> image) {
+    std::weak_ptr<ContextListener> image) {
   images_[id] = std::move(image);
 }
 
@@ -38,13 +38,21 @@ void TextureRegistry::UnregisterTexture(int64_t id) {
   mapping_.erase(found);
 }
 
-void TextureRegistry::UnregisterContextDestroyedListener(uintptr_t id) {
+void TextureRegistry::UnregisterContextListener(uintptr_t id) {
   images_.erase(id);
 }
 
 void TextureRegistry::OnGrContextCreated() {
   for (auto& it : mapping_) {
     it.second->OnGrContextCreated();
+  }
+
+  for (const auto& [id, weak_image] : images_) {
+    if (auto image = weak_image.lock()) {
+      image->OnGrContextCreated();
+    } else {
+      images_.erase(id);
+    }
   }
 }
 
@@ -56,9 +64,10 @@ void TextureRegistry::OnGrContextDestroyed() {
   for (const auto& [id, weak_image] : images_) {
     if (auto image = weak_image.lock()) {
       image->OnGrContextDestroyed();
+    } else {
+      images_.erase(id);
     }
   }
-  images_.clear();
 }
 
 std::shared_ptr<Texture> TextureRegistry::GetTexture(int64_t id) {

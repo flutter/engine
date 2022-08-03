@@ -69,25 +69,10 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
   auto image = CanvasImage::Create();
   const SkImageInfo image_info = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
-  auto dl_image = DlDeferredImageGPU::Make(image_info, raster_task_runner,
-                                           std::move(unref_queue));
+  auto dl_image = DlDeferredImageGPU::Make(
+      image_info, std::move(display_list), std::move(snapshot_delegate),
+      std::move(raster_task_runner), std::move(unref_queue));
   image->set_image(dl_image);
-
-  fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner, [snapshot_delegate, dl_image = std::move(dl_image),
-                           display_list = std::move(display_list)]() {
-        auto result = snapshot_delegate->MakeGpuImage(display_list,
-                                                      dl_image->image_info());
-        if (result->texture.isValid()) {
-          dl_image->set_texture(result->texture, std::move(result->context),
-                                snapshot_delegate->GetTextureRegistry());
-        } else if (result->image) {
-          dl_image->set_image(std::move(result->image));
-        } else {
-          dl_image->set_error(std::move(result->error));
-        }
-      });
-
   image->AssociateWithDartWrapper(raw_image_handle);
 }
 

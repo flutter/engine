@@ -5,14 +5,17 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_DEFERRED_IMAGE_GPU_H_
 #define FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_DEFERRED_IMAGE_GPU_H_
 
+#include <memory>
 #include <mutex>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/io_manager.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 
 namespace flutter {
 
@@ -20,6 +23,8 @@ class DlDeferredImageGPU final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPU> Make(
       const SkImageInfo& image_info,
+      sk_sp<DisplayList> display_list,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner,
       fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
@@ -45,21 +50,9 @@ class DlDeferredImageGPU final : public DlImage {
   // |DlImage|
   virtual size_t GetApproximateByteSize() const override;
 
-  // This method must only be called from the raster thread.
-  void set_texture(const GrBackendTexture& texture,
-                   sk_sp<GrDirectContext> context,
-                   std::shared_ptr<TextureRegistry> texture_registry);
-
-  void set_image(sk_sp<SkImage> image);
-
-  // This method is safe to call from any thread.
-  void set_error(const std::string& error);
-
   // |DlImage|
   // This method is safe to call from any thread.
   std::optional<std::string> get_error() const override;
-
-  const SkImageInfo& image_info() { return image_info_; }
 
   // |DlImage|
   OwningContext owning_context() const override {
@@ -67,44 +60,63 @@ class DlDeferredImageGPU final : public DlImage {
   }
 
  private:
-  class ImageWrapper final : public ContextDestroyedListener {
+  class ImageWrapper final : public std::enable_shared_from_this<ImageWrapper>,
+                             public ContextListener {
    public:
-    ImageWrapper(const GrBackendTexture& texture,
-                 sk_sp<GrDirectContext> context,
+    static std::shared_ptr<ImageWrapper> Make(
+        const SkImageInfo& image_info,
+        sk_sp<DisplayList> display_list,
+        fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+        fml::RefPtr<fml::TaskRunner> raster_task_runner,
+        fml::RefPtr<SkiaUnrefQueue> unref_queue);
+
+    const SkImageInfo image_info() const { return image_info_; }
+    const GrBackendTexture& texture() const { return texture_; }
+    bool isTextureBacked() const;
+    std::optional<std::string> get_error();
+    sk_sp<SkImage> CreateSkiaImage() const;
+    void Unregister();
+    void DeleteTexture();
+
+   private:
+    const SkImageInfo image_info_;
+    sk_sp<DisplayList> display_list_;
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
+    fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+    fml::RefPtr<SkiaUnrefQueue> unref_queue_;
+    std::shared_ptr<TextureRegistry> texture_registry_;
+
+    mutable std::mutex error_mutex_;
+    std::optional<std::string> error_;
+
+    GrBackendTexture texture_;
+    sk_sp<GrDirectContext> context_;
+    // May be used if this image is not texture backed.
+    sk_sp<SkImage> image_;
+
+    ImageWrapper(const SkImageInfo& image_info,
+                 sk_sp<DisplayList> display_list,
+                 fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                  fml::RefPtr<fml::TaskRunner> raster_task_runner,
                  fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
-    sk_sp<SkImage> CreateSkiaImage(const SkImageInfo& image_info);
+    void SnapshotDisplayList();
 
-    const GrBackendTexture& texture() { return texture_; }
+    // |ContextListener|
+    void OnGrContextCreated() override;
 
-    bool isTextureBacked();
-
-   private:
-    GrBackendTexture texture_;
-    sk_sp<GrDirectContext> context_;
-    fml::RefPtr<fml::TaskRunner> raster_task_runner_;
-    fml::RefPtr<SkiaUnrefQueue> unref_queue_;
-
-    // |ContextDestroyedListener|
+    // |ContextListener|
     void OnGrContextDestroyed() override;
   };
 
-  const SkImageInfo image_info_;
-  fml::RefPtr<fml::TaskRunner> raster_task_runner_;
-  fml::RefPtr<SkiaUnrefQueue> unref_queue_;
   // Must be accessed using atomics.
   // TODO(dnfield): When c++20 is available use std::atomic<std::shared_ptr>
-  std::shared_ptr<ImageWrapper> image_wrapper_;
-  std::shared_ptr<TextureRegistry> texture_registry_;
-  // May be used if this image is not texture backed.
-  sk_sp<SkImage> image_;
-  mutable std::mutex error_mutex_;
-  std::optional<std::string> error_;
+  const std::shared_ptr<ImageWrapper> image_wrapper_;
 
-  DlDeferredImageGPU(const SkImageInfo& image_info,
-                     fml::RefPtr<fml::TaskRunner> raster_task_runner,
-                     fml::RefPtr<SkiaUnrefQueue> unref_queue);
+  fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+
+  DlDeferredImageGPU(std::shared_ptr<ImageWrapper> image_wrapper,
+                     fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DlDeferredImageGPU);
 };

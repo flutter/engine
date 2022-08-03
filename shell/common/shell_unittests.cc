@@ -3777,9 +3777,12 @@ TEST_F(ShellTest, PictureToImageSync) {
                   ShellTestPlatformView::BackendType::kGLBackend  //
       );
 
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
-                      latch.Signal();
+  fml::CountDownLatch latch(2);
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      // Teardown and set up rasterizer again.
+                      PlatformViewNotifyDestroyed(shell.get());
+                      PlatformViewNotifyCreated(shell.get());
+                      latch.CountDown();
                     }));
 
   ASSERT_NE(shell, nullptr);
