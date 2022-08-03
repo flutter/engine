@@ -688,6 +688,13 @@ typedef struct {
   FlutterVulkanImageHandle image;
   /// The VkFormat of the image (for example: VK_FORMAT_R8G8B8A8_UNORM).
   uint32_t format;
+  /// Upon request, it represents the existing damage to the present image. At
+  /// present time, it represents the regions that need to be rendered.
+  FlutterDamage image_damage;
+  /// This field is used at present time to represent the regions that have
+  /// changed between this frame and the previous one. This is important so that
+  /// the user can keep track of images' existing damage.
+  FlutterDamage frame_damage;
 } FlutterVulkanImage;
 
 /// Callback to fetch a Vulkan function pointer for a given instance. Normally,
