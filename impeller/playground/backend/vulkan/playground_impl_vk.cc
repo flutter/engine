@@ -102,11 +102,11 @@ ContextVK* PlaygroundImplVK::GetContextVK() const {
 void PlaygroundImplVK::SetupSwapchain() {
   ContextVK* context_vk = GetContextVK();
 
-  auto psurf = VkSurfaceKHR(nullptr);
   auto window = reinterpret_cast<GLFWwindow*>(handle_.get());
-  ::glfwCreateWindowSurface(context_vk->GetInstance(), window, nullptr, &psurf);
+  ::glfwCreateWindowSurface(context_vk->GetInstance(), window, nullptr,
+                            &surface_);
 
-  swapchain_ = context_vk->CreateSwapchain(psurf);
+  swapchain_ = context_vk->CreateSwapchain(surface_);
 }
 
 // |PlaygroundImpl|

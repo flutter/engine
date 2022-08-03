@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <memory>
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 
@@ -12,13 +14,16 @@ namespace impeller {
 
 class RenderPassVK final : public RenderPass {
  public:
+  RenderPassVK(std::shared_ptr<ContextVK> context, RenderTarget target);
+
   // |RenderPass|
   ~RenderPassVK() override;
 
  private:
   friend class CommandBufferVK;
 
-  RenderPassVK(RenderTarget target);
+  std::shared_ptr<ContextVK> context_;
+  vk::UniqueRenderPass render_pass_;
 
   // |RenderPass|
   bool IsValid() const override;

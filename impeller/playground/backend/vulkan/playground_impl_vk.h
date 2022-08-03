@@ -26,6 +26,9 @@ class PlaygroundImplVK final : public PlaygroundImpl {
   using UniqueHandle = std::unique_ptr<void, decltype(&DestroyWindowHandle)>;
   UniqueHandle handle_;
 
+  // TODO (kaushikiska): surface needs to be destroyed!
+  VkSurfaceKHR surface_;
+
   std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
   std::shared_ptr<Context> context_;
   std::shared_ptr<SwapchainVK> swapchain_;

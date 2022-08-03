@@ -24,6 +24,8 @@ impeller_component("vulkan") {
     "pipeline_library_vk.h",
     "pipeline_vk.cc",
     "pipeline_vk.h",
+    "render_pass_factory.cc",
+    "render_pass_factory.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
     "sampler_library_vk.cc",

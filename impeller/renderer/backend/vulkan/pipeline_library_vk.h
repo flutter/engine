@@ -56,9 +56,6 @@ class PipelineLibraryVK final
   std::unique_ptr<PipelineCreateInfoVK> CreatePipeline(
       const PipelineDescriptor& desc);
 
-  std::optional<vk::UniqueRenderPass> CreateRenderPass(
-      const PipelineDescriptor& desc);
-
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryVK);
 };
 

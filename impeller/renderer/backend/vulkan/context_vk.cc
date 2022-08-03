@@ -27,7 +27,7 @@ static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #if FML_OS_MACOSX
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
-    // MVK_MACOS_SURFACE_EXT,
+                                  // MVK_MACOS_SURFACE_EXT,
 #endif
 };
 
