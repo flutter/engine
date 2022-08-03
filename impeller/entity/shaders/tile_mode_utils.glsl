@@ -19,6 +19,3 @@ float GetInterpolantValue(float t, float tile_mode) {
   }
   return t;
 }
-
-
-
