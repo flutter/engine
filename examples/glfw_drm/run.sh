@@ -16,6 +16,9 @@ make
 #################################################################
 if [ ! -d myapp ]; then
     flutter create myapp
+    cd myapp
+    flutter pub add flutter_spinkit
+    cd ..
 fi
 cd myapp
 cp ../../main.dart lib/main.dart
