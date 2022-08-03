@@ -19,7 +19,6 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @implementation UIView (FirstResponder)
-
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
     return YES;
@@ -457,7 +456,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     ++iter;
   }
 
-  if (canApplyBlurBackdrop) {
+  if (canApplyBlurBackdrop && ([blurRadii count] > 0)) {
     canApplyBlurBackdrop = [clipView applyBlurBackdropFilters:blurRadii];
   }
 

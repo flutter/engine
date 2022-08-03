@@ -67,6 +67,17 @@ void ResetAnchor(CALayer* layer) {
   NSObject* _gaussianFilter;
 }
 
+// Lazy initializes viewToExtractFrom as the expected UIVisualEffectView. The backdropFilter blur
+// requires this UIVisualEffectView initialization. The lazy initalization is only used to allow
+// custom unit tests.
+- (UIView*) viewToExtractFrom {
+  if(!_viewToExtractFrom) {
+    _viewToExtractFrom = [[[UIVisualEffectView alloc]
+                           initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
+  }
+  return _viewToExtractFrom;
+}
+
 // The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
 // be hit tested and consumed by this view if they are inside the embedded platform view which could
 // be smaller the embedded platform view is rotated.
@@ -81,13 +92,10 @@ void ResetAnchor(CALayer* layer) {
 
 // Creates and initializes a UIVisualEffectView with a UIBlurEffect. Extracts and returns its
 // gaussianFilter. Returns nil if Apple's API has changed and the filter cannot be extracted.
-+ (NSObject*)extractGaussianFilter {
-  UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
-
+- (NSObject*)extractGaussianFilter {
   NSObject* gaussianFilter = nil;
 
-  for (UIView* view in visualEffectView.subviews) {
+  for (UIView* view in self.viewToExtractFrom.subviews) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
       for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
@@ -114,12 +122,13 @@ void ResetAnchor(CALayer* layer) {
   if (!_activeGaussianFilters) {
     _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
 
-    _gaussianFilter = [ChildClippingView extractGaussianFilter];
+    _gaussianFilter = [self extractGaussianFilter];
     if (!_gaussianFilter) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                          "access the gaussianBlur CAFilter.";
       return NO;
     }
+    [self.viewToExtractFrom release];
   }
 
   BOOL updatedFilters = NO;

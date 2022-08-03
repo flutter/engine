@@ -52,6 +52,11 @@
 // blurred backdrop filters cannot be applied, otherwise returns YES.
 - (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
 
+// The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
+// initalized with UIBlurEffect to extract the correct filter. Made a public property
+// for custom unit tests.
+@property (nonatomic, strong) UIView* viewToExtractFrom;
+
 @end
 
 namespace flutter {
