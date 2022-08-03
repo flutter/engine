@@ -111,9 +111,9 @@ def ParseDepsFile(deps_flat_file):
         if common_commit is not None:
           queries.append({"commit" : common_commit})
         else:
-          failed_deps.append(dep[0])
+          failed_deps.append(dep[0].split('/')[-1].split('.')[0])
 
-    print("Dependencies that could not be parsed for ancestor commits: " + failed_deps)
+    print("Dependencies that could not be parsed for ancestor commits: " + ', '.join(failed_deps))
     json = {"queries": queries}
     print(json)
     responses = requests.post(osv_url, headers=headers, json=json, allow_redirects=True)
