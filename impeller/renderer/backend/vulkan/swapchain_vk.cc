@@ -13,6 +13,8 @@ namespace impeller {
 std::shared_ptr<SwapchainDetailsVK> SwapchainDetailsVK::Create(
     vk::SurfaceKHR surface,
     vk::PhysicalDevice physical_device) {
+  FML_DCHECK(surface) << "surface provided as nullptr";
+
   auto capabilities_res = physical_device.getSurfaceCapabilitiesKHR(surface);
   if (capabilities_res.result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to get surface capabilities: "

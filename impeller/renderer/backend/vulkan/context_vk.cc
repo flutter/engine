@@ -21,10 +21,13 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace impeller {
 
+static const char* MVK_MACOS_SURFACE_EXT = "VK_MVK_macos_surface";
+
 static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #if FML_OS_MACOSX
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
+    // MVK_MACOS_SURFACE_EXT,
 #endif
 };
 
@@ -206,6 +209,14 @@ ContextVK::ContextVK(
   // is a requirement for opting into Molten VK on Mac.
   enabled_extensions.push_back(
       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+  // Required for glfw macOS surfaces.
+  if (!capabilities->HasExtension(MVK_MACOS_SURFACE_EXT)) {
+    VALIDATION_LOG << "On Mac: Required extension " << MVK_MACOS_SURFACE_EXT
+                   << " absent.";
+    return;
+  }
+  enabled_extensions.push_back(MVK_MACOS_SURFACE_EXT);
 #endif  // FML_OS_MACOSX
 
   //----------------------------------------------------------------------------
