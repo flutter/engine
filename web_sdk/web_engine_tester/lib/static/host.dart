@@ -31,6 +31,8 @@ external _TestRunner? get testRunner;
 @JS()
 @anonymous
 class _JSApi {
+  external factory _JSApi({void Function() resume, void Function() restartCurrent});
+
   /// Causes the test runner to resume running, as though the user had clicked
   /// the "play" button.
   external Function get resume;
@@ -38,8 +40,6 @@ class _JSApi {
   /// Causes the test runner to restart the current test once it finishes
   /// running.
   external Function get restartCurrent;
-
-  external factory _JSApi({void Function() resume, void Function() restartCurrent});
 }
 
 /// Sets the top-level `dartTest` object so that it's visible to JS.

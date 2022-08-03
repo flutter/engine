@@ -32,6 +32,16 @@ void main(List<String> args) {
 /// This class encapsulates visually diffing an Image with any other.
 /// Both images need to be the exact same size.
 class ImageDiff {
+  /// Image diff constructor which requires two [Image]s to compare and
+  /// [PixelComparison] algorithm.
+  ImageDiff({
+    required this.golden,
+    required this.other,
+    required this.pixelComparison,
+  }) {
+    _computeDiff();
+  }
+
   /// The image to match
   final Image golden;
 
@@ -52,16 +62,6 @@ class ImageDiff {
   /// The ratio of wrong pixels to all pixels in golden (between 0 and 1)
   /// This gets set to 1 (100% difference) when golden and other aren't the same size.
   double get rate => _wrongPixels / _pixelCount;
-
-  /// Image diff constructor which requires two [Image]s to compare and
-  /// [PixelComparison] algorithm.
-  ImageDiff({
-    required this.golden,
-    required this.other,
-    required this.pixelComparison,
-  }) {
-    _computeDiff();
-  }
 
   int _pixelCount = 0;
   int _wrongPixels = 0;
