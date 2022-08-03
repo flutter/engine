@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <impeller/texture.glsl>
-#include <impeller/blending.glsl>
 
 uniform sampler2D texture_sampler;
 
