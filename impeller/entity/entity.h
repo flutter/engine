@@ -74,9 +74,8 @@ class Entity {
     /// perpendicular to a gradient's geometry).
     kRepeat,
 
-    /// Repeat the shader's image horizontally and vertically, alternating
-    /// mirror
-    /// images so that adjacent images always seam.
+    /// Repeat the shader's image horizontally and vertically, seamlessly
+    /// alternating mirrored images.
     kMirror,
 
     /// Render the shader's image pixels only within its original bounds. If the
