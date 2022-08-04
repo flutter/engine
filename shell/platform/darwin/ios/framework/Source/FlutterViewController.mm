@@ -1300,10 +1300,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
+  if (!self) {
+    return;
+  }
   auto callback = [self](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
-    if (!self) {
-      return;
-    }
     if ([self keyboardAnimationView].superview == nil) {
       // Ensure the keyboardAnimationView is in view hierarchy when animation running.
       [self.view addSubview:[self keyboardAnimationView]];
