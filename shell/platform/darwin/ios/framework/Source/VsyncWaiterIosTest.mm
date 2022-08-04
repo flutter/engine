@@ -22,7 +22,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 @interface VSyncClient (Testing)
 
 - (CADisplayLink*)getDisplayLink;
-- (void)setAllowPauseAfterVsync:(BOOL)allowPause;
+- (void)setAllowPauseAfterVsync:(BOOL)allowPauseAfterVsync;
 - (void)onDisplayLink:(CADisplayLink*)link;
 
 @end
