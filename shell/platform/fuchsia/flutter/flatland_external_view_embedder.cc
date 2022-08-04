@@ -67,8 +67,8 @@ void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
   frame_composition_order_.push_back(handle);
 }
 
-flutter::EmbedderPaintContext FlatlandExternalViewEmbedder::CompositeEmbeddedView(
-    int view_id) {
+flutter::EmbedderPaintContext
+FlatlandExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   zx_handle_t handle = static_cast<zx_handle_t>(view_id);
   auto found = frame_layers_.find(handle);
   FML_CHECK(found != frame_layers_.end());
