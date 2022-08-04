@@ -404,8 +404,8 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterHeightBiggerThanDest) {
 }
 
 TEST_P(DisplayListTest, CanDrawNinePatchImageCenterBiggerThanDest) {
-  // Edge case, the provided center is both wider and taller than the
-  // destination rect. Only the corners are displayed.
+  // Edge case, the width and height of the corners does not leave any
+  // room for the center slices. Only the corners are displayed.
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
   auto size = texture->GetSize();
