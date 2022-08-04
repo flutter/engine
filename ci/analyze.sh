@@ -64,6 +64,8 @@ echo ""
 # Check that dart libraries conform.
 echo "Checking the integrity of the Web SDK"
 (cd "$FLUTTER_DIR/web_sdk"; "$DART" pub get)
+(cd "$FLUTTER_DIR/web_sdk/web_test_utils"; "$DART" pub get)
+(cd "$FLUTTER_DIR/web_sdk/web_engine_tester"; "$DART" pub get)
 
 "$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/web_sdk"
 
