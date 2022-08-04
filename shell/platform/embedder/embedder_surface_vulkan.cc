@@ -84,8 +84,12 @@ FlutterVulkanImage EmbedderSurfaceVulkan::AcquireImage(const SkISize& size) {
 }
 
 // |GPUSurfaceVulkanDelegate|
-bool EmbedderSurfaceVulkan::PresentImage(VkImage image, VkFormat format, SkIRect image_damage_skrect, SkIRect frame_damage_skrect) {
-  return vulkan_dispatch_table_.present_image(image, format, image_damage_skrect, frame_damage_skrect);
+bool EmbedderSurfaceVulkan::PresentImage(VkImage image,
+                                         VkFormat format,
+                                         SkIRect image_damage_skrect,
+                                         SkIRect frame_damage_skrect) {
+  return vulkan_dispatch_table_.present_image(
+      image, format, image_damage_skrect, frame_damage_skrect);
 }
 
 // |EmbedderSurface|

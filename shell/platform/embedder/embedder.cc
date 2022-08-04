@@ -551,7 +551,8 @@ InferVulkanPlatformViewCreationCallback(
     FlutterVulkanImage next_image = ptr(user_data, &frame_info);
 
     // Verify that at least one damage rectangle was provided.
-    if (next_image.image_damage.damage == nullptr || next_image.image_damage.num_rects <= 0) {
+    if (next_image.image_damage.damage == nullptr ||
+        next_image.image_damage.num_rects <= 0) {
       FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
       next_image.partial_repaint_enabled = false;
     } else if (next_image.image_damage.num_rects > 1) {
@@ -568,11 +569,14 @@ InferVulkanPlatformViewCreationCallback(
 
   auto vulkan_present_image_callback =
       [ptr = config->vulkan.present_image_callback, user_data](
-          VkImage image, VkFormat format, SkIRect image_damage_skrect, SkIRect frame_damage_skrect) -> bool {
+          VkImage image, VkFormat format, SkIRect image_damage_skrect,
+          SkIRect frame_damage_skrect) -> bool {
     const size_t num_rects = 1;
 
-    std::array<FlutterRect, num_rects> image_damage_rect = {SkIRectToFlutterRect(image_damage_skrect)};
-    std::array<FlutterRect, num_rects> frame_damage_rect = {SkIRectToFlutterRect(frame_damage_skrect)};
+    std::array<FlutterRect, num_rects> image_damage_rect = {
+        SkIRectToFlutterRect(image_damage_skrect)};
+    std::array<FlutterRect, num_rects> frame_damage_rect = {
+        SkIRectToFlutterRect(frame_damage_skrect)};
 
     FlutterDamage image_damage{
         .struct_size = sizeof(FlutterDamage),
