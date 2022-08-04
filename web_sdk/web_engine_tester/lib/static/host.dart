@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: avoid_dynamic_calls
+
 @JS()
 library test.host;
 
@@ -22,7 +24,7 @@ class _TestRunner {
 
 /// Returns the current content shell runner, or `null` if none exists.
 @JS()
-external _TestRunner? get testRunner;
+external _TestRunner? get testRunner; // ignore: library_private_types_in_public_api
 
 /// A class that exposes the test API to JS.
 ///

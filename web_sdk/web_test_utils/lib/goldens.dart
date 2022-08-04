@@ -136,8 +136,6 @@ class ImageDiff {
           getGreen(pixel),
           getBlue(pixel),
         ];
-      default:
-        throw 'Unrecognized pixel comparison value: $pixelComparison';
     }
   }
 
