@@ -11,6 +11,7 @@
 #include "flutter/vulkan/vulkan_image.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
 
@@ -42,7 +43,7 @@ class GPUSurfaceVulkanDelegate {
   /// @brief  Called by the engine once a frame has been rendered to the image
   ///         and it's ready to be bound for further reading/writing.
   ///
-  virtual bool PresentImage(VkImage image, VkFormat format) = 0;
+  virtual bool PresentImage(VkImage image, VkFormat format, SkIRect image_damage_skrect, SkIRect frame_damage_skrect) = 0;
 };
 
 }  // namespace flutter
