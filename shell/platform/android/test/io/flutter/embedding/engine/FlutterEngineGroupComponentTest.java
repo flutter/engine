@@ -204,10 +204,10 @@ public class FlutterEngineGroupComponentTest {
 
     when(mockFlutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
-    FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
-    when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
-    doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
-    doReturn(secondMockflutterJNI)
+    FlutterJNI secondMockFlutterJNI = mock(FlutterJNI.class);
+    when(secondMockFlutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(secondMockFlutterJNI).attachToNative();
+    doReturn(secondMockFlutterJNI)
         .when(mockFlutterJNI)
         .spawn(
             nullable(String.class),
@@ -242,10 +242,10 @@ public class FlutterEngineGroupComponentTest {
 
     when(mockFlutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
-    FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
-    when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
-    doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
-    doReturn(secondMockflutterJNI)
+    FlutterJNI secondMockFlutterJNI = mock(FlutterJNI.class);
+    when(secondMockFlutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(secondMockFlutterJNI).attachToNative();
+    doReturn(secondMockFlutterJNI)
         .when(mockFlutterJNI)
         .spawn(
             nullable(String.class),
@@ -313,10 +313,10 @@ public class FlutterEngineGroupComponentTest {
 
     when(mockFlutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
-    FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
-    when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
-    doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
-    doReturn(secondMockflutterJNI)
+    FlutterJNI secondMockFlutterJNI = mock(FlutterJNI.class);
+    when(secondMockFlutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(secondMockFlutterJNI).attachToNative();
+    doReturn(secondMockFlutterJNI)
         .when(mockFlutterJNI)
         .spawn(
             nullable(String.class),
