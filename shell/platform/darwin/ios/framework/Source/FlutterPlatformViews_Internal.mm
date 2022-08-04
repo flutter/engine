@@ -75,7 +75,7 @@ void ResetAnchor(CALayer* layer) {
     // blurEffectView is only needed to extract its gaussianBlur filter. It is released after
     // searching its subviews and extracting the filter.
     _blurEffectView = [[[UIVisualEffectView alloc]
-                           initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
   }
   return _blurEffectView;
 }

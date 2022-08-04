@@ -377,7 +377,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   }
 }
 
-- (void) testAddBackdropFilters {
+- (void)testAddBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
@@ -465,7 +465,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     NSObject* gaussianFilter = childClippingView.layer.filters[i];
     XCTAssertEqualObjects(@"gaussianBlur", [gaussianFilter valueForKey:@"name"]);
     XCTAssertEqualObjects(@(5), [gaussianFilter valueForKey:@"inputRadius"]);
-  }  
+  }
 }
 
 - (void)testRemoveBackdropFilters {
