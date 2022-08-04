@@ -55,7 +55,7 @@
 // The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
 // initalized with UIBlurEffect to extract the correct filter. Made a public property
 // for custom unit tests.
-@property(nonatomic, strong) UIView* viewToExtractFrom;
+@property(nonatomic, retain) UIView* blurEffectView;
 
 @end
 

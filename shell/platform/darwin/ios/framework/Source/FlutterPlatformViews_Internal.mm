@@ -67,15 +67,17 @@ void ResetAnchor(CALayer* layer) {
   NSObject* _gaussianFilter;
 }
 
-// Lazy initializes viewToExtractFrom as the expected UIVisualEffectView. The backdropFilter blur
+// Lazy initializes blurEffectView as the expected UIVisualEffectView. The backdropFilter blur
 // requires this UIVisualEffectView initialization. The lazy initalization is only used to allow
 // custom unit tests.
-- (UIView*)viewToExtractFrom {
-  if (!_viewToExtractFrom) {
-    _viewToExtractFrom = [[[UIVisualEffectView alloc]
-        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
+- (UIView*)blurEffectView {
+  if (!_blurEffectView) {
+    // blurEffectView is only needed to extract its gaussianBlur filter. It is released after
+    // searching its subviews and extracting the filter.
+    _blurEffectView = [[[UIVisualEffectView alloc]
+                           initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
   }
-  return _viewToExtractFrom;
+  return _blurEffectView;
 }
 
 // The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
@@ -95,7 +97,7 @@ void ResetAnchor(CALayer* layer) {
 - (NSObject*)extractGaussianFilter {
   NSObject* gaussianFilter = nil;
 
-  for (UIView* view in self.viewToExtractFrom.subviews) {
+  for (UIView* view in self.blurEffectView.subviews) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
       for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
@@ -114,6 +116,7 @@ void ResetAnchor(CALayer* layer) {
       break;
     }
   }
+  [self.blurEffectView release];
 
   return gaussianFilter;
 }
@@ -128,7 +131,6 @@ void ResetAnchor(CALayer* layer) {
                          "access the gaussianBlur CAFilter.";
       return NO;
     }
-    [self.viewToExtractFrom release];
   }
 
   BOOL updatedFilters = NO;
