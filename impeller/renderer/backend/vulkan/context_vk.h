@@ -64,6 +64,9 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<impeller::SwapchainVK> CreateSwapchain(
       vk::SurfaceKHR surface);
 
+  // |Context|
+  std::shared_ptr<Allocator> GetPermanentsAllocator() const override;
+
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   vk::UniqueInstance instance_;
@@ -88,9 +91,6 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
       const std::shared_ptr<const fml::Mapping>& pipeline_cache_data,
       std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
       const std::string& label);
-
-  // |Context|
-  std::shared_ptr<Allocator> GetPermanentsAllocator() const override;
 
   // |Context|
   std::shared_ptr<Allocator> GetTransientsAllocator() const override;

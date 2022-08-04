@@ -112,7 +112,7 @@ void PlaygroundImplVK::SetupSwapchain() {
 // |PlaygroundImpl|
 std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
-  return std::make_shared<SurfaceVK>()
+  return SurfaceVK::WrapSurface(GetContextVK(), surface_, swapchain_);
 }
 
 }  // namespace impeller

@@ -14,10 +14,14 @@ namespace impeller {
 
 class SurfaceVK final : public Surface {
  public:
-  std::unique_ptr<Surface> WrapSurface(ContextVK* context,
-                                       std::shared_ptr<SwapchainVK> swapchain);
+  static std::unique_ptr<Surface> WrapSurface(
+      ContextVK* context,
+      vk::SurfaceKHR surface,
+      std::shared_ptr<SwapchainVK> swapchain);
 
-  SurfaceVK(RenderTarget target, vk::SurfaceKHR surface);
+  SurfaceVK(RenderTarget target,
+            vk::SurfaceKHR surface,
+            std::shared_ptr<SwapchainVK> swapchain);
 
   // |Surface|
   ~SurfaceVK() override;
@@ -26,6 +30,7 @@ class SurfaceVK final : public Surface {
 
  private:
   vk::SurfaceKHR surface_;
+  std::shared_ptr<SwapchainVK> swapchain_;
 
   // |Surface|
   bool Present() const override;

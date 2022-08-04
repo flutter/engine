@@ -3,14 +3,17 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
+#include <memory>
 
 #include "fml/logging.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/surface.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 std::unique_ptr<Surface> SurfaceVK::WrapSurface(
     ContextVK* context,
+    vk::SurfaceKHR surface,
     std::shared_ptr<SwapchainVK> swapchain) {
   if (context == nullptr || !context->IsValid() || swapchain == nullptr) {
     return nullptr;
@@ -47,10 +50,14 @@ std::unique_ptr<Surface> SurfaceVK::WrapSurface(
 
   RenderTarget render_target_desc;
   render_target_desc.SetColorAttachment(color0, 0u);
+
+  return std::make_unique<SurfaceVK>(render_target_desc, surface, swapchain);
 }
 
-SurfaceVK::SurfaceVK(RenderTarget target, vk::SurfaceKHR surface)
-    : Surface(target), surface_(surface) {
+SurfaceVK::SurfaceVK(RenderTarget target,
+                     vk::SurfaceKHR surface,
+                     std::shared_ptr<SwapchainVK> swapchain)
+    : Surface(target), surface_(surface), swapchain_(swapchain) {
   FML_DCHECK(surface_);
 }
 

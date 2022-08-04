@@ -8,6 +8,7 @@
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
+
 std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
     vk::Device device,
     vk::CommandPool command_pool) {
@@ -23,7 +24,8 @@ std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
     return nullptr;
   }
 
-  return std::make_shared<CommandBufferVK>(std::move(res.value));
+  vk::UniqueCommandBuffer cmd = std::move(res.value[0]);
+  return std::make_shared<CommandBufferVK>(std::move(cmd));
 }
 
 CommandBufferVK::CommandBufferVK(vk::UniqueCommandBuffer cmd)

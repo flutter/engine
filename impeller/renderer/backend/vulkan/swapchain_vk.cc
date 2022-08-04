@@ -6,7 +6,6 @@
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
-#include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/texture_descriptor.h"
 #include "vulkan/vulkan_core.h"
@@ -194,24 +193,14 @@ void SwapchainVK::InitializeSwapchainImages(vk::Device device) {
       return;
     }
 
-    TextureDescriptor texture_descriptor;
-    texture_descriptor.format = FromVKFormat(image_format_);
-    texture_descriptor.mip_count = 1;
-    texture_descriptor.sample_count = SampleCount::kCount1;
-    texture_descriptor.size = {static_cast<ISize::Type>(extent_.width),
-                               static_cast<ISize::Type>(extent_.height)};
-    texture_descriptor.usage =
-        static_cast<uint64_t>(TextureUsage::kRenderTarget);
-
-    textures_.push_back(std::make_unique<TextureVK>(texture_descriptor, image,
-                                                    std::move(img_view),
-                                                    image_format_, extent_));
+    swapchain_images_.push_back(std::make_unique<SwapchainImage>(
+        image, std::move(img_view), image_format_, extent_));
   }
 }
 
-const std::vector<std::unique_ptr<TextureVK>>& SwapchainVK::GetTextures()
-    const {
-  return textures_;
+const std::vector<std::unique_ptr<SwapchainImage>>&
+SwapchainVK::GetSwapchainImages() const {
+  return swapchain_images_;
 }
 
 SwapchainVK::SwapchainVK(vk::UniqueSwapchainKHR swapchain,
@@ -221,8 +210,14 @@ SwapchainVK::SwapchainVK(vk::UniqueSwapchainKHR swapchain,
       image_format_(image_format),
       extent_(extent) {}
 
-SwapchainImage::SwapchainImage(vk::Image image, vk::UniqueImageView image_view)
-    : image_(image), image_view_(std::move(image_view)) {}
+SwapchainImage::SwapchainImage(vk::Image image,
+                               vk::UniqueImageView image_view,
+                               vk::Format image_format,
+                               vk::Extent2D extent)
+    : image_(image),
+      image_view_(std::move(image_view)),
+      image_format_(image_format),
+      extent_(extent) {}
 
 SwapchainImage::~SwapchainImage() = default;
 
