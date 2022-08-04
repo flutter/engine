@@ -703,8 +703,7 @@ void DisplayListDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRect(const SkRect& rect) {
-  auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
-  canvas_.DrawPath(std::move(path), paint_);
+  canvas_.DrawRect(ToRect(rect), paint_);
 }
 
 // |flutter::Dispatcher|

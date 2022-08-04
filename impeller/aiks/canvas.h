@@ -128,6 +128,10 @@ class Canvas {
 
   void RestoreClip();
 
+  bool AttemptDrawBlurredRRect(const Rect& rect,
+                               Scalar corner_radius,
+                               Paint& paint);
+
   FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
 };
 
