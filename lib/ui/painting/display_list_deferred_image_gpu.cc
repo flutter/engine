@@ -4,8 +4,6 @@
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
 
-#include <atomic>
-
 #include "display_list_deferred_image_gpu.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 
@@ -32,9 +30,8 @@ DlDeferredImageGPU::DlDeferredImageGPU(
 
 // |DlImage|
 DlDeferredImageGPU::~DlDeferredImageGPU() {
-  auto image_wrapper = std::atomic_load(&image_wrapper_);
   fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner_, [image_wrapper = std::move(image_wrapper)]() {
+      raster_task_runner_, [image_wrapper = std::move(image_wrapper_)]() {
         if (!image_wrapper) {
           return;
         }
@@ -45,8 +42,7 @@ DlDeferredImageGPU::~DlDeferredImageGPU() {
 
 // |DlImage|
 sk_sp<SkImage> DlDeferredImageGPU::skia_image() const {
-  auto image_wrapper = std::atomic_load(&image_wrapper_);
-  return image_wrapper ? image_wrapper->CreateSkiaImage() : nullptr;
+  return image_wrapper_ ? image_wrapper_->CreateSkiaImage() : nullptr;
 };
 
 // |DlImage|
@@ -57,33 +53,24 @@ std::shared_ptr<impeller::Texture> DlDeferredImageGPU::impeller_texture()
 
 // |DlImage|
 bool DlDeferredImageGPU::isTextureBacked() const {
-  if (auto image_wrapper = std::atomic_load(&image_wrapper_)) {
-    return image_wrapper->isTextureBacked();
-  }
-  return false;
+  return image_wrapper_ ? image_wrapper_->isTextureBacked() : false;
 }
 
 // |DlImage|
 SkISize DlDeferredImageGPU::dimensions() const {
-  if (auto image_wrapper = std::atomic_load(&image_wrapper_)) {
-    return image_wrapper->image_info().dimensions();
-  }
-  return SkISize::MakeEmpty();
+  return image_wrapper_ ? image_wrapper_->image_info().dimensions()
+                        : SkISize::MakeEmpty();
 }
 
 // |DlImage|
 size_t DlDeferredImageGPU::GetApproximateByteSize() const {
-  if (auto image_wrapper = std::atomic_load(&image_wrapper_)) {
-    return sizeof(this) + image_wrapper->image_info().computeMinByteSize();
-  }
-  return sizeof(this);
+  return sizeof(this) + image_wrapper_
+             ? image_wrapper_->image_info().computeMinByteSize()
+             : 0;
 }
 
 std::optional<std::string> DlDeferredImageGPU::get_error() const {
-  if (auto image_wrapper = std::atomic_load(&image_wrapper_)) {
-    return image_wrapper->get_error();
-  }
-  return std::nullopt;
+  return image_wrapper_ ? image_wrapper_->get_error() ? std::nullopt;
 }
 
 std::shared_ptr<DlDeferredImageGPU::ImageWrapper>
@@ -146,8 +133,12 @@ void DlDeferredImageGPU::ImageWrapper::SnapshotDisplayList() {
         if (!wrapper) {
           return;
         }
-        auto result = wrapper->snapshot_delegate_->MakeGpuImage(
-            wrapper->display_list_, wrapper->image_info_);
+        auto snapshot_delegate = wrapper->snapshot_delegate_;
+        if (!snapshot_delegate) {
+          return;
+        }
+        auto result = snapshot_delegate->MakeGpuImage(wrapper->display_list_,
+                                                      wrapper->image_info_);
         if (result->texture.isValid()) {
           wrapper->texture_ = result->texture;
           wrapper->context_ = std::move(result->context);

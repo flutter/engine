@@ -109,8 +109,6 @@ class DlDeferredImageGPU final : public DlImage {
     void OnGrContextDestroyed() override;
   };
 
-  // Must be accessed using atomics.
-  // TODO(dnfield): When c++20 is available use std::atomic<std::shared_ptr>
   const std::shared_ptr<ImageWrapper> image_wrapper_;
 
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
