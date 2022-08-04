@@ -64,7 +64,7 @@ class Entity {
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
   /// typically defined range of the source of the colors (such as the
-  /// bounds of an image or the defining geoetry of a gradient).
+  /// bounds of an image or the defining geometry of a gradient).
   enum class TileMode {
     /// Replicate the edge color if the shader draws outside of its original
     /// bounds.
