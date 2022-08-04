@@ -2883,6 +2883,7 @@ class PathMetric {
       contourIndex = _measure.currentContourIndex;
 
   /// Return the total length of the current contour.
+  ///
   /// The length may be calculated from an approximation of the geometry
   /// originally added. For this reason, it is not recommended to rely on
   /// this property for mathematically correct lengths of common shapes.
