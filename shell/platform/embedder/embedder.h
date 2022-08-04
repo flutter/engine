@@ -695,6 +695,11 @@ typedef struct {
   /// changed between this frame and the previous one. This is important so that
   /// the user can keep track of images' existing damage.
   FlutterDamage frame_damage;
+  /// This boolean is used to flag to the rendering backend whether partial
+  /// is enabled or not. Partial repaint should be enabled by default. It might
+  /// be disabled when the embedder does not receive the required information
+  /// to execute dirty region management.
+  bool partial_repaint_enabled;
 } FlutterVulkanImage;
 
 /// Callback to fetch a Vulkan function pointer for a given instance. Normally,
