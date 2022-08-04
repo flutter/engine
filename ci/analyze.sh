@@ -56,6 +56,7 @@ echo ""
 
 "$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/tools"
 
+(cd "$FLUTTER_DIR/testing/skia_gold_client"; "$DART" pub get)
 "$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/testing"
 
 echo ""
