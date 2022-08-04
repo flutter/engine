@@ -59,14 +59,13 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   }
 
   AutoCachePaint cache_paint(context);
+  cache_paint.setColorFilter(filter_.get());
   if (context.leaf_nodes_builder) {
-    cache_paint.setColorFilter(filter_.get());
     context.leaf_nodes_builder->saveLayer(&paint_bounds(),
                                           cache_paint.dl_paint());
     PaintChildren(context);
     context.leaf_nodes_builder->restore();
   } else {
-    cache_paint.setColorFilter(filter_.get());
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());
     PaintChildren(context);
