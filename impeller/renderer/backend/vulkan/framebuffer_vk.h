@@ -4,6 +4,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
@@ -12,12 +13,13 @@ class FramebufferVK {
  public:
   static std::shared_ptr<FramebufferVK> Create(
       vk::Device device,
-      std::shared_ptr<SwapchainVK> swapchain,
+      const RenderTarget& render_target,
       vk::RenderPass render_pass);
 
-  explicit FramebufferVK(std::vector<vk::UniqueFramebuffer> framebuffers);
+  explicit FramebufferVK(vk::UniqueFramebuffer framebuffer)
+      : framebuffer_(std::move(framebuffer)) {}
 
-  std::vector<vk::UniqueFramebuffer> framebuffers_;
+  vk::UniqueFramebuffer framebuffer_;
 };
 
 }  // namespace impeller

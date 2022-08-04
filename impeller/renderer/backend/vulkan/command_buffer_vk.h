@@ -15,7 +15,8 @@ class CommandBufferVK final : public CommandBuffer {
   static std::shared_ptr<CommandBufferVK> Create(vk::Device device,
                                                  vk::CommandPool command_pool);
 
-  explicit CommandBufferVK(vk::UniqueCommandBuffer command_buffer);
+  explicit CommandBufferVK(vk::Device device,
+                           vk::UniqueCommandBuffer command_buffer);
 
   // |CommandBuffer|
   ~CommandBufferVK() override;
@@ -23,6 +24,7 @@ class CommandBufferVK final : public CommandBuffer {
  private:
   friend class ContextMTL;
 
+  vk::Device device_;
   vk::UniqueCommandBuffer command_buffer_;
 
   // |CommandBuffer|

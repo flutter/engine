@@ -3,9 +3,13 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include <memory>
 
 #include "flutter/fml/logging.h"
+#include "impeller/renderer/backend/vulkan/render_pass_factory.h"
 #include "impeller/renderer/render_target.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -28,17 +32,17 @@ std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
   return std::make_shared<CommandBufferVK>(std::move(cmd));
 }
 
-CommandBufferVK::CommandBufferVK(vk::UniqueCommandBuffer cmd)
-    : command_buffer_(std::move(cmd)) {}
+CommandBufferVK::CommandBufferVK(vk::Device device, vk::UniqueCommandBuffer cmd)
+    : device_(device), command_buffer_(std::move(cmd)) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 
 void CommandBufferVK::SetLabel(const std::string& label) const {
-  FML_UNREACHABLE();
+  // FML_UNREACHABLE();
 }
 
 bool CommandBufferVK::IsValid() const {
-  FML_UNREACHABLE();
+  return true;
 }
 
 bool CommandBufferVK::SubmitCommands(CompletionCallback callback) {
@@ -47,7 +51,15 @@ bool CommandBufferVK::SubmitCommands(CompletionCallback callback) {
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
     RenderTarget target) const {
-  FML_UNREACHABLE();
+  auto rp = renderpass::CreateRenderPass(device_, target.GetSampleCount(),
+                                         "inner_render_pass");
+  if (!rp.has_value()) {
+    VALIDATION_LOG << "Failed to create render pass";
+    return nullptr;
+  }
+
+  return std::make_shared<RenderPass>(target, *command_buffer_,
+                                      std::move(rp.value()));
 }
 
 std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {

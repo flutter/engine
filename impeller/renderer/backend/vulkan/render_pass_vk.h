@@ -14,7 +14,9 @@ namespace impeller {
 
 class RenderPassVK final : public RenderPass {
  public:
-  RenderPassVK(std::shared_ptr<ContextVK> context, RenderTarget target);
+  RenderPassVK(RenderTarget target,
+               vk::CommandBuffer command_buffer,
+               vk::UniqueRenderPass render_pass);
 
   // |RenderPass|
   ~RenderPassVK() override;
@@ -22,7 +24,7 @@ class RenderPassVK final : public RenderPass {
  private:
   friend class CommandBufferVK;
 
-  std::shared_ptr<ContextVK> context_;
+  vk::CommandBuffer command_buffer_;
   vk::UniqueRenderPass render_pass_;
 
   // |RenderPass|
