@@ -41,7 +41,7 @@ void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() > Entity::BlendMode::kLastPipelineBlendMode) {
     reads_from_pass_texture_ = true;
   }
-
+  cover_whole_screen |= entity.CoverWholeScreen();
   elements_.emplace_back(std::move(entity));
 }
 
@@ -135,7 +135,7 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
       pass->backdrop_filter_proc_.has_value()) {
     reads_from_pass_texture_ = true;
   }
-
+  cover_whole_screen |= pass->cover_whole_screen;
   auto subpass_pointer = pass.get();
   elements_.emplace_back(std::move(pass));
   return subpass_pointer;
@@ -252,7 +252,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     auto subpass_coverage =
         GetSubpassCoverage(*subpass, Rect::MakeSize(root_pass_size));
-
+    if (subpass->cover_whole_screen) {
+      subpass_coverage = Rect::MakeSize(root_pass_size);
+    }
     if (backdrop_contents) {
       auto backdrop_coverage = backdrop_contents->GetCoverage(Entity{});
       if (backdrop_coverage.has_value()) {
@@ -501,6 +503,9 @@ void EntityPass::SetStencilDepth(size_t stencil_depth) {
 
 void EntityPass::SetBlendMode(Entity::BlendMode blend_mode) {
   blend_mode_ = blend_mode;
+  if (Entity::BlendModeShouldCoverWholeScreen(blend_mode)) {
+    cover_whole_screen = true;
+  }
 }
 
 void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {

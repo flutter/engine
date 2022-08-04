@@ -99,12 +99,17 @@ class Entity {
 
   bool Render(const ContentContext& renderer, RenderPass& parent_pass) const;
 
+  bool CoverWholeScreen() const;
+
+  static bool BlendModeShouldCoverWholeScreen(BlendMode blend_mode);
+
  private:
   Matrix transformation_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   uint32_t stencil_depth_ = 0u;
   bool adds_to_coverage_ = true;
+  bool cover_whole_screen_ = false;
 };
 
 }  // namespace impeller

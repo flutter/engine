@@ -219,6 +219,22 @@ TEST_P(AiksTest, CanRenderRadialGradient) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, BlendModeShouldCoverWholeScreen) {
+  Canvas canvas;
+  Paint paint;
+
+  paint.color = Color::Red();
+  canvas.DrawPaint(paint);
+
+  paint.blend_mode = Entity::BlendMode::kSource;
+  canvas.SaveLayer(paint);
+  paint.color = Color::White();
+  canvas.DrawRect({100, 100, 200, 200}, paint);
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderGroupOpacity) {
   Canvas canvas;
 
