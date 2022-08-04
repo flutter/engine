@@ -357,5 +357,66 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(DisplayListTest, CanDrawNinePatchImage) {
+  // Image is drawn with corners to scale and center pieces stretched to fit.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width * 2, size.height * 2),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCenterWidthBiggerThanDest) {
+  // Edge case, the width of the corners does not leave any room for the
+  // center slice. The center (across the vertical axis) is folded out of the
+  // resulting image.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width / 2, size.height),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCenterHeightBiggerThanDest) {
+  // Edge case, the height of the corners does not leave any room for the
+  // center slice. The center (across the horizontal axis) is folded out of the
+  // resulting image.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width, size.height / 2),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCenterBiggerThanDest) {
+  // Edge case, the provided center is both wider and taller than the
+  // destination rect. Only the corners are displayed.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width / 2, size.height / 2),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
