@@ -406,7 +406,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
 
   // TODO EMILY: this line is for visual simulator tests, delete before landing PR
-  //                int numFilters = 0;
+  //                  int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -417,17 +417,17 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
         //             TODO EMILY: these lines are for visual simulator tests, delete before landing
         //             PR
-        //                                        if(numFilters < 1) {
-        //                                          flutter::DlBlurImageFilter filter =
-        //                                              flutter::DlBlurImageFilter(5, 5,
-        //                                              flutter::DlTileMode::kDecal);
+        //                                                if(numFilters < 1) {
+        //                                                  flutter::DlBlurImageFilter filter =
+        //                                                      flutter::DlBlurImageFilter(5, 5,
+        //                                                      flutter::DlTileMode::kDecal);
         //
-        //                                          NSNumber* blurRadius =
-        //                                          @(filter.asBlur()->sigma_x()); [blurRadii
-        //                                          addObject:blurRadius];
+        //                                                  NSNumber* blurRadius =
+        //                                                  @(filter.asBlur()->sigma_x());
+        //                                                  [blurRadii addObject:blurRadius];
         //
-        //                                          numFilters++;
-        //                                        }
+        //                                                  numFilters++;
+        //                                                }
         break;
       }
       case kClipRect:
