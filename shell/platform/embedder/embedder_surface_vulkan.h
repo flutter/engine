@@ -24,7 +24,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
         get_instance_proc_address;  // required
     std::function<FlutterVulkanImage(const SkISize& frame_size)>
         get_next_image;  // required
-    std::function<bool(VkImage image, VkFormat format)>
+    std::function<bool(VkImage image, VkFormat format, SkIRect image_damage_skrect, SkIRect frame_damage_skrect)>
         present_image;  // required
   };
 
@@ -51,7 +51,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
   FlutterVulkanImage AcquireImage(const SkISize& size) override;
 
   // |GPUSurfaceVulkanDelegate|
-  bool PresentImage(VkImage image, VkFormat format) override;
+  bool PresentImage(VkImage image, VkFormat format, SkIRect image_damage_skrect, SkIRect frame_damage_skrect) override;
 
  private:
   bool valid_ = false;
