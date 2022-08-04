@@ -351,9 +351,9 @@ InferOpenGLPlatformViewCreationCallback(
 
     // Verify that at least one damage rectangle was provided.
     if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
-      FML_LOG(INFO) << "No damage was provided. Setting the damage to an "
-                       "empty rectangle.";
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
       existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
     } else if (existing_damage.num_rects > 1) {
       // Log message notifying users that multi-damage is not yet available in
       // case they try to make use of it.
