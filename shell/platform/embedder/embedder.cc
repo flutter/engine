@@ -549,7 +549,16 @@ InferVulkanPlatformViewCreationCallback(
     };
 
     FlutterVulkanImage next_image = ptr(user_data, &frame_info);
-    if (!next_image.image_damage.damage) {
+
+    // Verify that at least one damage rectangle was provided.
+    if (next_image.image_damage.damage == nullptr || next_image.image_damage.num_rects <= 0) {
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
+      next_image.partial_repaint_enabled = false;
+    } else if (next_image.image_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
+      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
+                       "Repainting the whole frame.";
       next_image.partial_repaint_enabled = false;
     } else {
       next_image.partial_repaint_enabled = true;

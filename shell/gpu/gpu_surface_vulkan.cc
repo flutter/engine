@@ -89,9 +89,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
 
   SurfaceFrame::FramebufferInfo framebuffer_info{
     .supports_readback = true,
-    .supports_partial_repaint = image.partial_repaint_enabled,
-    .existing_damage = FlutterRectToSkIRect(image.image_damage.damage[0]), 
   };
+
+  if (image.partial_repaint_enabled) {
+    framebuffer_info.supports_partial_repaint = true;
+    framebuffer_info.existing_damage = FlutterRectToSkIRect(image.image_damage.damage[0]);
+  }
 
   return std::make_unique<SurfaceFrame>(
       std::move(surface), std::move(framebuffer_info), std::move(callback));
