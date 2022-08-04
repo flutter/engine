@@ -42,9 +42,9 @@
 ///             singal.
 ///
 ///
-/// @param allowPause Allow vsync client to pause after receiving vsync signal.
+/// @param allowPauseAfterVsync Allow vsync client to pause after receiving vsync signal.
 ///
-- (void)setAllowPauseAfterVsync:(BOOL)allowPause;
+- (void)setAllowPauseAfterVsync:(BOOL)allowPauseAfterVsync;
 
 - (void)invalidate;
 
