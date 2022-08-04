@@ -111,7 +111,6 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
     slice->end_recording();
 
-    // sk_sp<RTree> rtree = view_rtrees_.at(view_id);
     SkRect joined_rect = SkRect::MakeEmpty();
 
     // Determinate if Flutter UI intersects with any of the previous
