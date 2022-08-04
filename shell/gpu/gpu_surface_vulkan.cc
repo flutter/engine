@@ -26,6 +26,16 @@ bool GPUSurfaceVulkan::IsValid() {
   return skia_context_ != nullptr;
 }
 
+// Auxiliary function used to translate rectangles of type FlutterRect to
+// SkIRect.
+static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     const SkISize& frame_size) {
   if (!IsValid()) {
@@ -61,7 +71,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
   }
 
   SurfaceFrame::SubmitCallback callback = [image = image, delegate = delegate_](
-                                              const SurfaceFrame&,
+                                              const SurfaceFrame& frame,
                                               SkCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceVulkan::PresentImage");
     if (canvas == nullptr) {
@@ -72,10 +82,16 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     canvas->flush();
 
     return delegate->PresentImage(reinterpret_cast<VkImage>(image.image),
-                                  static_cast<VkFormat>(image.format));
+                                  static_cast<VkFormat>(image.format),
+                                  *frame.submit_info().buffer_damage,
+                                  *frame.submit_info().frame_damage);
   };
 
-  SurfaceFrame::FramebufferInfo framebuffer_info{.supports_readback = true};
+  SurfaceFrame::FramebufferInfo framebuffer_info{
+    .supports_readback = true,
+    .supports_partial_repaint = image.partial_repaint_enabled,
+    .existing_damage = FlutterRectToSkIRect(image.image_damage.damage[0]), 
+  };
 
   return std::make_unique<SurfaceFrame>(
       std::move(surface), std::move(framebuffer_info), std::move(callback));
