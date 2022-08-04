@@ -26,7 +26,7 @@ void main(List<String> args) {
   final Image imageB = decodeNamedImage(fileB.readAsBytesSync(), 'b.png')!;
   final ImageDiff diff = ImageDiff(
       golden: imageA, other: imageB, pixelComparison: PixelComparison.fuzzy);
-  print('Diff: ${(diff.rate * 100).toStringAsFixed(4)}%');
+  print('Diff: ${(diff.rate * 100).toStringAsFixed(4)}%'); // ignore: avoid_print
 }
 
 /// This class encapsulates visually diffing an Image with any other.

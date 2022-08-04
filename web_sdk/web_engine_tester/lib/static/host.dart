@@ -162,7 +162,7 @@ void main() {
       }));
     },
     (dynamic error, StackTrace stackTrace) {
-      print('$error\n${Trace.from(stackTrace).terse}');
+      print('$error\n${Trace.from(stackTrace).terse}'); // ignore: avoid_print
     },
   );
 }
