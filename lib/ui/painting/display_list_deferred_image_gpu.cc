@@ -64,9 +64,9 @@ SkISize DlDeferredImageGPU::dimensions() const {
 
 // |DlImage|
 size_t DlDeferredImageGPU::GetApproximateByteSize() const {
-  return sizeof(this) + image_wrapper_
-             ? image_wrapper_->image_info().computeMinByteSize()
-             : 0;
+  return sizeof(this) + (image_wrapper_
+                             ? image_wrapper_->image_info().computeMinByteSize()
+                             : 0);
 }
 
 std::optional<std::string> DlDeferredImageGPU::get_error() const {
