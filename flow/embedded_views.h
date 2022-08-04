@@ -278,10 +278,12 @@ enum class PostPrerollResult {
   kSkipAndRetryFrame
 };
 
-// The |CompositeEmbeddedView| method must return an SkCanvas, and also
-// the associated DisplayListBuilder if the frame is being redered
-// to DisplayLists as determined from the associated ScopedFrame. The
-// |EmbedderPaintContext| struct allows the method to return both values.
+// The |PlatformViewLayer| calls |CompositeEmbeddedView| in its |Paint|
+// method to replace the leaf_nodes_canvas and leaf_nodes_builder in its
+// |PaintContext| for subsequent layers in the frame to render into.
+// The builder value will only be supplied if the associated ScopedFrame
+// is being rendered to DisplayLists. The |EmbedderPaintContext| struct
+// allows the method to return both values.
 struct EmbedderPaintContext {
   SkCanvas* canvas;
   DisplayListBuilder* builder;
