@@ -229,7 +229,7 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
-#ifdef SHELL_ENABLE_GL
+#if defined(SHELL_ENABLE_GL) || defined(SHELL_ENABLE_VULKAN)
 // Auxiliary function used to translate rectangles of type SkIRect to
 // FlutterRect.
 static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
@@ -548,16 +548,41 @@ InferVulkanPlatformViewCreationCallback(
                  static_cast<uint32_t>(frame_size.height())},
     };
 
-    return ptr(user_data, &frame_info);
+    FlutterVulkanImage next_image = ptr(user_data, &frame_info);
+    if (!next_image.image_damage.damage) {
+      next_image.partial_repaint_enabled = false;
+    } else {
+      next_image.partial_repaint_enabled = true;
+    }
+    return next_image;
   };
 
   auto vulkan_present_image_callback =
       [ptr = config->vulkan.present_image_callback, user_data](
-          VkImage image, VkFormat format) -> bool {
+          VkImage image, VkFormat format, SkIRect image_damage_skrect, SkIRect frame_damage_skrect) -> bool {
+    const size_t num_rects = 1;
+
+    std::array<FlutterRect, num_rects> image_damage_rect = {SkIRectToFlutterRect(image_damage_skrect)};
+    std::array<FlutterRect, num_rects> frame_damage_rect = {SkIRectToFlutterRect(frame_damage_skrect)};
+
+    FlutterDamage image_damage{
+        .struct_size = sizeof(FlutterDamage),
+        .num_rects = image_damage_rect.size(),
+        .damage = image_damage_rect.data(),
+    };
+
+    FlutterDamage frame_damage{
+        .struct_size = sizeof(FlutterDamage),
+        .num_rects = frame_damage_rect.size(),
+        .damage = frame_damage_rect.data(),
+    };
+
     FlutterVulkanImage image_desc = {
         .struct_size = sizeof(FlutterVulkanImage),
         .image = reinterpret_cast<uint64_t>(image),
         .format = static_cast<uint32_t>(format),
+        .image_damage = image_damage,
+        .frame_damage = frame_damage,
     };
     return ptr(user_data, &image_desc);
   };
