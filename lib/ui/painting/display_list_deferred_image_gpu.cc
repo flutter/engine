@@ -70,7 +70,7 @@ size_t DlDeferredImageGPU::GetApproximateByteSize() const {
 }
 
 std::optional<std::string> DlDeferredImageGPU::get_error() const {
-  return image_wrapper_ ? image_wrapper_->get_error() ? std::nullopt;
+  return image_wrapper_ ? image_wrapper_->get_error() : std::nullopt;
 }
 
 std::shared_ptr<DlDeferredImageGPU::ImageWrapper>
