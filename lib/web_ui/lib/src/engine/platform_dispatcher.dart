@@ -343,6 +343,26 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         name, data, _zonedPlatformMessageResponseCallback(callback));
   }
 
+  @override
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port,
+  ) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
+  @override
+  int registerRootIsolate() {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
+  @override
+  void registerBackgroundIsolate(int rootIsolateId) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
   // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
   // to using channel buffers exclusively.
   @override

@@ -49,6 +49,16 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port);
+
+  int registerRootIsolate();
+
+  void registerBackgroundIsolate(int rootIsolateId);
+
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 

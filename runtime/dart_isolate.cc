@@ -269,7 +269,9 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
       static_cast<std::shared_ptr<DartIsolate>*>(Dart_IsolateData(vm_isolate));
 
   (*root_isolate_data)
-      ->SetPlatformConfiguration(std::move(platform_configuration));
+      ->SetPlatformConfiguration(
+          fml::threadsafe_unique_ptr<PlatformConfiguration>(
+              std::move(platform_configuration)));
 
   return (*root_isolate_data)->GetWeakIsolatePtr();
 }
@@ -959,6 +961,10 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
                           false,       // is_root_isolate
                           context)));  // context
+
+  (*embedder_isolate.get())
+      ->SetWeakPlatformConfiguration(
+          (*isolate_group_data)->GetPlatformConfiguration(1));
 
   // root isolate should have been created via CreateRootIsolate
   if (!InitializeIsolate(*embedder_isolate, isolate, error)) {

@@ -106,12 +106,20 @@ UIDartState* UIDartState::Current() {
 }
 
 void UIDartState::SetPlatformConfiguration(
-    std::unique_ptr<PlatformConfiguration> platform_configuration) {
+    fml::threadsafe_unique_ptr<PlatformConfiguration> platform_configuration) {
+  FML_DCHECK(IsRootIsolate());
   platform_configuration_ = std::move(platform_configuration);
   if (platform_configuration_) {
     platform_configuration_->client()->UpdateIsolateDescription(debug_name_,
                                                                 main_port_);
   }
+}
+
+void UIDartState::SetWeakPlatformConfiguration(
+    fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+        platform_configuration) {
+  FML_DCHECK(!IsRootIsolate());
+  weak_platform_configuration_ = platform_configuration;
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
@@ -212,6 +220,20 @@ void UIDartState::LogMessage(const std::string& tag,
 
 bool UIDartState::enable_skparagraph() const {
   return enable_skparagraph_;
+}
+
+void UIDartState::HandlePlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  if (platform_configuration_) {
+    platform_configuration_->client()->HandlePlatformMessage(
+        std::move(message));
+  } else {
+    fml::threadsafe_unique_ptr<PlatformConfiguration>::lock_ptr lock(
+        weak_platform_configuration_);
+    if (lock) {
+      lock->client()->HandlePlatformMessage(std::move(message));
+    }
+  }
 }
 
 }  // namespace flutter

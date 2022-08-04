@@ -13,6 +13,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/memory/threadsafe_unique_ptr.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/io_manager.h"
@@ -30,6 +31,7 @@ namespace flutter {
 class FontSelector;
 class ImageGeneratorRegistry;
 class PlatformConfiguration;
+class PlatformMessage;
 
 class UIDartState : public tonic::DartState {
  public:
@@ -106,6 +108,18 @@ class UIDartState : public tonic::DartState {
     return platform_configuration_.get();
   }
 
+  fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+  GetWeakPlatformConfiguration() const {
+    return platform_configuration_ ? platform_configuration_.GetWeakPtr()
+                                   : weak_platform_configuration_;
+  }
+
+  void SetWeakPlatformConfiguration(
+      fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+          platform_configuration);
+
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
+
   const TaskRunners& GetTaskRunners() const;
 
   void ScheduleMicrotask(Dart_Handle handle);
@@ -167,7 +181,7 @@ class UIDartState : public tonic::DartState {
   ~UIDartState() override;
 
   void SetPlatformConfiguration(
-      std::unique_ptr<PlatformConfiguration> platform_configuration);
+      fml::threadsafe_unique_ptr<PlatformConfiguration> platform_configuration);
 
   const std::string& GetAdvisoryScriptURI() const;
 
@@ -180,7 +194,9 @@ class UIDartState : public tonic::DartState {
   Dart_Port main_port_ = ILLEGAL_PORT;
   const bool is_root_isolate_;
   std::string debug_name_;
-  std::unique_ptr<PlatformConfiguration> platform_configuration_;
+  fml::threadsafe_unique_ptr<PlatformConfiguration> platform_configuration_;
+  fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+      weak_platform_configuration_;
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;

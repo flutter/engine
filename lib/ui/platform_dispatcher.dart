@@ -532,11 +532,37 @@ class PlatformDispatcher {
     }
   }
 
-  String? _sendPlatformMessage(String name,PlatformMessageResponseCallback? callback, ByteData? data) =>
+  String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data) =>
       __sendPlatformMessage(name, callback, data);
 
   @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
+
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    SendPort port) {
+    final String? error =
+        _sendPortPlatformMessage(name, identifier, port.nativePort, data);
+    if (error != null) {
+      throw Exception(error);
+    }
+  }
+
+  String? _sendPortPlatformMessage(String name, int identifier, int port, ByteData? data) =>
+      __sendPortPlatformMessage(name, identifier, port, data);
+
+  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
+  external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
+
+  int registerRootIsolate() => __registerRootIsolate();
+  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::RegisterRootIsolate')
+  external static int __registerRootIsolate();
+
+  void registerBackgroundIsolate(int rootIsolateId) => __registerBackgroundIsolate(rootIsolateId);
+  @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
+  external static void __registerBackgroundIsolate(int rootIsolateId);
 
   /// Called whenever this platform dispatcher receives a message from a
   /// platform-specific plugin.

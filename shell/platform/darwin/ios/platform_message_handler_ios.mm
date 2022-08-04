@@ -47,10 +47,13 @@ PlatformMessageHandlerIos::PlatformMessageHandlerIos(TaskRunners task_runners)
     : task_runners_(task_runners) {}
 
 void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
-  FML_CHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  // This can be called from any isolate's thread.
   fml::RefPtr<flutter::PlatformMessageResponse> completer = message->response();
   HandlerInfo handler_info;
   {
+    // TODO(gaaclarke): This mutex is a bottleneck for multiple isolates sending
+    // messages at the same time. This could be potentially changed to a
+    // read-write lock.
     std::lock_guard lock(message_handlers_mutex_);
     auto it = message_handlers_.find(message->channel());
     if (it != message_handlers_.end()) {

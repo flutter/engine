@@ -64,4 +64,21 @@ void DartIsolateGroupData::SetChildIsolatePreparer(
   child_isolate_preparer_ = value;
 }
 
+void DartIsolateGroupData::SetPlatformConfiguration(
+    int64_t root_isolate_id,
+    fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+        platform_configuration) {
+  std::scoped_lock lock(platform_configurations_mutex_);
+  platform_configurations_[root_isolate_id] = platform_configuration;
+}
+
+fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+DartIsolateGroupData::GetPlatformConfiguration(int64_t root_isolate_id) const {
+  std::scoped_lock lock(platform_configurations_mutex_);
+  auto it = platform_configurations_.find(root_isolate_id);
+  return it == platform_configurations_.end()
+             ? fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr()
+             : it->second;
+}
+
 }  // namespace flutter

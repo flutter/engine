@@ -281,6 +281,7 @@ FILE: ../../../flutter/fml/memory/task_runner_checker.cc
 FILE: ../../../flutter/fml/memory/task_runner_checker.h
 FILE: ../../../flutter/fml/memory/task_runner_checker_unittest.cc
 FILE: ../../../flutter/fml/memory/thread_checker.h
+FILE: ../../../flutter/fml/memory/threadsafe_unique_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.cc
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.h
@@ -1124,6 +1125,8 @@ FILE: ../../../flutter/lib/ui/window/platform_message_response.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.cc
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.h
 FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.cc

@@ -1212,10 +1212,15 @@ void Shell::OnEngineUpdateSemantics(SemanticsNodeUpdates update,
 // |Engine::Delegate|
 void Shell::OnEngineHandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
+  /// Called from any isolate's thread. This is safe because the only instance
+  /// variables accessed here are set once at startup, except
+  /// `route_messages_through_platform_thread_` which if misread is not a
+  /// logical error. `UIDartState` has a lock that makes sure that calling this
+  /// doesn't happen while the `Shell` is being destructed.
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (message->channel() == kSkiaChannel) {
+    FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
     HandleEngineSkiaMessage(std::move(message));
     return;
   }

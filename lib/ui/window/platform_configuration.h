@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "flutter/assets/asset_manager.h"
+#include "flutter/fml/memory/threadsafe_unique_ptr.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
@@ -443,6 +444,21 @@ class PlatformConfiguration final {
 };
 
 //----------------------------------------------------------------------------
+/// An inteface that the result of `Dart_CurrentIsolateGroupData` should
+/// implement for registering background isolates to work.
+class PlatformConfigurationStorage {
+ public:
+  virtual ~PlatformConfigurationStorage() = default;
+  virtual void SetPlatformConfiguration(
+      int64_t root_isolate_id,
+      fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+          platform_configuration) = 0;
+
+  virtual fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
+  GetPlatformConfiguration(int64_t root_isolate_id) const = 0;
+};
+
+//----------------------------------------------------------------------------
 // API exposed as FFI calls in Dart.
 //
 // These are probably not supposed to be called directly, and should instead
@@ -475,6 +491,11 @@ class PlatformConfigurationNativeApi {
                                          Dart_Handle callback,
                                          Dart_Handle data_handle);
 
+  static Dart_Handle SendPortPlatformMessage(const std::string& name,
+                                             Dart_Handle identifier,
+                                             Dart_Handle send_port,
+                                             Dart_Handle data_handle);
+
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
 
@@ -494,6 +515,10 @@ class PlatformConfigurationNativeApi {
   ///                              mode does.
   ///
   static int RequestDartPerformanceMode(int mode);
+
+  static int64_t RegisterRootIsolate();
+
+  static void RegisterBackgroundIsolate(int64_t isolate_id);
 };
 
 }  // namespace flutter
