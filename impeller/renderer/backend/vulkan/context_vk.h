@@ -10,6 +10,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/framebuffer_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
@@ -59,7 +61,8 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance();
 
-  std::shared_ptr<impeller::SwapchainVK> CreateSwapchain(vk::SurfaceKHR surface);
+  std::shared_ptr<impeller::SwapchainVK> CreateSwapchain(
+      vk::SurfaceKHR surface);
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -75,6 +78,9 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
   bool is_valid_ = false;
+
+  // more things
+  std::shared_ptr<impeller::CommandPoolVK> graphics_pool_;
 
   ContextVK(
       PFN_vkGetInstanceProcAddr proc_address_callback,

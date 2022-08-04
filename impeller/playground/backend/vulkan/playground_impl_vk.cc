@@ -112,7 +112,7 @@ void PlaygroundImplVK::SetupSwapchain() {
 // |PlaygroundImpl|
 std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
-  FML_UNREACHABLE();
+  return std::make_shared<SurfaceVK>()
 }
 
 }  // namespace impeller

@@ -5,19 +5,25 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 
 class CommandBufferVK final : public CommandBuffer {
  public:
+  static std::shared_ptr<CommandBufferVK> Create(vk::Device device,
+                                                 vk::CommandPool command_pool);
+
+  explicit CommandBufferVK(vk::UniqueCommandBuffer command_buffer);
+
   // |CommandBuffer|
   ~CommandBufferVK() override;
 
  private:
   friend class ContextMTL;
 
-  CommandBufferVK();
+  vk::UniqueCommandBuffer command_buffer_;
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;

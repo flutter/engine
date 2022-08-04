@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
@@ -13,7 +14,10 @@ namespace impeller {
 
 class SurfaceVK final : public Surface {
  public:
-  SurfaceVK(RenderTarget target, vk::UniqueSurfaceKHR surface);
+  std::unique_ptr<Surface> WrapSurface(ContextVK* context,
+                                       std::shared_ptr<SwapchainVK> swapchain);
+
+  SurfaceVK(RenderTarget target, vk::SurfaceKHR surface);
 
   // |Surface|
   ~SurfaceVK() override;
@@ -21,7 +25,7 @@ class SurfaceVK final : public Surface {
   vk::SurfaceKHR GetSurface() const;
 
  private:
-  vk::UniqueSurfaceKHR surface_;
+  vk::SurfaceKHR surface_;
 
   // |Surface|
   bool Present() const override;

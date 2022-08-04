@@ -7,6 +7,7 @@
 #include <vector>
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/device_buffer.h"
 #include "vulkan/vulkan_structs.hpp"
@@ -33,19 +34,6 @@ class SwapchainDetailsVK {
   FML_DISALLOW_COPY_AND_ASSIGN(SwapchainDetailsVK);
 };
 
-class SwapchainImage {
- public:
-  SwapchainImage(vk::Image image, vk::UniqueImageView view);
-
-  ~SwapchainImage();
-
- private:
-  vk::Image image_;
-  vk::UniqueImageView image_view_;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(SwapchainImage);
-};
-
 class SwapchainVK {
  public:
   static std::shared_ptr<SwapchainVK> Create(vk::Device device,
@@ -60,12 +48,14 @@ class SwapchainVK {
 
   void InitializeSwapchainImages(vk::Device device);
 
- private:
+  const std::vector<std::unique_ptr<TextureVK>>& GetTextures() const;
+
   vk::UniqueSwapchainKHR swapchain_;
   vk::Format image_format_;
   vk::Extent2D extent_;
-  std::vector<std::unique_ptr<SwapchainImage>> swapchain_images_;
+  std::vector<std::unique_ptr<TextureVK>> textures_;
 
+ private:
   FML_DISALLOW_COPY_AND_ASSIGN(SwapchainVK);
 };
 

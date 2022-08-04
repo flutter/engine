@@ -8,8 +8,26 @@
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
+std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
+    vk::Device device,
+    vk::CommandPool command_pool) {
+  vk::CommandBufferAllocateInfo allocate_info;
+  allocate_info.setLevel(vk::CommandBufferLevel::ePrimary);
+  allocate_info.setCommandBufferCount(1);
+  allocate_info.setCommandPool(command_pool);
 
-CommandBufferVK::CommandBufferVK() = default;
+  auto res = device.allocateCommandBuffersUnique(allocate_info);
+  if (res.result != vk::Result::eSuccess) {
+    FML_CHECK(false) << "Failed to allocate command buffer: "
+                     << vk::to_string(res.result);
+    return nullptr;
+  }
+
+  return std::make_shared<CommandBufferVK>(std::move(res.value));
+}
+
+CommandBufferVK::CommandBufferVK(vk::UniqueCommandBuffer cmd)
+    : command_buffer_(std::move(cmd)) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 

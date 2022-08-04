@@ -14,6 +14,8 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
@@ -401,6 +403,8 @@ ContextVK::ContextVK(
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   is_valid_ = true;
+
+  graphics_pool_ = CommandPoolVK::Create(*device_, graphics_queue->index);
 }
 
 ContextVK::~ContextVK() = default;
@@ -430,7 +434,7 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateRenderCommandBuffer() const {
-  FML_UNREACHABLE();
+  return CommandBufferVK::Create(*device_, *(graphics_pool_->command_pool_));
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateTransferCommandBuffer() const {
