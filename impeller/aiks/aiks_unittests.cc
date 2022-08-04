@@ -226,10 +226,19 @@ TEST_P(AiksTest, BlendModeShouldCoverWholeScreen) {
   paint.color = Color::Red();
   canvas.DrawPaint(paint);
 
+  paint.blend_mode = Entity::BlendMode::kSourceOver;
+  canvas.SaveLayer(paint);
+
+  paint.color = Color::White();
+  canvas.DrawRect({100, 100, 400, 400}, paint);
+
   paint.blend_mode = Entity::BlendMode::kSource;
   canvas.SaveLayer(paint);
-  paint.color = Color::White();
-  canvas.DrawRect({100, 100, 200, 200}, paint);
+
+  paint.color = Color::Blue();
+  canvas.DrawRect({200, 200, 200, 200}, paint);
+
+  canvas.Restore();
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

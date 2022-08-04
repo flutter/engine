@@ -503,9 +503,7 @@ void EntityPass::SetStencilDepth(size_t stencil_depth) {
 
 void EntityPass::SetBlendMode(Entity::BlendMode blend_mode) {
   blend_mode_ = blend_mode;
-  if (Entity::BlendModeShouldCoverWholeScreen(blend_mode)) {
-    cover_whole_screen = true;
-  }
+  cover_whole_screen = Entity::BlendModeShouldCoverWholeScreen(blend_mode);
 }
 
 void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {

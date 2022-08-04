@@ -70,9 +70,7 @@ void Entity::IncrementStencilDepth(uint32_t increment) {
 
 void Entity::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
-  if (BlendModeShouldCoverWholeScreen(blend_mode)) {
-    cover_whole_screen_ = true;
-  }
+  cover_whole_screen_ = BlendModeShouldCoverWholeScreen(blend_mode);
 }
 
 bool Entity::CoverWholeScreen() const {
