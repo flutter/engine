@@ -8,8 +8,8 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/device_buffer.h"
 #include "impeller/renderer/texture.h"
 #include "vulkan/vulkan_structs.hpp"
 
@@ -18,19 +18,21 @@ namespace impeller {
 class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
  public:
   TextureVK(TextureDescriptor desc,
-            vk::Image image,
-            vk::UniqueImageView image_view,
-            vk::Format image_format,
-            vk::Extent2D extent);
+            ContextVK& context,
+            const VmaAllocator& allocator,
+            VkImage image,
+            VmaAllocation allocation,
+            VmaAllocationInfo allocation_info);
 
   // |Texture|
   ~TextureVK() override;
 
  private:
-  vk::Image image_;
-  vk::UniqueImageView image_view_;
-  vk::Format image_format_;
-  vk::Extent2D extent_;
+  ContextVK& context_;
+  const VmaAllocator& allocator_;
+  VkImage image_;
+  VmaAllocation allocation_;
+  VmaAllocationInfo allocation_info_;
 
   // |Texture|
   void SetLabel(std::string_view label) override;
