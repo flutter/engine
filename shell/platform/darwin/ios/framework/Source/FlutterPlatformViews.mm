@@ -520,9 +520,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   // Resolve all pending GPU operations before allocating a new surface.
   background_canvas->flush();
+
   // Clipping the background canvas before drawing the picture recorders requires to
   // save and restore the clip context.
   SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
 
@@ -593,6 +595,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       slice->render_into(background_canvas);
     }
   }
+
+  // Manually trigger the SkAutoCanvasRestore before we submit the frame
+  save.restore();
+
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
   RemoveUnusedLayers();

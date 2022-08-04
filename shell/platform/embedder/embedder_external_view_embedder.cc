@@ -111,7 +111,8 @@ std::vector<SkCanvas*> EmbedderExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-EmbedderPaintContext EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+EmbedderPaintContext EmbedderExternalViewEmbedder::CompositeEmbeddedView(
+    int view_id) {
   auto vid = EmbedderExternalView::ViewIdentifier(view_id);
   auto found = pending_views_.find(vid);
   if (found == pending_views_.end()) {

@@ -311,7 +311,8 @@ class SkPictureEmbedderViewSlice : public EmbedderViewSlice {
   SkCanvas* canvas() override;
   DisplayListBuilder* builder() override;
   void end_recording() override;
-  std::list<SkRect> searchNonOverlappingDrawnRects(const SkRect& query) const override;
+  std::list<SkRect> searchNonOverlappingDrawnRects(
+      const SkRect& query) const override;
   void render_into(SkCanvas* canvas) override;
   void render_into(DisplayListBuilder* builder) override;
 
@@ -329,7 +330,8 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
   SkCanvas* canvas() override;
   DisplayListBuilder* builder() override;
   void end_recording() override;
-  std::list<SkRect> searchNonOverlappingDrawnRects(const SkRect& query) const override;
+  std::list<SkRect> searchNonOverlappingDrawnRects(
+      const SkRect& query) const override;
   void render_into(SkCanvas* canvas) override;
   void render_into(DisplayListBuilder* builder) override;
 

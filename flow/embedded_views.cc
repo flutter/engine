@@ -27,7 +27,7 @@ void SkPictureEmbedderViewSlice::end_recording() {
 }
 
 std::list<SkRect> SkPictureEmbedderViewSlice::searchNonOverlappingDrawnRects(
-      const SkRect& query) const {
+    const SkRect& query) const {
   return rtree_->searchNonOverlappingDrawnRects(query);
 }
 
@@ -44,19 +44,20 @@ DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
 }
 
 SkCanvas* DisplayListEmbedderViewSlice::canvas() {
-  return recorder_.get();
+  return recorder_ ? recorder_.get() : nullptr;
 }
 
 DisplayListBuilder* DisplayListEmbedderViewSlice::builder() {
-  return recorder_->builder().get();
+  return recorder_ ? recorder_->builder().get() : nullptr;
 }
 
 void DisplayListEmbedderViewSlice::end_recording() {
   display_list_ = recorder_->Build();
+  recorder_ = nullptr;
 }
 
 std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
-      const SkRect& query) const {
+    const SkRect& query) const {
   return display_list_->rtree()->searchNonOverlappingDrawnRects(query);
 }
 

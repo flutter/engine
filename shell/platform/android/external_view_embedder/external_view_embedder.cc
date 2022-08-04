@@ -38,7 +38,7 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
     view = std::make_unique<SkPictureEmbedderViewSlice>(view_bounds);
   }
   slices_.insert_or_assign(view_id, std::move(view));
- 
+
   composition_order_.push_back(view_id);
   // Update params only if they changed.
   if (view_params_.count(view_id) == 1 &&
@@ -154,6 +154,10 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       slice->render_into(background_canvas);
     }
   }
+
+  // Manually trigger the SkAutoCanvasRestore before we submit the frame
+  save.restore();
+
   // Submit the background canvas frame before switching the GL context to
   // the overlay surfaces.
   //

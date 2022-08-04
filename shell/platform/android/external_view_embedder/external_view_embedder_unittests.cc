@@ -577,8 +577,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
   }
   // This simulates Flutter UI that intersects with the first and second Android
   // views.
-  embedder->CompositeEmbeddedView(1).canvas->drawRect(SkRect::MakeXYWH(25, 25, 80, 50),
-                                               rect_paint);
+  embedder->CompositeEmbeddedView(1).canvas->drawRect(
+      SkRect::MakeXYWH(25, 25, 80, 50), rect_paint);
 
   embedder->CompositeEmbeddedView(1).canvas->drawRect(
       SkRect::MakeXYWH(75, 75, 30, 100), rect_paint);

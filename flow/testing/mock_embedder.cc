@@ -37,7 +37,7 @@ std::vector<SkCanvas*> MockViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-EmbedderContext MockViewEmbedder::CompositeEmbeddedView(int view_id) {
+EmbedderPaintContext MockViewEmbedder::CompositeEmbeddedView(int view_id) {
   return {nullptr, nullptr};
 }
 
