@@ -46,7 +46,9 @@ echo "Using dart from $DART_BIN"
 "$DART" --version
 echo ""
 
-"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib"
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib/ui"
+
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib/spirv"
 
 "$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/ci"
 
