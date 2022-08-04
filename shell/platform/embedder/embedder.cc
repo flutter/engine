@@ -239,7 +239,9 @@ static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
                               static_cast<double>(sk_rect.fBottom)};
   return flutter_rect;
 }
+#endif
 
+#ifdef SHELL_ENABLE_GL
 // Auxiliary function used to translate rectangles of type FlutterRect to
 // SkIRect.
 static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
