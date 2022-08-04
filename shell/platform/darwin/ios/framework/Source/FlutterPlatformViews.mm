@@ -431,7 +431,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       }
       case kClipRect:
-        to [maskView clipRect:(*iter)->GetRect() matrix:finalTransform];
+        [maskView clipRect:(*iter)->GetRect() matrix:finalTransform];
         break;
       case kClipRRect:
         [maskView clipRRect:(*iter)->GetRRect() matrix:finalTransform];
