@@ -208,8 +208,9 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
   Paint paint;
   std::vector<Vector3> offsets = {
       {0, 0, 0}, {0, 300, 0}, {300, 0, 0}, {300, 300, 0}};
-  std::vector<TileMode> tile_modes = {TileMode::kClamp, TileMode::kRepeat,
-                                      TileMode::kMirror, TileMode::kDecal};
+  std::vector<Entity::TileMode> tile_modes = {
+      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
   for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);
@@ -231,8 +232,9 @@ TEST_P(AiksTest, CanRenderRadialGradient) {
   Paint paint;
   std::vector<Vector3> offsets = {
       {0, 0, 0}, {0, 300, 0}, {300, 0, 0}, {300, 300, 0}};
-  std::vector<TileMode> tile_modes = {TileMode::kClamp, TileMode::kRepeat,
-                                      TileMode::kMirror, TileMode::kDecal};
+  std::vector<Entity::TileMode> tile_modes = {
+      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
   for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);

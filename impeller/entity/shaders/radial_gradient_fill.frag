@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "tile_mode_utils.glsl"
+#include <impeller/texture.glsl>
 
 uniform GradientInfo {
   vec2 center;
@@ -24,6 +24,6 @@ void main() {
     return;
   }
 
-  t = GetInterpolantValue(t, gradient_info.tile_mode);
+  t = IPTileTextureCoords(t, gradient_info.tile_mode);
   frag_color = mix(gradient_info.center_color, gradient_info.edge_color, t);
 }

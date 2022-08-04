@@ -35,7 +35,7 @@ void RadialGradientContents::SetColors(std::vector<Color> colors) {
   }
 }
 
-void RadialGradientContents::SetTileMode(TileMode tile_mode) {
+void RadialGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 

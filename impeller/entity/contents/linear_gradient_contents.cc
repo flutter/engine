@@ -35,7 +35,7 @@ void LinearGradientContents::SetColors(std::vector<Color> colors) {
   }
 }
 
-void LinearGradientContents::SetTileMode(TileMode tile_mode) {
+void LinearGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
