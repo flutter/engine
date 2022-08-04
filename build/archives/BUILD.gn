@@ -179,8 +179,6 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
       },
     ]
     if (is_mac) {
-      # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
-      # names will require changes in the list of artifacts the tool is downloading.
       output = "dart-sdk-darwin-$target_cpu.zip"
       deps += [ ":dart_sdk_entitlement_config" ]
       files += [
