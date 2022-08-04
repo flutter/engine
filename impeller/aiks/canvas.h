@@ -70,6 +70,8 @@ class Canvas {
 
   void DrawRect(Rect rect, Paint paint);
 
+  void DrawRRect(Rect rect, Scalar corner_radius, Paint paint);
+
   void DrawCircle(Point center, Scalar radius, Paint paint);
 
   void DrawImage(std::shared_ptr<Image> image,
@@ -97,6 +99,15 @@ class Canvas {
                     Entity::BlendMode blend_mode,
                     Paint paint);
 
+  void DrawAtlas(std::shared_ptr<Image> atlas,
+                 std::vector<Matrix> transforms,
+                 std::vector<Rect> texture_coordinates,
+                 std::vector<Color> colors,
+                 Entity::BlendMode blend_mode,
+                 SamplerDescriptor sampler,
+                 std::optional<Rect> cull_rect,
+                 Paint paint);
+
   Picture EndRecordingAsPicture();
 
  private:
@@ -116,6 +127,10 @@ class Canvas {
             Entity::BlendMode = Entity::BlendMode::kSourceOver);
 
   void RestoreClip();
+
+  bool AttemptDrawBlurredRRect(const Rect& rect,
+                               Scalar corner_radius,
+                               Paint& paint);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
 };

@@ -487,6 +487,7 @@ FILE: ../../../flutter/impeller/compiler/reflector.cc
 FILE: ../../../flutter/impeller/compiler/reflector.h
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
@@ -541,6 +542,8 @@ FILE: ../../../flutter/impeller/docs/assets/xcode_frame_capture/image6.png
 FILE: ../../../flutter/impeller/docs/assets/xcode_frame_capture/image7.png
 FILE: ../../../flutter/impeller/docs/assets/xcode_frame_capture/image8.png
 FILE: ../../../flutter/impeller/docs/assets/xcode_frame_capture/image9.png
+FILE: ../../../flutter/impeller/entity/contents/atlas_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/atlas_contents.h
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
@@ -570,6 +573,8 @@ FILE: ../../../flutter/impeller/entity/contents/path_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/path_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.h
+FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.cc
@@ -591,6 +596,8 @@ FILE: ../../../flutter/impeller/entity/entity_playground.h
 FILE: ../../../flutter/impeller/entity/entity_unittests.cc
 FILE: ../../../flutter/impeller/entity/inline_pass_context.cc
 FILE: ../../../flutter/impeller/entity/inline_pass_context.h
+FILE: ../../../flutter/impeller/entity/shaders/atlas_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/atlas_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_color.frag
@@ -608,7 +615,6 @@ FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_overlay.f
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_saturation.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_screen.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_softlight.frag
-FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_utils.glsl
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
@@ -621,6 +627,8 @@ FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
+FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
@@ -2395,6 +2403,7 @@ FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine_unittests.c
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_windows_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view_unittests.cc

@@ -191,6 +191,34 @@ static Color ToColor(const SkColor& color) {
   };
 }
 
+static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
+  auto result = std::vector<Color>();
+  if (colors == nullptr) {
+    return result;
+  }
+  for (int i = 0; i < count; i++) {
+    result.push_back(ToColor(colors[i]));
+  }
+  return result;
+}
+
+static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
+  auto result = std::vector<Matrix>();
+  for (int i = 0; i < count; i++) {
+    auto form = xform[i];
+    // clang-format off
+    auto matrix = Matrix{
+      form.fSCos, form.fSSin, 0, 0,
+     -form.fSSin, form.fSCos, 0, 0,
+      0,          0,          1, 0,
+      form.fTx,   form.fTy,   0, 1
+    };
+    // clang-format on
+    result.push_back(matrix);
+  }
+  return result;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
@@ -320,22 +348,16 @@ static FilterContents::BlurStyle ToBlurStyle(SkBlurStyle blur_style) {
 void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
-    paint_.mask_filter = std::nullopt;
+    paint_.mask_blur_descriptor = std::nullopt;
     return;
   }
   switch (filter->type()) {
     case flutter::DlMaskFilterType::kBlur: {
       auto blur = filter->asBlur();
 
-      auto style = ToBlurStyle(blur->style());
-      auto sigma = Sigma(blur->sigma());
-
-      paint_.mask_filter = [style, sigma](FilterInput::Ref input,
-                                          bool is_solid_color) {
-        if (is_solid_color) {
-          return FilterContents::MakeGaussianBlur(input, sigma, sigma, style);
-        }
-        return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style);
+      paint_.mask_blur_descriptor = {
+          .style = ToBlurStyle(blur->style()),
+          .sigma = Sigma(blur->sigma()),
       };
       break;
     }
@@ -394,6 +416,14 @@ static std::optional<Rect> ToRect(const SkRect* rect) {
     return std::nullopt;
   }
   return Rect::MakeLTRB(rect->fLeft, rect->fTop, rect->fRight, rect->fBottom);
+}
+
+static std::vector<Rect> ToRects(const SkRect tex[], int count) {
+  auto result = std::vector<Rect>();
+  for (int i = 0; i < count; i++) {
+    result.push_back(ToRect(&tex[i]).value());
+  }
+  return result;
 }
 
 // |flutter::Dispatcher|
@@ -676,8 +706,7 @@ void DisplayListDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRect(const SkRect& rect) {
-  auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
-  canvas_.DrawPath(std::move(path), paint_);
+  canvas_.DrawRect(ToRect(rect), paint_);
 }
 
 // |flutter::Dispatcher|
@@ -694,7 +723,11 @@ void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRRect(const SkRRect& rrect) {
-  canvas_.DrawPath(ToPath(rrect), paint_);
+  if (rrect.isSimple()) {
+    canvas_.DrawRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX, paint_);
+  } else {
+    canvas_.DrawPath(ToPath(rrect), paint_);
+  }
 }
 
 // |flutter::Dispatcher|
@@ -842,8 +875,10 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
+  canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
+                    ToRSXForms(xform, count), ToRects(tex, count),
+                    ToColors(colors, count), ToBlendMode(mode),
+                    ToSamplerDescriptor(sampling), ToRect(cull_rect), paint_);
 }
 
 // |flutter::Dispatcher|
