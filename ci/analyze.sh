@@ -58,13 +58,14 @@ echo ""
 
 "$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/testing"
 
-"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/web_sdk"
-
 echo ""
 
 # Check that dart libraries conform.
 echo "Checking the integrity of the Web SDK"
 (cd "$FLUTTER_DIR/web_sdk"; "$DART" pub get)
+
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/web_sdk"
+
 WEB_SDK_TEST_FILES="$FLUTTER_DIR/web_sdk/test/*"
 for testFile in $WEB_SDK_TEST_FILES
 do
