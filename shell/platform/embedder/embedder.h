@@ -660,10 +660,16 @@ typedef struct {
   /// Alias for id<MTLCommandQueue>.
   FlutterMetalCommandQueueHandle present_command_queue;
   /// The callback that gets invoked when the engine requests the embedder for a
-  /// texture to render to.
+  /// texture to render to. If using partial repaint, the user must define this
+  /// callback to fill in the value of texture_damage of the texture being
+  /// returned with the texture's existing damage. If no texture_damage is given
+  /// the Embedder will do a full repaint.
   FlutterMetalTextureCallback get_next_drawable_callback;
   /// The callback presented to the embedder to present a fully populated metal
-  /// texture to the user.
+  /// texture to the user. If using partial repaint, the user must use the 
+  /// texture and frame damages passed through the given FlutterMetalTexture to
+  /// render only the damage areas of the screen and to keep track of a damage
+  /// history.
   FlutterMetalPresentCallback present_drawable_callback;
   /// When the embedder specifies that a texture has a frame available, the
   /// engine will call this method (on an internal engine managed thread) so
