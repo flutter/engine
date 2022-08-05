@@ -68,9 +68,7 @@ void testMain() {
       });
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches keydown to flutter/keyevent channel', () {
       Keyboard.initialize();
@@ -101,9 +99,7 @@ void testMain() {
       expect(event.defaultPrevented, isFalse);
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches correct meta state', () {
       Keyboard.initialize();
@@ -155,9 +151,7 @@ void testMain() {
       });
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches repeat events', () {
       Keyboard.initialize();
@@ -210,9 +204,7 @@ void testMain() {
       ]);
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('stops dispatching events after dispose', () {
       Keyboard.initialize();
