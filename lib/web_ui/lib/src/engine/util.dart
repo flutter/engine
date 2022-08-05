@@ -93,10 +93,10 @@ void setElementTransform(DomElement element, Float32List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(List<double> matrix) {
+String float64ListToCssTransform(Float32List matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
-  if (transformKind == TransformKind.transform2d) {
+  if (transformKind == TransformKind.transform2d || transformKind == TransformKind.translation2d) {
     return float64ListToCssTransform2d(matrix);
   } else if (transformKind == TransformKind.complex) {
     return float64ListToCssTransform3d(matrix);
@@ -113,9 +113,15 @@ enum TransformKind {
   /// We do not want to set any CSS properties in this case.
   identity,
 
-  /// A transform that contains only 2d scale, rotation, and translation.
+  /// A non-identity translation along x and/or y.
+  translation2d,
+
+  /// A 2D transform that's not [identity] or [translation2d].
   ///
-  /// We prefer to use "matrix" instead of "matrix3d" in this case.
+  /// A transform of this kind contains something other than pure 2D translation,
+  /// such as 2d scale, rotation, or skew.
+  ///
+  /// When applying a transform of this kind `matrix` is preferred to `matrix3d`.
   transform2d,
 
   /// All other kinds of transforms.
@@ -125,14 +131,14 @@ enum TransformKind {
 }
 
 /// Detects the kind of transform the [matrix] performs.
-TransformKind transformKindOf(List<double> matrix) {
+TransformKind transformKindOf(Float32List matrix) {
   assert(matrix.length == 16);
-  final List<double> m = matrix;
+  final Float32List m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
-  final bool isSimple2dTransform = m[15] ==
-          1.0 && // start reading from the last element to eliminate range checks in subsequent reads.
+  final bool isSimple2dTransform =
+      m[15] == 1.0 && // start reading from the last element to eliminate range checks in subsequent reads.
       m[14] == 0.0 && // z translation is NOT simple
       // m[13] - y translation is simple
       // m[12] - x translation is simple
@@ -146,8 +152,8 @@ TransformKind transformKindOf(List<double> matrix) {
       // m[4] - 2D rotation is simple
       m[3] == 0.0 &&
       m[2] == 0.0;
-  // m[1] - 2D rotation is simple
-  // m[0] - scale x is simple
+      // m[1] - 2D rotation is simple
+      // m[0] - scale x is simple
 
   if (!isSimple2dTransform) {
     return TransformKind.complex;
@@ -166,7 +172,14 @@ TransformKind transformKindOf(List<double> matrix) {
   if (isIdentityTransform) {
     return TransformKind.identity;
   } else {
-    return TransformKind.transform2d;
+    // Check for scale, skew, and rotation.
+    final bool isTranslation2d =
+      m[0] == 1.0 &&
+      m[1] == 0.0 &&
+      m[4] == 0.0 &&
+      m[5] == 1.0;
+
+    return isTranslation2d ? TransformKind.translation2d : TransformKind.transform2d;
   }
 }
 
@@ -183,7 +196,7 @@ bool isIdentityFloat32ListTransform(Float32List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(List<double> matrix) {
+String float64ListToCssTransform2d(Float32List matrix) {
   assert(transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }

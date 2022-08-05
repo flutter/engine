@@ -5,6 +5,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+
 import 'util.dart';
 
 class Matrix4 {
@@ -1082,6 +1084,16 @@ class Matrix4 {
     } else {
       return super.toString();
     }
+  }
+
+  /// A convenience method for converting the matrix storage to 64-bit format.
+  ///
+  /// Normally the engine uses 32-bit matrices, so this method must not be used
+  /// in production code. It's mostly useful to emulate interactions with the
+  /// framework, where 64-bit matrices are used.
+  @visibleForTesting
+  Float64List debugToFloat64List() {
+    return Float64List.fromList(storage);
   }
 }
 

@@ -314,6 +314,13 @@ class HtmlViewEmbedder {
           head.style.transform =
               float64ListToCssTransform(headTransform.storage);
           break;
+        case MutatorType.translate:
+          final Matrix4 translation = Matrix4.translationValues(mutator.dx!, mutator.dy!, 1);
+          translation.multiply(headTransform);
+          headTransform = translation;
+          head.style.transform =
+              float64ListToCssTransform(headTransform.storage);
+          break;
         case MutatorType.clipRect:
         case MutatorType.clipRRect:
         case MutatorType.clipPath:
@@ -763,29 +770,36 @@ enum MutatorType {
   clipRRect,
   clipPath,
   transform,
+  translate,
   opacity,
 }
 
 /// Stores mutation information like clipping or transform.
 class Mutator {
   const Mutator.clipRect(ui.Rect rect)
-      : this._(MutatorType.clipRect, rect, null, null, null, null);
+      : this._(MutatorType.clipRect, rect: rect);
   const Mutator.clipRRect(ui.RRect rrect)
-      : this._(MutatorType.clipRRect, null, rrect, null, null, null);
+      : this._(MutatorType.clipRRect, rrect: rrect);
   const Mutator.clipPath(ui.Path path)
-      : this._(MutatorType.clipPath, null, null, path, null, null);
+      : this._(MutatorType.clipPath, path: path);
   const Mutator.transform(Matrix4 matrix)
-      : this._(MutatorType.transform, null, null, null, matrix, null);
+      : this._(MutatorType.transform, matrix: matrix);
+  const Mutator.translate(double dx, double dy)
+      : this._(MutatorType.translate, dx: dx, dy: dy);
   const Mutator.opacity(int alpha)
-      : this._(MutatorType.opacity, null, null, null, null, alpha);
+      : this._(MutatorType.opacity, alpha: alpha);
 
   const Mutator._(
     this.type,
-    this.rect,
-    this.rrect,
-    this.path,
-    this.matrix,
-    this.alpha,
+    {
+      this.rect,
+      this.rrect,
+      this.path,
+      this.matrix,
+      this.alpha,
+      this.dx,
+      this.dy,
+    }
   );
 
   final MutatorType type;
@@ -794,6 +808,8 @@ class Mutator {
   final ui.Path? path;
   final Matrix4? matrix;
   final int? alpha;
+  final double? dx;
+  final double? dy;
 
   bool get isClipType =>
       type == MutatorType.clipRect ||
@@ -859,6 +875,10 @@ class MutatorsStack extends Iterable<Mutator> {
 
   void pushTransform(Matrix4 matrix) {
     _mutators.add(Mutator.transform(matrix));
+  }
+
+  void pushTranslation(double dx, double dy) {
+    _mutators.add(Mutator.translate(dx, dy));
   }
 
   void pushOpacity(int alpha) {

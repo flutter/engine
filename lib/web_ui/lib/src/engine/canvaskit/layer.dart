@@ -351,16 +351,56 @@ class OpacityEngineLayer extends ContainerLayer
   }
 }
 
+/// Provides common functionality for [TransformEngineLayer] and [OffsetEngineLayer].
+mixin _TransformingLayerMixin on ContainerLayer {
+  // A permanent matrix used to store the translation represented by this offset
+  // layer during preroll. Do not store long-term values in this matrix. It is
+  // frequently overwritten.
+  static final Matrix4 _scratchTranslationMatrix = Matrix4.identity();
+
+  /// Prerolls this layer assuming it represents a pure 2D translation.
+  void prerollAsTranslation2d(PrerollContext prerollContext, Matrix4 matrix, double dx, double dy) {
+    final Matrix4 childMatrix = matrix.clone();
+    childMatrix.translate(dx, dy);
+    prerollContext.mutatorsStack.pushTranslation(dx, dy);
+    final ui.Rect childPaintBounds = prerollChildren(prerollContext, childMatrix);
+
+    // IMPORTANT: the scratch matrix must be populated after `prerollChildren`
+    //            because children may also be using this matrix, and if they do
+    //            they will overwrite the values used by this layer.
+    _scratchTranslationMatrix.setTranslationRaw(dx, dy, 1);
+    paintBounds = transformRect(_scratchTranslationMatrix, childPaintBounds);
+
+    prerollContext.mutatorsStack.pop();
+  }
+}
+
 /// A layer that transforms its child layers by the given transform matrix.
-class TransformEngineLayer extends ContainerLayer
+class TransformEngineLayer extends ContainerLayer with _TransformingLayerMixin
     implements ui.TransformEngineLayer {
-  TransformEngineLayer(this._transform);
+  TransformEngineLayer(this._transform) : transformKind = transformKindOf(_transform.storage);
 
   /// The matrix with which to transform the child layers.
   final Matrix4 _transform;
 
+  /// The kind of transform [_transform] represents.
+  final TransformKind transformKind;
+
+  double get _x => _transform.storage[12];
+  double get _y => _transform.storage[13];
+
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    if (transformKind == TransformKind.identity) {
+      super.preroll(prerollContext, matrix);
+      return;
+    }
+
+    if (transformKind == TransformKind.translation2d) {
+      super.prerollAsTranslation2d(prerollContext, matrix, _x, _y);
+      return;
+    }
+
     final Matrix4 childMatrix = matrix.multiplied(_transform);
     prerollContext.mutatorsStack.pushTransform(_transform);
     final ui.Rect childPaintBounds =
@@ -373,22 +413,57 @@ class TransformEngineLayer extends ContainerLayer
   void paint(PaintContext paintContext) {
     assert(needsPainting);
 
+    if (transformKind == TransformKind.identity) {
+      paintChildren(paintContext);
+      return;
+    }
+
     paintContext.internalNodesCanvas.save();
-    paintContext.internalNodesCanvas.transform(_transform.storage);
+
+    if (transformKind == TransformKind.translation2d) {
+      paintContext.internalNodesCanvas.translate(_x, _y);
+    } else {
+      paintContext.internalNodesCanvas.transform(_transform.storage);
+    }
+
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
   }
 }
 
 /// Translates its children along x and y coordinates.
-///
-/// This is a thin wrapper over [TransformEngineLayer] just so the framework
-/// gets the "OffsetEngineLayer" when calling `runtimeType.toString()`. This is
-/// better for debugging.
-class OffsetEngineLayer extends TransformEngineLayer
-    implements ui.OffsetEngineLayer {
-  OffsetEngineLayer(double dx, double dy)
-      : super(Matrix4.translationValues(dx, dy, 0.0));
+class OffsetEngineLayer extends ContainerLayer with _TransformingLayerMixin implements ui.OffsetEngineLayer {
+  OffsetEngineLayer(this.dx, this.dy);
+
+  final double dx;
+  final double dy;
+
+  bool get _isIdentity => dx == 0 && dy == 0;
+
+  @override
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    // If this is an identity translation there's no need for any matrix math.
+    if (_isIdentity) {
+      super.preroll(prerollContext, matrix);
+      return;
+    }
+    prerollAsTranslation2d(prerollContext, matrix, dx, dy);
+  }
+
+  @override
+  void paint(PaintContext paintContext) {
+    assert(needsPainting);
+
+    if (_isIdentity) {
+      paintChildren(paintContext);
+      return;
+    }
+
+    paintContext.internalNodesCanvas.save();
+    paintContext.internalNodesCanvas.translate(dx, dy);
+    paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
+  }
 }
 
 /// A layer that applies an [ui.ImageFilter] to its children.

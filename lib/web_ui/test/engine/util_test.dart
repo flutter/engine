@@ -28,10 +28,10 @@ void testMain() {
     expect(transformKindOf(zTranslation), TransformKind.complex);
     expect(isIdentityFloat32ListTransform(zTranslation), isFalse);
 
-    expect(transformKindOf(xTranslation), TransformKind.transform2d);
+    expect(transformKindOf(xTranslation), TransformKind.translation2d);
     expect(isIdentityFloat32ListTransform(xTranslation), isFalse);
 
-    expect(transformKindOf(yTranslation), TransformKind.transform2d);
+    expect(transformKindOf(yTranslation), TransformKind.translation2d);
     expect(isIdentityFloat32ListTransform(yTranslation), isFalse);
 
     expect(transformKindOf(scaleAndTranslate2d), TransformKind.transform2d);

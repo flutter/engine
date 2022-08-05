@@ -743,10 +743,10 @@ class _BlurEngineImageFilter extends EngineImageFilter {
 
 class _MatrixEngineImageFilter extends EngineImageFilter {
   _MatrixEngineImageFilter({ required Float64List matrix, required this.filterQuality })
-      : webMatrix = Float64List.fromList(matrix),
+      : webMatrix = toMatrix32(matrix),
         super._();
 
-  final Float64List webMatrix;
+  final Float32List webMatrix;
   final ui.FilterQuality filterQuality;
 
   // TODO(yjbanov): implement FilterQuality.
