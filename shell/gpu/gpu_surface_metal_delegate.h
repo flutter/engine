@@ -10,6 +10,7 @@
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 namespace flutter {
@@ -29,6 +30,9 @@ typedef const void* GPUMTLTextureHandle;
 struct GPUMTLTextureInfo {
   int64_t texture_id;
   GPUMTLTextureHandle texture;
+  bool partial_repaint_enabled;
+  SkIRect texture_damage;
+  SkIRect frame_damage;
 };
 
 enum class MTLRenderTargetType { kMTLTexture, kCAMetalLayer };
