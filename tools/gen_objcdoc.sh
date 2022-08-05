@@ -7,6 +7,15 @@
 
 set -e
 
+if [[ $# -eq 0 ]]; then
+   echo "Error: Argument specifying output directory required."
+   exit 1
+fi
+
+# Move to the flutter checkout
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+pushd "$SCRIPT_DIR/../"
+
 FLUTTER_UMBRELLA_HEADER=$(find ../out -maxdepth 4 -type f -name Flutter.h | grep 'ios_' | head -n 1)
 if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
   then
@@ -14,19 +23,11 @@ if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
       exit 1
 fi
 
-
-
-if [[ $# -eq 0 ]]; then
-   echo "Error: Argument specifying output directory required."
-   exit 1
-fi
-
 OUTPUT_DIR="$1"
 ZIP_DESTINATION="$1"
 if [ "${OUTPUT_DIR:0:1}" != "/" ]
 then
-  cwd=$('pwd')
-  ZIP_DESTINATION="$cwd/../$1"
+  ZIP_DESTINATION="$SCRIPT_DIR/../../$1"
   OUTPUT_DIR="$ZIP_DESTINATION/objectc_docs"
 fi
 
