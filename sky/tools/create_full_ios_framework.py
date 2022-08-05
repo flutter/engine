@@ -8,10 +8,10 @@
 # dependent snapshot.
 
 import argparse
-import subprocess
-import shutil
-import sys
 import os
+import shutil
+import subprocess
+import sys
 
 from create_xcframework import create_xcframework
 
@@ -38,10 +38,7 @@ def main():
   parser.add_argument('--x64-out-dir', type=str)
   parser.add_argument('--arm64-out-dir', type=str, required=True)
   parser.add_argument('--armv7-out-dir', type=str, required=False)
-  # TODO(gw280): Remove --simulator-out-dir alias when all recipes are updated
-  parser.add_argument(
-      '--simulator-x64-out-dir', '--simulator-out-dir', type=str, required=True
-  )
+  parser.add_argument('--simulator-x64-out-dir', type=str, required=True)
   parser.add_argument('--simulator-arm64-out-dir', type=str, required=False)
   parser.add_argument('--strip', action="store_true", default=False)
   parser.add_argument('--dsym', action="store_true", default=False)
@@ -71,13 +68,6 @@ def main():
         os.path.join(buildroot_dir, args.x64_out_dir)
     )
 
-  armv7_out_dir = None
-  if args.armv7_out_dir:
-    armv7_out_dir = (
-        args.armv7_out_dir if os.path.isabs(args.armv7_out_dir) else
-        os.path.join(buildroot_dir, args.armv7_out_dir)
-    )
-
   simulator_x64_out_dir = None
   if args.simulator_x64_out_dir:
     simulator_x64_out_dir = (
@@ -91,14 +81,19 @@ def main():
   simulator_x64_framework = os.path.join(
       simulator_x64_out_dir, 'Flutter.framework'
   )
+
+  simulator_arm64_out_dir = None
+  if args.simulator_arm64_out_dir:
+    simulator_arm64_out_dir = (
+        args.simulator_arm64_out_dir if os.path.isabs(
+            args.simulator_arm64_out_dir
+        ) else os.path.join(buildroot_dir, args.simulator_arm64_out_dir)
+    )
+
   if args.simulator_arm64_out_dir is not None:
     simulator_arm64_framework = os.path.join(
-        args.simulator_arm64_out_dir, 'Flutter.framework'
+        simulator_arm64_out_dir, 'Flutter.framework'
     )
-    simulator_arm64_dylib = os.path.join(simulator_arm64_framework, 'Flutter')
-
-  arm64_dylib = os.path.join(arm64_framework, 'Flutter')
-  simulator_x64_dylib = os.path.join(simulator_x64_framework, 'Flutter')
 
   if not os.path.isdir(arm64_framework):
     print('Cannot find iOS arm64 Framework at %s' % arm64_framework)
@@ -108,6 +103,27 @@ def main():
     print('Cannot find iOS x64 simulator Framework at %s' % simulator_framework)
     return 1
 
+  if not os.path.isfile(DSYMUTIL):
+    print('Cannot find dsymutil at %s' % DSYMUTIL)
+    return 1
+
+  create_framework(
+      args, dst, framework, arm64_framework, simulator_framework,
+      simulator_x64_framework, simulator_arm64_framework
+  )
+  framework_binary = os.path.join(framework, 'Flutter')
+  process_framework(args, framework, framework_binary)
+  generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir)
+  zip_archive(dst)
+
+
+def create_framework(
+    args, dst, framework, arm64_framework, simulator_framework,
+    simulator_x64_framework, simulator_arm64_framework
+):
+  arm64_dylib = os.path.join(arm64_framework, 'Flutter')
+  simulator_x64_dylib = os.path.join(simulator_x64_framework, 'Flutter')
+  simulator_arm64_dylib = os.path.join(simulator_arm64_framework, 'Flutter')
   if not os.path.isfile(arm64_dylib):
     print('Cannot find iOS arm64 dylib at %s' % arm64_dylib)
     return 1
@@ -116,14 +132,9 @@ def main():
     print('Cannot find iOS simulator dylib at %s' % simulator_dylib)
     return 1
 
-  if not os.path.isfile(DSYMUTIL):
-    print('Cannot find dsymutil at %s' % DSYMUTIL)
-    return 1
-
   shutil.rmtree(framework, True)
   shutil.copytree(arm64_framework, framework)
   framework_binary = os.path.join(framework, 'Flutter')
-  process_framework(args, framework, framework_binary)
 
   if args.simulator_arm64_out_dir is not None:
     shutil.rmtree(simulator_framework, True)
@@ -152,10 +163,6 @@ def main():
       framework_binary
   ])
 
-  process_framework(args, framework, framework_binary)
-  generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir, armv7_out_dir)
-  zip_archive(dst)
-
 
 def zip_archive(dst):
   subprocess.check_call([
@@ -182,7 +189,7 @@ def process_framework(args, framework, framework_binary):
     subprocess.check_call(["strip", "-x", "-S", framework_binary])
 
 
-def generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir, armv7_out_dir):
+def generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir):
   if x64_out_dir:
     _generate_gen_snapshot(x64_out_dir, os.path.join(dst, 'gen_snapshot_x64'))
 
@@ -190,12 +197,6 @@ def generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir, armv7_out_dir):
     _generate_gen_snapshot(
         os.path.join(arm64_out_dir, args.clang_dir),
         os.path.join(dst, 'gen_snapshot_arm64')
-    )
-
-  if armv7_out_dir:
-    _generate_gen_snapshot(
-        os.path.join(args.armv7_out_dir, args.clang_dir),
-        os.path.join(dst, 'gen_snapshot_armv7')
     )
 
 
