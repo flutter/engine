@@ -762,7 +762,35 @@ void DisplayListDispatcher::drawArc(const SkRect& oval_bounds,
 void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
                                        uint32_t count,
                                        const SkPoint points[]) {
-  UNIMPLEMENTED;
+  // auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+  Paint paint = paint_;
+  paint.style = Paint::Style::kStroke;
+  switch (mode) {
+    case SkCanvas::kPoints_PointMode:
+      for (uint32_t i = 0; i < count; i++) {
+        SkPoint p0 = points[i];
+        SkPoint p1 = points[i] + SkPoint{0.0001, 0.0};
+        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        canvas_.DrawPath(std::move(path), paint);
+      }
+      break;
+    case SkCanvas::kLines_PointMode:
+      for (uint32_t i = 1; i < count; i += 2) {
+        SkPoint p0 = points[i-1];
+        SkPoint p1 = points[i];
+        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        canvas_.DrawPath(std::move(path), paint);
+      }
+      break;
+    case SkCanvas::kPolygon_PointMode:
+      for (uint32_t i = 1; i < count; i++) {
+        SkPoint p0 = points[i-1];
+        SkPoint p1 = points[i];
+        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        canvas_.DrawPath(std::move(path), paint);
+      }
+      break;
+  }
 }
 
 // |flutter::Dispatcher|
