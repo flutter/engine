@@ -509,7 +509,8 @@ InferMetalPlatformViewCreationCallback(
     texture_info.partial_repaint_enabled = true;
 
     // Verify that at least one damage rectangle was provided.
-    if (metal_texture.texture_damage.num_rects <= 0 || metal_texture.texture_damage.damage == nullptr) {
+    if (metal_texture.texture_damage.num_rects <= 0 ||
+        metal_texture.texture_damage.damage == nullptr) {
       FML_LOG(INFO) << "No damage was provided. Forcing full repaint";
       texture_info.partial_repaint_enabled = false;
     } else if (metal_texture.texture_damage.num_rects > 1) {
@@ -519,7 +520,8 @@ InferMetalPlatformViewCreationCallback(
                        "Repainting the whole frame.";
       texture_info.partial_repaint_enabled = false;
     } else {
-      texture_info.texture_damage = FlutterRectToSkIRect(*(metal_texture.texture_damage.damage));
+      texture_info.texture_damage =
+          FlutterRectToSkIRect(*(metal_texture.texture_damage.damage));
     }
 
     return texture_info;
