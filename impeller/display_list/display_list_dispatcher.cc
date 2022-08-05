@@ -776,7 +776,7 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
       break;
     case SkCanvas::kLines_PointMode:
       for (uint32_t i = 1; i < count; i += 2) {
-        SkPoint p0 = points[i-1];
+        SkPoint p0 = points[i - 1];
         SkPoint p1 = points[i];
         auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
         canvas_.DrawPath(std::move(path), paint);
@@ -784,7 +784,7 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
       break;
     case SkCanvas::kPolygon_PointMode:
       for (uint32_t i = 1; i < count; i++) {
-        SkPoint p0 = points[i-1];
+        SkPoint p0 = points[i - 1];
         SkPoint p1 = points[i];
         auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
         canvas_.DrawPath(std::move(path), paint);
