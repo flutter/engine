@@ -21,6 +21,7 @@ echo "$(pwd)"
 if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
   then
       echo "Error: This script must be run at the root of the Flutter source tree with at least one built Flutter.framework in ../out/ios*/Flutter.framework."
+      echo "Running from: $(pwd)"
       exit 1
 fi
 
