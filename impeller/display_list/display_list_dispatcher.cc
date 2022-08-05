@@ -885,7 +885,8 @@ void DisplayListDispatcher::drawImageLattice(
     bool render_with_attributes) {
   // Needs https://github.com/flutter/flutter/issues/95434
   // Don't implement this one since it is not exposed by flutter,
-  // Skia internally converts calls to drawImageNine into this method.
+  // Skia internally converts calls to drawImageNine into this method,
+  // which is then converted back to drawImageNine by display list.
   UNIMPLEMENTED;
 }
 

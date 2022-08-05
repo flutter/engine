@@ -36,17 +36,25 @@ std::vector<double> NinePatchConverter::InitSlices(double img0,
     // common center position in the destination this produces only 2 slices
     // which is 8 values
     auto dstC = dst0 + destDim * edge0Dim / edgesDim;
+    // clang-format off
     return {
-        img0, dst0, imgC0, dstC, imgC1, dstC, img1, dst1,
+      img0,  dst0, imgC0, dstC,
+      imgC1, dstC, img1,  dst1,
     };
+    // clang-format on
   }
 
   // center portion is nonEmpty and only that part is scaled
   // we need 3 slices which is 12 values
   auto dstC0 = dst0 + edge0Dim;
   auto dstC1 = dst1 - edge1Dim;
-  return {img0,  dst0,  imgC0, dstC0, imgC0, dstC0,
-          imgC1, dstC1, imgC1, dstC1, img1,  dst1};
+  // clang-format off
+  return {
+    img0,  dst0,  imgC0, dstC0,
+    imgC0, dstC0, imgC1, dstC1,
+    imgC1, dstC1, img1,  dst1,
+  };
+  // clang-format on
 }
 
 void NinePatchConverter::DrawNinePatch(std::shared_ptr<Image> image,

@@ -418,5 +418,20 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterBiggerThanDest) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawNinePatchImageCornersScaledDown) {
+  // Edge case, there is not enough room for the corners to be drawn
+  // without scaling them down.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width / 4, size.height / 4),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
