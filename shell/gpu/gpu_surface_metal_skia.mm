@@ -209,8 +209,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
     return nullptr;
   }
 
-  auto submit_callback = [texture, delegate = delegate_](
-                             const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
+  auto submit_callback = [texture, delegate = delegate_](const SurfaceFrame& surface_frame,
+                                                         SkCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::PresentTexture");
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
@@ -223,11 +223,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
     }
 
     GPUMTLTextureInfo present_texture = {
-      .texture_id = texture.texture_id,
-      .texture = texture.texture,
-      .partial_repaint_enabled = texture.partial_repaint_enabled,
-      .texture_damage = *surface_frame.submit_info().buffer_damage,
-      .frame_damage = *surface_frame.submit_info().frame_damage,
+        .texture_id = texture.texture_id,
+        .texture = texture.texture,
+        .partial_repaint_enabled = texture.partial_repaint_enabled,
+        .texture_damage = *surface_frame.submit_info().buffer_damage,
+        .frame_damage = *surface_frame.submit_info().frame_damage,
     };
 
     return delegate->PresentTexture(present_texture);

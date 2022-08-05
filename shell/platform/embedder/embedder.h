@@ -666,7 +666,7 @@ typedef struct {
   /// the Embedder will do a full repaint.
   FlutterMetalTextureCallback get_next_drawable_callback;
   /// The callback presented to the embedder to present a fully populated metal
-  /// texture to the user. If using partial repaint, the user must use the 
+  /// texture to the user. If using partial repaint, the user must use the
   /// texture and frame damages passed through the given FlutterMetalTexture to
   /// render only the damage areas of the screen and to keep track of a damage
   /// history.
