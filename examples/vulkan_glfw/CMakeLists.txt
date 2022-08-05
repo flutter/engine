@@ -17,10 +17,10 @@ add_executable(${EXE_NAME} ${SOURCE_FILES})
 # The VULKAN_SDK path should contain `include/vulkan/vulkan.hpp`.
 #
 # MacOS MoltenVK Vulkan SDK environment example:
-#  export VULKAN_SDK=~/VulkanSDK/1.2.198.1/macOS
+#  export VULKAN_SDK=/Users/btrevisan/VulkanSDK/1.3.216.0/macOS
 #  export VK_LOADER_DEBUG=all
-#  export VK_ICD_FILENAMES=$VULKAN_SDK/share/vulkan/icd.d/MoltenVK_icd.json
-#  export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
+#  export VK_ICD_FILENAMES=/Users/btrevisan/VulkanSDK/1.3.216.0/macOS/share/vulkan/icd.d/MoltenVK_icd.json
+#  export VK_LAYER_PATH=/Users/btrevisan/VulkanSDK/1.3.216.0/macOS/share/vulkan/explicit_layer.d
 #  export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
 
 find_package(Vulkan REQUIRED)
@@ -48,7 +48,7 @@ target_include_directories(${EXE_NAME} PRIVATE $(GLFW_REPOSITORY)/include)
 # This is assuming you've built a local version of the Flutter Engine. If you
 # downloaded yours from the internet you'll have to change this.
 set(EMBEDDER_H_DIR ${CMAKE_SOURCE_DIR}/../../shell/platform/embedder)
-set(FLUTTER_OUT_DIR ${CMAKE_SOURCE_DIR}/../../../out/host_debug_unopt)
+set(FLUTTER_OUT_DIR ${CMAKE_SOURCE_DIR}/../../../out/host_debug_unopt_arm64)
 
 find_library(FLUTTER_LIB flutter_engine PATHS ${FLUTTER_OUT_DIR})
 

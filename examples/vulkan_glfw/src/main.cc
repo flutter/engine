@@ -343,11 +343,20 @@ FlutterVulkanImage FlutterGetNextImageCallback(
                     UINT64_MAX);
   d.vkResetFences(g_state.device, 1, &g_state.image_ready_fence);
 
+  FlutterDamage existing_damage;
+  std::array<FlutterRect, 1> existing_damage_rect = {
+      FlutterRect{0, 0, 0, 0}};
+  existing_damage.damage = existing_damage_rect.data();
+  existing_damage.num_rects = existing_damage_rect.size();
+
+  std::cout << "Existing Damage: " << existing_damage.damage[0].left << ", " << existing_damage.damage[0].top << ", " << existing_damage.damage[0].right << ", " << existing_damage.damage[0].bottom << std::endl;
+
   return {
       .struct_size = sizeof(FlutterVulkanImage),
       .image = reinterpret_cast<uint64_t>(
           g_state.swapchain_images[g_state.last_image_index]),
       .format = g_state.surface_format.format,
+      .image_damage = existing_damage,
   };
 }
 
@@ -366,6 +375,9 @@ bool FlutterPresentCallback(void* user_data, const FlutterVulkanImage* image) {
       .pSignalSemaphores = &g_state.present_transition_semaphore,
   };
   d.vkQueueSubmit(g_state.queue, 1, &submit_info, nullptr);
+
+  std::cout << "Image Damage: " << image->image_damage.damage[0].left << ", " << image->image_damage.damage[0].top << ", " << image->image_damage.damage[0].right << ", " << image->image_damage.damage[0].bottom << std::endl;
+  std::cout << "Frame Damage: " << image->frame_damage.damage[0].left << ", " << image->frame_damage.damage[0].top << ", " << image->frame_damage.damage[0].right << ", " << image->frame_damage.damage[0].bottom << std::endl;
 
   VkPresentInfoKHR present_info = {
       .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -468,6 +480,8 @@ int main(int argc, char** argv) {
     if (g_enable_validation_layers) {
       g_state.enabled_instance_extensions.push_back(
           VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+      g_state.enabled_instance_extensions.push_back(
+          VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     }
 
     std::cout << "Enabling " << g_state.enabled_instance_extensions.size()
@@ -491,6 +505,9 @@ int main(int argc, char** argv) {
     info.pApplicationInfo = &app_info;
     info.enabledExtensionCount = g_state.enabled_instance_extensions.size();
     info.ppEnabledExtensionNames = g_state.enabled_instance_extensions.data();
+    VkInstanceCreateFlags instance_flags = {};
+    instance_flags |= VkInstanceCreateFlagBits::VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    info.flags = instance_flags;
     if (g_enable_validation_layers) {
       auto available_layers = vk::enumerateInstanceLayerProperties();
 
