@@ -88,6 +88,18 @@ FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(
   return FlutterDesktopEngineGetPluginRegistrar(engine_, plugin_name.c_str());
 }
 
+void FlutterEngine::SetNextFrameCallback(const std::function<void()>& callback) {
+  next_frame_callback_ = callback;
+  FlutterDesktopEngineSetNextFrameCallback(
+      engine_,
+      [](void* user_data) {
+        FlutterEngine* that = static_cast<FlutterEngine*>(user_data);
+        that->next_frame_callback_();
+        that->next_frame_callback_ = nullptr;
+      },
+      this);
+}
+
 FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {
   owns_engine_ = false;
   return engine_;
