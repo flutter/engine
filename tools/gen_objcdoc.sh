@@ -14,9 +14,10 @@ fi
 
 # Move to the flutter checkout
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-pushd "$SCRIPT_DIR/../"
+pushd "$SCRIPT_DIR/../../flutter"
 
 FLUTTER_UMBRELLA_HEADER=$(find ../out -maxdepth 4 -type f -name Flutter.h | grep 'ios_' | head -n 1)
+echo "$(pwd)"
 if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
   then
       echo "Error: This script must be run at the root of the Flutter source tree with at least one built Flutter.framework in ../out/ios*/Flutter.framework."
