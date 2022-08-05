@@ -108,9 +108,8 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
     expected_builder.saveLayer(&child_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        DlPaint dl_paint;
-        dl_paint.setColor(DlColor::kYellow());
-        expected_builder.drawPath(child_path, dl_paint);
+        expected_builder.drawPath(child_path,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
     }
   }
@@ -156,14 +155,12 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
     expected_builder.saveLayer(&children_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        DlPaint dl_paint;
-        dl_paint.setColor(DlColor::kYellow());
-        expected_builder.drawPath(child_path1, dl_paint);
+        expected_builder.drawPath(child_path1,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
       /* MockLayer::Paint() */ {
-        DlPaint dl_paint;
-        dl_paint.setColor(DlColor::kCyan());
-        expected_builder.drawPath(child_path2, dl_paint);
+        expected_builder.drawPath(child_path2,
+                                  DlPaint().setColor(DlColor::kCyan()));
       }
     }
   }
@@ -215,9 +212,8 @@ TEST_F(ColorFilterLayerTest, Nested) {
     expected_builder.saveLayer(&children_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        DlPaint dl_paint;
-        dl_paint.setColor(DlColor::kYellow());
-        expected_builder.drawPath(child_path1, dl_paint);
+        expected_builder.drawPath(child_path1,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
       /* ColorFilter::Paint() */ {
         DlPaint dl_paint;
@@ -226,9 +222,8 @@ TEST_F(ColorFilterLayerTest, Nested) {
         expected_builder.saveLayer(&child_path2.getBounds(), &dl_paint);
 
         /* MockLayer::Paint() */ {
-          DlPaint dl_paint;
-          dl_paint.setColor(DlColor::kCyan());
-          expected_builder.drawPath(child_path2, dl_paint);
+          expected_builder.drawPath(child_path2,
+                                    DlPaint().setColor(DlColor::kCyan()));
         }
         expected_builder.restore();
       }
@@ -446,9 +441,7 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
         dl_paint.setColorFilter(&layer_filter);
         expected_builder.saveLayer(&child_path.getBounds(), &dl_paint);
         /* MockLayer::Paint() */ {
-          DlPaint dl_paint;
-          dl_paint.setColor(0xFF000000);
-          expected_builder.drawPath(child_path, dl_paint);
+          expected_builder.drawPath(child_path, DlPaint().setColor(0xFF000000));
         }
         expected_builder.restore();
       }
