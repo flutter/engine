@@ -832,6 +832,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self removeInternalPlugins];
   [self deregisterNotifications];
 
+  // Ensure the vsync client will invalidate.
+  [self invalidateKeyboardAnimationVsyncClient];
   [_keyboardAnimationVsyncClient release];
   _keyboardAnimationVsyncClient = nil;
   _scrollView.get().delegate = nil;

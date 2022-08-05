@@ -31,9 +31,9 @@
 @interface VSyncClient : NSObject
 
 //------------------------------------------------------------------------------
-/// @brief      Default value is YES. Vsync client will pause vsync callback after receiving a vsync
-/// signal.
-///             Set to NO can avoid this and let vsync client trggier vsync callback continuously.
+/// @brief      Default value is YES. Vsync client will pause vsync callback after receiving
+///             a vsync signal. Set to NO can avoid this and let vsync client trggier vsync
+///             callback continuously.
 ///
 ///
 /// @param allowPauseAfterVsync Allow vsync client to pause after receiving a vsync signal.
