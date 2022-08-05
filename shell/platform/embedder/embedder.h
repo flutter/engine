@@ -763,13 +763,19 @@ typedef struct {
   /// The callback invoked when resolving Vulkan function pointers.
   FlutterVulkanInstanceProcAddressCallback get_instance_proc_address_callback;
   /// The callback invoked when the engine requests a VkImage from the embedder
-  /// for rendering the next frame.
+  /// for rendering the next frame. If using partial repaint, the user must 
+  /// define this callback to fill in the value of image_damage of the image
+  /// being returned with the image's existing damage. If no image_damage is 
+  /// given, the Embedder will do a full repaint.
   /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterVulkanImageCallback get_next_image_callback;
   /// The callback invoked when a VkImage has been written to and is ready for
   /// use by the embedder. Prior to calling this callback, the engine performs
   /// a host sync, and so the VkImage can be used in a pipeline by the embedder
-  /// without any additional synchronization.
+  /// without any additional synchronization. If using partial reapint, the user
+  /// must use the image and frame damages passed through the given
+  /// FlutterVulkanImage to render only the damage areas of the screen and to 
+  /// keep track of a damage history.
   /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterVulkanPresentCallback present_image_callback;
 
