@@ -217,7 +217,7 @@ void testMain() {
 }
 
 /// Checks that the CSS 'transform' property is a translation in a cross-browser way.
-/// 
+///
 /// Assumes that the `x` and `y` values are round enough for their `toString` values
 /// to match the stringified CSS length value.
 Matcher _isTranslate(double x, double y) {
