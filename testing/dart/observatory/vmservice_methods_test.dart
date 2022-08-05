@@ -33,7 +33,7 @@ void main() {
             'assetDirectory': ''
           },
         );
-      } catch (dynamic err) {
+      } catch (err) {
         error = err;
       }
       expect(error != null, true);
