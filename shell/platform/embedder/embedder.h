@@ -631,6 +631,13 @@ typedef struct {
   /// The callback invoked by the engine when it no longer needs this backing
   /// store.
   VoidCallback destruction_callback;
+  // Upon request, it represents the existing damage to the present texture. At
+  // present time, it represents the regions that need to be rendered.
+  FlutterDamage texture_damage;
+  // This field is used at present time to represent the regions that have
+  // changed between this frame and the previous one. This is important so that
+  // the user can keep track of texture's existing damage.
+  FlutterDamage frame_damage;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
