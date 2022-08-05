@@ -24,14 +24,19 @@ void main() {
       final List<Object?>? rawViews = response.json!['views'] as List<Object?>?;
       final String viewId = (rawViews![0]! as Map<String, Object?>?)!['id']! as String;
 
-      final vms.Response setAssetDirectoryPath = await vmService.callMethod(
-        '_flutter.setAssetBundlePath',
-        args: <String, Object>{
-          'viewId': viewId,
-          'assetDirectory': ''
-        },
-      );
-      expect(setAssetDirectoryPath.type == 'Failure', true);
+      dynamic error;
+      try {
+        final vms.Response setAssetDirectoryPath = await vmService.callMethod(
+          '_flutter.setAssetBundlePath',
+          args: <String, Object>{
+            'viewId': viewId,
+            'assetDirectory': ''
+          },
+        );
+      } catch (dynamic err) {
+        error = err;
+      }
+      expect(error != null, true);
     } finally {
       await vmService?.dispose();
     }
