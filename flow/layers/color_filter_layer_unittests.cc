@@ -216,10 +216,10 @@ TEST_F(ColorFilterLayerTest, Nested) {
                                   DlPaint().setColor(DlColor::kYellow()));
       }
       /* ColorFilter::Paint() */ {
-        DlPaint dl_paint;
-        dl_paint.setColor(DlColor::kBlack());
-        dl_paint.setColorFilter(dl_color_filter.get());
-        expected_builder.saveLayer(&child_path2.getBounds(), &dl_paint);
+        DlPaint child_dl_paint;
+        child_dl_paint.setColor(DlColor::kBlack());
+        child_dl_paint.setColorFilter(dl_color_filter.get());
+        expected_builder.saveLayer(&child_path2.getBounds(), &child_dl_paint);
 
         /* MockLayer::Paint() */ {
           expected_builder.drawPath(child_path2,
