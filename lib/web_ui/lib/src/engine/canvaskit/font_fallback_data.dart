@@ -507,7 +507,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0xfe70, 0xfe74),
     CodeunitRange(0xfe76, 0xfefc),
   ]),
-  NotoFont('Noto Sans Armenian', 'http://fonts.gstatic.com/s/notosansarmenian/v31/ZgN0jOZKPa7CHqq0h37c7ReDUubm2SEdFXp7ig73qtTY5idb74R9UdM3y2nZLorxb60iYy6zF3Eg.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Armenian', 'http://fonts.gstatic.com/s/notosansarmenian/v32/ZgN0jOZKPa7CHqq0h37c7ReDUubm2SEdFXp7ig73qtTY5idb74R9UdM3y2nZLorxb60iYy6zF3Eg.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x2d, 0x2d),
     CodeunitRange(0xa0, 0xa0),
@@ -529,7 +529,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x10b00, 0x10b35),
     CodeunitRange(0x10b39, 0x10b3f),
   ]),
-  NotoFont('Noto Sans Balinese', 'http://fonts.gstatic.com/s/notosansbalinese/v16/NaPwcYvSBuhTirw6IaFn6UrRDaqje-lpbbRtYf-Fwu2Ov7fdhE5Vd222PPY.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Balinese', 'http://fonts.gstatic.com/s/notosansbalinese/v17/NaPwcYvSBuhTirw6IaFn6UrRDaqje-lpbbRtYf-Fwu2Ov7fdhE5Vd222PPY.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x3f, 0x3f),
     CodeunitRange(0xa0, 0xa0),
@@ -538,7 +538,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x200b, 0x200d),
     CodeunitRange(0x25cc, 0x25cc),
   ]),
-  NotoFont('Noto Sans Bamum', 'http://fonts.gstatic.com/s/notosansbamum/v17/uk-0EGK3o6EruUbnwovcbBTkkklK_Ya_PBHfNGTPEddO-_gLykxEkxA.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Bamum', 'http://fonts.gstatic.com/s/notosansbamum/v18/uk-0EGK3o6EruUbnwovcbBTkkklK_Ya_PBHfNGTPEddO-_gLykxEkxA.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0xa6a0, 0xa6f7),
@@ -559,7 +559,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x200b, 0x200d),
     CodeunitRange(0x25cc, 0x25cc),
   ]),
-  NotoFont('Noto Sans Bengali', 'http://fonts.gstatic.com/s/notosansbengali/v17/Cn-SJsCGWQxOjaGwMQ6fIiMywrNJIky6nvd8BjzVMvJx2mcSPVFpVEqE-6KmsolLudCk8izI0lc.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Bengali', 'http://fonts.gstatic.com/s/notosansbengali/v18/Cn-SJsCGWQxOjaGwMQ6fIiMywrNJIky6nvd8BjzVMvJx2mcSPVFpVEqE-6KmsolLudCk8izI0lc.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x23),
     CodeunitRange(0x25, 0x25),
     CodeunitRange(0x27, 0x3f),
@@ -694,7 +694,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0xaa50, 0xaa59),
     CodeunitRange(0xaa5c, 0xaa5f),
   ]),
-  NotoFont('Noto Sans Cherokee', 'http://fonts.gstatic.com/s/notosanscherokee/v16/KFOPCm6Yu8uF-29fiz9vQF9YWK6Z8O10cHNA0cSkZCHYWi5PDkm5rAffjl0.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Cherokee', 'http://fonts.gstatic.com/s/notosanscherokee/v17/KFOPCm6Yu8uF-29fiz9vQF9YWK6Z8O10cHNA0cSkZCHYWi5PDkm5rAffjl0.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0x300, 0x302),
@@ -946,7 +946,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x11d93, 0x11d98),
     CodeunitRange(0x11da0, 0x11da9),
   ]),
-  NotoFont('Noto Sans Gurmukhi', 'http://fonts.gstatic.com/s/notosansgurmukhi/v17/w8g9H3EvQP81sInb43inmyN9zZ7hb7ATbSWo4q8dJ74a3cVrYFQ_bogT0-gPeG1OenbxZ_trdp7h.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Gurmukhi', 'http://fonts.gstatic.com/s/notosansgurmukhi/v18/w8g9H3EvQP81sInb43inmyN9zZ7hb7ATbSWo4q8dJ74a3cVrYFQ_bogT0-gPeG1OenbxZ_trdp7h.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x23),
     CodeunitRange(0x25, 0x25),
     CodeunitRange(0x27, 0x3f),
@@ -6059,7 +6059,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x108f4, 0x108f5),
     CodeunitRange(0x108fb, 0x108ff),
   ]),
-  NotoFont('Noto Sans Hebrew', 'http://fonts.gstatic.com/s/notosanshebrew/v36/or3HQ7v33eiDljA1IufXTtVf7V6RvEEdhQlk0LlGxCyaeNKYZC0sqk3xXGiXd4qtoiJltutR2g.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Hebrew', 'http://fonts.gstatic.com/s/notosanshebrew/v37/or3HQ7v33eiDljA1IufXTtVf7V6RvEEdhQlk0LlGxCyaeNKYZC0sqk3xXGiXd4qtoiJltutR2g.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x2d, 0x2d),
     CodeunitRange(0xa0, 0xa0),
@@ -15759,7 +15759,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x10a3f, 0x10a48),
     CodeunitRange(0x10a50, 0x10a58),
   ]),
-  NotoFont('Noto Sans Khmer', 'http://fonts.gstatic.com/s/notosanskhmer/v15/ijw3s5roRME5LLRxjsRb-gssOenAyendxrgV2c-Zw-9vbVUti_Z_dWgtWYuNAJz4kAbrddiA.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Khmer', 'http://fonts.gstatic.com/s/notosanskhmer/v16/ijw3s5roRME5LLRxjsRb-gssOenAyendxrgV2c-Zw-9vbVUti_Z_dWgtWYuNAJz4kAbrddiA.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x22),
     CodeunitRange(0x27, 0x29),
     CodeunitRange(0x2c, 0x2f),
@@ -16113,7 +16113,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0x16e40, 0x16e9a),
   ]),
-  NotoFont('Noto Sans Meetei Mayek', 'http://fonts.gstatic.com/s/notosansmeeteimayek/v8/HTxAL3QyKieByqY9eZPFweO0be7M21uSphSdhqILnmrRfJ8t_1TJ_vTW5PgeFYVa.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Meetei Mayek', 'http://fonts.gstatic.com/s/notosansmeeteimayek/v10/HTxAL3QyKieByqY9eZPFweO0be7M21uSphSdhqILnmrRfJ8t_1TJ_vTW5PgeFYVa.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0x200b, 0x200d),
@@ -16255,7 +16255,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0x1680, 0x169c),
   ]),
-  NotoFont('Noto Sans Ol Chiki', 'http://fonts.gstatic.com/s/notosansolchiki/v16/N0b92TJNOPt-eHmFZCdQbrL32r-4CvhzDzRwlxOQYuVALWk267I6gVrz5gQ.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Ol Chiki', 'http://fonts.gstatic.com/s/notosansolchiki/v17/N0b92TJNOPt-eHmFZCdQbrL32r-4CvhzDzRwlxOQYuVALWk267I6gVrz5gQ.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0x1c50, 0x1c7f),
@@ -16912,7 +16912,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x11580, 0x115b5),
     CodeunitRange(0x115b8, 0x115dd),
   ]),
-  NotoFont('Noto Sans Sinhala', 'http://fonts.gstatic.com/s/notosanssinhala/v24/yMJ2MJBya43H0SUF_WmcBEEf4rQVO2P524V5N_MxQzQtb-tf5dJbC30Fu9zUwg2a5lgLpJwbQRM.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Sinhala', 'http://fonts.gstatic.com/s/notosanssinhala/v25/yMJ2MJBya43H0SUF_WmcBEEf4rQVO2P524V5N_MxQzQtb-tf5dJbC30Fu9zUwg2a5lgLpJwbQRM.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x23),
     CodeunitRange(0x25, 0x25),
     CodeunitRange(0x27, 0x3f),
@@ -16952,7 +16952,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x25cc, 0x25cc),
     CodeunitRange(0x10f30, 0x10f59),
   ]),
-  NotoFont('Noto Sans Sora Sompeng', 'http://fonts.gstatic.com/s/notosanssorasompeng/v16/PlIRFkO5O6RzLfvNNVSioxM2_OTrEhPyDLolKvCsHzCxWuGkYHR818DpZXJQd4Mu.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Sora Sompeng', 'http://fonts.gstatic.com/s/notosanssorasompeng/v17/PlIRFkO5O6RzLfvNNVSioxM2_OTrEhPyDLolKvCsHzCxWuGkYHR818DpZXJQd4Mu.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x2d, 0x2d),
     CodeunitRange(0xa0, 0xa0),
@@ -16966,7 +16966,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x25cc, 0x25cc),
     CodeunitRange(0x11a50, 0x11aa2),
   ]),
-  NotoFont('Noto Sans Sundanese', 'http://fonts.gstatic.com/s/notosanssundanese/v16/FwZw7_84xUkosG2xJo2gm7nFwSLQkdymq2mkz3Gz1_b6ctxpNNHCizv7fQES.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Sundanese', 'http://fonts.gstatic.com/s/notosanssundanese/v17/FwZw7_84xUkosG2xJo2gm7nFwSLQkdymq2mkz3Gz1_b6ctxpNNHCizv7fQES.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x2d, 0x2d),
     CodeunitRange(0xa0, 0xa0),
@@ -22113,7 +22113,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x3001, 0x3002),
     CodeunitRange(0x3008, 0x300b),
   ]),
-  NotoFont('Noto Sans Tai Tham', 'http://fonts.gstatic.com/s/notosanstaitham/v16/kJEbBv0U4hgtwxDUw2x9q7tbjLIfbPGHBoaVSAZ3MdLJBCUbPgquyaRGKMw.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Tai Tham', 'http://fonts.gstatic.com/s/notosanstaitham/v17/kJEbBv0U4hgtwxDUw2x9q7tbjLIfbPGHBoaVSAZ3MdLJBCUbPgquyaRGKMw.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0xa0, 0xa0),
     CodeunitRange(0x1a20, 0x1a5e),
@@ -22229,7 +22229,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0x2212, 0x2212),
     CodeunitRange(0x25cc, 0x25cc),
   ]),
-  NotoFont('Noto Sans Thaana', 'http://fonts.gstatic.com/s/notosansthaana/v15/C8c14dM-vnz-s-3jaEsxlxHkBH-WZOETXfoQrfQ9Y4XrbhLhnu4-tbNu.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Thaana', 'http://fonts.gstatic.com/s/notosansthaana/v16/C8c14dM-vnz-s-3jaEsxlxHkBH-WZOETXfoQrfQ9Y4XrbhLhnu4-tbNu.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x21),
     CodeunitRange(0x28, 0x29),
     CodeunitRange(0x2c, 0x2c),
@@ -22248,7 +22248,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0xfdf2, 0xfdf2),
     CodeunitRange(0xfdfd, 0xfdfd),
   ]),
-  NotoFont('Noto Sans Thai', 'http://fonts.gstatic.com/s/notosansthai/v17/iJWnBXeUZi_OHPqn4wq6hQ2_hbJ1xyN9wd43SofNWcd1MKVQt_So_9CdU5RtpzF-QRvzzXg.ttf', <CodeunitRange>[
+  NotoFont('Noto Sans Thai', 'http://fonts.gstatic.com/s/notosansthai/v18/iJWnBXeUZi_OHPqn4wq6hQ2_hbJ1xyN9wd43SofNWcd1MKVQt_So_9CdU5RtpzF-QRvzzXg.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x2d, 0x2d),
     CodeunitRange(0xa0, 0xa0),

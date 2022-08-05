@@ -20,7 +20,13 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       'key',
       defaultsTo: '',
       help: 'The Google Fonts API key. Used to get data about fonts hosted on '
-          'Google Fonts',
+          'Google Fonts.',
+    );
+    argParser.addFlag(
+      'download-test-fonts',
+      defaultsTo: true,
+      help: 'Whether to download the Noto fonts into a local folder to use in'
+          'tests.',
     );
   }
 
@@ -31,6 +37,8 @@ class GenerateFallbackFontDataCommand extends Command<bool>
   final String description = 'Generate fallback font data from GoogleFonts';
 
   String get apiKey => stringArg('key');
+
+  bool get downloadTestFonts => boolArg('download-test-fonts');
 
   @override
   Future<bool> run() async {
@@ -48,18 +56,30 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     if (response.statusCode != 200) {
       throw ToolExit('Failed to download Google Fonts list.');
     }
-    final Map<String, dynamic> googleFontsResult = jsonDecode(response.body);
-    final List<dynamic> fontDatas = googleFontsResult['items'] as List<dynamic>;
+    final Map<String, dynamic> googleFontsResult =
+        jsonDecode(response.body) as Map<String, dynamic>;
+    final List<Map<String, dynamic>> fontDatas =
+        (googleFontsResult['items'] as List<dynamic>)
+            .cast<Map<String, dynamic>>();
     final Map<String, Uri> urlForFamily = <String, Uri>{};
     for (final Map<String, dynamic> fontData in fontDatas) {
       if (fallbackFonts.contains(fontData['family'])) {
         final Uri uri = Uri.parse(fontData['files']['regular'] as String);
-        urlForFamily[fontData['family']] = uri;
+        urlForFamily[fontData['family'] as String] = uri;
       }
     }
     final Map<String, String> charsetForFamily = <String, String>{};
-    final io.Directory tempDir =
-        await io.Directory.systemTemp.createTemp('fonts');
+    final io.Directory fontDir = downloadTestFonts
+        ? await io.Directory(path.join(
+            environment.webUiBuildDir.path,
+            'assets',
+            'noto',
+          )).create(recursive: true)
+        : await io.Directory.systemTemp.createTemp('fonts');
+    // Delete old fonts in the font directory.
+    await for (final io.FileSystemEntity file in fontDir.list()) {
+      await file.delete();
+    }
     for (final String family in fallbackFonts) {
       print('Downloading $family...');
       final Uri uri = urlForFamily[family]!;
@@ -68,7 +88,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
         throw ToolExit('Failed to download font for $family');
       }
       final io.File fontFile =
-          io.File(path.join(tempDir.path, path.basename(uri.path)));
+          io.File(path.join(fontDir.path, path.basename(uri.path)));
       await fontFile.writeAsBytes(fontResponse.bodyBytes);
       final io.ProcessResult fcQueryResult =
           await io.Process.run('fc-query', <String>[
@@ -76,7 +96,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
         '--',
         fontFile.path,
       ]);
-      final String encodedCharset = fcQueryResult.stdout;
+      final String encodedCharset = fcQueryResult.stdout as String;
       charsetForFamily[family] = encodedCharset;
     }
 
@@ -86,14 +106,14 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln('// Use of this source code is governed by a BSD-style license '
         'that can be');
     sb.writeln('// found in the LICENSE file.');
-    sb.writeln('');
+    sb.writeln();
     sb.writeln('// DO NOT EDIT! This file is generated. See:');
     sb.writeln('// dev/generate_fallback_font_data.dart');
-    sb.writeln('import \'noto_font.dart\';');
-    sb.writeln('');
+    sb.writeln("import 'noto_font.dart';");
+    sb.writeln();
     sb.writeln('const List<NotoFont> fallbackFonts = <NotoFont>[');
     for (final String family in fallbackFonts) {
-      sb.writeln('  NotoFont(\'$family\', \'${urlForFamily[family]!}\', '
+      sb.writeln("  NotoFont('$family', '${urlForFamily[family]!}', "
           '<CodeunitRange>[');
       for (final String range in charsetForFamily[family]!.split(' ')) {
         String? start;
