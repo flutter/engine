@@ -49,7 +49,7 @@ class PersistedTransform extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement!.style.transform = float64ListToCssTransform(_matrixStorage);
+    rootElement!.style.transform = float32ListToCssTransform(_matrixStorage);
   }
 
   @override

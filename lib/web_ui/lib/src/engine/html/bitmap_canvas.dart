@@ -678,7 +678,7 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(clipElement);
       }
     } else {
-      final String cssTransform = float64ListToCssTransform(
+      final String cssTransform = float32ListToCssTransform(
           transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'

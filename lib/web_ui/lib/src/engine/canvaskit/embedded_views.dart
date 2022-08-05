@@ -312,14 +312,14 @@ class HtmlViewEmbedder {
         case MutatorType.transform:
           headTransform = mutator.matrix!.multiplied(headTransform);
           head.style.transform =
-              float64ListToCssTransform(headTransform.storage);
+              float32ListToCssTransform(headTransform.storage);
           break;
         case MutatorType.translate:
-          final Matrix4 translation = Matrix4.translationValues(mutator.dx!, mutator.dy!, 1);
+          final Matrix4 translation = Matrix4.translationValues(mutator.dx!, mutator.dy!, 0);
           translation.multiply(headTransform);
           headTransform = translation;
           head.style.transform =
-              float64ListToCssTransform(headTransform.storage);
+              float32ListToCssTransform(headTransform.storage);
           break;
         case MutatorType.clipRect:
         case MutatorType.clipRRect:
@@ -390,7 +390,7 @@ class HtmlViewEmbedder {
     final Matrix4 scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform = scaleMatrix.multiplied(headTransform);
-    head.style.transform = float64ListToCssTransform(headTransform.storage);
+    head.style.transform = float32ListToCssTransform(headTransform.storage);
   }
 
   /// Sets the transform origin to the top-left corner of the element.

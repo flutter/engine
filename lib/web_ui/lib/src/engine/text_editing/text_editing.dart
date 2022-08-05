@@ -2361,7 +2361,7 @@ class EditableTextGeometry {
   /// tree the semantics tree provides the placement parameters, in which
   /// case this method should not be used.
   void applyToDomElement(DomHTMLElement domElement) {
-    final String cssTransform = float64ListToCssTransform(globalTransform);
+    final String cssTransform = float32ListToCssTransform(globalTransform);
     domElement.style
       ..width = '${width}px'
       ..height = '${height}px'

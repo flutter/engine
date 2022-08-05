@@ -751,7 +751,7 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
 
   // TODO(yjbanov): implement FilterQuality.
   @override
-  String get transformAttribute => float64ListToCssTransform(webMatrix);
+  String get transformAttribute => float32ListToCssTransform(webMatrix);
 
   @override
   bool operator ==(Object other) {

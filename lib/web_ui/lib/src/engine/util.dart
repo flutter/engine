@@ -72,16 +72,16 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
 
 /// Converts [matrix] to CSS transform value.
 String matrix4ToCssTransform(Matrix4 matrix) {
-  return float64ListToCssTransform(matrix.storage);
+  return float32ListToCssTransform(matrix.storage);
 }
 
 /// Applies a transform to the [element].
 ///
-/// See [float64ListToCssTransform] for details on how the CSS value is chosen.
+/// See [float32ListToCssTransform] for details on how the CSS value is chosen.
 void setElementTransform(DomElement element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
-    ..transform = float64ListToCssTransform(matrix4);
+    ..transform = float32ListToCssTransform(matrix4);
 }
 
 /// Converts [matrix] to CSS transform value.
@@ -93,13 +93,13 @@ void setElementTransform(DomElement element, Float32List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(Float32List matrix) {
+String float32ListToCssTransform(Float32List matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d || transformKind == TransformKind.translation2d) {
-    return float64ListToCssTransform2d(matrix);
+    return float32ListToCssTransform2d(matrix);
   } else if (transformKind == TransformKind.complex) {
-    return float64ListToCssTransform3d(matrix);
+    return float32ListToCssTransform3d(matrix);
   } else {
     assert(transformKind == TransformKind.identity);
     return 'none';
@@ -196,13 +196,13 @@ bool isIdentityFloat32ListTransform(Float32List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(Float32List matrix) {
+String float32ListToCssTransform2d(Float32List matrix) {
   assert(transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
 /// Converts [matrix] to a 3D CSS transform value.
-String float64ListToCssTransform3d(List<double> matrix) {
+String float32ListToCssTransform3d(List<double> matrix) {
   assert(matrix.length == 16);
   final List<double> m = matrix;
   if (m[0] == 1.0 &&
