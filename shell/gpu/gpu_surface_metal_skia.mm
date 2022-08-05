@@ -222,11 +222,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
       canvas->flush();
     }
 
+    texture.texture_damage = *surface_frame.submit_info().buffer_damage;
+    texture.frame_damage = *surface_frame.submit_info().frame_damage;
+
     return delegate->PresentTexture(texture);
   };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
+
+  if (texture.partial_repaint_enabled) {
+    framebuffer_info.supports_partial_repaint = true;
+    framebuffer_info.existing_damage = texture.texture_damage;
+  }
 
   return std::make_unique<SurfaceFrame>(std::move(surface), std::move(framebuffer_info),
                                         submit_callback);
