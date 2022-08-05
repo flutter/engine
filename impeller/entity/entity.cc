@@ -42,7 +42,7 @@ std::optional<Rect> Entity::GetCoverage() const {
 }
 
 bool Entity::ShouldRender(const ISize& target_size) const {
-  if (cover_whole_screen_) {
+  if (BlendModeShouldCoverWholeScreen(blend_mode_)) {
     return true;
   }
   return contents_->ShouldRender(*this, target_size);
@@ -70,11 +70,6 @@ void Entity::IncrementStencilDepth(uint32_t increment) {
 
 void Entity::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
-  cover_whole_screen_ = BlendModeShouldCoverWholeScreen(blend_mode);
-}
-
-bool Entity::CoverWholeScreen() const {
-  return cover_whole_screen_;
 }
 
 Entity::BlendMode Entity::GetBlendMode() const {
