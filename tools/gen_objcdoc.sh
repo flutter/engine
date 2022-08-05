@@ -15,19 +15,18 @@ if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
 fi
 
 
-# If the script is running from within LUCI we use the LUCI_WORKDIR, if not we force the caller of the script
-# to pass an output directory as the first parameter.
-OUTPUT_DIR=""
 
-if [[ -z "$LUCI_CI" ]]; then
-  if [[ $# -eq 0 ]]; then
-    echo "Error: Argument specifying output directory required."
-    exit 1
-  else
-    OUTPUT_DIR="$1"
-  fi
-else
-  OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
+if [[ $# -eq 0 ]]; then
+   echo "Error: Argument specifying output directory required."
+   exit 1
+fi
+
+OUTPUT_DIR="$1"
+if [ "${OUTPUT_DIR:0:1}" != "/" ]
+then
+  cwd=$('pwd')
+  ZIP_DESTINATION="$cwd/../$1"
+  OUTPUT_DIR="$ZIP_DESTINATION/objectc_docs"
 fi
 
 # If GEM_HOME is set, prefer using its copy of jazzy.
@@ -83,3 +82,8 @@ if [[ $EXPECTED_CLASSES != $ACTUAL_CLASSES ]]; then
   diff <(echo "$EXPECTED_CLASSES") <(echo "$ACTUAL_CLASSES")
   exit -1
 fi
+
+# Create the final zip file.
+pushd $OUTPUT_DIR
+zip -r "$ZIP_DESTINATION/ios-objcdoc.zip" .
+popd
