@@ -18,7 +18,7 @@ class FontWeight {
 
   /// The encoded integer value of this font weight.
   final int index;
-  
+
   /// The thickness value of this font weight.
   final int value;
 
