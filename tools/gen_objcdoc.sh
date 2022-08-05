@@ -22,6 +22,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 OUTPUT_DIR="$1"
+ZIP_DESTINATION="$1"
 if [ "${OUTPUT_DIR:0:1}" != "/" ]
 then
   cwd=$('pwd')
