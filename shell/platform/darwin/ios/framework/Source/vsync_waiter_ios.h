@@ -30,21 +30,20 @@
 
 @interface VSyncClient : NSObject
 
+//------------------------------------------------------------------------------
+/// @brief      Default value is YES. Vsync client will pause vsync callback after receiving a vsync
+/// signal.
+///             Set to NO can avoid this and let vsync client trggier vsync callback continuously.
+///
+///
+/// @param allowPauseAfterVsync Allow vsync client to pause after receiving a vsync signal.
+///
+@property(nonatomic, assign) BOOL allowPauseAfterVsync;
+
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
                           callback:(flutter::VsyncWaiter::Callback)callback;
 
 - (void)await;
-
-//------------------------------------------------------------------------------
-/// @brief      By default, vsync client will pause vsync callback after receiving a vsync signal.
-///             Calling this method and pass NO can avoid this and let vsync client trggier vsync
-///             callback continuously. Set to YES if you want to let it pause after every vsync
-///             singal.
-///
-///
-/// @param allowPauseAfterVsync Allow vsync client to pause after receiving vsync signal.
-///
-- (void)setAllowPauseAfterVsync:(BOOL)allowPauseAfterVsync;
 
 - (void)invalidate;
 

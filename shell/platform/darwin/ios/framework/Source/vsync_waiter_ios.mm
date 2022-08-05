@@ -45,12 +45,6 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 
 }  // namespace flutter
 
-@interface VSyncClient ()
-
-@property(nonatomic, assign) BOOL allowPauseAfterVsync;
-
-@end
-
 @implementation VSyncClient {
   flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;

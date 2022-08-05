@@ -22,7 +22,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 @interface VSyncClient (Testing)
 
 - (CADisplayLink*)getDisplayLink;
-- (void)setAllowPauseAfterVsync:(BOOL)allowPauseAfterVsync;
 - (void)onDisplayLink:(CADisplayLink*)link;
 
 @end
@@ -39,12 +38,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                 callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}]
       autorelease];
   CADisplayLink* link = [vsyncClient getDisplayLink];
-  [vsyncClient setAllowPauseAfterVsync:NO];
+  vsyncClient.allowPauseAfterVsync = NO;
   [vsyncClient await];
   [vsyncClient onDisplayLink:link];
   XCTAssertFalse(link.isPaused);
 
-  [vsyncClient setAllowPauseAfterVsync:YES];
+  vsyncClient.allowPauseAfterVsync = YES;
   [vsyncClient await];
   [vsyncClient onDisplayLink:link];
   XCTAssertTrue(link.isPaused);

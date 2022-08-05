@@ -1318,7 +1318,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _keyboardAnimationVsyncClient =
       [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
                                      callback:callback];
-  [_keyboardAnimationVsyncClient setAllowPauseAfterVsync:NO];
+  _keyboardAnimationVsyncClient.allowPauseAfterVsync = NO;
   [_keyboardAnimationVsyncClient await];
 }
 
