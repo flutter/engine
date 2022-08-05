@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: avoid_dynamic_calls
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -99,7 +97,7 @@ void testMain() {
       // which cannot be a different size from the canvas.
       // TODO(hterkelsen): See if we can give a custom size for software
       //     surfaces.
-    }, skip: isFirefox || isIosSafari);
+    }, skip: isFirefox);
 
     test(
       'Surface creates new context when WebGL context is restored',
@@ -188,5 +186,5 @@ void testMain() {
       expect(surface.htmlCanvas!.style.width, '5px');
       expect(surface.htmlCanvas!.style.height, '8px');
     });
-  }, skip: isIosSafari);
+  });
 }
