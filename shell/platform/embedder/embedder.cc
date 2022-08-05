@@ -229,7 +229,7 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
-#ifdef SHELL_ENABLE_GL
+#if defined(SHELL_ENABLE_GL) || defined(SHELL_ENABLE_METAL)
 // Auxiliary function used to translate rectangles of type SkIRect to
 // FlutterRect.
 static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
@@ -467,10 +467,31 @@ InferMetalPlatformViewCreationCallback(
   std::function<bool(flutter::GPUMTLTextureInfo texture)> metal_present =
       [ptr = config->metal.present_drawable_callback,
        user_data](flutter::GPUMTLTextureInfo texture) {
+        const size_t num_rects = 1;
+
+        std::array<FlutterRect, num_rects> texture_damage_rect = {
+            SkIRectToFlutterRect(texture.texture_damage)};
+        std::array<FlutterRect, num_rects> frame_damage_rect = {
+            SkIRectToFlutterRect(texture.frame_damage)};
+
+        FlutterDamage texture_damage{
+            .struct_size = sizeof(FlutterDamage),
+            .num_rects = texture_damage_rect.size(),
+            .damage = texture_damage_rect.data(),
+        };
+
+        FlutterDamage frame_damage{
+            .struct_size = sizeof(FlutterDamage),
+            .num_rects = frame_damage_rect.size(),
+            .damage = frame_damage_rect.data(),
+        };
+
         FlutterMetalTexture embedder_texture;
         embedder_texture.struct_size = sizeof(FlutterMetalTexture);
         embedder_texture.texture = texture.texture;
         embedder_texture.texture_id = texture.texture_id;
+        embedder_texture.texture_damage = texture_damage;
+        embedder_texture.frame_damage = frame_damage;
         return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
@@ -485,6 +506,22 @@ InferMetalPlatformViewCreationCallback(
     FlutterMetalTexture metal_texture = ptr(user_data, &frame_info);
     texture_info.texture_id = metal_texture.texture_id;
     texture_info.texture = metal_texture.texture;
+    texture_info.partial_repaint_enabled = true;
+
+    // Verify that at least one damage rectangle was provided.
+    if (metal_texture.texture_damage.num_rects <= 0 || metal_texture.texture_damage.damage == nullptr) {
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint";
+      texture_info.partial_repaint_enabled = false;
+    } else if (metal_texture.texture_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
+      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
+                       "Repainting the whole frame.";
+      texture_info.partial_repaint_enabled = false;
+    } else {
+      texture_info.texture_damage = FlutterRectToSkIRect(*(metal_texture.texture_damage.damage));
+    }
+
     return texture_info;
   };
 
