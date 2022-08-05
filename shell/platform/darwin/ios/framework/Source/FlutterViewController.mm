@@ -1302,18 +1302,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
-  if (!self) {
-    return;
-  }
-  auto callback = [self](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
-    if ([self keyboardAnimationView].superview == nil) {
-      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-      [self.view addSubview:[self keyboardAnimationView]];
+  auto callback = [weakSelf =
+                       [self getWeakPtr]](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    if (!weakSelf) {
+      return;
     }
-    if ([self keyboardAnimationView].layer.presentationLayer) {
-      CGFloat value = [self keyboardAnimationView].layer.presentationLayer.frame.origin.y;
-      _viewportMetrics.physical_view_inset_bottom = value;
-      [self updateViewportMetrics];
+    fml::scoped_nsobject<FlutterViewController> flutterViewController(
+        [(FlutterViewController*)weakSelf.get() retain]);
+    if (!flutterViewController) {
+      return;
+    }
+
+    if ([flutterViewController keyboardAnimationView].superview == nil) {
+      // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+      [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
+    }
+    if ([flutterViewController keyboardAnimationView].layer.presentationLayer) {
+      CGFloat value =
+          [flutterViewController keyboardAnimationView].layer.presentationLayer.frame.origin.y;
+      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = value;
+      [flutterViewController updateViewportMetrics];
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
