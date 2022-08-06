@@ -767,6 +767,9 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
   paint.style = Paint::Style::kStroke;
   switch (mode) {
     case SkCanvas::kPoints_PointMode:
+      if (paint.stroke_cap == SolidStrokeContents::Cap::kButt) {
+        paint.stroke_cap = SolidStrokeContents::Cap::kSquare;
+      }
       for (uint32_t i = 0; i < count; i++) {
         SkPoint p0 = points[i];
         SkPoint p1 = points[i] + SkPoint{0.0001, 0.0};
