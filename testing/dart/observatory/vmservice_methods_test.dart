@@ -69,7 +69,7 @@ void main() {
 
       expect(fontChangeResponse.type, 'Success');
       expect(
-        await completer.future.timeout(const Duration(minutes: 3)),
+        await completer.future,
         const PlatformResponse(
           name: 'flutter/system',
           contents: '{"type":"fontsChange"}',
