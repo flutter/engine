@@ -772,7 +772,10 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
       }
       for (uint32_t i = 0; i < count; i++) {
         SkPoint p0 = points[i];
-        SkPoint p1 = points[i] + SkPoint{0.0001, 0.0};
+        // kEhCloseEnough works around a bug where Impeller does not draw
+        // anything for zero-length lines.
+        // See: https://github.com/flutter/flutter/issues/109077
+        SkPoint p1 = points[i] + SkPoint{kEhCloseEnough, 0.0};
         auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
         canvas_.DrawPath(std::move(path), paint);
       }
