@@ -1,4 +1,4 @@
-Signature: 44880828aa8f200231751c14894fb1f7
+Signature: 61bce20ac88459b1a7d4ec3dc12908f8
 
 UNUSED LICENSES:
 
@@ -5571,6 +5571,8 @@ FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
 FILE: ../../../third_party/skia/src/gpu/AtlasTypes.cpp
 FILE: ../../../third_party/skia/src/gpu/AtlasTypes.h
 FILE: ../../../third_party/skia/src/gpu/RefCntedCallback.h
+FILE: ../../../third_party/skia/src/gpu/ganesh/GrBufferTransferRenderTask.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/GrBufferTransferRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrImageInfo.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/PathTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/PathTessellator.h
@@ -5581,6 +5583,10 @@ FILE: ../../../third_party/skia/src/gpu/graphite/AttachmentTypes.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ClipStack.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/ClipStack_graphite.h
 FILE: ../../../third_party/skia/src/gpu/graphite/CommandTypes.h
+FILE: ../../../third_party/skia/src/gpu/graphite/ComputePipeline.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/ComputePipeline.h
+FILE: ../../../third_party/skia/src/gpu/graphite/ComputePipelineDesc.h
+FILE: ../../../third_party/skia/src/gpu/graphite/ComputeTypes.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawAtlas.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawCommands.h
@@ -5613,6 +5619,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Geometry.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/SubRunData.h
+FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputePipeline.h
+FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputePipeline.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlQueueManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlQueueManager.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
@@ -6586,6 +6594,9 @@ FILE: ../../../third_party/skia/modules/skottie/src/BlendModes.cpp
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGOpenTypeSVGDecoder.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSBIX.cpp
+FILE: ../../../third_party/skia/src/codec/SkAvifCodec.cpp
+FILE: ../../../third_party/skia/src/codec/SkAvifCodec.h
+FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputeCommandEncoder.h
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_hmtx.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.h

@@ -106,6 +106,12 @@ struct PrerollContext {
   bool subtree_can_inherit_opacity = false;
 
   std::vector<RasterCacheItem*>* raster_cached_entries;
+
+  // This flag will be set to true iff the frame will be constructing
+  // a DisplayList for the layer tree. This flag is mostly of note to
+  // the embedders that must decide between creating SkPicture or
+  // DisplayList objects for the inter-view slices of the layer tree.
+  bool display_list_enabled = false;
 };
 
 struct PaintContext {
@@ -223,9 +229,11 @@ class Layer {
       update_needs_paint();
     }
 
-    void setColorFilter(sk_sp<SkColorFilter> filter) {
-      sk_paint_.setColorFilter(filter);
-      dl_paint_.setColorFilter(DlColorFilter::From(filter));
+    void setColorFilter(const DlColorFilter* filter) {
+      if (!filter)
+        return;
+      sk_paint_.setColorFilter(filter->skia_object());
+      dl_paint_.setColorFilter(filter);
       update_needs_paint();
     }
 

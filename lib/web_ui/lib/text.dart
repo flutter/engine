@@ -19,17 +19,18 @@ enum PlaceholderAlignment {
 }
 
 class FontWeight {
-  const FontWeight._(this.index);
+  const FontWeight._(this.index, this.value);
   final int index;
-  static const FontWeight w100 = FontWeight._(0);
-  static const FontWeight w200 = FontWeight._(1);
-  static const FontWeight w300 = FontWeight._(2);
-  static const FontWeight w400 = FontWeight._(3);
-  static const FontWeight w500 = FontWeight._(4);
-  static const FontWeight w600 = FontWeight._(5);
-  static const FontWeight w700 = FontWeight._(6);
-  static const FontWeight w800 = FontWeight._(7);
-  static const FontWeight w900 = FontWeight._(8);
+  final int value;
+  static const FontWeight w100 = FontWeight._(0, 100);
+  static const FontWeight w200 = FontWeight._(1, 200);
+  static const FontWeight w300 = FontWeight._(2, 300);
+  static const FontWeight w400 = FontWeight._(3, 400);
+  static const FontWeight w500 = FontWeight._(4, 500);
+  static const FontWeight w600 = FontWeight._(5, 600);
+  static const FontWeight w700 = FontWeight._(6, 700);
+  static const FontWeight w800 = FontWeight._(7, 800);
+  static const FontWeight w900 = FontWeight._(8, 900);
   static const FontWeight normal = w400;
   static const FontWeight bold = w700;
   static const List<FontWeight> values = <FontWeight>[
@@ -44,7 +45,7 @@ class FontWeight {
     w900
   ];
   static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (a == null && b == null) {
       return null;
     }
@@ -74,10 +75,10 @@ class FontWeight {
 
 class FontFeature {
   const FontFeature(this.feature, [this.value = 1])
-      : assert(feature != null), // ignore: unnecessary_null_comparison
+      : assert(feature != null),
         assert(feature.length == 4,
             'Feature tag must be exactly four characters long.'),
-        assert(value != null), // ignore: unnecessary_null_comparison
+        assert(value != null),
         assert(value >= 0, 'Feature value must be zero or a positive integer.');
   const FontFeature.enable(String feature) : this(feature, 1);
   const FontFeature.disable(String feature) : this(feature, 0);
@@ -579,8 +580,8 @@ class TextPosition {
   const TextPosition({
     required this.offset,
     this.affinity = TextAffinity.downstream,
-  })  : assert(offset != null), // ignore: unnecessary_null_comparison
-        assert(affinity != null); // ignore: unnecessary_null_comparison
+  })  : assert(offset != null),
+        assert(affinity != null);
   final int offset;
   final TextAffinity affinity;
 
@@ -655,7 +656,7 @@ class TextRange {
 class ParagraphConstraints {
   const ParagraphConstraints({
     required this.width,
-  }) : assert(width != null); // ignore: unnecessary_null_comparison
+  }) : assert(width != null);
   final double width;
 
   @override

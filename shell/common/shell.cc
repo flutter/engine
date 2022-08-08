@@ -958,6 +958,8 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = engine_->GetWeakPtr(), message = std::move(message)]() mutable {
         if (engine) {
@@ -1230,6 +1232,9 @@ void Shell::OnEngineHandlePlatformMessage(
           [weak_platform_message_handler =
                std::weak_ptr<PlatformMessageHandler>(platform_message_handler_),
            message = std::move(message), ui_task_runner]() mutable {
+            // The static leak checker gets confused by the use of
+            // fml::MakeCopyable.
+            // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
             ui_task_runner->PostTask(fml::MakeCopyable(
                 [weak_platform_message_handler, message = std::move(message),
                  ui_task_runner]() mutable {
@@ -1773,10 +1778,15 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   auto asset_manager = std::make_shared<AssetManager>();
 
-  asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
-      fml::OpenDirectory(params.at("assetDirectory").data(), false,
-                         fml::FilePermission::kRead),
-      false));
+  if (!asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
+          fml::OpenDirectory(params.at("assetDirectory").data(), false,
+                             fml::FilePermission::kRead),
+          false))) {
+    // The new asset directory path was invalid.
+    FML_DLOG(ERROR) << "Could not update asset directory.";
+    ServiceProtocolFailureError(response, "Could not update asset directory.");
+    return false;
+  }
 
   // Preserve any original asset resolvers to avoid syncing unchanged assets
   // over the DevFS connection.
