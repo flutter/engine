@@ -33,13 +33,21 @@ std::shared_ptr<DlImageFilter> DlImageFilter::makeWithLocalMatrix(
     return shared();
   }
   // Matrix
-  MatrixCapability inputCapability = this->get_matrix_capability();
-  if ((inputCapability == MatrixCapability::kTranslate &&
-       !matrix.isTranslate()) ||
-      (inputCapability == MatrixCapability::kScaleTranslate &&
-       !matrix.isScaleTranslate())) {
-    // Nothing we can do at this point
-    return nullptr;
+  switch (this->matrix_capability()) {
+    case MatrixCapability::kTranslate: {
+      if (!matrix.isTranslate()) {
+        // Nothing we can do at this point
+        return nullptr;
+      }
+    }
+    case MatrixCapability::kScaleTranslate: {
+      if (!matrix.isScaleTranslate()) {
+        // Nothing we can do at this point
+        return nullptr;
+      }
+    }
+    default:
+      break;
   }
   return std::make_shared<DlLocalMatrixImageFilter>(matrix, shared());
 }

@@ -97,7 +97,8 @@ class DlImageFilter
     return nullptr;
   }
 
-  std::shared_ptr<DlImageFilter> makeWithLocalMatrix(const SkMatrix& matrix);
+  virtual std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
+      const SkMatrix& matrix);
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -153,17 +154,6 @@ class DlImageFilter
   virtual SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                            const SkMatrix& ctm,
                                            SkIRect& input_bounds) const = 0;
-
-  MatrixCapability get_matrix_capability() const {
-    // CropRects need to apply in the source coordinate system, but are not
-    // aware of complex CTMs when performing clipping. For a simple fix, any
-    // filter with a crop rect set cannot support more than scale+translate CTMs
-    // until that's updated.
-    // if (this->cropRectIsSet()) {
-    //     result = std::min(result, MatrixCapability::kScaleTranslate);
-    // }
-    return this->matrix_capability();
-  }
 
   virtual MatrixCapability matrix_capability() const {
     return MatrixCapability::kScaleTranslate;
@@ -646,6 +636,11 @@ class DlColorFilterImageFilter final : public DlImageFilter {
 
   MatrixCapability matrix_capability() const override {
     return MatrixCapability::kComplex;
+  }
+
+  std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
+      const SkMatrix& matrix) override {
+    return shared();
   }
 
  protected:

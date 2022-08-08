@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include <vector>
 #include "flutter/display_list/display_list_attributes_testing.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
@@ -772,57 +773,86 @@ TEST(DisplayListImageFilter, UnknownContents) {
 }
 
 TEST(DisplayListImageFilter, LocalImageFilterBounds) {
-  auto inputBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
   auto filter_matrix = SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                          0.5, 3.0, 15,  //
                                          0.0, 0.0, 1);
-
-  auto sk_filter1 =
-      SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr);
-  auto sk_filter2 = SkImageFilters::ColorFilter(
-      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver), nullptr);
-  auto sk_filter3 = SkImageFilters::Dilate(5.0, 10.0, nullptr);
-  auto sk_filter4 = SkImageFilters::MatrixTransform(
-      filter_matrix, ToSk(DlImageSampling::kLinear), nullptr);
-  auto sk_filter5 = SkImageFilters::Compose(sk_filter1, sk_filter2);
   std::vector<sk_sp<SkImageFilter>> sk_filters{
-      sk_filter1, sk_filter2, sk_filter3, sk_filter4, sk_filter5};
+      SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr),
+      SkImageFilters::ColorFilter(
+          SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver), nullptr),
+      SkImageFilters::Dilate(5.0, 10.0, nullptr),
+      SkImageFilters::MatrixTransform(filter_matrix,
+                                      ToSk(DlImageSampling::kLinear), nullptr),
+      SkImageFilters::Compose(
+          SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr),
+          SkImageFilters::ColorFilter(
+              SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver),
+              nullptr))};
 
   DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
-  auto dl_filter1 =
-      std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat);
-  auto dl_filter2 =
-      std::make_shared<DlColorFilterImageFilter>(dl_color_filter.shared());
-  auto dl_filter3 = std::make_shared<DlDilateImageFilter>(5, 10);
-  auto dl_filter4 = std::make_shared<DlMatrixImageFilter>(
-      filter_matrix, DlImageSampling::kLinear);
-  auto dl_filter5 = std::make_shared<DlComposeImageFilter>(
-      dl_filter1->shared(), dl_filter2->shared());
   std::vector<std::shared_ptr<DlImageFilter>> dl_filters{
-      dl_filter1, dl_filter2, dl_filter3, dl_filter4, dl_filter5};
+      std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat),
+      std::make_shared<DlColorFilterImageFilter>(dl_color_filter.shared()),
+      std::make_shared<DlDilateImageFilter>(5, 10),
+      std::make_shared<DlMatrixImageFilter>(filter_matrix,
+                                            DlImageSampling::kLinear),
+      std::make_shared<DlComposeImageFilter>(
+          std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat),
+          std::make_shared<DlColorFilterImageFilter>(
+              dl_color_filter.shared()))};
 
-  auto translate = SkMatrix::Translate(10.0, 10.0);
-  auto scale_translate = SkMatrix::Scale(2.0, 2.0).preTranslate(10.0, 10.0);
-  auto rotate_translate = SkMatrix::RotateDeg(45).preTranslate(5.0, 5.0);
   auto persp = SkMatrix::I();
   persp.setPerspY(10);
-  std::vector<SkMatrix> matrices = {translate, scale_translate,
-                                    rotate_translate, persp};
+  std::vector<SkMatrix> matrices = {
+      SkMatrix::Translate(10.0, 10.0),
+      SkMatrix::Scale(2.0, 2.0).preTranslate(10.0, 10.0),
+      SkMatrix::RotateDeg(45).preTranslate(5.0, 5.0), persp};
+  std::vector<SkMatrix> bounds_matrices{SkMatrix::Translate(5.0, 10.0),
+                                        SkMatrix::Scale(2.0, 2.0)};
 
   for (unsigned i = 0; i < sk_filters.size(); i++) {
     for (unsigned j = 0; j < matrices.size(); j++) {
-      auto& m = matrices[j];
-      auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
-      auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
-      SkIRect sk_rect, dl_rect;
-      if (sk_local_filter) {
-        sk_rect = sk_local_filter->filterBounds(
-            inputBounds, m, SkImageFilter::MapDirection::kForward_MapDirection);
+      for (unsigned k = 0; k < bounds_matrices.size(); k++) {
+        auto& m = matrices[j];
+        auto& bounds_matrix = bounds_matrices[k];
+        auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
+        auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
+        {
+          auto inputBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+          SkIRect sk_rect, dl_rect;
+          if (sk_local_filter) {
+            sk_rect = sk_local_filter->filterBounds(
+                inputBounds, bounds_matrix,
+                SkImageFilter::MapDirection::kForward_MapDirection);
+          }
+          if (dl_local_filter) {
+            dl_local_filter->map_device_bounds(inputBounds, bounds_matrix,
+                                               dl_rect);
+          }
+          ASSERT_EQ(sk_rect, dl_rect);
+        }
+        {
+          // Test for: Know the outset bounds to get the inset bounds
+          // Skia have some bounds calculate error of DilateFilter and
+          // MatrixFilter
+          // https://fiddle.skia.org/c/a0dc934dd7f900fb958797edd0e86ee3
+          if (i == 2 || i == 3) {
+            continue;
+          }
+          auto outsetBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+          SkIRect sk_rect, dl_rect;
+          if (sk_local_filter) {
+            sk_rect = sk_local_filter->filterBounds(
+                outsetBounds, bounds_matrix,
+                SkImageFilter::MapDirection::kReverse_MapDirection);
+          }
+          if (dl_local_filter) {
+            dl_local_filter->get_input_device_bounds(outsetBounds,
+                                                     bounds_matrix, dl_rect);
+          }
+          ASSERT_EQ(sk_rect, dl_rect);
+        }
       }
-      if (dl_local_filter) {
-        dl_local_filter->map_device_bounds(inputBounds, m, dl_rect);
-      }
-      ASSERT_EQ(sk_rect, dl_rect);
     }
   }
 }
