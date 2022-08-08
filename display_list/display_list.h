@@ -247,21 +247,9 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() {
-    if (bounds_.width() < 0.0) {
-      // ComputeBounds() will leave the variable with a
-      // non-negative width and height
-      ComputeBounds();
-    }
-    return bounds_;
-  }
+  const SkRect& bounds() { return bounds_; }
 
-  sk_sp<const DlRTree> rtree() {
-    if (!rtree_) {
-      ComputeRTree();
-    }
-    return rtree_;
-  }
+  sk_sp<const DlRTree> rtree() { return rtree_; }
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
@@ -279,8 +267,10 @@ class DisplayList : public SkRefCnt {
               unsigned int op_count,
               size_t nested_byte_count,
               unsigned int nested_op_count,
+              const SkRect& bounds,
               const SkRect& cull_rect,
-              bool can_apply_group_opacity);
+              bool can_apply_group_opacity,
+              sk_sp<const DlRTree> rtree);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t byte_count_;
@@ -291,15 +281,12 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id_;
   SkRect bounds_;
-  sk_sp<const DlRTree> rtree_;
-
   // Only used for drawPaint() and drawColor()
   SkRect bounds_cull_;
 
   bool can_apply_group_opacity_;
+  sk_sp<const DlRTree> rtree_;
 
-  void ComputeBounds();
-  void ComputeRTree();
   void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 
   friend class DisplayListBuilder;

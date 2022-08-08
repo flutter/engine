@@ -5,9 +5,9 @@
 #include <type_traits>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_ops.h"
-#include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -31,16 +31,19 @@ DisplayList::DisplayList(uint8_t* ptr,
                          unsigned int op_count,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
+                         const SkRect& bounds,
                          const SkRect& cull_rect,
-                         bool can_apply_group_opacity)
+                         bool can_apply_group_opacity,
+                         sk_sp<const DlRTree> rtree)
     : storage_(ptr),
       byte_count_(byte_count),
       op_count_(op_count),
       nested_byte_count_(nested_byte_count),
       nested_op_count_(nested_op_count),
-      bounds_({0, 0, -1, -1}),
+      bounds_(bounds),
       bounds_cull_(cull_rect),
-      can_apply_group_opacity_(can_apply_group_opacity) {
+      can_apply_group_opacity_(can_apply_group_opacity),
+      rtree_(std::move(rtree)) {
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -50,26 +53,6 @@ DisplayList::DisplayList(uint8_t* ptr,
 DisplayList::~DisplayList() {
   uint8_t* ptr = storage_.get();
   DisposeOps(ptr, ptr + byte_count_);
-}
-
-void DisplayList::ComputeBounds() {
-  RectBoundsAccumulator accumulator;
-  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
-  Dispatch(calculator);
-  if (calculator.is_unbounded()) {
-    FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
-  }
-  bounds_ = accumulator.bounds();
-}
-
-void DisplayList::ComputeRTree() {
-  RTreeBoundsAccumulator accumulator;
-  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
-  Dispatch(calculator);
-  if (calculator.is_unbounded()) {
-    FML_LOG(INFO) << "returning partial rtree for unbounded DisplayList";
-  }
-  rtree_ = accumulator.rtree();
 }
 
 void DisplayList::Dispatch(Dispatcher& dispatcher,

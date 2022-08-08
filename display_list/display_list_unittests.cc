@@ -158,6 +158,30 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
   }
 }
 
+TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToProduceRtree) {
+  for (auto& group : allGroups) {
+    for (size_t i = 0; i < group.variants.size(); i++) {
+      DisplayListBuilder buider1(/*need_produce_rtree=*/false);
+      DisplayListBuilder buider2(/*need_produce_rtree=*/true);
+      group.variants[i].invoker(buider1);
+      group.variants[i].invoker(buider2);
+      sk_sp<DisplayList> dl1 = buider1.Build();
+      sk_sp<DisplayList> dl2 = buider2.Build();
+
+      auto desc = group.op_name + "(variant " + std::to_string(i + 1) + " )";
+      ASSERT_EQ(dl1->op_count(false), dl2->op_count(false)) << desc;
+      ASSERT_EQ(dl1->bytes(false), dl2->bytes(false)) << desc;
+      ASSERT_EQ(dl1->op_count(true), dl2->op_count(true)) << desc;
+      ASSERT_EQ(dl1->bytes(true), dl2->bytes(true)) << desc;
+      ASSERT_EQ(dl1->bounds(), dl2->bounds()) << desc;
+      ASSERT_TRUE(dl1->Equals(*dl2)) << desc;
+      ASSERT_TRUE(dl2->Equals(*dl1)) << desc;
+      ASSERT_EQ(dl1->rtree().get(), nullptr) << desc;
+      ASSERT_NE(dl2->rtree().get(), nullptr) << desc;
+    }
+  }
+}
+
 TEST(DisplayList, FullRotationsAreNop) {
   DisplayListBuilder builder;
   builder.rotate(0);
@@ -1554,7 +1578,7 @@ static void test_rtree(sk_sp<const DlRTree> rtree,
 }
 
 TEST(DisplayList, RTreeOfSimpleScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*need_produce_rtree=*/true);
   builder.drawRect({10, 10, 20, 20});
   builder.drawRect({50, 50, 60, 60});
   auto display_list = builder.Build();
@@ -1581,7 +1605,7 @@ TEST(DisplayList, RTreeOfSimpleScene) {
 }
 
 TEST(DisplayList, RTreeOfSaveRestoreScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*need_produce_rtree=*/true);
   builder.drawRect({10, 10, 20, 20});
   builder.save();
   builder.drawRect({50, 50, 60, 60});
@@ -1610,7 +1634,7 @@ TEST(DisplayList, RTreeOfSaveRestoreScene) {
 }
 
 TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*need_produce_rtree=*/true);
   // blur filter with sigma=1 expands by 3 on all sides
   auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
@@ -1645,7 +1669,7 @@ TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
 }
 
 TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*need_produce_rtree=*/true);
   // blur filter with sigma=1 expands by 30 on all sides
   auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();

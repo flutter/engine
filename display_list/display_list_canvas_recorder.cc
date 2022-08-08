@@ -19,9 +19,10 @@ namespace flutter {
     }                                                                     \
   } while (0)
 
-DisplayListCanvasRecorder::DisplayListCanvasRecorder(const SkRect& bounds)
+DisplayListCanvasRecorder::DisplayListCanvasRecorder(const SkRect& bounds,
+                                                     bool need_produce_rtree)
     : SkCanvasVirtualEnforcer(bounds.width(), bounds.height()),
-      builder_(sk_make_sp<DisplayListBuilder>(bounds)) {}
+      builder_(sk_make_sp<DisplayListBuilder>(bounds, need_produce_rtree)) {}
 
 sk_sp<DisplayList> DisplayListCanvasRecorder::Build() {
   CHECK_DISPOSE(nullptr);
