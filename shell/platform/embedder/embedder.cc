@@ -2699,15 +2699,15 @@ FlutterEngineResult FlutterEngineSetNextFrameCallback(
   flutter::EmbedderEngine* embedder_engine =
       reinterpret_cast<flutter::EmbedderEngine*>(engine);
 
-  fml::WeakPtr<flutter::PlatformView> weakPlatformView =
+  fml::WeakPtr<flutter::PlatformView> weak_platform_view =
       embedder_engine->GetShell().GetPlatformView();
 
-  if (!weakPlatformView) {
+  if (!weak_platform_view) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Platform view unavailable.");
   }
 
-  weakPlatformView->SetNextFrameCallback(
+  weak_platform_view->SetNextFrameCallback(
       [callback, user_data]() { callback(user_data); });
 
   return kSuccess;

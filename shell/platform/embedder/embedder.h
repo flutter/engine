@@ -2512,8 +2512,9 @@ FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
 
 //------------------------------------------------------------------------------
 /// @brief      Schedule a callback to be called after the next frame is drawn.
-///             This callback is made on an internal engine managed thread and
-///             embedders must re-thread if necessary. Performing blocking calls
+///             This must be called from the platform thread. The callback is
+///             executed only once from the raster thread; embedders must
+///             re-thread if necessary. Performing blocking calls
 ///             in this callback may introduce application jank.
 ///
 /// @param[in]  engine     A running engine instance.
