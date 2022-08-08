@@ -9,7 +9,6 @@ import 'dart:typed_data';
 import 'package:ui/src/engine/fonts.dart';
 
 import '../assets.dart';
-import '../browser_detection.dart';
 import '../dom.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
