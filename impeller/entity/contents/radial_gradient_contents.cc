@@ -20,8 +20,8 @@ void RadialGradientContents::SetPath(Path path) {
   path_ = std::move(path);
 }
 
-void RadialGradientContents::SetCenterAndRadius(Point centre, Scalar radius) {
-  center_ = centre;
+void RadialGradientContents::SetCenterAndRadius(Point center, Scalar radius) {
+  center_ = center;
   radius_ = radius;
 }
 

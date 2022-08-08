@@ -1,4 +1,4 @@
-Signature: edb9709b9184c2694501c4e65aa4566a
+Signature: 818c506d4bd552515c898e3da6aba1f3
 
 UNUSED LICENSES:
 
@@ -3258,7 +3258,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/access.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/bootstrap.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/host_watcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/identity.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/pairing_delegate.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/peer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/address.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/appearance.fidl

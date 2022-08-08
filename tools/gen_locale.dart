@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(goderbauer): Migrate this to null safety, https://github.com/flutter/flutter/issues/108933
+// @dart = 2.7
+
 // This file is used to generate the switch statements in the Locale class.
 // See: ../lib/ui/window.dart
 
