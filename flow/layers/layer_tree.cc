@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/layer_tree.h"
+#include <memory>
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
@@ -48,6 +49,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   raster_cache_items_.clear();
+  paint_tree_root_ = std::make_unique<DlPaintNode>();
 
   PrerollContext context = {
       // clang-format off
@@ -65,6 +67,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .raster_cached_entries         = &raster_cache_items_,
       .display_list_enabled          = frame.display_list_builder() != nullptr,
+      .paint                         = paint_tree_root_.get(),
       // clang-format on
   };
 
@@ -158,6 +161,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .inherited_opacity             = SK_Scalar1,
       .leaf_nodes_builder            = builder,
       .builder_multiplexer           = builder ? &builder_multiplexer : nullptr,
+      .paint                         = paint_tree_root_.get(),
       // clang-format on
   };
 

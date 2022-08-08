@@ -16,6 +16,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
+#include "flutter/flow/layers/paint_node.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
@@ -115,6 +116,8 @@ struct PrerollContext {
   // the embedders that must decide between creating SkPicture or
   // DisplayList objects for the inter-view slices of the layer tree.
   bool display_list_enabled = false;
+
+  DlPaintNode* paint = nullptr;
 };
 
 struct PaintContext {
@@ -153,7 +156,10 @@ struct PaintContext {
   // a |kSrcOver| blend mode.
   SkScalar inherited_opacity = SK_Scalar1;
   DisplayListBuilder* leaf_nodes_builder = nullptr;
+
   DisplayListBuilderMultiplexer* builder_multiplexer = nullptr;
+
+  DlPaintNode* paint = nullptr;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -222,6 +228,14 @@ class Layer {
         sk_paint_.setAlphaf(context.inherited_opacity);
         dl_paint_.setAlpha(SkScalarRoundToInt(context.inherited_opacity * 255));
         context.inherited_opacity = SK_Scalar1;
+      }
+    }
+
+    explicit AutoCachePaint(std::vector<DlPaintNode*>& paint_nodes,
+                            PaintContext& context)
+        : context_(context) {
+      for (auto* paint_node : paint_nodes) {
+        paint_node->SetSaveLayerAttribute(&dl_paint_);
       }
     }
 

@@ -150,8 +150,13 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   }
 
   if (context.leaf_nodes_builder) {
-    AutoCachePaint save_paint(context);
+    DlPaint paint;
+    // we get all paints which need saveLayer
+    auto paint_nodes = context.paint->SaveLayerAttributePaintNodes();
+    AutoCachePaint save_paint(paint_nodes, context);
+
     int restore_count = context.leaf_nodes_builder->getSaveCount();
+
     if (save_paint.dl_paint() != nullptr) {
       context.leaf_nodes_builder->saveLayer(&paint_bounds(),
                                             save_paint.dl_paint());

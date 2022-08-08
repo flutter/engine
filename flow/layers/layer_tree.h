@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
@@ -98,6 +99,10 @@ class LayerTree {
   PaintRegionMap paint_region_map_;
 
   std::vector<RasterCacheItem*> raster_cache_items_;
+
+  std::unique_ptr<DlPaint> dl_paint_;
+
+  std::unique_ptr<DlPaintNode> paint_tree_root_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };
