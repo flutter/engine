@@ -22,7 +22,7 @@ namespace flutter {
 //
 // In the future, this will be the API surface used for all interactions with
 // the engine, rather than having them duplicated on FlutterViewController.
-// For now it is only used in the rare where case you need a headless Flutter
+// For now it is only used in the rare case where you need a headless Flutter
 // engine.
 class FlutterEngine : public PluginRegistry {
  public:
