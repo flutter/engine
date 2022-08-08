@@ -2130,7 +2130,7 @@ TEST_F(EmbedderTest, CanSetNextFrameCallback) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
-  builder.SetDartEntrypoint("empty_scene");
+  builder.SetDartEntrypoint("draw_solid_red");
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
