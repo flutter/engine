@@ -11,9 +11,11 @@
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
@@ -1708,6 +1710,61 @@ TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
   auto display_list2 = builder2.Build();
 
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
+  SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
+  SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
+  // clang-format off
+  const float alpha_matrix[] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 0, 1,
+  };
+  // clang-format on
+  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  // Making sure hiding a problematic ColorFilter as an ImageFilter
+  // will generate the same behavior as setting it as a ColorFilter
+
+  DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.save();
+    DlPaint paint;
+    paint.setImageFilter(&color_filter_image_filter);
+    builder.drawRect(rect, paint);
+    builder.restore();
+    sk_sp<DisplayList> display_list1 = builder.Build();
+
+    DisplayListBuilder builder2(build_bounds);
+    DlPaint paint2;
+    paint2.setImageFilter(&color_filter_image_filter);
+    builder2.drawRect(rect, paint2);
+    sk_sp<DisplayList> display_list2 = builder2.Build();
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.save();
+    builder.saveLayer(&build_bounds, true);
+    DlPaint paint;
+    paint.setImageFilter(&color_filter_image_filter);
+    builder.drawRect(rect, paint);
+    builder.restore();
+    builder.restore();
+    sk_sp<DisplayList> display_list1 = builder.Build();
+
+    DisplayListBuilder builder2(build_bounds);
+    builder2.saveLayer(&build_bounds, true);
+    DlPaint paint2;
+    paint2.setImageFilter(&color_filter_image_filter);
+    builder2.drawRect(rect, paint2);
+    builder2.restore();
+    sk_sp<DisplayList> display_list2 = builder2.Build();
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
 }
 
 TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
