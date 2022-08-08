@@ -264,7 +264,7 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
     canvas.Save();
     canvas.Translate(offsets[i]);
     auto contents = std::make_shared<SweepGradientContents>();
-    contents->SetCenterAndAngles({50, 50}, 45, 135);
+    contents->SetCenterAndAngles({50, 50}, Degrees(45), Degrees(135));
     std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
                                  Color{0.1294, 0.5882, 0.9529, 1.0}};
     contents->SetColors(std::move(colors));

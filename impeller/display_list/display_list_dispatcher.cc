@@ -274,8 +274,8 @@ void DisplayListDispatcher::setColorSource(
       FML_DCHECK(sweepGradient);
       auto contents = std::make_shared<SweepGradientContents>();
       contents->SetCenterAndAngles(ToPoint(sweepGradient->center()),
-                                   sweepGradient->start(),
-                                   sweepGradient->end());
+                                   Degrees(sweepGradient->start()),
+                                   Degrees(sweepGradient->end()));
       std::vector<Color> colors;
       for (auto i = 0; i < sweepGradient->stop_count(); i++) {
         colors.emplace_back(ToColor(sweepGradient->colors()[i]));

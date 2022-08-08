@@ -21,11 +21,11 @@ void SweepGradientContents::SetPath(Path path) {
 }
 
 void SweepGradientContents::SetCenterAndAngles(Point center,
-                                               Scalar start_angle,
-                                               Scalar end_angle) {
+                                               Degrees start_angle,
+                                               Degrees end_angle) {
   center_ = center;
-  Scalar t0 = start_angle / 360;
-  Scalar t1 = end_angle / 360;
+  Scalar t0 = start_angle.degrees / 360;
+  Scalar t1 = end_angle.degrees / 360;
   FML_DCHECK(t0 < t1);
   bias_ = -t0;
   scale_ = 1 / (t1 - t0);

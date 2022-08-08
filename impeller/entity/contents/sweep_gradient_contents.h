@@ -34,7 +34,7 @@ class SweepGradientContents final : public PathContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  void SetCenterAndAngles(Point center, Scalar start_angle, Scalar end_angle);
+  void SetCenterAndAngles(Point center, Degrees start_angle, Degrees end_angle);
 
   void SetColors(std::vector<Color> colors);
 
