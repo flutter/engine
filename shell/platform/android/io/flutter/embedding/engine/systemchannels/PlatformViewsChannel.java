@@ -111,11 +111,14 @@ public class PlatformViewsChannel {
               result.success(null);
             } else {
               final boolean hybridFallback =
-                  createArgs.containsKey("hybridFallback") &&
-                  (boolean) createArgs.get("hybridFallback");
-              final PlatformViewCreationRequest.RequestedDisplayMode displayMode = hybridFallback ?
-                  PlatformViewCreationRequest.RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK :
-                  PlatformViewCreationRequest.RequestedDisplayMode.TEXTURE_WITH_VIRTUAL_FALLBACK;
+                  createArgs.containsKey("hybridFallback")
+                      && (boolean) createArgs.get("hybridFallback");
+              final PlatformViewCreationRequest.RequestedDisplayMode displayMode =
+                  hybridFallback
+                      ? PlatformViewCreationRequest.RequestedDisplayMode
+                          .TEXTURE_WITH_HYBRID_FALLBACK
+                      : PlatformViewCreationRequest.RequestedDisplayMode
+                          .TEXTURE_WITH_VIRTUAL_FALLBACK;
               final PlatformViewCreationRequest request =
                   new PlatformViewCreationRequest(
                       (int) createArgs.get("id"),
@@ -131,7 +134,7 @@ public class PlatformViewsChannel {
               if (textureId == PlatformViewsHandler.NON_TEXTURE_FALLBACK) {
                 if (!hybridFallback) {
                   throw new AssertionError(
-        "Platform view attempted to fall back to hybrid mode when not requested.");
+                      "Platform view attempted to fall back to hybrid mode when not requested.");
                 }
                 // A fallback to hybrid mode is indicated with a null texture ID.
                 result.success(null);
@@ -366,9 +369,7 @@ public class PlatformViewsChannel {
 
   /** Request sent from Flutter to create a new platform view. */
   public static class PlatformViewCreationRequest {
-    /**
-     * Platform view display modes that can be requested at creation time.
-     */
+    /** Platform view display modes that can be requested at creation time. */
     public enum RequestedDisplayMode {
       /** Use Texture Layer if possible, falling back to Virtual Display if not. */
       TEXTURE_WITH_VIRTUAL_FALLBACK,
@@ -419,8 +420,16 @@ public class PlatformViewsChannel {
         double logicalHeight,
         int direction,
         @Nullable ByteBuffer params) {
-      this(viewId, viewType, logicalTop, logicalLeft, logicalWidth, logicalHeight, direction,
-          RequestedDisplayMode.TEXTURE_WITH_VIRTUAL_FALLBACK, params);
+      this(
+          viewId,
+          viewType,
+          logicalTop,
+          logicalLeft,
+          logicalWidth,
+          logicalHeight,
+          direction,
+          RequestedDisplayMode.TEXTURE_WITH_VIRTUAL_FALLBACK,
+          params);
     }
 
     /** Creates a request to construct a platform view with the given display mode. */

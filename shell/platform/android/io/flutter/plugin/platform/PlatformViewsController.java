@@ -197,21 +197,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
 
-
           // The newer Texture Layer Hybrid Composition mode isn't suppported if any of the
           // following are true:
           // - The embedded view contains any of the VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY view types.
           //   These views allow out-of-band graphics operations that aren't notified to the Android
           //   view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
           // - The API level is <23, due to TLHC implementation API requirements.
-          final boolean supportsTextureLayerMode = Build.VERSION.SDK_INT >= 23 &&
-              !ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY);
+          final boolean supportsTextureLayerMode =
+              Build.VERSION.SDK_INT >= 23
+                  && !ViewUtils.hasChildViewOfType(
+                      embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY);
 
           // Fall back to Hybrid Composition or Virtual Display when necessary, depending on which
           // fallback mode is requested.
           if (!supportsTextureLayerMode) {
-            if (request.displayMode ==
-                PlatformViewsChannel.PlatformViewCreationRequest.RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK) {
+            if (request.displayMode
+                == PlatformViewsChannel.PlatformViewCreationRequest.RequestedDisplayMode
+                    .TEXTURE_WITH_HYBRID_FALLBACK) {
               configureForHybridComposition(platformView, request);
               return PlatformViewsChannel.PlatformViewsHandler.NON_TEXTURE_FALLBACK;
             } else if (!usesSoftwareRendering) { // Virtual Display doesn't support software mode.
