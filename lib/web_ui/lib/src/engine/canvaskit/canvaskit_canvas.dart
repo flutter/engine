@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
@@ -471,5 +472,28 @@ class CanvasKitCanvas implements ui.Canvas {
   void _drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     _canvas.drawShadow(path as CkPath, color, elevation, transparentOccluder);
+  }
+
+  @override
+  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+    final SkFloat32List skPoints = toMallocedSkPoints(run.positions);
+    ensureSkiaFontCollectionInitialized();
+    // The [skiaFontCollection] definitely exists, no worries
+    final List<SkFont>? fonts = skiaFontCollection.familyToFontMap[run.fontFamily];
+    // TODO: font weight & font slant?
+    final SkFont font = fonts?[0] ?? skiaFontCollection.familyToFontMap.entries.first.value[0];
+    final double size = font.getSize();
+    font.setSize(run.fontSize);
+    _canvas.drawGlyphs(
+      run.glyphs,
+      skPoints.toTypedArray(),
+      offset.dx,
+      offset.dy,
+      font,
+      paint as CkPaint,
+    );
+    // reset font size
+    font.setSize(size);
+    freeFloat32List(skPoints);
   }
 }

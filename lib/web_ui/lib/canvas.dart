@@ -82,6 +82,45 @@ abstract class PictureRecorder {
   Picture endRecording();
 }
 
+/// Defines a list of glyphs to draw, used by [Canvas.drawGlyphRun].
+///
+/// All glyphs are baseline aligned when drawing.
+class GlyphRun {
+  /// The id of the glyphs to draw. If a glyph id in this list does not exist
+  /// in the font given by [familyName], it takes no visual effect.
+  final Uint16List glyphs;
+
+  /// The position of each glyph to place.
+  final List<Offset> positions;
+
+  /// The font family name. A unique font is determined by [fontWeight],
+  /// [fontStyle], and [fontFamily] together. Make sure the font is exists,
+  /// otherwise it will use the default font to paint the glyphs, thus the
+  /// painting result is unpredicatable.
+  final String fontFamily;
+
+  /// The font weight, defaults to [FontWeight.normal].
+  final FontWeight fontWeight;
+
+  /// The font style, defaults to [FontStyle.normal].
+  final FontStyle fontStyle;
+
+  /// The size of glyphs (in logical pixels) to use when painting.
+  final double fontSize;
+
+  /// Creates a glyph run.
+  ///
+  /// The [glyphs] and [positions] lengths must match.
+  GlyphRun({
+    required this.glyphs,
+    required this.positions,
+    required this.fontFamily,
+    required this.fontSize,
+    this.fontWeight = FontWeight.normal,
+    this.fontStyle = FontStyle.normal,
+  }) : assert(glyphs.length == positions.length);
+}
+
 abstract class Canvas {
   factory Canvas(PictureRecorder recorder, [Rect? cullRect]) {
     if (engine.useCanvasKit) {
@@ -151,6 +190,7 @@ abstract class Canvas {
     double elevation,
     bool transparentOccluder,
   );
+  void drawGlyphRun(GlyphRun run, Offset offset, Paint paint);
 }
 
 abstract class Picture {

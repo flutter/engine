@@ -260,6 +260,11 @@ class CkCanvas {
     );
   }
 
+  void drawGlyphs(Uint16List glyphs, Float32List positions, double x, double y,
+      SkFont font, CkPaint paint) {
+    skCanvas.drawGlyphs(glyphs, positions, x, y, font, paint.skiaObject);
+  }
+
   void restore() {
     skCanvas.restore();
   }
@@ -498,6 +503,12 @@ class RecordingCkCanvas extends CkCanvas {
       CkVertices vertices, ui.BlendMode blendMode, CkPaint paint) {
     super.drawVertices(vertices, blendMode, paint);
     _addCommand(CkDrawVerticesCommand(vertices, blendMode, paint));
+  }
+
+  @override
+  void drawGlyphs(Uint16List glyphs, Float32List positions, double x, double y, SkFont font, CkPaint paint) {
+    super.drawGlyphs(glyphs, positions, x, y, font, paint);
+    _addCommand(CKDrawGlyphsCommand(glyphs, positions, x, y, font, paint));
   }
 
   @override
@@ -1171,5 +1182,26 @@ class CkSaveLayerWithFilterCommand extends CkPaintCommand {
       convertible.imageFilter.skiaObject,
       0,
     );
+  }
+}
+
+class CKDrawGlyphsCommand extends CkPaintCommand {
+
+  final Uint16List glyphs;
+  final Float32List positions;
+  final double x;
+  final double y;
+  final SkFont font;
+  final CkPaint paint;
+  final double fontSize;
+
+  CKDrawGlyphsCommand(this.glyphs, this.positions, this.x, this.y, this.font, this.paint): fontSize = font.getSize();
+
+  @override
+  void apply(SkCanvas canvas) {
+    final double size = font.getSize();
+    font.setSize(fontSize);
+    canvas.drawGlyphs(glyphs, positions, x, y, font, paint.skiaObject);
+    font.setSize(size);
   }
 }

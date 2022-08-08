@@ -1833,6 +1833,14 @@ extension SkCanvasExtension on SkCanvas {
     double x,
     double y,
   );
+  external void drawGlyphs(
+    Uint16List glyphs,
+    Float32List positions,
+    double x,
+    double y,
+    SkFont font,
+    SkPaint paint,
+  );
 }
 
 @JS()
@@ -2091,6 +2099,8 @@ extension SkFontExtension on SkFont {
   external Uint16List getGlyphIDs(String text);
   external void getGlyphBounds(
       List<int> glyphs, SkPaint? paint, Uint8List? output);
+  external double getSize();
+  external void setSize(double size);
 }
 
 @JS()

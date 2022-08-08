@@ -548,4 +548,10 @@ class SurfaceCanvas implements ui.Canvas {
     assert(transparentOccluder != null); // ignore: unnecessary_null_comparison
     _canvas.drawShadow(path, color, elevation, transparentOccluder);
   }
+
+  @override
+  void drawGlyphRun(ui.GlyphRun run, ui.Offset offset, ui.Paint paint) {
+    // CanvasRenderingContext2D does not have an interface to draw glyphs
+    throw UnimplementedError();
+  }
 }
