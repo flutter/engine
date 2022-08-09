@@ -3,15 +3,16 @@
 // found in the LICENSE file.
 
 class NotoFont {
-  const NotoFont(this.name, this.url, List<int> unicodeRanges) {
-    List<int> starts = <int>[];
-    List<int> ends = <int>[];
-    for (int i = 0; i < unicodeRanges.length; i += 2) {
-      starts.add(unicodeRanges[i]);
-      ends.add(unicodeRanges[i+1]);
+  const NotoFont(this.name, this.url, this._rangeStarts, this._rangeEnds);
+
+  factory NotoFont.fromFlatRanges(String name, String url, List<int> flatRanges) {
+    final List<int> starts = <int>[];
+    final List<int> ends = <int>[];
+    for (int i = 0; i < flatRanges.length; i += 2) {
+      starts.add(flatRanges[i]);
+      ends.add(flatRanges[i+1]);
     }
-    this._rangeStarts = starts;
-    this._rangeEnds = ends;
+    return NotoFont(name, url, starts, ends);
   }
 
   final String name;
@@ -22,18 +23,34 @@ class NotoFont {
   // A sorted list of Unicode range end points.
   final List<int> _rangeEnds;
 
+  List<CodeunitRange> get unicodeRanges {
+    final List<CodeunitRange> result = <CodeunitRange>[];
+    for (int i = 0; i < _rangeStarts.length; i++) {
+      result.add(CodeunitRange(_rangeStarts[i], _rangeEnds[i]));
+    }
+    return result;
+  }
 
   // Returns `true` if this font has a glyph for the given [codeunit].
-  bool contains(int codeunit) {
-    // The list of codeunit ranges is sorted.
-    for (final CodeunitRange range in unicodeRanges) {
-      if (range.start > codeunit) {
-        return false;
-      } else {
-        // range.start <= codeunit
-        if (range.end >= codeunit) {
-          return true;
+  bool contains(int codeUnit) {
+    // Binary search through the starts and ends to see if there
+    // is a range that contains the codeunit.
+    int min = 0;
+    int max = _rangeStarts.length;
+    // Search for the first rangeStart that is greater than codeunit.
+    while (min < max) {
+      final int mid = (min + max) ~/ 2;
+      if (_rangeStarts[mid] > codeUnit) {
+        if (mid == 0) return false;
+        final int rangeStart = _rangeStarts[mid - 1];
+        if (rangeStart <= codeUnit) {
+          final int rangeEnd = _rangeEnds[mid - 1];
+          return rangeStart <= codeUnit && codeUnit <= rangeEnd;
+        } else {
+          max = mid - 1;
         }
+      } else if (_rangeStarts[mid] < codeUnit) {
+        min = mid;
       }
     }
     return false;

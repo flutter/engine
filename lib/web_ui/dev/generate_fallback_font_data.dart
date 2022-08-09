@@ -113,8 +113,8 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln();
     sb.writeln('const List<NotoFont> fallbackFonts = <NotoFont>[');
     for (final String family in fallbackFonts) {
-      sb.writeln("  NotoFont('$family', '${urlForFamily[family]!}', "
-          '<CodeunitRange>[');
+      sb.write("  NotoFont.fromFlatList('$family', '${urlForFamily[family]!}', "
+          '<int>[');
       for (final String range in charsetForFamily[family]!.split(' ')) {
         String? start;
         String? end;
@@ -126,9 +126,9 @@ class GenerateFallbackFontDataCommand extends Command<bool>
           start = parts[0];
           end = parts[1];
         }
-        sb.writeln('    CodeunitRange(0x$start, 0x$end),');
+        sb.write('$start,$end,');
       }
-      sb.writeln('  ]),');
+      sb.writeln(']),');
     }
     sb.writeln('];');
 
