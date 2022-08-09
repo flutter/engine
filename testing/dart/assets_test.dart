@@ -27,6 +27,12 @@ void main() {
     expect(buffer.length == 354679, true);
   });
 
+  test('returns the bytes of a bundled asset with a space in the name', () async {
+    final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat WithSpace.jpg');
+
+    expect(buffer.length == 354679, true);
+  });
+
   test('can dispose immutable buffer', () async {
     final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
 
