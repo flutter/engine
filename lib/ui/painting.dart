@@ -1648,10 +1648,10 @@ class Image {
       _debugStack = StackTrace.current;
       return true;
     }());
-    if (onCreate != null) {
-      onCreate!();
-    }
     _image._handles.add(this);
+    if (onCreate != null) {
+      onCreate!(this);
+    }
   }
 
   // C++ unit tests access this.
@@ -1671,14 +1671,14 @@ class Image {
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart 
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  void Function()? onCreate;
+  static void Function(Object)? onCreate;
 
   /// A callback that is invoked to report the object disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart 
   /// than to use [onDispose] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  void Function()? onDispose;
+  static void Function(Object)? onDispose;
 
   bool _disposed = false;
   /// Release this handle's claim on the underlying Image. This handle is no
@@ -1692,6 +1692,9 @@ class Image {
   /// useful when trying to determine what parts of the program are keeping an
   /// image resident in memory.
   void dispose() {
+    if (onDispose != null) {
+      onDispose!(this);
+    }
     assert(!_disposed && !_image._disposed);
     assert(_image._handles.contains(this));
     _disposed = true;
