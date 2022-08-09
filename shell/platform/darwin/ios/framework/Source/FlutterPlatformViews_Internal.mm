@@ -116,7 +116,7 @@ void ResetAnchor(CALayer* layer) {
       break;
     }
   }
-//  [self.blurEffectView release];
+  //  [self.blurEffectView release];
 
   return gaussianFilter;
 }
