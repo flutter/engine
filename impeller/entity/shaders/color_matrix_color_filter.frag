@@ -43,7 +43,6 @@ void main() {
 
   color = frag_info.color_m * color + frag_info.color_v;
   
-  
   // premultiply the outputs
   frag_color = vec4(color.rgb * color.a, color.a);
 }
