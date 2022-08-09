@@ -6,7 +6,9 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/sampler.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -22,7 +24,10 @@ class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
  private:
   friend SamplerLibraryVK;
 
-  SamplerVK(SamplerDescriptor desc);
+  vk::UniqueSampler sampler_;
+  bool is_valid_ = false;
+
+  SamplerVK(SamplerDescriptor desc, vk::UniqueSampler sampler);
 
   // |Sampler|
   bool IsValid() const override;

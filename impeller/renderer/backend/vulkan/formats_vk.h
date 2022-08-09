@@ -160,4 +160,37 @@ constexpr vk::SampleCountFlagBits ToVKSampleCount(SampleCount sample_count) {
   }
 }
 
+constexpr vk::Filter ToVKSamplerMinMagFilter(MinMagFilter filter) {
+  switch (filter) {
+    case MinMagFilter::kNearest:
+      return vk::Filter::eNearest;
+    case MinMagFilter::kLinear:
+      return vk::Filter::eLinear;
+  }
+}
+
+constexpr vk::SamplerMipmapMode ToVKSamplerMipmapMode(MipFilter filter) {
+  vk::SamplerCreateInfo sampler_info;
+  switch (filter) {
+    case MipFilter::kNearest:
+      return vk::SamplerMipmapMode::eNearest;
+    case MipFilter::kLinear:
+      return vk::SamplerMipmapMode::eLinear;
+    default:
+      return vk::SamplerMipmapMode::eNearest;
+  }
+}
+
+constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
+    SamplerAddressMode mode) {
+  switch (mode) {
+    case SamplerAddressMode::kRepeat:
+      return vk::SamplerAddressMode::eRepeat;
+    case SamplerAddressMode::kMirror:
+      return vk::SamplerAddressMode::eMirroredRepeat;
+    case SamplerAddressMode::kClampToEdge:
+      return vk::SamplerAddressMode::eClampToEdge;
+  }
+}
+
 }  // namespace impeller
