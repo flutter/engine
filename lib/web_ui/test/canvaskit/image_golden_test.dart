@@ -584,7 +584,12 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final CkImage mandrill = frame.image as CkImage;
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
-      canvas.drawImageRect(mandrill, ui.Rect.fromLTWH(0, 0, 128, 128), ui.Rect.fromLTWH(0, 0, 128, 128), ui.Paint());
+      canvas.drawImageRect(
+        mandrill,
+        const ui.Rect.fromLTWH(0, 0, 128, 128),
+        const ui.Rect.fromLTWH(0, 0, 128, 128),
+        ui.Paint(),
+      );
       final ui.Picture picture = recorder.endRecording();
       final ui.Image image = picture.toImageSync(50, 50);
 
