@@ -407,7 +407,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
 
   // TODO EMILY: this line is for visual simulator tests, delete before landing PR
-//                    int numFilters = 0;
+  //                    int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -418,20 +418,20 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
         //             TODO EMILY: these lines are for visual simulator tests, delete before landing
         //             PR
-//                  if(numFilters < 1) {
-//                    flutter::DlBlurImageFilter filter =
-//                        flutter::DlBlurImageFilter(changingBlurRadius, changingBlurRadius,
-//                        flutter::DlTileMode::kDecal);
-//
-//                    NSNumber* blurRadius =
-//                    @(filter.asBlur()->sigma_x());
-//                    [blurRadii addObject:blurRadius];
-//
-//                    numFilters++;
-//                    FML_DLOG(ERROR) << "****checkpoint***" << changingBlurRadius;
-//
-//                    changingBlurRadius++;
-//                  }
+        //                  if(numFilters < 1) {
+        //                    flutter::DlBlurImageFilter filter =
+        //                        flutter::DlBlurImageFilter(changingBlurRadius, changingBlurRadius,
+        //                        flutter::DlTileMode::kDecal);
+        //
+        //                    NSNumber* blurRadius =
+        //                    @(filter.asBlur()->sigma_x());
+        //                    [blurRadii addObject:blurRadius];
+        //
+        //                    numFilters++;
+        //                    FML_DLOG(ERROR) << "****checkpoint***" << changingBlurRadius;
+        //
+        //                    changingBlurRadius++;
+        //                  }
         break;
       }
       case kClipRect:
@@ -502,9 +502,9 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   // Do nothing if the view doesn't need to be composited.
-//  if (views_to_recomposite_.count(view_id) == 0) {
-//    return picture_recorders_[view_id]->getRecordingCanvas();
-//  }
+  //  if (views_to_recomposite_.count(view_id) == 0) {
+  //    return picture_recorders_[view_id]->getRecordingCanvas();
+  //  }
   CompositeWithParams(view_id, current_composition_params_[view_id]);
   views_to_recomposite_.erase(view_id);
   return picture_recorders_[view_id]->getRecordingCanvas();

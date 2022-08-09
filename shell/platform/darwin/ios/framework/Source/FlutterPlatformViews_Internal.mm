@@ -116,7 +116,7 @@ void ResetAnchor(CALayer* layer) {
       break;
     }
   }
-  
+
   return gaussianFilter;
 }
 
@@ -133,13 +133,13 @@ void ResetAnchor(CALayer* layer) {
       return NO;
     }
   }
-  
+
   // Becomes YES if _activeGaussianFilters must be updated
   BOOL updateActiveFilters = NO;
-  
+
   if ([blurRadii count] != [_activeGaussianFilters count]) {
     updateActiveFilters = YES;
-    
+
     // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
     while ([blurRadii count] > [_activeGaussianFilters count]) {
       // copy returns a deep copy of _gaussianFilter
@@ -148,24 +148,24 @@ void ResetAnchor(CALayer* layer) {
     while ([blurRadii count] < [_activeGaussianFilters count]) {
       [_activeGaussianFilters removeLastObject];
     }
-    
+
   } else {
-    for(NSUInteger i = 0; i < [blurRadii count]; i++) {
+    for (NSUInteger i = 0; i < [blurRadii count]; i++) {
       if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] != blurRadii[i]) {
         updateActiveFilters = YES;
         break;
       }
     }
   }
-  
-  if(updateActiveFilters) {
+
+  if (updateActiveFilters) {
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
       _activeGaussianFilters[i] = [_gaussianFilter copy];
       [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
     }
     self.layer.filters = _activeGaussianFilters;
   }
-  
+
   return YES;
 }
 
