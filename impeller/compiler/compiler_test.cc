@@ -160,6 +160,24 @@ bool CompilerTest::CanCompileAndReflect(const char* fixture_name,
     }
   }
 
+  auto mapping =
+      compiler.CreateDepfileContents({"fixtures/FixtureWith\%And#.jpg"});
+  std::string contents(reinterpret_cast<char const*>(mapping->GetMapping()),
+                       mapping->GetSize());
+  bool escaped = false;
+  for (auto it = contents.begin(); it != contents.end(); it++) {
+    if (*it == '\\') {
+      escaped = true;
+    } else if (*it == '%' || *it == '#') {
+      if (!escaped) {
+        VALIDATION_LOG << "Unescaped character " << *it << " in depfile.";
+        return false;
+      }
+      escaped = false;
+    } else {
+      escaped = false;
+    }
+  }
   return true;
 }
 
