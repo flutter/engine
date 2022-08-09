@@ -116,7 +116,7 @@ void ResetAnchor(CALayer* layer) {
       break;
     }
   }
-  [self.blurEffectView release];
+//  [self.blurEffectView release];
 
   return gaussianFilter;
 }
@@ -126,6 +126,8 @@ void ResetAnchor(CALayer* layer) {
     _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
 
     _gaussianFilter = [self extractGaussianFilter];
+    [self.blurEffectView release];
+
     if (!_gaussianFilter) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                          "access the gaussianBlur CAFilter.";
