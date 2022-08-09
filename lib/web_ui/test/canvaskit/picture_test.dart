@@ -103,6 +103,6 @@ void testMain() {
       expect(data.buffer.asUint32List().first, color.value);
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
     }, skip: isFirefox);
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

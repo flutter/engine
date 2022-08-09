@@ -27,6 +27,8 @@
 #include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
+#include "impeller/entity/atlas_fill.frag.h"
+#include "impeller/entity/atlas_fill.vert.h"
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -40,10 +42,14 @@
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/radial_gradient_fill.vert.h"
+#include "impeller/entity/rrect_blur.frag.h"
+#include "impeller/entity/rrect_blur.vert.h"
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/solid_stroke.frag.h"
 #include "impeller/entity/solid_stroke.vert.h"
+#include "impeller/entity/sweep_gradient_fill.frag.h"
+#include "impeller/entity/sweep_gradient_fill.vert.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/vertices.frag.h"
@@ -58,6 +64,11 @@ using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
     PipelineT<RadialGradientFillVertexShader, RadialGradientFillFragmentShader>;
+using SweepGradientFillPipeline =
+    PipelineT<SweepGradientFillVertexShader, SweepGradientFillFragmentShader>;
+using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
+using RRectBlurPipeline =
+    PipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
 using BlendColorPipeline =
     PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorFragmentShader>;
@@ -101,6 +112,7 @@ using GlyphAtlasPipeline =
     PipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using VerticesPipeline =
     PipelineT<VerticesVertexShader, VerticesFragmentShader>;
+using AtlasPipeline = PipelineT<AtlasFillVertexShader, AtlasFillFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
@@ -143,9 +155,19 @@ class ContentContext {
       ContentContextOptions opts) const {
     return GetPipeline(gradient_fill_pipelines_, opts);
   }
+
   std::shared_ptr<Pipeline> GetRadialGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline> GetRRectBlurPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(rrect_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetSweepGradientFillPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(sweep_gradient_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidFillPipeline(
@@ -189,6 +211,10 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetVerticesPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(vertices_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetAtlasPipeline(ContentContextOptions opts) const {
+    return GetPipeline(atlas_pipelines_, opts);
   }
 
   // Advanced blends.
@@ -293,6 +319,8 @@ class ContentContext {
   mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
+  mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
+  mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
@@ -301,6 +329,7 @@ class ContentContext {
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<VerticesPipeline> vertices_pipelines_;
+  mutable Variants<AtlasPipeline> atlas_pipelines_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;

@@ -2895,6 +2895,10 @@ class PathMetric {
       contourIndex = _measure.currentContourIndex;
 
   /// Return the total length of the current contour.
+  ///
+  /// The length may be calculated from an approximation of the geometry
+  /// originally added. For this reason, it is not recommended to rely on
+  /// this property for mathematically correct lengths of common shapes.
   final double length;
 
   /// Whether the contour is closed.
@@ -3579,7 +3583,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// Creates an image filter that applies a Gaussian blur.
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
   }
@@ -3588,7 +3592,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// to the max value within the given radii along the x and y axes.
   _ImageFilter.dilate(_DilateImageFilter filter)
     : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     _initDilate(filter.radiusX, filter.radiusY);
   }
@@ -3597,7 +3601,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// to the minimum channel value within the given radii along the x and y axes.
   _ImageFilter.erode(_ErodeImageFilter filter)
     : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     _initErode(filter.radiusX, filter.radiusY);
   }
@@ -3608,7 +3612,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// when used with [BackdropFilter] would magnify the background image.
   _ImageFilter.matrix(_MatrixImageFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     if (filter.data.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
@@ -3619,7 +3623,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// Converts a color filter to an image filter.
   _ImageFilter.fromColorFilter(ColorFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
     _initColorFilter(nativeFilter);
@@ -3628,7 +3632,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     final _ImageFilter nativeFilterInner = filter.innerFilter._toNativeImageFilter();
     final _ImageFilter nativeFilterOuter = filter.outerFilter._toNativeImageFilter();
@@ -4073,13 +4077,18 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// compiler. The constructed object should then be reused via the [shader]
   /// method to create [Shader] objects that can be used by [Shader.paint].
   static Future<FragmentProgram> fromAsset(String assetKey) {
-    final FragmentProgram? program = _shaderRegistry[assetKey]?.target;
+    // The flutter tool converts all asset keys with spaces into URI
+    // encoded paths (replacing ' ' with '%20', for example). We perform
+    // the same encoding here so that users can load assets with the same
+    // key they have written in the pubspec.
+    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
+    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
     if (program != null) {
       return Future<FragmentProgram>.value(program);
     }
     return Future<FragmentProgram>.microtask(() {
-      final FragmentProgram program = FragmentProgram._fromAsset(assetKey);
-      _shaderRegistry[assetKey] = WeakReference<FragmentProgram>(program);
+      final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
+      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
       return program;
     });
   }
@@ -4760,7 +4769,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///   canvas.clipPath(Path()
   ///     ..addRect(const Rect.fromLTRB(80, 10, 100, 20))
   ///     ..addRect(const Rect.fromLTRB(10, 80, 20, 100)));
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5243,7 +5252,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     ], null, null, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5289,7 +5298,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     ], BlendMode.srcIn, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5427,7 +5436,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     canvas.drawRawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5496,7 +5505,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     canvas.drawRawAtlas(spriteAtlas, transformList, rectList, colorList, BlendMode.srcIn, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5951,9 +5960,14 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
   ///
   /// Throws an [Exception] if the asset does not exist.
   static Future<ImmutableBuffer> fromAsset(String assetKey) {
+    // The flutter tool converts all asset keys with spaces into URI
+    // encoded paths (replacing ' ' with '%20', for example). We perform
+    // the same encoding here so that users can load assets with the same
+    // key they have written in the pubspec.
+    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
     final ImmutableBuffer instance = ImmutableBuffer._(0);
     return _futurize((_Callback<int> callback) {
-      return instance._initFromAsset(assetKey, callback);
+      return instance._initFromAsset(encodedKey, callback);
     }).then((int length) => instance.._length = length);
   }
 

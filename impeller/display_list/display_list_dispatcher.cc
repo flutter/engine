@@ -13,10 +13,12 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/display_list_image_impeller.h"
+#include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
+#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
@@ -99,6 +101,19 @@ static Entity::BlendMode ToBlendMode(flutter::DlBlendMode mode) {
       return Entity::BlendMode::kLuminosity;
   }
   FML_UNREACHABLE();
+}
+
+static Entity::TileMode ToTileMode(flutter::DlTileMode tile_mode) {
+  switch (tile_mode) {
+    case flutter::DlTileMode::kClamp:
+      return Entity::TileMode::kClamp;
+    case flutter::DlTileMode::kRepeat:
+      return Entity::TileMode::kRepeat;
+    case flutter::DlTileMode::kMirror:
+      return Entity::TileMode::kMirror;
+    case flutter::DlTileMode::kDecal:
+      return Entity::TileMode::kDecal;
+  }
 }
 
 // |flutter::Dispatcher|
@@ -190,6 +205,34 @@ static Color ToColor(const SkColor& color) {
   };
 }
 
+static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
+  auto result = std::vector<Color>();
+  if (colors == nullptr) {
+    return result;
+  }
+  for (int i = 0; i < count; i++) {
+    result.push_back(ToColor(colors[i]));
+  }
+  return result;
+}
+
+static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
+  auto result = std::vector<Matrix>();
+  for (int i = 0; i < count; i++) {
+    auto form = xform[i];
+    // clang-format off
+    auto matrix = Matrix{
+      form.fSCos, form.fSSin, 0, 0,
+     -form.fSSin, form.fSCos, 0, 0,
+      0,          0,          1, 0,
+      form.fTx,   form.fTy,   0, 1
+    };
+    // clang-format on
+    result.push_back(matrix);
+  }
+  return result;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
@@ -218,13 +261,14 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(linear->colors()[i]));
       }
       contents->SetColors(std::move(colors));
+      contents->SetTileMode(ToTileMode(linear->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
     case flutter::DlColorSourceType::kRadialGradient: {
       const flutter::DlRadialGradientColorSource* radialGradient =
           source->asRadialGradient();
-      FML_CHECK(radialGradient);
+      FML_DCHECK(radialGradient);
       auto contents = std::make_shared<RadialGradientContents>();
       contents->SetCenterAndRadius(ToPoint(radialGradient->center()),
                                    radialGradient->radius());
@@ -233,12 +277,29 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
       }
       contents->SetColors(std::move(colors));
+      contents->SetTileMode(ToTileMode(radialGradient->tile_mode()));
+      paint_.contents = std::move(contents);
+      return;
+    }
+    case flutter::DlColorSourceType::kSweepGradient: {
+      const flutter::DlSweepGradientColorSource* sweepGradient =
+          source->asSweepGradient();
+      FML_DCHECK(sweepGradient);
+      auto contents = std::make_shared<SweepGradientContents>();
+      contents->SetCenterAndAngles(ToPoint(sweepGradient->center()),
+                                   Degrees(sweepGradient->start()),
+                                   Degrees(sweepGradient->end()));
+      std::vector<Color> colors;
+      for (auto i = 0; i < sweepGradient->stop_count(); i++) {
+        colors.emplace_back(ToColor(sweepGradient->colors()[i]));
+      }
+      contents->SetColors(std::move(colors));
+      contents->SetTileMode(ToTileMode(sweepGradient->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
     case flutter::DlColorSourceType::kImage:
     case flutter::DlColorSourceType::kConicalGradient:
-    case flutter::DlColorSourceType::kSweepGradient:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;
@@ -317,22 +378,16 @@ static FilterContents::BlurStyle ToBlurStyle(SkBlurStyle blur_style) {
 void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
-    paint_.mask_filter = std::nullopt;
+    paint_.mask_blur_descriptor = std::nullopt;
     return;
   }
   switch (filter->type()) {
     case flutter::DlMaskFilterType::kBlur: {
       auto blur = filter->asBlur();
 
-      auto style = ToBlurStyle(blur->style());
-      auto sigma = Sigma(blur->sigma());
-
-      paint_.mask_filter = [style, sigma](FilterInput::Ref input,
-                                          bool is_solid_color) {
-        if (is_solid_color) {
-          return FilterContents::MakeGaussianBlur(input, sigma, sigma, style);
-        }
-        return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style);
+      paint_.mask_blur_descriptor = {
+          .style = ToBlurStyle(blur->style()),
+          .sigma = Sigma(blur->sigma()),
       };
       break;
     }
@@ -343,7 +398,8 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
 }
 
 static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
-    const flutter::DlImageFilter* filter) {
+    const flutter::DlImageFilter* filter,
+    const Vector2& effect_scale = {1, 1}) {
   if (filter == nullptr) {
     return std::nullopt;
   }
@@ -351,16 +407,16 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
-      auto sigma_x = Sigma(blur->sigma_x());
-      auto sigma_y = Sigma(blur->sigma_y());
+      Vector2 scaled_blur =
+          Vector2(blur->sigma_x(), blur->sigma_y()) * effect_scale;
+      auto sigma_x = Sigma(scaled_blur.x);
+      auto sigma_y = Sigma(scaled_blur.y);
+      auto tile_mode = ToTileMode(blur->tile_mode());
 
-      if (blur->tile_mode() != flutter::DlTileMode::kClamp) {
-        // TODO(105072): Implement tile mode for blur filter.
-        UNIMPLEMENTED;
-      }
-
-      return [sigma_x, sigma_y](FilterInput::Ref input) {
-        return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
+      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input) {
+        return FilterContents::MakeGaussianBlur(
+            input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
+            tile_mode);
       };
 
       break;
@@ -393,12 +449,23 @@ static std::optional<Rect> ToRect(const SkRect* rect) {
   return Rect::MakeLTRB(rect->fLeft, rect->fTop, rect->fRight, rect->fBottom);
 }
 
+static std::vector<Rect> ToRects(const SkRect tex[], int count) {
+  auto result = std::vector<Rect>();
+  for (int i = 0; i < count; i++) {
+    result.push_back(ToRect(&tex[i]).value());
+  }
+  return result;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
                                       const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
+  auto scale = canvas_.GetCurrentTransformation().GetScale();
+  canvas_.SaveLayer(
+      paint, ToRect(bounds),
+      ToImageFilterProc(backdrop, Vector2::MakeXY(scale.x, scale.y)));
 }
 
 // |flutter::Dispatcher|
@@ -668,13 +735,14 @@ void DisplayListDispatcher::drawPaint() {
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
-  canvas_.DrawPath(std::move(path), paint_);
+  Paint paint = paint_;
+  paint.style = Paint::Style::kStroke;
+  canvas_.DrawPath(std::move(path), std::move(paint));
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRect(const SkRect& rect) {
-  auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
-  canvas_.DrawPath(std::move(path), paint_);
+  canvas_.DrawRect(ToRect(rect), paint_);
 }
 
 // |flutter::Dispatcher|
@@ -691,7 +759,11 @@ void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRRect(const SkRRect& rrect) {
-  canvas_.DrawPath(ToPath(rrect), paint_);
+  if (rrect.isSimple()) {
+    canvas_.DrawRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX, paint_);
+  } else {
+    canvas_.DrawPath(ToPath(rrect), paint_);
+  }
 }
 
 // |flutter::Dispatcher|
@@ -723,7 +795,41 @@ void DisplayListDispatcher::drawArc(const SkRect& oval_bounds,
 void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
                                        uint32_t count,
                                        const SkPoint points[]) {
-  UNIMPLEMENTED;
+  // auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+  Paint paint = paint_;
+  paint.style = Paint::Style::kStroke;
+  switch (mode) {
+    case SkCanvas::kPoints_PointMode:
+      if (paint.stroke_cap == SolidStrokeContents::Cap::kButt) {
+        paint.stroke_cap = SolidStrokeContents::Cap::kSquare;
+      }
+      for (uint32_t i = 0; i < count; i++) {
+        SkPoint p0 = points[i];
+        // kEhCloseEnough works around a bug where Impeller does not draw
+        // anything for zero-length lines.
+        // See: https://github.com/flutter/flutter/issues/109077
+        SkPoint p1 = points[i] + SkPoint{kEhCloseEnough, 0.0};
+        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        canvas_.DrawPath(std::move(path), paint);
+      }
+      break;
+    case SkCanvas::kLines_PointMode:
+      for (uint32_t i = 1; i < count; i += 2) {
+        SkPoint p0 = points[i - 1];
+        SkPoint p1 = points[i];
+        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        canvas_.DrawPath(std::move(path), paint);
+      }
+      break;
+    case SkCanvas::kPolygon_PointMode:
+      for (uint32_t i = 1; i < count; i++) {
+        SkPoint p0 = points[i - 1];
+        SkPoint p1 = points[i];
+        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        canvas_.DrawPath(std::move(path), paint);
+      }
+      break;
+  }
 }
 
 // |flutter::Dispatcher|
@@ -791,6 +897,24 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
   return desc;
 }
 
+static impeller::SamplerDescriptor ToSamplerDescriptor(
+    const flutter::DlFilterMode options) {
+  impeller::SamplerDescriptor desc;
+  switch (options) {
+    case flutter::DlFilterMode::kNearest:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
+      desc.label = "Nearest Sampler";
+      break;
+    case flutter::DlFilterMode::kLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.label = "Linear Sampler";
+      break;
+    default:
+      break;
+  }
+  return desc;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawImageRect(
     const sk_sp<flutter::DlImage> image,
@@ -801,7 +925,7 @@ void DisplayListDispatcher::drawImageRect(
     SkCanvas::SrcRectConstraint constraint) {
   canvas_.DrawImageRect(
       std::make_shared<Image>(image->impeller_texture()),  // image
-      ToRect(src),                                         // source  rect
+      ToRect(src),                                         // source rect
       ToRect(dst),                                         // destination rect
       paint_,                                              // paint
       ToSamplerDescriptor(sampling)                        // sampling
@@ -814,8 +938,11 @@ void DisplayListDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
                                           const SkRect& dst,
                                           flutter::DlFilterMode filter,
                                           bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
+  NinePatchConverter converter = {};
+  converter.DrawNinePatch(
+      std::make_shared<Image>(image->impeller_texture()),
+      Rect::MakeLTRB(center.fLeft, center.fTop, center.fRight, center.fBottom),
+      ToRect(dst), ToSamplerDescriptor(filter), &canvas_, &paint_);
 }
 
 // |flutter::Dispatcher|
@@ -826,6 +953,9 @@ void DisplayListDispatcher::drawImageLattice(
     flutter::DlFilterMode filter,
     bool render_with_attributes) {
   // Needs https://github.com/flutter/flutter/issues/95434
+  // Don't implement this one since it is not exposed by flutter,
+  // Skia internally converts calls to drawImageNine into this method,
+  // which is then converted back to drawImageNine by display list.
   UNIMPLEMENTED;
 }
 
@@ -839,8 +969,10 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
+  canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
+                    ToRSXForms(xform, count), ToRects(tex, count),
+                    ToColors(colors, count), ToBlendMode(mode),
+                    ToSamplerDescriptor(sampling), ToRect(cull_rect), paint_);
 }
 
 // |flutter::Dispatcher|
