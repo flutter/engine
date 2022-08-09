@@ -102,6 +102,27 @@ void testMain() {
       expect(data!.lengthInBytes, 10 * 15 * 4);
       expect(data.buffer.asUint32List().first, color.value);
     });
+
+    test('toImageSync with texture-backed image', () async {
+      final DomResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
+      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final CkImage mandrill = frame.image as CkImage;
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.drawImageRect(mandrill, ui.Rect.fromLTWH(0, 0, 128, 128), ui.Rect.fromLTWH(0, 0, 128, 128), ui.Paint());
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image image = picture.toImageSync(10, 15);
+
+      expect(image.width, 10);
+      expect(image.height, 15);
+
+      final ByteData? data = await image.toByteData();
+      expect(data, isNotNull);
+      expect(data!.lengthInBytes, 10 * 15 * 4);
+      expect(data.buffer.asUint32List().any((int byte) => byte != 0), isTrue);
+    });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
