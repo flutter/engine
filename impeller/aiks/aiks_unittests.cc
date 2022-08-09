@@ -10,10 +10,14 @@
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/renderer/formats.h"
+#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
@@ -67,6 +71,34 @@ TEST_P(AiksTest, CanRenderImage) {
   auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
   paint.color = Color::Red();
   canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTiledImage) {
+  Canvas canvas;
+  Paint paint;
+  std::vector<Entity::TileMode> tile_modes = {
+      Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+      Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      Scalar offset_x = i * 400.0;
+      Scalar offset_y = j * 400.0;
+      canvas.Save();
+      canvas.Translate({offset_x, offset_y, 0});
+      auto contents = std::make_shared<TiledTextureContents>();
+      contents->SetTexture(texture);
+      contents->SetTileModes(tile_modes[i], tile_modes[j]);
+      SamplerDescriptor desc;
+      desc.width_address_mode = SamplerAddressMode::kMirror;
+      desc.height_address_mode = SamplerAddressMode::kRepeat;
+      contents->SetSamplerDescriptor(desc);
+      paint.contents = contents;
+      canvas.DrawRect({0, 0, 300, 300}, paint);
+      canvas.Restore();
+    }
+  }
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
