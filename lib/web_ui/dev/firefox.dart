@@ -57,9 +57,6 @@ class Firefox extends Browser {
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, FirefoxEnvironment firefoxEnvironment, {bool debug = false}) {
-    if (debug) {
-      print('Debug mode currently has no effect in Firefox.');
-    }
     final BrowserInstallation installation = firefoxEnvironment._installation;
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(BrowserProcess(() async {
@@ -88,6 +85,8 @@ user_pref("dom.max_script_run_time", 0);
         url.toString(),
         '--profile',
         temporaryProfileDirectory.path,
+        if (!debug)
+          '--headless'
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
         // On Mac Firefox uses the -- option prefix, while elsewhere it uses the - prefix.
