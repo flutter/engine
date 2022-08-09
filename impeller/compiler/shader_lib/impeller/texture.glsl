@@ -21,10 +21,10 @@ vec4 IPSample(sampler2D texture_sampler, vec2 coords, float y_coord_scale) {
 
 // These values must correspond to the order of the items in the
 // 'Entity::TileMode' enum class.
-const float kTileModeClamp = 0;
-const float kTileModeRepeat = 1;
-const float kTileModeMirror = 2;
-const float kTileModeDecal = 3;
+const float kTileModeClamp = 0.0;
+const float kTileModeRepeat = 1.0;
+const float kTileModeMirror = 2.0;
+const float kTileModeDecal = 3.0;
 
 /// Remap a float using a tiling mode.
 ///
@@ -38,8 +38,8 @@ float IPFloatTile(float t, float tile_mode) {
   } else if (tile_mode == kTileModeRepeat) {
     t = fract(t);
   } else if (tile_mode == kTileModeMirror) {
-    float t1 = t - 1;
-    float t2 = t1 - 2 * floor(t1 * 0.5) - 1;
+    float t1 = t - 1.0;
+    float t2 = t1 - 2.0 * floor(t1 * 0.5) - 1.0;
     t = abs(t2);
   }
   return t;
@@ -61,9 +61,9 @@ vec4 IPSampleWithTileMode(sampler2D tex,
                           vec2 coords,
                           float y_coord_scale,
                           float tile_mode) {
-  if (tile_mode == kTileModeDecal &&
-      (coords.x < 0 || coords.y < 0 || coords.x >= 1 || coords.y >= 1)) {
-    return vec4(0);
+  if (tile_mode == kTileModeDecal && (coords.x < 0.0 || coords.y < 0.0 ||
+                                      coords.x >= 1.0 || coords.y >= 1.0)) {
+    return vec4(0.0);
   }
 
   return IPSample(tex, IPVec2Tile(coords, tile_mode), y_coord_scale);

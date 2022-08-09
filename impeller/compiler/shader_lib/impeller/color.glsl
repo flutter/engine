@@ -12,8 +12,8 @@
 ///
 /// Returns (0, 0, 0, 0) if the alpha component is 0.
 vec4 IPUnpremultiply(vec4 color) {
-  if (color.a == 0) {
-    return vec4(0);
+  if (color.a == 0.0) {
+    return vec4(0.0);
   }
   return vec4(color.rgb / color.a, color.a);
 }

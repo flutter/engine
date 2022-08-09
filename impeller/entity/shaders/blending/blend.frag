@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 uniform sampler2D texture_sampler_src;
 
 in vec2 v_texture_coords;

@@ -22,21 +22,21 @@ BoolV3 IPVec3IsEqual(vec3 x, float y) {
 ///
 /// Returns 1.0 if x > y, otherwise 0.0.
 BoolF IPFloatIsGreaterThan(float x, float y) {
-  return max(sign(x - y), 0);
+  return max(sign(x - y), 0.0);
 }
 
 /// Perform a branchless greater than check for each vec3 component.
 ///
 /// Returns 1.0 if x > y, otherwise 0.0.
 BoolV3 IPVec3IsGreaterThan(vec3 x, vec3 y) {
-  return max(sign(x - y), 0);
+  return max(sign(x - y), 0.0);
 }
 
 /// Perform a branchless less than check.
 ///
 /// Returns 1.0 if x < y, otherwise 0.0.
 BoolF IPFloatIsLessThan(float x, float y) {
-  return max(sign(y - x), 0);
+  return max(sign(y - x), 0.0);
 }
 
 /// For each vec3 component, if value > cutoff, return b, otherwise return a.

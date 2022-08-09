@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 uniform FragInfo {
   vec4 color;
   float blur_radius;
@@ -16,7 +18,7 @@ out vec4 frag_color;
 
 // Simple logistic sigmoid with a domain of [-1, 1] and range of [0, 1].
 float Sigmoid(float x) {
-  return 1.03731472073 / (1 + exp(-4 * x)) - 0.0186573603638;
+  return 1.03731472073 / (1.0 + exp(-4.0 * x)) - 0.0186573603638;
 }
 
 float RRectDistance(vec2 sample_position, vec2 rect_size, float corner_radius) {

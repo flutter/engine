@@ -13,6 +13,8 @@
 //     reduced in the first pass by sampling the source textures with a mip
 //     level of log2(min_radius).
 
+precision mediump float;
+
 #include <impeller/constants.glsl>
 #include <impeller/texture.glsl>
 
@@ -49,8 +51,8 @@ float Gaussian(float x) {
 }
 
 void main() {
-  vec4 total_color = vec4(0);
-  float gaussian_integral = 0;
+  vec4 total_color = vec4(0.0);
+  float gaussian_integral = 0.0;
   vec2 blur_uv_offset = frag_info.blur_direction / frag_info.texture_size;
 
   for (float i = -frag_info.blur_radius; i <= frag_info.blur_radius; i++) {
@@ -74,8 +76,8 @@ void main() {
                            1.0,                   // y coordinate scale
                            frag_info.tile_mode    // tile mode
       );
-  float blur_factor = frag_info.inner_blur_factor * float(src_color.a > 0) +
-                      frag_info.outer_blur_factor * float(src_color.a == 0);
+  float blur_factor = frag_info.inner_blur_factor * float(src_color.a > 0.0) +
+                      frag_info.outer_blur_factor * float(src_color.a == 0.0);
 
   frag_color = blur_color * blur_factor + src_color * frag_info.src_factor;
 }

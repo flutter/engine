@@ -252,12 +252,12 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
   // here are irrelevant and get in the way of generating reflection code.
   spirv_options.SetGenerateDebugInfo();
 
-  // Expects GLSL 4.60 (Core Profile).
-  // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
+  // Expects GLSL ES 3.20.
+  // https://registry.khronos.org/OpenGL/specs/es/3.2/GLSL_ES_Specification_3.20.pdf
   spirv_options.SetSourceLanguage(
       shaderc_source_language::shaderc_source_language_glsl);
-  spirv_options.SetForcedVersionProfile(460,
-                                        shaderc_profile::shaderc_profile_core);
+  spirv_options.SetForcedVersionProfile(320,
+                                        shaderc_profile::shaderc_profile_es);
   SetLimitations(spirv_options);
 
   switch (source_options.target_platform) {

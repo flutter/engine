@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
 #include <impeller/blending.glsl>
 #include <impeller/color.glsl>
 #include <impeller/texture.glsl>
@@ -29,7 +31,7 @@ void main() {
       blend_info.dst_y_coord_scale,  // y coordinate scale
       kTileModeDecal                 // tile mode
       ));
-  vec4 src = blend_info.color_factor > 0
+  vec4 src = blend_info.color_factor > 0.0
                  ? blend_info.color
                  : IPUnpremultiply(IPSampleWithTileMode(
                        texture_sampler_src,           // sampler

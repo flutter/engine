@@ -5,12 +5,12 @@
 #ifndef CONSTANTS_GLSL_
 #define CONSTANTS_GLSL_
 
-const float kEhCloseEnough = 0.000001;
+const mediump float kEhCloseEnough = 0.000001;
 
 // 1 / (2 * pi)
-const float k1Over2Pi = 0.1591549430918;
+const mediump float k1Over2Pi = 0.1591549430918;
 
 // sqrt(2 * pi)
-const float kSqrtTwoPi = 2.50662827463;
+const mediump float kSqrtTwoPi = 2.50662827463;
 
 #endif
