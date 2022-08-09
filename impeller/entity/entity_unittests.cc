@@ -1396,15 +1396,15 @@ TEST_P(EntityTest, RRectShadowTest) {
 TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   // Set up a simple color background.
   auto fill = std::make_shared<SolidColorContents>();
-  fill->SetPath(PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath());
+  fill->SetPath(
+      PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath());
   fill->SetColor(Color::Coral());
 
   // Set the color matrix filter.
-  FilterContents::ColorMatrix  matrix = {1, 1, 1, 1, 1,
-                                          1, 1, 1, 1, 1,
-                                          1, 1, 1, 1, 1,
-                                          1, 1, 1, 1, 1};
-  auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
+  FilterContents::ColorMatrix matrix = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  auto filter =
+      FilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1423,11 +1423,10 @@ TEST_P(EntityTest, ColorMatrixFilter) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     // Set the color matrix filter.
-    FilterContents::ColorMatrix  matrix = {1, 0, 0, 0, 0,
-                                            0, 3, 0, 0, 0,
-                                            0, 0, 1, 0, 0,
-                                            0, 0, 0, 1, 0};
-    auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(image), matrix);
+    FilterContents::ColorMatrix matrix = {1, 0, 0, 0, 0, 0, 3, 0, 0, 0,
+                                          0, 0, 1, 0, 0, 0, 0, 0, 1, 0};
+    auto filter =
+        FilterContents::MakeColorMatrix(FilterInput::Make(image), matrix);
 
     // Define the entity with the color matrix filter.
     Entity entity;
@@ -1456,22 +1455,22 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
     }
 
     // UI state.
-    static FilterContents::ColorMatrix color_matrix = {1, 0, 0, 0, 0,
-                                                      0, 3, 0, 0, 0,
-                                                      0, 0, 1, 0, 0,
-                                                      0, 0, 0, 1, 0};
+    static FilterContents::ColorMatrix color_matrix = {
+        1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0};
 
     // Define the ImGui
     ImGui::Begin("Color Matrix");
     char label[4] = "##1";
     for (int i = 0; i < 20; i += 5) {
-      ImGui::InputScalarN(label, ImGuiDataType_Float, &(color_matrix.array[i]), 5, NULL, NULL, "%.2f", 0);
+      ImGui::InputScalarN(label, ImGuiDataType_Float, &(color_matrix.array[i]),
+                          5, NULL, NULL, "%.2f", 0);
       label[2]++;
     }
     ImGui::End();
 
     // Set the color matrix filter.
-    auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(bay_bridge), color_matrix);
+    auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(bay_bridge),
+                                                  color_matrix);
 
     // Define the entity with the color matrix filter.
     Entity entity;
