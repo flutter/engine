@@ -3899,6 +3899,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 
   /// Creates a fragment program from SPIR-V byte data as an input.
   ///
+<<<<<<< HEAD
   /// One instance should be created per SPIR-V input. The constructed object
   /// should then be reused via the [shader] method to create [Shader] objects
   /// that can be used by [Shader.paint].
@@ -3912,6 +3913,56 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     // Delay compilation without creating a timer, which interacts poorly with the
     // flutter test framework. See: https://github.com/flutter/flutter/issues/104084
     return Future<FragmentProgram>.microtask(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
+=======
+  /// The asset must be a file produced as the output of the `impellerc`
+  /// compiler. The constructed object should then be reused via the [shader]
+  /// method to create [Shader] objects that can be used by [Shader.paint].
+  static Future<FragmentProgram> fromAsset(String assetKey) {
+    // The flutter tool converts all asset keys with spaces into URI
+    // encoded paths (replacing ' ' with '%20', for example). We perform
+    // the same encoding here so that users can load assets with the same
+    // key they have written in the pubspec.
+    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
+    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    if (program != null) {
+      return Future<FragmentProgram>.value(program);
+    }
+    return Future<FragmentProgram>.microtask(() {
+      final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
+      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      return program;
+    });
+  }
+
+  // This is a cache of shaders that have been loaded by
+  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
+  // so that the case where an in-use program is requested again can be fast,
+  // but programs that are no longer referenced are not retained because of the
+  // cache.
+  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
+      <String, WeakReference<FragmentProgram>>{};
+
+  static void _reinitializeShader(String assetKey) {
+    // If a shader for the assent isn't already registered, then there's no
+    // need to reinitialize it. The new shader will be loaded and initialized
+    // the next time the program access it.
+    final WeakReference<FragmentProgram>? programRef = _shaderRegistry == null
+      ? null
+      : _shaderRegistry[assetKey];
+    if (programRef == null) {
+      return;
+    }
+
+    final FragmentProgram? program = programRef.target;
+    if (program == null) {
+      return;
+    }
+
+    final String result = program._initFromAsset(assetKey);
+    if (result.isNotEmpty) {
+      throw result; // ignore: only_throw_errors
+    }
+>>>>>>> e79d12a8e3... Automatically URI encode asset keys (#35270)
   }
 
   @pragma('vm:entry-point')
@@ -5674,9 +5725,14 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
   ///
   /// Throws an [Exception] if the asset does not exist.
   static Future<ImmutableBuffer> fromAsset(String assetKey) {
+    // The flutter tool converts all asset keys with spaces into URI
+    // encoded paths (replacing ' ' with '%20', for example). We perform
+    // the same encoding here so that users can load assets with the same
+    // key they have written in the pubspec.
+    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
     final ImmutableBuffer instance = ImmutableBuffer._(0);
     return _futurize((_Callback<int> callback) {
-      return instance._initFromAsset(assetKey, callback);
+      return instance._initFromAsset(encodedKey, callback);
     }).then((int length) => instance.._length = length);
   }
 
