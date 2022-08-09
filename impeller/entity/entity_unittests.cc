@@ -1460,9 +1460,10 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
 
     // Define the ImGui
     ImGui::Begin("Color Matrix");
-    char label[4] = "##1";
+    std::string label = "##1";
+    label.c_str();
     for (int i = 0; i < 20; i += 5) {
-      ImGui::InputScalarN(label, ImGuiDataType_Float, &(color_matrix.array[i]),
+      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(color_matrix.array[i]),
                           5, NULL, NULL, "%.2f", 0);
       label[2]++;
     }
