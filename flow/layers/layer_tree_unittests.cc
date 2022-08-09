@@ -195,12 +195,6 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
 }
 
 TEST_F(LayerTreeTest, PrerollContextInitialization) {
-  // This EXPECT macro will ensure that if any fields get added to the
-  // PrerollContext that this test must be revisited and updated.
-  // If any fields get removed or replaced, then the expect_defaults closure
-  // will fail to compile, again bringing attention to updating this test.
-  EXPECT_EQ(sizeof(PrerollContext), size_t(120));
-
   MutatorsStack mock_mutators;
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
@@ -240,12 +234,6 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
 }
 
 TEST_F(LayerTreeTest, PaintContextInitialization) {
-  // This EXPECT macro will ensure that if any fields get added to the
-  // PaintContext that this test must be revisited and updated.
-  // If any fields get removed or replaced, then the expect_defaults closure
-  // will fail to compile, again bringing attention to updating this test.
-  EXPECT_EQ(sizeof(PaintContext), size_t(112));
-
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
   std::shared_ptr<TextureRegistry> mock_registry;
