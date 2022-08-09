@@ -85,8 +85,6 @@ user_pref("dom.max_script_run_time", 0);
         url.toString(),
         '--profile',
         temporaryProfileDirectory.path,
-        if (!debug)
-          '--headless',
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
         // On Mac Firefox uses the -- option prefix, while elsewhere it uses the - prefix.
