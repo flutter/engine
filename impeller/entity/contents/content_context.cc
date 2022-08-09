@@ -155,6 +155,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
+  sweep_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
+  rrect_blur_pipelines_[{}] =
+      CreateDefaultPipeline<RRectBlurPipeline>(*context_);
   texture_blend_pipelines_[{}] =
       CreateDefaultPipeline<BlendPipeline>(*context_);
   blend_color_pipelines_[{}] =
@@ -196,6 +200,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
   vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
+  atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.
   // TODO(98684): Rework this API to allow fetching the descriptor without
@@ -238,7 +243,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  auto sub_command_buffer = context->CreateRenderCommandBuffer();
+  auto sub_command_buffer = context->CreateCommandBuffer();
   sub_command_buffer->SetLabel("Offscreen Contents Command Buffer");
   if (!sub_command_buffer) {
     return nullptr;
@@ -254,7 +259,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands(context->GetTransientsAllocator())) {
+  if (!sub_renderpass->EncodeCommands(context->GetResourceAllocator())) {
     return nullptr;
   }
 

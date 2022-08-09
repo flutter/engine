@@ -8,7 +8,6 @@ import 'package:args/command_runner.dart';
 
 import 'build.dart';
 import 'clean.dart';
-import 'create_simulator.dart';
 import 'exceptions.dart';
 import 'generate_fallback_font_data.dart';
 import 'licenses.dart';
@@ -22,7 +21,6 @@ CommandRunner<bool> runner = CommandRunner<bool>(
 )
   ..addCommand(BuildCommand())
   ..addCommand(CleanCommand())
-  ..addCommand(CreateSimulatorCommand())
   ..addCommand(GenerateFallbackFontDataCommand())
   ..addCommand(LicensesCommand())
   ..addCommand(RunCommand())

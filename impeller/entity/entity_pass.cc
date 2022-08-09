@@ -154,7 +154,7 @@ bool EntityPass::Render(ContentContext& renderer,
       return false;
     }
 
-    auto command_buffer = renderer.GetContext()->CreateRenderCommandBuffer();
+    auto command_buffer = renderer.GetContext()->CreateCommandBuffer();
     command_buffer->SetLabel("EntityPass Root Command Buffer");
     auto render_pass = command_buffer->CreateRenderPass(render_target);
     render_pass->SetLabel("EntityPass Root Render Pass");
@@ -174,7 +174,7 @@ bool EntityPass::Render(ContentContext& renderer,
     }
 
     if (!render_pass->EncodeCommands(
-            renderer.GetContext()->GetTransientsAllocator())) {
+            renderer.GetContext()->GetResourceAllocator())) {
       return false;
     }
     if (!command_buffer->SubmitCommands()) {
@@ -252,7 +252,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     auto subpass_coverage =
         GetSubpassCoverage(*subpass, Rect::MakeSize(root_pass_size));
-
+    if (subpass->cover_whole_screen) {
+      subpass_coverage = Rect(
+          position, Size(pass_context.GetRenderTarget().GetRenderTargetSize()));
+    }
     if (backdrop_contents) {
       auto backdrop_coverage = backdrop_contents->GetCoverage(Entity{});
       if (backdrop_coverage.has_value()) {
@@ -501,6 +504,7 @@ void EntityPass::SetStencilDepth(size_t stencil_depth) {
 
 void EntityPass::SetBlendMode(Entity::BlendMode blend_mode) {
   blend_mode_ = blend_mode;
+  cover_whole_screen = Entity::BlendModeShouldCoverWholeScreen(blend_mode);
 }
 
 void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
