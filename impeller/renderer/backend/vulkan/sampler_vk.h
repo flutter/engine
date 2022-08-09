@@ -16,7 +16,7 @@ class SamplerLibraryVK;
 
 class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
  public:
-  SamplerVK();
+  SamplerVK(SamplerDescriptor desc, vk::UniqueSampler sampler);
 
   // |Sampler|
   ~SamplerVK() override;
@@ -26,8 +26,6 @@ class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
 
   vk::UniqueSampler sampler_;
   bool is_valid_ = false;
-
-  SamplerVK(SamplerDescriptor desc, vk::UniqueSampler sampler);
 
   // |Sampler|
   bool IsValid() const override;

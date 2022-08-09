@@ -47,6 +47,7 @@ std::shared_ptr<const Sampler> SamplerLibraryVK::GetSampler(
   }
 
   auto sampler = std::make_shared<SamplerVK>(desc, std::move(res.value));
+
   if (!sampler->IsValid()) {
     return nullptr;
   }
