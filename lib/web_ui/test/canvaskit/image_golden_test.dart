@@ -602,10 +602,12 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         final CkPictureRecorder recorder = CkPictureRecorder();
         final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.save();
-        canvas.drawImage(image, ui.Offset.zero, CkPaint());
+        canvas.drawImage(image as CkImage, ui.Offset.zero, CkPaint());
         canvas.restore();
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
       }
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
       dispatcher.rasterizer!.draw(sb.build().layerTree);
       await matchGoldenFile(
         'canvaskit_picture_texture_toimage',
