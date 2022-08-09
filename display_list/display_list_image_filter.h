@@ -5,9 +5,6 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 
-#include <algorithm>
-#include <memory>
-#include <vector>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
@@ -158,8 +155,6 @@ class DlImageFilter
   virtual MatrixCapability matrix_capability() const {
     return MatrixCapability::kScaleTranslate;
   }
-
-  virtual std::vector<const DlImageFilter*> filters() const { return {this}; }
 
  protected:
   static SkVector map_vectors_affine(const SkMatrix& ctm,
@@ -678,7 +673,12 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
     return this;
   }
 
-  bool modifies_transparent_black() const override { return false; }
+  bool modifies_transparent_black() const override {
+    if (!image_filter_) {
+      return false;
+    }
+    return image_filter_->modifies_transparent_black();
+  }
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
@@ -719,7 +719,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   bool equals_(const DlImageFilter& other) const override {
     FML_DCHECK(other.type() == DlImageFilterType::kMatrix);
     auto that = static_cast<const DlLocalMatrixImageFilter*>(&other);
-    return (matrix_ == that->matrix_ && image_filter_ == that->image_filter_);
+    return (matrix_ == that->matrix_ &&
+            Equals(image_filter_, that->image_filter_));
   }
 
  private:

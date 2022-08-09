@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <memory>
-#include <vector>
 #include "flutter/display_list/display_list_attributes_testing.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
@@ -15,13 +13,6 @@
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
-#include "include/core/SkColorFilter.h"
-#include "include/core/SkImageFilter.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkTileMode.h"
 
 namespace flutter {
 namespace testing {
@@ -802,7 +793,7 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
               dl_color_filter.shared()))};
 
   auto persp = SkMatrix::I();
-  persp.setPerspY(10);
+  persp.setPerspY(0.001);
   std::vector<SkMatrix> matrices = {
       SkMatrix::Translate(10.0, 10.0),
       SkMatrix::Scale(2.0, 2.0).preTranslate(10.0, 10.0),
@@ -817,18 +808,19 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
         auto& bounds_matrix = bounds_matrices[k];
         auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
         auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
+        if (!sk_local_filter || !dl_local_filter) {
+          ASSERT_TRUE(!sk_local_filter);
+          ASSERT_TRUE(!dl_local_filter);
+          continue;
+        }
         {
           auto inputBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
           SkIRect sk_rect, dl_rect;
-          if (sk_local_filter) {
-            sk_rect = sk_local_filter->filterBounds(
-                inputBounds, bounds_matrix,
-                SkImageFilter::MapDirection::kForward_MapDirection);
-          }
-          if (dl_local_filter) {
-            dl_local_filter->map_device_bounds(inputBounds, bounds_matrix,
-                                               dl_rect);
-          }
+          sk_rect = sk_local_filter->filterBounds(
+              inputBounds, bounds_matrix,
+              SkImageFilter::MapDirection::kForward_MapDirection);
+          dl_local_filter->map_device_bounds(inputBounds, bounds_matrix,
+                                             dl_rect);
           ASSERT_EQ(sk_rect, dl_rect);
         }
         {
@@ -841,15 +833,11 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
           }
           auto outsetBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
           SkIRect sk_rect, dl_rect;
-          if (sk_local_filter) {
-            sk_rect = sk_local_filter->filterBounds(
-                outsetBounds, bounds_matrix,
-                SkImageFilter::MapDirection::kReverse_MapDirection);
-          }
-          if (dl_local_filter) {
-            dl_local_filter->get_input_device_bounds(outsetBounds,
-                                                     bounds_matrix, dl_rect);
-          }
+          sk_rect = sk_local_filter->filterBounds(
+              outsetBounds, bounds_matrix,
+              SkImageFilter::MapDirection::kReverse_MapDirection);
+          dl_local_filter->get_input_device_bounds(outsetBounds, bounds_matrix,
+                                                   dl_rect);
           ASSERT_EQ(sk_rect, dl_rect);
         }
       }
