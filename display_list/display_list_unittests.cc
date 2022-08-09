@@ -1712,6 +1712,26 @@ TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
+TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.saveLayer(nullptr, false);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.scale(2, 2);
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.saveLayer(nullptr, false);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.scale(2, 2);
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
 TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
   SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
   SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
@@ -1767,176 +1787,413 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
   }
 }
 
-TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
-  // Translate
+TEST(DisplayList, TranslateTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.saveLayer(nullptr, false);
+  builder1.translate(10, 10);
+  builder1.scale(2, 2);
+  builder1.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.saveLayer(nullptr, false);
+  builder2.translate(10, 10);
+  builder2.scale(2, 2);
+  builder2.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, TransformTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform(SkM44::Translate(10, 100));
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44::Translate(10, 100));
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transform(SkM44::Translate(10, 100));
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.save();
+  builder2.transform(SkM44::Translate(10, 100));
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, Transform2DTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform2DAffine(0, 1, 12, 1, 0, 33);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transform2DAffine(0, 1, 12, 1, 0, 33);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, TransformPerspectiveTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0, 0,
+                                    0, 12);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0, 0,
+                                    0, 12);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ResetTransformTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transformReset();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transformReset();
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, SkewTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.skew(10, 10);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.skew(10, 10);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+TEST(DisplayList, ScaleTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.scale(0.5, 0.5);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.scale(0.5, 0.5);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ClipRectTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
+                    true);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
+                    true);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.transform(SkM44());
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ClipRRectTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipRRect(kTestRRect, SkClipOp::kIntersect, true);
+
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.clipRRect(kTestRRect, SkClipOp::kIntersect, true);
+
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.transform(SkM44());
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ClipPathTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipPath(kTestPath1, SkClipOp::kIntersect, true);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.clipPath(kTestPath1, SkClipOp::kIntersect, true);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.transform(SkM44());
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTranslateDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.translate(0, 0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPScaleDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.scale(1.0, 1.0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPRotationDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.rotate(360);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPSkewDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.skew(0, 0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTransformDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTransform2DDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform2DAffine(1, 0, 0, 0, 1, 0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
   {
     DisplayListBuilder builder1;
     builder1.save();
-    builder1.saveLayer(nullptr, false);
-    builder1.translate(10, 10);
-    builder1.scale(2, 2);
-    builder1.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+    builder1.save();
+    builder1.transformFullPerspective(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,
+                                      0, 1);
     builder1.drawRect({0, 0, 100, 100});
     builder1.restore();
+    builder1.drawRect({0, 0, 100, 100});
     builder1.restore();
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    builder2.saveLayer(nullptr, false);
-    builder2.translate(10, 10);
-    builder2.scale(2, 2);
-    builder2.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
     builder2.drawRect({0, 0, 100, 100});
-    builder2.restore();
+    builder2.drawRect({0, 0, 100, 100});
     auto display_list2 = builder2.Build();
 
     ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
   }
-  // Transform
+
   {
     DisplayListBuilder builder1;
     builder1.save();
     builder1.save();
-    builder1.transform(SkM44::Translate(10, 100));
+    builder1.transformFullPerspective(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,
+                                      0, 1);
+    builder1.transformReset();
     builder1.drawRect({0, 0, 100, 100});
     builder1.restore();
-    builder1.transform(SkM44::Translate(10, 100));
     builder1.drawRect({0, 0, 100, 100});
     builder1.restore();
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
     builder2.save();
-    builder2.transform(SkM44::Translate(10, 100));
+    builder2.transformReset();
     builder2.drawRect({0, 0, 100, 100});
     builder2.restore();
-    builder2.save();
-    builder2.transform(SkM44::Translate(10, 100));
     builder2.drawRect({0, 0, 100, 100});
-    builder2.restore();
+
     auto display_list2 = builder2.Build();
 
     ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
   }
-  // Skew
-  {
-    DisplayListBuilder builder1;
-    builder1.save();
-    builder1.save();
-    builder1.skew(10, 10);
-    builder1.drawRect({0, 0, 100, 100});
-    builder1.restore();
-    auto display_list1 = builder1.Build();
+}
 
-    DisplayListBuilder builder2;
-    builder2.save();
-    builder2.skew(10, 10);
-    builder2.drawRect({0, 0, 100, 100});
-    builder2.restore();
-    auto display_list2 = builder2.Build();
+TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipRect(SkRect::MakeLTRB(0, SK_ScalarNaN, SK_ScalarNaN, 0),
+                    SkClipOp::kIntersect, true);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
 
-    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
-  }
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
 
-  // Scale
-  {
-    DisplayListBuilder builder1;
-    builder1.save();
-    builder1.save();
-    builder1.scale(0.5, 0.5);
-    builder1.drawRect({0, 0, 100, 100});
-    builder1.restore();
-    auto display_list1 = builder1.Build();
-
-    DisplayListBuilder builder2;
-    builder2.save();
-    builder2.scale(0.5, 0.5);
-    builder2.drawRect({0, 0, 100, 100});
-    builder2.restore();
-    auto display_list2 = builder2.Build();
-
-    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
-  }
-
-  {
-    DisplayListBuilder builder1;
-    builder1.save();
-    builder1.save();
-    builder1.transform(SkM44());
-    builder1.drawRect({0, 0, 100, 100});
-    builder1.restore();
-    builder1.transform(SkM44());
-    builder1.drawRect({0, 0, 100, 100});
-    builder1.restore();
-    auto display_list1 = builder1.Build();
-
-    DisplayListBuilder builder2;
-    builder2.drawRect({0, 0, 100, 100});
-    builder2.drawRect({0, 0, 100, 100});
-    auto display_list2 = builder2.Build();
-
-    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
-  }
-  // Clip
-  {
-    DisplayListBuilder builder1;
-    builder1.save();
-    builder1.save();
-    builder1.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
-                      true);
-    builder1.drawRect({0, 0, 100, 100});
-    builder1.restore();
-    builder1.transform(SkM44());
-    builder1.drawRect({0, 0, 100, 100});
-    builder1.restore();
-    auto display_list1 = builder1.Build();
-
-    DisplayListBuilder builder2;
-    builder2.save();
-    builder2.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
-                      true);
-    builder2.drawRect({0, 0, 100, 100});
-    builder2.restore();
-    builder2.transform(SkM44());
-    builder2.drawRect({0, 0, 100, 100});
-    auto display_list2 = builder2.Build();
-
-    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
-  }
-
-  std::unordered_set<std::string> function_names = {"Translate",
-                                                    "Scale",
-                                                    "Skew",
-                                                    "Transform2d",
-                                                    "TransformFullPerspective",
-                                                    "ClipRect",
-                                                    "ClipPath",
-                                                    "ClipRRect"};
-
-  for (auto& group : allGroups) {
-    if (function_names.find(group.op_name) == function_names.cend()) {
-      continue;
-    }
-    for (size_t i = 0; i < group.variants.size(); i++) {
-      auto& invocation = group.variants[i];
-      DisplayListBuilder builder1;
-      builder1.save();
-      builder1.save();
-      invocation.invoker(builder1);
-      builder1.drawRect({0, 0, 100, 100});
-      builder1.restore();
-
-      auto display_list1 = builder1.Build();
-
-      DisplayListBuilder builder2;
-      builder2.save();
-      invocation.invoker(builder2);
-      builder2.drawRect({0, 0, 100, 100});
-      builder2.restore();
-      auto display_list2 = builder2.Build();
-      ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
-    }
-  }
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
 TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
