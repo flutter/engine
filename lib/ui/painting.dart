@@ -1648,6 +1648,9 @@ class Image {
       _debugStack = StackTrace.current;
       return true;
     }());
+    if (onCreate != null) {
+      onCreate!();
+    }
     _image._handles.add(this);
   }
 
@@ -1662,6 +1665,20 @@ class Image {
 
   /// The number of image pixels along the image's vertical axis.
   final int height;
+
+  /// A callback that is invoked to report an object creation.
+  ///
+  /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart 
+  /// than to use [onCreate] directly because [MemoryAllocations]
+  /// allows multiple callbacks.
+  void Function()? onCreate;
+
+  /// A callback that is invoked to report the object disposal.
+  ///
+  /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart 
+  /// than to use [onDispose] directly because [MemoryAllocations]
+  /// allows multiple callbacks.
+  void Function()? onDispose;
 
   bool _disposed = false;
   /// Release this handle's claim on the underlying Image. This handle is no
