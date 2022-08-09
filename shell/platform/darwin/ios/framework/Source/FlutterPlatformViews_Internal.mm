@@ -116,8 +116,7 @@ void ResetAnchor(CALayer* layer) {
       break;
     }
   }
-  //  [self.blurEffectView release];
-
+  
   return gaussianFilter;
 }
 
@@ -134,31 +133,39 @@ void ResetAnchor(CALayer* layer) {
       return NO;
     }
   }
-
-  BOOL updatedFilters = NO;
-
-  // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
-  while ([blurRadii count] > [_activeGaussianFilters count]) {
-    // copy returns a deep copy of _gaussianFilter
-    [_activeGaussianFilters addObject:[_gaussianFilter copy]];
-    updatedFilters = YES;
-  }
-  while ([blurRadii count] < [_activeGaussianFilters count]) {
-    [_activeGaussianFilters removeLastObject];
-    updatedFilters = YES;
-  }
-
-  for (NSUInteger i = 0; i < [blurRadii count]; i++) {
-    if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i]) {
-      continue;
+  
+  // Becomes YES if _activeGaussianFilters must be updated
+  BOOL updateActiveFilters = NO;
+  
+  if ([blurRadii count] != [_activeGaussianFilters count]) {
+    updateActiveFilters = YES;
+    
+    // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
+    while ([blurRadii count] > [_activeGaussianFilters count]) {
+      // copy returns a deep copy of _gaussianFilter
+      [_activeGaussianFilters addObject:[_gaussianFilter copy]];
     }
-    [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
-    updatedFilters = YES;
+    while ([blurRadii count] < [_activeGaussianFilters count]) {
+      [_activeGaussianFilters removeLastObject];
+    }
+    
+  } else {
+    for(NSUInteger i = 0; i < [blurRadii count]; i++) {
+      if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] != blurRadii[i]) {
+        updateActiveFilters = YES;
+        break;
+      }
+    }
   }
-
-  if (updatedFilters) {
+  
+  if(updateActiveFilters) {
+    for (NSUInteger i = 0; i < [blurRadii count]; i++) {
+      _activeGaussianFilters[i] = [_gaussianFilter copy];
+      [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
+    }
     self.layer.filters = _activeGaussianFilters;
   }
+  
   return YES;
 }
 
