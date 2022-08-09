@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../profiler.dart';
 import '../util.dart';
 import 'canvas.dart';
@@ -17,12 +20,12 @@ import 'skia_object_cache.dart';
 /// class may have their Skia counterparts deleted before finalization registry
 /// or [SkiaObjectCache] decide to delete it.
 class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
-  CkPicture(SkPicture super.picture, this.cullRect, this._snapshot) :
-    assert(
-      browserSupportsFinalizationRegistry && _snapshot == null ||
-          _snapshot != null,
-      'If the browser does not support FinalizationRegistry (WeakRef), then we must have a picture snapshot to be able to resurrect it.',
-    );
+  CkPicture(SkPicture super.picture, this.cullRect, this._snapshot)
+      : assert(
+          browserSupportsFinalizationRegistry && _snapshot == null ||
+              _snapshot != null,
+          'If the browser does not support FinalizationRegistry (WeakRef), then we must have a picture snapshot to be able to resurrect it.',
+        );
 
   final ui.Rect? cullRect;
   final CkPictureSnapshot? _snapshot;
@@ -35,7 +38,8 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     if (assertionsEnabled) {
       return _isDisposed;
     }
-    throw StateError('Picture.debugDisposed is only available when asserts are enabled.');
+    throw StateError(
+        'Picture.debugDisposed is only available when asserts are enabled.');
   }
 
   /// This is set to true when [dispose] is called and is never reset back to
@@ -97,12 +101,27 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   @override
   ui.Image toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
-    final SkSurface skSurface = canvasKit.MakeSurface(width, height);
+    final DomCanvasElement tempCanvas =
+        createDomCanvasElement(width: width, height: height);
+    final SkSurface skSurface = canvasKit.MakeWebGLCanvasSurface(tempCanvas);
     final SkCanvas skCanvas = skSurface.getCanvas();
     skCanvas.drawPicture(skiaObject);
     final SkImage skImage = skSurface.makeImageSnapshot();
+    final SkImageInfo imageInfo = SkImageInfo(
+      alphaType: canvasKit.AlphaType.Premul,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+      width: width,
+      height: height,
+    );
+    final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
+    final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, 4 * width);
     skSurface.dispose();
-    return CkImage(skImage);
+    tempCanvas.remove();
+    if (rasterImage == null) {
+      throw StateError('Unable to convert image pixels into SkImage.');
+    }
+    return CkImage(rasterImage);
   }
 
   @override
