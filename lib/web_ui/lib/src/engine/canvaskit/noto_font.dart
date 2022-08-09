@@ -3,11 +3,25 @@
 // found in the LICENSE file.
 
 class NotoFont {
+  const NotoFont(this.name, this.url, List<int> unicodeRanges) {
+    List<int> starts = <int>[];
+    List<int> ends = <int>[];
+    for (int i = 0; i < unicodeRanges.length; i += 2) {
+      starts.add(unicodeRanges[i]);
+      ends.add(unicodeRanges[i+1]);
+    }
+    this._rangeStarts = starts;
+    this._rangeEnds = ends;
+  }
+
   final String name;
   final String url;
-  final List<CodeunitRange> unicodeRanges;
+  // A sorted list of Unicode range start points.
+  final List<int> _rangeStarts;
 
-  const NotoFont(this.name, this.url, this.unicodeRanges);
+  // A sorted list of Unicode range end points.
+  final List<int> _rangeEnds;
+
 
   // Returns `true` if this font has a glyph for the given [codeunit].
   bool contains(int codeunit) {
@@ -18,8 +32,8 @@ class NotoFont {
       } else {
         // range.start <= codeunit
         if (range.end >= codeunit) {
-	  return true;
-	}
+          return true;
+        }
       }
     }
     return false;
@@ -27,10 +41,11 @@ class NotoFont {
 }
 
 class CodeunitRange {
+  const CodeunitRange(this.start, this.end);
+
   final int start;
   final int end;
 
-  const CodeunitRange(this.start, this.end);
 
   bool contains(int codeUnit) {
     return start <= codeUnit && codeUnit <= end;
