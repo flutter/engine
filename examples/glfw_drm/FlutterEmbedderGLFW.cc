@@ -14,6 +14,7 @@
 #include <array>
 #include <cstring>
 #include <list>
+#include <unordered_map>
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 #include "embedder.h"
@@ -29,6 +30,9 @@ static const int kMaxHistorySize = 10;
 // Keeps track of the most recent frame damages so that existing damage can
 // be easily computed.
 std::list<FlutterRect> damage_history_;
+
+// Keeps track of the existing damage associated with each FBO ID
+std::unordered_map<intptr_t, FlutterRect*> existing_damage_map_;
 
 EGLDisplay display_;
 EGLSurface surface_;
@@ -148,6 +152,9 @@ bool RunFlutter(GLFWwindow* window,
   };
   config.open_gl.present_with_info =
       [](void* userdata, const FlutterPresentInfo* info) -> bool {
+    // Free the existing damage that was allocated to this frame.
+    free(existing_damage_map_[info->fbo_id]);
+
     // Get list of extensions.
     const char* extensions = eglQueryString(display_, EGL_EXTENSIONS);
 
@@ -209,9 +216,13 @@ bool RunFlutter(GLFWwindow* window,
     }
 
     existing_damage->num_rects = 1;
-    std::array<FlutterRect, 1> existing_damage_rect = {
-        FlutterRect{0, 0, kInitialWindowWidth, kInitialWindowHeight}};
-    existing_damage->damage = existing_damage_rect.data();
+
+    // Allocate the array of rectangles for the existing damage.
+    existing_damage_map_[fbo_id] = static_cast<FlutterRect*>(
+        malloc(sizeof(FlutterRect) * existing_damage->num_rects));
+    existing_damage_map_[fbo_id][0] =
+        FlutterRect{0, 0, kInitialWindowWidth, kInitialWindowHeight};
+    existing_damage->damage = existing_damage_map_[fbo_id];
 
     if (age > 1) {
       --age;
