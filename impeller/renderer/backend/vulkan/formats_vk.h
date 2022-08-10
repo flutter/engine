@@ -151,7 +151,7 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
   }
 }
 
-constexpr PixelFormat VKFormatToPixelFormat(vk::Format format) {
+constexpr PixelFormat ToPixelFormat(vk::Format format) {
   switch (format) {
     case vk::Format::eUndefined:
       return PixelFormat::kUnknown;
@@ -175,7 +175,6 @@ constexpr PixelFormat VKFormatToPixelFormat(vk::Format format) {
       return PixelFormat::kS8UInt;
 
     default:
-      FML_DCHECK(false) << "unknown pixel format";
       return PixelFormat::kUnknown;
   }
 }

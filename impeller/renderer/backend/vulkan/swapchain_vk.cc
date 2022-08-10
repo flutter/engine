@@ -131,7 +131,7 @@ SwapchainImageVK* SwapchainVK::GetSwapchainImage(uint32_t image_index) const {
 }
 
 PixelFormat SwapchainImageVK::GetPixelFormat() const {
-  return VKFormatToPixelFormat(image_format_);
+  return ToPixelFormat(image_format_);
 }
 
 ISize SwapchainImageVK::GetSize() const {
