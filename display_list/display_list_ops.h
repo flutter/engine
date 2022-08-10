@@ -263,7 +263,7 @@ struct SetRuntimeEffectColorSourceOp : DLOp {
     dispatcher.setColorSource(&source);
   }
 
-  DisplayListCompare equals(const SetSharedImageFilterOp* other) const {
+  DisplayListCompare equals(const SetRuntimeEffectColorSourceOp* other) const {
     return (source == other->source) ? DisplayListCompare::kEqual
                                      : DisplayListCompare::kNotEqual;
   }
