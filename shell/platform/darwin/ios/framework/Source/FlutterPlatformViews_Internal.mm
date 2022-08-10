@@ -57,11 +57,6 @@ void ResetAnchor(CALayer* layer) {
 
 }  // namespace flutter
 
-@interface ChildClippingView ()
-// The gaussianFilters currently applied to this ChildClippingView.
-@property(nonatomic, retain) NSMutableArray* activeGaussianFilters;
-@end
-
 @implementation ChildClippingView {
   // A gaussianFilter from UIVisualEffectView that can be copied for new backdrop filters.
   NSObject* _gaussianFilter;
@@ -121,9 +116,11 @@ void ResetAnchor(CALayer* layer) {
 }
 
 - (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii {
-  if (!_activeGaussianFilters) {
-    _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
-
+  // The outer if-statement checks for the first time this method is called and _gaussianFilter is
+  // not initialized. The inner if-statement checks if extracting the gaussianBlur was successful.
+  // If it was not successful, this method will not be called again. Thus the if-statements check
+  // for different conditions.
+  if (!_gaussianFilter) {
     _gaussianFilter = [self extractGaussianFilter];
 
     if (!_gaussianFilter) {
@@ -133,37 +130,34 @@ void ResetAnchor(CALayer* layer) {
     }
   }
 
-  // Becomes YES if _activeGaussianFilters must be updated
-  BOOL updateActiveFilters = NO;
+  BOOL newRadiusValues = NO;
 
-  if ([blurRadii count] != [_activeGaussianFilters count]) {
-    updateActiveFilters = YES;
+  if ([blurRadii count] != [self.layer.filters count]) {
+    newRadiusValues = YES;
   } else {
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
-      if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] != blurRadii[i]) {
-        updateActiveFilters = YES;
+      if ([self.layer.filters[i] valueForKey:@"inputRadius"] != blurRadii[i]) {
+        newRadiusValues = YES;
         break;
       }
     }
   }
 
-  if (updateActiveFilters) {
-    [_activeGaussianFilters removeAllObjects];
+  if (newRadiusValues) {
+    NSMutableArray* newGaussianFilters =
+        [[[NSMutableArray alloc] initWithCapacity:[blurRadii count]] autorelease];
 
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
-      [_activeGaussianFilters addObject: [[_gaussianFilter copy] autorelease]];
-      [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
+      newGaussianFilters[i] = [_gaussianFilter copy];
+      [newGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
     }
-    self.layer.filters = _activeGaussianFilters;
+    self.layer.filters = newGaussianFilters;
   }
 
   return YES;
 }
 
 - (void)dealloc {
-  [_activeGaussianFilters release];
-  _activeGaussianFilters = nil;
-  
   [self.blurEffectView release];
 
   [_gaussianFilter release];
