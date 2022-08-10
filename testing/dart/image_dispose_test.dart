@@ -16,8 +16,13 @@ void main() {
     return true;
   }());
 
+  tearDown((){
+    Image.onDispose = null; 
+    Image.onCreate = null; 
+  });
+
   test('Handles are distinct', () async {
-    final Uint8List bytes = await readFile('2x2.png');
+    final Uint8List bytes = await _readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
     final FrameInfo frame = await codec.getNextFrame();
 
@@ -36,7 +41,7 @@ void main() {
   });
 
   test('Canvas can paint image from handle and byte data from handle', () async {
-    final Uint8List bytes = await readFile('2x2.png');
+    final Uint8List bytes = await _readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
     final FrameInfo frame = await codec.getNextFrame();
 
@@ -66,7 +71,7 @@ void main() {
   });
 
   test('Records stack traces', () async {
-    final Uint8List bytes = await readFile('2x2.png');
+    final Uint8List bytes = await _readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
     final FrameInfo frame = await codec.getNextFrame();
 
@@ -92,7 +97,7 @@ void main() {
   }, skip: !assertsEnabled);
 
   test('Clones can be compared', () async {
-    final Uint8List bytes = await readFile('2x2.png');
+    final Uint8List bytes = await _readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
     final FrameInfo frame = await codec.getNextFrame();
 
@@ -115,7 +120,7 @@ void main() {
   });
 
   test('debugDisposed works', () async {
-    final Uint8List bytes = await readFile('2x2.png');
+    final Uint8List bytes = await _readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
     final FrameInfo frame = await codec.getNextFrame();
 
@@ -132,9 +137,36 @@ void main() {
       expect(() => frame.image.debugDisposed, throwsStateError);
     }
   });
+
+  test('dispose() invokes onDispose once', () async {
+    int onDisposeInvokedCount = 0;
+    int instanceHashCode = 0;
+    Image.onDispose = (obj) {
+      onDisposeInvokedCount++; 
+      instanceHashCode = identityHashCode(obj);
+    };
+
+    final image1 = _createPicture().toImage()..dispose();
+
+    expect(onDisposeInvokedCount, 1);
+    expect(instanceHashCode, identityHashCode(image1));
+
+    final image2 = _createPicture().toImage()..dispose();
+    
+    expect(onDisposeInvokedCount, 2);
+    expect(instanceHashCode, identityHashCode(image2));
+  }
 }
 
-Future<Uint8List> readFile(String fileName) async {
+Picture _createPicture() {
+  final recorder = PictureRecorder();
+  final canvas = Canvas(recorder);
+  var rect = Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
+  canvas.clipRect(rect);
+  return recorder.endRecording();
+}
+
+Future<Uint8List> _readFile(String fileName) async {
   final File file = File(path.join(
     'flutter',
     'testing',
