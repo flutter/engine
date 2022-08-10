@@ -5602,9 +5602,7 @@ class Picture extends NativeFieldWrapperClass1 {
   ///
   /// To create a [Picture], use a [PictureRecorder].
   @pragma('vm:entry-point')
-  Picture._() {
-    onCreate?.call(this);
-  }
+  Picture._() { onCreate?.call(this); }
 
   /// A callback that is invoked to report an object creation.
   ///
