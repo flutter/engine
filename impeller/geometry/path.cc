@@ -232,6 +232,7 @@ Path::Polyline Path::CreatePolyline(
       return;
     }
 
+    size_t previous_size = polyline.points.size();
     polyline.points.reserve(polyline.points.size() + collection.size());
 
     bool duplicated = false;
@@ -245,7 +246,7 @@ Path::Polyline Path::CreatePolyline(
       previous_contour_point = point;
       polyline.points.push_back(point);
     }
-    if (polyline.points.size() == 1 && duplicated) {
+    if (duplicated && polyline.points.size() == previous_size + 1) {
       polyline.points.push_back(polyline.points.back());
     }
   };
