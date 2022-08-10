@@ -302,6 +302,7 @@ void DisplayListDispatcher::setColorSource(
     }
     case flutter::DlColorSourceType::kImage:
     case flutter::DlColorSourceType::kConicalGradient:
+    case flutter::DlColorSourceType::kRuntimeEffect:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;

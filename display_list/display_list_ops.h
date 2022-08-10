@@ -5,6 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_OPS_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_OPS_H_
 
+#include "display_list_color_source.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_dispatcher.h"
@@ -240,6 +241,23 @@ struct SetImageColorSourceOp : DLOp {
                source->matrix_ptr()) {}
 
   const DlImageColorSource source;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorSource(&source);
+  }
+};
+
+// 4 byte header + 80 bytes for the embedded DlImageColorSource
+// uses 84 total bytes (4 bytes unused)
+struct SetRuntimeEffectColorSourceOp : DLOp {
+  static const auto kType = DisplayListOpType::kSetRuntimeEffectColorSource;
+
+  SetRuntimeEffectColorSourceOp(const DlRuntimeEffectColorSource* source)
+      : source(source->runtime_effect(),
+               source->samplers(),
+               source->uniform_data()) {}
+
+  const DlRuntimeEffectColorSource source;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.setColorSource(&source);

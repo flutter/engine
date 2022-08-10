@@ -54,6 +54,8 @@ class DlImage : public SkRefCnt {
   ///
   virtual std::shared_ptr<impeller::Texture> impeller_texture() const = 0;
 
+  virtual bool isOpaque() const = 0;
+
   virtual bool isTextureBacked() const = 0;
 
   //----------------------------------------------------------------------------
