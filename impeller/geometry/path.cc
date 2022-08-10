@@ -232,22 +232,16 @@ Path::Polyline Path::CreatePolyline(
       return;
     }
 
-    size_t previous_size = polyline.points.size();
     polyline.points.reserve(polyline.points.size() + collection.size());
 
-    bool duplicated = false;
     for (const auto& point : collection) {
       if (previous_contour_point.has_value() &&
           previous_contour_point.value() == point) {
-        // Slip over duplicate points in the same contour.
-        duplicated = true;
+        // Skip over duplicate points in the same contour.
         continue;
       }
       previous_contour_point = point;
       polyline.points.push_back(point);
-    }
-    if (duplicated && polyline.points.size() == previous_size + 1) {
-      polyline.points.push_back(polyline.points.back());
     }
   };
 
