@@ -262,6 +262,11 @@ struct SetRuntimeEffectColorSourceOp : DLOp {
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.setColorSource(&source);
   }
+
+  DisplayListCompare equals(const SetSharedImageFilterOp* other) const {
+    return (source == other->source) ? DisplayListCompare::kEqual
+                                     : DisplayListCompare::kNotEqual;
+  }
 };
 
 // 4 byte header + 16 byte payload uses 24 total bytes (4 bytes unused)

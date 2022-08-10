@@ -700,9 +700,21 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
   bool equals_(DlColorSource const& other) const override {
     FML_DCHECK(other.type() == DlColorSourceType::kRuntimeEffect);
     auto that = static_cast<DlRuntimeEffectColorSource const*>(&other);
-    return (runtime_effect_ == that->runtime_effect_ &&
-            samplers_ == that->samplers_ &&
-            uniform_data_ == that->uniform_data_);
+    if (runtime_effect_ != that->runtime_effect_) {
+      return false;
+    }
+    if (uniform_data_ != that->uniform_data_) {
+      return false;
+    }
+    if (samplers_.size() != that->samplers_.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < samplers_.size(); i++) {
+      if (samplers_[i] != that->samplers_[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
  private:
