@@ -842,31 +842,37 @@ TEST_P(EntityTest, GaussianBlurFilter) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     if (first_frame) {
       first_frame = false;
-      ImGui::SetNextWindowSize({500, 290});
-      ImGui::SetNextWindowPos({300, 480});
+      ImGui::SetNextWindowPos({10, 10});
     }
 
     const char* input_type_names[] = {"Texture", "Solid Color"};
     const char* blur_type_names[] = {"Image blur", "Mask blur"};
+    const char* pass_variation_names[] = {"Two pass", "Directional"};
     const char* blur_style_names[] = {"Normal", "Solid", "Outer", "Inner"};
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
     const FilterContents::BlurStyle blur_styles[] = {
         FilterContents::BlurStyle::kNormal, FilterContents::BlurStyle::kSolid,
         FilterContents::BlurStyle::kOuter, FilterContents::BlurStyle::kInner};
+    const Entity::TileMode tile_modes[] = {
+        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
 
     // UI state.
     static int selected_input_type = 0;
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
+    static int selected_pass_variation = 0;
     static float blur_amount[2] = {20, 20};
     static int selected_blur_style = 0;
+    static int selected_tile_mode = 3;
     static Color cover_color(1, 0, 0, 0.2);
     static Color bounds_color(0, 1, 0, 0.1);
     static float offset[2] = {500, 400};
     static float rotation = 0;
-    static float scale[2] = {0.75, 0.75};
+    static float scale[2] = {0.65, 0.65};
     static float skew[2] = {0, 0};
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
       ImGui::Combo("Input type", &selected_input_type, input_type_names,
                    sizeof(input_type_names) / sizeof(char*));
@@ -878,9 +884,16 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       }
       ImGui::Combo("Blur type", &selected_blur_type, blur_type_names,
                    sizeof(blur_type_names) / sizeof(char*));
-      ImGui::SliderFloat2("Blur", &blur_amount[0], 0, 200);
+      if (selected_blur_type == 0) {
+        ImGui::Combo("Pass variation", &selected_pass_variation,
+                     pass_variation_names,
+                     sizeof(pass_variation_names) / sizeof(char*));
+      }
+      ImGui::SliderFloat2("Sigma", &blur_amount[0], 0, 200);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
       ImGui::ColorEdit4("Cover color", reinterpret_cast<float*>(&cover_color));
       ImGui::ColorEdit4("Bounds color",
                         reinterpret_cast<float*>(&bounds_color));
@@ -915,9 +928,18 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       input_size = input_rect.size;
     }
 
-    auto blur = FilterContents::MakeGaussianBlur(
-        FilterInput::Make(input), Sigma{blur_amount[0]}, Sigma{blur_amount[1]},
-        blur_styles[selected_blur_style]);
+    std::shared_ptr<FilterContents> blur;
+    if (selected_pass_variation == 0) {
+      blur = FilterContents::MakeGaussianBlur(
+          FilterInput::Make(input), Sigma{blur_amount[0]},
+          Sigma{blur_amount[1]}, blur_styles[selected_blur_style],
+          tile_modes[selected_tile_mode]);
+    } else {
+      Vector2 blur_vector(blur_amount[0], blur_amount[1]);
+      blur = FilterContents::MakeDirectionalGaussianBlur(
+          FilterInput::Make(input), Sigma{blur_vector.GetLength()},
+          blur_vector.Normalize());
+    }
 
     auto mask_blur = FilterContents::MakeBorderMaskBlur(
         FilterInput::Make(input), Sigma{blur_amount[0]}, Sigma{blur_amount[1]},

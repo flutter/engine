@@ -70,6 +70,11 @@ void DirectionalGaussianBlurFilterContents::SetBlurStyle(BlurStyle blur_style) {
   }
 }
 
+void DirectionalGaussianBlurFilterContents::SetTileMode(
+    Entity::TileMode tile_mode) {
+  tile_mode_ = tile_mode;
+}
+
 void DirectionalGaussianBlurFilterContents::SetSourceOverride(
     FilterInput::Ref source_override) {
   source_override_ = source_override;
@@ -133,11 +138,16 @@ bool DirectionalGaussianBlurFilterContents::RenderFilter(
   frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
 
   FS::FragInfo frag_info;
+  frag_info.texture_sampler_y_coord_scale =
+      input_snapshot->texture->GetYCoordScale();
+  frag_info.alpha_mask_sampler_y_coord_scale =
+      source_snapshot->texture->GetYCoordScale();
   frag_info.blur_sigma = transformed_blur.GetLength();
   frag_info.blur_radius = Radius{Sigma{frag_info.blur_sigma}}.radius;
   frag_info.blur_direction = input_snapshot->transform.Invert()
                                  .TransformDirection(transformed_blur)
                                  .Normalize();
+  frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.src_factor = src_color_factor_;
   frag_info.inner_blur_factor = inner_blur_factor_;
   frag_info.outer_blur_factor = outer_blur_factor_;

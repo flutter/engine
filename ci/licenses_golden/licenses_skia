@@ -1,4 +1,4 @@
-Signature: 599315b0c40514d4685fba7a698830d9
+Signature: f779394be911a5e2b2e154726881571a
 
 UNUSED LICENSES:
 
@@ -840,6 +840,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/bazel/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel_build_task_driver/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_mac_arm64/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/binutils_linux_x64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bloaty/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cast_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ccache_linux/VERSION
@@ -2561,8 +2562,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
 FILE: ../../../third_party/skia/src/gpu/KeyBuilder.h
 FILE: ../../../third_party/skia/src/gpu/ResourceKey.cpp
 FILE: ../../../third_party/skia/src/gpu/ShaderErrorHandler.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/BaseDevice.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/BaseDevice.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrDstProxyView.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrEagerVertexAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrMeshDrawTarget.cpp
@@ -5543,6 +5542,7 @@ FILE: ../../../third_party/skia/include/core/SkColorType.h
 FILE: ../../../third_party/skia/include/core/SkCombinationBuilder.h
 FILE: ../../../third_party/skia/include/gpu/GpuTypes.h
 FILE: ../../../third_party/skia/include/gpu/graphite/ContextOptions.h
+FILE: ../../../third_party/skia/include/gpu/graphite/ImageProvider.h
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
 FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/bazel_build.go
@@ -5596,6 +5596,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/GlobalCache.h
 FILE: ../../../third_party/skia/src/gpu/graphite/GpuWorkSubmission.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.h
+FILE: ../../../third_party/skia/src/gpu/graphite/ImageUtils.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/ImageUtils.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Log.h
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParams.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParams.h

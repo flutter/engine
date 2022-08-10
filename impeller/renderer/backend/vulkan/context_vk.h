@@ -13,6 +13,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
 
@@ -54,10 +55,16 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
     return true;
   }
 
+  vk::Instance GetInstance() const;
+
+  std::unique_ptr<impeller::SwapchainVK> CreateSwapchain(
+      vk::SurfaceKHR surface) const;
+
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   vk::UniqueInstance instance_;
   vk::UniqueDebugUtilsMessengerEXT debug_messenger_;
+  vk::PhysicalDevice physical_device_;
   vk::UniqueDevice device_;
   std::shared_ptr<Allocator> allocator_;
   std::shared_ptr<ShaderLibraryVK> shader_library_;
@@ -76,10 +83,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
       const std::string& label);
 
   // |Context|
-  std::shared_ptr<Allocator> GetPermanentsAllocator() const override;
-
-  // |Context|
-  std::shared_ptr<Allocator> GetTransientsAllocator() const override;
+  std::shared_ptr<Allocator> GetResourceAllocator() const override;
 
   // |Context|
   std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override;
@@ -91,10 +95,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override;
 
   // |Context|
-  std::shared_ptr<CommandBuffer> CreateRenderCommandBuffer() const override;
-
-  // |Context|
-  std::shared_ptr<CommandBuffer> CreateTransferCommandBuffer() const override;
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };
