@@ -250,7 +250,8 @@ class EmbeddedViewParams {
   // Pushes the stored DlImageFilter object to the mutators stack.
   void PushImageFilter(std::shared_ptr<const DlImageFilter> filter) {
     mutators_stack_.PushBackdropFilter(filter);
-
+  }
+  
   // Whether the embedder should construct DisplayList objects to hold the
   // rendering commands for each between-view slice of the layer tree.
   bool display_list_enabled() const { return display_list_enabled_; }
