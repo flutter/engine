@@ -1400,12 +1400,12 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath());
   fill->SetColor(Color::Coral());
 
-  // Set the color matrix filter.  
+  // Set the color matrix filter.
   FilterContents::ColorMatrix matrix = {
-    1, 1, 1, 1, 1, //
-    1, 1, 1, 1, 1, //
-    1, 1, 1, 1, 1, //
-    1, 1, 1, 1, 1, //
+      1, 1, 1, 1, 1,  //
+      1, 1, 1, 1, 1,  //
+      1, 1, 1, 1, 1,  //
+      1, 1, 1, 1, 1,  //
   };
 
   auto filter =
@@ -1429,10 +1429,10 @@ TEST_P(EntityTest, ColorMatrixFilter) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     // Set the color matrix filter.
     FilterContents::ColorMatrix matrix = {
-      1, 0, 0, 0, 0, //
-      0, 3, 0, 0, 0, //
-      0, 0, 1, 0, 0, //
-      0, 0, 0, 1, 0, //
+        1, 0, 0, 0, 0,  //
+        0, 3, 0, 0, 0,  //
+        0, 0, 1, 0, 0,  //
+        0, 0, 0, 1, 0,  //
     };
 
     auto filter =
@@ -1466,10 +1466,10 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
 
     // UI state.
     static FilterContents::ColorMatrix color_matrix = {
-      1, 0, 0, 0, 0, //
-      0, 3, 0, 0, 0, //
-      0, 0, 1, 0, 0, //
-      0, 0, 0, 1, 0, //
+        1, 0, 0, 0, 0,  //
+        0, 3, 0, 0, 0,  //
+        0, 0, 1, 0, 0,  //
+        0, 0, 0, 1, 0,  //
     };
 
     // Define the ImGui
