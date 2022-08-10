@@ -10,6 +10,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
+#include "impeller/entity/contents/path_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
@@ -25,6 +26,7 @@ struct Paint {
   using MaskFilterProc =
       std::function<std::shared_ptr<FilterContents>(FilterInput::Ref,
                                                     bool is_solid_color)>;
+  using ColorSourceProc = std::function<std::shared_ptr<PathContents>()>;
 
   enum class Style {
     kFill,
@@ -40,7 +42,7 @@ struct Paint {
   };
 
   Color color = Color::Black();
-  std::shared_ptr<PathContents> contents;
+  std::optional<ColorSourceProc> color_source;
 
   Scalar stroke_width = 0.0;
   SolidStrokeContents::Cap stroke_cap = SolidStrokeContents::Cap::kButt;

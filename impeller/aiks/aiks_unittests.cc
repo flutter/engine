@@ -10,6 +10,7 @@
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
@@ -214,13 +215,16 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
   for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);
-    auto contents = std::make_shared<LinearGradientContents>();
-    contents->SetEndPoints({0, 0}, {100, 100});
-    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
-    contents->SetColors(std::move(colors));
-    contents->SetTileMode(tile_modes[i]);
-    paint.contents = contents;
+    Entity::TileMode tile_mode = tile_modes[i];
+    paint.color_source = [tile_mode]() {
+      auto contents = std::make_shared<LinearGradientContents>();
+      contents->SetEndPoints({0, 0}, {100, 100});
+      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                   Color{0.1294, 0.5882, 0.9529, 1.0}};
+      contents->SetColors(std::move(colors));
+      contents->SetTileMode(tile_mode);
+      return contents;
+    };
     canvas.DrawRect({0, 0, 200, 200}, paint);
     canvas.Restore();
   }
@@ -238,13 +242,16 @@ TEST_P(AiksTest, CanRenderRadialGradient) {
   for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);
-    auto contents = std::make_shared<RadialGradientContents>();
-    contents->SetCenterAndRadius({50, 50}, 50);
-    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
-    contents->SetColors(std::move(colors));
-    contents->SetTileMode(tile_modes[i]);
-    paint.contents = contents;
+    Entity::TileMode tile_mode = tile_modes[i];
+    paint.color_source = [tile_mode]() {
+      auto contents = std::make_shared<RadialGradientContents>();
+      contents->SetCenterAndRadius({50, 50}, 50);
+      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                   Color{0.1294, 0.5882, 0.9529, 1.0}};
+      contents->SetColors(std::move(colors));
+      contents->SetTileMode(tile_mode);
+      return contents;
+    };
     canvas.DrawRect({0, 0, 200, 200}, paint);
     canvas.Restore();
   }
@@ -263,17 +270,37 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
   for (int i = 0; i < 4; i++) {
     canvas.Save();
     canvas.Translate(offsets[i]);
-    auto contents = std::make_shared<SweepGradientContents>();
-    contents->SetCenterAndAngles({50, 50}, Degrees(45), Degrees(135));
-    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
-    contents->SetColors(std::move(colors));
-    contents->SetTileMode(tile_modes[i]);
-    paint.contents = contents;
+    Entity::TileMode tile_mode = tile_modes[i];
+    paint.color_source = [tile_mode]() {
+      auto contents = std::make_shared<SweepGradientContents>();
+      contents->SetCenterAndAngles({50, 50}, Degrees(45), Degrees(135));
+      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                   Color{0.1294, 0.5882, 0.9529, 1.0}};
+      contents->SetColors(std::move(colors));
+      contents->SetTileMode(tile_mode);
+      return contents;
+    };
     canvas.DrawRect({0, 0, 200, 200}, paint);
     canvas.Restore();
   }
 
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
+  Canvas canvas;
+  Paint paint;
+  paint.color_source = []() {
+    auto contents = std::make_shared<LinearGradientContents>();
+    contents->SetEndPoints({0, 0}, {100, 100});
+    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
+    contents->SetColors(std::move(colors));
+    contents->SetTileMode(Entity::TileMode::kRepeat);
+    return contents;
+  };
+  canvas.DrawRect({100, 100, 200, 200}, paint);
+  canvas.DrawCircle({200, 500}, 100, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
