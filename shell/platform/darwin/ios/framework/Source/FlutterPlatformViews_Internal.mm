@@ -143,12 +143,11 @@ void ResetAnchor(CALayer* layer) {
     // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
     while ([blurRadii count] > [_activeGaussianFilters count]) {
       // copy returns a deep copy of _gaussianFilter
-      [_activeGaussianFilters addObject:[_gaussianFilter copy]];
+      [_activeGaussianFilters addObject:[[_gaussianFilter copy] autorelease] ];
     }
     while ([blurRadii count] < [_activeGaussianFilters count]) {
       [_activeGaussianFilters removeLastObject];
     }
-
   } else {
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
       if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] != blurRadii[i]) {
@@ -160,7 +159,7 @@ void ResetAnchor(CALayer* layer) {
 
   if (updateActiveFilters) {
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
-      _activeGaussianFilters[i] = [_gaussianFilter copy];
+      _activeGaussianFilters[i] = [[_gaussianFilter copy] autorelease];
       [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
     }
     self.layer.filters = _activeGaussianFilters;
