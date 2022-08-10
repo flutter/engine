@@ -161,10 +161,10 @@ TEST_F(FlutterScenicEmbedderTests, HittestDisabledEmbedding) {
                              std::map<scenic::Color, size_t> histogram) {
         // Expect parent and child background colors, with parent color > child
         // color.
-        EXPECT_EQ(histogram[kParentBackgroundColor], 0u);
+        EXPECT_EQ(histogram[kParentBackgroundColor], 5u);
         EXPECT_GT(histogram[kParentTappedColor], 0u);
         EXPECT_GT(histogram[kChildBackgroundColor], 0u);
-        EXPECT_EQ(histogram[kChildTappedColor], 0u);
+        EXPECT_EQ(histogram[kChildTappedColor], 5u);
         EXPECT_GT(histogram[kParentTappedColor],
                   histogram[kChildBackgroundColor]);
       }));
