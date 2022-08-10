@@ -832,10 +832,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self removeInternalPlugins];
   [self deregisterNotifications];
 
-  // Ensure the vsync client will invalidate.
   [self invalidateKeyboardAnimationVsyncClient];
-  [_keyboardAnimationVsyncClient release];
-  _keyboardAnimationVsyncClient = nil;
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
@@ -1333,7 +1330,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)invalidateKeyboardAnimationVsyncClient {
-  [_keyboardAnimationVsyncClient invalidate];
+  if (_keyboardAnimationVsyncClient) {
+    [_keyboardAnimationVsyncClient invalidate];
+    [_keyboardAnimationVsyncClient release];
+    _keyboardAnimationVsyncClient = nil;
+  }
 }
 
 - (void)removeKeyboardAnimationView {
