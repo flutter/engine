@@ -1649,22 +1649,12 @@ class Image {
       return true;
     }());
     _image._handles.add(this);
-    if (onCreate != null) {
-      onCreate!(this);
-    }
+    onCreate?.call(this);
   }
 
   // C++ unit tests access this.
   @pragma('vm:entry-point')
   final _Image _image;
-
-  StackTrace? _debugStack;
-
-  /// The number of image pixels along the image's horizontal axis.
-  final int width;
-
-  /// The number of image pixels along the image's vertical axis.
-  final int height;
 
   /// A callback that is invoked to report an object creation.
   ///
@@ -1680,6 +1670,14 @@ class Image {
   /// allows multiple callbacks.
   static void Function(Object)? onDispose;
 
+  StackTrace? _debugStack;
+
+  /// The number of image pixels along the image's horizontal axis.
+  final int width;
+
+  /// The number of image pixels along the image's vertical axis.
+  final int height;
+
   bool _disposed = false;
   /// Release this handle's claim on the underlying Image. This handle is no
   /// longer usable after this method is called.
@@ -1692,9 +1690,7 @@ class Image {
   /// useful when trying to determine what parts of the program are keeping an
   /// image resident in memory.
   void dispose() {
-    if (onDispose != null) {
-      onDispose!(this);
-    }
+    onDispose?.call(this);
     assert(!_disposed && !_image._disposed);
     assert(_image._handles.contains(this));
     _disposed = true;
