@@ -230,6 +230,7 @@ class DlImageColorSource final : public SkRefCnt,
   size_t size() const override { return sizeof(*this); }
 
   bool is_opaque() const override {
+    // TODO(109286): Consider implementing 'isOpaque' on 'DlImage'.
     if (!image_->skia_image()) {
       return false;
     }
