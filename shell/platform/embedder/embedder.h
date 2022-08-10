@@ -1354,6 +1354,10 @@ typedef struct {
   FlutterPoint offset;
   /// The size of the layer (in physical pixels).
   FlutterSize size;
+  /// Represents the size of the `paint_regions` array.
+  size_t num_paint_regions;
+  /// Locations within this layer that contain painted content.
+  FlutterRect* paint_regions;
 } FlutterLayer;
 
 typedef bool (*FlutterBackingStoreCreateCallback)(
