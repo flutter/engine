@@ -50,8 +50,14 @@ void ShellTestExternalViewEmbedder::BeginFrame(
 void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
-  picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
-  picture_recorders_[view_id]->beginRecording(SkRect::MakeEmpty());
+  SkRect view_bounds = SkRect::Make(frame_size_);
+  std::unique_ptr<EmbedderViewSlice> view;
+  if (params->display_list_enabled()) {
+    view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+  } else {
+    view = std::make_unique<SkPictureEmbedderViewSlice>(view_bounds);
+  }
+  slices_.insert_or_assign(view_id, std::move(view));
 }
 
 // |ExternalViewEmbedder|
@@ -80,42 +86,44 @@ void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     current_composition_params_[id] = params;
     mutators_stacks_[id] = params.mutatorsStack();
   }
+}
 
-  EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
-      int view_id) {
-    return {nullptr, nullptr};
-  }
+EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
+    int view_id) {
+  return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
+}
 
-  // |ExternalViewEmbedder|
-  void ShellTestExternalViewEmbedder::SubmitFrame(
-      GrDirectContext * context, std::unique_ptr<SurfaceFrame> frame) {
-    if (!frame) {
-      return;
-    }
-    frame->Submit();
-    if (frame->SkiaSurface()) {
-      last_submitted_frame_size_ = SkISize::Make(
-          frame->SkiaSurface()->width(), frame->SkiaSurface()->height());
-    } else {
-      last_submitted_frame_size_ = SkISize::MakeEmpty();
-    }
-    submitted_frame_count_++;
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
+    std::unique_ptr<SurfaceFrame> frame) {
+  if (!frame) {
+    return;
   }
+  frame->Submit();
+  if (frame->SkiaSurface()) {
+    last_submitted_frame_size_ = SkISize::Make(frame->SkiaSurface()->width(),
+                                               frame->SkiaSurface()->height());
+  } else {
+    last_submitted_frame_size_ = SkISize::MakeEmpty();
+  }
+  submitted_frame_count_++;
+}
 
-  // |ExternalViewEmbedder|
-  void ShellTestExternalViewEmbedder::EndFrame(
-      bool should_resubmit_frame,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-    end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
-  }
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::EndFrame(
+    bool should_resubmit_frame,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
+}
 
-  // |ExternalViewEmbedder|
-  SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
-    return nullptr;
-  }
+// |ExternalViewEmbedder|
+SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
+  return nullptr;
+}
 
-  bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
-    return support_thread_merging_;
-  }
+bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
+  return support_thread_merging_;
+}
 
 }  // namespace flutter

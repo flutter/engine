@@ -72,9 +72,6 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
-
-  // |ExternalViewEmbedder|
   void PushVisitedPlatformView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
@@ -101,7 +98,8 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   PostPrerollResult post_preroll_result_;
 
   bool support_thread_merging_;
-  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
+  SkISize frame_size_;
+  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
   std::map<int64_t, MutatorsStack> mutators_stacks_;
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   std::vector<int64_t> visited_platform_views_;
