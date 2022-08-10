@@ -234,14 +234,19 @@ Path::Polyline Path::CreatePolyline(
 
     polyline.points.reserve(polyline.points.size() + collection.size());
 
+    bool duplicated = false;
     for (const auto& point : collection) {
       if (previous_contour_point.has_value() &&
           previous_contour_point.value() == point) {
         // Slip over duplicate points in the same contour.
+        duplicated = true;
         continue;
       }
       previous_contour_point = point;
       polyline.points.push_back(point);
+    }
+    if (polyline.points.size() == 1 && duplicated) {
+      polyline.points.push_back(polyline.points.back());
     }
   };
 
