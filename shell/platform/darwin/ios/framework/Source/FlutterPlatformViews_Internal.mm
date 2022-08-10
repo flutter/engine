@@ -144,13 +144,14 @@ void ResetAnchor(CALayer* layer) {
   }
 
   if (newRadiusValues) {
-    NSMutableArray* newGaussianFilters =
-        [[[NSMutableArray alloc] initWithCapacity:[blurRadii count]] autorelease];
+    NSMutableArray* newGaussianFilters = [[[NSMutableArray alloc] init] autorelease];
 
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
-      newGaussianFilters[i] = [_gaussianFilter copy];
-      [newGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
+      NSObject* newGaussianFilter = [_gaussianFilter copy];
+      [newGaussianFilter setValue:blurRadii[i] forKey:@"inputRadius"];
+      [newGaussianFilters addObject:newGaussianFilter];
     }
+
     self.layer.filters = newGaussianFilters;
   }
 
