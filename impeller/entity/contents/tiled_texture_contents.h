@@ -11,10 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/path_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
-#include "impeller/geometry/point.h"
-#include "impeller/geometry/scalar.h"
 #include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
