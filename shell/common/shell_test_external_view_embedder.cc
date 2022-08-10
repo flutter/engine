@@ -86,6 +86,7 @@ void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     current_composition_params_[id] = params;
     mutators_stacks_[id] = params.mutatorsStack();
   }
+}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::SubmitFrame(
