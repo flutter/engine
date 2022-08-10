@@ -299,8 +299,15 @@ TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
     contents->SetTileMode(Entity::TileMode::kRepeat);
     return contents;
   };
-  canvas.DrawRect({100, 100, 200, 200}, paint);
-  canvas.DrawCircle({200, 500}, 100, paint);
+  canvas.Save();
+  canvas.Translate({100, 100, 0});
+  canvas.DrawRect({0, 0, 200, 200}, paint);
+  canvas.Restore();
+
+  canvas.Save();
+  canvas.Translate({100, 400, 0});
+  canvas.DrawCircle({100, 100}, 100, paint);
+  canvas.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
