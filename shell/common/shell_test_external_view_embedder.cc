@@ -67,6 +67,11 @@ std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
+SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+  return picture_recorders_[view_id]->getRecordingCanvas();
+}
+
+// |ExternalViewEmbedder|
 EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
     int view_id) {
   return {nullptr, nullptr};
