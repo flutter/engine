@@ -23,7 +23,7 @@ class NotoFont {
   // A sorted list of Unicode range end points.
   final List<int> _rangeEnds;
 
-  List<CodeunitRange> get unicodeRanges {
+  List<CodeunitRange> computeUnicodeRanges() {
     final List<CodeunitRange> result = <CodeunitRange>[];
     for (int i = 0; i < _rangeStarts.length; i++) {
       result.add(CodeunitRange(_rangeStarts[i], _rangeEnds[i]));

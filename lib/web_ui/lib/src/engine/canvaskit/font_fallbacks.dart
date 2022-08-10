@@ -49,7 +49,7 @@ class FontFallbackData {
 
     for (final NotoFont font in fallbackFonts) {
       // ignore: prefer_foreach
-      for (final CodeunitRange range in font.unicodeRanges) {
+      for (final CodeunitRange range in font.computeUnicodeRanges()) {
         ranges.putIfAbsent(font, () => <CodeunitRange>[]).add(range);
       }
     }
