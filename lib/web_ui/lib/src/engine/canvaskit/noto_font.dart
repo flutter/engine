@@ -41,7 +41,11 @@ class NotoFont {
     while (min < max) {
       final int mid = (min + max) ~/ 2;
       if (_rangeStarts[mid] > codeUnit) {
-        if (mid == 0) return false;
+        if (mid == 0) {
+          final int rangeStart = _rangeStarts[mid];
+          final int rangeEnd = _rangeEnds[mid];
+          return rangeStart <= codeUnit && codeUnit <= rangeEnd;
+        }
         final int rangeStart = _rangeStarts[mid - 1];
         if (rangeStart <= codeUnit) {
           final int rangeEnd = _rangeEnds[mid - 1];
@@ -50,6 +54,12 @@ class NotoFont {
           max = mid - 1;
         }
       } else if (_rangeStarts[mid] < codeUnit) {
+        // If this is the last index, check if the codeunit is contained within it.
+        if (mid == _rangeStarts.length) {
+          final int rangeStart = _rangeStarts[mid];
+          final int rangeEnd = _rangeEnds[mid];
+          return rangeStart <= codeUnit && codeUnit <= rangeEnd;
+        }
         min = mid;
       }
     }
