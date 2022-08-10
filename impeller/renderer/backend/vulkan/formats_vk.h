@@ -167,6 +167,8 @@ constexpr vk::Filter ToVKSamplerMinMagFilter(MinMagFilter filter) {
     case MinMagFilter::kLinear:
       return vk::Filter::eLinear;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::SamplerMipmapMode ToVKSamplerMipmapMode(MipFilter filter) {
@@ -176,9 +178,11 @@ constexpr vk::SamplerMipmapMode ToVKSamplerMipmapMode(MipFilter filter) {
       return vk::SamplerMipmapMode::eNearest;
     case MipFilter::kLinear:
       return vk::SamplerMipmapMode::eLinear;
-    default:
+    case MipFilter::kNone:
       return vk::SamplerMipmapMode::eNearest;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
@@ -191,6 +195,8 @@ constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
     case SamplerAddressMode::kClampToEdge:
       return vk::SamplerAddressMode::eClampToEdge;
   }
+
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller

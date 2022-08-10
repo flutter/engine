@@ -14,10 +14,9 @@ class CommandPoolVK {
   static std::unique_ptr<CommandPoolVK> Create(vk::Device device,
                                                uint32_t queue_index);
 
-  explicit CommandPoolVK(vk::UniqueCommandPool command_pool)
-      : command_pool_(std::move(command_pool)) {}
+  explicit CommandPoolVK(vk::UniqueCommandPool command_pool);
 
-  ~CommandPoolVK() = default;
+  ~CommandPoolVK();
 
  private:
   vk::UniqueCommandPool command_pool_;

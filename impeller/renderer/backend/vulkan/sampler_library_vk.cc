@@ -23,22 +23,22 @@ std::shared_ptr<const Sampler> SamplerLibraryVK::GetSampler(
     return nullptr;
   }
 
-  auto mip_map = ToVKSamplerMipmapMode(desc.mip_filter);
+  const auto mip_map = ToVKSamplerMipmapMode(desc.mip_filter);
 
-  auto min_filter = ToVKSamplerMinMagFilter(desc.min_filter);
-  auto mag_filter = ToVKSamplerMinMagFilter(desc.mag_filter);
+  const auto min_filter = ToVKSamplerMinMagFilter(desc.min_filter);
+  const auto mag_filter = ToVKSamplerMinMagFilter(desc.mag_filter);
 
-  auto address_mode_u = ToVKSamplerAddressMode(desc.width_address_mode);
-  auto address_mode_v = ToVKSamplerAddressMode(desc.height_address_mode);
-  auto address_mode_w = ToVKSamplerAddressMode(desc.depth_address_mode);
+  const auto address_mode_u = ToVKSamplerAddressMode(desc.width_address_mode);
+  const auto address_mode_v = ToVKSamplerAddressMode(desc.height_address_mode);
+  const auto address_mode_w = ToVKSamplerAddressMode(desc.depth_address_mode);
 
-  auto sampler_create_info = vk::SamplerCreateInfo()
-                                 .setMagFilter(mag_filter)
-                                 .setMinFilter(min_filter)
-                                 .setAddressModeU(address_mode_u)
-                                 .setAddressModeV(address_mode_v)
-                                 .setAddressModeW(address_mode_w)
-                                 .setMipmapMode(mip_map);
+  const auto sampler_create_info = vk::SamplerCreateInfo()
+                                       .setMagFilter(mag_filter)
+                                       .setMinFilter(min_filter)
+                                       .setAddressModeU(address_mode_u)
+                                       .setAddressModeV(address_mode_v)
+                                       .setAddressModeW(address_mode_w)
+                                       .setMipmapMode(mip_map);
 
   auto res = device_.createSamplerUnique(sampler_create_info);
   if (res.result != vk::Result::eSuccess) {

@@ -21,4 +21,9 @@ std::unique_ptr<CommandPoolVK> CommandPoolVK::Create(vk::Device device,
   return std::make_unique<CommandPoolVK>(std::move(res.value));
 }
 
+CommandPoolVK::CommandPoolVK(vk::UniqueCommandPool command_pool)
+    : command_pool_(std::move(command_pool)) {}
+
+CommandPoolVK::~CommandPoolVK() = default;
+
 }  // namespace impeller
