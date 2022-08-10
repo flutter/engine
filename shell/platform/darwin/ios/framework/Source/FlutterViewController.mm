@@ -63,7 +63,7 @@ typedef struct MouseState {
  * Keyboard animation properties
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
-@property(nonatomic, retain) VSyncClient* keyboardAnimationVsyncClient;
+@property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 
 /*
  * Mouse and trackpad gesture recognizers
@@ -776,7 +776,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
-    [self invalidateKeyboardAnimationVsyncClient];
+    [self invalidateKeyboardAnimationVSyncClient];
     [self ensureViewportMetricsIsCorrect];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
@@ -832,7 +832,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self removeInternalPlugins];
   [self deregisterNotifications];
 
-  [self invalidateKeyboardAnimationVsyncClient];
+  [self invalidateKeyboardAnimationVSyncClient];
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
@@ -1277,9 +1277,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
 
   // Invalidate old vsync client if old animation is not completed.
-  [self invalidateKeyboardAnimationVsyncClient];
+  [self invalidateKeyboardAnimationVSyncClient];
   [self setupKeyboardAnimationVsyncClient];
-  VSyncClient* currentVsyncClient = _keyboardAnimationVsyncClient;
+  VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   [UIView animateWithDuration:duration
       animations:^{
@@ -1287,11 +1287,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
-        if (_keyboardAnimationVsyncClient == currentVsyncClient) {
+        if (_keyboardAnimationVSyncClient == currentVsyncClient) {
           // Indicates the vsync client captured by this block is the original one, which also
           // indicates the animation has not been interrupted from its beginning. Moreover,
           // indicates the animation is over and there is no more to execute.
-          [self invalidateKeyboardAnimationVsyncClient];
+          [self invalidateKeyboardAnimationVSyncClient];
           [self removeKeyboardAnimationView];
           [self ensureViewportMetricsIsCorrect];
         }
@@ -1322,18 +1322,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
-  _keyboardAnimationVsyncClient =
+  _keyboardAnimationVSyncClient =
       [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
                                      callback:callback];
-  _keyboardAnimationVsyncClient.allowPauseAfterVsync = NO;
-  [_keyboardAnimationVsyncClient await];
+  _keyboardAnimationVSyncClient.allowPauseAfterVsync = NO;
+  [_keyboardAnimationVSyncClient await];
 }
 
-- (void)invalidateKeyboardAnimationVsyncClient {
-  if (_keyboardAnimationVsyncClient) {
-    [_keyboardAnimationVsyncClient invalidate];
-    [_keyboardAnimationVsyncClient release];
-    _keyboardAnimationVsyncClient = nil;
+- (void)invalidateKeyboardAnimationVSyncClient {
+  if (_keyboardAnimationVSyncClient) {
+    [_keyboardAnimationVSyncClient invalidate];
+    [_keyboardAnimationVSyncClient release];
+    _keyboardAnimationVSyncClient = nil;
   }
 }
 

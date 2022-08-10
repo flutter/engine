@@ -20,7 +20,7 @@ FLUTTER_ASSERT_NOT_ARC
 @interface FlutterViewController (Testing)
 
 @property(nonatomic, assign) double targetViewInsetBottom;
-@property(nonatomic, retain) VSyncClient* keyboardAnimationVsyncClient;
+@property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 
 - (void)setupKeyboardAnimationVsyncClient;
 
@@ -44,8 +44,8 @@ FLUTTER_ASSERT_NOT_ARC
                                                                                 nibName:nil
                                                                                  bundle:nil];
   [viewController setupKeyboardAnimationVsyncClient];
-  XCTAssertNotNil(viewController.keyboardAnimationVsyncClient);
-  CADisplayLink* link = [viewController.keyboardAnimationVsyncClient getDisplayLink];
+  XCTAssertNotNil(viewController.keyboardAnimationVSyncClient);
+  CADisplayLink* link = [viewController.keyboardAnimationVSyncClient getDisplayLink];
   XCTAssertNotNil(link);
   if (@available(iOS 15.0, *)) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, maxFrameRate);

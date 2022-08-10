@@ -128,7 +128,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)setupKeyboardAnimationVsyncClient;
 - (void)ensureViewportMetricsIsCorrect;
-- (void)invalidateKeyboardAnimationVsyncClient;
+- (void)invalidateKeyboardAnimationVSyncClient;
 - (void)addInternalPlugins;
 - (flutter::PointerData)generatePointerDataForFake;
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
@@ -236,7 +236,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   id viewControllerMock = OCMPartialMock(viewController);
   [viewControllerMock viewDidDisappear:YES];
   OCMVerify([viewControllerMock ensureViewportMetricsIsCorrect]);
-  OCMVerify([viewControllerMock invalidateKeyboardAnimationVsyncClient]);
+  OCMVerify([viewControllerMock invalidateKeyboardAnimationVSyncClient]);
 }
 
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
