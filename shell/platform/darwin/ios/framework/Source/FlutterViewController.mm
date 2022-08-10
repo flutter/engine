@@ -1322,6 +1322,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
+  NSAssert(_keyboardAnimationVSyncClient == nil,
+           @"_keyboardAnimationVSyncClient must be nil when setup");
   _keyboardAnimationVSyncClient =
       [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
                                      callback:callback];
@@ -1330,11 +1332,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)invalidateKeyboardAnimationVSyncClient {
-  if (_keyboardAnimationVSyncClient) {
-    [_keyboardAnimationVSyncClient invalidate];
-    [_keyboardAnimationVSyncClient release];
-    _keyboardAnimationVSyncClient = nil;
-  }
+  [_keyboardAnimationVSyncClient invalidate];
+  [_keyboardAnimationVSyncClient release];
+  _keyboardAnimationVSyncClient = nil;
 }
 
 - (void)removeKeyboardAnimationView {
