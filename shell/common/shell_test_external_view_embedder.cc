@@ -67,12 +67,6 @@ std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
-    int view_id) {
-  return {nullptr, nullptr};
-}
-
-// |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
   visited_platform_views_.push_back(view_id);
 }
@@ -86,39 +80,42 @@ void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     current_composition_params_[id] = params;
     mutators_stacks_[id] = params.mutatorsStack();
   }
-}
 
-// |ExternalViewEmbedder|
-void ShellTestExternalViewEmbedder::SubmitFrame(
-    GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame) {
-  if (!frame) {
-    return;
+  EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
+      int view_id) {
+    return {nullptr, nullptr};
   }
-  frame->Submit();
-  if (frame->SkiaSurface()) {
-    last_submitted_frame_size_ = SkISize::Make(frame->SkiaSurface()->width(),
-                                               frame->SkiaSurface()->height());
-  } else {
-    last_submitted_frame_size_ = SkISize::MakeEmpty();
+
+  // |ExternalViewEmbedder|
+  void ShellTestExternalViewEmbedder::SubmitFrame(
+      GrDirectContext * context, std::unique_ptr<SurfaceFrame> frame) {
+    if (!frame) {
+      return;
+    }
+    frame->Submit();
+    if (frame->SkiaSurface()) {
+      last_submitted_frame_size_ = SkISize::Make(
+          frame->SkiaSurface()->width(), frame->SkiaSurface()->height());
+    } else {
+      last_submitted_frame_size_ = SkISize::MakeEmpty();
+    }
+    submitted_frame_count_++;
   }
-  submitted_frame_count_++;
-}
 
-// |ExternalViewEmbedder|
-void ShellTestExternalViewEmbedder::EndFrame(
-    bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
-}
+  // |ExternalViewEmbedder|
+  void ShellTestExternalViewEmbedder::EndFrame(
+      bool should_resubmit_frame,
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
+  }
 
-// |ExternalViewEmbedder|
-SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
-  return nullptr;
-}
+  // |ExternalViewEmbedder|
+  SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
+    return nullptr;
+  }
 
-bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return support_thread_merging_;
-}
+  bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
+    return support_thread_merging_;
+  }
 
 }  // namespace flutter

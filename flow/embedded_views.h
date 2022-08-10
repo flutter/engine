@@ -256,6 +256,10 @@ class EmbeddedViewParams {
   // rendering commands for each between-view slice of the layer tree.
   bool display_list_enabled() const { return display_list_enabled_; }
 
+  // Whether the embedder should construct DisplayList objects to hold the
+  // rendering commands for each between-view slice of the layer tree.
+  bool display_list_enabled() const { return display_list_enabled_; }
+
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
            mutators_stack_ == other.mutators_stack_ &&
