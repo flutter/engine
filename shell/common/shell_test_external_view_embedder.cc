@@ -67,9 +67,9 @@ std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return picture_recorders_[view_id]->getRecordingCanvas();
-}
+EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
+    int view_id) {
+  return {nullptr, nullptr};
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
@@ -85,7 +85,6 @@ void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     current_composition_params_[id] = params;
     mutators_stacks_[id] = params.mutatorsStack();
   }
-}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::SubmitFrame(

@@ -398,6 +398,8 @@ InferMetalPlatformViewCreationCallback(
               config->metal.present_command_queue),
           metal_dispatch_table, view_embedder);
 
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
        external_view_embedder = view_embedder](flutter::Shell& shell) mutable {
@@ -2681,6 +2683,36 @@ FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
                                   "Could not schedule frame.");
 }
 
+FlutterEngineResult FlutterEngineSetNextFrameCallback(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Next frame callback was null.");
+  }
+
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+
+  fml::WeakPtr<flutter::PlatformView> weak_platform_view =
+      embedder_engine->GetShell().GetPlatformView();
+
+  if (!weak_platform_view) {
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                              "Platform view unavailable.");
+  }
+
+  weak_platform_view->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
+
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2732,6 +2764,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
+  SET_PROC(SetNextFrameCallback, FlutterEngineSetNextFrameCallback);
 #undef SET_PROC
 
   return kSuccess;

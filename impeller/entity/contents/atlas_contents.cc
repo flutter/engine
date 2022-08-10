@@ -41,12 +41,24 @@ void AtlasContents::SetColors(std::vector<Color> colors) {
   colors_ = colors;
 }
 
+void AtlasContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
 void AtlasContents::SetBlendMode(Entity::BlendMode blend_mode) {
   // TODO(jonahwilliams): blending of colors with texture.
   blend_mode_ = blend_mode;
 }
 
+void AtlasContents::SetCullRect(std::optional<Rect> cull_rect) {
+  cull_rect_ = cull_rect;
+}
+
 std::optional<Rect> AtlasContents::GetCoverage(const Entity& entity) const {
+  if (cull_rect_.has_value()) {
+    return cull_rect_.value().TransformBounds(entity.GetTransformation());
+  }
+
   Rect bounding_box = {};
   for (size_t i = 0; i < texture_coords_.size(); i++) {
     auto matrix = transforms_[i];
@@ -116,7 +128,8 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frag_info.has_color = colors_.size() > 0 ? 1.0 : 0.0;
+  frag_info.has_vertex_color = colors_.size() > 0 ? 1.0 : 0.0;
+  frag_info.alpha = alpha_;
 
   Command cmd;
   cmd.label = "DrawAtlas";

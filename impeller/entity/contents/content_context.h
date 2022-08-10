@@ -33,6 +33,8 @@
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
+#include "impeller/entity/color_matrix_color_filter.frag.h"
+#include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
@@ -48,6 +50,8 @@
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/solid_stroke.frag.h"
 #include "impeller/entity/solid_stroke.vert.h"
+#include "impeller/entity/sweep_gradient_fill.frag.h"
+#include "impeller/entity/sweep_gradient_fill.vert.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/vertices.frag.h"
@@ -62,6 +66,8 @@ using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
     PipelineT<RadialGradientFillVertexShader, RadialGradientFillFragmentShader>;
+using SweepGradientFillPipeline =
+    PipelineT<SweepGradientFillVertexShader, SweepGradientFillFragmentShader>;
 using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     PipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
@@ -102,6 +108,9 @@ using GaussianBlurPipeline =
     PipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     PipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
+using ColorMatrixColorFilterPipeline =
+    PipelineT<ColorMatrixColorFilterVertexShader,
+              ColorMatrixColorFilterFragmentShader>;
 using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
@@ -141,7 +150,7 @@ struct ContentContextOptions {
 
 class ContentContext {
  public:
-  ContentContext(std::shared_ptr<Context> context);
+  explicit ContentContext(std::shared_ptr<Context> context);
 
   ~ContentContext();
 
@@ -151,6 +160,7 @@ class ContentContext {
       ContentContextOptions opts) const {
     return GetPipeline(gradient_fill_pipelines_, opts);
   }
+
   std::shared_ptr<Pipeline> GetRadialGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
@@ -158,6 +168,11 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetRRectBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(rrect_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetSweepGradientFillPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(sweep_gradient_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidFillPipeline(
@@ -182,6 +197,11 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetColorMatrixColorFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(color_matrix_color_filter_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidStrokePipeline(
@@ -309,11 +329,14 @@ class ContentContext {
   mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
+  mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
+  mutable Variants<ColorMatrixColorFilterPipeline>
+      color_matrix_color_filter_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
