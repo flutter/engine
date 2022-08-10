@@ -4,9 +4,8 @@
 
 #include "flutter/display_list/display_list_builder.h"
 
-#include "display_list_color_source.h"
-#include "display_list_ops.h"
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_color_source.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
