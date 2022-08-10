@@ -70,6 +70,7 @@ std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
 EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
     int view_id) {
   return {nullptr, nullptr};
+}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
