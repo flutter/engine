@@ -67,9 +67,6 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
-  
-  // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
   void PushVisitedPlatformView(int64_t view_id) override;
