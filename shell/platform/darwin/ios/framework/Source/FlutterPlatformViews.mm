@@ -35,7 +35,7 @@
 namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
-//int changingBlurRadius = 0; // TODO EMILY part of visual tests. delete before landing PR
+// int changingBlurRadius = 0; // TODO EMILY part of visual tests. delete before landing PR
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
@@ -407,7 +407,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
 
   // TODO EMILY: this line is for visual simulator tests, delete before landing PR
-//                      int numFilters = 0;
+  //                      int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -418,20 +418,20 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
         //             TODO EMILY: these lines are for visual simulator tests, delete before landing
         //             PR
-//                          if(numFilters < 1) {
-//                            flutter::DlBlurImageFilter filter =
-//                                flutter::DlBlurImageFilter(changingBlurRadius, changingBlurRadius,
-//                                flutter::DlTileMode::kDecal);
-//
-//                            NSNumber* blurRadius =
-//                            @(filter.asBlur()->sigma_x());
-//                            [blurRadii addObject:blurRadius];
-//
-//                            numFilters++;
-//                            FML_DLOG(ERROR) << "****checkpoint***" << changingBlurRadius;
-//
-//                            changingBlurRadius++;
-//                          }
+        //                          if(numFilters < 1) {
+        //                            flutter::DlBlurImageFilter filter =
+        //                                flutter::DlBlurImageFilter(changingBlurRadius,
+        //                                changingBlurRadius, flutter::DlTileMode::kDecal);
+        //
+        //                            NSNumber* blurRadius =
+        //                            @(filter.asBlur()->sigma_x());
+        //                            [blurRadii addObject:blurRadius];
+        //
+        //                            numFilters++;
+        //                            FML_DLOG(ERROR) << "****checkpoint***" << changingBlurRadius;
+        //
+        //                            changingBlurRadius++;
+        //                          }
         break;
       }
       case kClipRect:

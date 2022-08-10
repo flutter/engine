@@ -143,7 +143,7 @@ void ResetAnchor(CALayer* layer) {
     // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
     while ([blurRadii count] > [_activeGaussianFilters count]) {
       // copy returns a deep copy of _gaussianFilter
-      [_activeGaussianFilters addObject:[[_gaussianFilter copy] autorelease] ];
+      [_activeGaussianFilters addObject:[[_gaussianFilter copy] autorelease]];
     }
     while ([blurRadii count] < [_activeGaussianFilters count]) {
       [_activeGaussianFilters removeLastObject];
