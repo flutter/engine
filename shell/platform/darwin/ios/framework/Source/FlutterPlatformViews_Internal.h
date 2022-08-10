@@ -48,8 +48,9 @@
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
-// Adds a blur filter to its layers. Returns NO if Apple's API has changed and
-// blurred backdrop filters cannot be applied, otherwise returns YES.
+// Applies blur backdrop filters to the ChildClippingView with blur radius values from
+// blurRadii. Returns NO if Apple's API has changed and blurred backdrop filters cannot
+// be applied, otherwise returns YES.
 - (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
 
 // The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView

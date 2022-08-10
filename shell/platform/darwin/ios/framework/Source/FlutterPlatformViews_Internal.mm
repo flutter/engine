@@ -125,7 +125,6 @@ void ResetAnchor(CALayer* layer) {
     _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
 
     _gaussianFilter = [self extractGaussianFilter];
-    [self.blurEffectView release];
 
     if (!_gaussianFilter) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
@@ -139,15 +138,6 @@ void ResetAnchor(CALayer* layer) {
 
   if ([blurRadii count] != [_activeGaussianFilters count]) {
     updateActiveFilters = YES;
-
-    // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
-    while ([blurRadii count] > [_activeGaussianFilters count]) {
-      // copy returns a deep copy of _gaussianFilter
-      [_activeGaussianFilters addObject:[[_gaussianFilter copy] autorelease]];
-    }
-    while ([blurRadii count] < [_activeGaussianFilters count]) {
-      [_activeGaussianFilters removeLastObject];
-    }
   } else {
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
       if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] != blurRadii[i]) {
@@ -158,8 +148,10 @@ void ResetAnchor(CALayer* layer) {
   }
 
   if (updateActiveFilters) {
+    [_activeGaussianFilters removeAllObjects];
+
     for (NSUInteger i = 0; i < [blurRadii count]; i++) {
-      _activeGaussianFilters[i] = [[_gaussianFilter copy] autorelease];
+      [_activeGaussianFilters addObject: [[_gaussianFilter copy] autorelease]];
       [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
     }
     self.layer.filters = _activeGaussianFilters;
@@ -171,6 +163,8 @@ void ResetAnchor(CALayer* layer) {
 - (void)dealloc {
   [_activeGaussianFilters release];
   _activeGaussianFilters = nil;
+  
+  [self.blurEffectView release];
 
   [_gaussianFilter release];
   _gaussianFilter = nil;
