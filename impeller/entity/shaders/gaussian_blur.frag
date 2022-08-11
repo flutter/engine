@@ -7,30 +7,44 @@
 // Paths for future optimization:
 //   * Remove the uv bounds multiplier in SampleColor by adding optional
 //     support for SamplerAddressMode::ClampToBorder in the texture sampler.
-//   * Sample from higher mipmap levels when the blur radius is high enough.
+//   * Render both blur passes into a smaller texture than the source image
+//     (~1/radius size).
+//   * If doing the small texture render optimization, cache misses can be
+//     reduced in the first pass by sampling the source textures with a mip
+//     level of log2(min_radius).
 
+#include <impeller/constants.glsl>
 #include <impeller/texture.glsl>
 
 uniform sampler2D texture_sampler;
 uniform sampler2D alpha_mask_sampler;
 
 uniform FragInfo {
+  float texture_sampler_y_coord_scale;
+  float alpha_mask_sampler_y_coord_scale;
+
   vec2 texture_size;
   vec2 blur_direction;
 
+  float tile_mode;
+
+  // The blur sigma and radius have a linear relationship which is defined
+  // host-side, but both are useful controls here. Sigma (pixels per standard
+  // deviation) is used to define the gaussian function itself, whereas the
+  // radius is used to limit how much of the function is integrated.
   float blur_sigma;
   float blur_radius;
+
   float src_factor;
   float inner_blur_factor;
   float outer_blur_factor;
-} frag_info;
+}
+frag_info;
 
 in vec2 v_texture_coords;
 in vec2 v_src_texture_coords;
 
 out vec4 frag_color;
-
-const float kSqrtTwoPi = 2.50662827463;
 
 float Gaussian(float x) {
   float variance = frag_info.blur_sigma * frag_info.blur_sigma;
@@ -46,14 +60,23 @@ void main() {
     float gaussian = Gaussian(i);
     gaussian_integral += gaussian;
     total_color +=
-        gaussian * IPSampleClampToBorder(texture_sampler,
-                                         v_texture_coords + blur_uv_offset * i);
+        gaussian *
+        IPSampleWithTileMode(
+            texture_sampler,                          // sampler
+            v_texture_coords + blur_uv_offset * i,    // texture coordinates
+            frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
+            frag_info.tile_mode                       // tile mode
+        );
   }
 
   vec4 blur_color = total_color / gaussian_integral;
 
-  vec4 src_color =
-      IPSampleClampToBorder(alpha_mask_sampler, v_src_texture_coords);
+  vec4 src_color = IPSampleWithTileMode(
+      alpha_mask_sampler,                          // sampler
+      v_src_texture_coords,                        // texture coordinates
+      frag_info.alpha_mask_sampler_y_coord_scale,  // y coordinate scale
+      frag_info.tile_mode                          // tile mode
+  );
   float blur_factor = frag_info.inner_blur_factor * float(src_color.a > 0) +
                       frag_info.outer_blur_factor * float(src_color.a == 0);
 

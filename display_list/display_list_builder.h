@@ -348,6 +348,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   sk_sp<DisplayList> Build();
 
  private:
+  void checkForDeferredSave();
+
   SkAutoTMalloc<uint8_t> storage_;
   size_t used_ = 0;
   size_t allocated_ = 0;
@@ -484,6 +486,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
     SkRect clip_bounds_;
     std::shared_ptr<const DlImageFilter> filter_;
     bool is_unbounded_;
+    bool has_deferred_save_op_ = false;
+
+    friend class DisplayListBuilder;
   };
 
   std::vector<LayerInfo> layer_stack_;

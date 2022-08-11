@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "display_list/display_list_blend_mode.h"
+#include "display_list/display_list_color_filter.h"
 #include "display_list/display_list_path_effect.h"
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
@@ -15,6 +16,7 @@
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
@@ -101,6 +103,19 @@ static Entity::BlendMode ToBlendMode(flutter::DlBlendMode mode) {
       return Entity::BlendMode::kLuminosity;
   }
   FML_UNREACHABLE();
+}
+
+static Entity::TileMode ToTileMode(flutter::DlTileMode tile_mode) {
+  switch (tile_mode) {
+    case flutter::DlTileMode::kClamp:
+      return Entity::TileMode::kClamp;
+    case flutter::DlTileMode::kRepeat:
+      return Entity::TileMode::kRepeat;
+    case flutter::DlTileMode::kMirror:
+      return Entity::TileMode::kMirror;
+    case flutter::DlTileMode::kDecal:
+      return Entity::TileMode::kDecal;
+  }
 }
 
 // |flutter::Dispatcher|
@@ -248,7 +263,7 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(linear->colors()[i]));
       }
       contents->SetColors(std::move(colors));
-      contents->SetTileMode(static_cast<Entity::TileMode>(linear->tile_mode()));
+      contents->SetTileMode(ToTileMode(linear->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
@@ -264,8 +279,7 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
       }
       contents->SetColors(std::move(colors));
-      contents->SetTileMode(
-          static_cast<Entity::TileMode>(radialGradient->tile_mode()));
+      contents->SetTileMode(ToTileMode(radialGradient->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
@@ -282,8 +296,7 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(sweepGradient->colors()[i]));
       }
       contents->SetColors(std::move(colors));
-      contents->SetTileMode(
-          static_cast<Entity::TileMode>(sweepGradient->tile_mode()));
+      contents->SetTileMode(ToTileMode(sweepGradient->tile_mode()));
       paint_.contents = std::move(contents);
       return;
     }
@@ -319,10 +332,25 @@ void DisplayListDispatcher::setColorFilter(
       };
       return;
     }
-    case flutter::DlColorFilterType::kMatrix:
+    case flutter::DlColorFilterType::kMatrix: {
+      const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
+      impeller::FilterContents::ColorMatrix color_matrix;
+      dl_matrix->get_matrix(color_matrix.array);
+      paint_.color_filter = [color_matrix](FilterInput::Ref input) {
+        return FilterContents::MakeColorMatrix({input}, color_matrix);
+      };
+      return;
+    }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
+      FML_LOG(ERROR) << "requested DlColorFilterType::kSrgbToLinearGamma";
+      UNIMPLEMENTED;
+      break;
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
+      FML_LOG(ERROR) << "requested DlColorFilterType::kLinearToSrgbGamma";
+      UNIMPLEMENTED;
+      break;
     case flutter::DlColorFilterType::kUnknown:
+      FML_LOG(ERROR) << "requested DlColorFilterType::kUnknown";
       UNIMPLEMENTED;
       break;
   }
@@ -387,7 +415,8 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
 }
 
 static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
-    const flutter::DlImageFilter* filter) {
+    const flutter::DlImageFilter* filter,
+    const Vector2& effect_scale = {1, 1}) {
   if (filter == nullptr) {
     return std::nullopt;
   }
@@ -395,16 +424,16 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
-      auto sigma_x = Sigma(blur->sigma_x());
-      auto sigma_y = Sigma(blur->sigma_y());
+      Vector2 scaled_blur =
+          Vector2(blur->sigma_x(), blur->sigma_y()) * effect_scale;
+      auto sigma_x = Sigma(scaled_blur.x);
+      auto sigma_y = Sigma(scaled_blur.y);
+      auto tile_mode = ToTileMode(blur->tile_mode());
 
-      if (blur->tile_mode() != flutter::DlTileMode::kClamp) {
-        // TODO(105072): Implement tile mode for blur filter.
-        UNIMPLEMENTED;
-      }
-
-      return [sigma_x, sigma_y](FilterInput::Ref input) {
-        return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
+      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input) {
+        return FilterContents::MakeGaussianBlur(
+            input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
+            tile_mode);
       };
 
       break;
@@ -412,6 +441,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
     case flutter::DlImageFilterType::kDilate:
     case flutter::DlImageFilterType::kErode:
     case flutter::DlImageFilterType::kMatrix:
+    case flutter::DlImageFilterType::kLocalMatrixFilter:
     case flutter::DlImageFilterType::kComposeFilter:
     case flutter::DlImageFilterType::kColorFilter:
     case flutter::DlImageFilterType::kUnknown:
@@ -450,7 +480,10 @@ void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
                                       const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
+  auto scale = canvas_.GetCurrentTransformation().GetScale();
+  canvas_.SaveLayer(
+      paint, ToRect(bounds),
+      ToImageFilterProc(backdrop, Vector2::MakeXY(scale.x, scale.y)));
 }
 
 // |flutter::Dispatcher|

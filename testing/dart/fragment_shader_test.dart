@@ -24,6 +24,16 @@ void main() async {
     _expectShaderRendersGreen(shader);
   });
 
+  test('simple shader with space in key renders correctly', () async {
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'functions with_space.frag.iplr',
+    );
+    final Shader shader = program.shader(
+      floatUniforms: Float32List.fromList(<double>[1]),
+    );
+    _expectShaderRendersGreen(shader);
+  });
+
   test('blue-green image renders green', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
@@ -62,6 +72,22 @@ void main() async {
     expect(toFloat(renderedBytes.getUint8(1)), closeTo(0.25, epsilon));
     expect(toFloat(renderedBytes.getUint8(2)), closeTo(0.75, epsilon));
     expect(toFloat(renderedBytes.getUint8(3)), closeTo(1.0, epsilon));
+  });
+
+  test('shader with array uniforms renders correctly', () async {
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'uniform_arrays.frag.iplr',
+    );
+
+    final List<double> floatArray = List<double>.generate(
+      24, (int i) => i.toDouble(),
+    );
+    final Shader shader = program.shader(
+      floatUniforms: Float32List.fromList(<double>[
+        ...floatArray,
+    ]));
+
+    await _expectShaderRendersGreen(shader);
   });
 
   test('The ink_sparkle shader is accepted', () async {

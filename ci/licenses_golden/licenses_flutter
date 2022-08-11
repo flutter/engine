@@ -556,6 +556,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
@@ -623,6 +625,8 @@ FILE: ../../../flutter/impeller/entity/shaders/blending/blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
+FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
@@ -773,6 +777,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
@@ -793,8 +799,14 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc
@@ -1669,6 +1681,7 @@ FILE: ../../../flutter/shell/platform/common/path_utils.h
 FILE: ../../../flutter/shell/platform/common/path_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/common/platform_provided_menu.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_export.h
+FILE: ../../../flutter/shell/platform/common/public/flutter_macros.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_plugin_registrar.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_texture_registrar.h
@@ -2317,6 +2330,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_task_runner.h
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_text_input_view_delegate.cc
+FILE: ../../../flutter/shell/platform/linux/fl_text_input_view_delegate.h
 FILE: ../../../flutter/shell/platform/linux/fl_texture.cc
 FILE: ../../../flutter/shell/platform/linux/fl_texture_gl.cc
 FILE: ../../../flutter/shell/platform/linux/fl_texture_gl_private.h

@@ -195,6 +195,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
+  color_matrix_color_filter_pipelines_[{}] =
+      CreateDefaultPipeline<ColorMatrixColorFilterPipeline>(*context_);
   solid_stroke_pipelines_[{}] =
       CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
@@ -243,7 +245,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  auto sub_command_buffer = context->CreateRenderCommandBuffer();
+  auto sub_command_buffer = context->CreateCommandBuffer();
   sub_command_buffer->SetLabel("Offscreen Contents Command Buffer");
   if (!sub_command_buffer) {
     return nullptr;
@@ -259,7 +261,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands(context->GetTransientsAllocator())) {
+  if (!sub_renderpass->EncodeCommands(context->GetResourceAllocator())) {
     return nullptr;
   }
 
