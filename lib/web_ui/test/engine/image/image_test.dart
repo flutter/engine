@@ -2,52 +2,54 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui';
-
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
+import 'package:ui/ui.dart';
 
 void main() {
-  test('Picture constructor invokes onCreate once', () async {
+  test('Image constructor invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
-    Picture? createdPicture;
-    Picture.onCreate = (Picture picture) {
+    Image? createdImage;
+    Image.onCreate = (Image image) {
       onCreateInvokedCount++;
-      createdPicture = picture;
+      createdImage = image;
     };
 
-    final Picture picture1 = _createPicture();
+    final Image image1 = await _createImage();
 
     expect(onCreateInvokedCount, 1);
-    expect(createdPicture, picture1);
+    expect(createdImage, image1);
 
-    final Picture picture2 = _createPicture();
+    final Image image2 = await _createImage();
 
     expect(onCreateInvokedCount, 2);
-    expect(createdPicture, picture2);
-    Picture.onCreate = null;
+    expect(createdImage, image2);
+    Image.onCreate = null;
   });
 
   test('dispose() invokes onDispose once', () async {
     int onDisposeInvokedCount = 0;
-    Picture? disposedPicture;
-    Picture.onDispose = (Picture picture) {
+    Image? disposedImage;
+    Image.onDispose = (Image image) {
       onDisposeInvokedCount++;
-      disposedPicture = picture;
+      disposedImage = image;
     };
 
-    final Picture picture1 = _createPicture()..dispose();
+    final Image image1 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 1);
-    expect(disposedPicture, picture1);
+    expect(disposedImage, image1);
 
-    final Picture picture2 = _createPicture()..dispose();
+    final Image image2 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 2);
-    expect(disposedPicture, picture2);
+    expect(disposedImage, image2);
 
-    Picture.onDispose = null;
+    Image.onDispose = null;
   });
 }
+
+
+Future<Image> _createImage() async => _createPicture().toImage(10, 10);
 
 Picture _createPicture() {
   final PictureRecorder recorder = PictureRecorder();

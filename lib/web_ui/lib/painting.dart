@@ -332,17 +332,13 @@ abstract class Gradient extends Shader {
 }
 
 abstract class Image {
-  Image() {
-    onCreate?.call(this);
-  }
-
   static void Function(Image)? onCreate;
   static void Function(Image)? onDispose;
 
   int get width;
   int get height;
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
-  void dispose() => onDispose?.call(this);
+  void dispose();
   bool get debugDisposed;
 
   Image clone() => this;

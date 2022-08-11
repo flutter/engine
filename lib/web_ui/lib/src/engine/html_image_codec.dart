@@ -140,7 +140,9 @@ class SingleFrameInfo implements ui.FrameInfo {
 }
 
 class HtmlImage implements ui.Image {
-  HtmlImage(this.imgElement, this.width, this.height);
+  HtmlImage(this.imgElement, this.width, this.height) {
+    ui.Image.onCreate?.call(this);
+  }
 
   final DomHTMLImageElement imgElement;
   bool _requiresClone = false;
@@ -148,6 +150,7 @@ class HtmlImage implements ui.Image {
   bool _disposed = false;
   @override
   void dispose() {
+    ui.Image.onDispose?.call(this);
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
     if (assertionsEnabled) {

@@ -149,9 +149,7 @@ Future<Uint8List> fetchImage(
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
   CkImage(SkImage skImage, { this.videoFrame }) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
+    _init();
     if (browserSupportsFinalizationRegistry) {
       box = SkiaObjectBox<CkImage, SkImage>(this, skImage);
     } else {
@@ -200,10 +198,15 @@ class CkImage implements ui.Image, StackTraceDebugger {
   }
 
   CkImage.cloneOf(this.box) {
+    _init();
+    box.ref(this);
+  }
+
+  void _init() {
     if (assertionsEnabled) {
       _debugStackTrace = StackTrace.current;
     }
-    box.ref(this);
+    ui.Image.onCreate?.call(this);
   }
 
   @override
@@ -237,6 +240,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   @override
   void dispose() {
+    ui.Image.onDispose?.call(this);
     assert(
       !_disposed,
       'Cannot dispose an image that has already been disposed.',
