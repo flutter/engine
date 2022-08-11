@@ -455,8 +455,9 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
-  auto present_queue_out = PickPresentQueue(physical_device_, surface);
+void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
+  surface_ = std::move(surface);
+  auto present_queue_out = PickPresentQueue(physical_device_, *surface);
   if (!present_queue_out.has_value()) {
     return;
   }
@@ -464,11 +465,11 @@ void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
       device_->getQueue(present_queue_out->family, present_queue_out->index);
 
   auto swapchain_details =
-      SwapchainDetailsVK::Create(physical_device_, surface);
+      SwapchainDetailsVK::Create(physical_device_, *surface);
   if (!swapchain_details) {
     return;
   }
-  swapchain_ = SwapchainVK::Create(*device_, surface, *swapchain_details);
+  swapchain_ = SwapchainVK::Create(*device_, *surface, *swapchain_details);
   auto weak_this = weak_from_this();
   surface_producer_ = SurfaceProducerVK::Create(
       weak_this, {
