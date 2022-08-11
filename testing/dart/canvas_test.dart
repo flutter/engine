@@ -508,18 +508,27 @@ void main() {
   test('toImage and toImageSync have identical contents', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
-    canvas.drawRect(Rect.fromLTWH(20, 20, 100, 100),
-        Paint()..color = const Color(0xFFFF6D00));
+    canvas.drawRect(
+      const Rect.fromLTWH(20, 20, 100, 100),
+      Paint()..color = const Color(0xFFFF6D00),
+    );
     final Picture picture = recorder.endRecording();
     final Image toImageImage = await picture.toImage(200, 200);
     final Image toImageSyncImage = picture.toImageSync(200, 200);
 
-    final ByteData? dataSync = await toImageImage.toByteData();
-    final ByteData? data = await toImageSyncImage.toByteData();
+    // To trigger observable difference in alpha, draw image
+    // on a second canvas.
+    Future<ByteData> drawOnCanvas(Image image) async {
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawImage(image, Offset.zero, Paint());
+      final Image resultImage = await recorder.endRecording().toImage(200, 200);
+      return (await resultImage.toByteData())!;
+    }
 
-    expect(dataSync, isNotNull);
-    expect(data, isNotNull);
-    expect(data!, listEquals(dataSync!));
+    final ByteData dataSync = await drawOnCanvas(toImageImage);
+    final ByteData data = await drawOnCanvas(toImageSyncImage);
+    expect(data, listEquals(dataSync));
   });
 
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
