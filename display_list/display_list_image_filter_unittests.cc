@@ -827,7 +827,8 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
           // Test for: Know the outset bounds to get the inset bounds
           // Skia have some bounds calculate error of DilateFilter and
           // MatrixFilter
-          // https://fiddle.skia.org/c/a0dc934dd7f900fb958797edd0e86ee3
+          // Skia issue: https://bugs.chromium.org/p/skia/issues/detail?id=13444
+          // flutter issue: https://github.com/flutter/flutter/issues/108693
           if (i == 2 || i == 3) {
             continue;
           }
