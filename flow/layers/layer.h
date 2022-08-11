@@ -227,7 +227,6 @@ class Layer {
 
     ~AutoCachePaint() { context_.inherited_opacity = sk_paint_.getAlphaf(); }
 
-
     void setImageFilter(const DlImageFilter* filter) {
       if (!filter) {
         return;

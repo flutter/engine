@@ -24,9 +24,7 @@ using ImageFilterLayerTest = LayerTest;
 
 #ifndef NDEBUG
 TEST_F(ImageFilterLayerTest, PaintingEmptyLayerDies) {
-  auto sk_image_filter = sk_sp<SkImageFilter>();
-  auto layer =
-      std::make_shared<ImageFilterLayer>(DlImageFilter::From(sk_image_filter));
+  auto layer = std::make_shared<ImageFilterLayer>(nullptr);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -40,8 +38,7 @@ TEST_F(ImageFilterLayerTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto dl_filter = DlImageFilter::From(sk_sp<SkImageFilter>());
-  auto layer = std::make_shared<ImageFilterLayer>(dl_filter);
+  auto layer = std::make_shared<ImageFilterLayer>(nullptr);
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -102,13 +99,13 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
 
   DisplayListBuilder expected_builder;
   /* ImageFilterLayer::Paint() */ {
-    expected_builder.setImageFilter(dl_image_filter.get());
-    expected_builder.saveLayer(&child_bounds, true);
+    DlPaint dl_paint;
+    dl_paint.setImageFilter(dl_image_filter.get());
+    expected_builder.saveLayer(&child_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        expected_builder.setColor(SkColors::kYellow.toSkColor());
-        expected_builder.setImageFilter(nullptr);
-        expected_builder.drawPath(child_path);
+        expected_builder.drawPath(child_path,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
     }
   }
@@ -142,13 +139,13 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
 
   DisplayListBuilder expected_builder;
   /* ImageFilterLayer::Paint() */ {
-    expected_builder.setImageFilter(dl_image_filter.get());
-    expected_builder.saveLayer(&child_bounds, true);
+    DlPaint dl_paint;
+    dl_paint.setImageFilter(dl_image_filter.get());
+    expected_builder.saveLayer(&child_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        expected_builder.setColor(SkColors::kYellow.toSkColor());
-        expected_builder.setImageFilter(nullptr);
-        expected_builder.drawPath(child_path);
+        expected_builder.drawPath(child_path,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
     }
   }
@@ -192,18 +189,17 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
 
   DisplayListBuilder expected_builder;
   /* ImageFilterLayer::Paint() */ {
-    expected_builder.setImageFilter(dl_image_filter.get());
-    expected_builder.saveLayer(&children_bounds, true);
+    DlPaint dl_paint;
+    dl_paint.setImageFilter(dl_image_filter.get());
+    expected_builder.saveLayer(&children_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        expected_builder.setColor(SkColors::kYellow.toSkColor());
-        expected_builder.setImageFilter(nullptr);
-        expected_builder.drawPath(child_path1);
+        expected_builder.drawPath(child_path1,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
       /* MockLayer::Paint() */ {
-        expected_builder.setColor(SkColors::kCyan.toSkColor());
-        expected_builder.setImageFilter(nullptr);
-        expected_builder.drawPath(child_path2);
+        expected_builder.drawPath(child_path2,
+                                  DlPaint().setColor(DlColor::kCyan()));
       }
     }
   }
@@ -257,22 +253,21 @@ TEST_F(ImageFilterLayerTest, Nested) {
 
   DisplayListBuilder expected_builder;
   /* ImageFilterLayer::Paint() */ {
-    expected_builder.setImageFilter(dl_image_filter1.get());
-    expected_builder.saveLayer(&child_path1.getBounds(), true);
+    DlPaint dl_paint;
+    dl_paint.setImageFilter(dl_image_filter1.get());
+    expected_builder.saveLayer(&children_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
-        expected_builder.setColor(SkColors::kYellow.toSkColor());
-        expected_builder.setImageFilter(nullptr);
-        expected_builder.drawPath(child_path1);
+        expected_builder.drawPath(child_path1,
+                                  DlPaint().setColor(DlColor::kYellow()));
       }
       /* ImageFilterLayer::Paint() */ {
-        expected_builder.setColor(SkColors::kBlack.toSkColor());
-        expected_builder.setImageFilter(dl_image_filter2.get());
-        expected_builder.saveLayer(&child_path2.getBounds(), true);
+        DlPaint child_paint;
+        child_paint.setImageFilter(dl_image_filter2.get());
+        expected_builder.saveLayer(&child_path2.getBounds(), &child_paint);
         /* MockLayer::Paint() */ {
-          expected_builder.setColor(SkColors::kCyan.toSkColor());
-          expected_builder.setImageFilter(nullptr);
-          expected_builder.drawPath(child_path2);
+          expected_builder.drawPath(child_path2,
+                                    DlPaint().setColor(DlColor::kCyan()));
         }
         expected_builder.restore();
       }
@@ -471,13 +466,14 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
     {
       expected_builder.translate(offset.fX, offset.fY);
       /* ImageFilterLayer::Paint() */ {
-        expected_builder.setColor(opacity_alpha << 24);
-        expected_builder.setImageFilter(dl_image_filter.get());
-        expected_builder.saveLayer(&child_path.getBounds(), true);
+        DlPaint image_filter_paint;
+        image_filter_paint.setColor(opacity_alpha << 24);
+        image_filter_paint.setImageFilter(dl_image_filter.get());
+        expected_builder.saveLayer(&child_path.getBounds(),
+                                   &image_filter_paint);
         /* MockLayer::Paint() */ {
-          expected_builder.setColor(child_paint.getColor());
-          expected_builder.setImageFilter(nullptr);
-          expected_builder.drawPath(child_path);
+          expected_builder.drawPath(child_path,
+                                    DlPaint().setColor(child_paint.getColor()));
         }
         expected_builder.restore();
       }

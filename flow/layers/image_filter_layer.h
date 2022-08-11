@@ -25,7 +25,7 @@ class ImageFilterLayer : public CacheableContainerLayer {
 
  private:
   std::shared_ptr<const DlImageFilter> filter_;
-  sk_sp<SkImageFilter> transformed_filter_;
+  std::shared_ptr<const DlImageFilter> transformed_filter_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageFilterLayer);
 };

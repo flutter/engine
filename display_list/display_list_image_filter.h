@@ -76,12 +76,6 @@ class DlImageFilter
     return From(sk_filter.get());
   }
 
-  std::shared_ptr<DlImageFilter> makeWithLocalMatrix(const SkMatrix&) const {
-    // TODO(Jsoulaing): if need implement this method which used for
-    // ImageFilterLayer
-    return nullptr;
-  }
-
   // Return a DlBlurImageFilter pointer to this object iff it is a Blur
   // type of ImageFilter, otherwise return nullptr.
   virtual const DlBlurImageFilter* asBlur() const { return nullptr; }
@@ -103,7 +97,7 @@ class DlImageFilter
   }
 
   virtual std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix);
+      const SkMatrix& matrix) const;
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -642,7 +636,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
 
   std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix) override {
+      const SkMatrix& matrix) const override {
     return shared();
   }
 
@@ -772,6 +766,9 @@ class DlUnknownImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
+    if (!sk_filter_) {
+      return nullptr;
+    }
     if (modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
@@ -783,6 +780,9 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
+    if (!sk_filter_) {
+      return nullptr;
+    }
     if (modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
@@ -795,6 +795,9 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
+    if (!sk_filter_) {
+      return nullptr;
+    }
     if (modifies_transparent_black()) {
       input_bounds = output_bounds;
       return nullptr;

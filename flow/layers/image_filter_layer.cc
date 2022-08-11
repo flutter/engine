@@ -26,14 +26,14 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
 
   if (filter_) {
-    auto filter =
-        filter_->skia_object()->makeWithLocalMatrix(context->GetTransform());
+    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
       context->PushFilterBoundsAdjustment([filter](SkRect rect) {
-        return SkRect::Make(
-            filter->filterBounds(rect.roundOut(), SkMatrix::I(),
-                                 SkImageFilter::kForward_MapDirection));
+        SkIRect filter_out_bounds;
+        filter->map_device_bounds(rect.roundOut(), SkMatrix::I(),
+                                  filter_out_bounds);
+        return SkRect::Make(filter_out_bounds);
       });
     }
   }
@@ -62,11 +62,11 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     return;
   }
 
-  const SkIRect filter_target_bounds = child_bounds.roundOut();
-  SkIRect filter_input_bounds;
-  filter_->map_device_bounds(filter_target_bounds, SkMatrix::I(),
-                             filter_input_bounds);
-  child_bounds = SkRect::Make(filter_input_bounds);
+  const SkIRect filter_in_bounds = child_bounds.roundOut();
+  SkIRect filter_out_bounds;
+  filter_->map_device_bounds(filter_in_bounds, SkMatrix::I(),
+                             filter_out_bounds);
+  child_bounds = SkRect::Make(filter_out_bounds);
 
   set_paint_bounds(child_bounds);
 
@@ -74,7 +74,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   // So in here we reset the LayerRasterCacheItem cache state.
   layer_raster_cache_item_->MarkNotCacheChildren();
 
-  transformed_filter_ = filter_->skia_object()->makeWithLocalMatrix(matrix);
+  transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();
   }
@@ -87,21 +87,20 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint cache_paint(context);
   if (context.raster_cache) {
     if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setImageFilter(transformed_filter_);
+      cache_paint.setImageFilter(transformed_filter_.get());
     }
     if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
       return;
     }
   }
 
+  cache_paint.setImageFilter(filter_ ? filter_.get() : nullptr);
   if (context.leaf_nodes_builder) {
-    cache_paint.setImageFilter(filter_.get());
     context.leaf_nodes_builder->saveLayer(&child_paint_bounds(),
                                           cache_paint.dl_paint());
     PaintChildren(context);
     context.leaf_nodes_builder->restore();
   } else {
-    cache_paint.setImageFilter(filter_ ? filter_->skia_object() : nullptr);
     // Normally a save_layer is sized to the current layer bounds, but in this
     // case the bounds of the child may not be the same as the filtered version
     // so we use the bounds of the child container which do not include any
