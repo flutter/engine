@@ -509,7 +509,7 @@ void main() {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawRect(
-      const Rect.fromLTWH(20, 20, 100, 100),
+      const Rect.fromLTWH(20.5, 20.5, 100.5, 100.5),
       Paint()..color = const Color(0xFFFF6D00),
     );
     final Picture picture = recorder.endRecording();
@@ -521,6 +521,7 @@ void main() {
     Future<ByteData> drawOnCanvas(Image image) async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder);
+      canvas.drawPaint(Paint()..color = const Color(0x4FFFFFFF));
       canvas.drawImage(image, Offset.zero, Paint());
       final Image resultImage = await recorder.endRecording().toImage(200, 200);
       return (await resultImage.toByteData())!;
