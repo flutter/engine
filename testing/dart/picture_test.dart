@@ -38,12 +38,12 @@ void main() {
     final Picture picture1 = _createPicture()..dispose();
 
     expect(onDisposeInvokedCount, 1);
-    expect(disposedPicture, identityHashCode(picture1));
+    expect(disposedPicture, picture1);
 
     final Picture picture2 = _createPicture()..dispose();
 
     expect(onDisposeInvokedCount, 2);
-    expect(disposedPicture, identityHashCode(picture2));
+    expect(disposedPicture, picture2);
 
     Picture.onDispose = null;
   });
