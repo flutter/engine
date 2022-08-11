@@ -469,13 +469,14 @@ void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
     return;
   }
   swapchain_ = SwapchainVK::Create(*device_, surface, *swapchain_details);
-
-  surface_producer_ = SurfaceProducerVK::Create({
-      .device = *device_,
-      .graphics_queue = graphics_queue_,
-      .present_queue = present_queue_,
-      .swapchain = swapchain_.get(),
-  });
+  auto weak_this = weak_from_this();
+  surface_producer_ = SurfaceProducerVK::Create(
+      weak_this, {
+                     .device = *device_,
+                     .graphics_queue = graphics_queue_,
+                     .present_queue = present_queue_,
+                     .swapchain = swapchain_.get(),
+                 });
 }
 
 }  // namespace impeller
