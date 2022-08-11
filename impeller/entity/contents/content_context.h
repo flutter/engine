@@ -33,6 +33,8 @@
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
+#include "impeller/entity/color_matrix_color_filter.frag.h"
+#include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
@@ -110,6 +112,9 @@ using GaussianBlurPipeline =
     PipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     PipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
+using ColorMatrixColorFilterPipeline =
+    PipelineT<ColorMatrixColorFilterVertexShader,
+              ColorMatrixColorFilterFragmentShader>;
 using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
@@ -149,7 +154,7 @@ struct ContentContextOptions {
 
 class ContentContext {
  public:
-  ContentContext(std::shared_ptr<Context> context);
+  explicit ContentContext(std::shared_ptr<Context> context);
 
   ~ContentContext();
 
@@ -201,6 +206,11 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetColorMatrixColorFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(color_matrix_color_filter_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidStrokePipeline(
@@ -335,6 +345,8 @@ class ContentContext {
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
+  mutable Variants<ColorMatrixColorFilterPipeline>
+      color_matrix_color_filter_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;

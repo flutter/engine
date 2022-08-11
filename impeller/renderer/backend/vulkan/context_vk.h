@@ -10,9 +10,11 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
@@ -57,8 +59,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance() const;
 
-  std::unique_ptr<impeller::SwapchainVK> CreateSwapchain(
-      vk::SurfaceKHR surface) const;
+  void SetupSwapchain(vk::SurfaceKHR surface);
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -73,6 +74,10 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::Queue graphics_queue_;
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
+  vk::Queue present_queue_;
+  std::unique_ptr<SwapchainVK> swapchain_;
+  std::unique_ptr<CommandPoolVK> graphics_command_pool_;
+  std::unique_ptr<SurfaceProducerVK> surface_producer_;
   bool is_valid_ = false;
 
   ContextVK(
