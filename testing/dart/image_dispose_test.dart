@@ -135,21 +135,21 @@ void main() {
 
   test('dispose() invokes onDispose once', () async {
     int onDisposeInvokedCount = 0;
-    int instanceHashCode = 0;
-    Image.onDispose = (Object obj) {
+    Image? disposedImage;
+    Image.onDispose = (Image image) {
       onDisposeInvokedCount++;
-      instanceHashCode = identityHashCode(obj);
+      disposedImage = image;
     };
 
     final Image image1 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 1);
-    expect(instanceHashCode, identityHashCode(image1));
+    expect(disposedImage, image1);
 
     final Image image2 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 2);
-    expect(instanceHashCode, identityHashCode(image2));
+    expect(disposedImage, image2);
 
     Image.onDispose = null;
   });

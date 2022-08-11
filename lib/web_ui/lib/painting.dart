@@ -336,8 +336,8 @@ abstract class Image {
     onCreate?.call(this);
   }
 
-  static void Function(Object)? onCreate;
-  static void Function(Object)? onDispose;
+  static void Function(Image)? onCreate;
+  static void Function(Image)? onDispose;
 
   int get width;
   int get height;

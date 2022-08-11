@@ -10,21 +10,21 @@ import 'package:litetest/litetest.dart';
 void main() {
   test('Image constructor invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
-    int instanceHashCode = 0;
-    Image.onCreate = (Object obj) {
+    Image? createdImage;
+    Image.onCreate = (Image image) {
       onCreateInvokedCount++;
-      instanceHashCode = identityHashCode(obj);
+      createdImage = image;
     };
 
     final Image image1 = await _createImage();
 
     expect(onCreateInvokedCount, 1);
-    expect(instanceHashCode, identityHashCode(image1));
+    expect(createdImage, image1);
 
     final Image image2 = await _createImage();
 
     expect(onCreateInvokedCount, 2);
-    expect(instanceHashCode, identityHashCode(image2));
+    expect(createdImage, image2);
     Image.onCreate = null;
   });
 }

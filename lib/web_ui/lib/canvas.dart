@@ -155,8 +155,8 @@ abstract class Canvas {
 
 abstract class Picture {
   Picture() { onCreate?.call(this); }
-  static void Function(Object)? onCreate;
-  static void Function(Object)? onDispose;
+  static void Function(Picture)? onCreate;
+  static void Function(Picture)? onDispose;
   Future<Image> toImage(int width, int height);
   Image toImageSync(int width, int height);
   void dispose() { onDispose?.call(this); }

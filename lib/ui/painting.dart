@@ -1661,14 +1661,14 @@ class Image {
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Object)? onCreate;
+  static void Function(Image)? onCreate;
 
   /// A callback that is invoked to report the object disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onDispose] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Object)? onDispose;
+  static void Function(Image)? onDispose;
 
   StackTrace? _debugStack;
 
@@ -5614,14 +5614,14 @@ class Picture extends NativeFieldWrapperClass1 {
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Object)? onCreate;
+  static void Function(Picture)? onCreate;
 
   /// A callback that is invoked to report the object disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onDispose] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Object)? onDispose;
+  static void Function(Picture)? onDispose;
 
   /// Creates an image from this picture.
   ///
