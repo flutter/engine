@@ -287,7 +287,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     return originState['state'];
   }
 
-  Map<String, bool> _flutterState = <String, bool>{_kFlutterTag: true};
+  final Map<String, bool> _flutterState = <String, bool>{_kFlutterTag: true};
 
   /// The origin entry is the history entry that the Flutter app landed on. It's
   /// created by the browser when the user navigates to the url of the app.
@@ -359,7 +359,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   /// replaces the state of the entry so that we can recognize it later using
   /// [_isOriginEntry] inside [_popStateListener].
   void _setupOriginEntry(UrlStrategy strategy) {
-    assert(strategy != null); // ignore: unnecessary_null_comparison
+    assert(strategy != null);
     strategy.replaceState(_wrapOriginState(currentState), 'origin', '');
   }
 
@@ -370,7 +370,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     bool replace = false,
     String? path,
   }) {
-    assert(strategy != null); // ignore: unnecessary_null_comparison
+    assert(strategy != null);
     path ??= currentPath;
     if (replace) {
       strategy.replaceState(_flutterState, 'flutter', path);

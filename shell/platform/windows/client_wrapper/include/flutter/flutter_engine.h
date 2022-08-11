@@ -22,7 +22,8 @@ namespace flutter {
 //
 // In the future, this will be the API surface used for all interactions with
 // the engine, rather than having them duplicated on FlutterViewController.
-// For now it is only used in the rare where you need a headless Flutter engine.
+// For now it is only used in the rare case where you need a headless Flutter
+// engine.
 class FlutterEngine : public PluginRegistry {
  public:
   // Creates a new engine for running the given project.
@@ -34,13 +35,17 @@ class FlutterEngine : public PluginRegistry {
   FlutterEngine(FlutterEngine const&) = delete;
   FlutterEngine& operator=(FlutterEngine const&) = delete;
 
+  // Starts running the engine at the entrypoint function specified in the
+  // DartProject used to configure the engine, or main() by default.
+  bool Run();
+
   // Starts running the engine, with an optional entry point.
   //
   // If provided, entry_point must be the name of a top-level function from the
   // same Dart library that contains the app's main() function, and must be
   // decorated with `@pragma(vm:entry-point)` to ensure the method is not
   // tree-shaken by the Dart compiler. If not provided, defaults to main().
-  bool Run(const char* entry_point = nullptr);
+  bool Run(const char* entry_point);
 
   // Terminates the running engine.
   void ShutDown();

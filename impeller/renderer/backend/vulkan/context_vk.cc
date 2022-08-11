@@ -14,7 +14,10 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -26,6 +29,10 @@ static std::set<std::string> kRequiredDeviceExtensions = {
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
 #endif
 };
+
+#if FML_OS_MACOSX
+static const char* MVK_MACOS_SURFACE_EXT = "VK_MVK_macos_surface";
+#endif
 
 static bool HasRequiredQueues(const vk::PhysicalDevice& device) {
   auto present_flags = vk::QueueFlags{};
@@ -132,6 +139,23 @@ static std::optional<QueueVK> PickQueue(const vk::PhysicalDevice& device,
   return std::nullopt;
 }
 
+static std::optional<QueueVK> PickPresentQueue(const vk::PhysicalDevice& device,
+                                               vk::SurfaceKHR surface) {
+  const auto families = device.getQueueFamilyProperties();
+  for (size_t i = 0u; i < families.size(); i++) {
+    auto res = device.getSurfaceSupportKHR(i, surface);
+    if (res.result != vk::Result::eSuccess) {
+      continue;
+    }
+    vk::Bool32 present_supported = res.value;
+    if (present_supported) {
+      return QueueVK{.family = i, .index = 0};
+    }
+  }
+  VALIDATION_LOG << "No present queue found.";
+  return std::nullopt;
+}
+
 std::shared_ptr<ContextVK> ContextVK::Create(
     PFN_vkGetInstanceProcAddr proc_address_callback,
     const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
@@ -205,6 +229,14 @@ ContextVK::ContextVK(
   // is a requirement for opting into Molten VK on Mac.
   enabled_extensions.push_back(
       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+  // Required for glfw macOS surfaces.
+  if (!capabilities->HasExtension(MVK_MACOS_SURFACE_EXT)) {
+    VALIDATION_LOG << "On Mac: Required extension " << MVK_MACOS_SURFACE_EXT
+                   << " absent.";
+    return;
+  }
+  enabled_extensions.push_back(MVK_MACOS_SURFACE_EXT);
 #endif  // FML_OS_MACOSX
 
   //----------------------------------------------------------------------------
@@ -308,6 +340,8 @@ ContextVK::ContextVK(
   auto compute_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eCompute);
 
+  physical_device_ = physical_device.value();
+
   if (!graphics_queue.has_value() || !transfer_queue.has_value() ||
       !compute_queue.has_value()) {
     VALIDATION_LOG << "Could not pick device queues.";
@@ -386,6 +420,8 @@ ContextVK::ContextVK(
       device_->getQueue(compute_queue->family, compute_queue->index);
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
+  graphics_command_pool_ =
+      CommandPoolVK::Create(*device_, graphics_queue->index);
   is_valid_ = true;
 }
 
@@ -395,11 +431,7 @@ bool ContextVK::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Allocator> ContextVK::GetPermanentsAllocator() const {
-  return allocator_;
-}
-
-std::shared_ptr<Allocator> ContextVK::GetTransientsAllocator() const {
+std::shared_ptr<Allocator> ContextVK::GetResourceAllocator() const {
   return allocator_;
 }
 
@@ -415,12 +447,35 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
-std::shared_ptr<CommandBuffer> ContextVK::CreateRenderCommandBuffer() const {
+std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   FML_UNREACHABLE();
 }
 
-std::shared_ptr<CommandBuffer> ContextVK::CreateTransferCommandBuffer() const {
-  FML_UNREACHABLE();
+vk::Instance ContextVK::GetInstance() const {
+  return *instance_;
+}
+
+void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
+  auto present_queue_out = PickPresentQueue(physical_device_, surface);
+  if (!present_queue_out.has_value()) {
+    return;
+  }
+  present_queue_ =
+      device_->getQueue(present_queue_out->family, present_queue_out->index);
+
+  auto swapchain_details =
+      SwapchainDetailsVK::Create(physical_device_, surface);
+  if (!swapchain_details) {
+    return;
+  }
+  swapchain_ = SwapchainVK::Create(*device_, surface, *swapchain_details);
+
+  surface_producer_ = SurfaceProducerVK::Create({
+      .device = *device_,
+      .graphics_queue = graphics_queue_,
+      .present_queue = present_queue_,
+      .swapchain = swapchain_.get(),
+  });
 }
 
 }  // namespace impeller
