@@ -14,8 +14,10 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -134,6 +136,23 @@ static std::optional<QueueVK> PickQueue(const vk::PhysicalDevice& device,
     }
     return QueueVK{.family = i, .index = 0};
   }
+  return std::nullopt;
+}
+
+static std::optional<QueueVK> PickPresentQueue(const vk::PhysicalDevice& device,
+                                               vk::SurfaceKHR surface) {
+  const auto families = device.getQueueFamilyProperties();
+  for (size_t i = 0u; i < families.size(); i++) {
+    auto res = device.getSurfaceSupportKHR(i, surface);
+    if (res.result != vk::Result::eSuccess) {
+      continue;
+    }
+    vk::Bool32 present_supported = res.value;
+    if (present_supported) {
+      return QueueVK{.family = i, .index = 0};
+    }
+  }
+  VALIDATION_LOG << "No present queue found.";
   return std::nullopt;
 }
 
@@ -401,6 +420,8 @@ ContextVK::ContextVK(
       device_->getQueue(compute_queue->family, compute_queue->index);
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
+  graphics_command_pool_ =
+      CommandPoolVK::Create(*device_, graphics_queue->index);
   is_valid_ = true;
 }
 
@@ -410,11 +431,7 @@ bool ContextVK::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Allocator> ContextVK::GetPermanentsAllocator() const {
-  return allocator_;
-}
-
-std::shared_ptr<Allocator> ContextVK::GetTransientsAllocator() const {
+std::shared_ptr<Allocator> ContextVK::GetResourceAllocator() const {
   return allocator_;
 }
 
@@ -430,11 +447,7 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
-std::shared_ptr<CommandBuffer> ContextVK::CreateRenderCommandBuffer() const {
-  FML_UNREACHABLE();
-}
-
-std::shared_ptr<CommandBuffer> ContextVK::CreateTransferCommandBuffer() const {
+std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   FML_UNREACHABLE();
 }
 
@@ -442,14 +455,27 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-std::unique_ptr<impeller::SwapchainVK> ContextVK::CreateSwapchain(
-    vk::SurfaceKHR surface) const {
+void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
+  auto present_queue_out = PickPresentQueue(physical_device_, surface);
+  if (!present_queue_out.has_value()) {
+    return;
+  }
+  present_queue_ =
+      device_->getQueue(present_queue_out->family, present_queue_out->index);
+
   auto swapchain_details =
       SwapchainDetailsVK::Create(physical_device_, surface);
   if (!swapchain_details) {
-    return nullptr;
+    return;
   }
-  return SwapchainVK::Create(*device_, surface, *swapchain_details);
+  swapchain_ = SwapchainVK::Create(*device_, surface, *swapchain_details);
+
+  surface_producer_ = SurfaceProducerVK::Create({
+      .device = *device_,
+      .graphics_queue = graphics_queue_,
+      .present_queue = present_queue_,
+      .swapchain = swapchain_.get(),
+  });
 }
 
 }  // namespace impeller
