@@ -137,7 +137,7 @@ void main() {
     int onDisposeInvokedCount = 0;
     int instanceHashCode = 0;
     Image.onDispose = (Object obj) {
-      onDisposeInvokedCount++; 
+      onDisposeInvokedCount++;
       instanceHashCode = identityHashCode(obj);
     };
 
@@ -147,7 +147,7 @@ void main() {
     expect(instanceHashCode, identityHashCode(image1));
 
     final Image image2 = await _createImage()..dispose();
-    
+
     expect(onDisposeInvokedCount, 2);
     expect(instanceHashCode, identityHashCode(image2));
 
