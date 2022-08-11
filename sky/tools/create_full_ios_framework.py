@@ -170,6 +170,12 @@ def zip_archive(dst):
       'zip', '-r', 'artifacts.zip', 'gen_snapshot_arm64', 'Flutter.xcframework'
   ],
                         cwd=dst)
+  if (api.path.exists(dst.join('Flutter.dSYM', 'Contents'))):
+    subprocess.check_call([
+        'zip', '-r',
+        '%s/Flutter.dSYM.zip' % dst,
+        '%s/Flutter.dSYM/Contents' % dst
+    ])
 
 
 def process_framework(args, dst, framework, framework_binary):
