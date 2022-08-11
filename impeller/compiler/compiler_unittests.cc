@@ -76,6 +76,10 @@ TEST_P(CompilerTest, BindingBaseForFragShader) {
     GTEST_SKIP();
   }
 
+#ifndef IMPELLER_ENABLE_VULKAN
+  GTEST_SKIP();
+#endif
+
   ASSERT_TRUE(CanCompileAndReflect("sample.vert", SourceType::kVertexShader));
   ASSERT_TRUE(CanCompileAndReflect("sample.frag", SourceType::kFragmentShader));
 
