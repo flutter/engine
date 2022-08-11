@@ -362,14 +362,18 @@ void DisplayListDispatcher::setColorSource(
       const flutter::DlImageColorSource* image_color_source = source->asImage();
       FML_DCHECK(image_color_source &&
                  image_color_source->image()->impeller_texture());
-      auto contents = std::make_shared<TiledTextureContents>();
-      contents->SetTexture(image_color_source->image()->impeller_texture());
-      contents->SetTileModes(
-          ToTileMode(image_color_source->horizontal_tile_mode()),
-          ToTileMode(image_color_source->vertical_tile_mode()));
-      contents->SetSamplerDescriptor(
-          ToSamplerDescriptor(image_color_source->sampling()));
-      paint_.contents = std::move(contents);
+      auto texture = image_color_source->image()->impeller_texture();
+      auto x_tile_mode = ToTileMode(image_color_source->horizontal_tile_mode());
+      auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
+      auto desc = ToSamplerDescriptor(image_color_source->sampling());
+      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc]() {
+        auto contents = std::make_shared<TiledTextureContents>();
+        contents->SetTexture(texture);
+        contents->SetTileModes(x_tile_mode, y_tile_mode);
+        contents->SetSamplerDescriptor(desc);
+        // TODO(109384) Support 'matrix' parameter for all color sources.
+        return contents;
+      };
       return;
     }
     case flutter::DlColorSourceType::kConicalGradient:

@@ -34,8 +34,7 @@ class TiledTextureContents final : public PathContents {
 
   void SetTexture(std::shared_ptr<Texture> texture);
 
-  void SetTileModes(Entity::TileMode horizontal_tile_mode,
-                    Entity::TileMode vertical_tile_mode);
+  void SetTileModes(Entity::TileMode x_tile_mode, Entity::TileMode y_tile_mode);
 
   void SetSamplerDescriptor(SamplerDescriptor desc);
 

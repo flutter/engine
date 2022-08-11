@@ -129,16 +129,19 @@ TEST_P(AiksTest, CanRenderTiledTexture) {
     Canvas canvas;
     Paint paint;
     canvas.Translate({100.0, 100.0, 0});
-    auto contents = std::make_shared<TiledTextureContents>();
-    contents->SetTexture(texture);
-    contents->SetTileModes(tile_modes[selected_x_tile_mode],
-                           tile_modes[selected_y_tile_mode]);
+    auto x_tile_mode = tile_modes[selected_x_tile_mode];
+    auto y_tile_mode = tile_modes[selected_y_tile_mode];
     SamplerDescriptor descriptor;
     descriptor.mip_filter = mip_filters[selected_mip_filter];
     descriptor.min_filter = min_mag_filters[selected_min_mag_filter];
     descriptor.mag_filter = min_mag_filters[selected_min_mag_filter];
-    contents->SetSamplerDescriptor(descriptor);
-    paint.contents = contents;
+    paint.color_source = [texture, x_tile_mode, y_tile_mode, descriptor]() {
+      auto contents = std::make_shared<TiledTextureContents>();
+      contents->SetTexture(texture);
+      contents->SetTileModes(x_tile_mode, y_tile_mode);
+      contents->SetSamplerDescriptor(descriptor);
+      return contents;
+    };
     canvas.DrawRect({0, 0, 600, 600}, paint);
     return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
   };
