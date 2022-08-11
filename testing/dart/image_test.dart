@@ -22,7 +22,7 @@ void main() {
     expect(instanceHashCode, identityHashCode(image1));
 
     final Image image2 = await _createImage();
-    
+
     expect(onCreateInvokedCount, 2);
     expect(instanceHashCode, identityHashCode(image2));
     Image.onCreate = null;
