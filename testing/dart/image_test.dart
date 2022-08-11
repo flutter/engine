@@ -16,18 +16,20 @@ void main() {
       instanceHashCode = identityHashCode(obj);
     };
 
-    final Future<Image> image1 = _createPicture().toImage(10, 10);
+    final Image image1 = await _createImage();
 
     expect(onCreateInvokedCount, 1);
     expect(instanceHashCode, identityHashCode(image1));
 
-    final Future<Image> image2 = _createPicture().toImage(10, 10);
+    final Image image2 = await _createImage();
     
     expect(onCreateInvokedCount, 2);
     expect(instanceHashCode, identityHashCode(image2));
     Image.onCreate = null;
   });
 }
+
+Future<Image> _createImage() async => _createPicture().toImage(10, 10);
 
 Picture _createPicture() {
   final PictureRecorder recorder = PictureRecorder();

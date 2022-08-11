@@ -419,7 +419,7 @@ class FlutterViewEmbedder {
   /// Called immediately after browser window language change.
   void _languageDidChange(DomEvent event) {
     EnginePlatformDispatcher.instance.updateLocales();
-    ui.window.onLocaleChanged?.call();    
+    ui.window.onLocaleChanged?.call();
   }
 
   static const String orientationLockTypeAny = 'any';

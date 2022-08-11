@@ -16,11 +16,6 @@ void main() {
     return true;
   }());
 
-  tearDown((){
-    Image.onDispose = null; 
-    Image.onCreate = null; 
-  });
-
   test('Handles are distinct', () async {
     final Uint8List bytes = await _readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
@@ -141,27 +136,31 @@ void main() {
   test('dispose() invokes onDispose once', () async {
     int onDisposeInvokedCount = 0;
     int instanceHashCode = 0;
-    Image.onDispose = (obj) {
+    Image.onDispose = (Object obj) {
       onDisposeInvokedCount++; 
       instanceHashCode = identityHashCode(obj);
     };
 
-    final image1 = _createPicture().toImage()..dispose();
+    final Image image1 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 1);
     expect(instanceHashCode, identityHashCode(image1));
 
-    final image2 = _createPicture().toImage()..dispose();
+    final Image image2 = await _createImage()..dispose();
     
     expect(onDisposeInvokedCount, 2);
     expect(instanceHashCode, identityHashCode(image2));
-  }
+
+    Image.onDispose = null;
+  });
 }
 
+Future<Image> _createImage() async => _createPicture().toImage(10, 10);
+
 Picture _createPicture() {
-  final recorder = PictureRecorder();
-  final canvas = Canvas(recorder);
-  var rect = Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  const Rect rect = Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
   canvas.clipRect(rect);
   return recorder.endRecording();
 }
