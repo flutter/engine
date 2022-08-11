@@ -505,6 +505,23 @@ void main() {
     expect(data.buffer.asUint8List()[3], 0xFF);
   });
 
+  test('toImage and toImageSync have identical contents', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawRect(Rect.fromLTWH(20, 20, 100, 100),
+        Paint()..color = const Color(0xFFFF6D00));
+    final Picture picture = recorder.endRecording();
+    final Image toImageImage = await picture.toImage(200, 200);
+    final Image toImageSyncImage = picture.toImageSync(200, 200);
+
+    final ByteData? dataSync = await toImageImage.toByteData();
+    final ByteData? data = await toImageSyncImage.toByteData();
+
+    expect(dataSync, isNotNull);
+    expect(data, isNotNull);
+    expect(data!, listEquals(dataSync!));
+  });
+
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
     // Regression test for https://github.com/flutter/flutter/issues/97172
     bool assertsEnabled = false;
@@ -896,3 +913,12 @@ void main() {
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
 }
+
+Matcher listEquals(ByteData expected) => (dynamic v) {
+  Expect.type<ByteData>(v);
+  final ByteData value = v as ByteData;
+  expect(value.lengthInBytes, expected.lengthInBytes);
+  for (int i = 0; i < value.lengthInBytes; i++) {
+    expect(value.getUint8(i), expected.getUint8(i));
+  }
+};
