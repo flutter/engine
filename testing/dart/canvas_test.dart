@@ -509,8 +509,8 @@ void main() {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawRect(
-      const Rect.fromLTWH(20.5, 20.5, 100.5, 100.5),
-      Paint()..color = const Color(0xFFFF6D00),
+      const Rect.fromLTWH(20, 20, 100, 100),
+      Paint()..color = const Color(0xA0FF6D00),
     );
     final Picture picture = recorder.endRecording();
     final Image toImageImage = await picture.toImage(200, 200);
