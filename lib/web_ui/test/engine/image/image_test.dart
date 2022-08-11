@@ -3,53 +3,53 @@
 // found in the LICENSE file.
 
 import 'package:test/test.dart';
-import 'package:ui/ui.dart';
+import 'package:ui/ui.dart'  as ui;
 
 void main() {
   test('Image constructor invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
-    Image? createdImage;
-    Image.onCreate = (Image image) {
+    ui.Image? createdImage;
+    ui.Image.onCreate = (ui.Image image) {
       onCreateInvokedCount++;
       createdImage = image;
     };
 
-    final Image image1 = await _createImage();
+    final ui.Image image1 = await _createImage();
 
     expect(onCreateInvokedCount, 1);
     expect(createdImage, image1);
 
-    final Image image2 = await _createImage();
+    final ui.Image image2 = await _createImage();
 
     expect(onCreateInvokedCount, 2);
     expect(createdImage, image2);
-    Image.onCreate = null;
+
+    ui.Image.onCreate = null;
   });
 
   test('dispose() invokes onDispose once', () async {
     int onDisposeInvokedCount = 0;
-    Image? disposedImage;
-    Image.onDispose = (Image image) {
+    ui.Image? disposedImage;
+    ui.Image.onDispose = (ui.Image image) {
       onDisposeInvokedCount++;
       disposedImage = image;
     };
 
-    final Image image1 = await _createImage()..dispose();
+    final ui.Image image1 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 1);
     expect(disposedImage, image1);
 
-    final Image image2 = await _createImage()..dispose();
+    final ui.Image image2 = await _createImage()..dispose();
 
     expect(onDisposeInvokedCount, 2);
     expect(disposedImage, image2);
 
-    Image.onDispose = null;
+    ui.Image.onDispose = null;
   });
 }
 
-
-Future<Image> _createImage() async => _createPicture().toImage(10, 10);
+Future<ui.Image> _createImage() async => _createPicture().toImage(10, 10);
 
 Picture _createPicture() {
   final PictureRecorder recorder = PictureRecorder();
