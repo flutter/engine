@@ -61,6 +61,7 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
   if (!IsActive()) {
     command_buffer_ = context_->CreateCommandBuffer();
     if (!command_buffer_) {
+      FML_DLOG(ERROR) << "Could not create command buffer.";
       return nullptr;
     }
 
@@ -85,6 +86,7 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
 
     pass_ = command_buffer_->CreateRenderPass(render_target_);
     if (!pass_) {
+      FML_DLOG(ERROR) << "Could not create render pass.";
       return nullptr;
     }
 
