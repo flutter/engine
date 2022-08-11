@@ -260,7 +260,8 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(linear->colors()[i]));
       }
       auto tile_mode = ToTileMode(linear->tile_mode());
-      paint_.color_source = [start_point, end_point, colors, tile_mode]() {
+      paint_.color_source = [start_point, end_point, colors = std::move(colors),
+                             tile_mode]() {
         auto contents = std::make_shared<LinearGradientContents>();
         contents->SetEndPoints(start_point, end_point);
         contents->SetColors(std::move(colors));
@@ -280,7 +281,8 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
       }
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
-      paint_.color_source = [center, radius, colors, tile_mode]() {
+      paint_.color_source = [center, radius, colors = std::move(colors),
+                             tile_mode]() {
         auto contents = std::make_shared<RadialGradientContents>();
         contents->SetCenterAndRadius(center, radius),
             contents->SetColors(std::move(colors));
@@ -302,8 +304,8 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(sweepGradient->colors()[i]));
       }
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
-      paint_.color_source = [center, start_angle, end_angle, colors,
-                             tile_mode]() {
+      paint_.color_source = [center, start_angle, end_angle,
+                             colors = std::move(colors), tile_mode]() {
         auto contents = std::make_shared<SweepGradientContents>();
         contents->SetCenterAndAngles(center, start_angle, end_angle);
         contents->SetColors(std::move(colors));
