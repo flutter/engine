@@ -316,7 +316,6 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
     auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
-    FML_LOG(ERROR) << desc.GetLabel() << " - binding: " << layout.binding;
     bindings.push_back(vk_desc_layout);
   }
 
