@@ -555,16 +555,16 @@ typedef struct {
   /// Dirty region management will only render the areas of the screen that have
   /// changed in between frames, greatly reducing rendering times and energy
   /// consumption. To take advantage of these benefits, it is necessary to
-  /// define populate_existing_damage_callback as a callback that takes user
+  /// define populate_existing_damage as a callback that takes user
   /// data, an FBO ID, and an existing damage FlutterDamage. The callback should
   /// use the given FBO ID to identify the FBO's exisiting damage (i.e. areas
   /// that have changed since the FBO was last used) and use it to populate the
   /// given existing damage variable. This callback is dependent on either
   /// fbo_callback or fbo_with_frame_info_callback being defined as they are
-  /// responsible for providing populate_existing_damage_callback with the FBO's
-  /// ID. Not specifying populate_existing_damage_callback will result in full
+  /// responsible for providing populate_existing_damage with the FBO's
+  /// ID. Not specifying populate_existing_damage will result in full
   /// repaint (i.e. rendering all the pixels on the screen at every frame).
-  FlutterFrameBufferWithDamageCallback populate_existing_damage_callback;
+  FlutterFrameBufferWithDamageCallback populate_existing_damage;
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.

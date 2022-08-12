@@ -3111,8 +3111,7 @@ TEST_F(EmbedderTest, MustStillRunWhenPopulateExistingDamageIsNotProvided) {
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
-      nullptr;
+  builder.GetRendererConfig().open_gl.populate_existing_damage = nullptr;
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -3124,7 +3123,7 @@ TEST_F(EmbedderTest, MustRunWhenPopulateExistingDamageIsProvided) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3143,7 +3142,7 @@ TEST_F(EmbedderTest, MustRunWithPopulateExistingDamageAndFBOCallback) {
   builder.GetRendererConfig().open_gl.fbo_callback =
       [](void* context) -> uint32_t { return 0; };
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3162,7 +3161,7 @@ TEST_F(EmbedderTest,
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3223,7 +3222,7 @@ TEST_F(EmbedderTest,
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3299,7 +3298,7 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3374,7 +3373,7 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3450,7 +3449,7 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesValidID) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
@@ -3485,7 +3484,7 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesInvalidID) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("render_gradient");
-  builder.GetRendererConfig().open_gl.populate_existing_damage_callback =
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
