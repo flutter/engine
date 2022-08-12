@@ -174,7 +174,7 @@ def zip_archive(dst):
     subprocess.check_call([
         'zip', '-r',
         '%s/Flutter.dSYM.zip' % dst,
-        '%s/Flutter.dSYM/Contents' % dst
+        '%s/Flutter.dSYM' % dst
     ])
 
 
