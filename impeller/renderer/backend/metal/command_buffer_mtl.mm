@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
 
+#include "impeller/renderer/backend/metal/blit_pass_mtl.h"
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
 
 namespace impeller {
@@ -136,8 +137,9 @@ id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
   return [queue commandBuffer];
 }
 
-CommandBufferMTL::CommandBufferMTL(id<MTLCommandQueue> queue)
-    : buffer_(CreateCommandBuffer(queue)) {}
+CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context> context,
+                                   id<MTLCommandQueue> queue)
+    : CommandBuffer(std::move(context)), buffer_(CreateCommandBuffer(queue)) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
@@ -165,15 +167,7 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
   return CommandBufferMTL::Status::kError;
 }
 
-bool CommandBufferMTL::SubmitCommands(CompletionCallback callback) {
-  if (!IsValid()) {
-    // Already committed or was never valid. Either way, this is caller error.
-    if (callback) {
-      callback(Status::kError);
-    }
-    return false;
-  }
-
+bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   if (callback) {
     [buffer_ addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
       LogMTLCommandBufferErrorIfPresent(buffer);
@@ -194,7 +188,20 @@ std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
   }
 
   auto pass = std::shared_ptr<RenderPassMTL>(
-      new RenderPassMTL(buffer_, std::move(target)));
+      new RenderPassMTL(context_, std::move(target), buffer_));
+  if (!pass->IsValid()) {
+    return nullptr;
+  }
+
+  return pass;
+}
+
+std::shared_ptr<BlitPass> CommandBufferMTL::OnCreateBlitPass() const {
+  if (!buffer_) {
+    return nullptr;
+  }
+
+  auto pass = std::shared_ptr<BlitPassMTL>(new BlitPassMTL(buffer_));
   if (!pass->IsValid()) {
     return nullptr;
   }

@@ -7,8 +7,6 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 // ignore_for_file: non_constant_identifier_names
-
-// ignore_for_file: public_member_api_docs
 @JS()
 library canvaskit_api;
 
@@ -1241,10 +1239,11 @@ Float32List toSkMatrixFromFloat32(Float32List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1255,10 +1254,11 @@ Float32List toSkMatrixFromFloat64(Float64List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }

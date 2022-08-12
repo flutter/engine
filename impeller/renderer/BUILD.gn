@@ -8,6 +8,10 @@ impeller_component("renderer") {
   sources = [
     "allocator.cc",
     "allocator.h",
+    "blit_command.cc",
+    "blit_command.h",
+    "blit_pass.cc",
+    "blit_pass.h",
     "buffer.cc",
     "buffer.h",
     "buffer_view.cc",
@@ -18,6 +22,7 @@ impeller_component("renderer") {
     "command_buffer.h",
     "context.cc",
     "context.h",
+    "descriptor_set_layout.h",
     "device_buffer.cc",
     "device_buffer.h",
     "formats.cc",
@@ -76,6 +81,7 @@ impeller_component("renderer") {
     "../base",
     "../geometry",
     "../image",
+    "../runtime_stage",
     "../tessellator",
   ]
 
@@ -94,7 +100,7 @@ impeller_component("renderer_unittests") {
   deps = [
     ":renderer",
     "../fixtures",
-    "../playground",
+    "../playground:playground_test",
     "//flutter/testing:testing_lib",
   ]
 }

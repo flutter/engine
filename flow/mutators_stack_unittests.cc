@@ -91,11 +91,21 @@ TEST(MutatorsStack, PushOpacity) {
 
 TEST(MutatorsStack, PushBackdropFilter) {
   MutatorsStack stack;
-  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
-  stack.PushBackdropFilter(filter);
-  auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kBackdropFilter);
-  ASSERT_TRUE(iter->get()->GetFilter() == filter);
+  const int num_of_mutators = 10;
+  for (int i = 0; i < num_of_mutators; i++) {
+    auto filter = std::make_shared<DlBlurImageFilter>(i, 5, DlTileMode::kClamp);
+    stack.PushBackdropFilter(filter);
+  }
+
+  auto iter = stack.Begin();
+  int i = 0;
+  while (iter != stack.End()) {
+    ASSERT_EQ(iter->get()->GetType(), MutatorType::kBackdropFilter);
+    ASSERT_EQ(iter->get()->GetFilter().asBlur()->sigma_x(), i);
+    ++iter;
+    ++i;
+  }
+  ASSERT_EQ(i, num_of_mutators);
 }
 
 TEST(MutatorsStack, Pop) {
@@ -153,6 +163,8 @@ TEST(MutatorsStack, Equality) {
   stack.PushClipPath(path);
   int alpha = 240;
   stack.PushOpacity(alpha);
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  stack.PushBackdropFilter(filter);
 
   MutatorsStack stackOther;
   SkMatrix matrixOther = SkMatrix::Scale(1, 1);
@@ -165,6 +177,9 @@ TEST(MutatorsStack, Equality) {
   stackOther.PushClipPath(otherPath);
   int otherAlpha = 240;
   stackOther.PushOpacity(otherAlpha);
+  auto otherFilter =
+      std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  stackOther.PushBackdropFilter(otherFilter);
 
   ASSERT_TRUE(stack == stackOther);
 }
@@ -194,6 +209,11 @@ TEST(Mutator, Initialization) {
   int alpha = 240;
   Mutator mutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5.GetType() == MutatorType::kOpacity);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  ASSERT_TRUE(mutator6.GetType() == MutatorType::kBackdropFilter);
+  ASSERT_TRUE(mutator6.GetFilter() == *filter);
 }
 
 TEST(Mutator, CopyConstructor) {
@@ -222,6 +242,11 @@ TEST(Mutator, CopyConstructor) {
   Mutator mutator5 = Mutator(alpha);
   Mutator copy5 = Mutator(mutator5);
   ASSERT_TRUE(mutator5 == copy5);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  Mutator copy6 = Mutator(mutator6);
+  ASSERT_TRUE(mutator6 == copy6);
 }
 
 TEST(Mutator, Equality) {
@@ -250,6 +275,11 @@ TEST(Mutator, Equality) {
   Mutator mutator5 = Mutator(alpha);
   Mutator otherMutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5 == otherMutator5);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  Mutator otherMutator6 = Mutator(filter);
+  ASSERT_TRUE(mutator6 == otherMutator6);
 }
 
 TEST(Mutator, UnEquality) {
@@ -265,6 +295,13 @@ TEST(Mutator, UnEquality) {
   Mutator mutator2 = Mutator(alpha);
   Mutator otherMutator2 = Mutator(alpha2);
   ASSERT_TRUE(mutator2 != otherMutator2);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter2 =
+      std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
+  Mutator mutator3 = Mutator(filter);
+  Mutator otherMutator3 = Mutator(filter2);
+  ASSERT_TRUE(mutator3 != otherMutator3);
 }
 
 }  // namespace testing

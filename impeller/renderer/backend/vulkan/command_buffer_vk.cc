@@ -9,7 +9,8 @@
 
 namespace impeller {
 
-CommandBufferVK::CommandBufferVK() = default;
+CommandBufferVK::CommandBufferVK(std::weak_ptr<const Context> context)
+    : CommandBuffer(std::move(context)) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 
@@ -21,12 +22,16 @@ bool CommandBufferVK::IsValid() const {
   FML_UNREACHABLE();
 }
 
-bool CommandBufferVK::SubmitCommands(CompletionCallback callback) {
+bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
   FML_UNREACHABLE();
 }
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
     RenderTarget target) const {
+  FML_UNREACHABLE();
+}
+
+std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {
   FML_UNREACHABLE();
 }
 

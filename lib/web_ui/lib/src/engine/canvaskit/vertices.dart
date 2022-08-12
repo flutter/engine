@@ -17,18 +17,21 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     List<ui.Color>? colors,
     List<int>? indices,
   }) {
-    assert(mode != null); // ignore: unnecessary_null_comparison
-    assert(positions != null); // ignore: unnecessary_null_comparison
+    assert(mode != null);
+    assert(positions != null);
     if (textureCoordinates != null &&
-        textureCoordinates.length != positions.length)
+        textureCoordinates.length != positions.length) {
       throw ArgumentError(
           '"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length != positions.length)
+    }
+    if (colors != null && colors.length != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length))
+        indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
+    }
 
     return CkVertices._(
       toSkVertexMode(mode),
@@ -46,18 +49,21 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     Int32List? colors,
     Uint16List? indices,
   }) {
-    assert(mode != null); // ignore: unnecessary_null_comparison
-    assert(positions != null); // ignore: unnecessary_null_comparison
+    assert(mode != null);
+    assert(positions != null);
     if (textureCoordinates != null &&
-        textureCoordinates.length != positions.length)
+        textureCoordinates.length != positions.length) {
       throw ArgumentError(
           '"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length * 2 != positions.length)
+    }
+    if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length))
+        indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
+    }
 
     return CkVertices._(
       toSkVertexMode(mode),

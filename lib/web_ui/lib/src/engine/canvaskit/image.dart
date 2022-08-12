@@ -83,7 +83,6 @@ class ImageCodecException implements Exception {
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
 typedef HttpRequestFactory = DomXMLHttpRequest Function();
-// ignore: prefer_function_declarations_over_variables
 HttpRequestFactory httpRequestFactory = () => createDomXMLHttpRequest();
 void debugRestoreHttpRequestFactory() {
   httpRequestFactory = () => createDomXMLHttpRequest();
@@ -95,7 +94,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, WebOnlyImageCodecChunkCallback? chunkCallback) async {
   final Uint8List list = await fetchImage(url, chunkCallback);
   if (browserSupportsImageDecoder) {
-    return CkBrowserImageDecoder.create(data: list, debugSource: url.toString());
+    return CkBrowserImageDecoder.create(data: list, debugSource: url);
   } else {
     return CkAnimatedImage.decodeFromBytes(list, url);
   }
@@ -208,8 +207,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
   }
 
   @override
-  StackTrace get debugStackTrace => _debugStackTrace!;
-  StackTrace? _debugStackTrace;
+  StackTrace get debugStackTrace => _debugStackTrace;
+  late StackTrace _debugStackTrace;
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
@@ -345,10 +344,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
 /// Data for a single frame of an animated image.
 class AnimatedImageFrameInfo implements ui.FrameInfo {
+  AnimatedImageFrameInfo(this._duration, this._image);
+
   final Duration _duration;
   final CkImage _image;
-
-  AnimatedImageFrameInfo(this._duration, this._image);
 
   @override
   Duration get duration => _duration;

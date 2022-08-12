@@ -352,6 +352,24 @@ class AutofillInfo {
     this.placeholder,
   });
 
+  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
+      {TextCapitalizationConfig textCapitalization =
+          const TextCapitalizationConfig.defaultCapitalization()}) {
+    assert(autofill != null);
+    final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
+    final List<dynamic>? hintsList = autofill.tryList('hints');
+    final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
+    final EditingState editingState =
+        EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
+    return AutofillInfo(
+      uniqueIdentifier: uniqueIdentifier,
+      autofillHint: (firstHint != null) ? BrowserAutofillHints.instance.flutterToEngine(firstHint) : null,
+      editingState: editingState,
+      placeholder: autofill.tryString('hintText'),
+      textCapitalization: textCapitalization,
+    );
+  }
+
   /// The current text and selection state of a text field.
   final EditingState editingState;
 
@@ -389,24 +407,6 @@ class AutofillInfo {
   /// can be a useful indication to the platform autofill service as to what
   /// information is expected in this field.
   final String? placeholder;
-
-  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
-      {TextCapitalizationConfig textCapitalization =
-          const TextCapitalizationConfig.defaultCapitalization()}) {
-    assert(autofill != null); // ignore: unnecessary_null_comparison
-    final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
-    final List<dynamic>? hintsList = autofill.tryList('hints');
-    final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
-    final EditingState editingState =
-        EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
-    return AutofillInfo(
-      uniqueIdentifier: uniqueIdentifier,
-      autofillHint: (firstHint != null) ? BrowserAutofillHints.instance.flutterToEngine(firstHint) : null,
-      editingState: editingState,
-      placeholder: autofill.tryString('hintText'),
-      textCapitalization: textCapitalization,
-    );
-  }
 
   void applyToDomElement(DomHTMLElement domElement,
       {bool focusedElement = false}) {
@@ -573,8 +573,8 @@ class TextEditingDeltaState {
     }
 
     // Update selection of the delta using information from the new editing state.
-    newTextEditingDeltaState.baseOffset = newEditingState.baseOffset!;
-    newTextEditingDeltaState.extentOffset = newEditingState.extentOffset!;
+    newTextEditingDeltaState.baseOffset = newEditingState.baseOffset;
+    newTextEditingDeltaState.extentOffset = newEditingState.extentOffset;
 
     return newTextEditingDeltaState;
   }
@@ -977,7 +977,7 @@ abstract class TextEditingStrategy {
 /// enabled. With semantics enabled the placement is provided by the semantics
 /// tree.
 class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
-  GloballyPositionedTextEditingStrategy(HybridTextEditing owner) : super(owner);
+  GloballyPositionedTextEditingStrategy(super.owner);
 
   @override
   void placeElement() {
@@ -1016,7 +1016,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
 /// enabled. With semantics enabled the placement is provided by the semantics
 /// tree.
 class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
-  SafariDesktopTextEditingStrategy(HybridTextEditing owner) : super(owner);
+  SafariDesktopTextEditingStrategy(super.owner);
 
   /// Appending an element on the DOM for Safari Desktop Browser.
   ///
@@ -1084,9 +1084,9 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
 /// Unless a formfactor/browser requires specific implementation for a specific
 /// strategy the methods in this class should be used.
 abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements TextEditingStrategy  {
-  final HybridTextEditing owner;
-
   DefaultTextEditingStrategy(this.owner);
+
+  final HybridTextEditing owner;
 
   bool isEnabled = false;
 
@@ -1421,7 +1421,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 /// inputmodeAttribute needs to be set for mobile devices. Due to this
 /// [initializeTextEditing] is different.
 class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
-  IOSTextEditingStrategy(HybridTextEditing owner) : super(owner);
+  IOSTextEditingStrategy(super.owner);
 
   /// Timer that times when to set the location of the input text.
   ///
@@ -1618,7 +1618,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 /// Keyboard acts differently than other devices. [addEventHandlers] handles
 /// this case as an extra.
 class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
-  AndroidTextEditingStrategy(HybridTextEditing owner) : super(owner);
+  AndroidTextEditingStrategy(super.owner);
 
   @override
   void initializeTextEditing(
@@ -1689,7 +1689,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 /// Selections are different in Firefox. [addEventHandlers] strategy is
 /// impelemented diefferently in Firefox.
 class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
-  FirefoxTextEditingStrategy(HybridTextEditing owner) : super(owner);
+  FirefoxTextEditingStrategy(super.owner);
 
   @override
   void initializeTextEditing(
@@ -1770,7 +1770,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // inside the blur event, therefore we postpone the focus.
     // Calling focus inside a Timer for `0` milliseconds guarantee that it is
     // called after blur event propagation is completed.
-    Timer(const Duration(milliseconds: 0), () {
+    Timer(Duration.zero, () {
       activeDomElement.focus();
     });
   }

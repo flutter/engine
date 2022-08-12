@@ -5,12 +5,15 @@
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 
 #include "impeller/base/config.h"
+#include "impeller/renderer/backend/gles/blit_pass_gles.h"
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
 namespace impeller {
 
-CommandBufferGLES::CommandBufferGLES(ReactorGLES::Ref reactor)
-    : reactor_(std::move(reactor)),
+CommandBufferGLES::CommandBufferGLES(std::weak_ptr<const Context> context,
+                                     ReactorGLES::Ref reactor)
+    : CommandBuffer(std::move(context)),
+      reactor_(std::move(reactor)),
       is_valid_(reactor_ && reactor_->IsValid()) {}
 
 CommandBufferGLES::~CommandBufferGLES() = default;
@@ -26,13 +29,8 @@ bool CommandBufferGLES::IsValid() const {
 }
 
 // |CommandBuffer|
-bool CommandBufferGLES::SubmitCommands(CompletionCallback callback) {
-  if (!IsValid()) {
-    return false;
-  }
-
+bool CommandBufferGLES::OnSubmitCommands(CompletionCallback callback) {
   const auto result = reactor_->React();
-
   if (callback) {
     callback(result ? CommandBuffer::Status::kCompleted
                     : CommandBuffer::Status::kError);
@@ -47,7 +45,19 @@ std::shared_ptr<RenderPass> CommandBufferGLES::OnCreateRenderPass(
     return nullptr;
   }
   auto pass = std::shared_ptr<RenderPassGLES>(
-      new RenderPassGLES(std::move(target), reactor_));
+      new RenderPassGLES(context_, std::move(target), reactor_));
+  if (!pass->IsValid()) {
+    return nullptr;
+  }
+  return pass;
+}
+
+// |CommandBuffer|
+std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() const {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  auto pass = std::shared_ptr<BlitPassGLES>(new BlitPassGLES(reactor_));
   if (!pass->IsValid()) {
     return nullptr;
   }

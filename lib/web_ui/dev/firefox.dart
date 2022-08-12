@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:pedantic/pedantic.dart';
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:test_core/src/util/io.dart';
 
@@ -55,11 +54,6 @@ class FirefoxEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class Firefox extends Browser {
-  final BrowserProcess _process;
-
-  @override
-  final Future<Uri> remoteDebuggerUrl;
-
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, FirefoxEnvironment firefoxEnvironment, {bool debug = false}) {
@@ -67,7 +61,7 @@ class Firefox extends Browser {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(BrowserProcess(() async {
       // Using a profile on opening will prevent popups related to profiles.
-      const String _profile = '''
+      const String profile = '''
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("dom.disable_open_during_load", false);
 user_pref("dom.max_script_run_time", 0);
@@ -84,7 +78,7 @@ user_pref("dom.max_script_run_time", 0);
       }
       temporaryProfileDirectory.createSync(recursive: true);
       File(path.join(temporaryProfileDirectory.path, 'prefs.js'))
-          .writeAsStringSync(_profile);
+          .writeAsStringSync(profile);
 
       final bool isMac = Platform.isMacOS;
       final List<String> args = <String>[
@@ -116,6 +110,11 @@ user_pref("dom.max_script_run_time", 0);
   }
 
   Firefox._(this._process, this.remoteDebuggerUrl);
+
+  final BrowserProcess _process;
+
+  @override
+  final Future<Uri> remoteDebuggerUrl;
 
   @override
   Future<void> get onExit => _process.onExit;

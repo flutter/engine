@@ -34,7 +34,7 @@ Future<Image> createImage(int width, int height) {
 
 void testCanvas(CanvasCallback callback) {
   try {
-    callback(Canvas(PictureRecorder(), const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
+    callback(Canvas(PictureRecorder(), Rect.zero));
   } catch (error) { } // ignore: empty_catches
 }
 
@@ -62,7 +62,7 @@ void testNoCrashes() {
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(1, 1);
 
-    try { Canvas(PictureRecorder(), null); } catch (error) { } // ignore: empty_catches
+    try { Canvas(PictureRecorder()); } catch (error) { } // ignore: empty_catches
     try { Canvas(PictureRecorder(), rect); } catch (error) { } // ignore: empty_catches
 
     try {
@@ -108,8 +108,6 @@ void testNoCrashes() {
     testCanvas((Canvas canvas) => canvas.transform(Float64List(16)));
     testCanvas((Canvas canvas) => canvas.translate(double.nan, double.nan));
     testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[],
-                                                               textureCoordinates: null,
-                                                               colors: null,
                                                                indices: <int>[]), BlendMode.screen, paint));
   });
 }
@@ -138,7 +136,7 @@ Future<void> saveTestImage(Image image, String filename) async {
   final ByteData pngData = (await image.toByteData(format: ImageByteFormat.png))!;
   final String outPath = path.join(imagesPath, filename);
   File(outPath).writeAsBytesSync(pngData.buffer.asUint8List());
-  print('wrote: ' + outPath);
+  print('wrote: $outPath');
 }
 
 /// @returns true When the images are reasonably similar.
@@ -161,7 +159,7 @@ Future<bool> fuzzyGoldenImageCompare(
   }
 
   if (!areEqual) {
-    saveTestImage(image, 'found_' + goldenImageName);
+    saveTestImage(image, 'found_$goldenImageName');
   }
   return areEqual;
 }
@@ -497,7 +495,7 @@ void main() {
     expect(image.width, 6);
     expect(image.height, 8);
 
-    final ByteData? data = await image.toByteData(format: ImageByteFormat.rawRgba);
+    final ByteData? data = await image.toByteData();
 
     expect(data, isNotNull);
     expect(data!.lengthInBytes, 6 * 8 * 4);
@@ -505,6 +503,39 @@ void main() {
     expect(data.buffer.asUint8List()[1], 0x34);
     expect(data.buffer.asUint8List()[2], 0x56);
     expect(data.buffer.asUint8List()[3], 0xFF);
+  });
+
+  test('toImage and toImageSync have identical contents', () async {
+    // Note: on linux this stil seems to be different.
+    // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/108835
+    if (Platform.isLinux) {
+      return;
+    }
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawRect(
+      const Rect.fromLTWH(20, 20, 100, 100),
+      Paint()..color = const Color(0xA0FF6D00),
+    );
+    final Picture picture = recorder.endRecording();
+    final Image toImageImage = await picture.toImage(200, 200);
+    final Image toImageSyncImage = picture.toImageSync(200, 200);
+
+    // To trigger observable difference in alpha, draw image
+    // on a second canvas.
+    Future<ByteData> drawOnCanvas(Image image) async {
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawPaint(Paint()..color = const Color(0x4FFFFFFF));
+      canvas.drawImage(image, Offset.zero, Paint());
+      final Image resultImage = await recorder.endRecording().toImage(200, 200);
+      return (await resultImage.toByteData())!;
+    }
+
+    final ByteData dataSync = await drawOnCanvas(toImageImage);
+    final ByteData data = await drawOnCanvas(toImageSyncImage);
+    expect(data, listEquals(dataSync));
   });
 
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
@@ -574,7 +605,7 @@ void main() {
 
   Matcher closeToTransform(Float64List expected) => (dynamic v) {
     Expect.type<Float64List>(v);
-    final Float64List value = v;
+    final Float64List value = v as Float64List;
     expect(expected.length, equals(16));
     expect(value.length, equals(16));
     for (int r = 0; r < 4; r++) {
@@ -590,7 +621,7 @@ void main() {
 
   Matcher notCloseToTransform(Float64List expected) => (dynamic v) {
     Expect.type<Float64List>(v);
-    final Float64List value = v;
+    final Float64List value = v as Float64List;
     expect(expected.length, equals(16));
     expect(value.length, equals(16));
     for (int r = 0; r < 4; r++) {
@@ -672,7 +703,7 @@ void main() {
 
   Matcher closeToRect(Rect expected) => (dynamic v) {
     Expect.type<Rect>(v);
-    final Rect value = v;
+    final Rect value = v as Rect;
     expect(value.left,   closeTo(expected.left,   1e-6));
     expect(value.top,    closeTo(expected.top,    1e-6));
     expect(value.right,  closeTo(expected.right,  1e-6));
@@ -681,7 +712,7 @@ void main() {
 
   Matcher notCloseToRect(Rect expected) => (dynamic v) {
     Expect.type<Rect>(v);
-    final Rect value = v;
+    final Rect value = v as Rect;
     if ((value.left - expected.left).abs() > 1e-6 ||
         (value.top - expected.top).abs() > 1e-6 ||
         (value.right - expected.right).abs() > 1e-6 ||
@@ -731,6 +762,27 @@ void main() {
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
 
+  test('Canvas.clipRect with matrix affects canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds1 = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
+    const Rect clipBounds2 = Rect.fromLTRB(10.0, 10.0, 20.0, 20.0);
+
+    canvas.save();
+    canvas.clipRect(clipBounds1);
+    canvas.translate(0, 10.0);
+    canvas.clipRect(clipBounds1);
+    expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
+    canvas.restore();
+
+    canvas.save();
+    canvas.clipRect(clipBounds1);
+    canvas.translate(-10.0, -10.0);
+    canvas.clipRect(clipBounds2);
+    expect(canvas.getDestinationClipBounds(), clipBounds1);
+    canvas.restore();
+  });
+
   test('Canvas.clipRRect affects canvas.getClipBounds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
@@ -770,6 +822,29 @@ void main() {
     // save/restore returned the values to their original values
     expect(canvas.getLocalClipBounds(), initialLocalBounds);
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+  });
+
+  test('Canvas.clipRRect with matrix affects canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds1 = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
+    const Rect clipBounds2 = Rect.fromLTRB(10.0, 10.0, 20.0, 20.0);
+    final RRect clip1 = RRect.fromRectAndRadius(clipBounds1, const Radius.circular(3));
+    final RRect clip2 = RRect.fromRectAndRadius(clipBounds2, const Radius.circular(3));
+
+    canvas.save();
+    canvas.clipRRect(clip1);
+    canvas.translate(0, 10.0);
+    canvas.clipRRect(clip1);
+    expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
+    canvas.restore();
+
+    canvas.save();
+    canvas.clipRRect(clip1);
+    canvas.translate(-10.0, -10.0);
+    canvas.clipRRect(clip2);
+    expect(canvas.getDestinationClipBounds(), clipBounds1);
+    canvas.restore();
   });
 
   test('Canvas.clipPath affects canvas.getClipBounds', () async {
@@ -813,6 +888,29 @@ void main() {
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
 
+  test('Canvas.clipPath with matrix affects canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds1 = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
+    const Rect clipBounds2 = Rect.fromLTRB(10.0, 10.0, 20.0, 20.0);
+    final Path clip1 = Path()..addRect(clipBounds1)..addOval(clipBounds1);
+    final Path clip2 = Path()..addRect(clipBounds2)..addOval(clipBounds2);
+
+    canvas.save();
+    canvas.clipPath(clip1);
+    canvas.translate(0, 10.0);
+    canvas.clipPath(clip1);
+    expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
+    canvas.restore();
+
+    canvas.save();
+    canvas.clipPath(clip1);
+    canvas.translate(-10.0, -10.0);
+    canvas.clipPath(clip2);
+    expect(canvas.getDestinationClipBounds(), clipBounds1);
+    canvas.restore();
+  });
+
   test('Canvas.clipRect(diff) does not affect canvas.getClipBounds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
@@ -831,3 +929,12 @@ void main() {
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
 }
+
+Matcher listEquals(ByteData expected) => (dynamic v) {
+  Expect.type<ByteData>(v);
+  final ByteData value = v as ByteData;
+  expect(value.lengthInBytes, expected.lengthInBytes);
+  for (int i = 0; i < value.lengthInBytes; i++) {
+    expect(value.getUint8(i), expected.getUint8(i));
+  }
+};

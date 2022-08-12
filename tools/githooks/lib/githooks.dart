@@ -19,6 +19,10 @@ Future<int> run(List<String> args) async {
 
   // Add top-level arguments.
   runner.argParser
+    ..addFlag(
+      'enable-clang-tidy',
+      help: 'Enable running clang-tidy on changed files.',
+    )
     ..addOption(
       'flutter',
       abbr: 'f',
@@ -28,7 +32,6 @@ Future<int> run(List<String> args) async {
       'verbose',
       abbr: 'v',
       help: 'Runs with verbose logging',
-      defaultsTo: false,
     );
 
   if (args.isEmpty) {

@@ -433,6 +433,15 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMVerify(never(), [mockEngine attachView]);
 }
 
+- (void)testSplashScreenViewRemoveNotCrash {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"engine" project:nil];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  [flutterViewController setSplashScreenView:[[UIView alloc] init]];
+  [flutterViewController setSplashScreenView:nil];
+}
+
 - (void)testInternalPluginsWeakPtrNotCrash {
   FlutterSendKeyEvent sendEvent;
   @autoreleasepool {
@@ -1135,4 +1144,11 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertTrue(interval_micros / 1000 < tolerance_millis,
                 @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
+
+- (void)testSplashScreenViewCanSetNil {
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithProject:nil nibName:nil bundle:nil];
+  [flutterViewController setSplashScreenView:nil];
+}
+
 @end

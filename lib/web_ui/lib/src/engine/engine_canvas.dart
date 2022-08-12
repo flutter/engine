@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 // For member documentation see https://api.flutter.dev/flutter/dart-ui/Canvas-class.html
-// ignore_for_file: public_member_api_docs
 
 import 'dart:typed_data';
 
@@ -100,7 +99,7 @@ Matrix4 transformWithOffset(Matrix4 transform, ui.Offset offset) {
 
   // Clone to avoid mutating transform.
   final Matrix4 effectiveTransform = transform.clone();
-  effectiveTransform.translate(offset.dx, offset.dy, 0.0);
+  effectiveTransform.translate(offset.dx, offset.dy);
   return effectiveTransform;
 }
 
@@ -116,10 +115,6 @@ class SaveStackEntry {
 
 /// Tagged union of clipping parameters used for canvas.
 class SaveClipEntry {
-  final ui.Rect? rect;
-  final ui.RRect? rrect;
-  final ui.Path? path;
-  final Matrix4 currentTransform;
   SaveClipEntry.rect(this.rect, this.currentTransform)
       : rrect = null,
         path = null;
@@ -129,6 +124,11 @@ class SaveClipEntry {
   SaveClipEntry.path(this.path, this.currentTransform)
       : rect = null,
         rrect = null;
+
+  final ui.Rect? rect;
+  final ui.RRect? rrect;
+  final ui.Path? path;
+  final Matrix4 currentTransform;
 }
 
 /// Provides save stack tracking functionality to implementations of
