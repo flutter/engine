@@ -332,7 +332,6 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   vk::UniqueDescriptorSetLayout descriptor_set_layout =
       std::move(descriptor_set_create_res.value);
 
-  // TODO(106377): Wire this up from the C++ generated headers.
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
   pipeline_layout_info.setSetLayouts(descriptor_set_layout.get());
   auto pipeline_layout =
@@ -346,7 +345,6 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   pipeline_info.setLayout(pipeline_layout.value.get());
 
   // TODO(WIP)
-  // pipeline_info.setPVertexInputState(&vertex_input_state);
   // pipeline_info.setPDepthStencilState(&depth_stencil_state_);
 
   // See the note in the header about why this is a reader lock.
