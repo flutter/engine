@@ -170,7 +170,7 @@ def zip_archive(dst):
       'zip', '-r', 'artifacts.zip', 'gen_snapshot_arm64', 'Flutter.xcframework'
   ],
                         cwd=dst)
-  if (os.path.exists(dst.join('Flutter.dSYM', 'Contents'))):
+  if (os.path.exists(os.path.join(dst, 'Flutter.dSYM', 'Contents'))):
     subprocess.check_call([
         'zip', '-r',
         '%s/Flutter.dSYM.zip' % dst,
