@@ -116,7 +116,8 @@ using BorderMaskBlurPipeline =
 using ColorMatrixColorFilterPipeline =
     PipelineT<ColorMatrixColorFilterVertexShader,
               ColorMatrixColorFilterFragmentShader>;
-using LinearToSrgbFilterPipeline = PipelineT<LinearToSrgbFilterVertexShader, LinearToSrgbFilterFragmentShader>;
+using LinearToSrgbFilterPipeline =
+    PipelineT<LinearToSrgbFilterVertexShader, LinearToSrgbFilterFragmentShader>;
 using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =

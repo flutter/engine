@@ -1575,18 +1575,20 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
     // filter with no filter at all.
     Entity entity_left;
     entity_left.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({100, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
-    auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image), Sigma{0}, Sigma{0});
+                                  Matrix::MakeTranslation({100, 300}) *
+                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+    auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
+                                                       Sigma{0}, Sigma{0});
     entity_left.SetContents(unfiltered);
 
     // Define the entity that will be filtered from linear to sRGB.
     Entity entity_right;
     entity_right.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                                   Matrix::MakeTranslation({500, 300}) *
+                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity_right.SetContents(filtered);
-    return entity_left.Render(context, pass) && entity_right.Render(context, pass);
+    return entity_left.Render(context, pass) &&
+           entity_right.Render(context, pass);
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
