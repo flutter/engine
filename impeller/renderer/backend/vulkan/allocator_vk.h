@@ -45,6 +45,8 @@ class AllocatorVK final : public Allocator {
       StorageMode mode,
       const TextureDescriptor& desc) override;
 
+  ISize GetMaxTextureSizeSupported() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
 };
 
