@@ -33,7 +33,9 @@ class ImageDecoderImpeller final : public ImageDecoder {
 
   static std::shared_ptr<SkBitmap> DecompressTexture(
       ImageDescriptor* descriptor,
-      SkISize target_size);
+      SkISize target_size,
+      int32_t max_width,
+      int32_t max_height);
 
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;

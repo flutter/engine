@@ -173,4 +173,31 @@ std::shared_ptr<Texture> AllocatorMTL::CreateTexture(
   return std::make_shared<TextureMTL>(desc, texture);
 }
 
+ISize AllocatorMTL::GetMaxTextureSizeSupported() {
+  // Since Apple didn't expose API for us to get the max texture size, we have
+  // to use hardcoded data from
+  // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+  // According to the feature set table, there are two supported max sizes :
+  // 16384 and 8192 for devices flutter support. The former is used on macs and
+  // latest ios devices. The latter is used on old ios devices.
+  if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
+    if ([device_ supportsFamily:MTLGPUFamilyApple3] ||
+        [device_ supportsFamily:MTLGPUFamilyMacCatalyst1] ||
+        [device_ supportsFamily:MTLGPUFamilyMac1])
+      return {16384, 16384};
+    return {8192, 8192};
+  } else {
+#if FML_OS_IOS
+    if ([device_ supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1] ||
+        [device_ supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1]) {
+      return {16384, 16384};
+    }
+#endif
+#if FML_OS_MACOSX
+    return {16384, 16384};
+#endif
+    return {8192, 8192};
+  }
+}
+
 }  // namespace impeller
