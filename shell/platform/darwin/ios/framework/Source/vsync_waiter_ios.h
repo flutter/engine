@@ -33,7 +33,7 @@
 //------------------------------------------------------------------------------
 /// @brief      Default value is YES. Vsync client will pause vsync callback after receiving
 ///             a vsync signal. Setting this property to NO can avoid this and vsync client
-///             will trggier vsync callback continuously.
+///             will trigger vsync callback continuously.
 ///
 ///
 /// @param allowPauseAfterVsync Allow vsync client to pause after receiving a vsync signal.
