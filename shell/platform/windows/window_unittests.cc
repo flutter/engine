@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/testing/mock_text_input_manager_win32.h"
+#include <array>
+
+#include "flutter/shell/platform/windows/testing/mock_text_input_manager.h"
 #include "flutter/shell/platform/windows/testing/mock_window.h"
 #include "gtest/gtest.h"
 
@@ -37,10 +39,8 @@ TEST(MockWindow, VerticalScroll) {
 }
 
 TEST(MockWindow, OnImeCompositionCompose) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
-      text_input_manager);
+  MockTextInputManager* text_input_manager = new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
   EXPECT_CALL(*text_input_manager, GetComposingString())
       .WillRepeatedly(
@@ -63,10 +63,8 @@ TEST(MockWindow, OnImeCompositionCompose) {
 }
 
 TEST(MockWindow, OnImeCompositionResult) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
-      text_input_manager);
+  MockTextInputManager* text_input_manager = new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
   EXPECT_CALL(*text_input_manager, GetComposingString())
       .WillRepeatedly(
@@ -89,10 +87,8 @@ TEST(MockWindow, OnImeCompositionResult) {
 }
 
 TEST(MockWindow, OnImeCompositionResultAndCompose) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
-      text_input_manager);
+  MockTextInputManager* text_input_manager = new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
 
   // This situation is that Google Japanese Input finished composing "今日" in
@@ -127,10 +123,8 @@ TEST(MockWindow, OnImeCompositionResultAndCompose) {
 }
 
 TEST(MockWindow, OnImeCompositionClearChange) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
-      text_input_manager);
+  MockTextInputManager* text_input_manager = new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
   EXPECT_CALL(window, OnComposeChange(std::u16string(u""), 0)).Times(1);
   EXPECT_CALL(window, OnComposeCommit()).Times(1);
@@ -215,19 +209,19 @@ TEST(MockWindow, KeyDownPrintable) {
       .Times(1)
       .WillOnce(respond_false);
   EXPECT_CALL(window, OnText(_)).Times(1);
-  Win32Message messages[] = {{WM_KEYDOWN, 65, lparam, kWmResultDontCheck},
-                             {WM_CHAR, 65, lparam, kWmResultDontCheck}};
-  window.InjectMessageList(2, messages);
+  std::array<Win32Message, 2> messages = {
+      Win32Message{WM_KEYDOWN, 65, lparam, kWmResultDontCheck},
+      Win32Message{WM_CHAR, 65, lparam, kWmResultDontCheck}};
+  window.InjectMessageList(2, messages.data());
 }
 
 TEST(MockWindow, KeyDownWithCtrl) {
   MockWindow window;
 
   // Simulate CONTROL pressed
-  BYTE keyboard_state[256];
-  memset(keyboard_state, 0, 256);
+  std::array<BYTE, 256> keyboard_state;
   keyboard_state[VK_CONTROL] = -1;
-  SetKeyboardState(keyboard_state);
+  SetKeyboardState(keyboard_state.data());
 
   LPARAM lparam = CreateKeyEventLparam(30, false, false);
 
@@ -238,8 +232,8 @@ TEST(MockWindow, KeyDownWithCtrl) {
 
   window.InjectWindowMessage(WM_KEYDOWN, 65, lparam);
 
-  memset(keyboard_state, 0, 256);
-  SetKeyboardState(keyboard_state);
+  keyboard_state.fill(0);
+  SetKeyboardState(keyboard_state.data());
 }
 
 TEST(MockWindow, KeyDownWithCtrlToggled) {
@@ -252,10 +246,9 @@ TEST(MockWindow, KeyDownWithCtrlToggled) {
   };
 
   // Simulate CONTROL toggled
-  BYTE keyboard_state[256];
-  memset(keyboard_state, 0, 256);
+  std::array<BYTE, 256> keyboard_state;
   keyboard_state[VK_CONTROL] = 1;
-  SetKeyboardState(keyboard_state);
+  SetKeyboardState(keyboard_state.data());
 
   LPARAM lparam = CreateKeyEventLparam(30, false, false);
 
@@ -269,8 +262,8 @@ TEST(MockWindow, KeyDownWithCtrlToggled) {
                              {WM_CHAR, 65, lparam, kWmResultDontCheck}};
   window.InjectMessageList(2, messages);
 
-  memset(keyboard_state, 0, 256);
-  SetKeyboardState(keyboard_state);
+  keyboard_state.fill(0);
+  SetKeyboardState(keyboard_state.data());
 }
 
 TEST(MockWindow, Paint) {

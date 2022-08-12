@@ -1,4 +1,4 @@
-Signature: 54a8fe3f85b63bd14263ad3c4e19ce60
+Signature: f88fb225a5be5fb8fa3f200c1d1e1c62
 
 UNUSED LICENSES:
 
@@ -10684,6 +10684,8 @@ FILE: ../../../third_party/dart/runtime/vm/instructions.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
+FILE: ../../../third_party/dart/runtime/vm/simulator_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/simulator_x64.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/runtime_metrics.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart

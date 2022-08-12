@@ -60,10 +60,10 @@ class GradientSweep extends EngineGradient {
   GradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
       this.startAngle, this.endAngle, this.matrix4)
       : assert(offsetIsValid(center)),
-        assert(colors != null), // ignore: unnecessary_null_comparison
-        assert(tileMode != null), // ignore: unnecessary_null_comparison
-        assert(startAngle != null), // ignore: unnecessary_null_comparison
-        assert(endAngle != null), // ignore: unnecessary_null_comparison
+        assert(colors != null),
+        assert(tileMode != null),
+        assert(startAngle != null),
+        assert(endAngle != null),
         assert(startAngle < endAngle),
         super._() {
     validateColorStops(colors, colorStops);
@@ -150,7 +150,7 @@ class GradientSweep extends EngineGradient {
         'float angle = atan(-localCoord.y, -localCoord.x) + ${math.pi};');
     method.addStatement('float sweep = angle_range.y - angle_range.x;');
     method.addStatement('angle = (angle - angle_range.x) / sweep;');
-    method.addStatement(''
+    method.addStatement(
         'float st = angle;');
 
     final String probeName =
@@ -180,8 +180,8 @@ class GradientLinear extends EngineGradient {
     Float32List? matrix,
   )   : assert(offsetIsValid(from)),
         assert(offsetIsValid(to)),
-        assert(colors != null), // ignore: unnecessary_null_comparison
-        assert(tileMode != null), // ignore: unnecessary_null_comparison
+        assert(colors != null),
+        assert(tileMode != null),
         matrix4 = matrix == null ? null : FastMatrix32(matrix),
         super._() {
     if (assertionsEnabled) {
@@ -304,7 +304,7 @@ class GradientLinear extends EngineGradient {
     // We compute location based on gl_FragCoord to center distance which
     // returns 0.0 at center. To make sure we align center of gradient to this
     // point, we shift by 0.5 to get st value for center of gradient.
-    gradientTransform.translate(0.5, 0);
+    gradientTransform.translate(0.5);
     if (length > kFltEpsilon) {
       gradientTransform.scale(1.0 / length);
     }
@@ -588,7 +588,7 @@ class GradientRadial extends EngineGradient {
     method.addStatement(
         'vec4 localCoord = vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1) * m_gradient;');
     method.addStatement('float dist = length(localCoord);');
-    method.addStatement(''
+    method.addStatement(
         'float st = abs(dist / u_radius);');
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
@@ -619,7 +619,7 @@ class GradientConical extends GradientRadial {
       ui.Rect? shaderBounds, double density) {
     if ((tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) &&
         focalRadius == 0.0 &&
-        focal == const ui.Offset(0, 0)) {
+        focal == ui.Offset.zero) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
       initWebGl();
@@ -717,8 +717,9 @@ class _BlurEngineImageFilter extends EngineImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _BlurEngineImageFilter &&
         other.tileMode == tileMode &&
         other.sigmaX == sigmaX &&
@@ -748,8 +749,9 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _MatrixEngineImageFilter
         && other.filterQuality == filterQuality
         && listEquals<double>(other.webMatrix, webMatrix);

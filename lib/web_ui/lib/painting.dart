@@ -3,30 +3,31 @@
 // found in the LICENSE file.
 
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
-// ignore_for_file: public_member_api_docs
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
-  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
+  assert(offset != null, 'Offset argument was null.');
   assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
   return true;
 }
 
 // ignore: unused_element, Used in Shader assert.
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
+  assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
 
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
-    if (colors.length != 2)
+    if (colors.length != 2) {
       throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
+    }
   } else {
-    if (colors.length != colorStops.length)
+    if (colors.length != colorStops.length) {
       throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
+    }
   }
 }
 
@@ -35,7 +36,7 @@ Color _scaleAlpha(Color a, double factor) {
 }
 
 class Color {
-  const Color(int value) : this.value = value & 0xFFFFFFFF;// ignore: unnecessary_this
+  const Color(int value) : value = value & 0xFFFFFFFF;
   const Color.fromARGB(int a, int r, int g, int b)
       : value = (((a & 0xff) << 24) |
                 ((r & 0xff) << 16) |
@@ -92,7 +93,7 @@ class Color {
   }
 
   static Color? lerp(Color? a, Color? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -144,7 +145,7 @@ class Color {
   }
 
   static int getAlphaFromOpacity(double opacity) {
-    assert(opacity != null); // ignore: unnecessary_null_comparison
+    assert(opacity != null);
     return (opacity.clamp(0.0, 1.0) * 255).round();
   }
 
@@ -367,8 +368,8 @@ class MaskFilter {
   const MaskFilter.blur(
     this._style,
     this._sigma,
-  )   : assert(_style != null), // ignore: unnecessary_null_comparison
-        assert(_sigma != null); // ignore: unnecessary_null_comparison
+  )   : assert(_style != null),
+        assert(_sigma != null);
 
   final BlurStyle _style;
   final double _sigma;
@@ -420,8 +421,9 @@ class ImageFilter {
   }
 
   factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
     }
@@ -559,7 +561,7 @@ Future<Codec> _createBmp(
   final int bufferSize = headerSize + (width * height * 4);
   final ByteData bmpData = ByteData(bufferSize);
   // 'BM' header
-  bmpData.setUint16(0x00, 0x424D, Endian.big);
+  bmpData.setUint16(0x00, 0x424D);
   // Size of data
   bmpData.setUint32(0x02, bufferSize, Endian.little);
   // Offset where pixel array begins
@@ -653,8 +655,8 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null, 'Text shadow color was null.'), // ignore: unnecessary_null_comparison
-        assert(offset != null, 'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
+  })  : assert(color != null, 'Text shadow color was null.'),
+        assert(offset != null, 'Text shadow offset was null.'),
         assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
@@ -683,7 +685,7 @@ class Shadow {
   }
 
   static Shadow? lerp(Shadow? a, Shadow? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -704,7 +706,7 @@ class Shadow {
   }
 
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (a == null && b == null) {
       return null;
     }
@@ -712,10 +714,12 @@ class Shadow {
     b ??= <Shadow>[];
     final List<Shadow> result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
-    for (int i = 0; i < commonLength; i += 1)
+    for (int i = 0; i < commonLength; i += 1) {
       result.add(Shadow.lerp(a[i], b[i], t)!);
-    for (int i = commonLength; i < a.length; i += 1)
+    }
+    for (int i = commonLength; i < a.length; i += 1) {
       result.add(a[i].scale(1.0 - t));
+    }
     for (int i = commonLength; i < b.length; i += 1) {
       result.add(b[i].scale(t));
     }
@@ -763,7 +767,7 @@ class ImmutableBuffer {
   Uint8List? _list;
 
   int get length => _length;
-  int _length;
+  final int _length;
 
   bool get debugDisposed {
     late bool disposed;
@@ -777,17 +781,6 @@ class ImmutableBuffer {
 }
 
 class ImageDescriptor {
-  ImageDescriptor._()
-      : _width = null,
-        _height = null,
-        _rowBytes = null,
-        _format = null;
-  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
-    final ImageDescriptor descriptor = ImageDescriptor._();
-    descriptor._data = buffer._list;
-    return descriptor;
-  }
-
   // Not async because there's no expensive work to do here.
   ImageDescriptor.raw(
     ImmutableBuffer buffer, {
@@ -800,6 +793,18 @@ class ImageDescriptor {
         _rowBytes = rowBytes,
         _format = pixelFormat {
     _data = buffer._list;
+  }
+
+  ImageDescriptor._()
+      : _width = null,
+        _height = null,
+        _rowBytes = null,
+        _format = null;
+
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    descriptor._data = buffer._list;
+    return descriptor;
   }
 
   Uint8List? _data;
@@ -835,6 +840,8 @@ class ImageDescriptor {
 }
 
 class FragmentProgram {
+  FragmentProgram._();
+
   static Future<FragmentProgram> fromAsset(String assetKey) {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
@@ -842,8 +849,6 @@ class FragmentProgram {
   static Future<FragmentProgram> fromAssetAsync(String assetKey) {
     return Future<FragmentProgram>.microtask(() => FragmentProgram.fromAsset(assetKey));
   }
-
-  FragmentProgram._();
 
   Shader shader({
     Float32List? floatUniforms,

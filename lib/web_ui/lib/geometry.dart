@@ -4,13 +4,12 @@
 
 // See https://github.com/flutter/engine/blob/main/lib/ui/geometry.dart for
 // documentation of APIs.
-// ignore_for_file: public_member_api_docs
 part of ui;
 
 abstract class OffsetBase {
   const OffsetBase(this._dx, this._dy)
-      : assert(_dx != null), // ignore: unnecessary_null_comparison
-        assert(_dy != null); // ignore: unnecessary_null_comparison
+      : assert(_dx != null),
+        assert(_dy != null);
 
   final double _dx;
   final double _dy;
@@ -35,7 +34,7 @@ abstract class OffsetBase {
 }
 
 class Offset extends OffsetBase {
-  const Offset(double dx, double dy) : super(dx, dy);
+  const Offset(super.dx, super.dy);
   factory Offset.fromDirection(double direction, [ double distance = 1.0 ]) {
     return Offset(distance * math.cos(direction), distance * math.sin(direction));
   }
@@ -58,7 +57,7 @@ class Offset extends OffsetBase {
   Offset operator %(double operand) => Offset(dx % operand, dy % operand);
   Rect operator &(Size other) => Rect.fromLTWH(dx, dy, other.width, other.height);
   static Offset? lerp(Offset? a, Offset? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -89,22 +88,25 @@ class Offset extends OffsetBase {
 }
 
 class Size extends OffsetBase {
-  const Size(double width, double height) : super(width, height);
+  const Size(super.width, super.height);
   // Used by the rendering library's _DebugSize hack.
   Size.copy(Size source) : super(source.width, source.height);
-  const Size.square(double dimension) : super(dimension, dimension);
+  const Size.square(double dimension) : super(dimension, dimension); // ignore: use_super_parameters
   const Size.fromWidth(double width) : super(width, double.infinity);
   const Size.fromHeight(double height) : super(double.infinity, height);
   const Size.fromRadius(double radius) : super(radius * 2.0, radius * 2.0);
   double get width => _dx;
   double get height => _dy;
   double get aspectRatio {
-    if (height != 0.0)
+    if (height != 0.0) {
       return width / height;
-    if (width > 0.0)
+    }
+    if (width > 0.0) {
       return double.infinity;
-    if (width < 0.0)
+    }
+    if (width < 0.0) {
       return double.negativeInfinity;
+    }
     return 0.0;
   }
 
@@ -112,10 +114,12 @@ class Size extends OffsetBase {
   static const Size infinite = Size(double.infinity, double.infinity);
   bool get isEmpty => width <= 0.0 || height <= 0.0;
   OffsetBase operator -(OffsetBase other) {
-    if (other is Size)
+    if (other is Size) {
       return Offset(width - other.width, height - other.height);
-    if (other is Offset)
+    }
+    if (other is Offset) {
       return Size(width - other.dx, height - other.dy);
+    }
     throw ArgumentError(other);
   }
 
@@ -144,7 +148,7 @@ class Size extends OffsetBase {
 
   Size get flipped => Size(height, width);
   static Size? lerp(Size? a, Size? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -177,10 +181,10 @@ class Size extends OffsetBase {
 
 class Rect {
   const Rect.fromLTRB(this.left, this.top, this.right, this.bottom)
-      : assert(left != null), // ignore: unnecessary_null_comparison
-        assert(top != null), // ignore: unnecessary_null_comparison
-        assert(right != null), // ignore: unnecessary_null_comparison
-        assert(bottom != null); // ignore: unnecessary_null_comparison
+      : assert(left != null),
+        assert(top != null),
+        assert(right != null),
+        assert(bottom != null);
 
   const Rect.fromLTWH(double left, double top, double width, double height)
       : this.fromLTRB(left, top, left + width, top + height);
@@ -262,10 +266,12 @@ class Rect {
   }
 
   bool overlaps(Rect other) {
-    if (right <= other.left || other.right <= left)
+    if (right <= other.left || other.right <= left) {
       return false;
-    if (bottom <= other.top || other.bottom <= top)
+    }
+    if (bottom <= other.top || other.bottom <= top) {
       return false;
+    }
     return true;
   }
 
@@ -285,7 +291,7 @@ class Rect {
   }
 
   static Rect? lerp(Rect? a, Rect? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -309,10 +315,12 @@ class Rect {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
     return other is Rect
         && other.left   == left
         && other.top    == top
@@ -341,7 +349,7 @@ class Radius {
   Radius operator ~/(double operand) => Radius.elliptical((x ~/ operand).toDouble(), (y ~/ operand).toDouble());
   Radius operator %(double operand) => Radius.elliptical(x % operand, y % operand);
   static Radius? lerp(Radius? a, Radius? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -363,10 +371,12 @@ class Radius {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
 
     return other is Radius
         && other.x == x
@@ -537,18 +547,18 @@ class RRect {
     this.blRadiusX = 0.0,
     this.blRadiusY = 0.0,
     bool uniformRadii = false,
-  })  : assert(left != null), // ignore: unnecessary_null_comparison
-        assert(top != null), // ignore: unnecessary_null_comparison
-        assert(right != null), // ignore: unnecessary_null_comparison
-        assert(bottom != null), // ignore: unnecessary_null_comparison
-        assert(tlRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(tlRadiusY != null), // ignore: unnecessary_null_comparison
-        assert(trRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(trRadiusY != null), // ignore: unnecessary_null_comparison
-        assert(brRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(brRadiusY != null), // ignore: unnecessary_null_comparison
-        assert(blRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(blRadiusY != null), // ignore: unnecessary_null_comparison
+  })  : assert(left != null),
+        assert(top != null),
+        assert(right != null),
+        assert(bottom != null),
+        assert(tlRadiusX != null),
+        assert(tlRadiusY != null),
+        assert(trRadiusX != null),
+        assert(trRadiusY != null),
+        assert(brRadiusX != null),
+        assert(brRadiusY != null),
+        assert(blRadiusX != null),
+        assert(blRadiusY != null),
         webOnlyUniformRadii = uniformRadii;
 
   final double left;
@@ -696,8 +706,9 @@ class RRect {
   // should be scaled with in order not to exceed the limit.
   double _getMin(double min, double radius1, double radius2, double limit) {
     final double sum = radius1 + radius2;
-    if (sum > limit && sum != 0.0)
+    if (sum > limit && sum != 0.0) {
       return math.min(min, limit / sum);
+    }
     return min;
   }
 
@@ -744,8 +755,9 @@ class RRect {
   }
 
   bool contains(Offset point) {
-    if (point.dx < left || point.dx >= right || point.dy < top || point.dy >= bottom)
-      return false; // outside bounding box
+    if (point.dx < left || point.dx >= right || point.dy < top || point.dy >= bottom) {
+      return false;
+    } // outside bounding box
 
     final RRect scaled = scaleRadii();
 
@@ -786,13 +798,14 @@ class RRect {
     x = x / radiusX;
     y = y / radiusY;
     // check if the point is outside the unit circle
-    if (x * x + y * y > 1.0)
+    if (x * x + y * y > 1.0) {
       return false;
+    }
     return true;
   }
 
   static RRect? lerp(RRect? a, RRect? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -850,10 +863,12 @@ class RRect {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
     return other is RRect
         && other.left      == left
         && other.top       == top
@@ -883,8 +898,9 @@ class RRect {
     if (tlRadius == trRadius &&
         trRadius == brRadius &&
         brRadius == blRadius) {
-      if (tlRadius.x == tlRadius.y)
+      if (tlRadius.x == tlRadius.y) {
         return 'RRect.fromLTRBR($rect, ${tlRadius.x.toStringAsFixed(1)})';
+      }
       return 'RRect.fromLTRBXY($rect, ${tlRadius.x.toStringAsFixed(1)}, ${tlRadius.y.toStringAsFixed(1)})';
     }
     return 'RRect.fromLTRBAndCorners('

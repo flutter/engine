@@ -12,6 +12,7 @@
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
+#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 
@@ -24,14 +25,23 @@ struct Paint {
   using MaskFilterProc =
       std::function<std::shared_ptr<FilterContents>(FilterInput::Ref,
                                                     bool is_solid_color)>;
+  using ColorSourceProc = std::function<std::shared_ptr<PathContents>()>;
 
   enum class Style {
     kFill,
     kStroke,
   };
 
+  struct MaskBlurDescriptor {
+    FilterContents::BlurStyle style;
+    Sigma sigma;
+
+    std::shared_ptr<FilterContents> CreateMaskBlur(FilterInput::Ref input,
+                                                   bool is_solid_color) const;
+  };
+
   Color color = Color::Black();
-  std::shared_ptr<PathContents> contents;
+  std::optional<ColorSourceProc> color_source;
 
   Scalar stroke_width = 0.0;
   SolidStrokeContents::Cap stroke_cap = SolidStrokeContents::Cap::kButt;
@@ -42,7 +52,7 @@ struct Paint {
 
   std::optional<ImageFilterProc> image_filter;
   std::optional<ColorFilterProc> color_filter;
-  std::optional<MaskFilterProc> mask_filter;
+  std::optional<MaskBlurDescriptor> mask_blur_descriptor;
 
   /// @brief      Wrap this paint's configured filters to the given contents.
   /// @param[in]  input           The contents to wrap with paint's filters.

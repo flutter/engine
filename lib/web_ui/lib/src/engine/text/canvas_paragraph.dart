@@ -315,20 +315,13 @@ class FlatTextSpan implements ParagraphSpan {
 class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
   PlaceholderSpan(
     int index,
-    double width,
-    double height,
-    ui.PlaceholderAlignment alignment, {
-    required double baselineOffset,
-    required ui.TextBaseline baseline,
+    super.width,
+    super.height,
+    super.alignment, {
+    required super.baselineOffset,
+    required super.baseline,
   })   : start = index,
-        end = index,
-        super(
-          width,
-          height,
-          alignment,
-          baselineOffset: baselineOffset,
-          baseline: baseline,
-        );
+        end = index;
 
   @override
   final int start;
@@ -574,7 +567,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   final List<ParagraphSpan> _spans = <ParagraphSpan>[];
   final List<StyleNode> _styleStack = <StyleNode>[];
 
-  RootStyleNode _rootStyleNode;
+  final RootStyleNode _rootStyleNode;
   StyleNode get _currentStyleNode => _styleStack.isEmpty
       ? _rootStyleNode
       : _styleStack[_styleStack.length - 1];

@@ -59,8 +59,7 @@ void testMain() {
     group('SkParagraph', () {
       _textStyleTests();
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }
 
 void _blendModeTests() {
@@ -1355,7 +1354,7 @@ void _canvasTests() {
         CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
-        await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        await image.toByteData();
     expect(rawData.lengthInBytes, greaterThan(0));
     expect(
       rawData.buffer.asUint32List(),
@@ -1608,22 +1607,17 @@ void _paragraphTests() {
 
   test('TextHeightBehavior', () {
     expect(
-      toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        applyHeightToFirstAscent: true,
-        applyHeightToLastDescent: true,
-      )),
+      toSkTextHeightBehavior(const ui.TextHeightBehavior()),
       canvasKit.TextHeightBehavior.All,
     );
     expect(
       toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: false,
-        applyHeightToLastDescent: true,
       )),
       canvasKit.TextHeightBehavior.DisableFirstAscent,
     );
     expect(
       toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        applyHeightToFirstAscent: true,
         applyHeightToLastDescent: false,
       )),
       canvasKit.TextHeightBehavior.DisableLastDescent,

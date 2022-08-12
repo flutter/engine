@@ -20,8 +20,8 @@ void RadialGradientContents::SetPath(Path path) {
   path_ = std::move(path);
 }
 
-void RadialGradientContents::SetCenterAndRadius(Point centre, Scalar radius) {
-  center_ = centre;
+void RadialGradientContents::SetCenterAndRadius(Point center, Scalar radius) {
+  center_ = center;
   radius_ = radius;
 }
 
@@ -33,6 +33,10 @@ void RadialGradientContents::SetColors(std::vector<Color> colors) {
   } else if (colors_.size() < 2u) {
     colors_.push_back(colors_.back());
   }
+}
+
+void RadialGradientContents::SetTileMode(Entity::TileMode tile_mode) {
+  tile_mode_ = tile_mode;
 }
 
 const std::vector<Color>& RadialGradientContents::GetColors() const {
@@ -77,6 +81,7 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
   gradient_info.radius = radius_;
   gradient_info.center_color = colors_[0].Premultiply();
   gradient_info.edge_color = colors_[1].Premultiply();
+  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
 
   Command cmd;
   cmd.label = "RadialGradientFill";
