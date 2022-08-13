@@ -54,12 +54,12 @@ Future<void> testMain() async {
   });
 }
 
-Future<ui.Image> _createImage() async => _createPicture().toImage(10, 10);
+Future<ui.Image> _createImage() async => await _createPicture().toImage(10, 10);
 
-Picture _createPicture() {
-  final PictureRecorder recorder = PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
-  const Rect rect = Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
+ui.Picture _createPicture() {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(recorder);
+  const ui.Rect rect = ui.Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
   canvas.clipRect(rect);
   return recorder.endRecording();
 }
