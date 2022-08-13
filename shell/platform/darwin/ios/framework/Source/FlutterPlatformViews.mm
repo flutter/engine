@@ -539,6 +539,7 @@ void FlutterPlatformViewsController::Reset() {
   clip_count_.clear();
   views_to_recomposite_.clear();
   layer_pool_->RecycleLayers();
+  visited_platform_views_.clear();
 }
 
 SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
@@ -799,6 +800,7 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 void FlutterPlatformViewsController::ResetFrameState() {
   slices_.clear();
   composition_order_.clear();
+  visited_platform_views_.clear();
 }
 
 }  // namespace flutter

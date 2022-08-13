@@ -159,7 +159,7 @@ void ResetAnchor(CALayer* layer) {
 }
 
 - (void)dealloc {
-  [self.blurEffectView release];
+  [_blurEffectView release];
 
   [_gaussianFilter release];
   _gaussianFilter = nil;
