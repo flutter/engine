@@ -6,6 +6,10 @@ import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+Future<void> testMain() async {
   test('Picture constructor invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
     Picture? createdPicture;
