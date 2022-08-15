@@ -178,7 +178,7 @@ class FlutterWindowsEngine {
   void ScheduleFrame();
 
   // Set the callback that is called when the next frame is drawn.
-  void SetNextFrameCallback(const fml::closure& callback);
+  void SetNextFrameCallback(fml::closure callback);
 
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);

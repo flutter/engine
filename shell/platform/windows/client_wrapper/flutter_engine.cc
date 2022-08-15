@@ -88,9 +88,8 @@ FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(
   return FlutterDesktopEngineGetPluginRegistrar(engine_, plugin_name.c_str());
 }
 
-void FlutterEngine::SetNextFrameCallback(
-    const std::function<void()>& callback) {
-  next_frame_callback_ = callback;
+void FlutterEngine::SetNextFrameCallback(std::function<void()> callback) {
+  next_frame_callback_ = std::move(callback);
   FlutterDesktopEngineSetNextFrameCallback(
       engine_,
       [](void* user_data) {

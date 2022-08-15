@@ -506,8 +506,8 @@ void FlutterWindowsEngine::ScheduleFrame() {
   embedder_api_.ScheduleFrame(engine_);
 }
 
-void FlutterWindowsEngine::SetNextFrameCallback(const fml::closure& callback) {
-  next_frame_callback_ = callback;
+void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
+  next_frame_callback_ = std::move(callback);
 
   embedder_api_.SetNextFrameCallback(
       engine_,

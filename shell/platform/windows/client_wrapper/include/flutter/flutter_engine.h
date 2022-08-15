@@ -82,7 +82,7 @@ class FlutterEngine : public PluginRegistry {
   //
   // This must be called from the platform thread. The callback is executed only
   // once on the platform thread.
-  void SetNextFrameCallback(const std::function<void()>& callback);
+  void SetNextFrameCallback(std::function<void()> callback);
 
  private:
   // For access to RelinquishEngine.
