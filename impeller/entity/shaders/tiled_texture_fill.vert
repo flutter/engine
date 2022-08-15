@@ -8,11 +8,10 @@ uniform VertInfo {
 vert_info;
 
 in vec2 position;
-in vec2 texture_coords;
 
-out vec2 v_texture_coords;
+out vec2 interpolated_vertices;
 
 void main() {
   gl_Position = vert_info.mvp * vec4(position, 0.0, 1.0);
-  v_texture_coords = texture_coords;
+  interpolated_vertices = position;
 }

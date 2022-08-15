@@ -17,10 +17,6 @@ TiledTextureContents::TiledTextureContents() = default;
 
 TiledTextureContents::~TiledTextureContents() = default;
 
-void TiledTextureContents::SetPath(Path path) {
-  path_ = std::move(path);
-}
-
 void TiledTextureContents::SetTexture(std::shared_ptr<Texture> texture) {
   texture_ = std::move(texture);
 }
@@ -35,11 +31,6 @@ void TiledTextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
 
-std::optional<Rect> TiledTextureContents::GetCoverage(
-    const Entity& entity) const {
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
-};
-
 bool TiledTextureContents::Render(const ContentContext& renderer,
                                   const Entity& entity,
                                   RenderPass& pass) const {
@@ -50,7 +41,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   using VS = TiledTextureFillVertexShader;
   using FS = TiledTextureFillFragmentShader;
 
-  const auto coverage_rect = path_.GetBoundingBox();
+  const auto coverage_rect = GetPath().GetBoundingBox();
 
   if (!coverage_rect.has_value()) {
     return true;
@@ -67,14 +58,13 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   {
-    const auto tess_result =
-        Tessellator{}.Tessellate(path_.GetFillType(), path_.CreatePolyline(),
-                                 [&vertex_builder, &texture_size](Point vtx) {
-                                   VS::PerVertexData data;
-                                   data.position = vtx;
-                                   data.texture_coords = vtx / texture_size;
-                                   vertex_builder.AppendVertex(data);
-                                 });
+    const auto tess_result = Tessellator{}.Tessellate(
+        GetPath().GetFillType(), GetPath().CreatePolyline(),
+        [&vertex_builder](Point vtx) {
+          VS::PerVertexData data;
+          data.position = vtx;
+          vertex_builder.AppendVertex(data);
+        });
 
     if (tess_result == Tessellator::Result::kInputError) {
       return true;
@@ -98,6 +88,9 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
   frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
+  frag_info.matrix = GetInverseMatrix();
+  frag_info.texture_size = Vector2{static_cast<Scalar>(texture_size.width),
+                                   static_cast<Scalar>(texture_size.height)};
 
   Command cmd;
   cmd.label = "TiledTextureFill";

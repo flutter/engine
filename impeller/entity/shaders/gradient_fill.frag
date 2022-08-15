@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <impeller/texture.glsl>
+#include <impeller/transform.glsl>
 
 uniform GradientInfo {
   vec2 start_point;
@@ -10,6 +11,7 @@ uniform GradientInfo {
   vec4 start_color;
   vec4 end_color;
   float tile_mode;
+  mat4 matrix;
 } gradient_info;
 
 in vec2 interpolated_vertices;
@@ -17,9 +19,10 @@ in vec2 interpolated_vertices;
 out vec4 frag_color;
 
 void main() {
+  vec2 transformed_vertices = transform(gradient_info.matrix, interpolated_vertices);
   float len = length(gradient_info.end_point - gradient_info.start_point);
   float dot = dot(
-    interpolated_vertices - gradient_info.start_point,
+    transformed_vertices - gradient_info.start_point,
     gradient_info.end_point - gradient_info.start_point
   );
   float t = dot / (len * len);
