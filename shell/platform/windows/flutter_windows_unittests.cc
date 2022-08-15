@@ -183,7 +183,7 @@ TEST_F(WindowsTest, NextFrameCallback) {
         },
         &captures);
 
-    // Pump messages for the Windows platform runner.
+    // Pump messages for the Windows platform task runner.
     ::MSG msg;
     while (::GetMessage(&msg, nullptr, 0, 0)) {
       ::TranslateMessage(&msg);
