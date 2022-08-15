@@ -29,6 +29,7 @@
     "http": "https://github.com/dart-lang/http.git",
     "http_multi_server": "https://github.com/dart-lang/http_multi_server.git",
     "http_parser": "https://github.com/dart-lang/http_parser.git",
+    "icu": "https://github.com/unicode-org/icu.git",
     "json_rpc_2": "https://github.com/dart-lang/json_rpc_2.git",
     "linter": "https://github.com/dart-lang/linter.git",
     "logging": "https://github.com/dart-lang/logging.git",

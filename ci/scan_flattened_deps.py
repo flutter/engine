@@ -145,8 +145,9 @@ def getCommonAncestorCommit(dep):
         data = json.load(f)
         if dep_name in data:
           try:
-            print("attempting to clone from: " + dep[0])
+            print("chdir")
             os.chdir('./clone-test')
+            print(f'attempting: git clone {dep[0]} --quiet')
             os.system(f'git clone {dep[0]} --quiet')
             os.chdir(f'./{dep_name}')
             os.system(f'git for-each-ref --format=\'%(refname:short) %(objectname:short)\' refs/heads')
