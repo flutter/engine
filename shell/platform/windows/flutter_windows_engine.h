@@ -9,8 +9,11 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <vector>
 
+#include "flutter/fml/closure.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
@@ -72,11 +75,22 @@ class FlutterWindowsEngine {
   FlutterWindowsEngine(FlutterWindowsEngine const&) = delete;
   FlutterWindowsEngine& operator=(FlutterWindowsEngine const&) = delete;
 
-  // Starts running the engine with the given entrypoint. If null, defaults to
-  // main().
+  // Starts running the entrypoint function specifed in the project bundle. If
+  // unspecified, defaults to main().
   //
   // Returns false if the engine couldn't be started.
-  bool RunWithEntrypoint(const char* entrypoint);
+  bool Run();
+
+  // Starts running the engine with the given entrypoint. If the empty string
+  // is specified, defaults to the entrypoint function specified in the project
+  // bundle, or main() if both are unspecified.
+  //
+  // Returns false if the engine couldn't be started or if conflicting,
+  // non-default values are passed here and in the project bundle..
+  //
+  // DEPRECATED: Prefer setting the entrypoint in the FlutterProjectBundle
+  // passed to the constructor and calling the no-parameter overload.
+  bool Run(std::string_view entrypoint);
 
   // Returns true if the engine is currently running.
   bool running() { return engine_ != nullptr; }
@@ -190,6 +204,19 @@ class FlutterWindowsEngine {
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
 
+  // Register a root isolate create callback.
+  //
+  // The root isolate create callback is invoked at creation of the root Dart
+  // isolate in the app. This may be used to be notified that execution of the
+  // main Dart entrypoint is about to begin, and is used by test infrastructure
+  // to register a native function resolver that can register and resolve
+  // functions marked as native in the Dart code.
+  //
+  // This must be called before calling |Run|.
+  void SetRootIsolateCreateCallback(const fml::closure& callback) {
+    root_isolate_create_callback_ = callback;
+  }
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -264,6 +291,9 @@ class FlutterWindowsEngine {
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;
+
+  // The root isolate creation callback.
+  fml::closure root_isolate_create_callback_;
 };
 
 }  // namespace flutter

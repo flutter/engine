@@ -128,8 +128,10 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
   return result;
 }
 
-RenderPassMTL::RenderPassMTL(id<MTLCommandBuffer> buffer, RenderTarget target)
-    : RenderPass(std::move(target)),
+RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
+                             RenderTarget target,
+                             id<MTLCommandBuffer> buffer)
+    : RenderPass(std::move(context), std::move(target)),
       buffer_(buffer),
       desc_(ToMTLRenderPassDescriptor(GetRenderTarget())) {
   if (!buffer_ || !desc_ || !render_target_.IsValid()) {
@@ -151,8 +153,7 @@ void RenderPassMTL::OnSetLabel(std::string label) {
   label_ = std::move(label);
 }
 
-bool RenderPassMTL::EncodeCommands(
-    const std::shared_ptr<Allocator>& transients_allocator) const {
+bool RenderPassMTL::OnEncodeCommands(const Context& context) const {
   TRACE_EVENT0("impeller", "RenderPassMTL::EncodeCommands");
   if (!IsValid()) {
     return false;
@@ -173,7 +174,7 @@ bool RenderPassMTL::EncodeCommands(
   fml::ScopedCleanupClosure auto_end(
       [render_command_encoder]() { [render_command_encoder endEncoding]; });
 
-  return EncodeCommands(transients_allocator, render_command_encoder);
+  return EncodeCommands(context.GetResourceAllocator(), render_command_encoder);
 }
 
 //-----------------------------------------------------------------------------
@@ -299,6 +300,36 @@ struct PassBindingsCache {
     return false;
   }
 
+  void SetViewport(const Viewport& viewport) {
+    if (viewport_.has_value() && viewport_.value() == viewport) {
+      return;
+    }
+    [encoder_ setViewport:MTLViewport{
+                              .originX = viewport.rect.origin.x,
+                              .originY = viewport.rect.origin.y,
+                              .width = viewport.rect.size.width,
+                              .height = viewport.rect.size.height,
+                              .znear = viewport.depth_range.z_near,
+                              .zfar = viewport.depth_range.z_far,
+                          }];
+    viewport_ = viewport;
+  }
+
+  void SetScissor(const IRect& scissor) {
+    if (scissor_.has_value() && scissor_.value() == scissor) {
+      return;
+    }
+    [encoder_
+        setScissorRect:MTLScissorRect{
+                           .x = static_cast<NSUInteger>(scissor.origin.x),
+                           .y = static_cast<NSUInteger>(scissor.origin.y),
+                           .width = static_cast<NSUInteger>(scissor.size.width),
+                           .height =
+                               static_cast<NSUInteger>(scissor.size.height),
+                       }];
+    scissor_ = scissor;
+  }
+
  private:
   struct BufferOffsetPair {
     id<MTLBuffer> buffer = nullptr;
@@ -314,6 +345,8 @@ struct PassBindingsCache {
   std::map<ShaderStage, BufferMap> buffers_;
   std::map<ShaderStage, TextureMap> textures_;
   std::map<ShaderStage, SamplerMap> samplers_;
+  std::optional<Viewport> viewport_;
+  std::optional<IRect> scissor_;
 };
 
 static bool Bind(PassBindingsCache& pass,
@@ -423,33 +456,17 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
         PipelineMTL::Cast(*command.pipeline).GetMTLRenderPipelineState());
     pass_bindings.SetDepthStencilState(
         PipelineMTL::Cast(*command.pipeline).GetMTLDepthStencilState());
+    pass_bindings.SetViewport(command.viewport.value_or<Viewport>(
+        {.rect = Rect::MakeSize(GetRenderTargetSize())}));
+    pass_bindings.SetScissor(
+        command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize())));
+
     [encoder setFrontFacingWinding:pipeline_desc.GetWindingOrder() ==
                                            WindingOrder::kClockwise
                                        ? MTLWindingClockwise
                                        : MTLWindingCounterClockwise];
     [encoder setCullMode:ToMTLCullMode(pipeline_desc.GetCullMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
-
-    auto v = command.viewport.value_or<Viewport>(
-        {.rect = Rect::MakeSize(GetRenderTargetSize())});
-    MTLViewport viewport = {
-        .originX = v.rect.origin.x,
-        .originY = v.rect.origin.y,
-        .width = v.rect.size.width,
-        .height = v.rect.size.height,
-        .znear = v.depth_range.z_near,
-        .zfar = v.depth_range.z_far,
-    };
-    [encoder setViewport:viewport];
-
-    auto s = command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize()));
-    MTLScissorRect scissor = {
-        .x = static_cast<NSUInteger>(s.origin.x),
-        .y = static_cast<NSUInteger>(s.origin.y),
-        .width = static_cast<NSUInteger>(s.size.width),
-        .height = static_cast<NSUInteger>(s.size.height),
-    };
-    [encoder setScissorRect:scissor];
 
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
       return false;

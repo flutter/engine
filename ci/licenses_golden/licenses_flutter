@@ -450,6 +450,8 @@ FILE: ../../../flutter/impeller/base/base_unittests.cc
 FILE: ../../../flutter/impeller/base/comparable.cc
 FILE: ../../../flutter/impeller/base/comparable.h
 FILE: ../../../flutter/impeller/base/config.h
+FILE: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.cc
+FILE: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.h
 FILE: ../../../flutter/impeller/base/promise.cc
 FILE: ../../../flutter/impeller/base/promise.h
 FILE: ../../../flutter/impeller/base/strings.cc
@@ -462,6 +464,10 @@ FILE: ../../../flutter/impeller/base/validation.cc
 FILE: ../../../flutter/impeller/base/validation.h
 FILE: ../../../flutter/impeller/base/version.cc
 FILE: ../../../flutter/impeller/base/version.h
+FILE: ../../../flutter/impeller/base/work_queue.cc
+FILE: ../../../flutter/impeller/base/work_queue.h
+FILE: ../../../flutter/impeller/base/work_queue_common.cc
+FILE: ../../../flutter/impeller/base/work_queue_common.h
 FILE: ../../../flutter/impeller/blobcat/blob.cc
 FILE: ../../../flutter/impeller/blobcat/blob.h
 FILE: ../../../flutter/impeller/blobcat/blob_library.cc
@@ -556,6 +562,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
@@ -581,10 +589,14 @@ FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.h
+FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/text_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/text_contents.h
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.h
+FILE: ../../../flutter/impeller/entity/contents/tiled_texture_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/tiled_texture_contents.h
 FILE: ../../../flutter/impeller/entity/contents/vertices_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/vertices_contents.h
 FILE: ../../../flutter/impeller/entity/entity.cc
@@ -621,6 +633,8 @@ FILE: ../../../flutter/impeller/entity/shaders/blending/blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
+FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
@@ -635,8 +649,12 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
+FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
 FILE: ../../../flutter/impeller/entity/shaders/vertices.vert
 FILE: ../../../flutter/impeller/geometry/color.cc
@@ -769,6 +787,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
@@ -789,8 +809,14 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc
@@ -872,6 +898,7 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
+FILE: ../../../flutter/impeller/runtime_stage/runtime_types.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
 FILE: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart
@@ -1665,6 +1692,7 @@ FILE: ../../../flutter/shell/platform/common/path_utils.h
 FILE: ../../../flutter/shell/platform/common/path_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/common/platform_provided_menu.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_export.h
+FILE: ../../../flutter/shell/platform/common/public/flutter_macros.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_plugin_registrar.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_texture_registrar.h
@@ -2313,6 +2341,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_task_runner.h
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_text_input_view_delegate.cc
+FILE: ../../../flutter/shell/platform/linux/fl_text_input_view_delegate.h
 FILE: ../../../flutter/shell/platform/linux/fl_texture.cc
 FILE: ../../../flutter/shell/platform/linux/fl_texture_gl.cc
 FILE: ../../../flutter/shell/platform/linux/fl_texture_gl_private.h

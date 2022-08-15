@@ -33,7 +33,7 @@ class RadialGradientContents final : public PathContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  void SetCenterAndRadius(Point centre, Scalar radius);
+  void SetCenterAndRadius(Point center, Scalar radius);
 
   void SetColors(std::vector<Color> colors);
 

@@ -4,6 +4,7 @@
 
 #include "impeller/entity/inline_pass_context.h"
 
+#include "impeller/base/validation.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
@@ -37,7 +38,7 @@ bool InlinePassContext::EndPass() {
     return true;
   }
 
-  if (!pass_->EncodeCommands(context_->GetTransientsAllocator())) {
+  if (!pass_->EncodeCommands()) {
     return false;
   }
 
@@ -59,8 +60,9 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
     uint32_t pass_depth) {
   // Create a new render pass if one isn't active.
   if (!IsActive()) {
-    command_buffer_ = context_->CreateRenderCommandBuffer();
+    command_buffer_ = context_->CreateCommandBuffer();
     if (!command_buffer_) {
+      VALIDATION_LOG << "Could not create command buffer.";
       return nullptr;
     }
 
@@ -85,6 +87,7 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
 
     pass_ = command_buffer_->CreateRenderPass(render_target_);
     if (!pass_) {
+      VALIDATION_LOG << "Could not create render pass.";
       return nullptr;
     }
 
