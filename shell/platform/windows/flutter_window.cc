@@ -8,6 +8,8 @@
 #include <chrono>
 #include <map>
 
+#include "flutter/fml/logging.h"
+
 namespace flutter {
 
 namespace {
@@ -121,7 +123,7 @@ static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
     case XBUTTON2:
       return kFlutterPointerButtonMouseForward;
   }
-  std::cerr << "Mouse button not recognized: " << button << std::endl;
+  FML_LOG(WARNING) << "Mouse button not recognized: " << button;
   return 0;
 }
 
@@ -250,8 +252,7 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
                                            size_t row_bytes,
                                            size_t height) {
   HDC dc = ::GetDC(GetWindowHandle());
-  BITMAPINFO bmi;
-  memset(&bmi, 0, sizeof(bmi));
+  BITMAPINFO bmi = {};
   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bmi.bmiHeader.biWidth = row_bytes / 4;
   bmi.bmiHeader.biHeight = -height;

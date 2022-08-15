@@ -91,10 +91,12 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
   cmd.BindVertices(vtx_buffer);
   cmd.pipeline = std::move(pipeline);
 
+  typename FS::BlendInfo blend_info;
+
   auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
   FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, sampler);
+  blend_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
 
-  typename FS::BlendInfo blend_info;
   if (foreground_color.has_value()) {
     blend_info.color_factor = 1;
     blend_info.color = foreground_color.value();
@@ -104,6 +106,7 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
   } else {
     blend_info.color_factor = 0;
     FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, sampler);
+    blend_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
   }
   auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
   FS::BindBlendInfo(cmd, blend_uniform);
@@ -265,32 +268,43 @@ void BlendFilterContents::SetForegroundColor(std::optional<Color> color) {
   foreground_color_ = color;
 }
 
-bool BlendFilterContents::RenderFilter(const FilterInput::Vector& inputs,
-                                       const ContentContext& renderer,
-                                       const Entity& entity,
-                                       RenderPass& pass,
-                                       const Rect& coverage) const {
+std::optional<Snapshot> BlendFilterContents::RenderFilter(
+    const FilterInput::Vector& inputs,
+    const ContentContext& renderer,
+    const Entity& entity,
+    const Rect& coverage) const {
   if (inputs.empty()) {
-    return true;
+    return std::nullopt;
   }
 
-  if (inputs.size() == 1 && !foreground_color_.has_value()) {
-    // Nothing to blend.
-    return PipelineBlend(inputs, renderer, entity, pass, coverage,
-                         Entity::BlendMode::kSource, std::nullopt);
-  }
+  ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
+                                                 RenderPass& pass) {
+    if (inputs.size() == 1 && !foreground_color_.has_value()) {
+      // Nothing to blend.
+      return PipelineBlend(inputs, renderer, entity, pass, coverage,
+                           Entity::BlendMode::kSource, std::nullopt);
+    }
 
-  if (blend_mode_ <= Entity::BlendMode::kLastPipelineBlendMode) {
-    return PipelineBlend(inputs, renderer, entity, pass, coverage, blend_mode_,
-                         foreground_color_);
-  }
+    if (blend_mode_ <= Entity::BlendMode::kLastPipelineBlendMode) {
+      return PipelineBlend(inputs, renderer, entity, pass, coverage,
+                           blend_mode_, foreground_color_);
+    }
 
-  if (blend_mode_ <= Entity::BlendMode::kLastAdvancedBlendMode) {
-    return advanced_blend_proc_(inputs, renderer, entity, pass, coverage,
-                                foreground_color_);
-  }
+    if (blend_mode_ <= Entity::BlendMode::kLastAdvancedBlendMode) {
+      return advanced_blend_proc_(inputs, renderer, entity, pass, coverage,
+                                  foreground_color_);
+    }
+    FML_UNREACHABLE();
+  };
 
-  FML_UNREACHABLE();
+  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), callback);
+  if (!out_texture) {
+    return std::nullopt;
+  }
+  out_texture->SetLabel("BlendFilter Texture");
+
+  return Snapshot{.texture = out_texture,
+                  .transform = Matrix::MakeTranslation(coverage.origin)};
 }
 
 }  // namespace impeller

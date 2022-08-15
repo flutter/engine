@@ -155,6 +155,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
+  sweep_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
   rrect_blur_pipelines_[{}] =
       CreateDefaultPipeline<RRectBlurPipeline>(*context_);
   texture_blend_pipelines_[{}] =
@@ -189,10 +191,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
   texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
+  tiled_texture_pipelines_[{}] =
+      CreateDefaultPipeline<TiledTexturePipeline>(*context_);
   gaussian_blur_pipelines_[{}] =
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
+  color_matrix_color_filter_pipelines_[{}] =
+      CreateDefaultPipeline<ColorMatrixColorFilterPipeline>(*context_);
   solid_stroke_pipelines_[{}] =
       CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
@@ -241,7 +247,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  auto sub_command_buffer = context->CreateRenderCommandBuffer();
+  auto sub_command_buffer = context->CreateCommandBuffer();
   sub_command_buffer->SetLabel("Offscreen Contents Command Buffer");
   if (!sub_command_buffer) {
     return nullptr;
@@ -257,7 +263,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands(context->GetTransientsAllocator())) {
+  if (!sub_renderpass->EncodeCommands()) {
     return nullptr;
   }
 

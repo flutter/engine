@@ -58,6 +58,13 @@ static std::string SLFileName(const char* fixture_name,
   return stream.str();
 }
 
+std::unique_ptr<fml::FileMapping> CompilerTest::GetReflectionJson(
+    const char* fixture_name) const {
+  auto filename = ReflectionJSONName(fixture_name);
+  auto fd = fml::OpenFileReadOnly(intermediates_directory_, filename.c_str());
+  return fml::FileMapping::CreateReadOnly(fd);
+}
+
 bool CompilerTest::CanCompileAndReflect(const char* fixture_name,
                                         SourceType source_type) const {
   auto fixture = flutter::testing::OpenFixtureAsMapping(fixture_name);
@@ -159,7 +166,6 @@ bool CompilerTest::CanCompileAndReflect(const char* fixture_name,
       return false;
     }
   }
-
   return true;
 }
 
