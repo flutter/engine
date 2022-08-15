@@ -104,6 +104,7 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
+
   auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
   if (!maybe_input_uvs.has_value()) {
     return std::nullopt;
@@ -191,8 +192,13 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   }
   out_texture->SetLabel("DirectionalGaussianBlurFilter Texture");
 
+  SamplerDescriptor sampler_desc;
+  sampler_desc.min_filter = MinMagFilter::kLinear;
+  sampler_desc.mag_filter = MinMagFilter::kLinear;
+
   return Snapshot{.texture = out_texture,
-                  .transform = Matrix::MakeTranslation(coverage.origin)};
+                  .transform = Matrix::MakeTranslation(coverage.origin),
+                  .sampler_descriptor = sampler_desc};
 }
 
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(

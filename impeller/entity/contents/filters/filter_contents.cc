@@ -156,6 +156,7 @@ bool FilterContents::Render(const ContentContext& renderer,
   contents->SetPath(
       PathBuilder{}.AddRect(filter_coverage.value()).GetCurrentPath());
   contents->SetTexture(snapshot.texture);
+  contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
   contents->SetSourceRect(Rect::MakeSize(snapshot.texture->GetSize()));
 
   Entity e;

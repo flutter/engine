@@ -43,6 +43,14 @@ std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
 
+std::optional<Snapshot> TextureContents::RenderToSnapshot(
+    const ContentContext& renderer,
+    const Entity& entity) const {
+  return Snapshot{.texture = texture_,
+                  .transform = entity.GetTransformation(),
+                  .sampler_descriptor = sampler_descriptor_};
+}
+
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
