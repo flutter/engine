@@ -103,6 +103,6 @@
     "imgui": "https://github.com/ocornut/imgui.git",
     "wuffs-mirror-release-c": "https://github.com/google/wuffs-mirror-release-c.git",
     "skia": "https://skia.googlesource.com/skia.git",
-    "SwiftShader": "https://swiftshader.googlesource.com/SwiftShader.git",
+    "SwiftShader": "https://swiftshader.googlesource.com/SwiftaShader.git",
     "boringssl": "https://github.com/openssl/openssl"
 }
