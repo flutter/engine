@@ -79,7 +79,7 @@ class FlutterEngine : public PluginRegistry {
   BinaryMessenger* messenger() { return messenger_.get(); }
 
   // Schedule a callback to be called after the next frame is drawn.
-  // 
+  //
   // This must be called from the platform thread. The callback is executed only
   // once on the platform thread.
   void SetNextFrameCallback(const std::function<void()>& callback);
