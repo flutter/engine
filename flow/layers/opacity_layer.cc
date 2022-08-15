@@ -46,6 +46,9 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
 
+  context->paint = context->paint->SetAlpha(alpha_);
+  BindPaintNode(context->paint);
+
   AutoCache auto_cache =
       AutoCache(layer_raster_cache_item_.get(), context, matrix);
   Layer::AutoPrerollSaveLayerState save =

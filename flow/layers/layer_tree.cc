@@ -49,7 +49,9 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   raster_cache_items_.clear();
+  
   paint_tree_root_ = std::make_unique<DlPaintNode>();
+  root_layer_->BindPaintNode(paint_tree_root_.get());
 
   PrerollContext context = {
       // clang-format off

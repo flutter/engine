@@ -36,6 +36,10 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
+      
+  context->paint = context->paint->SetColorFilter(filter_.get());
+  BindPaintNode(context->paint);
+
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
@@ -61,7 +65,6 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint cache_paint(context);
   cache_paint.setColorFilter(filter_.get());
   if (context.leaf_nodes_builder) {
-
     FML_DCHECK(context.builder_multiplexer);
     context.builder_multiplexer->saveLayer(&paint_bounds(),
                                            cache_paint.dl_paint());

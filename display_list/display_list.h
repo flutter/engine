@@ -163,6 +163,7 @@ enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 
 class Dispatcher;
 class DisplayListBuilder;
+class DlPaint;
 
 class SaveLayerOptions {
  public:
@@ -272,6 +273,8 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity() { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
+
+  bool is_compatible(const DlPaint* paint) const;
 
  private:
   DisplayList(uint8_t* ptr,

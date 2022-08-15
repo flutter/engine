@@ -414,6 +414,14 @@ class Layer {
   }
   virtual const testing::MockLayer* as_mock_layer() const { return nullptr; }
 
+  void BindPaintNode(DlPaintNode* paint_node) {
+    paint_node_ = paint_node;
+  }
+
+  const DlPaintNode* paint_node() const {
+    return paint_node_;
+  }
+
  private:
   SkRect paint_bounds_;
   uint64_t unique_id_;
@@ -421,6 +429,8 @@ class Layer {
   bool subtree_has_platform_view_;
 
   static uint64_t NextUniqueID();
+
+  DlPaintNode* paint_node_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };

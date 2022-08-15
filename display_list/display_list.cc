@@ -8,6 +8,7 @@
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_ops.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/display_list_paint.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -194,6 +195,11 @@ void DisplayList::RenderTo(DisplayListBuilder* builder,
     return;
   }
   Dispatch(*builder);
+}
+
+bool DisplayList::is_compatible(const DlPaint *paint) const {
+  // TODO(JsouLiang)
+  return true;
 }
 
 void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {

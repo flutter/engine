@@ -47,6 +47,11 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
     context->view_embedder->PushFilterToVisitedPlatformViews(filter_);
   }
   SkRect child_paint_bounds = SkRect::MakeEmpty();
+  
+  context->paint = context->paint->SetBackdropFilter(blend_mode_, filter_.get());
+  BindPaintNode(context->paint);
+
+
   PrerollChildren(context, matrix, &child_paint_bounds);
   child_paint_bounds.join(context->cull_rect);
   set_paint_bounds(child_paint_bounds);

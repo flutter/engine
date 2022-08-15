@@ -378,8 +378,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
               bool has_layer = false)
         : save_layer_offset(save_layer_offset),
           has_layer(has_layer),
-          cannot_inherit_opacity(false),
-          has_compatible_op(false),
           matrix(matrix),
           clip_bounds(clip_bounds) {}
 
@@ -402,27 +400,43 @@ class DisplayListBuilder final : public virtual Dispatcher,
     bool has_deferred_save_op_ = false;
 
     bool has_layer;
-    bool cannot_inherit_opacity;
-    bool has_compatible_op;
+    bool cannot_inherit_opacity = false;
+    bool has_opacity_compatible_op = false;
+
+    bool cannot_inherit_color_filter;
+    bool has_color_filter_compatible_op = false;
 
     SkM44 matrix;
     SkRect clip_bounds;
 
     bool is_group_opacity_compatible() const { return !cannot_inherit_opacity; }
 
-    void mark_incompatible() { cannot_inherit_opacity = true; }
+    void mark_opacity_incompatible() { cannot_inherit_opacity = true; }
+
+    void mark_color_filter_incompatible() { cannot_inherit_color_filter = true; }
 
     // For now this only allows a single compatible op to mark the
     // layer as being compatible with group opacity. If we start
     // computing bounds of ops in the Builder methods then we
     // can upgrade this to checking for overlapping ops.
     // See https://github.com/flutter/flutter/issues/93899
-    void add_compatible_op() {
+    void add_opacity_compatible_op() {
       if (!cannot_inherit_opacity) {
-        if (has_compatible_op) {
+        if (has_opacity_compatible_op) {
           cannot_inherit_opacity = true;
         } else {
-          has_compatible_op = true;
+          has_opacity_compatible_op = true;
+        }
+      }
+    }
+
+    void add_color_filter_compatible_op() {
+      // can use color filter
+      if (!cannot_inherit_color_filter) {
+        if (has_color_filter_compatible_op) {
+          cannot_inherit_color_filter = true;
+        } else {
+          has_color_filter_compatible_op = true;
         }
       }
     }
@@ -434,6 +448,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   // This flag indicates whether or not the current rendering attributes
   // are compatible with rendering ops applying an inherited opacity.
   bool current_opacity_compatibility_ = true;
+
+  bool current_color_filter_compatibility_ = true;
 
   // Returns the compatibility of a given blend mode for applying an
   // inherited opacity value to modulate the visibility of the op.
@@ -453,13 +469,29 @@ class DisplayListBuilder final : public virtual Dispatcher,
         IsOpacityCompatible(current_.getBlendMode());
   }
 
+  void UpdateCurrentColorFilterCompatibility() {
+    // TODO:(Jsouliang) check the filter compatiblity is right?
+    current_opacity_compatibility_ = 
+        current_.getAlpha() == 1.0 && // not set alpha
+        !current_.isInvertColors() && 
+        IsOpacityCompatible(current_.getBlendMode()); 
+  }
+
   // Update the opacity compatibility flags of the current layer for an op
   // that has determined its compatibility as indicated by |compatible|.
   void UpdateLayerOpacityCompatibility(bool compatible) {
     if (compatible) {
-      current_layer_->add_compatible_op();
+      current_layer_->add_opacity_compatible_op();
     } else {
-      current_layer_->mark_incompatible();
+      current_layer_->mark_opacity_incompatible();
+    }
+  }
+
+  void UpdateLayerColorFilterCompatiblity(bool compatible) {
+    if (compatible) {
+      current_layer_->add_color_filter_compatible_op();
+    } else {
+      current_layer_->mark_color_filter_incompatible();
     }
   }
 
@@ -472,6 +504,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
     UpdateLayerOpacityCompatibility(!uses_blend_attribute ||
                                     current_opacity_compatibility_);
   }
+
+  void CheckLayerColorFilterCompatiblity() {}
 
   void CheckLayerOpacityHairlineCompatibility() {
     UpdateLayerOpacityCompatibility(
