@@ -94,9 +94,9 @@ void FlutterEngine::SetNextFrameCallback(
   FlutterDesktopEngineSetNextFrameCallback(
       engine_,
       [](void* user_data) {
-        FlutterEngine* that = static_cast<FlutterEngine*>(user_data);
-        that->next_frame_callback_();
-        that->next_frame_callback_ = nullptr;
+        FlutterEngine* self = static_cast<FlutterEngine*>(user_data);
+        self->next_frame_callback_();
+        self->next_frame_callback_ = nullptr;
       },
       this);
 }

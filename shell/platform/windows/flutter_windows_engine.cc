@@ -513,10 +513,10 @@ void FlutterWindowsEngine::SetNextFrameCallback(const fml::closure& callback) {
       engine_,
       [](void* user_data) {
         // Embedder callback runs on raster thread. Switch back to platform thread.
-        FlutterWindowsEngine* that =
+        FlutterWindowsEngine* self =
             static_cast<FlutterWindowsEngine*>(user_data);
 
-        that->task_runner_->PostTask(std::move(that->next_frame_callback_));
+        self->task_runner_->PostTask(std::move(self->next_frame_callback_));
       },
       this);
 }
