@@ -152,7 +152,8 @@ TEST_F(WindowsTest, VerifyNativeFunctionWithReturn) {
 // Verify the next frame callback is executed.
 TEST_F(WindowsTest, NextFrameCallback) {
   struct Captures {
-    fml::AutoResetWaitableEvent latch;
+    fml::AutoResetWaitableEvent frame_scheduled_latch;
+    fml::AutoResetWaitableEvent frame_drawn_latch;
     std::thread::id thread_id;
   };
   Captures captures;
@@ -164,6 +165,12 @@ TEST_F(WindowsTest, NextFrameCallback) {
     WindowsConfigBuilder builder(context);
     builder.SetDartEntrypoint("drawHelloWorld");
 
+    auto native_entry = CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+      ASSERT_FALSE(captures.frame_drawn_latch.IsSignaledForTest());
+      captures.frame_scheduled_latch.Signal();
+    });
+    context.AddNativeFunction("NotifyFirstFrameScheduled", native_entry);
+
     ViewControllerPtr controller{builder.Run()};
     ASSERT_NE(controller, nullptr);
 
@@ -174,11 +181,13 @@ TEST_F(WindowsTest, NextFrameCallback) {
         [](void* user_data) {
           auto captures = static_cast<Captures*>(user_data);
 
+          ASSERT_TRUE(captures->frame_scheduled_latch.IsSignaledForTest());
+
           // Callback should execute on platform thread.
           ASSERT_EQ(std::this_thread::get_id(), captures->thread_id);
 
           // Signal the test passed and end the Windows message loop.
-          captures->latch.Signal();
+          captures->frame_drawn_latch.Signal();
           ::PostQuitMessage(0);
         },
         &captures);
@@ -191,7 +200,7 @@ TEST_F(WindowsTest, NextFrameCallback) {
     }
   });
 
-  captures.latch.Wait();
+  captures.frame_drawn_latch.Wait();
 }
 
 }  // namespace testing

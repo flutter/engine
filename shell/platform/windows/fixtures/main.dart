@@ -13,6 +13,9 @@ void signalBoolValue(bool value) native 'SignalBoolValue';
 // Signals a waiting latch in the native test, which returns a value to the fixture.
 bool signalBoolReturn() native 'SignalBoolReturn';
 
+// Notify the native test that the first frame has been scheduled.
+void notifyFirstFrameScheduled() native 'NotifyFirstFrameScheduled';
+
 void main() {
 }
 
@@ -59,4 +62,5 @@ void drawHelloWorld() {
   };
 
   ui.PlatformDispatcher.instance.scheduleFrame();
+  notifyFirstFrameScheduled();
 }
