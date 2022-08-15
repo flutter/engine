@@ -52,7 +52,7 @@
 
 /**
  * Called when there is no Flutter content available to render. This must be passed to resize
- * syncrhonizer.
+ * synchronizer.
  */
 - (void)presentWithoutContent;
 
