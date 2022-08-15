@@ -164,8 +164,18 @@ def create_framework(
 
 
 def zip_archive(dst):
+  entitlement_config = open( dst + '/entitlements.txt', 'w')
+  entitlement_config.write( 'gen_snapshot_arm64\n', 'w')
+  entitlement_config.close()
+
+  without_entitlement_config = open( dst + '/without_entitlements.txt', 'w')
+  without_entitlement_config.writelines( 'Flutter.xcframework/ios-arm64/Flutter.framework/Flutter',
+      'Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter',)
+  without_entitlement_config.close()
+
   subprocess.check_call([
-      'zip', '-r', 'artifacts.zip', 'gen_snapshot_arm64', 'Flutter.xcframework'
+      'zip', '-r', 'artifacts.zip', 'gen_snapshot_arm64', 'Flutter.xcframework',
+      'entitlements.txt', 'without_entitlements.txt',
   ],
                         cwd=dst)
 
