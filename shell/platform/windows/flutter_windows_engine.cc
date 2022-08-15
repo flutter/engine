@@ -512,7 +512,8 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
   embedder_api_.SetNextFrameCallback(
       engine_,
       [](void* user_data) {
-        // Embedder callback runs on raster thread. Switch back to platform thread.
+        // Embedder callback runs on raster thread. Switch back to platform
+        // thread.
         FlutterWindowsEngine* self =
             static_cast<FlutterWindowsEngine*>(user_data);
 
