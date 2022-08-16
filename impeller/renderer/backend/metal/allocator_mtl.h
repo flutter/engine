@@ -26,6 +26,7 @@ class AllocatorMTL final : public Allocator {
   bool supports_memoryless_targets_ = false;
   bool supports_uma_ = false;
   bool is_valid_ = false;
+  ISize max_texture_supported_;
 
   AllocatorMTL(id<MTLDevice> device, std::string label);
 
@@ -41,7 +42,8 @@ class AllocatorMTL final : public Allocator {
       StorageMode mode,
       const TextureDescriptor& desc) override;
 
-  ISize GetMaxTextureSizeSupported() override;
+  // |Allocator|
+  ISize GetMaxTextureSizeSupported() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorMTL);
 };

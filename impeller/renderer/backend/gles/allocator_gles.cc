@@ -42,7 +42,8 @@ std::shared_ptr<Texture> AllocatorGLES::CreateTexture(
   return std::make_shared<TextureGLES>(reactor_, std::move(desc));
 }
 
-ISize AllocatorGLES::GetMaxTextureSizeSupported() {
+// |Allocator|
+ISize AllocatorGLES::GetMaxTextureSizeSupported() const {
   return reactor_->GetProcTable().GetCapabilities()->max_texture_size;
 }
 

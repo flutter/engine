@@ -59,8 +59,7 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
     SkISize target_size,
-    int32_t max_width,
-    int32_t max_height) {
+    impeller::ISize max_texture_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";
@@ -72,8 +71,10 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
         << "Uncompressed images are not implemented in Impeller yet.";
     return nullptr;
   }
-  target_size.set(std::min(max_width, target_size.width()),
-                  std::min(max_height, target_size.height()));
+  target_size.set(std::min(static_cast<int32_t>(max_texture_size.width),
+                           target_size.width()),
+                  std::min(static_cast<int32_t>(max_texture_size.height),
+                           target_size.height()));
 
   const SkISize source_size = descriptor->image_info().dimensions();
   auto decode_size = descriptor->get_scaled_dimensions(std::max(
@@ -209,9 +210,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
 
         // Always decompress on the concurrent runner.
         auto bitmap =
-            DecompressTexture(raw_descriptor, target_size,
-                              static_cast<int32_t>(max_size_supported.width),
-                              static_cast<int32_t>(max_size_supported.height));
+            DecompressTexture(raw_descriptor, target_size, max_size_supported);
         if (!bitmap) {
           result(nullptr);
           return;

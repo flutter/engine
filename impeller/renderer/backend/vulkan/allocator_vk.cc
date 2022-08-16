@@ -143,8 +143,11 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
   return std::make_shared<DeviceBufferVK>(length, mode, context_,
                                           std::move(device_allocation));
 }
-ISize AllocatorVK::GetMaxTextureSizeSupported() {
-  // source :
+
+// |Allocator|
+ISize AllocatorVK::GetMaxTextureSizeSupported() const {
+  // TODO(magicianA): Get correct max texture size for Vulkan.
+  // 4096 is the required limit, see below:
   // https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#limits-minmax
   return {4096, 4096};
 }

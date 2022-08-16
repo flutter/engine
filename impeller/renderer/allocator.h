@@ -69,7 +69,7 @@ class Allocator {
   std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(
       const fml::Mapping& mapping);
 
-  virtual ISize GetMaxTextureSizeSupported() = 0;
+  virtual ISize GetMaxTextureSizeSupported() const = 0;
 
  protected:
   Allocator();
