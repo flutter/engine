@@ -169,15 +169,18 @@ def embed_codesign_configuration(config_path, contents):
 
 
 def zip_archive(dst):
+  ios_file_with_entitlements = ['gen_snapshot_arm64\n']
+  ios_file_without_entitlements = [
+      'Flutter.xcframework/ios-arm64/Flutter.framework/Flutter\n',
+      'Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter\n'
+  ]
   embed_codesign_configuration(
-      os.path.join(dst, 'entitlements.txt'), ['gen_snapshot_arm64\n']
+      os.path.join(dst, 'entitlements.txt'), ios_file_with_entitlements
   )
 
   embed_codesign_configuration(
-      os.path.join(dst, 'without_entitlements.txt'), [
-          'Flutter.xcframework/ios-arm64/Flutter.framework/Flutter\n',
-          'Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter\n'
-      ]
+      os.path.join(dst, 'without_entitlements.txt'),
+      ios_file_without_entitlements
   )
 
   subprocess.check_call([
