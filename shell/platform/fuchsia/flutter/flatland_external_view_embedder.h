@@ -16,7 +16,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flutter/display_list/display_list_builder_multiplexer.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -66,7 +65,7 @@ class FlatlandExternalViewEmbedder final
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
