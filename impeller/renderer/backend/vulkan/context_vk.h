@@ -59,7 +59,9 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance() const;
 
-  void SetupSwapchain(vk::SurfaceKHR surface);
+  void SetupSwapchain(vk::UniqueSurfaceKHR surface);
+
+  std::unique_ptr<Surface> AcquireSurface();
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -75,9 +77,11 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
   vk::Queue present_queue_;
+  vk::UniqueSurfaceKHR surface_;
   std::unique_ptr<SwapchainVK> swapchain_;
   std::unique_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
+  std::shared_ptr<WorkQueue> work_queue_;
   bool is_valid_ = false;
 
   ContextVK(
@@ -101,6 +105,9 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   // |Context|
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
+
+  // |Context|
+  std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };

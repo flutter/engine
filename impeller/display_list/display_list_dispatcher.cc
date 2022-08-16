@@ -21,6 +21,7 @@
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
@@ -116,6 +117,47 @@ static Entity::TileMode ToTileMode(flutter::DlTileMode tile_mode) {
     case flutter::DlTileMode::kDecal:
       return Entity::TileMode::kDecal;
   }
+}
+
+static impeller::SamplerDescriptor ToSamplerDescriptor(
+    const flutter::DlImageSampling options) {
+  impeller::SamplerDescriptor desc;
+  switch (options) {
+    case flutter::DlImageSampling::kNearestNeighbor:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
+      desc.label = "Nearest Sampler";
+      break;
+    case flutter::DlImageSampling::kLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.label = "Linear Sampler";
+      break;
+    case flutter::DlImageSampling::kMipmapLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.mip_filter = impeller::MipFilter::kLinear;
+      desc.label = "Mipmap Linear Sampler";
+      break;
+    default:
+      break;
+  }
+  return desc;
+}
+
+static impeller::SamplerDescriptor ToSamplerDescriptor(
+    const flutter::DlFilterMode options) {
+  impeller::SamplerDescriptor desc;
+  switch (options) {
+    case flutter::DlFilterMode::kNearest:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
+      desc.label = "Nearest Sampler";
+      break;
+    case flutter::DlFilterMode::kLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.label = "Linear Sampler";
+      break;
+    default:
+      break;
+  }
+  return desc;
 }
 
 // |flutter::Dispatcher|
@@ -239,14 +281,14 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
   if (!source) {
-    paint_.contents = nullptr;
+    paint_.color_source = std::nullopt;
     return;
   }
 
   switch (source->type()) {
     case flutter::DlColorSourceType::kColor: {
       const flutter::DlColorColorSource* color = source->asColor();
-      paint_.contents = nullptr;
+      paint_.color_source = std::nullopt;
       setColor(color->color());
       FML_DCHECK(color);
       return;
@@ -255,52 +297,85 @@ void DisplayListDispatcher::setColorSource(
       const flutter::DlLinearGradientColorSource* linear =
           source->asLinearGradient();
       FML_DCHECK(linear);
-      auto contents = std::make_shared<LinearGradientContents>();
-      contents->SetEndPoints(ToPoint(linear->start_point()),
-                             ToPoint(linear->end_point()));
+      auto start_point = ToPoint(linear->start_point());
+      auto end_point = ToPoint(linear->end_point());
       std::vector<Color> colors;
       for (auto i = 0; i < linear->stop_count(); i++) {
         colors.emplace_back(ToColor(linear->colors()[i]));
       }
-      contents->SetColors(std::move(colors));
-      contents->SetTileMode(ToTileMode(linear->tile_mode()));
-      paint_.contents = std::move(contents);
+      auto tile_mode = ToTileMode(linear->tile_mode());
+      paint_.color_source = [start_point, end_point, colors = std::move(colors),
+                             tile_mode]() {
+        auto contents = std::make_shared<LinearGradientContents>();
+        contents->SetEndPoints(start_point, end_point);
+        contents->SetColors(std::move(colors));
+        contents->SetTileMode(tile_mode);
+        return contents;
+      };
       return;
     }
     case flutter::DlColorSourceType::kRadialGradient: {
       const flutter::DlRadialGradientColorSource* radialGradient =
           source->asRadialGradient();
       FML_DCHECK(radialGradient);
-      auto contents = std::make_shared<RadialGradientContents>();
-      contents->SetCenterAndRadius(ToPoint(radialGradient->center()),
-                                   radialGradient->radius());
+      auto center = ToPoint(radialGradient->center());
+      auto radius = radialGradient->radius();
       std::vector<Color> colors;
       for (auto i = 0; i < radialGradient->stop_count(); i++) {
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
       }
-      contents->SetColors(std::move(colors));
-      contents->SetTileMode(ToTileMode(radialGradient->tile_mode()));
-      paint_.contents = std::move(contents);
+      auto tile_mode = ToTileMode(radialGradient->tile_mode());
+      paint_.color_source = [center, radius, colors = std::move(colors),
+                             tile_mode]() {
+        auto contents = std::make_shared<RadialGradientContents>();
+        contents->SetCenterAndRadius(center, radius),
+            contents->SetColors(std::move(colors));
+        contents->SetTileMode(tile_mode);
+        return contents;
+      };
       return;
     }
     case flutter::DlColorSourceType::kSweepGradient: {
       const flutter::DlSweepGradientColorSource* sweepGradient =
           source->asSweepGradient();
       FML_DCHECK(sweepGradient);
-      auto contents = std::make_shared<SweepGradientContents>();
-      contents->SetCenterAndAngles(ToPoint(sweepGradient->center()),
-                                   Degrees(sweepGradient->start()),
-                                   Degrees(sweepGradient->end()));
+
+      auto center = ToPoint(sweepGradient->center());
+      auto start_angle = Degrees(sweepGradient->start());
+      auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
       for (auto i = 0; i < sweepGradient->stop_count(); i++) {
         colors.emplace_back(ToColor(sweepGradient->colors()[i]));
       }
-      contents->SetColors(std::move(colors));
-      contents->SetTileMode(ToTileMode(sweepGradient->tile_mode()));
-      paint_.contents = std::move(contents);
+      auto tile_mode = ToTileMode(sweepGradient->tile_mode());
+      paint_.color_source = [center, start_angle, end_angle,
+                             colors = std::move(colors), tile_mode]() {
+        auto contents = std::make_shared<SweepGradientContents>();
+        contents->SetCenterAndAngles(center, start_angle, end_angle);
+        contents->SetColors(std::move(colors));
+        contents->SetTileMode(tile_mode);
+        return contents;
+      };
       return;
     }
-    case flutter::DlColorSourceType::kImage:
+    case flutter::DlColorSourceType::kImage: {
+      const flutter::DlImageColorSource* image_color_source = source->asImage();
+      FML_DCHECK(image_color_source &&
+                 image_color_source->image()->impeller_texture());
+      auto texture = image_color_source->image()->impeller_texture();
+      auto x_tile_mode = ToTileMode(image_color_source->horizontal_tile_mode());
+      auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
+      auto desc = ToSamplerDescriptor(image_color_source->sampling());
+      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc]() {
+        auto contents = std::make_shared<TiledTextureContents>();
+        contents->SetTexture(texture);
+        contents->SetTileModes(x_tile_mode, y_tile_mode);
+        contents->SetSamplerDescriptor(desc);
+        // TODO(109384) Support 'matrix' parameter for all color sources.
+        return contents;
+      };
+      return;
+    }
     case flutter::DlColorSourceType::kConicalGradient:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
@@ -813,7 +888,6 @@ void DisplayListDispatcher::drawArc(const SkRect& oval_bounds,
 void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
                                        uint32_t count,
                                        const SkPoint points[]) {
-  // auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   switch (mode) {
@@ -822,29 +896,28 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
         paint.stroke_cap = SolidStrokeContents::Cap::kSquare;
       }
       for (uint32_t i = 0; i < count; i++) {
-        SkPoint p0 = points[i];
-        // kEhCloseEnough works around a bug where Impeller does not draw
-        // anything for zero-length lines.
-        // See: https://github.com/flutter/flutter/issues/109077
-        SkPoint p1 = points[i] + SkPoint{kEhCloseEnough, 0.0};
-        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        Point p0 = ToPoint(points[i]);
+        auto path = PathBuilder{}.AddLine(p0, p0).TakePath();
         canvas_.DrawPath(std::move(path), paint);
       }
       break;
     case SkCanvas::kLines_PointMode:
       for (uint32_t i = 1; i < count; i += 2) {
-        SkPoint p0 = points[i - 1];
-        SkPoint p1 = points[i];
-        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
+        Point p0 = ToPoint(points[i - 1]);
+        Point p1 = ToPoint(points[i]);
+        auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
         canvas_.DrawPath(std::move(path), paint);
       }
       break;
     case SkCanvas::kPolygon_PointMode:
-      for (uint32_t i = 1; i < count; i++) {
-        SkPoint p0 = points[i - 1];
-        SkPoint p1 = points[i];
-        auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
-        canvas_.DrawPath(std::move(path), paint);
+      if (count > 1) {
+        Point p0 = ToPoint(points[0]);
+        for (uint32_t i = 1; i < count; i++) {
+          Point p1 = ToPoint(points[i]);
+          auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
+          canvas_.DrawPath(std::move(path), paint);
+          p0 = p1;
+        }
       }
       break;
   }
@@ -890,47 +963,6 @@ void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
       render_with_attributes,  // render with attributes
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint  // constraint
   );
-}
-
-static impeller::SamplerDescriptor ToSamplerDescriptor(
-    const flutter::DlImageSampling options) {
-  impeller::SamplerDescriptor desc;
-  switch (options) {
-    case flutter::DlImageSampling::kNearestNeighbor:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
-      desc.label = "Nearest Sampler";
-      break;
-    case flutter::DlImageSampling::kLinear:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
-      desc.label = "Linear Sampler";
-      break;
-    case flutter::DlImageSampling::kMipmapLinear:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
-      desc.mip_filter = impeller::MipFilter::kLinear;
-      desc.label = "Mipmap Linear Sampler";
-      break;
-    default:
-      break;
-  }
-  return desc;
-}
-
-static impeller::SamplerDescriptor ToSamplerDescriptor(
-    const flutter::DlFilterMode options) {
-  impeller::SamplerDescriptor desc;
-  switch (options) {
-    case flutter::DlFilterMode::kNearest:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
-      desc.label = "Nearest Sampler";
-      break;
-    case flutter::DlFilterMode::kLinear:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
-      desc.label = "Linear Sampler";
-      break;
-    default:
-      break;
-  }
-  return desc;
 }
 
 // |flutter::Dispatcher|
