@@ -121,6 +121,7 @@ export 'engine/plugins.dart';
 export 'engine/pointer_binding.dart';
 export 'engine/pointer_converter.dart';
 export 'engine/profiler.dart';
+export 'engine/renderer.dart';
 export 'engine/rrect_renderer.dart';
 export 'engine/safe_browser_api.dart';
 export 'engine/semantics/accessibility.dart';

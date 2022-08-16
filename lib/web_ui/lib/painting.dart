@@ -232,7 +232,7 @@ enum Clip {
 }
 
 abstract class Paint {
-  factory Paint() => engine.useCanvasKit ? engine.CkPaint() : engine.SurfacePaint();
+  factory Paint() => engine.renderer.createPaint();
   static bool enableDithering = false;
   BlendMode get blendMode;
   set blendMode(BlendMode value);
@@ -282,10 +282,13 @@ abstract class Gradient extends Shader {
     Float64List? matrix4,
   ]) {
     final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
-    return engine.useCanvasKit
-        ? engine.CkGradientLinear(
-        from, to, colors, colorStops, tileMode, matrix)
-        : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix);
+    return engine.renderer.createLinearGradient(
+      from,
+      to,
+      colors,
+      colorStops,
+      tileMode,
+      matrix);
   }
 
   factory Gradient.radial(
@@ -303,17 +306,13 @@ abstract class Gradient extends Shader {
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      return engine.useCanvasKit
-          ? engine.CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix32)
-          : engine.GradientRadial(center, radius, colors, colorStops, tileMode, matrix32);
+      return engine.renderer.createRadialGradient(
+        center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.useCanvasKit
-          ? engine.CkGradientConical(
-              focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32)
-          : engine.GradientConical(
-              focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32);
+      return engine.renderer.createConicalGradient(
+        focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32);
     }
   }
   factory Gradient.sweep(
@@ -324,11 +323,14 @@ abstract class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) => engine.useCanvasKit
-    ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
-          endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
-    : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
-          endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null);
+  ]) => engine.renderer.createSweepGradient(
+    center,
+    colors,
+    colorStops,
+    tileMode,
+    startAngle,
+    endAngle,
+    matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
 abstract class Image {
