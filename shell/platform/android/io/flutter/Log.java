@@ -95,4 +95,8 @@ public class Log {
   public static void wtf(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
     android.util.Log.wtf(tag, message, tr);
   }
+
+  public static String getStackTraceString(Throwable tr) {
+    return android.util.Log.getStackTraceString(tr);
+  }
 }

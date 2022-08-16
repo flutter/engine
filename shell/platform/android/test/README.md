@@ -12,14 +12,9 @@ integration tests in other repos.
    test. For example,
    `shell/platform/android/io/flutter/util/Preconditions.java` ->
    `shell/platform/android/**test**/io/flutter/util/Preconditions**Test**.java`.
-2. Add your file to the `sources` of the `robolectric_tests` build target in
-   `/shell/platform/android/BUILD.gn`. This compiles the test class into the
-   test jar.
-3. Import your test class and add it to the `@SuiteClasses` annotation in
-   `FlutterTestSuite.java`. This makes sure the test is actually executed at
-   run time.
-4. Write your test.
-5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
+2. Write your test.
+3. Build android embedding code `android_debug_unopt`.
+3. Run the test with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
 
 ## Q&A
 
