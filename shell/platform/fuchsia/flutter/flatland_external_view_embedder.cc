@@ -56,6 +56,10 @@ std::vector<SkCanvas*> FlatlandExternalViewEmbedder::GetCurrentCanvases() {
   return canvases;
 }
 
+std::vector<SkCanvas*> FlatlandExternalViewEmbedder::GetCurrentBuilders() {
+  return std::vector<DisplayListBuilder*>();
+}
+
 void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<flutter::EmbeddedViewParams> params) {

@@ -48,6 +48,9 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
+
+  // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 

@@ -65,6 +65,9 @@ class FlatlandExternalViewEmbedder final
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
+
+  // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override;
