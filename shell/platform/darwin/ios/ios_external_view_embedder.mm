@@ -65,9 +65,9 @@ std::vector<SkCanvas*> IOSExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-std::vector<SkCanvas*> IOSExternalViewEmbedder::GetCurrentBuilders() {
+std::vector<DisplayListBuilder*> IOSExternalViewEmbedder::GetCurrentBuilders() {
   FML_CHECK(platform_views_controller_);
-  return platform_views_controller_->GetCurentBuilders();
+  return platform_views_controller_->GetCurrentBuilders();
 }
 
 // |ExternalViewEmbedder|

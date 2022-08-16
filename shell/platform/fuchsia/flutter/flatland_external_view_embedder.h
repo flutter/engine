@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/display_list/display_list_builder_multiplexer.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"

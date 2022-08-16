@@ -187,6 +187,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
       display_list_paint_context_.leaf_nodes_canvas = nullptr;
       display_list_paint_context_.internal_nodes_canvas = nullptr;
       display_list_paint_context_.leaf_nodes_builder = nullptr;
+      display_list_paint_context_.builder_multiplexer = nullptr;
     }
     return display_list_;
   }

@@ -202,6 +202,8 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
   SkISize canvas_size = builder.getBaseLayerSize();
   SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
   internal_nodes_canvas.addCanvas(&builder);
+  DisplayListBuilderMultiplexer multiplexer;
+  multiplexer.addBuilder(builder.builder().get());
 
   PaintContext paint_context = {
       // clang-format off
@@ -219,6 +221,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
       .layer_snapshot_store          = nullptr,
       .enable_leaf_layer_tracing     = false,
       .leaf_nodes_builder            = builder.builder().get(),
+      .builder_multiplexer           = &multiplexer,
       // clang-format on
   };
 
