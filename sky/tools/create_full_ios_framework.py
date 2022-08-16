@@ -171,11 +171,7 @@ def zip_archive(dst):
   ],
                         cwd=dst)
   if (os.path.exists(os.path.join(dst, 'Flutter.dSYM'))):
-    subprocess.check_call([
-        'zip', '-r',
-        '%s/Flutter.dSYM.zip' % dst,
-        '%s/Flutter.dSYM' % dst
-    ],
+    subprocess.check_call(['zip', '-r', 'Flutter.dSYM.zip', 'Flutter.dSYM'],
                           cwd=dst)
 
 
