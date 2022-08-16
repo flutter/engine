@@ -126,7 +126,7 @@
     "archives": [
         {
             "source": "out/release/artifacts.zip",
-            "destination": "ios/artifacts.zip"
+            "destination": "ios-release/artifacts.zip"
         },
         {
             "source": "out/release/Flutter.dSYM.zip",
