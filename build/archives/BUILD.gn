@@ -305,8 +305,7 @@ if (is_win) {
   zip_bundle("archive_win_gen_snapshot") {
     deps = [ "//third_party/dart/runtime/bin:gen_snapshot" ]
     cpu = "arm"
-    output =
-        "$target_host_name-$target_cpu-$flutter_runtime_mode/windows-x64.zip"
+    output = "$target_platform_name-$target_cpu-$flutter_runtime_mode/windows-x64.zip"
     files = [
       {
         source = "$root_out_dir/gen_snapshot.exe"
