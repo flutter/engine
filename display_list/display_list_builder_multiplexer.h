@@ -21,7 +21,8 @@ class DisplayListBuilderMultiplexer {
 
   void addBuilder(DisplayListBuilder* builder);
 
-  void saveLayer(const SkRect* bounds, const DlPaint* paint,
+  void saveLayer(const SkRect* bounds,
+                 const DlPaint* paint,
                  const DlImageFilter* backdrop_filter = nullptr);
 
   void restore();
