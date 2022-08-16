@@ -26,8 +26,8 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  using VS = SrgbToLinearFilterContents::VertexShader;
-  using FS = SrgbToLinearFilterContents::FragmentShader;
+  using VS = SrgbToLinearFilterPipeline::VertexShader;
+  using FS = SrgbToLinearFilterPipeline::FragmentShader;
 
   auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!input_snapshot.has_value()) {
