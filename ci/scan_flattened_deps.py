@@ -26,7 +26,7 @@ CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 HELP_STR = "To find complete information on this vulnerability, navigate to "
 # TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
-DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdepstest.json')
+DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdeps.json')
 
 sarif_log = {
   "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
