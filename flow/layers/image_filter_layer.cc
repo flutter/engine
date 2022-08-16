@@ -94,12 +94,13 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
-  cache_paint.setImageFilter(filter_ ? filter_.get() : nullptr);
+  cache_paint.setImageFilter(filter_.get());
   if (context.leaf_nodes_builder) {
-    context.leaf_nodes_builder->saveLayer(&child_paint_bounds(),
+    FML_DCHECK(context.builder_multiplexer);
+    context.builder_multiplexer->saveLayer(&child_paint_bounds(),
                                           cache_paint.dl_paint());
     PaintChildren(context);
-    context.leaf_nodes_builder->restore();
+    context.builder_multiplexer->restore();
   } else {
     // Normally a save_layer is sized to the current layer bounds, but in this
     // case the bounds of the child may not be the same as the filtered version

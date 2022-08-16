@@ -5,8 +5,6 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 
-#include <cstddef>
-#include <memory>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
@@ -780,10 +778,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    if (!sk_filter_) {
-      return nullptr;
-    }
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
     }
@@ -795,10 +790,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    if (!sk_filter_) {
-      return nullptr;
-    }
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       input_bounds = output_bounds;
       return nullptr;
     }
