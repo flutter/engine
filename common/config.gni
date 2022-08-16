@@ -23,8 +23,8 @@ declare_args() {
   # Whether to use a prebuilt Dart SDK instead of building one.
   flutter_prebuilt_dart_sdk = false
 
-  # The dart target architecture.
-  dart_target_arch = "arm"
+  # The android cpu used to generate windows artifacts.
+  android_cpu = "arm"
 }
 
 # feature_defines_list ---------------------------------------------------------
