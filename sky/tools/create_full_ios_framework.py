@@ -176,7 +176,7 @@ def zip_archive(dst):
         '%s/Flutter.dSYM.zip' % dst,
         '%s/Flutter.dSYM' % dst
     ],
-                        cwd=dst)
+                          cwd=dst)
 
 
 def process_framework(args, dst, framework, framework_binary):
