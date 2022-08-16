@@ -6,6 +6,7 @@
     "gtest-parallel": "https://github.com/google/gtest-parallel.git",
     "libexpat": "https://github.com/libexpat/libexpat.git",
     "libwebp": "https://chromium.googlesource.com/webm/libwebp.git",
+    "abseil-cpp": "https://github.com/abseil/abseil-cpp",
     "args": "https://github.com/dart-lang/args.git",
     "async": "https://github.com/dart-lang/async.git",
     "bazel_worker": "https://github.com/dart-lang/bazel_worker.git",
