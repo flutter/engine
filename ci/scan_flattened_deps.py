@@ -75,7 +75,7 @@ def sarif_rule():
         "text": "Vulnerability found by scanning against the OSV API"
       },
       "help": {
-        "text": "Search OSV database using ID of the vulnerability"
+        "text": "More details for this finding can be found in the OSV DB at: https://osv.dev/vulnerability/"
       },
       "defaultConfiguration": {
         "level": "error"
@@ -196,6 +196,7 @@ def CreateRuleEntry(vuln: Dict[str, Any]):
     rule = sarif_rule()
     rule['id'] = vuln['id']
     rule['shortDescription']['text'] = vuln['id']
+    rule['help']['text'].append("vuln['id']")
     return rule
 
 def CreateResultEntry(vuln: Dict[str, Any]):
