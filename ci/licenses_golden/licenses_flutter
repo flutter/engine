@@ -573,8 +573,6 @@ FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h
-FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.cc
@@ -584,6 +582,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
+FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
