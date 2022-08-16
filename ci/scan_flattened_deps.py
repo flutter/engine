@@ -113,8 +113,8 @@ def ParseDepsFile(deps_flat_file):
           failed_deps.append(dep[0].split('/')[-1].split('.')[0])
 
     print("Dependencies that could not be parsed for ancestor commits: " + ', '.join(failed_deps))
+    queries.append({"commit" : "772e1f47e0a4bbc7128039792eb438a423d8ce67"})
     json = {"queries": queries}
-    print(json)
     responses = requests.post(osv_url, headers=headers, json=json, allow_redirects=True)
     if responses.json() == {}:
         print("Found no vulnerabilities")
