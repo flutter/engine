@@ -14,13 +14,13 @@ void DisplayListBuilderMultiplexer::saveLayer(
     const SkRect* bounds,
     const DlPaint* paint,
     const DlImageFilter* backdrop_filter) {
-  for (auto builder : builders_) {
+  for (auto* builder : builders_) {
     builder->saveLayer(bounds, paint, backdrop_filter);
   }
 }
 
 void DisplayListBuilderMultiplexer::restore() {
-  for (auto builder : builders_) {
+  for (auto* builder : builders_) {
     builder->restore();
   }
 }
