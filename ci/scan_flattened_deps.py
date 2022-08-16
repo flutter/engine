@@ -26,7 +26,7 @@ CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 HELP_STR = "To find complete information on this vulnerability, navigate to "
 # TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
-DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdeps.json')
+DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdepstest.json')
 
 sarif_log = {
   "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -44,50 +44,51 @@ sarif_log = {
   ]
 }
 
-sarif_result = {
-    "ruleId": "N/A",
-    "message": {
-        "text": "OSV Scan Finding"
-    },
-    "locations": [{
-        "physicalLocation": {
-          "artifactLocation": {
-            "uri": "No location associated with this finding"
-          },
-          "region": {
-            "startLine": 1,
-            "startColumn": 1,
-            "endColumn": 1
+def sarif_result():
+  return {
+      "ruleId": "N/A",
+      "message": {
+          "text": "OSV Scan Finding"
+      },
+      "locations": [{
+          "physicalLocation": {
+            "artifactLocation": {
+              "uri": "No location associated with this finding"
+            },
+            "region": {
+              "startLine": 1,
+              "startColumn": 1,
+              "endColumn": 1
+            }
           }
-        }
-    }]
-}
+      }]
+    }
 
-sarif_rule = {
-  "id": "OSV Scan",
-  "name": "OSV Scan Finding",
-  "shortDescription": {
-    "text": "Insert OSV id"
-  },
-  "fullDescription": {
-    "text": "Vulnerability found by scanning against the OSV API"
-  },
-  "help": {
-    "text": "Search OSV database using ID of the vulnerability"
-  },
-  "defaultConfiguration": {
-    "level": "error"
-  },
-  "properties": {
-    "problem.severity": "error",
-    "security-severity": "9.8",
-    "tags": [
-      "supply-chain",
-      "dependency"
-    ]
-  }
-}
-
+def sarif_rule():
+  return {
+      "id": "OSV Scan",
+      "name": "OSV Scan Finding",
+      "shortDescription": {
+        "text": "Insert OSV id"
+      },
+      "fullDescription": {
+        "text": "Vulnerability found by scanning against the OSV API"
+      },
+      "help": {
+        "text": "Search OSV database using ID of the vulnerability"
+      },
+      "defaultConfiguration": {
+        "level": "error"
+      },
+      "properties": {
+        "problem.severity": "error",
+        "security-severity": "9.8",
+        "tags": [
+          "supply-chain",
+          "dependency"
+        ]
+      }
+    }
 
 def ParseDepsFile(deps_flat_file):
     queries = [] # list of queries to submit in bulk request to OSV API
@@ -172,13 +173,19 @@ def getCommonAncestorCommit(dep):
           print("did not find dep: " + dep_name)
 
 def WriteSarif(responses, manifest_file):
+    """
+    Creates a full Sarif report based on the OSV API response which
+    may contain several vulnerabilities
+
+    Combines a rule with a result in order to construct the report
+    """
     data = sarif_log
     print("before WriteSarif: " + str(responses))
     for response in responses:
         for vuln in response['vulns']:
-            data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
+            newRule = CreateRuleEntry(vuln)
+            data['runs'][0]['tool']['driver']['rules'].append(newRule)
             data['runs'][0]['results'].append(CreateResultEntry(vuln))
-
     with open(manifest_file, 'w') as out:
         json.dump(data, out)
 
@@ -187,7 +194,7 @@ def CreateRuleEntry(vuln: Dict[str, Any]):
     Creates a Sarif rule entry from an OSV finding.
     Vuln object follows OSV Schema and is required to have 'id' and 'modified'
     """
-    rule = sarif_rule
+    rule = sarif_rule()
     rule['id'] = vuln['id']
     rule['shortDescription']['text'] = vuln['id']
     return rule
@@ -197,7 +204,7 @@ def CreateResultEntry(vuln: Dict[str, Any]):
     Creates a Sarif res entry from an OSV entry.
     Rule finding linked to the associated rule metadata via ruleId
     """
-    result = sarif_result
+    result = sarif_result()
     result['ruleId'] = vuln['id']
     return result
 
