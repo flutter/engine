@@ -98,7 +98,7 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   if (context.leaf_nodes_builder) {
     FML_DCHECK(context.builder_multiplexer);
     context.builder_multiplexer->saveLayer(&child_paint_bounds(),
-                                          cache_paint.dl_paint());
+                                           cache_paint.dl_paint());
     PaintChildren(context);
     context.builder_multiplexer->restore();
   } else {
