@@ -82,29 +82,76 @@ class LayerStateStack {
   void scale(SkScalar sx, SkScalar sy);
   void skew(SkScalar sx, SkScalar sy);
   void rotate(SkScalar degrees);
-  void transform(SkM44 matrix);
-  void transform(SkMatrix matrix);
+  void transform(SkM44& matrix);
+  void transform(SkMatrix& matrix);
 
-  void clipRect(SkRect rect, SkClipOp op, bool is_aa);
-  void clipRRect(SkRect rect, SkClipOp op, bool is_aa);
-  void clipPath(SkRect rect, SkClipOp op, bool is_aa);
+  void clipRect(const SkRect& rect, SkClipOp op, bool is_aa);
+  void clipRRect(const SkRRect& rect, SkClipOp op, bool is_aa);
+  void clipPath(const SkPath& rect, SkClipOp op, bool is_aa);
 
  private:
+  class ClipEntry {
+   public:
+    virtual void apply(SkCanvas& canvas) const = 0;
+    virtual void apply(DisplayListBuilder& builder) const = 0;
+
+   protected:
+    ClipEntry(SkClipOp op, bool is_aa);
+
+    const SkClipOp clip_op_;
+    const bool is_aa_;
+  };
+
+  class ClipRectEntry : public ClipEntry {
+    ClipRectEntry(const SkRect& rect, SkClipOp op, bool is_aa);
+
+    void apply(SkCanvas& canvas) const override;
+    void apply(DisplayListBuilder& canvas) const override;
+
+   private:
+    const SkRect rect_;
+  };
+
+  class ClipRRectEntry : public ClipEntry {
+    ClipRRectEntry(const SkRRect& rrect, SkClipOp op, bool is_aa);
+
+    void apply(SkCanvas& canvas) const override;
+    void apply(DisplayListBuilder& canvas) const override;
+
+   private:
+    const SkRRect rrect_;
+  };
+
+  class ClipPathEntry : public ClipEntry {
+    ClipPathEntry(const SkPath& path, SkClipOp op, bool is_aa);
+
+    void apply(SkCanvas& canvas) const override;
+    void apply(DisplayListBuilder& canvas) const override;
+
+   private:
+    const SkPath path_;
+  };
+
   struct RenderState {
     RenderState(SkM44& incoming_matrix);
 
     SkRect* save_bounds() { return layer_has_bounds ? &layer_bounds : nullptr; }
-    SkPaint* save_skpaint() { FML_DCHECK(false); return nullptr; }
+    SkPaint* save_skpaint() {
+      FML_DCHECK(false);
+      return nullptr;
+    }
     DlPaint* save_dlpaint() { return layer_has_paint ? &layer_paint : nullptr; }
 
     bool is_layer;
+
     bool layer_has_bounds;
-    bool layer_has_paint;
     SkRect layer_bounds;
+
+    bool layer_has_paint;
     DlPaint layer_paint;
 
     SkM44 matrix;
-    std::vector<SkPath> clip_paths;
+    std::vector<std::unique_ptr<ClipEntry>> clip_ops;
   };
 
   std::vector<RenderState> state_stack_;
