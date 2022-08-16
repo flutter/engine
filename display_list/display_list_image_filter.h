@@ -764,10 +764,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    if (!sk_filter_) {
-      return nullptr;
-    }
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
     }
