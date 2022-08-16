@@ -17,13 +17,13 @@ LinearToSrgbFilterContents::LinearToSrgbFilterContents() = default;
 
 LinearToSrgbFilterContents::~LinearToSrgbFilterContents() = default;
 
-bool LinearToSrgbFilterContents::RenderFilter(const FilterInput::Vector& inputs,
-                                              const ContentContext& renderer,
-                                              const Entity& entity,
-                                              RenderPass& pass,
-                                              const Rect& coverage) const {
+std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
+    const FilterInput::Vector& inputs,
+    const ContentContext& renderer,
+    const Entity& entity,
+    const Rect& coverage) const {
   if (inputs.empty()) {
-    return true;
+    return std::nullopt;
   }
 
   using VS = LinearToSrgbFilterPipeline::VertexShader;
@@ -31,38 +31,51 @@ bool LinearToSrgbFilterContents::RenderFilter(const FilterInput::Vector& inputs,
 
   auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!input_snapshot.has_value()) {
-    return true;
+    return std::nullopt;
   }
 
-  Command cmd;
-  cmd.label = "Linear to sRGB Filter";
+  ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
+                                                 RenderPass& pass) {
+    Command cmd;
+    cmd.label = "Linear to sRGB Filter";
 
-  auto options = OptionsFromPass(pass);
-  options.blend_mode = Entity::BlendMode::kSource;
-  cmd.pipeline = renderer.GetLinearToSrgbFilterPipeline(options);
+    auto options = OptionsFromPass(pass);
+    options.blend_mode = Entity::BlendMode::kSource;
+    cmd.pipeline = renderer.GetLinearToSrgbFilterPipeline(options);
 
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  vtx_builder.AddVertices({
-      {Point(0, 0)},
-      {Point(1, 0)},
-      {Point(1, 1)},
-      {Point(0, 0)},
-      {Point(1, 1)},
-      {Point(0, 1)},
-  });
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-  cmd.BindVertices(vtx_buffer);
+    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    vtx_builder.AddVertices({
+        {Point(0, 0)},
+        {Point(1, 0)},
+        {Point(1, 1)},
+        {Point(0, 0)},
+        {Point(1, 1)},
+        {Point(0, 1)},
+    });
 
-  VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    auto& host_buffer = pass.GetTransientsBuffer();
+    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+    cmd.BindVertices(vtx_buffer);
 
-  auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-  FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
+    VS::FrameInfo frame_info;
+    frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
 
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+    auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
+    FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
 
-  return pass.AddCommand(std::move(cmd));
+    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+
+    return pass.AddCommand(std::move(cmd));
+  };
+
+  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), callback);
+  if (!out_texture) {
+    return std::nullopt;
+  }
+  out_texture->SetLabel("LinearToSrgb Texture");
+
+  return Snapshot{.texture = out_texture,
+                  .transform = Matrix::MakeTranslation(coverage.origin)};
 }
 
 }  // namespace impeller
