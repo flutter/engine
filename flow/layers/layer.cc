@@ -56,6 +56,86 @@ Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
   }
 }
 
+LayerStateStack::LayerStateStack() {
+  state_stack_.emplace_back(SkM44());
+}
+
+void LayerStateStack::setCanvasDelegate(SkCanvas* canvas) {
+  if (canvas_) {
+    canvas_->restoreToCount(canvas_restore_count_);
+    canvas_ = nullptr;
+  }
+  if (canvas) {
+    canvas_restore_count_ = canvas->getSaveCount();
+    canvas_ = canvas;
+    for (auto& state : state_stack_) {
+      if (state.is_layer) {
+        canvas->saveLayer(state.save_bounds(), state.save_skpaint());
+      } else {
+        canvas->save();
+      }
+      canvas->setMatrix(state.matrix);
+      for (auto& path : state.clip_paths) {
+        canvas->clipPath(path);
+      }
+    }
+  }
+}
+
+void LayerStateStack::setBuilderDelegate(DisplayListBuilder* builder) {
+  if (builder_) {
+    builder_->restoreToCount(builder_restore_count_);
+    builder_ = nullptr;
+  }
+  if (builder) {
+    builder_restore_count_ = builder->getSaveCount();
+    builder_ = builder;
+    for (auto& state : state_stack_) {
+      if (state.is_layer) {
+        builder->saveLayer(state.save_bounds(), state.save_skpaint());
+      } else {
+        builder->save();
+      }
+      builder->transformReset();
+      builder->transform(state.matrix);
+      for (auto& path : state.clip_paths) {
+        builder->clipPath(path, SkClipOp::kIntersect, false);
+      }
+    }
+  }
+}
+
+void LayerStateStack::setMutatorDelegate(MutatorsStack* mutators) {
+  // Does a MutatorsStack do restoreToCount?
+  if (mutators_) {
+    // builder_->restoreToCount(builder_restore_count_);
+    mutators_ = nullptr;
+  }
+  if (mutators) {
+    // builder_restore_count_ = mutators->getSaveCount();
+    mutators_ = mutators;
+  }
+}
+
+LayerStateStack::AutoRestore::AutoRestore(LayerStateStack* stack)
+    : stack_(stack), stack_restore_count_(stack->getSaveCount()) {}
+
+LayerStateStack::AutoRestore::~AutoRestore() {
+  stack_->restoreToCount(stack_restore_count_);
+}
+
+void LayerStateStack::save() {
+  state_stack_.emplace_back(state_stack_.back().matrix);
+}
+
+LayerStateStack::AutoRestore LayerStateStack::autoSave() {
+  save();
+  return AutoRestore(this);
+}
+
+LayerStateStack::RenderState::RenderState(SkM44& incoming_matrix)
+    : matrix(incoming_matrix) {}
+
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     const SkRect& bounds,
                                     const SkPaint* paint,

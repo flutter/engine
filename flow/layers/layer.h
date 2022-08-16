@@ -45,6 +45,77 @@ class RasterCacheItem;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
+class LayerStateStack {
+ public:
+  LayerStateStack();
+
+  void setCanvasDelegate(SkCanvas* canvas);
+  void setBuilderDelegate(DisplayListBuilder* canvas);
+  void setMutatorDelegate(MutatorsStack* mutators);
+
+  class AutoRestore {
+   public:
+    ~AutoRestore();
+
+   private:
+    AutoRestore(LayerStateStack* stack);
+    friend class LayerStateStack;
+
+    LayerStateStack* stack_;
+    const int stack_restore_count_;
+  };
+
+  void save();
+  [[nodiscard]] AutoRestore autoSave();
+  void saveLayer(const SkRect* bounds = nullptr,
+                 const DlPaint* paint = nullptr,
+                 const DlImageFilter* backdrop_filter = nullptr);
+  [[nodiscard]] AutoRestore autoSaveLayer(
+      const SkRect* bounds = nullptr,
+      const DlPaint* paint = nullptr,
+      const DlImageFilter* backdrop_filter = nullptr);
+  void restore();
+  void restoreToCount(int restore_count);
+  int getSaveCount();
+
+  void translate(SkScalar tx, SkScalar ty);
+  void scale(SkScalar sx, SkScalar sy);
+  void skew(SkScalar sx, SkScalar sy);
+  void rotate(SkScalar degrees);
+  void transform(SkM44 matrix);
+  void transform(SkMatrix matrix);
+
+  void clipRect(SkRect rect, SkClipOp op, bool is_aa);
+  void clipRRect(SkRect rect, SkClipOp op, bool is_aa);
+  void clipPath(SkRect rect, SkClipOp op, bool is_aa);
+
+ private:
+  struct RenderState {
+    RenderState(SkM44& incoming_matrix);
+
+    SkRect* save_bounds() { return layer_has_bounds ? &layer_bounds : nullptr; }
+    SkPaint* save_skpaint() { FML_DCHECK(false); return nullptr; }
+    DlPaint* save_dlpaint() { return layer_has_paint ? &layer_paint : nullptr; }
+
+    bool is_layer;
+    bool layer_has_bounds;
+    bool layer_has_paint;
+    SkRect layer_bounds;
+    DlPaint layer_paint;
+
+    SkM44 matrix;
+    std::vector<SkPath> clip_paths;
+  };
+
+  std::vector<RenderState> state_stack_;
+
+  SkCanvas* canvas_ = nullptr;
+  int canvas_restore_count_;
+  DisplayListBuilder* builder_ = nullptr;
+  int builder_restore_count_;
+  MutatorsStack* mutators_ = nullptr;
+};
+
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
