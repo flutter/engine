@@ -24,6 +24,5 @@ void main() {
     }
   }
 
-  // premultiply the outputs
   frag_color = input_color;
 }
