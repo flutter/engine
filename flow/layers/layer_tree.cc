@@ -124,7 +124,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   if (builder) {
     builder_multiplexer.addBuilder(builder);
     if (frame.view_embedder()) {
-      for (auto view_builder : frame.view_embedder()->GetCurrentBuilders()) {
+      for (auto* view_builder : frame.view_embedder()->GetCurrentBuilders()) {
         builder_multiplexer.addBuilder(view_builder);
       }
     }
