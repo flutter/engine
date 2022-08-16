@@ -65,7 +65,7 @@
     "webdev": "https://github.com/dart-lang/webdev.git",
     "yaml": "https://github.com/dart-lang/yaml.git",
     "yaml_edit": "https://github.com/dart-lang/yaml_edit.git",
-    "freetype2": "https://gitlab.freedesktop.org/freetype.git",
+    "freetype2": "https://gitlab.freedesktop.org/freetype/freetype.git",
     "harfbuzz": "https://github.com/harfbuzz/harfbuzz.git",
     "inja": "https://github.com/pantor/inja.git",
     "libpng": "https://github.com/glennrp/libpng.git",
