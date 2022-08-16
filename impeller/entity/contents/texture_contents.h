@@ -56,7 +56,7 @@ class TextureContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
- public:
+ private:
   Path path_;
   bool is_rect_ = false;
 
