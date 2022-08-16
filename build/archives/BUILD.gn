@@ -301,7 +301,7 @@ if (is_mac) {
   }
 }
 
-if (is_win && is_android) {
+if (platform_name == "windows" && is_android) {
   zip_bundle("archive_win_gen_snapshot") {
     deps = [ "//third_party/dart/runtime/bin:gen_snapshot" ]
     output = "$android_prebuilt_arch-$flutter_runtime_mode/windows-x64.zip"
