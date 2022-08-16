@@ -42,8 +42,8 @@ const std::vector<Color>& LinearGradientContents::GetColors() const {
 bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-  using VS = GradientFillPipeline::VertexShader;
-  using FS = GradientFillPipeline::FragmentShader;
+  using VS = LinearGradientFillPipeline::VertexShader;
+  using FS = LinearGradientFillPipeline::FragmentShader;
 
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
   {
@@ -51,7 +51,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
                                            GetPath().CreatePolyline(),
                                            [&vertices_builder](Point point) {
                                              VS::PerVertexData vtx;
-                                             vtx.vertices = point;
+                                             vtx.position = point;
                                              vertices_builder.AppendVertex(vtx);
                                            });
 
@@ -66,6 +66,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
+  frame_info.matrix = GetInverseMatrix();
 
   FS::GradientInfo gradient_info;
   gradient_info.start_point = start_point_;
@@ -73,12 +74,11 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   gradient_info.start_color = colors_[0].Premultiply();
   gradient_info.end_color = colors_[1].Premultiply();
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  gradient_info.matrix = GetInverseMatrix();
 
   Command cmd;
   cmd.label = "LinearGradientFill";
-  cmd.pipeline =
-      renderer.GetGradientFillPipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.pipeline = renderer.GetLinearGradientFillPipeline(
+      OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(
       vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));

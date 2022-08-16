@@ -83,14 +83,14 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                   entity.GetTransformation();
+  vert_info.matrix = GetInverseMatrix();
+  vert_info.texture_size = Vector2{static_cast<Scalar>(texture_size.width),
+                                   static_cast<Scalar>(texture_size.height)};
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
   frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-  frag_info.matrix = GetInverseMatrix();
-  frag_info.texture_size = Vector2{static_cast<Scalar>(texture_size.width),
-                                   static_cast<Scalar>(texture_size.height)};
 
   Command cmd;
   cmd.label = "TiledTextureFill";

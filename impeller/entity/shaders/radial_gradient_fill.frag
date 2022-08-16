@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <impeller/texture.glsl>
-#include <impeller/transform.glsl>
 
 uniform GradientInfo {
   vec2 center;
@@ -11,16 +10,14 @@ uniform GradientInfo {
   vec4 center_color;
   vec4 edge_color;
   float tile_mode;
-  mat4 matrix;
 } gradient_info;
 
-in vec2 interpolated_vertices;
+in vec2 v_position;
 
 out vec4 frag_color;
 
 void main() {
-  vec2 transformed_vertices = transform(gradient_info.matrix, interpolated_vertices);
-  float len = length(transformed_vertices - gradient_info.center);
+  float len = length(v_position - gradient_info.center);
   float t = len / gradient_info.radius;
   if ((t < 0.0 || t > 1.0) && gradient_info.tile_mode == kTileModeDecal) {
     frag_color = vec4(0);

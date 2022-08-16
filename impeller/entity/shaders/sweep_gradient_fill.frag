@@ -4,7 +4,6 @@
 
 #include <impeller/constants.glsl>
 #include <impeller/texture.glsl>
-#include <impeller/transform.glsl>
 
 uniform GradientInfo {
   vec2 center;
@@ -13,16 +12,14 @@ uniform GradientInfo {
   vec4 start_color;
   vec4 end_color;
   float tile_mode;
-  mat4 matrix;
 } gradient_info;
 
-in vec2 interpolated_vertices;
+in vec2 v_position;
 
 out vec4 frag_color;
 
 void main() {
-  vec2 transformed_vertices = transform(gradient_info.matrix, interpolated_vertices);
-  vec2 coord = transformed_vertices - gradient_info.center;
+  vec2 coord = v_position - gradient_info.center;
   float angle = atan(-coord.y, -coord.x);
 
   float t = (angle * k1Over2Pi + 0.5 + gradient_info.bias) * gradient_info.scale;

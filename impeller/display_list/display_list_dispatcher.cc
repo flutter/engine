@@ -342,8 +342,8 @@ void DisplayListDispatcher::setColorSource(
       paint_.color_source = [center, radius, colors = std::move(colors),
                              tile_mode, matrix]() {
         auto contents = std::make_shared<RadialGradientContents>();
-        contents->SetCenterAndRadius(center, radius),
-            contents->SetColors(std::move(colors));
+        contents->SetCenterAndRadius(center, radius);
+        contents->SetColors(std::move(colors));
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;

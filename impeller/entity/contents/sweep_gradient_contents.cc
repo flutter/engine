@@ -57,7 +57,7 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
                                            GetPath().CreatePolyline(),
                                            [&vertices_builder](Point point) {
                                              VS::PerVertexData vtx;
-                                             vtx.vertices = point;
+                                             vtx.position = point;
                                              vertices_builder.AppendVertex(vtx);
                                            });
 
@@ -72,6 +72,7 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
+  frame_info.matrix = GetInverseMatrix();
 
   FS::GradientInfo gradient_info;
   gradient_info.center = center_;
@@ -80,7 +81,6 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
   gradient_info.start_color = colors_[0].Premultiply();
   gradient_info.end_color = colors_[1].Premultiply();
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  gradient_info.matrix = GetInverseMatrix();
 
   Command cmd;
   cmd.label = "SweepGradientFill";
