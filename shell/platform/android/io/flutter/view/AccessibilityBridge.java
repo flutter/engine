@@ -257,6 +257,23 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   @Nullable private OnAccessibilityChangeListener onAccessibilityChangeListener;
 
+  // The widget within Flutter that currently sits beneath a cursor, e.g,
+  // beneath a stylus or mouse cursor.
+  @VisibleForTesting public boolean hasAssistiveTechnology = false;
+
+  private void setHasAssistiveTechnology(boolean value) {
+    if (hasAssistiveTechnology == value) {
+      return;
+    }
+    hasAssistiveTechnology = value;
+    if (hasAssistiveTechnology) {
+      accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    } else {
+      accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    }
+    sendLatestAccessibilityFlagsToFlutter();
+  }
+
   // Set to true after {@code release} has been invoked.
   private boolean isReleased = false;
 
@@ -331,6 +348,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
                 accessibilityChannel.onAndroidAccessibilityEnabled();
               } else {
+                setHasAssistiveTechnology(false);
                 accessibilityChannel.setAccessibilityMessageHandler(null);
                 accessibilityChannel.onAndroidAccessibilityDisabled();
               }
@@ -409,7 +427,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     this.contentResolver = contentResolver;
     this.accessibilityViewEmbedder = accessibilityViewEmbedder;
     this.platformViewsAccessibilityDelegate = platformViewsAccessibilityDelegate;
-
     // Tell Flutter whether accessibility is initially active or not. Then register a listener
     // to be notified of changes in the future.
     accessibilityStateChangeListener.onAccessibilityStateChanged(accessibilityManager.isEnabled());
@@ -425,13 +442,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
               if (isReleased) {
                 return;
               }
-              if (isTouchExplorationEnabled) {
-                accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-              } else {
+              if (!isTouchExplorationEnabled) {
+                setHasAssistiveTechnology(false);
                 onTouchExplorationExit();
-                accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
               }
-              sendLatestAccessibilityFlagsToFlutter();
 
               if (onAccessibilityChangeListener != null) {
                 onAccessibilityChangeListener.onAccessibilityChanged(
@@ -551,6 +565,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
+    setHasAssistiveTechnology(true);
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
       // The node is in the engine generated range, and is provided by the accessibility view
       // embedder.
