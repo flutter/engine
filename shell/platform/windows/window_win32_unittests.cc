@@ -2,11 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/platform/windows/testing/mock_direct_manipulation.h"
 #include "flutter/shell/platform/windows/testing/mock_text_input_manager_win32.h"
 #include "flutter/shell/platform/windows/testing/mock_window_win32.h"
+#include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 using testing::_;
+using testing::Eq;
 using testing::InSequence;
 using testing::Invoke;
 using testing::Return;
@@ -37,11 +41,12 @@ TEST(MockWin32Window, VerticalScroll) {
 }
 
 TEST(MockWin32Window, OnImeCompositionCompose) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto* text_input_manager = new MockTextInputManagerWin32();
   std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
       text_input_manager);
-  MockWin32Window window(std::move(text_input_manager_ptr));
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager_ptr));
   EXPECT_CALL(*text_input_manager, GetComposingString())
       .WillRepeatedly(
           Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
@@ -63,11 +68,12 @@ TEST(MockWin32Window, OnImeCompositionCompose) {
 }
 
 TEST(MockWin32Window, OnImeCompositionResult) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto* text_input_manager = new MockTextInputManagerWin32();
   std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
       text_input_manager);
-  MockWin32Window window(std::move(text_input_manager_ptr));
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager_ptr));
   EXPECT_CALL(*text_input_manager, GetComposingString())
       .WillRepeatedly(
           Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
@@ -89,11 +95,12 @@ TEST(MockWin32Window, OnImeCompositionResult) {
 }
 
 TEST(MockWin32Window, OnImeCompositionResultAndCompose) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto* text_input_manager = new MockTextInputManagerWin32();
   std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
       text_input_manager);
-  MockWin32Window window(std::move(text_input_manager_ptr));
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager_ptr));
 
   // This situation is that Google Japanese Input finished composing "今日" in
   // "今日は" but is still composing "は".
@@ -127,11 +134,12 @@ TEST(MockWin32Window, OnImeCompositionResultAndCompose) {
 }
 
 TEST(MockWin32Window, OnImeCompositionClearChange) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto* text_input_manager = new MockTextInputManagerWin32();
   std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
       text_input_manager);
-  MockWin32Window window(std::move(text_input_manager_ptr));
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager_ptr));
   EXPECT_CALL(window, OnComposeChange(std::u16string(u""), 0)).Times(1);
   EXPECT_CALL(window, OnComposeCommit()).Times(1);
   ON_CALL(window, OnImeComposition)
@@ -271,6 +279,82 @@ TEST(MockWin32Window, KeyDownWithCtrlToggled) {
 
   memset(keyboard_state, 0, 256);
   SetKeyboardState(keyboard_state);
+}
+
+// Verify direct manipulation isn't notified of pointer hit tests.
+TEST(MockWin32Window, PointerHitTest) {
+  UINT32 pointer_id = 123;
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto text_input_manager = std::make_unique<MockTextInputManagerWin32>();
+
+  EXPECT_CALL(*windows_proc_table, GetPointerType(Eq(pointer_id), _))
+      .Times(1)
+      .WillOnce([](UINT32 pointer_id, POINTER_INPUT_TYPE* type) {
+        *type = PT_POINTER;
+        return TRUE;
+      });
+
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager));
+
+  auto direct_manipulation =
+      std::make_unique<MockDirectManipulationOwner>(&window);
+
+  EXPECT_CALL(*direct_manipulation, SetContact).Times(0);
+
+  window.SetDirectManipulationOwner(std::move(direct_manipulation));
+  window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
+}
+
+// Verify direct manipulation is notified of touchpad hit tests.
+TEST(MockWin32Window, TouchPadHitTest) {
+  UINT32 pointer_id = 123;
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto text_input_manager = std::make_unique<MockTextInputManagerWin32>();
+
+  EXPECT_CALL(*windows_proc_table, GetPointerType(Eq(pointer_id), _))
+      .Times(1)
+      .WillOnce([](UINT32 pointer_id, POINTER_INPUT_TYPE* type) {
+        *type = PT_TOUCHPAD;
+        return TRUE;
+      });
+
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager));
+
+  auto direct_manipulation =
+      std::make_unique<MockDirectManipulationOwner>(&window);
+
+  EXPECT_CALL(*direct_manipulation, SetContact(Eq(pointer_id))).Times(1);
+
+  window.SetDirectManipulationOwner(std::move(direct_manipulation));
+  window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
+}
+
+// Verify direct manipulation isn't notified of unknown hit tests.
+// This can happen if determining the pointer type fails, for example,
+// if GetPointerType is unsupported by the current Windows version.
+// See: https://github.com/flutter/flutter/issues/109412
+TEST(MockWin32Window, UnknownPointerTypeSkipsDirectManipulation) {
+  UINT32 pointer_id = 123;
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
+  auto text_input_manager = std::make_unique<MockTextInputManagerWin32>();
+
+  EXPECT_CALL(*windows_proc_table, GetPointerType(Eq(pointer_id), _))
+      .Times(1)
+      .WillOnce(
+          [](UINT32 pointer_id, POINTER_INPUT_TYPE* type) { return FALSE; });
+
+  MockWin32Window window(std::move(windows_proc_table),
+                         std::move(text_input_manager));
+
+  auto direct_manipulation =
+      std::make_unique<MockDirectManipulationOwner>(&window);
+
+  EXPECT_CALL(*direct_manipulation, SetContact).Times(0);
+
+  window.SetDirectManipulationOwner(std::move(direct_manipulation));
+  window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
 }  // namespace testing
