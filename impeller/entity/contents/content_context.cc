@@ -149,10 +149,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
 
-  gradient_fill_pipelines_[{}] =
-      CreateDefaultPipeline<GradientFillPipeline>(*context_);
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
+  linear_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
   sweep_gradient_fill_pipelines_[{}] =
@@ -191,6 +191,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
   texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
+  tiled_texture_pipelines_[{}] =
+      CreateDefaultPipeline<TiledTexturePipeline>(*context_);
   gaussian_blur_pipelines_[{}] =
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
@@ -261,7 +263,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands(context->GetResourceAllocator())) {
+  if (!sub_renderpass->EncodeCommands()) {
     return nullptr;
   }
 

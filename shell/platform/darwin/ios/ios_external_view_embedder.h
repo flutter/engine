@@ -50,6 +50,9 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
+
+  // |ExternalViewEmbedder|
   EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
@@ -63,6 +66,13 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
+
+  // |ExternalViewEmbedder|
+  void PushFilterToVisitedPlatformViews(
+      std::shared_ptr<const DlImageFilter> filter) override;
+
+  // |ExternalViewEmbedder|
+  void PushVisitedPlatformView(int64_t view_id) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalViewEmbedder);
 };

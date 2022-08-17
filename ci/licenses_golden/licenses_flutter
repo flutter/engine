@@ -56,6 +56,8 @@ FILE: ../../../flutter/display_list/display_list_blend_mode.h
 FILE: ../../../flutter/display_list/display_list_builder.cc
 FILE: ../../../flutter/display_list/display_list_builder.h
 FILE: ../../../flutter/display_list/display_list_builder_benchmarks.cc
+FILE: ../../../flutter/display_list/display_list_builder_multiplexer.cc
+FILE: ../../../flutter/display_list/display_list_builder_multiplexer.h
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.cc
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_canvas_recorder.cc
@@ -450,6 +452,8 @@ FILE: ../../../flutter/impeller/base/base_unittests.cc
 FILE: ../../../flutter/impeller/base/comparable.cc
 FILE: ../../../flutter/impeller/base/comparable.h
 FILE: ../../../flutter/impeller/base/config.h
+FILE: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.cc
+FILE: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.h
 FILE: ../../../flutter/impeller/base/promise.cc
 FILE: ../../../flutter/impeller/base/promise.h
 FILE: ../../../flutter/impeller/base/strings.cc
@@ -462,10 +466,14 @@ FILE: ../../../flutter/impeller/base/validation.cc
 FILE: ../../../flutter/impeller/base/validation.h
 FILE: ../../../flutter/impeller/base/version.cc
 FILE: ../../../flutter/impeller/base/version.h
-FILE: ../../../flutter/impeller/blobcat/blob.cc
-FILE: ../../../flutter/impeller/blobcat/blob.h
+FILE: ../../../flutter/impeller/base/work_queue.cc
+FILE: ../../../flutter/impeller/base/work_queue.h
+FILE: ../../../flutter/impeller/base/work_queue_common.cc
+FILE: ../../../flutter/impeller/base/work_queue_common.h
+FILE: ../../../flutter/impeller/blobcat/blob.fbs
 FILE: ../../../flutter/impeller/blobcat/blob_library.cc
 FILE: ../../../flutter/impeller/blobcat/blob_library.h
+FILE: ../../../flutter/impeller/blobcat/blob_types.h
 FILE: ../../../flutter/impeller/blobcat/blob_writer.cc
 FILE: ../../../flutter/impeller/blobcat/blob_writer.h
 FILE: ../../../flutter/impeller/blobcat/blobcat_main.cc
@@ -492,6 +500,7 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
 FILE: ../../../flutter/impeller/compiler/source_options.cc
 FILE: ../../../flutter/impeller/compiler/source_options.h
@@ -548,6 +557,8 @@ FILE: ../../../flutter/impeller/entity/contents/atlas_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/atlas_contents.h
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
+FILE: ../../../flutter/impeller/entity/contents/color_source_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/color_source_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
 FILE: ../../../flutter/impeller/entity/contents/content_context.h
 FILE: ../../../flutter/impeller/entity/contents/contents.cc
@@ -573,8 +584,6 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_in
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
-FILE: ../../../flutter/impeller/entity/contents/path_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/path_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc
@@ -589,6 +598,8 @@ FILE: ../../../flutter/impeller/entity/contents/text_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/text_contents.h
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.h
+FILE: ../../../flutter/impeller/entity/contents/tiled_texture_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/tiled_texture_contents.h
 FILE: ../../../flutter/impeller/entity/contents/vertices_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/vertices_contents.h
 FILE: ../../../flutter/impeller/entity/entity.cc
@@ -631,10 +642,9 @@ FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
-FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
@@ -642,9 +652,10 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
 FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
 FILE: ../../../flutter/impeller/entity/shaders/vertices.vert
 FILE: ../../../flutter/impeller/geometry/color.cc
@@ -799,6 +810,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.cc
@@ -886,6 +899,7 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
+FILE: ../../../flutter/impeller/runtime_stage/runtime_types.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
 FILE: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart
@@ -3243,6 +3257,8 @@ ORIGIN: ../../../third_party/icu/scripts/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_data.cc
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_data.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_mac_unittest.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_mac_unittest.mm
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win_unittest.cc

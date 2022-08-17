@@ -318,6 +318,15 @@ void FlutterPlatformViewsController::EndFrame(
   }
 }
 
+void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter) {
+  for (int64_t id : visited_platform_views_) {
+    EmbeddedViewParams params = current_composition_params_[id];
+    params.PushImageFilter(filter);
+    current_composition_params_[id] = params;
+  }
+}
+
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
@@ -368,6 +377,15 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
     canvases.push_back(slices_[view_id]->canvas());
   }
   return canvases;
+}
+
+std::vector<DisplayListBuilder*> FlutterPlatformViewsController::GetCurrentBuilders() {
+  std::vector<DisplayListBuilder*> builders;
+  for (size_t i = 0; i < composition_order_.size(); i++) {
+    int64_t view_id = composition_order_[i];
+    builders.push_back(slices_[view_id]->builder());
+  }
+  return builders;
 }
 
 int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
