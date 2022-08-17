@@ -337,6 +337,7 @@ TEST(MockWindow, TouchPadHitTest) {
 // Verify direct manipulation isn't notified of unknown hit tests.
 // This can happen if determining the pointer type fails, for example,
 // if GetPointerType is unsupported by the current Windows version.
+// See: https://github.com/flutter/flutter/issues/109412
 TEST(MockWindow, UnknownPointerTypeSkipsDirectManipulation) {
   UINT32 pointer_id = 123;
   auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
