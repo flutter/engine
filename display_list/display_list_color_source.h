@@ -690,6 +690,9 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
   const sk_sp<SkData> uniform_data() const { return uniform_data_; }
 
   sk_sp<SkShader> skia_object() const override {
+    if (!runtime_effect_) {
+      return nullptr;
+    }
     std::vector<sk_sp<SkShader>> sk_samplers(samplers_.size());
     for (size_t i = 0; i < samplers_.size(); i++) {
       sk_samplers[i] = samplers_[i]->skia_object();

@@ -134,6 +134,8 @@ static const std::shared_ptr<DlColorSource> kTestSource5 =
                              kColors,
                              kStops,
                              DlTileMode::kDecal);
+static const std::shared_ptr<DlRuntimeEffectColorSource> kTestSource6 =
+    DlColorSource::MakeRuntimeEffect(nullptr, {}, nullptr);
 static const DlBlendColorFilter kTestBlendColorFilter1(DlColor::kRed(),
                                                        DlBlendMode::kDstATop);
 static const DlBlendColorFilter kTestBlendColorFilter2(DlColor::kBlue(),
