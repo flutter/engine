@@ -45,6 +45,10 @@ sarif_log = {
 }
 
 def sarif_result():
+  """
+  Returns the template for a result entry in the Sarif log,
+  which is populated with CVE findings from OSV API
+  """
   return {
       "ruleId": "N/A",
       "message": {
@@ -65,6 +69,10 @@ def sarif_result():
     }
 
 def sarif_rule():
+  """
+  Returns the template for a rule entry in the Sarif log,
+  which is populated with CVE findings from OSV API
+  """
   return {
       "id": "OSV Scan",
       "name": "OSV Scan Finding",
@@ -91,6 +99,14 @@ def sarif_rule():
     }
 
 def ParseDepsFile(deps_flat_file):
+    """
+    Takes input of fully qualified dependencies,
+    for each dep find the common ancestor commit SHA
+    from the upstream and query OSV API using that SHA
+
+    If the commit cannot be found or the dep cannot be
+    compared to an upstream, prints list of those deps
+    """
     queries = [] # list of queries to submit in bulk request to OSV API
     deps = open(deps_flat_file, 'r')
     Lines = deps.readlines()
@@ -98,47 +114,49 @@ def ParseDepsFile(deps_flat_file):
     headers = { 'Content-Type': 'application/json',}
     osv_url = 'https://api.osv.dev/v1/querybatch'
 
-    os.system(f'mkdir clone-test')
+    os.system(f'mkdir clone-test') #clone deps with upstream into temporary dir
 
     failed_deps = []
 
     # Extract commit hash, save in dictionary
     for line in Lines:
         os.chdir(CHECKOUT_ROOT)
-        dep = line.strip().split('@')
-        # @jseales TODO -- this is the pinned hash, but we need to calculate the common ancestor hash
+        dep = line.strip().split('@') # separate fully qualified dep into name + pinned hash 
         common_commit = getCommonAncestorCommit(dep)
         if common_commit is not None:
           queries.append({"commit" : common_commit})
         else:
-          failed_deps.append(dep[0].split('/')[-1].split('.')[0])
+          failed_deps.append(dep[0])
 
     print("Dependencies that could not be parsed for ancestor commits: " + ', '.join(failed_deps))
-    json = {"queries": queries}
-    responses = requests.post(osv_url, headers=headers, json=json, allow_redirects=True)
-    if responses.json() == {}:
-        print("Found no vulnerabilities")
-    elif responses.status_code != 200:
+    responses = requests.post(osv_url, headers=headers, json={"queries": queries}, allow_redirects=True)
+    if responses.status_code != 200:
         print("Request error")
-    elif responses.json() != {} and responses.status_code==200 and responses.json().get("results"):
+    elif responses.json() == {}:
+        print("Found no vulnerabilities")
+    elif responses.json().get("results"):
         results = responses.json().get("results")
         filtered_results = list(filter(lambda vuln: vuln != {}, results))
-        if len(filtered_results)==0:
-            print("Found no vulnerabilities")
-            return {}
-        else:
+        if len(filtered_results)>0:
             print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
             return filtered_results
     return {}
 
 def getCommonAncestorCommit(dep):
-    # check if dep is found in upstream map. if found, proceed.
-    # proceed with upstream cloning
-    # git merge-base
-    # return commit
-    # Opening JSON file
+    """
+    Given an input of a mirrored dep,
+    compare to the mapping of deps to their upstream
+    in DEPS_UPSTREAM_MAP and find a common ancestor
+    commit SHA value.
 
-    # dep[0] is the mirror repo
+    This is done by first cloning the mirrored dep,
+    then a branch which tracks the upstream.
+    From there,  git merge-base operates using the HEAD
+    commit SHA of the upstream branch and the pinned
+    SHA value of the mirrored branch
+    """
+    # dep[0] contains the mirror repo
+    # dep[1] contains the mirror's pinned SHA
     # data[dep_name] is the origin repo
     dep_name = dep[0].split('/')[-1].split('.')[0]
     with open(DEPS_UPSTREAM_MAP,'r', encoding='utf-8') as f:
