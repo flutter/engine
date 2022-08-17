@@ -247,7 +247,8 @@ struct SetImageColorSourceOp : DLOp {
   }
 };
 
-// 16 * 2 for the two sk_sps, 24 for the std::vector.
+// 56 bytes: 4 byte header, 4 byte padding, 8 for vtable, 8 * 2 for sk_sps, 24
+// for the std::vector.
 struct SetRuntimeEffectColorSourceOp : DLOp {
   static const auto kType = DisplayListOpType::kSetRuntimeEffectColorSource;
 
