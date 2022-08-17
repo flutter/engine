@@ -196,6 +196,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
 
   ChildClippingView* clipping_view =
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
+  FML_DLOG(ERROR) << "ADD VIEW " << viewId;
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
 
@@ -463,7 +464,17 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 void FlutterPlatformViewsController::CompositeWithParams(int view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
-  UIView* touchInterceptor = touch_interceptors_[view_id].get();
+  FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
+  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
+  if (!CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
+    FML_LOG(WARNING)
+        << "Embedded PlatformView's origin is not CGPointZero."
+           "A none-zero origin might cause undefined behavior."
+           "If you are the author of the PlatformView and you have a valid case of using a "
+           "none-zero origin,"
+           "please file an issue at https://github.com/flutter/flutter/issues/new/choose"
+           "See https://github.com/flutter/flutter/issues/109700 for more details.";
+  }
   touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
   touchInterceptor.alpha = 1;
@@ -720,11 +731,14 @@ void FlutterPlatformViewsController::RemoveUnusedLayers() {
   std::unordered_set<int64_t> composition_order_set;
   for (int64_t view_id : composition_order_) {
     composition_order_set.insert(view_id);
+    FML_DLOG(ERROR) << "composition_order_set " << view_id;
   }
   // Remove unused platform views.
   for (int64_t view_id : active_composition_order_) {
+    FML_DLOG(ERROR) << "active_composition_order_ " << view_id;
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
       UIView* platform_view_root = root_views_[view_id].get();
+      FML_DLOG(ERROR) << "REMOVE VIEW " << view_id;
       [platform_view_root removeFromSuperview];
     }
   }

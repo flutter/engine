@@ -75,7 +75,7 @@
                     arguments:(id _Nullable)args
               binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
   if ([super init]) {
-    _textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250.0, 100.0)];
+    _textView = [[UITextView alloc] initWithFrame:CGRectMake(0.0, 0.0, 250.0, 100.0)];
     _textView.textColor = UIColor.blueColor;
     _textView.backgroundColor = UIColor.lightGrayColor;
     [_textView setFont:[UIFont systemFontOfSize:52]];
