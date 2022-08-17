@@ -155,7 +155,7 @@ public class AccessibilityBridgeTest {
     verify(mockChannel).setAccessibilityFeatures(1);
     assertEquals(accessibilityBridge.hasAssistiveTechnology, true);
 
-    // Simulate turning of talkback.
+    // Simulate turning off TalkBack.
     reset(mockChannel);
     listenerCaptor.getValue().onTouchExplorationStateChanged(false);
     verify(mockChannel).setAccessibilityFeatures(0);
