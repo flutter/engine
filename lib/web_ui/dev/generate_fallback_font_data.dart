@@ -126,7 +126,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
           start = parts[0];
           end = parts[1];
         }
-        sb.write('$start,$end,');
+        sb.write('0x$start,0x$end,');
       }
       sb.writeln(']),');
     }
