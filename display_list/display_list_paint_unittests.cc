@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_paint.h"
 
 #include "flutter/display_list/display_list_comparable.h"
@@ -130,6 +131,20 @@ TEST(DisplayListPaint, ChainingConstructor) {
             DlBlurMaskFilter(SkBlurStyle::kInner_SkBlurStyle, 3.14));
 
   EXPECT_NE(paint, DlPaint());
+}
+
+TEST(DisplayListPaint, AttributeSetted) {
+  DlPaint dl_paint;
+  dl_paint.setColorFilter(
+      DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn).shared());
+  dl_paint.setAlpha(0x7F);
+  EXPECT_EQ(dl_paint.attribute_is_setted(DlPaintAttribute::kColorFilter), true);
+  EXPECT_EQ(dl_paint.attribute_is_setted(DlPaintAttribute::kAlpha), true);
+  // clean color filter
+  dl_paint.setColorFilter(nullptr);
+  EXPECT_EQ(dl_paint.attribute_is_setted(DlPaintAttribute::kColorFilter),
+            false);
+  EXPECT_EQ(dl_paint.attribute_is_setted(DlPaintAttribute::kAlpha), true);
 }
 
 }  // namespace testing

@@ -414,13 +414,9 @@ class Layer {
   }
   virtual const testing::MockLayer* as_mock_layer() const { return nullptr; }
 
-  void BindPaintNode(DlPaintNode* paint_node) {
-    paint_node_ = paint_node;
-  }
+  void BindPaintNode(DlPaintNode* paint_node) { paint_node_ = paint_node; }
 
-  const DlPaintNode* paint_node() const {
-    return paint_node_;
-  }
+  const DlPaintNode* paint_node() const { return paint_node_; }
 
  private:
   SkRect paint_bounds_;

@@ -459,9 +459,9 @@ void DisplayListBuilder::restore() {
       // For regular save() ops there was no protecting layer so we have to
       // accumulate the values into the enclosing layer.
       if (layer_info.cannot_inherit_opacity) {
-        current_layer_->mark_incompatible();
-      } else if (layer_info.has_compatible_op) {
-        current_layer_->add_compatible_op();
+        current_layer_->mark_opacity_incompatible();
+      } else if (layer_info.has_opacity_compatible_op) {
+        current_layer_->mark_opacity_incompatible();
       }
     }
   }

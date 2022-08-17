@@ -7,8 +7,8 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_ops.h"
-#include "flutter/display_list/display_list_utils.h"
 #include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -197,7 +197,7 @@ void DisplayList::RenderTo(DisplayListBuilder* builder,
   Dispatch(*builder);
 }
 
-bool DisplayList::is_compatible(const DlPaint *paint) const {
+bool DisplayList::is_compatible(const DlPaint* paint) const {
   // TODO(JsouLiang)
   return true;
 }

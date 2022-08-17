@@ -35,6 +35,7 @@ DlPaintNode* DlPaintNode::SetBackdropFilter(DlBlendMode blend_mode,
 
 void BackdropFilterPaintNode::SetSaveLayerAttribute(DlPaint* paint) {
   paint->setBlendMode(blend_mode_);
+  paint->setImageFilter(filter_);
 }
 
 void OpacityPaintNode::SetSaveLayerAttribute(DlPaint* paint) {

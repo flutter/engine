@@ -36,7 +36,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-      
+
   context->paint = context->paint->SetColorFilter(filter_.get());
   BindPaintNode(context->paint);
 

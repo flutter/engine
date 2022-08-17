@@ -67,6 +67,40 @@ inline SkPaint::Join ToSk(DlStrokeJoin join) {
   return static_cast<SkPaint::Join>(join);
 }
 
+enum class DlPaintAttribute {
+  kNone = 0,
+  kAlpha = 1 << 0,
+  kAntiAlias = 1 << 1,
+  kBlendMode = 1 << 2,
+  kColor = 1 << 3,
+  kColorFilter = 1 << 4,
+  kColorSource = 1 << 5,
+  kDither = 1 << 6,
+  kDrawStyle = 1 << 7,
+  kImageFilter = 1 << 8,
+  kInvertColors = 1 << 9,
+  kMaskFilter = 1 << 10,
+  kPathEffect = 1 << 11,
+};
+
+inline DlPaintAttribute& operator|=(DlPaintAttribute& l, DlPaintAttribute r) {
+  return l = static_cast<DlPaintAttribute>(static_cast<uint16_t>(l) |
+                                           static_cast<uint16_t>(r));
+}
+
+inline DlPaintAttribute& operator&=(DlPaintAttribute& l, DlPaintAttribute r) {
+  return l = static_cast<DlPaintAttribute>(static_cast<uint16_t>(l) &
+                                           static_cast<uint16_t>(r));
+}
+
+inline DlPaintAttribute operator~(DlPaintAttribute l) {
+  return static_cast<DlPaintAttribute>(~static_cast<uint16_t>(l));
+}
+
+inline bool operator&(DlPaintAttribute l, DlPaintAttribute r) {
+  return static_cast<bool>(static_cast<uint16_t>(l) & static_cast<uint16_t>(r));
+}
+
 class DlPaint {
  public:
   static constexpr DlColor kDefaultColor = DlColor::kBlack();
@@ -78,30 +112,35 @@ class DlPaint {
   bool isAntiAlias() const { return isAntiAlias_; }
   DlPaint& setAntiAlias(bool isAntiAlias) {
     isAntiAlias_ = isAntiAlias;
+    setted_attributed_ |= DlPaintAttribute::kAntiAlias;
     return *this;
   }
 
   bool isDither() const { return isDither_; }
   DlPaint& setDither(bool isDither) {
     isDither_ = isDither;
+    setted_attributed_ |= DlPaintAttribute::kDither;
     return *this;
   }
 
   bool isInvertColors() const { return isInvertColors_; }
   DlPaint& setInvertColors(bool isInvertColors) {
     isInvertColors_ = isInvertColors;
+    setted_attributed_ |= DlPaintAttribute::kInvertColors;
     return *this;
   }
 
   DlColor getColor() const { return color_; }
   DlPaint& setColor(DlColor color) {
     color_ = color;
+    setted_attributed_ |= DlPaintAttribute::kColor;
     return *this;
   }
 
   uint8_t getAlpha() const { return color_.argb >> 24; }
   DlPaint& setAlpha(uint8_t alpha) {
     color_.argb = alpha << 24 | (color_.argb & 0x00FFFFFF);
+    setted_attributed_ |= DlPaintAttribute::kAlpha;
     return *this;
   }
 
@@ -110,6 +149,7 @@ class DlPaint {
   }
   DlPaint& setBlendMode(DlBlendMode mode) {
     blendMode_ = static_cast<unsigned>(mode);
+    setted_attributed_ |= DlPaintAttribute::kBlendMode;
     return *this;
   }
 
@@ -118,6 +158,7 @@ class DlPaint {
   }
   DlPaint& setDrawStyle(DlDrawStyle style) {
     drawStyle_ = static_cast<unsigned>(style);
+    setted_attributed_ |= DlPaintAttribute::kDrawStyle;
     return *this;
   }
 
@@ -155,6 +196,7 @@ class DlPaint {
   const DlColorSource* getColorSourcePtr() const { return colorSource_.get(); }
   DlPaint& setColorSource(std::shared_ptr<const DlColorSource> source) {
     colorSource_ = source;
+    setted_attributed_ |= DlPaintAttribute::kColorSource;
     return *this;
   }
   DlPaint& setColorSource(const DlColorSource* source) {
@@ -168,10 +210,22 @@ class DlPaint {
   const DlColorFilter* getColorFilterPtr() const { return colorFilter_.get(); }
   DlPaint& setColorFilter(std::shared_ptr<DlColorFilter> filter) {
     colorFilter_ = filter ? filter->shared() : nullptr;
+    if (colorFilter_) {
+      setted_attributed_ |= DlPaintAttribute::kColorFilter;
+    } else {
+      // clean color_filter
+      setted_attributed_ &= ~DlPaintAttribute::kColorFilter;
+    }
     return *this;
   }
   DlPaint& setColorFilter(const DlColorFilter* filter) {
     colorFilter_ = filter ? filter->shared() : nullptr;
+    if (colorFilter_) {
+      setted_attributed_ |= DlPaintAttribute::kColorFilter;
+    } else {
+      // clean color_filter
+      setted_attributed_ &= ~DlPaintAttribute::kColorFilter;
+    }
     return *this;
   }
 
@@ -181,10 +235,22 @@ class DlPaint {
   const DlImageFilter* getImageFilterPtr() const { return imageFilter_.get(); }
   DlPaint& setImageFilter(std::shared_ptr<DlImageFilter> filter) {
     imageFilter_ = filter;
+    if (imageFilter_) {
+      setted_attributed_ |= DlPaintAttribute::kImageFilter;
+    } else {
+      // clean image_filter
+      setted_attributed_ &= ~DlPaintAttribute::kImageFilter;
+    }
     return *this;
   }
   DlPaint& setImageFilter(const DlImageFilter* filter) {
     imageFilter_ = filter ? filter->shared() : nullptr;
+    if (imageFilter_) {
+      setted_attributed_ |= DlPaintAttribute::kImageFilter;
+    } else {
+      // clean image_filter
+      setted_attributed_ &= ~DlPaintAttribute::kImageFilter;
+    }
     return *this;
   }
 
@@ -213,6 +279,10 @@ class DlPaint {
   bool operator==(DlPaint const& other) const;
   bool operator!=(DlPaint const& other) const { return !(*this == other); }
 
+  bool attribute_is_setted(DlPaintAttribute attribute) {
+    return setted_attributed_ & attribute;
+  }
+
  private:
 #define ASSERT_ENUM_FITS(last_enum, num_bits)                    \
   static_assert(static_cast<int>(last_enum) < (1 << num_bits) && \
@@ -238,6 +308,8 @@ class DlPaint {
       unsigned isInvertColors_ : 1;
     };
   };
+
+  DlPaintAttribute setted_attributed_ = DlPaintAttribute::kNone;
 
   DlColor color_;
   float strokeWidth_;

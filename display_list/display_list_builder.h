@@ -413,7 +413,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
     void mark_opacity_incompatible() { cannot_inherit_opacity = true; }
 
-    void mark_color_filter_incompatible() { cannot_inherit_color_filter = true; }
+    void mark_color_filter_incompatible() {
+      cannot_inherit_color_filter = true;
+    }
 
     // For now this only allows a single compatible op to mark the
     // layer as being compatible with group opacity. If we start
@@ -471,10 +473,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   void UpdateCurrentColorFilterCompatibility() {
     // TODO:(Jsouliang) check the filter compatiblity is right?
-    current_opacity_compatibility_ = 
-        current_.getAlpha() == 1.0 && // not set alpha
-        !current_.isInvertColors() && 
-        IsOpacityCompatible(current_.getBlendMode()); 
+    current_opacity_compatibility_ =
+        current_.getAlpha() == 1.0 &&  // not set alpha
+        !current_.isInvertColors() &&
+        IsOpacityCompatible(current_.getBlendMode());
   }
 
   // Update the opacity compatibility flags of the current layer for an op
