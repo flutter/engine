@@ -619,6 +619,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         region: const ui.Rect.fromLTRB(0, 0, 128, 128),
         maxDiffRatePercent: 0,
       );
+      mandrill.dispose();
+      codec.dispose();
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
     }, skip: isFirefox || isSafari);
 
