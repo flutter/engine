@@ -284,6 +284,7 @@ TEST(MockWindow, Paint) {
   window.InjectWindowMessage(WM_PAINT, 0, 0);
 }
 
+// Verify direct manipulation isn't notified of pointer hit tests.
 TEST(MockWindow, PointerHitTest) {
   UINT32 pointer_id = 123;
   auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
@@ -308,6 +309,7 @@ TEST(MockWindow, PointerHitTest) {
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
+// Verify direct manipulation is notified of touchpad hit tests.
 TEST(MockWindow, TouchPadHitTest) {
   UINT32 pointer_id = 123;
   auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
@@ -332,6 +334,9 @@ TEST(MockWindow, TouchPadHitTest) {
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
+// Verify direct manipulation isn't notified of unknown hit tests.
+// This can happen if determining the pointer type fails, for example,
+// if GetPointerType is unsupported by the current Windows version.
 TEST(MockWindow, UnknownPointerTypeSkipsDirectManipulation) {
   UINT32 pointer_id = 123;
   auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
