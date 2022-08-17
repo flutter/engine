@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
@@ -19,7 +20,7 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('Using CanvasKit', () {
-      expect(useCanvasKit, isTrue);
+      expect(renderer is CanvasKitRenderer, isTrue);
     });
 
     test(CkPathMetrics, () {

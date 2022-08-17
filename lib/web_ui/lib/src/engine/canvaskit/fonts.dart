@@ -5,6 +5,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/fonts.dart';
+
 import '../assets.dart';
 import '../dom.dart';
 import '../util.dart';
@@ -23,7 +25,7 @@ const String _robotoUrl =
 const String _ahemUrl = '/assets/fonts/ahem.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
-class SkiaFontCollection {
+class SkiaFontCollection implements FontCollection {
   final Set<String> _registeredFontFamilies = <String>{};
 
   /// Fonts that started the download process.
@@ -50,6 +52,7 @@ class SkiaFontCollection {
 
   final Map<String, List<SkFont>> familyToFontMap = <String, List<SkFont>>{};
 
+  @override
   Future<void> ensureFontsLoaded() async {
     await _loadFonts();
 
@@ -91,6 +94,7 @@ class SkiaFontCollection {
     _pendingFonts.clear();
   }
 
+  @override
   Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) async {
     if (fontFamily == null) {
       fontFamily = _readActualFamilyName(list);
@@ -112,6 +116,7 @@ class SkiaFontCollection {
   }
 
   /// Loads fonts from `FontManifest.json`.
+  @override
   Future<void> registerFonts(AssetManager assetManager) async {
     ByteData byteData;
 
@@ -164,6 +169,7 @@ class SkiaFontCollection {
   /// `FontManifest.json` has higher priority than the default test font URLs.
   /// This allows customizing test environments where fonts are loaded from
   /// different URLs.
+  @override
   void debugRegisterTestFonts() {
     if (!_isFontFamilyRegistered('Ahem')) {
       _registerFont(_ahemUrl, 'Ahem');
@@ -218,6 +224,9 @@ class SkiaFontCollection {
 
   SkFontMgr? skFontMgr;
   TypefaceFontProvider? fontProvider;
+  
+  @override
+  void clear() {}
 }
 
 /// Represents a font that has been registered.

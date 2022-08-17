@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import '../dom.dart';
 import '../font_change_util.dart';
 import '../platform_dispatcher.dart';
+import '../renderer.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'fonts.dart';
@@ -120,7 +121,7 @@ class FontFallbackData {
     final List<SkFont> fonts = <SkFont>[];
     for (final String font in fontFamilies) {
       final List<SkFont>? typefacesForFamily =
-          skiaFontCollection.familyToFontMap[font];
+          (renderer.fontCollection as SkiaFontCollection).familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
       }
@@ -173,7 +174,7 @@ class FontFallbackData {
 
     for (final String font in globalFontFallbacks) {
       final List<SkFont>? fontsForFamily =
-          skiaFontCollection.familyToFontMap[font];
+          (renderer.fontCollection as SkiaFontCollection).familyToFontMap[font];
       if (fontsForFamily == null) {
         printWarning('A fallback font was registered but we '
             'cannot retrieve the typeface for it.');
@@ -917,7 +918,7 @@ class FallbackFontDownloadQueue {
       final Uint8List bytes = downloadedData[url]!;
       FontFallbackData.instance.registerFallbackFont(subset.family, bytes);
       if (pendingSubsets.isEmpty) {
-        _fontsLoading = skiaFontCollection.ensureFontsLoaded();
+        _fontsLoading = renderer.fontCollection.ensureFontsLoaded();
         try {
           await _fontsLoading;
         } finally {

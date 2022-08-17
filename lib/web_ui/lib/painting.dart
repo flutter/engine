@@ -400,45 +400,33 @@ enum FilterQuality {
 }
 
 class ImageFilter {
-  factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp}) {
-    if (engine.useCanvasKit) {
-      return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
-    }
-    // TODO(ferhat): implement TileMode.
-    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
-  }
+  factory ImageFilter.blur({
+    double sigmaX = 0.0, 
+    double sigmaY = 0.0, 
+    TileMode tileMode = TileMode.clamp
+  }) => engine.renderer.createBlurImageFilter(
+    sigmaX: sigmaX,
+    sigmaY: sigmaY,
+    tileMode: tileMode
+  );
 
   // ignore: avoid_unused_constructor_parameters
-  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) {
-    // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.dilate not implemented for web platform.');
-  }
+  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) =>
+    engine.renderer.createDilateImageFilter(radiusX: radiusX, radiusY: radiusY);
 
   // ignore: avoid_unused_constructor_parameters
-  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) {
-    // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.erode not implemented for web platform.');
-  }
+  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) =>
+    engine.renderer.createErodeImageFilter(radiusX: radiusX, radiusY: radiusY);
 
   factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
-    if (engine.useCanvasKit) {
-      return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
-    }
-    // TODO(yjbanov): implement FilterQuality.
-    return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
+    return engine.renderer.createMatrixImageFilter(matrix4, filterQuality: filterQuality);
   }
 
-  // TODO(ferhat): add implementation and remove the "ignore".
-  // ignore: avoid_unused_constructor_parameters
-  ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
-    throw UnimplementedError(
-        'ImageFilter.compose not implemented for web platform.');
-  }
+  factory ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) =>
+    engine.renderer.composeImageFilters(outer: outer, inner: inner);
 }
 
 enum ImageByteFormat {
@@ -479,48 +467,26 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) async {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateImageCodec(list, targetWidth, targetHeight);
-  } else {
-    final engine.DomBlob blob = engine.createDomBlob(<dynamic>[list.buffer]);
-    return engine.HtmlBlobCodec(blob);
-  }
-}
+}) => engine.renderer.instantiateImageCodec(
+  list,
+  targetWidth: targetWidth,
+  targetHeight: targetHeight,
+  allowUpscaling: allowUpscaling);
 
 Future<Codec> instantiateImageCodecFromBuffer(
   ImmutableBuffer buffer, {
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) async {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateImageCodec(buffer._list!, targetWidth, targetHeight);
-  } else {
-    final engine.DomBlob blob = engine.createDomBlob(<dynamic>[buffer._list!.buffer]);
-    return engine.HtmlBlobCodec(blob);
-  }
-}
+}) => engine.renderer.instantiateImageCodec(
+  buffer._list!, 
+  targetWidth: targetWidth,
+  targetHeight: targetHeight,
+  allowUpscaling: allowUpscaling);
 
 Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateWebImageCodec(
-      uri.toString(), chunkCallback);
-  } else {
-    return engine.futurize<Codec>((engine.Callback<Codec> callback) =>
-      _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
-  }
-}
-
-String? _instantiateImageCodecFromUrl(
-  Uri uri,
-  engine.WebOnlyImageCodecChunkCallback? chunkCallback,
-  engine.Callback<Codec> callback,
-) {
-  callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
-  return null;
-}
+  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
+  engine.renderer.instantiateImageCodecFromUrl(uri, chunkCallback: chunkCallback);
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
@@ -537,7 +503,7 @@ Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
 // The `pixels` should be the scanlined raw pixels, 4 bytes per pixel, from left
 // to right, then from top to down. The order of the 4 bytes of pixels is
 // decided by `format`.
-Future<Codec> _createBmp(
+Future<Codec> createBmp(
   Uint8List pixels,
   int width,
   int height,
@@ -626,31 +592,16 @@ void decodeImageFromPixels(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) {
-  if (engine.useCanvasKit) {
-    engine.skiaDecodeImageFromPixels(
-      pixels,
-      width,
-      height,
-      format,
-      callback,
-      rowBytes: rowBytes,
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
-      allowUpscaling: allowUpscaling,
-    );
-    return;
-  }
-
-  void executeCallback(Codec codec) {
-    codec.getNextFrame().then((FrameInfo frameInfo) {
-      callback(frameInfo.image);
-    });
-  }
-  _createBmp(pixels, width, height, rowBytes ?? width, format).then(
-      executeCallback);
-
-}
+}) => engine.renderer.decodeImageFromPixels(
+  pixels,
+  width,
+  height,
+  format,
+  callback,
+  rowBytes: rowBytes,
+  targetWidth: targetWidth,
+  targetHeight: targetHeight,
+  allowUpscaling: allowUpscaling);
 
 class Shadow {
   const Shadow({
@@ -749,9 +700,7 @@ class Shadow {
 class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) => engine.useCanvasKit
-      ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
-      : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
+  }) => engine.renderer.createImageShader(image, tmx, tmy, matrix4, filterQuality);
 }
 
 class ImmutableBuffer {
@@ -837,7 +786,7 @@ class ImageDescriptor {
       );
     }
 
-    return _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
+    return createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }
 

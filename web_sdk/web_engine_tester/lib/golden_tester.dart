@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:test/test.dart';
 // ignore: implementation_imports
-import 'package:ui/src/engine.dart' show OperatingSystem, operatingSystem, useCanvasKit;
+import 'package:ui/src/engine.dart' show OperatingSystem, operatingSystem, renderer;
 // ignore: implementation_imports
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/ui.dart';
@@ -64,7 +64,7 @@ Future<void> matchGoldenFile(String filename,
             'height': region.height
           },
     'pixelComparison': pixelComparison.toString(),
-    'isCanvaskitTest': useCanvasKit,
+    'isCanvaskitTest': renderer is CanvasKitRenderer,
   };
 
   // Chrome on macOS renders slightly differently from Linux, so allow it an
