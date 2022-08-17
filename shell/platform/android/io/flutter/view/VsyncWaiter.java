@@ -90,8 +90,6 @@ public class VsyncWaiter {
 
     private long cookie;
 
-    FrameCallback() {}
-
     FrameCallback(long cookie) {
       this.cookie = cookie;
     }
