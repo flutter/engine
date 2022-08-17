@@ -111,7 +111,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     sb.writeln('// dev/generate_fallback_font_data.dart');
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
-    sb.writeln('List<NotoFont> fallbackFonts = <NotoFont>[');
+    sb.writeln('final List<NotoFont> fallbackFonts = <NotoFont>[');
     for (final String family in fallbackFonts) {
       sb.write("  NotoFont.fromFlatRanges('$family', '${urlForFamily[family]!}', "
           '<int>[');

@@ -214,7 +214,7 @@ void testMain() {
           FontFallbackData.instance.notoTree;
       for (final NotoFont font in notoTree.root.enumerateAllElements()) {
         testedFonts.add(font.name);
-        for (final CodeunitRange range in font.unicodeRanges) {
+        for (final CodeunitRange range in font.computeUnicodeRanges()) {
           for (int codeUnit = range.start;
               codeUnit < range.end;
               codeUnit += 1) {

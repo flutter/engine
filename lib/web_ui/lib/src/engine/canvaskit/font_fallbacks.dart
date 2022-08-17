@@ -405,7 +405,7 @@ class FallbackFontDownloadQueue {
   Future<void> startDownloads() async {
     final Map<String, Future<void>> downloads = <String, Future<void>>{};
     final Map<String, Uint8List> downloadedData = <String, Uint8List>{};
-    AssetManager assetManager = AssetManager();
+    const AssetManager assetManager = AssetManager();
     for (final NotoFont font in pendingFonts.values) {
       downloads[font.url] = Future<void>(() async {
         ByteBuffer buffer;
