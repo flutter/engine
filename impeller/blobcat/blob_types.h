@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "path_contents.h"
+#pragma once
 
 namespace impeller {
 
-PathContents::PathContents() = default;
-
-PathContents::~PathContents() = default;
+enum class BlobShaderType {
+  kVertex,
+  kFragment,
+};
 
 }  // namespace impeller

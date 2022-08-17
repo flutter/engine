@@ -4,6 +4,7 @@
 
 #include "impeller/display_list/display_list_dispatcher.h"
 
+#include <algorithm>
 #include <optional>
 #include <unordered_map>
 
@@ -160,6 +161,17 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
   return desc;
 }
 
+static Matrix ToMatrix(const SkMatrix& m) {
+  return Matrix{
+      // clang-format off
+      m[0], m[3], 0, m[6],
+      m[1], m[4], 0, m[7],
+      0,    0,    1, 0,
+      m[2], m[5], 0, m[8],
+      // clang-format on
+  };
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setAntiAlias(bool aa) {
   // Nothing to do because AA is implicit.
@@ -304,12 +316,14 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(linear->colors()[i]));
       }
       auto tile_mode = ToTileMode(linear->tile_mode());
+      auto matrix = ToMatrix(linear->matrix());
       paint_.color_source = [start_point, end_point, colors = std::move(colors),
-                             tile_mode]() {
+                             tile_mode, matrix]() {
         auto contents = std::make_shared<LinearGradientContents>();
         contents->SetEndPoints(start_point, end_point);
         contents->SetColors(std::move(colors));
         contents->SetTileMode(tile_mode);
+        contents->SetMatrix(matrix);
         return contents;
       };
       return;
@@ -325,12 +339,14 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
       }
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
+      auto matrix = ToMatrix(radialGradient->matrix());
       paint_.color_source = [center, radius, colors = std::move(colors),
-                             tile_mode]() {
+                             tile_mode, matrix]() {
         auto contents = std::make_shared<RadialGradientContents>();
-        contents->SetCenterAndRadius(center, radius),
-            contents->SetColors(std::move(colors));
+        contents->SetCenterAndRadius(center, radius);
+        contents->SetColors(std::move(colors));
         contents->SetTileMode(tile_mode);
+        contents->SetMatrix(matrix);
         return contents;
       };
       return;
@@ -348,12 +364,14 @@ void DisplayListDispatcher::setColorSource(
         colors.emplace_back(ToColor(sweepGradient->colors()[i]));
       }
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
+      auto matrix = ToMatrix(sweepGradient->matrix());
       paint_.color_source = [center, start_angle, end_angle,
-                             colors = std::move(colors), tile_mode]() {
+                             colors = std::move(colors), tile_mode, matrix]() {
         auto contents = std::make_shared<SweepGradientContents>();
         contents->SetCenterAndAngles(center, start_angle, end_angle);
         contents->SetColors(std::move(colors));
         contents->SetTileMode(tile_mode);
+        contents->SetMatrix(matrix);
         return contents;
       };
       return;
@@ -366,12 +384,14 @@ void DisplayListDispatcher::setColorSource(
       auto x_tile_mode = ToTileMode(image_color_source->horizontal_tile_mode());
       auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
       auto desc = ToSamplerDescriptor(image_color_source->sampling());
-      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc]() {
+      auto matrix = ToMatrix(image_color_source->matrix());
+      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc,
+                             matrix]() {
         auto contents = std::make_shared<TiledTextureContents>();
         contents->SetTexture(texture);
         contents->SetTileModes(x_tile_mode, y_tile_mode);
         contents->SetSamplerDescriptor(desc);
-        // TODO(109384) Support 'matrix' parameter for all color sources.
+        contents->SetMatrix(matrix);
         return contents;
       };
       return;
@@ -736,8 +756,8 @@ static Path ToPath(const SkPath& path) {
       break;
     case SkPathFillType::kInverseWinding:
     case SkPathFillType::kInverseEvenOdd:
-      // TODO(104848): Support the inverse winding modes.
-      UNIMPLEMENTED;
+      // Flutter doesn't expose these path fill types. These are only visible
+      // via the dispatcher interface. We should never get here.
       fill_type = FillType::kNonZero;
       break;
   }
@@ -1002,11 +1022,9 @@ void DisplayListDispatcher::drawImageLattice(
     const SkRect& dst,
     flutter::DlFilterMode filter,
     bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
   // Don't implement this one since it is not exposed by flutter,
   // Skia internally converts calls to drawImageNine into this method,
   // which is then converted back to drawImageNine by display list.
-  UNIMPLEMENTED;
 }
 
 // |flutter::Dispatcher|
@@ -1061,7 +1079,66 @@ void DisplayListDispatcher::drawShadow(const SkPath& path,
                                        const SkScalar elevation,
                                        bool transparent_occluder,
                                        SkScalar dpr) {
-  UNIMPLEMENTED;
+  Color spot_color = ToColor(color);
+  spot_color.alpha *= 0.25;
+
+  // Compute the spot color -- ported from SkShadowUtils::ComputeTonalColors.
+  {
+    Scalar max =
+        std::max(std::max(spot_color.red, spot_color.green), spot_color.blue);
+    Scalar min =
+        std::min(std::min(spot_color.red, spot_color.green), spot_color.blue);
+    Scalar luminance = (min + max) * 0.5;
+
+    Scalar alpha_adjust =
+        (2.6f + (-2.66667f + 1.06667f * spot_color.alpha) * spot_color.alpha) *
+        spot_color.alpha;
+    Scalar color_alpha =
+        (3.544762f + (-4.891428f + 2.3466f * luminance) * luminance) *
+        luminance;
+    color_alpha = std::clamp(alpha_adjust * color_alpha, 0.0f, 1.0f);
+
+    Scalar greyscale_alpha =
+        std::clamp(spot_color.alpha * (1 - 0.4f * luminance), 0.0f, 1.0f);
+
+    Scalar color_scale = color_alpha * (1 - greyscale_alpha);
+    Scalar tonal_alpha = color_scale + greyscale_alpha;
+    Scalar unpremul_scale = color_scale / tonal_alpha;
+    spot_color = Color(unpremul_scale * spot_color.red,
+                       unpremul_scale * spot_color.green,
+                       unpremul_scale * spot_color.blue, tonal_alpha);
+  }
+
+  Vector3 light_position(0, -1, 1);
+  Scalar occluder_z = dpr * elevation;
+
+  constexpr Scalar kLightRadius = 800 / 600;  // Light radius / light height
+
+  Paint paint;
+  paint.style = Paint::Style::kFill;
+  paint.color = spot_color;
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Radius{kLightRadius * occluder_z /
+                      canvas_.GetCurrentTransformation().GetScale().y},
+  };
+
+  canvas_.Save();
+  canvas_.PreConcat(
+      Matrix::MakeTranslation(Vector2(0, -occluder_z * light_position.y)));
+
+  SkRect rect;
+  SkRRect rrect;
+  if (path.isRect(&rect)) {
+    canvas_.DrawRect(ToRect(rect), std::move(paint));
+  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+    canvas_.DrawRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX,
+                      std::move(paint));
+  } else {
+    canvas_.DrawPath(ToPath(path), std::move(paint));
+  }
+
+  canvas_.Restore();
 }
 
 Picture DisplayListDispatcher::EndRecordingAsPicture() {
