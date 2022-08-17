@@ -82,7 +82,7 @@ TEST_F(ContainerLayerTest, LayerWithParentHasTextureLayerNeedsResetFlag) {
   root->Add(container_layer1);
   root->Add(container_layer2);
   container_layer1->Add(mock_layer1);
-  container_layer1->Add(mock_layer2);
+  container_layer2->Add(mock_layer2);
 
   EXPECT_EQ(preroll_context()->has_texture_layer, false);
   root->Preroll(preroll_context(), SkMatrix());
