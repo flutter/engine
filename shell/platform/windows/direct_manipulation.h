@@ -58,6 +58,8 @@ class DirectManipulationOwner {
   Microsoft::WRL::ComPtr<IDirectManipulationViewport> viewport_;
   // Child needed for operation of the DirectManipulation API.
   fml::RefPtr<DirectManipulationEventHandler> handler_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DirectManipulationOwner);
 };
 
 // Implements DirectManipulation event handling interfaces, receives calls from
