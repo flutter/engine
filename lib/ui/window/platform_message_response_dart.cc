@@ -17,6 +17,11 @@ static std::atomic<uint64_t> platform_message_counter = 1;
 
 namespace flutter {
 namespace {
+
+void MappingFinalizer(void* isolate_callback_data, void* peer) {
+  delete static_cast<fml::Mapping*>(peer);
+}
+
 template <typename Callback, typename TaskRunner, typename Result>
 void PostCompletion(Callback&& callback,
                     const TaskRunner& ui_task_runner,
@@ -63,11 +68,38 @@ PlatformMessageResponseDart::~PlatformMessageResponseDart() {
 }
 
 void PlatformMessageResponseDart::Complete(std::unique_ptr<fml::Mapping> data) {
-  PostCompletion(std::move(callback_), ui_task_runner_, &is_complete_, channel_,
-                 [data = std::move(data)] {
-                   return tonic::DartByteData::Create(data->GetMapping(),
-                                                      data->GetSize());
-                 });
+  PostCompletion(
+      std::move(callback_), ui_task_runner_, &is_complete_, channel_,
+      [data = std::move(data)]() mutable {
+        Dart_Handle byte_buffer;
+        intptr_t size = data->GetSize();
+        if (data->GetSize() > tonic::DartByteData::kExternalSizeThreshold) {
+          // The ByteData will be wrapped with an
+          // UnmodifiableByteDataView below to protect constness in
+          // Dart.
+          void* mapping = const_cast<uint8_t*>(data->GetMapping());
+          byte_buffer = Dart_NewExternalTypedDataWithFinalizer(
+              /*type=*/Dart_TypedData_kByteData,
+              /*data=*/mapping,
+              /*length=*/size,
+              /*peer=*/data.release(),
+              /*external_allocation_size=*/size,
+              /*callback=*/MappingFinalizer);
+        } else {
+          byte_buffer =
+              tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
+        }
+        Dart_Handle ui_lib = Dart_LookupLibrary(
+            tonic::DartConverter<std::string>().ToDart("dart:ui"));
+        FML_DCHECK(!(Dart_IsNull(ui_lib) || Dart_IsError(ui_lib)));
+        Dart_Handle result =
+            Dart_Invoke(ui_lib,
+                        tonic::DartConverter<std::string>().ToDart(
+                            "_wrapUnmodifiableByteData"),
+                        1, &byte_buffer);
+        FML_DCHECK(!(Dart_IsNull(result) || Dart_IsError(result)));
+        return result;
+      });
 }
 
 void PlatformMessageResponseDart::CompleteEmpty() {
