@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/display_list/display_list_builder_multiplexer.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
@@ -29,7 +30,9 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
+
 namespace flutter {
+
 namespace testing {
 class MockLayer;
 }  // namespace testing
@@ -150,6 +153,7 @@ struct PaintContext {
   // a |kSrcOver| blend mode.
   SkScalar inherited_opacity = SK_Scalar1;
   DisplayListBuilder* leaf_nodes_builder = nullptr;
+  DisplayListBuilderMultiplexer* builder_multiplexer = nullptr;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -223,16 +227,14 @@ class Layer {
 
     ~AutoCachePaint() { context_.inherited_opacity = sk_paint_.getAlphaf(); }
 
-    void setImageFilter(sk_sp<SkImageFilter> filter) {
-      sk_paint_.setImageFilter(filter);
-      dl_paint_.setImageFilter(DlImageFilter::From(filter));
+    void setImageFilter(const DlImageFilter* filter) {
+      sk_paint_.setImageFilter(!filter ? nullptr : filter->skia_object());
+      dl_paint_.setImageFilter(filter);
       update_needs_paint();
     }
 
     void setColorFilter(const DlColorFilter* filter) {
-      if (!filter)
-        return;
-      sk_paint_.setColorFilter(filter->skia_object());
+      sk_paint_.setColorFilter(!filter ? nullptr : filter->skia_object());
       dl_paint_.setColorFilter(filter);
       update_needs_paint();
     }

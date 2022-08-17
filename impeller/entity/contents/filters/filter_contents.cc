@@ -16,6 +16,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
+#include "impeller/entity/contents/filters/color_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -112,6 +113,15 @@ std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
   return filter;
 }
 
+std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(
+    FilterInput::Ref input,
+    const ColorMatrix& matrix) {
+  auto filter = std::make_shared<ColorMatrixFilterContents>();
+  filter->SetInputs({input});
+  filter->SetMatrix(matrix);
+  return filter;
+}
+
 FilterContents::FilterContents() = default;
 
 FilterContents::~FilterContents() = default;
@@ -142,15 +152,16 @@ bool FilterContents::Render(const ContentContext& renderer,
 
   // Draw the result texture, respecting the transform and clip stack.
 
-  auto contents = std::make_shared<TextureContents>();
-  contents->SetPath(
-      PathBuilder{}.AddRect(filter_coverage.value()).GetCurrentPath());
+  auto texture_rect = Rect::MakeSize(snapshot.texture->GetSize());
+  auto contents = TextureContents::MakeRect(texture_rect);
   contents->SetTexture(snapshot.texture);
-  contents->SetSourceRect(Rect::MakeSize(snapshot.texture->GetSize()));
+  contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
+  contents->SetSourceRect(texture_rect);
 
   Entity e;
   e.SetBlendMode(entity.GetBlendMode());
   e.SetStencilDepth(entity.GetStencilDepth());
+  e.SetTransformation(snapshot.transform);
   return contents->Render(renderer, e, pass);
 }
 
@@ -210,20 +221,8 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
     return std::nullopt;
   }
 
-  // Render the filter into a new texture.
-  auto texture = renderer.MakeSubpass(
-      ISize(coverage->size),
-      [=](const ContentContext& renderer, RenderPass& pass) -> bool {
-        return RenderFilter(inputs_, renderer, entity_with_local_transform,
-                            pass, coverage.value());
-      });
-
-  if (!texture) {
-    return std::nullopt;
-  }
-
-  return Snapshot{.texture = texture,
-                  .transform = Matrix::MakeTranslation(coverage->origin)};
+  return RenderFilter(inputs_, renderer, entity_with_local_transform,
+                      coverage.value());
 }
 
 Matrix FilterContents::GetLocalTransform() const {

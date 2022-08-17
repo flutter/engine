@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "path_contents.h"
+uniform FragInfo {
+  vec4 color;
+}
+frag_info;
 
-namespace impeller {
+out vec4 frag_color;
 
-PathContents::PathContents() = default;
-
-PathContents::~PathContents() = default;
-
-}  // namespace impeller
+void main() {
+  frag_color = frag_info.color;
+}

@@ -871,6 +871,9 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static float rotation = 0;
     static float scale[2] = {0.65, 0.65};
     static float skew[2] = {0, 0};
+    static float path_rect[4] = {0, 0,
+                                 static_cast<float>(boston->GetSize().width),
+                                 static_cast<float>(boston->GetSize().height)};
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
@@ -889,7 +892,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma", &blur_amount[0], 0, 200);
+      ImGui::SliderFloat2("Sigma", blur_amount, 0, 200);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -897,21 +900,23 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       ImGui::ColorEdit4("Cover color", reinterpret_cast<float*>(&cover_color));
       ImGui::ColorEdit4("Bounds color",
                         reinterpret_cast<float*>(&bounds_color));
-      ImGui::SliderFloat2("Translation", &offset[0], 0,
+      ImGui::SliderFloat2("Translation", offset, 0,
                           pass.GetRenderTargetSize().width);
       ImGui::SliderFloat("Rotation", &rotation, 0, kPi * 2);
-      ImGui::SliderFloat2("Scale", &scale[0], 0, 3);
-      ImGui::SliderFloat2("Skew", &skew[0], -3, 3);
+      ImGui::SliderFloat2("Scale", scale, 0, 3);
+      ImGui::SliderFloat2("Skew", skew, -3, 3);
+      ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
     }
     ImGui::End();
 
     std::shared_ptr<Contents> input;
     Size input_size;
 
+    auto input_rect =
+        Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
-      auto input_rect = Rect::MakeSize(boston->GetSize());
-      texture->SetSourceRect(input_rect);
+      texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
       texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
@@ -920,7 +925,6 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       input_size = input_rect.size;
     } else {
       auto fill = std::make_shared<SolidColorContents>();
-      auto input_rect = Rect::MakeSize(boston->GetSize());
       fill->SetColor(input_color);
       fill->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
 
@@ -964,8 +968,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     // unfiltered input.
     Entity cover_entity;
     cover_entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}.AddRect(Rect::MakeSize(input_size)).TakePath(),
-        cover_color));
+        PathBuilder{}.AddRect(input_rect).TakePath(), cover_color));
     cover_entity.SetTransformation(ctm);
 
     cover_entity.Render(context, pass);
@@ -1412,6 +1415,130 @@ TEST_P(EntityTest, RRectShadowTest) {
 
     return true;
   };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
+  // Set up a simple color background.
+  auto fill = std::make_shared<SolidColorContents>();
+  fill->SetPath(
+      PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath());
+  fill->SetColor(Color::Coral());
+
+  // Set the color matrix filter.
+  FilterContents::ColorMatrix matrix = {
+      1, 1, 1, 1, 1,  //
+      1, 1, 1, 1, 1,  //
+      1, 1, 1, 1, 1,  //
+      1, 1, 1, 1, 1,  //
+  };
+
+  auto filter =
+      FilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
+
+  Entity e;
+  e.SetTransformation(Matrix());
+
+  // Confirm that the actual filter coverage matches the expected coverage.
+  auto actual = filter->GetCoverage(e);
+  auto expected = Rect::MakeXYWH(0, 0, 300, 400);
+
+  ASSERT_TRUE(actual.has_value());
+  ASSERT_RECT_NEAR(actual.value(), expected);
+}
+
+TEST_P(EntityTest, ColorMatrixFilter) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(image);
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // Set the color matrix filter.
+    FilterContents::ColorMatrix matrix = {
+        1, 0, 0, 0, 0,  //
+        0, 3, 0, 0, 0,  //
+        0, 0, 1, 0, 0,  //
+        0, 0, 0, 1, 0,  //
+    };
+
+    auto filter =
+        FilterContents::MakeColorMatrix(FilterInput::Make(image), matrix);
+
+    // Define the entity with the color matrix filter.
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({500, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+
+  // Should output the boston image with a green filter.
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, ColorMatrixFilterEditable) {
+  auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
+  ASSERT_TRUE(bay_bridge);
+
+  bool first_frame = true;
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // If this is the first frame, set the ImGui's initial size and postion.
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowPos({10, 10});
+    }
+
+    // UI state.
+    static FilterContents::ColorMatrix color_matrix = {
+        1, 0, 0, 0, 0,  //
+        0, 3, 0, 0, 0,  //
+        0, 0, 1, 0, 0,  //
+        0, 0, 0, 1, 0,  //
+    };
+    static float offset[2] = {500, 400};
+    static float rotation = 0;
+    static float scale[2] = {0.65, 0.65};
+    static float skew[2] = {0, 0};
+
+    // Define the ImGui
+    ImGui::Begin("Color Matrix", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      std::string label = "##1";
+      label.c_str();
+      for (int i = 0; i < 20; i += 5) {
+        ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
+                            &(color_matrix.array[i]), 5, nullptr, nullptr,
+                            "%.2f", 0);
+        label[2]++;
+      }
+
+      ImGui::SliderFloat2("Translation", &offset[0], 0,
+                          pass.GetRenderTargetSize().width);
+      ImGui::SliderFloat("Rotation", &rotation, 0, kPi * 2);
+      ImGui::SliderFloat2("Scale", &scale[0], 0, 3);
+      ImGui::SliderFloat2("Skew", &skew[0], -3, 3);
+    }
+    ImGui::End();
+
+    // Set the color matrix filter.
+    auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(bay_bridge),
+                                                  color_matrix);
+
+    // Define the entity with the color matrix filter.
+    Entity entity;
+    entity.SetTransformation(
+        Matrix::MakeScale(GetContentScale()) *
+        Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
+        Matrix::MakeRotationZ(Radians(rotation)) *
+        Matrix::MakeScale(Vector2(scale[0], scale[1])) *
+        Matrix::MakeSkew(skew[0], skew[1]) *
+        Matrix::MakeTranslation(-Point(bay_bridge->GetSize()) / 2));
+    entity.SetContents(filter);
+    entity.Render(context, pass);
+
+    return true;
+  };
+
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
