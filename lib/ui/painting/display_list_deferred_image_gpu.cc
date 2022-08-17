@@ -64,10 +64,9 @@ SkISize DlDeferredImageGPU::dimensions() const {
 
 // |DlImage|
 size_t DlDeferredImageGPU::GetApproximateByteSize() const {
-  // We don't actually want Dart's GC to use the size of this object to make GC
-  // decisions, as it is generally both created and disposed in the framework.
-  // This is similar to why we do not report the sizes of engine layers.
-  return sizeof(this);
+  return sizeof(this) + (image_wrapper_
+                             ? image_wrapper_->image_info().computeMinByteSize()
+                             : 0);
 }
 
 std::optional<std::string> DlDeferredImageGPU::get_error() const {
