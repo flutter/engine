@@ -257,8 +257,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   @Nullable private OnAccessibilityChangeListener onAccessibilityChangeListener;
 
-  // The widget within Flutter that currently sits beneath a cursor, e.g,
-  // beneath a stylus or mouse cursor.
+  // Whether there is assitive technology[s] running.
+  //
+  // Use the setter to update this property if needed.
   @VisibleForTesting public boolean hasAssistiveTechnology = false;
 
   private void setHasAssistiveTechnology(boolean value) {
