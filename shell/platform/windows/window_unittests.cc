@@ -285,75 +285,72 @@ TEST(MockWindow, Paint) {
 }
 
 TEST(MockWindow, PointerHitTest) {
-  auto* windows_proc_table = new MockWindowsProcTable();
+  UINT32 pointer_id = 123;
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
   auto text_input_manager = std::make_unique<MockTextInputManager>();
 
-  MockWindow window(std::unique_ptr<MockWindowsProcTable>(windows_proc_table),
-                    std::move(text_input_manager));
-
-  auto direct_manipulation = new MockDirectManipulationOwner(&window);
-  window.SetDirectManipulationOwner(
-      std::unique_ptr<MockDirectManipulationOwner>(direct_manipulation));
-
-  UINT32 pointer_id = 123;
-
-  EXPECT_CALL(*windows_proc_table, GetPointerType(Eq(pointer_id), _))
+  EXPECT_CALL(*windows_proc_table.get(), GetPointerType(Eq(pointer_id), _))
       .Times(1)
       .WillOnce([](UINT32 pointer_id, POINTER_INPUT_TYPE* type) {
         *type = PT_POINTER;
         return TRUE;
       });
 
-  EXPECT_CALL(*direct_manipulation, SetContact).Times(0);
+  MockWindow window(std::move(windows_proc_table),
+                    std::move(text_input_manager));
 
+  auto direct_manipulation =
+      std::make_unique<MockDirectManipulationOwner>(&window);
+
+  EXPECT_CALL(*direct_manipulation.get(), SetContact).Times(0);
+
+  window.SetDirectManipulationOwner(std::move(direct_manipulation));
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
 TEST(MockWindow, TouchPadHitTest) {
-  auto* windows_proc_table = new MockWindowsProcTable();
+  UINT32 pointer_id = 123;
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
   auto text_input_manager = std::make_unique<MockTextInputManager>();
 
-  MockWindow window(std::unique_ptr<MockWindowsProcTable>(windows_proc_table),
-                    std::move(text_input_manager));
-
-  auto direct_manipulation = new MockDirectManipulationOwner(&window);
-  window.SetDirectManipulationOwner(
-      std::unique_ptr<MockDirectManipulationOwner>(direct_manipulation));
-
-  UINT32 pointer_id = 123;
-
-  EXPECT_CALL(*windows_proc_table, GetPointerType(Eq(pointer_id), _))
+  EXPECT_CALL(*windows_proc_table.get(), GetPointerType(Eq(pointer_id), _))
       .Times(1)
       .WillOnce([](UINT32 pointer_id, POINTER_INPUT_TYPE* type) {
         *type = PT_TOUCHPAD;
         return TRUE;
       });
 
-  EXPECT_CALL(*direct_manipulation, SetContact(Eq(pointer_id))).Times(1);
+  MockWindow window(std::move(windows_proc_table),
+                    std::move(text_input_manager));
 
+  auto direct_manipulation =
+      std::make_unique<MockDirectManipulationOwner>(&window);
+
+  EXPECT_CALL(*direct_manipulation.get(), SetContact(Eq(pointer_id))).Times(1);
+
+  window.SetDirectManipulationOwner(std::move(direct_manipulation));
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
 TEST(MockWindow, UnknownPointerTypeSkipsDirectManipulation) {
-  auto* windows_proc_table = new MockWindowsProcTable();
+  UINT32 pointer_id = 123;
+  auto windows_proc_table = std::make_unique<MockWindowsProcTable>();
   auto text_input_manager = std::make_unique<MockTextInputManager>();
 
-  MockWindow window(std::unique_ptr<MockWindowsProcTable>(windows_proc_table),
-                    std::move(text_input_manager));
-
-  auto direct_manipulation = new MockDirectManipulationOwner(&window);
-  window.SetDirectManipulationOwner(
-      std::unique_ptr<MockDirectManipulationOwner>(direct_manipulation));
-
-  UINT32 pointer_id = 123;
-
-  EXPECT_CALL(*windows_proc_table, GetPointerType(Eq(pointer_id), _))
+  EXPECT_CALL(*windows_proc_table.get(), GetPointerType(Eq(pointer_id), _))
       .Times(1)
       .WillOnce(
           [](UINT32 pointer_id, POINTER_INPUT_TYPE* type) { return FALSE; });
 
-  EXPECT_CALL(*direct_manipulation, SetContact).Times(0);
+  MockWindow window(std::move(windows_proc_table),
+                    std::move(text_input_manager));
 
+  auto direct_manipulation =
+      std::make_unique<MockDirectManipulationOwner>(&window);
+
+  EXPECT_CALL(*direct_manipulation.get(), SetContact).Times(0);
+
+  window.SetDirectManipulationOwner(std::move(direct_manipulation));
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
