@@ -20,8 +20,8 @@ class WindowsProcTable {
 
   // Retrieves the pointer type for a specified pointer.
   //
-  // Used to react differently to touch or pen inputs. Returns zero on failure.
-  // Available in Windows 8 and newer, otherwise returns zero.
+  // Used to react differently to touch or pen inputs. Returns false on failure.
+  // Available in Windows 8 and newer, otherwise returns false.
   virtual BOOL GetPointerType(UINT32 pointer_id,
                               POINTER_INPUT_TYPE* pointer_type);
 
