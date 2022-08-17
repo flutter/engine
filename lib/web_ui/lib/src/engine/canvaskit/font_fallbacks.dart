@@ -405,18 +405,12 @@ class FallbackFontDownloadQueue {
   Future<void> startDownloads() async {
     final Map<String, Future<void>> downloads = <String, Future<void>>{};
     final Map<String, Uint8List> downloadedData = <String, Uint8List>{};
-    const AssetManager assetManager = AssetManager();
     for (final NotoFont font in pendingFonts.values) {
       downloads[font.url] = Future<void>(() async {
         ByteBuffer buffer;
         try {
-          if (ui.debugEmulateFlutterTesterEnvironment) {
-            final String fontBasename = font.url.substring(font.url.lastIndexOf('/'));
-            buffer = (await assetManager.load('noto/$fontBasename')).buffer;
-          } else {
-            buffer = await downloader.downloadAsBytes(font.url,
-                debugDescription: font.name);
-          }
+          buffer = await downloader.downloadAsBytes(font.url,
+              debugDescription: font.name);
         } catch (e) {
           pendingFonts.remove(font.url);
           printWarning('Failed to load font ${font.name} at ${font.url}');
