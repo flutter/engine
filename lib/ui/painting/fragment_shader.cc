@@ -36,13 +36,14 @@ std::shared_ptr<DlColorSource> FragmentShader::shader(
 
 fml::RefPtr<FragmentShader> FragmentShader::Create(
     Dart_Handle dart_handle,
-    std::shared_ptr<DlColorSource> shader) {
+    std::shared_ptr<DlRuntimeEffectColorSource> shader) {
   auto fragment_shader = fml::MakeRefCounted<FragmentShader>(std::move(shader));
   fragment_shader->AssociateWithDartWrapper(dart_handle);
   return fragment_shader;
 }
 
-FragmentShader::FragmentShader(std::shared_ptr<DlColorSource> shader)
+FragmentShader::FragmentShader(
+    std::shared_ptr<DlRuntimeEffectColorSource> shader)
     : source_(std::move(shader)) {}
 
 FragmentShader::~FragmentShader() = default;

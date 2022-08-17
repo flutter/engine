@@ -27,14 +27,14 @@ class FragmentShader : public Shader {
   ~FragmentShader() override;
   static fml::RefPtr<FragmentShader> Create(
       Dart_Handle dart_handle,
-      std::shared_ptr<DlColorSource> shader);
+      std::shared_ptr<DlRuntimeEffectColorSource> shader);
 
   std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
 
  private:
-  explicit FragmentShader(std::shared_ptr<DlColorSource> shader);
+  explicit FragmentShader(std::shared_ptr<DlRuntimeEffectColorSource> shader);
 
-  std::shared_ptr<DlColorSource> source_;
+  std::shared_ptr<DlRuntimeEffectColorSource> source_;
 };
 
 }  // namespace flutter

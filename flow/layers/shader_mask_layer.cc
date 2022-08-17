@@ -9,7 +9,7 @@ namespace flutter {
 
 ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> shader,
                                  const SkRect& mask_rect,
-                                 SkBlendMode blend_mode)
+                                 DlBlendMode blend_mode)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
       shader_(std::move(shader)),
@@ -60,7 +60,7 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 
   SkPaint paint;
-  paint.setBlendMode(blend_mode_);
+  paint.setBlendMode(ToSk(blend_mode_));
   if (shader_) {
     paint.setShader(shader_->skia_object());
   }

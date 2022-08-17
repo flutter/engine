@@ -107,7 +107,7 @@ class DlColorSource
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlColorSource> MakeRuntimeEffect(
+  static std::shared_ptr<DlRuntimeEffectColorSource> MakeRuntimeEffect(
       sk_sp<SkRuntimeEffect> runtime_effect,
       std::vector<std::shared_ptr<DlColorSource>> samplers,
       sk_sp<SkData> uniform_data);
@@ -681,11 +681,13 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
 
   bool is_opaque() const override { return false; }
 
-  sk_sp<SkRuntimeEffect> runtime_effect() const { return runtime_effect_; }
-  std::vector<std::shared_ptr<DlColorSource>> samplers() const {
+  const sk_sp<SkRuntimeEffect> runtime_effect() const {
+    return runtime_effect_;
+  }
+  const std::vector<std::shared_ptr<DlColorSource>> samplers() const {
     return samplers_;
   }
-  sk_sp<SkData> uniform_data() const { return uniform_data_; }
+  const sk_sp<SkData> uniform_data() const { return uniform_data_; }
 
   sk_sp<SkShader> skia_object() const override {
     std::vector<sk_sp<SkShader>> sk_samplers(samplers_.size());

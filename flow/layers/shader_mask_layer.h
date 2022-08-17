@@ -14,7 +14,7 @@ class ShaderMaskLayer : public CacheableContainerLayer {
  public:
   ShaderMaskLayer(std::shared_ptr<DlColorSource> shader,
                   const SkRect& mask_rect,
-                  SkBlendMode blend_mode);
+                  DlBlendMode blend_mode);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -25,7 +25,7 @@ class ShaderMaskLayer : public CacheableContainerLayer {
  private:
   std::shared_ptr<DlColorSource> shader_;
   SkRect mask_rect_;
-  SkBlendMode blend_mode_;
+  DlBlendMode blend_mode_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
 };

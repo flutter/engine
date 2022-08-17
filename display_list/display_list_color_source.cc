@@ -129,7 +129,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
   return std::move(ret);
 }
 
-std::shared_ptr<DlColorSource> DlColorSource::MakeRuntimeEffect(
+std::shared_ptr<DlRuntimeEffectColorSource> DlColorSource::MakeRuntimeEffect(
     sk_sp<SkRuntimeEffect> runtime_effect,
     std::vector<std::shared_ptr<DlColorSource>> samplers,
     sk_sp<SkData> uniform_data) {

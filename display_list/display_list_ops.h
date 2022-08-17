@@ -247,8 +247,6 @@ struct SetImageColorSourceOp : DLOp {
   }
 };
 
-// 4 byte header + 80 bytes for the embedded DlImageColorSource
-// uses 84 total bytes (4 bytes unused)
 struct SetRuntimeEffectColorSourceOp : DLOp {
   static const auto kType = DisplayListOpType::kSetRuntimeEffectColorSource;
 

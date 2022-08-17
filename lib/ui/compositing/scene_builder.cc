@@ -189,7 +189,7 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
                                  maskRectBottom);
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
-      shader->shader(sampling), rect, static_cast<SkBlendMode>(blendMode));
+      shader->shader(sampling), rect, static_cast<DlBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

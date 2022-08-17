@@ -23,7 +23,7 @@ using ShaderMaskLayerTest = LayerTest;
 #ifndef NDEBUG
 TEST_F(ShaderMaskLayerTest, PaintingEmptyLayerDies) {
   auto layer =
-      std::make_shared<ShaderMaskLayer>(nullptr, kEmptyRect, SkBlendMode::kSrc);
+      std::make_shared<ShaderMaskLayer>(nullptr, kEmptyRect, DlBlendMode::kSrc);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -39,7 +39,7 @@ TEST_F(ShaderMaskLayerTest, PaintBeforePrerollDies) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
   auto layer =
-      std::make_shared<ShaderMaskLayer>(nullptr, kEmptyRect, SkBlendMode::kSrc);
+      std::make_shared<ShaderMaskLayer>(nullptr, kEmptyRect, DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -57,7 +57,7 @@ TEST_F(ShaderMaskLayerTest, EmptyFilter) {
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ShaderMaskLayer>(nullptr, layer_bounds,
-                                                 SkBlendMode::kSrc);
+                                                 DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -101,7 +101,7 @@ TEST_F(ShaderMaskLayerTest, SimpleFilter) {
   auto dl_filter = DlColorSource::From(layer_filter);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ShaderMaskLayer>(dl_filter, layer_bounds,
-                                                 SkBlendMode::kSrc);
+                                                 DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -147,7 +147,7 @@ TEST_F(ShaderMaskLayerTest, MultipleChildren) {
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ShaderMaskLayer>(dl_filter, layer_bounds,
-                                                 SkBlendMode::kSrc);
+                                                 DlBlendMode::kSrc);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
@@ -206,9 +206,9 @@ TEST_F(ShaderMaskLayerTest, Nested) {
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer1 = std::make_shared<ShaderMaskLayer>(dl_filter1, layer_bounds,
-                                                  SkBlendMode::kSrc);
+                                                  DlBlendMode::kSrc);
   auto layer2 = std::make_shared<ShaderMaskLayer>(dl_filter2, layer_bounds,
-                                                  SkBlendMode::kSrc);
+                                                  DlBlendMode::kSrc);
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
@@ -275,7 +275,7 @@ TEST_F(ShaderMaskLayerTest, Readback) {
       SkPerlinNoiseShader::MakeFractalNoise(1.0f, 1.0f, 1, 1.0f);
   auto dl_filter = DlColorSource::From(layer_filter);
   auto layer = std::make_shared<ShaderMaskLayer>(dl_filter, layer_bounds,
-                                                 SkBlendMode::kSrc);
+                                                 DlBlendMode::kSrc);
 
   // ShaderMaskLayer does not read from surface
   preroll_context()->surface_needs_readback = false;
@@ -301,7 +301,7 @@ TEST_F(ShaderMaskLayerTest, LayerCached) {
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer = std::make_shared<MockLayer>(child_path);
   auto layer = std::make_shared<ShaderMaskLayer>(dl_filter, layer_bounds,
-                                                 SkBlendMode::kSrc);
+                                                 DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
   SkMatrix cache_ctm = initial_transform;
@@ -350,7 +350,7 @@ TEST_F(ShaderMaskLayerTest, OpacityInheritance) {
   auto mock_layer = MockLayer::Make(child_path);
   const SkRect mask_rect = SkRect::MakeLTRB(10, 10, 20, 20);
   auto shader_mask_layer =
-      std::make_shared<ShaderMaskLayer>(nullptr, mask_rect, SkBlendMode::kSrc);
+      std::make_shared<ShaderMaskLayer>(nullptr, mask_rect, DlBlendMode::kSrc);
   shader_mask_layer->Add(mock_layer);
 
   // ShaderMaskLayers can always support opacity despite incompatible children
