@@ -207,7 +207,7 @@ If you have questions, contact the Flutter Web team on Flutter Discord on the
 
 ### Rolling Noto Font Data
 
-In order to generate new font data for Noto fallback fonts, run:
+In order to generate new data for the Noto fallback fonts, run:
 
 ```
 ./dev/felt generate-fallback-font-data --key=<your GoogleFonts API key>
