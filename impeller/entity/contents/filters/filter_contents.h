@@ -31,6 +31,11 @@ class FilterContents : public Contents {
     kInner,
   };
 
+  // Domain is kRGBA, we may decide to support more color modes later.
+  struct ColorMatrix {
+    float array[20];
+  };
+
   static std::shared_ptr<FilterContents> MakeBlend(
       Entity::BlendMode blend_mode,
       FilterInput::Vector inputs,
@@ -56,6 +61,10 @@ class FilterContents : public Contents {
       Sigma sigma_x,
       Sigma sigma_y,
       BlurStyle blur_style = BlurStyle::kNormal);
+
+  static std::shared_ptr<FilterContents> MakeColorMatrix(
+      FilterInput::Ref input,
+      const ColorMatrix& matrix);
 
   FilterContents();
 
@@ -92,13 +101,12 @@ class FilterContents : public Contents {
       const FilterInput::Vector& inputs,
       const Entity& entity) const;
 
-  /// @brief  Takes a set of zero or more input textures and writes to an output
-  ///         texture.
-  virtual bool RenderFilter(const FilterInput::Vector& inputs,
-                            const ContentContext& renderer,
-                            const Entity& entity,
-                            RenderPass& pass,
-                            const Rect& coverage) const = 0;
+  /// @brief  Converts zero or more filter inputs into a new texture.
+  virtual std::optional<Snapshot> RenderFilter(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 

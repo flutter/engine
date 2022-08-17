@@ -43,6 +43,9 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
+  if (context->view_embedder != nullptr) {
+    context->view_embedder->PushFilterToVisitedPlatformViews(filter_);
+  }
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
   child_paint_bounds.join(context->cull_rect);
@@ -57,6 +60,10 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint save_paint(context);
   save_paint.setBlendMode(blend_mode_);
   if (context.leaf_nodes_builder) {
+    // Note that we perform a saveLayer directly on the
+    // leaf_nodes_builder here similar to how the SkCanvas
+    // path specifies the kLeafNodesCanvas below.
+    // See https:://flutter.dev/go/backdrop-filter-with-overlay-canvas
     context.leaf_nodes_builder->saveLayer(&paint_bounds(),
                                           save_paint.dl_paint(), filter_.get());
 

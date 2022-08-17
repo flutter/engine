@@ -83,6 +83,10 @@ void Canvas::Concat(const Matrix& xformation) {
   xformation_stack_.back().xformation = GetCurrentTransformation() * xformation;
 }
 
+void Canvas::PreConcat(const Matrix& xformation) {
+  xformation_stack_.back().xformation = xformation * GetCurrentTransformation();
+}
+
 void Canvas::ResetTransform() {
   xformation_stack_.back().xformation = {};
 }
@@ -227,8 +231,6 @@ void Canvas::RestoreClip() {
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
-void Canvas::DrawShadow(Path path, Color color, Scalar elevation) {}
-
 void Canvas::DrawPicture(Picture picture) {
   if (!picture.pass) {
     return;
@@ -274,8 +276,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
     return;
   }
 
-  auto contents = std::make_shared<TextureContents>();
-  contents->SetPath(PathBuilder{}.AddRect(dest).TakePath());
+  auto contents = TextureContents::MakeRect(dest);
   contents->SetTexture(image->GetTexture());
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));

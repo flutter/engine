@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/testing/windows_test_context.h"
 
@@ -21,6 +22,13 @@ WindowsConfigBuilder::WindowsConfigBuilder(WindowsTestContext& context)
     : context_(context) {}
 
 WindowsConfigBuilder::~WindowsConfigBuilder() = default;
+
+void WindowsConfigBuilder::SetDartEntrypoint(std::string_view entrypoint) {
+  if (entrypoint.empty()) {
+    return;
+  }
+  dart_entrypoint_ = entrypoint;
+}
 
 void WindowsConfigBuilder::AddDartEntrypointArgument(std::string_view arg) {
   if (arg.empty()) {
@@ -35,6 +43,9 @@ FlutterDesktopEngineProperties WindowsConfigBuilder::GetEngineProperties()
   FlutterDesktopEngineProperties engine_properties = {};
   engine_properties.assets_path = context_.GetAssetsPath().c_str();
   engine_properties.icu_data_path = context_.GetIcuDataPath().c_str();
+
+  // Set Dart entrypoint.
+  engine_properties.dart_entrypoint = dart_entrypoint_.c_str();
 
   // Set Dart entrypoint argc, argv.
   std::vector<const char*> dart_args;
@@ -55,13 +66,24 @@ FlutterDesktopEngineProperties WindowsConfigBuilder::GetEngineProperties()
   return engine_properties;
 }
 
-ViewControllerPtr WindowsConfigBuilder::LaunchEngine() const {
+EnginePtr WindowsConfigBuilder::InitializeEngine() const {
+  FlutterDesktopEngineProperties engine_properties = GetEngineProperties();
+  return EnginePtr(FlutterDesktopEngineCreate(&engine_properties));
+}
+
+ViewControllerPtr WindowsConfigBuilder::Run() const {
   InitializeCOM();
 
   EnginePtr engine = InitializeEngine();
   if (!engine) {
     return {};
   }
+
+  // Register native functions.
+  FlutterWindowsEngine* windows_engine =
+      reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  windows_engine->SetRootIsolateCreateCallback(
+      context_.GetRootIsolateCallback());
 
   int width = 600;
   int height = 400;
@@ -76,11 +98,6 @@ ViewControllerPtr WindowsConfigBuilder::LaunchEngine() const {
 
 void WindowsConfigBuilder::InitializeCOM() const {
   FML_CHECK(SUCCEEDED(::CoInitializeEx(nullptr, COINIT_MULTITHREADED)));
-}
-
-EnginePtr WindowsConfigBuilder::InitializeEngine() const {
-  FlutterDesktopEngineProperties engine_properties = GetEngineProperties();
-  return EnginePtr(FlutterDesktopEngineCreate(&engine_properties));
 }
 
 }  // namespace testing

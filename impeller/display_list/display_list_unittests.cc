@@ -16,6 +16,7 @@
 #include "impeller/display_list/display_list_playground.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "include/core/SkRRect.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -451,11 +452,13 @@ TEST_P(DisplayListTest, CanDrawPoints) {
       flutter::DlStrokeCap::kRound,
       flutter::DlStrokeCap::kSquare,
   };
-  flutter::DlPaint paint = flutter::DlPaint().setStrokeWidth(20);
+  flutter::DlPaint paint =
+      flutter::DlPaint()                                         //
+          .setColor(flutter::DlColor::kYellow().withAlpha(127))  //
+          .setStrokeWidth(20);
   builder.translate(50, 50);
   for (auto cap : caps) {
     paint.setStrokeCap(cap);
-    paint.setColor(flutter::DlColor::kYellow().withAlpha(127));
     builder.save();
     builder.drawPoints(SkCanvas::kPoints_PointMode, 7, points, paint);
     builder.translate(150, 0);
@@ -465,6 +468,56 @@ TEST_P(DisplayListTest, CanDrawPoints) {
     builder.restore();
     builder.translate(0, 150);
   }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =
+      flutter::DlPaint()                                         //
+          .setColor(flutter::DlColor::kYellow().withAlpha(127))  //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)           //
+          .setStrokeCap(flutter::DlStrokeCap::kButt)             //
+          .setStrokeWidth(20);
+  SkPath path = SkPath().addPoly({{150, 50}, {150, 50}}, false);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.drawLine({50, 50}, {50, 50}, paint);
+    builder.drawPath(path, paint);
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawShadow) {
+  flutter::DisplayListBuilder builder;
+  std::array<SkPath, 3> paths = {
+      SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+      SkPath{}.addRRect(
+          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
+      SkPath{}.addCircle(100, 50, 50),
+  };
+  builder.setColor(flutter::DlColor::kWhite());
+  builder.drawPaint();
+  builder.setColor(flutter::DlColor::kCyan());
+  builder.translate(100, 100);
+  for (size_t x = 0; x < paths.size(); x++) {
+    builder.save();
+    for (size_t y = 0; y < 5; y++) {
+      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 5, false,
+                         1);
+      builder.drawPath(paths[x]);
+      builder.translate(0, 200);
+    }
+    builder.restore();
+    builder.translate(300, 0);
+  }
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

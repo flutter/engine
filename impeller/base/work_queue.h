@@ -4,21 +4,24 @@
 
 #pragma once
 
+#include <memory>
+
+#include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-#include "impeller/entity/contents/contents.h"
-#include "impeller/geometry/path.h"
 
 namespace impeller {
 
-class PathContents : public Contents {
+class WorkQueue : public std::enable_shared_from_this<WorkQueue> {
  public:
-  PathContents();
+  virtual ~WorkQueue();
 
-  ~PathContents() override;
+  virtual void PostTask(fml::closure task) = 0;
 
-  virtual void SetPath(Path path) = 0;
+ protected:
+  WorkQueue();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PathContents);
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(WorkQueue);
 };
 
 }  // namespace impeller
