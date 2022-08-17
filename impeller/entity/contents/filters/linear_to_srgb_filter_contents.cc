@@ -68,7 +68,8 @@ std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
     return pass.AddCommand(std::move(cmd));
   };
 
-  auto out_texture = renderer.MakeSubpass(input_snapshot->texture->GetSize(), callback);
+  auto out_texture =
+      renderer.MakeSubpass(input_snapshot->texture->GetSize(), callback);
   if (!out_texture) {
     return std::nullopt;
   }
