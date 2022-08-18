@@ -114,7 +114,7 @@ def ParseDepsFile(deps_flat_file):
     headers = { 'Content-Type': 'application/json',}
     osv_url = 'https://api.osv.dev/v1/querybatch'
 
-    os.system(f'mkdir clone-test') #clone deps with upstream into temporary dir
+    os.mkdir('clone-test') #clone deps with upstream into temporary dir
 
     failed_deps = []
 
