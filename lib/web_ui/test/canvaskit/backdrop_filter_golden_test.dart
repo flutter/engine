@@ -5,6 +5,7 @@
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'package:web_engine_tester/golden_tester.dart';
@@ -49,7 +50,7 @@ void testMain() {
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, checkerboard);
       builder.pushBackdropFilter(ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10));
-      EnginePlatformDispatcher.instance.rasterizer!
+      (renderer as CanvasKitRenderer).rasterizer
           .draw(builder.build().layerTree);
       await matchGoldenFile('canvaskit_backdropfilter_blur_edges.png',
           region: region);

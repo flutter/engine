@@ -13,7 +13,6 @@ import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
-import 'initialization.dart';
 import 'painting.dart';
 import 'skia_object_cache.dart';
 import 'util.dart';

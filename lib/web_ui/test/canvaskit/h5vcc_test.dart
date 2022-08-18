@@ -7,6 +7,7 @@ import 'package:js/js_util.dart' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
@@ -21,7 +22,7 @@ void testMain() {
 
     setUpAll(() async {
       // Set `window.h5vcc` to PatchedH5vcc which uses a downloaded CanvasKit.
-      final CanvasKit downloadedCanvasKit = await downloadCanvasKit();
+      final CanvasKit downloadedCanvasKit = await (renderer as CanvasKitRenderer).downloadCanvasKit();
       debugH5vccSetter = PatchedH5vcc(canvasKit: downloadedCanvasKit);
 
       // Monkey-patch the getH5vccSkSurface function of

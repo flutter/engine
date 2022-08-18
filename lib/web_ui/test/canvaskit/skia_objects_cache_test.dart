@@ -8,6 +8,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart';
 
 import '../matchers.dart';
@@ -38,7 +39,7 @@ void _tests() {
   group(ManagedSkiaObject, () {
     test('implements create, cache, delete, resurrect, delete lifecycle', () {
       final FakeRasterizer fakeRasterizer = FakeRasterizer();
-      EnginePlatformDispatcher.instance.rasterizer = fakeRasterizer;
+      (renderer as CanvasKitRenderer).rasterizer = fakeRasterizer;
 
       // Trigger first create
       final TestSkiaObject testObject = TestSkiaObject();

@@ -11,7 +11,6 @@ import '../util.dart';
 import '../validators.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
-import 'initialization.dart';
 import 'skia_object_cache.dart';
 
 abstract class CkShader extends ManagedSkiaObject<SkShader>

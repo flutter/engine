@@ -10,6 +10,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
@@ -38,6 +39,8 @@ void testMain() {
       ui.window.onPlatformMessage = savedCallback;
     });
 
+    final Rasterizer rasterizer = (renderer as CanvasKitRenderer).rasterizer;
+
     test('Roboto is always a fallback font', () {
       expect(FontFallbackData.instance.globalFontFallbacks, contains('Roboto'));
     });
@@ -65,8 +68,7 @@ void testMain() {
       );
       pb.addText('مرحبا');
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
@@ -127,8 +129,7 @@ void testMain() {
       );
       pb.addText('مرحبا');
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
@@ -143,8 +144,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
@@ -174,8 +174,7 @@ void testMain() {
       );
       pb.addText('Hello 😊');
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
@@ -219,8 +218,7 @@ void testMain() {
       pb.addText('مرحبا');
 
       // Flush microtasks and test that we didn't start any downloads.
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await Future<void>.delayed(Duration.zero);
 
       expect(notoDownloadQueue.isPending, isFalse);
@@ -239,8 +237,7 @@ void testMain() {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
 
       CkParagraphBuilder(CkParagraphStyle()).addText('ヽಠ');
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.downloader.debugWhenIdle();
       expect(
         loggingDownloader.log,
@@ -257,8 +254,7 @@ void testMain() {
       // Do the same thing but this time with loaded fonts.
       loggingDownloader.log.clear();
       CkParagraphBuilder(CkParagraphStyle()).addText('ヽಠ');
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.downloader.debugWhenIdle();
       expect(loggingDownloader.log, isEmpty);
     });

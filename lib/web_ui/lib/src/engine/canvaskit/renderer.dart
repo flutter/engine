@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/fonts.dart';
 import 'package:ui/ui.dart';
@@ -19,7 +20,8 @@ class CanvasKitRenderer implements Renderer {
   DomElement? _sceneHost;
   DomElement? get sceneHost => _sceneHost;
 
-  late final Rasterizer rasterizer = Rasterizer();
+  @visibleForTesting
+  late Rasterizer rasterizer = Rasterizer();
 
   set resourceCacheMaxBytes(int bytes) => rasterizer.setSkiaResourceCacheMaxBytes(bytes);
 
@@ -50,6 +52,7 @@ class CanvasKitRenderer implements Renderer {
   ///
   /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
   /// and intialize the CanvasKit wasm.
+  @visibleForTesting
   Future<CanvasKit> downloadCanvasKit() async {
     await _downloadCanvasKitJs();
     final Completer<CanvasKit> canvasKitInitCompleter = Completer<CanvasKit>();

@@ -6,23 +6,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:meta/meta.dart';
 import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart'  show platformViewManager, registerHotRestartListener;
-import 'canvaskit/initialization.dart';
-import 'canvaskit/layer_scene_builder.dart';
-import 'canvaskit/rasterizer.dart';
 import 'clipboard.dart';
 import 'dom.dart';
 import 'embedder.dart';
-import 'html/scene.dart';
 import 'mouse_cursor.dart';
 import 'platform_views/message_handler.dart';
 import 'plugins.dart';
-import 'profiler.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'services.dart';

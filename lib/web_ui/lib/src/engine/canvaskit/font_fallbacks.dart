@@ -6,14 +6,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/canvaskit/renderer.dart';
+
 import '../dom.dart';
 import '../font_change_util.dart';
-import '../platform_dispatcher.dart';
 import '../renderer.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'fonts.dart';
-import 'initialization.dart';
 import 'interval_tree.dart';
 
 /// Global static font fallback data.
@@ -148,8 +148,7 @@ class FontFallbackData {
       if (!_scheduledCodeUnitCheck) {
         _scheduledCodeUnitCheck = true;
         // ignore: invalid_use_of_visible_for_testing_member
-        EnginePlatformDispatcher.instance.rasterizer!
-            .addPostFrameCallback(_ensureFallbackFonts);
+        (renderer as CanvasKitRenderer).rasterizer.addPostFrameCallback(_ensureFallbackFonts);
       }
     }
   }

@@ -64,7 +64,7 @@ Future<void> matchGoldenFile(String filename,
             'height': region.height
           },
     'pixelComparison': pixelComparison.toString(),
-    'isCanvaskitTest': renderer is CanvasKitRenderer,
+    'isCanvaskitTest': renderer.rendererTag == 'canvaskit',
   };
 
   // Chrome on macOS renders slightly differently from Linux, so allow it an

@@ -454,7 +454,7 @@ abstract class StrutStyle {
     fontWeight: fontWeight,
     fontStyle: fontStyle,
     forceStrutHeight: forceStrutHeight,
-  )
+  );
 }
 
 // The order of this enum must match the order of the values in TextDirection.h's TextDirection.

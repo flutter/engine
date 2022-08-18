@@ -8,12 +8,13 @@ import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
 import '../platform_dispatcher.dart';
+import '../renderer.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
-import 'initialization.dart';
+import 'renderer.dart';
 import 'surface_factory.dart';
 import 'util.dart';
 
@@ -131,7 +132,7 @@ class Surface {
 
   void addToScene() {
     if (!_addedToScene) {
-      skiaSceneHost!.prepend(htmlElement);
+      (renderer as CanvasKitRenderer).sceneHost!.prepend(htmlElement);
     }
     _addedToScene = true;
   }

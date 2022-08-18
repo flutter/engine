@@ -170,6 +170,7 @@ class HtmlRenderer implements Renderer {
     WebOnlyImageCodecChunkCallback? chunkCallback}) {
       return futurize<Codec>((Callback<Codec> callback) {
         callback(HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
+        return null;
       });
   }
   

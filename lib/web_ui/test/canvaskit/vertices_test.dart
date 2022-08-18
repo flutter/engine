@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -59,7 +60,7 @@ void testMain() {
     final LayerSceneBuilder builder = LayerSceneBuilder();
     builder.pushOffset(0, 0);
     builder.addPicture(ui.Offset.zero, verticesPicture);
-    EnginePlatformDispatcher.instance.rasterizer!
+    (renderer as CanvasKitRenderer).rasterizer
         .draw(builder.build().layerTree);
     await matchGoldenFile('canvaskit_vertices_antialiased.png', region: region);
   }, skip: isSafari);

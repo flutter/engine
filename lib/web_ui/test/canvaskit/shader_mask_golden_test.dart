@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'package:web_engine_tester/golden_tester.dart';
@@ -20,9 +21,7 @@ const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 Future<void> matchSceneGolden(String goldenFile, LayerScene scene,
     {bool write = false}) async {
-  final EnginePlatformDispatcher dispatcher =
-  ui.window.platformDispatcher as EnginePlatformDispatcher;
-  dispatcher.rasterizer!.draw(scene.layerTree);
+  (renderer as CanvasKitRenderer).rasterizer.draw(scene.layerTree);
   await matchGoldenFile(goldenFile, region: region, write: write);
 }
 

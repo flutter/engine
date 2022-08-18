@@ -6,9 +6,11 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 
-import '../../engine.dart' show EnginePlatformDispatcher, Instrumentation;
+import '../../engine.dart' show Instrumentation;
+import '../renderer.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
+import 'renderer.dart';
 
 /// A cache of Skia objects whose memory Flutter manages.
 ///
@@ -536,8 +538,7 @@ class SkiaObjects {
     // This method is @visibleForTesting but we're getting a warning about
     // using a @visibleForTesting member.
     // ignore: invalid_use_of_visible_for_testing_member
-    EnginePlatformDispatcher.instance.rasterizer!
-        .addPostFrameCallback(postFrameCleanUp);
+    (renderer as CanvasKitRenderer).rasterizer.addPostFrameCallback(postFrameCleanUp);
     _addedCleanupCallback = true;
   }
 
