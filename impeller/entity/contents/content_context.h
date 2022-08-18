@@ -59,7 +59,6 @@
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/vertices.vert.h"
 #include "impeller/renderer/formats.h"
-#include "impeller/renderer/pipeline.h"
 
 namespace impeller {
 
