@@ -465,15 +465,18 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
   FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
-  if (!CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
-    FML_LOG(WARNING)
+#ifdef DEBUG
+  if (!non_zero_origin_views_.find(view_id) && !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero))) {
+    non_zero_origin_views_.insert(view_id);
+        FML_LOG(WARNING)
         << "Embedded PlatformView's origin is not CGPointZero."
-           "A none-zero origin might cause undefined behavior."
-           "If you are the author of the PlatformView and you have a valid case of using a "
-           "none-zero origin,"
-           "please file an issue at https://github.com/flutter/flutter/issues/new/choose"
+           "A non-zero origin might cause undefined behavior."
            "See https://github.com/flutter/flutter/issues/109700 for more details.";
+           "If you are the author of the PlatformView and you have a valid case of using a "
+           "non-zero origin,"
+           "please leave a comment at issue at https://github.com/flutter/flutter/issues/109700 with details."
   }
+#endif
   touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
   touchInterceptor.alpha = 1;
