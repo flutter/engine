@@ -36,7 +36,7 @@ class NotoFont {
     // Binary search through the starts and ends to see if there
     // is a range that contains the codeunit.
     int min = 0;
-    int max = _rangeStarts.length;
+    int max = _rangeStarts.length - 1;
     // Search for the first rangeStart that is greater than codeunit.
     while (min < max) {
       final int mid = (min + max) ~/ 2;
@@ -60,7 +60,10 @@ class NotoFont {
           final int rangeEnd = _rangeEnds[mid];
           return rangeStart <= codeUnit && codeUnit <= rangeEnd;
         }
-        min = mid;
+        min = mid + 1;
+      } else {
+        // _rangeStarts[mid] == codeUnit
+        return true;
       }
     }
     return false;

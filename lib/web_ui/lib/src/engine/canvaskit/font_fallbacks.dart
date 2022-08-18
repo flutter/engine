@@ -154,6 +154,9 @@ class FontFallbackData {
     _scheduledCodeUnitCheck = false;
     // We don't know if the remaining code units are covered by our fallback
     // fonts. Check them and update the cache.
+    if (_codeUnitsToCheckAgainstFallbackFonts.isEmpty) {
+      return;
+    }
     final List<int> codeUnits = _codeUnitsToCheckAgainstFallbackFonts.toList();
     _codeUnitsToCheckAgainstFallbackFonts.clear();
     final List<bool> codeUnitsSupported =
