@@ -363,10 +363,8 @@ class ContentContext {
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
       color_matrix_color_filter_pipelines_;
-  mutable Variants<LinearToSrgbFilterPipeline>
-      linear_to_srgb_filter_pipelines_;
-mutable Variants<SrgbToLinearFilterPipeline>
-      srgb_to_linear_filter_pipelines_;
+  mutable Variants<LinearToSrgbFilterPipeline> linear_to_srgb_filter_pipelines_;
+  mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
