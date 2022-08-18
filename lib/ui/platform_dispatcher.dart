@@ -73,6 +73,19 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
     byteData == null ? null : UnmodifiableByteDataView(byteData);
 
+class RootIsolateToken {
+  final int _rootIsolateId;
+  const RootIsolateToken._(this._rootIsolateId);
+
+  static RootIsolateToken? get instance {
+    final int rootIsolateId = __getRootIsolateId();
+    return rootIsolateId == 0 ? null : RootIsolateToken._(rootIsolateId);
+  }
+
+  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateId')
+  external static int __getRootIsolateId();
+}
+
 /// Platform event dispatcher singleton.
 ///
 /// The most basic interface to the host operating system's interface.
@@ -556,11 +569,7 @@ class PlatformDispatcher {
   @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
   external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
 
-  int registerRootIsolate() => __registerRootIsolate();
-  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::RegisterRootIsolate')
-  external static int __registerRootIsolate();
-
-  void registerBackgroundIsolate(int rootIsolateId) => __registerBackgroundIsolate(rootIsolateId);
+  void registerBackgroundIsolate(RootIsolateToken token) => __registerBackgroundIsolate(token._rootIsolateId);
   @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);
 

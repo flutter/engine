@@ -430,9 +430,8 @@ std::string PlatformConfigurationNativeApi::DefaultRouteName() {
       ->DefaultRouteName();
 }
 
-int64_t PlatformConfigurationNativeApi::RegisterRootIsolate() {
+int64_t PlatformConfigurationNativeApi::GetRootIsolateId() {
   UIDartState* dart_state = UIDartState::Current();
-  FML_DCHECK(dart_state && dart_state->IsRootIsolate());
   if (dart_state->IsRootIsolate()) {
     int64_t identifier = reinterpret_cast<int64_t>(dart_state);
     (*static_cast<std::shared_ptr<PlatformConfigurationStorage>*>(
