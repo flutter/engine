@@ -9,8 +9,6 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../fonts.dart';
-
 class HtmlRenderer implements Renderer {
   @override
   String get rendererTag => 'html';
