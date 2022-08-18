@@ -224,7 +224,7 @@ class SkiaFontCollection implements FontCollection {
 
   SkFontMgr? skFontMgr;
   TypefaceFontProvider? fontProvider;
-  
+
   @override
   void clear() {}
 }

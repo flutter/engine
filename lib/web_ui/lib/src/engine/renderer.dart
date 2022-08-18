@@ -97,12 +97,12 @@ abstract class Renderer {
   ]);
 
   ui.ImageFilter createBlurImageFilter({
-    double sigmaX = 0.0, 
-    double sigmaY = 0.0, 
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
     ui.TileMode tileMode = ui.TileMode.clamp});
   ui.ImageFilter createDilateImageFilter({ double radiusX = 0.0, double radiusY = 0.0});
   ui.ImageFilter createErodeImageFilter({ double radiusX = 0.0, double radiusY = 0.0});
-  ui.ImageFilter createMatrixImageFilter( 
+  ui.ImageFilter createMatrixImageFilter(
     Float64List matrix4, {
     ui.FilterQuality filterQuality = ui.FilterQuality.low
   });
@@ -136,7 +136,7 @@ abstract class Renderer {
     ui.Image image,
     ui.TileMode tmx,
     ui.TileMode tmy,
-    Float64List matrix4, 
+    Float64List matrix4,
     ui.FilterQuality? filterQuality,
   );
 

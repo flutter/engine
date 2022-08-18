@@ -212,26 +212,26 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   ui.SceneBuilder createSceneBuilder() => LayerSceneBuilder();
-    
+
   @override
   ui.ImageFilter createBlurImageFilter({
-    double sigmaX = 0.0, 
-    double sigmaY = 0.0, 
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
     ui.TileMode tileMode = ui.TileMode.clamp
   }) => CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
-  
+
   @override
   ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError('ImageFilter.dilate not implemented for CanvasKit.');
   }
-  
+
   @override
   ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError('ImageFilter.erode not implemented for web platform.');
   }
-  
+
   @override
   ui.ImageFilter createMatrixImageFilter(
     Float64List matrix4, {
@@ -243,7 +243,7 @@ class CanvasKitRenderer implements Renderer {
   // TODO(ferhat): add implementation
     throw UnimplementedError('ImageFilter.compose not implemented for CanvasKit.');
   }
-  
+
   @override
   Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
@@ -254,13 +254,13 @@ class CanvasKitRenderer implements Renderer {
     list,
     targetWidth,
     targetHeight);
-    
+
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
     WebOnlyImageCodecChunkCallback? chunkCallback
   }) => skiaInstantiateWebImageCodec(uri.toString(), chunkCallback);
-  
+
   @override
   void decodeImageFromPixels(
     Uint8List pixels,
@@ -283,7 +283,7 @@ class CanvasKitRenderer implements Renderer {
     targetHeight: targetHeight,
     allowUpscaling: allowUpscaling
   );
-    
+
   @override
   ui.ImageShader createImageShader(
     ui.Image image,
@@ -292,7 +292,7 @@ class CanvasKitRenderer implements Renderer {
     Float64List matrix4,
     ui.FilterQuality? filterQuality
   ) => CkImageShader(image, tmx, tmy, matrix4, filterQuality);
-  
+
   @override
   ui.Path createPath() => CkPath();
 
@@ -302,13 +302,13 @@ class CanvasKitRenderer implements Renderer {
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) =>
     CkPath.combine(op, path1, path2);
-    
+
   @override
   ui.TextStyle createTextStyle({
     ui.Color? color,
     ui.TextDecoration? decoration,
     ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle, 
+    ui.TextDecorationStyle? decorationStyle,
     double? decorationThickness,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
@@ -377,7 +377,7 @@ class CanvasKitRenderer implements Renderer {
     ellipsis: ellipsis,
     locale: locale,
   );
-  
+
   @override
   ui.StrutStyle createStrutStyle({
     String? fontFamily,
@@ -402,9 +402,9 @@ class CanvasKitRenderer implements Renderer {
   );
 
   @override
-  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => 
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
     CkParagraphBuilder(style);
-    
+
   @override
   void renderScene(ui.Scene scene) {
     // "Build finish" and "raster start" happen back-to-back because we

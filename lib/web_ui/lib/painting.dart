@@ -401,8 +401,8 @@ enum FilterQuality {
 
 class ImageFilter {
   factory ImageFilter.blur({
-    double sigmaX = 0.0, 
-    double sigmaY = 0.0, 
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
     TileMode tileMode = TileMode.clamp
   }) => engine.renderer.createBlurImageFilter(
     sigmaX: sigmaX,
@@ -479,7 +479,7 @@ Future<Codec> instantiateImageCodecFromBuffer(
   int? targetHeight,
   bool allowUpscaling = true,
 }) => engine.renderer.instantiateImageCodec(
-  buffer._list!, 
+  buffer._list!,
   targetWidth: targetWidth,
   targetHeight: targetHeight,
   allowUpscaling: allowUpscaling);

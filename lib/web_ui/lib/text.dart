@@ -673,7 +673,7 @@ abstract class Paragraph {
 }
 
 abstract class ParagraphBuilder {
-  factory ParagraphBuilder(ParagraphStyle style) => 
+  factory ParagraphBuilder(ParagraphStyle style) =>
     engine.renderer.createParagraphBuilder(style);
   void pushStyle(TextStyle style);
   void pop();

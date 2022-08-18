@@ -14,7 +14,7 @@ class HtmlRenderer implements Renderer {
   late final FontCollection _fontCollection = HtmlFontCollection();
 
   late FlutterViewEmbedder _viewEmbedder;
-  
+
   @override
   FontCollection get fontCollection => _fontCollection;
 
@@ -124,27 +124,27 @@ class HtmlRenderer implements Renderer {
 
   @override
   ui.SceneBuilder createSceneBuilder() => SurfaceSceneBuilder();
-    
+
   // TODO(ferhat): implement TileMode.
   @override
   ui.ImageFilter createBlurImageFilter({
-    double sigmaX = 0.0, 
-    double sigmaY = 0.0, 
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
     ui.TileMode tileMode = ui.TileMode.clamp
   }) => EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
-  
+
   @override
   ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError('ImageFilter.dilate not implemented for HTML renderer.');
   }
-  
+
   @override
   ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError('ImageFilter.erode not implemented for HTML renderer.');
   }
-  
+
   @override
   ui.ImageFilter createMatrixImageFilter(
     Float64List matrix4, {
@@ -157,7 +157,7 @@ class HtmlRenderer implements Renderer {
     // ignore: avoid_unused_constructor_parameters
     throw UnimplementedError('ImageFilter.erode not implemented for HTML renderer.');
   }
-  
+
   @override
   Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
@@ -167,7 +167,7 @@ class HtmlRenderer implements Renderer {
     final DomBlob blob = createDomBlob(<dynamic>[list.buffer]);
     return HtmlBlobCodec(blob);
   }
-  
+
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
@@ -177,7 +177,7 @@ class HtmlRenderer implements Renderer {
         return null;
       });
   }
-  
+
   @override
   void decodeImageFromPixels(
     Uint8List pixels,
@@ -224,7 +224,7 @@ class HtmlRenderer implements Renderer {
     ui.Color? color,
     ui.TextDecoration? decoration,
     ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle, 
+    ui.TextDecorationStyle? decorationStyle,
     double? decorationThickness,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
@@ -293,7 +293,7 @@ class HtmlRenderer implements Renderer {
     ellipsis: ellipsis,
     locale: locale,
   );
-  
+
   @override
   ui.StrutStyle createStrutStyle({
     String? fontFamily,
@@ -318,9 +318,9 @@ class HtmlRenderer implements Renderer {
   );
 
   @override
-  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => 
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
     CanvasParagraphBuilder(style as EngineParagraphStyle);
-    
+
   @override
   void renderScene(ui.Scene scene) {
     _viewEmbedder.addSceneToSceneHost((scene as SurfaceScene).webOnlyRootElement);
