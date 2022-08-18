@@ -165,7 +165,7 @@ def get_host_cpu():
   if is_rosetta():
     return 'arm64'
   machine = platform.machine()
-  if machine in ['aarch64', 'arm64']:
+  if machine in ['aarch64', 'arm64', 'ARM64']:
     return 'arm64'
   if machine in ['x86_64', 'AMD64', 'x64']:
     return 'x64'
