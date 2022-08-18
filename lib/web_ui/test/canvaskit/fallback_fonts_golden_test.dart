@@ -187,7 +187,7 @@ void testMain() {
       expect(
         loggingDownloader.log,
         <String>[
-          'Noto Sans KR',
+          'Noto Sans SC',
           'Noto Sans Kannada',
         ],
       );

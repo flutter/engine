@@ -342,6 +342,8 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
           if (bestFonts.contains(_notoSansKR)) {
             bestFont = _notoSansKR;
           }
+        } else if (bestFonts.contains(_notoSansSC)) {
+          bestFont = _notoSansSC;
         }
       }
     }
