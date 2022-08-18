@@ -105,7 +105,7 @@ group("flutter") {
         "//third_party/dart/runtime/bin:gen_snapshot",
 
         # Built alongside gen_snapshot for 64 bit targets
-        "//third_party/dart/runtime/bin:analyze_snasphot",
+        "//third_party/dart/runtime/bin:analyze_snapshot",
 
         # Impeller artifacts - compiler and libtessellator
         "//flutter/impeller/compiler:impellerc",
