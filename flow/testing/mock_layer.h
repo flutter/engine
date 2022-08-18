@@ -5,6 +5,7 @@
 #ifndef FLOW_TESTING_MOCK_LAYER_H_
 #define FLOW_TESTING_MOCK_LAYER_H_
 
+#include <bitset>
 #include <functional>
 #include <memory>
 #include "flutter/flow/diff_context.h"
@@ -46,8 +47,14 @@ class MockLayer : public Layer {
   const MutatorsStack& parent_mutators() { return parent_mutators_; }
   const SkMatrix& parent_matrix() { return parent_matrix_; }
   const SkRect& parent_cull_rect() { return parent_cull_rect_; }
-  bool parent_has_platform_view() { return parent_has_platform_view_; }
-  bool parent_has_texture_layer() { return parent_has_texture_layer_; }
+
+  bool parent_has_platform_view() {
+    return bits_[MOCK_FLAGS::kParentHasPlatformView];
+  }
+
+  bool parent_has_texture_layer() {
+    return bits_[MOCK_FLAGS::kParentHasTextureLayer];
+  }
 
   bool IsReplacing(DiffContext* context, const Layer* layer) const override;
   void Diff(DiffContext* context, const Layer* old_layer) override;
@@ -59,12 +66,18 @@ class MockLayer : public Layer {
   SkRect parent_cull_rect_ = SkRect::MakeEmpty();
   SkPath fake_paint_path_;
   SkPaint fake_paint_;
-  bool parent_has_platform_view_ = false;
-  bool parent_has_texture_layer_ = false;
-  bool fake_has_platform_view_ = false;
-  bool fake_reads_surface_ = false;
-  bool fake_opacity_compatible_ = false;
-  bool fake_has_texture_layer_ = false;
+
+  enum MOCK_FLAGS : size_t {
+    kParentHasPlatformView,  // 0
+    kParentHasTextureLayer,  // 1
+    kFakeHasPlatformView,    // 2
+    kFakeReadsSurface,       // 3
+    kFakeOpacityCompatible,  // 4
+    kFakeHasTextureLayer,    // 5
+    size
+  };
+
+  std::bitset<static_cast<size_t>(MOCK_FLAGS::size)> bits_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MockLayer);
 };
