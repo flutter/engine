@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
+#include <cmath>
 #include <valarray>
 
 #include "impeller/base/validation.h"
@@ -210,8 +211,12 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
     return pass.AddCommand(cmd);
   };
 
+  Scalar x_scale =
+      std::min(1.0, 1.0 / std::ceil(std::log2(transformed_blur_radius_length)));
   auto out_texture =
-      renderer.MakeSubpass(ISize(pass_texture_rect.size), callback);
+      renderer.MakeSubpass(ISize(pass_texture_rect.size.width * x_scale,
+                                 pass_texture_rect.size.height),
+                           callback);
   if (!out_texture) {
     return std::nullopt;
   }
@@ -224,7 +229,8 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   return Snapshot{
       .texture = out_texture,
       .transform = texture_rotate.Invert() *
-                   Matrix::MakeTranslation(pass_texture_rect.origin),
+                   Matrix::MakeTranslation(pass_texture_rect.origin) *
+                   Matrix::MakeScale(Vector2(1 / x_scale, 1)),
       .sampler_descriptor = sampler_desc};
 }
 
