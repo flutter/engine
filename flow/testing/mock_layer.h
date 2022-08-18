@@ -49,11 +49,11 @@ class MockLayer : public Layer {
   const SkRect& parent_cull_rect() { return parent_cull_rect_; }
 
   bool parent_has_platform_view() {
-    return bits_[MOCK_FLAGS::kParentHasPlatformView];
+    return bits_[MockFlags::kParentHasPlatformView];
   }
 
   bool parent_has_texture_layer() {
-    return bits_[MOCK_FLAGS::kParentHasTextureLayer];
+    return bits_[MockFlags::kParentHasTextureLayer];
   }
 
   bool IsReplacing(DiffContext* context, const Layer* layer) const override;
@@ -67,7 +67,7 @@ class MockLayer : public Layer {
   SkPath fake_paint_path_;
   SkPaint fake_paint_;
 
-  enum MOCK_FLAGS : size_t {
+  enum MockFlags : size_t {
     kParentHasPlatformView,  // 0
     kParentHasTextureLayer,  // 1
     kFakeHasPlatformView,    // 2
@@ -77,7 +77,7 @@ class MockLayer : public Layer {
     size
   };
 
-  std::bitset<static_cast<size_t>(MOCK_FLAGS::size)> bits_;
+  std::bitset<static_cast<size_t>(MockFlags::size)> bits_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MockLayer);
 };

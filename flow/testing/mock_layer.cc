@@ -17,10 +17,10 @@ MockLayer::MockLayer(SkPath path,
                      bool fake_opacity_compatible,
                      bool fake_has_texture_layer)
     : fake_paint_path_(path), fake_paint_(paint) {
-  bits_[MOCK_FLAGS::kFakeHasPlatformView] = fake_has_platform_view;
-  bits_[MOCK_FLAGS::kFakeReadsSurface] = fake_reads_surface;
-  bits_[MOCK_FLAGS::kFakeOpacityCompatible] = fake_opacity_compatible;
-  bits_[MOCK_FLAGS::kFakeHasTextureLayer] = fake_has_texture_layer;
+  bits_[MockFlags::kFakeHasPlatformView] = fake_has_platform_view;
+  bits_[MockFlags::kFakeReadsSurface] = fake_reads_surface;
+  bits_[MockFlags::kFakeOpacityCompatible] = fake_opacity_compatible;
+  bits_[MockFlags::kFakeHasTextureLayer] = fake_has_texture_layer;
 }
 
 bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
@@ -42,16 +42,16 @@ void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   parent_mutators_ = context->mutators_stack;
   parent_matrix_ = matrix;
   parent_cull_rect_ = context->cull_rect;
-  bits_[MOCK_FLAGS::kParentHasPlatformView] = context->has_platform_view;
-  bits_[MOCK_FLAGS::kParentHasTextureLayer] = context->has_texture_layer;
+  bits_[MockFlags::kParentHasPlatformView] = context->has_platform_view;
+  bits_[MockFlags::kParentHasTextureLayer] = context->has_texture_layer;
 
-  context->has_platform_view = bits_[MOCK_FLAGS::kFakeHasPlatformView];
-  context->has_texture_layer = bits_[MOCK_FLAGS::kFakeHasTextureLayer];
+  context->has_platform_view = bits_[MockFlags::kFakeHasPlatformView];
+  context->has_texture_layer = bits_[MockFlags::kFakeHasTextureLayer];
   set_paint_bounds(fake_paint_path_.getBounds());
-  if (bits_[MOCK_FLAGS::kFakeReadsSurface]) {
+  if (bits_[MockFlags::kFakeReadsSurface]) {
     context->surface_needs_readback = true;
   }
-  if (bits_[MOCK_FLAGS::kFakeOpacityCompatible]) {
+  if (bits_[MockFlags::kFakeOpacityCompatible]) {
     context->subtree_can_inherit_opacity = true;
   }
 }
