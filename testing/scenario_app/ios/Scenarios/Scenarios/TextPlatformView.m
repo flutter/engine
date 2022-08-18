@@ -77,10 +77,12 @@
               binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
   if ([super init]) {
     _containerView = [[UIView alloc] init];
-    _containerView.backgroundColor = UIColor.lightGrayColor;
     _containerView.accessibilityIdentifier = @"platform_view";
-  
-    _textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250.0, 100.0)];
+    _containerView.backgroundColor = UIColor.whiteColor;
+    _containerView.clipsToBounds = YES;
+
+    _textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 0, 0)];
+    _textView.backgroundColor = UIColor.lightGrayColor;
     _textView.textColor = UIColor.blueColor;
     [_textView setFont:[UIFont systemFontOfSize:52]];
     _textView.text = args;
