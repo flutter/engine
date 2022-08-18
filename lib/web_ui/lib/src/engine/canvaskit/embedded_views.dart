@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/src/engine/canvaskit/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show platformViewManager;
@@ -19,6 +18,7 @@ import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'path.dart';
 import 'picture_recorder.dart';
+import 'renderer.dart';
 import 'surface.dart';
 import 'surface_factory.dart';
 

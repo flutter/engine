@@ -286,7 +286,7 @@ class FlutterViewEmbedder {
     _sceneHostElement = domDocument.createElement('flt-scene-host')
       ..style.pointerEvents = 'none';
 
-    renderer.reset();
+    renderer.reset(this);
 
     final DomElement semanticsHostElement =
         domDocument.createElement('flt-semantics-host');

@@ -5,10 +5,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:ui/src/engine/fonts.dart';
 
 import '../assets.dart';
 import '../dom.dart';
+import '../fonts.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';

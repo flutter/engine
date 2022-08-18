@@ -3,9 +3,31 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine.dart';
-import 'package:ui/src/engine/fonts.dart';
-import 'package:ui/ui.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../configuration.dart';
+import '../dom.dart';
+import '../embedder.dart';
+import '../fonts.dart';
+import '../html_image_codec.dart';
+import '../initialization.dart';
+import '../profiler.dart';
+import '../renderer.dart';
+import '../safe_browser_api.dart';
+import 'canvaskit_api.dart';
+import 'canvaskit_canvas.dart';
+import 'fonts.dart';
+import 'image.dart';
+import 'image_filter.dart';
+import 'layer_scene_builder.dart';
+import 'painting.dart';
+import 'path.dart';
+import 'picture_recorder.dart';
+import 'rasterizer.dart';
+import 'shader.dart';
+import 'text.dart';
+import 'util.dart';
+import 'vertices.dart';
 
 class CanvasKitRenderer implements Renderer {
   @override
@@ -88,25 +110,24 @@ class CanvasKitRenderer implements Renderer {
     return canvasKitLoadCompleter.future;
   }
 
-
   @override
-  void reset() {
+  void reset(FlutterViewEmbedder embedder) {
     /// CanvasKit uses a static scene element that never gets replaced, so it's
     /// added eagerly during initialization here and never touched, unless the
     /// system is reset due to hot restart or in a test.
     _sceneHost = createDomElement('flt-scene');
-    flutterViewEmbedder.addSceneToSceneHost(_sceneHost);
+    embedder.addSceneToSceneHost(_sceneHost);
   }
 
   @override
-  Paint createPaint() => CkPaint();
+  ui.Paint createPaint() => CkPaint();
 
   @override
-  Vertices createVertices(
-    VertexMode mode,
-    List<Offset> positions, {
-    List<Offset>? textureCoordinates,
-    List<Color>? colors,
+  ui.Vertices createVertices(
+    ui.VertexMode mode,
+    List<ui.Offset> positions, {
+    List<ui.Offset>? textureCoordinates,
+    List<ui.Color>? colors,
     List<int>? indices,
   }) => CkVertices(
     mode,
@@ -116,8 +137,8 @@ class CanvasKitRenderer implements Renderer {
     indices: indices);
 
   @override
-  Vertices createVerticesRaw(
-    VertexMode mode,
+  ui.Vertices createVerticesRaw(
+    ui.VertexMode mode,
     Float32List positions, {
     Float32List? textureCoordinates,
     Int32List? colors,
@@ -130,40 +151,40 @@ class CanvasKitRenderer implements Renderer {
     indices: indices);
 
   @override
-  Canvas createCanvas(PictureRecorder recorder, [Rect? cullRect]) =>
+  ui.Canvas createCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) =>
     CanvasKitCanvas(recorder, cullRect);
 
   @override
-  Gradient createLinearGradient(
-    Offset from,
-    Offset to,
-    List<Color> colors, [
+  ui.Gradient createLinearGradient(
+    ui.Offset from,
+    ui.Offset to,
+    List<ui.Color> colors, [
     List<double>? colorStops,
-    TileMode tileMode = TileMode.clamp,
+    ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4
   ]) => CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4);
 
   @override
-  Gradient createRadialGradient(
-    Offset center,
+  ui.Gradient createRadialGradient(
+    ui.Offset center,
     double radius,
-    List<Color> colors, [
+    List<ui.Color> colors, [
     List<double>? colorStops,
-    TileMode tileMode = TileMode.clamp,
+    ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-    Offset? focal,
+    ui.Offset? focal,
     double focalRadius = 0.0,
   ]) => CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix4);
 
   @override
-  Gradient createConicalGradient(
-    Offset focal,
+  ui.Gradient createConicalGradient(
+    ui.Offset focal,
     double focalRadius,
-    Offset center,
+    ui.Offset center,
     double radius,
-    List<Color> colors,
+    List<ui.Color> colors,
     [List<double>? colorStops,
-    TileMode tileMode = TileMode.clamp,
+    ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix]
   ) => CkGradientConical(
     focal,
@@ -176,55 +197,55 @@ class CanvasKitRenderer implements Renderer {
     matrix);
 
   @override
-  Gradient createSweepGradient(
-    Offset center,
-    List<Color> colors, [
+  ui.Gradient createSweepGradient(
+    ui.Offset center,
+    List<ui.Color> colors, [
     List<double>? colorStops,
-    TileMode tileMode = TileMode.clamp,
+    ui.TileMode tileMode = ui.TileMode.clamp,
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float32List? matrix4
   ]) => CkGradientSweep(center, colors, colorStops, tileMode, startAngle, endAngle, matrix4);
 
   @override
-  PictureRecorder createPictureRecorder() => CkPictureRecorder();
+  ui.PictureRecorder createPictureRecorder() => CkPictureRecorder();
 
   @override
-  SceneBuilder createSceneBuilder() => LayerSceneBuilder();
+  ui.SceneBuilder createSceneBuilder() => LayerSceneBuilder();
     
   @override
-  ImageFilter createBlurImageFilter({
+  ui.ImageFilter createBlurImageFilter({
     double sigmaX = 0.0, 
     double sigmaY = 0.0, 
-    TileMode tileMode = TileMode.clamp
+    ui.TileMode tileMode = ui.TileMode.clamp
   }) => CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   
   @override
-  ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
+  ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError('ImageFilter.dilate not implemented for CanvasKit.');
   }
   
   @override
-  ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
+  ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError('ImageFilter.erode not implemented for web platform.');
   }
   
   @override
-  ImageFilter createMatrixImageFilter(
+  ui.ImageFilter createMatrixImageFilter(
     Float64List matrix4, {
-    FilterQuality filterQuality = FilterQuality.low
+    ui.FilterQuality filterQuality = ui.FilterQuality.low
   }) => CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
 
   @override
-  ImageFilter composeImageFilters({required ImageFilter outer, required ImageFilter inner}) {
+  ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner}) {
   // TODO(ferhat): add implementation
     throw UnimplementedError('ImageFilter.compose not implemented for CanvasKit.');
   }
   
   @override
-  Future<Codec> instantiateImageCodec(
+  Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
     int? targetWidth,
     int? targetHeight,
@@ -235,7 +256,7 @@ class CanvasKitRenderer implements Renderer {
     targetHeight);
     
   @override
-  Future<Codec> instantiateImageCodecFromUrl(
+  Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
     WebOnlyImageCodecChunkCallback? chunkCallback
   }) => skiaInstantiateWebImageCodec(uri.toString(), chunkCallback);
@@ -245,8 +266,8 @@ class CanvasKitRenderer implements Renderer {
     Uint8List pixels,
     int width,
     int height,
-    PixelFormat format,
-    ImageDecoderCallback callback, {
+    ui.PixelFormat format,
+    ui.ImageDecoderCallback callback, {
     int? rowBytes,
     int? targetWidth,
     int? targetHeight,
@@ -264,47 +285,47 @@ class CanvasKitRenderer implements Renderer {
   );
     
   @override
-  ImageShader createImageShader(
-    Image image,
-    TileMode tmx,
-    TileMode tmy,
+  ui.ImageShader createImageShader(
+    ui.Image image,
+    ui.TileMode tmx,
+    ui.TileMode tmy,
     Float64List matrix4,
-    FilterQuality? filterQuality
+    ui.FilterQuality? filterQuality
   ) => CkImageShader(image, tmx, tmy, matrix4, filterQuality);
   
   @override
-  Path createPath() => CkPath();
+  ui.Path createPath() => CkPath();
 
   @override
-  Path copyPath(Path src) => CkPath.from(src as CkPath);
+  ui.Path copyPath(ui.Path src) => CkPath.from(src as CkPath);
 
   @override
-  Path combinePaths(PathOperation op, Path path1, Path path2) =>
+  ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) =>
     CkPath.combine(op, path1, path2);
     
   @override
-  TextStyle createTextStyle({
-    Color? color,
-    TextDecoration? decoration,
-    Color? decorationColor,
-    TextDecorationStyle? decorationStyle, 
+  ui.TextStyle createTextStyle({
+    ui.Color? color,
+    ui.TextDecoration? decoration,
+    ui.Color? decorationColor,
+    ui.TextDecorationStyle? decorationStyle, 
     double? decorationThickness,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    TextBaseline? textBaseline,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.TextBaseline? textBaseline,
     String? fontFamily,
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? letterSpacing,
     double? wordSpacing,
     double? height,
-    TextLeadingDistribution? leadingDistribution,
-    Locale? locale,
-    Paint? background,
-    Paint? foreground,
-    List<Shadow>? shadows,
-    List<FontFeature>? fontFeatures,
-    List<FontVariation>? fontVariations
+    ui.TextLeadingDistribution? leadingDistribution,
+    ui.Locale? locale,
+    ui.Paint? background,
+    ui.Paint? foreground,
+    List<ui.Shadow>? shadows,
+    List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations
   }) => CkTextStyle(
     color: color,
     decoration: decoration,
@@ -329,19 +350,19 @@ class CanvasKitRenderer implements Renderer {
   );
 
   @override
-  ParagraphStyle createParagraphStyle({
-    TextAlign? textAlign,
-    TextDirection? textDirection,
+  ui.ParagraphStyle createParagraphStyle({
+    ui.TextAlign? textAlign,
+    ui.TextDirection? textDirection,
     int? maxLines,
     String? fontFamily,
     double? fontSize,
     double? height,
-    TextHeightBehavior? textHeightBehavior,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    StrutStyle? strutStyle,
+    ui.TextHeightBehavior? textHeightBehavior,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.StrutStyle? strutStyle,
     String? ellipsis,
-    Locale? locale
+    ui.Locale? locale
   }) => CkParagraphStyle(
     textAlign: textAlign,
     textDirection: textDirection,
@@ -358,15 +379,15 @@ class CanvasKitRenderer implements Renderer {
   );
   
   @override
-  StrutStyle createStrutStyle({
+  ui.StrutStyle createStrutStyle({
     String? fontFamily,
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    TextLeadingDistribution? leadingDistribution,
+    ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
     bool? forceStrutHeight
   }) => CkStrutStyle(
     fontFamily: fontFamily,
@@ -381,22 +402,22 @@ class CanvasKitRenderer implements Renderer {
   );
 
   @override
-  ParagraphBuilder createParagraphBuilder(ParagraphStyle style) => 
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => 
     CkParagraphBuilder(style);
     
   @override
-  void renderScene(Scene scene) {
-      // "Build finish" and "raster start" happen back-to-back because we
-      // render on the same thread, so there's no overhead from hopping to
-      // another thread.
-      //
-      // CanvasKit works differently from the HTML renderer in that in HTML
-      // we update the DOM in SceneBuilder.build, which is these function calls
-      // here are CanvasKit-only.
-      frameTimingsOnBuildFinish();
-      frameTimingsOnRasterStart();
+  void renderScene(ui.Scene scene) {
+    // "Build finish" and "raster start" happen back-to-back because we
+    // render on the same thread, so there's no overhead from hopping to
+    // another thread.
+    //
+    // CanvasKit works differently from the HTML renderer in that in HTML
+    // we update the DOM in SceneBuilder.build, which is these function calls
+    // here are CanvasKit-only.
+    frameTimingsOnBuildFinish();
+    frameTimingsOnRasterStart();
 
-      rasterizer.draw((scene as LayerScene).layerTree);
-      frameTimingsOnRasterFinish();
+    rasterizer.draw((scene as LayerScene).layerTree);
+    frameTimingsOnRasterFinish();
   }
 }

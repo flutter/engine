@@ -2,7 +2,7 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
+import 'assets.dart';
 
 abstract class FontCollection {
   Future<void> loadFontFromList(Uint8List list, {String? fontFamily});
