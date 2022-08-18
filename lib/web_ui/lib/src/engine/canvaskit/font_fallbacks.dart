@@ -5,9 +5,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart' as ui;
-
-import '../assets.dart';
 import '../dom.dart';
 import '../font_change_util.dart';
 import '../platform_dispatcher.dart';
