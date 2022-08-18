@@ -196,7 +196,6 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
 
   ChildClippingView* clipping_view =
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
-  FML_DLOG(ERROR) << "ADD VIEW " << viewId;
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
 
@@ -731,14 +730,11 @@ void FlutterPlatformViewsController::RemoveUnusedLayers() {
   std::unordered_set<int64_t> composition_order_set;
   for (int64_t view_id : composition_order_) {
     composition_order_set.insert(view_id);
-    FML_DLOG(ERROR) << "composition_order_set " << view_id;
   }
   // Remove unused platform views.
   for (int64_t view_id : active_composition_order_) {
-    FML_DLOG(ERROR) << "active_composition_order_ " << view_id;
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
       UIView* platform_view_root = root_views_[view_id].get();
-      FML_DLOG(ERROR) << "REMOVE VIEW " << view_id;
       [platform_view_root removeFromSuperview];
     }
   }
