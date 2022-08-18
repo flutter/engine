@@ -1016,10 +1016,7 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
 }
 
 - (NSRange)accessibilityRangeForPosition:(NSPoint)point {
-  if (!_node)
-    return NSMakeRange(0, 0);
-
-  return NSMakeRange(0, [self accessibilityNumberOfCharacters]);
+  return NSMakeRange(0, 0);
 }
 
 // "Setting the Focus" section of the NSAccessibility formal protocol.
