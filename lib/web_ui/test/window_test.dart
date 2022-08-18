@@ -156,6 +156,26 @@ void testMain() {
     }, throwsAssertionError);
   });
 
+  // TODO(chunhtai): remove this test and makes all other test to use
+  // standard codec once the migration is done.
+  // https://github.com/flutter/flutter/issues/63121.
+  test('handleNavigationMessage can handle standard codec',
+      () async {
+    bool success = false;
+    await window.handleNavigationMessage(
+        const StandardMethodCodec().encodeMethodCall(const MethodCall(
+        'routeInformationUpdated',
+        <String, dynamic>{
+          'location': '/baz',
+          'state': null,
+        }, // boom
+      ))
+    ).then<void>((bool data) {
+      success = true;
+    });
+    expect(true, isTrue);
+  });
+
   test('handleNavigationMessage execute request in order.', () async {
     // Start with multi entries.
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(

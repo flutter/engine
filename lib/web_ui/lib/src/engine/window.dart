@@ -169,7 +169,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
   Future<bool> handleNavigationMessage(ByteData? data) async {
     return _waitInTheLine(() async {
-      final MethodCall decoded = const JSONMethodCodec().decodeMethodCall(data);
+      // TODO(chunhtai): remove fallback logic once the migration is done.
+      // https://github.com/flutter/flutter/issues/63121.
+      final MethodCall decoded = _decodeMethodCallWithFallback(data, const JSONMethodCodec(), const StandardMethodCodec());
       final Map<String, dynamic>? arguments = decoded.arguments as Map<String, dynamic>?;
       switch (decoded.method) {
         case 'selectMultiEntryHistory':
@@ -195,6 +197,20 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       }
       return false;
     });
+  }
+
+  MethodCall _decodeMethodCallWithFallback(
+    ByteData? data,
+    MethodCodec codec,
+    MethodCodec fallbackCodec,
+  ) {
+    MethodCall decoded;
+    try {
+      decoded = codec.decodeMethodCall(data);
+    } on FormatException {
+      decoded = fallbackCodec.decodeMethodCall(data);
+    }
+    return decoded;
   }
 
   @override
