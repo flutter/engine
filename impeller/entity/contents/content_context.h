@@ -219,6 +219,16 @@ class ContentContext {
     return GetPipeline(color_matrix_color_filter_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline> GetLinearToSrgbFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(linear_to_srgb_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetSrgbToLinearFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(srgb_to_linear_filter_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline> GetSolidStrokePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(solid_stroke_pipelines_, opts);
@@ -353,6 +363,10 @@ class ContentContext {
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
       color_matrix_color_filter_pipelines_;
+  mutable Variants<LinearToSrgbFilterPipeline>
+      linear_to_srgb_filter_pipelines_;
+mutable Variants<SrgbToLinearFilterPipeline>
+      srgb_to_linear_filter_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
