@@ -200,6 +200,10 @@ struct TPoint {
 
   constexpr Type Dot(const TPoint& p) const { return (x * p.x) + (y * p.y); }
 
+  constexpr Radians AngleTo(const TPoint& p) const {
+    return Radians{std::atan2(this->Cross(p), this->Dot(p))};
+  }
+
   constexpr TPoint Reflect(const TPoint& axis) const {
     return *this - axis * this->Dot(axis) * 2;
   }
