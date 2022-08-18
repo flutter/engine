@@ -81,7 +81,7 @@ fi
 # We create a new temporary SDK directory because the default working directory
 # tends to not update/re-download packages if they are being used. This guarantees
 # a clean install of Android SDK.
-temp_dir=`mktemp -d -t android_sdk`
+temp_dir=`mktemp -d -t android_sdkXXXX`
 
 for platform in "${platforms[@]}"; do
   sdk_root="$temp_dir/sdk_$platform"
