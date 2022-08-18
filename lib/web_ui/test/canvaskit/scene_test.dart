@@ -46,7 +46,7 @@ void testMain() {
       final ui.Image sceneImage = await scene.toImage(100, 100);
       expect(sceneImage, isA<CkImage>());
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-    }, skip: isFirefox);
+    }, skip: isFirefox || isSafari);
 
     test('pushColorFilter does not throw', () async {
       final ui.SceneBuilder builder = ui.SceneBuilder();
