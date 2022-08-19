@@ -464,17 +464,18 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
-  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
-#ifdef DEBUG
-  if (!non_zero_origin_views_.find(view_id) && !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero))) {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  FML_CHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
+  if (non_zero_origin_views_.find(view_id) == non_zero_origin_views_.end() && !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
     non_zero_origin_views_.insert(view_id);
-        FML_LOG(WARNING)
-        << "Embedded PlatformView's origin is not CGPointZero."
-           "A non-zero origin might cause undefined behavior."
-           "See https://github.com/flutter/flutter/issues/109700 for more details.";
-           "If you are the author of the PlatformView and you have a valid case of using a "
-           "non-zero origin,"
-           "please leave a comment at issue at https://github.com/flutter/flutter/issues/109700 with details."
+        NSLog(@"A Embedded PlatformView's origin is not CGPointZero.\n"
+           "  View id: %@\n"
+           "  View info: \n %@ \n"
+           "A non-zero origin might cause undefined behavior.\n"
+           "See https://github.com/flutter/flutter/issues/109700 for more details.\n"
+           "If you are the author of the PlatformView, please update the implementation of the PlatformView to have a (0, 0) origin.\n"
+           "If you have a valid case of using a non-zero origin, "
+           "please leave a comment at https://github.com/flutter/flutter/issues/109700 with details.", @(view_id), [touchInterceptor embeddedView]);
   }
 #endif
   touchInterceptor.layer.transform = CATransform3DIdentity;
