@@ -39,6 +39,8 @@ class Scene extends NativeFieldWrapperClass1 {
 
   /// Creates a raster image representation of the current state of the scene.
   ///
+  /// This is a slow operation that is performed on a background thread.
+  ///
   /// Callers must dispose the [Image] when they are done with it. If the result
   /// will be shared with other methods or classes, [Image.clone] should be used
   /// and each handle created must be disposed.
@@ -46,16 +48,18 @@ class Scene extends NativeFieldWrapperClass1 {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
-    final _Image image = _Image._();
-    final String? result =  _toImage(width, height, image);
-    if (result != null) {
-      throw PictureRasterizationException._(result);
-    }
-    return Future<Image>.value(Image._(image, image.width, image.height));
+    return _futurize((_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
+        if (image == null) {
+          callback(null);
+        } else {
+          callback(Image._(image, image.width, image.height));
+        }
+      }),
+    );
   }
 
   @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>('Scene::toImage')
-  external String? _toImage(int width, int height, _Image outImage);
+  external String? _toImage(int width, int height, _Callback<_Image?> callback);
 
   /// Releases the resources used by this scene.
   ///
