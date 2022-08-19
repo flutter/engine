@@ -120,7 +120,7 @@ class FontFallbackData {
 
     final List<SkFont> fonts = <SkFont>[];
     for (final String font in fontFamilies) {
-      final List<SkFont>? typefacesForFamily = 
+      final List<SkFont>? typefacesForFamily =
         canvasKitRenderer.fontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
