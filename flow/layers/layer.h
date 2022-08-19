@@ -136,9 +136,12 @@ class LayerStateStack {
     RenderState(SkM44& incoming_matrix);
 
     SkRect* save_bounds() { return layer_has_bounds ? &layer_bounds : nullptr; }
-    SkPaint* save_skpaint() {
-      FML_DCHECK(false);
-      return nullptr;
+    SkPaint* save_skpaint(SkPaint& paint) {
+      if (!layer_has_paint) {
+        return nullptr;
+      }
+      layer_paint.toSkPaint(paint);
+      return &paint;
     }
     DlPaint* save_dlpaint() { return layer_has_paint ? &layer_paint : nullptr; }
 

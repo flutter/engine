@@ -70,7 +70,8 @@ void LayerStateStack::setCanvasDelegate(SkCanvas* canvas) {
     canvas_ = canvas;
     for (auto& state : state_stack_) {
       if (state.is_layer) {
-        canvas->saveLayer(state.save_bounds(), state.save_skpaint());
+        SkPaint paint;
+        canvas->saveLayer(state.save_bounds(), state.save_skpaint(paint));
       } else {
         canvas->save();
       }
@@ -92,7 +93,14 @@ void LayerStateStack::setBuilderDelegate(DisplayListBuilder* builder) {
     builder_ = builder;
     for (auto& state : state_stack_) {
       if (state.is_layer) {
-        builder->saveLayer(state.save_bounds(), state.save_skpaint());
+        // We do not save the backdrop filter for later playback because
+        // that filter should only be used to populate the temporary layer
+        // of the first invocation of saveLayer. Since the filtered backdrop
+        // appears behind any of the content of the saveLayer, subsequent
+        // builder objects that are being populated from this state stack
+        // should performa normal saveLayer with the properties that clip
+        // or modulate that layers contents.
+        builder->saveLayer(state.save_bounds(), state.save_dlpaint());
       } else {
         builder->save();
       }
@@ -154,12 +162,13 @@ void LayerStateStack::saveLayer(const SkRect* bounds,
     state.layer_paint = *paint;
   }
   if (canvas_) {
+    SkPaint paint;
     if (backdrop_filter) {
       sk_sp<SkImageFilter> sk_filter = backdrop_filter->skia_object();
       canvas_->saveLayer(SkCanvas::SaveLayerRec(
-          state.save_bounds(), state.save_skpaint(), sk_filter.get(), 0));
+          state.save_bounds(), state.save_skpaint(paint), sk_filter.get(), 0));
     } else {
-      canvas_->saveLayer(state.save_bounds(), state.save_skpaint());
+      canvas_->saveLayer(state.save_bounds(), state.save_skpaint(paint));
     }
   }
   if (builder_) {

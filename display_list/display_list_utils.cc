@@ -19,15 +19,6 @@
 
 namespace flutter {
 
-// clang-format off
-constexpr float kInvertColorMatrix[20] = {
-  -1.0,    0,    0, 1.0, 0,
-     0, -1.0,    0, 1.0, 0,
-     0,    0, -1.0, 1.0, 0,
-   1.0,  1.0,  1.0, 1.0, 0
-};
-// clang-format on
-
 void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
   save_stack_.emplace_back(opacity_);
   set_opacity(child_opacity);
@@ -96,13 +87,18 @@ void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
 }
 
 sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
-  if (!invert_colors_) {
-    return color_filter_ ? color_filter_->skia_object() : nullptr;
+  return MakeColorFilter(invert_colors_, color_filter_.get());
+}
+
+sk_sp<SkColorFilter> SkPaintDispatchHelper::MakeColorFilter(
+    bool isInvertColors, const DlColorFilter* color_filter) {
+  if (!isInvertColors) {
+    return color_filter ? color_filter->skia_object() : nullptr;
   }
   sk_sp<SkColorFilter> invert_filter =
       SkColorFilters::Matrix(kInvertColorMatrix);
-  if (color_filter_) {
-    invert_filter = invert_filter->makeComposed(color_filter_->skia_object());
+  if (color_filter) {
+    invert_filter = invert_filter->makeComposed(color_filter->skia_object());
   }
   return invert_filter;
 }

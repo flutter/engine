@@ -174,6 +174,17 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
     }
   }
 
+  // clang-format off
+  static constexpr float kInvertColorMatrix[20] = {
+    -1.0,    0,    0, 1.0, 0,
+       0, -1.0,    0, 1.0, 0,
+       0,    0, -1.0, 1.0, 0,
+     1.0,  1.0,  1.0, 1.0, 0
+  };
+  // clang-format on
+  static sk_sp<SkColorFilter> MakeColorFilter(
+      bool isInvertColors, const DlColorFilter* color_filter);
+
   void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;
   void setStyle(DlDrawStyle style) override;
