@@ -59,14 +59,24 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
       context, paint_bounds(), cache_paint.sk_paint());
   PaintChildren(context);
 
-  SkPaint paint;
-  paint.setBlendMode(ToSk(blend_mode_));
-  if (shader_) {
-    paint.setShader(shader_->skia_object());
+  auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
+  if (context.leaf_nodes_builder) {
+    DlPaint dl_paint;
+    dl_paint.setBlendMode(blend_mode_);
+    if (shader_) {
+      dl_paint.setColorSource(shader_.get());
+    }
+    context.leaf_nodes_builder->translate(mask_rect_.left(), mask_rect_.top());
+    context.leaf_nodes_builder->drawRect(shader_rect, dl_paint);
+  } else {
+    SkPaint paint;
+    paint.setBlendMode(ToSk(blend_mode_));
+    if (shader_) {
+      paint.setShader(shader_->skia_object());
+    }
+    context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
+    context.leaf_nodes_canvas->drawRect(shader_rect, paint);
   }
-  context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
-  context.leaf_nodes_canvas->drawRect(
-      SkRect::MakeWH(mask_rect_.width(), mask_rect_.height()), paint);
 }
 
 }  // namespace flutter
