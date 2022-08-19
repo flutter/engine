@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
-#include <iostream>
 
 #include "display_list_deferred_image_gpu.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -190,10 +189,10 @@ void DlDeferredImageGPU::ImageWrapper::SnapshotDisplayList() {
                 wrapper->display_list_or_layer_tree_)) {
           auto layer_tree = std::get<std::shared_ptr<LayerTree>>(
               wrapper->display_list_or_layer_tree_);
-          auto display_list =
-              layer_tree->Flatten(SkRect::MakeWH(100, 100),
-                                  snapshot_delegate.get()->GetTextureRegistry(),
-                                  snapshot_delegate.get()->GetGrContext());
+          auto display_list = layer_tree->Flatten(
+              SkRect::MakeWH(wrapper->width_, wrapper->height_),
+              snapshot_delegate.get()->GetTextureRegistry(),
+              snapshot_delegate.get()->GetGrContext());
           wrapper->display_list_or_layer_tree_.emplace<sk_sp<DisplayList>>(
               display_list);
         }
