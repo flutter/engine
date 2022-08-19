@@ -83,12 +83,8 @@ Dart_Handle Scene::toImage(uint32_t width,
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
 
-  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
-  if (!picture) {
-    return tonic::ToDart("Could not flatten scene into a layer tree.");
-  }
-
-  return Picture::RasterizeToImage(picture, width, height, raw_image_callback);
+  return Picture::RasterizeLayerTreeToImage(std::move(layer_tree_), width,
+                                            height, raw_image_callback);
 }
 
 void Scene::RasterizeToImage(uint32_t width,
@@ -106,9 +102,8 @@ void Scene::RasterizeToImage(uint32_t width,
   const SkImageInfo image_info = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   auto dl_image = DlDeferredImageGPU::MakeFromLayerTree(
-      image_info, std::move(layer_tree_), width, height,
-      std::move(snapshot_delegate), std::move(raster_task_runner),
-      std::move(unref_queue));
+      image_info, std::move(layer_tree_), std::move(snapshot_delegate),
+      std::move(raster_task_runner), std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }
