@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/blobcat/blob.h"
-
-namespace impeller {
-
-//
-
-}  // namespace impeller
+uniform sampler1D tex;
+void main() 
+{
+  vec4 x = textureOffset(tex, 1.0, -10); 
+}

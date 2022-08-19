@@ -126,12 +126,21 @@ void Playground::TeardownWindow() {
   impl_.reset();
 }
 
+static std::atomic_bool gShouldOpenNewPlaygrounds = true;
+
+bool Playground::ShouldOpenNewPlaygrounds() {
+  return gShouldOpenNewPlaygrounds;
+}
+
 static void PlaygroundKeyCallback(GLFWwindow* window,
                                   int key,
                                   int scancode,
                                   int action,
                                   int mods) {
   if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_RELEASE) {
+    if (mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER | GLFW_MOD_SHIFT)) {
+      gShouldOpenNewPlaygrounds = false;
+    }
     ::glfwSetWindowShouldClose(window, GLFW_TRUE);
   }
 }
@@ -224,7 +233,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
       // Render ImGui overlay.
       {
-        auto buffer = renderer->GetContext()->CreateRenderCommandBuffer();
+        auto buffer = renderer->GetContext()->CreateCommandBuffer();
         if (!buffer) {
           return false;
         }
@@ -244,7 +253,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
         ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass);
 
-        pass->EncodeCommands(renderer->GetContext()->GetTransientsAllocator());
+        pass->EncodeCommands();
         if (!buffer->SubmitCommands()) {
           return false;
         }
@@ -268,7 +277,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
   return OpenPlaygroundHere(
       [context = GetContext(), &pass_callback](RenderTarget& render_target) {
-        auto buffer = context->CreateRenderCommandBuffer();
+        auto buffer = context->CreateCommandBuffer();
         if (!buffer) {
           return false;
         }
@@ -284,7 +293,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
           return false;
         }
 
-        pass->EncodeCommands(context->GetTransientsAllocator());
+        pass->EncodeCommands();
         if (!buffer->SubmitCommands()) {
           return false;
         }
@@ -332,9 +341,8 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   texture_descriptor.mip_count =
       enable_mipmapping ? image->GetSize().MipCount() : 1u;
 
-  auto texture =
-      renderer_->GetContext()->GetPermanentsAllocator()->CreateTexture(
-          StorageMode::kHostVisible, texture_descriptor);
+  auto texture = renderer_->GetContext()->GetResourceAllocator()->CreateTexture(
+      StorageMode::kHostVisible, texture_descriptor);
   if (!texture) {
     VALIDATION_LOG << "Could not allocate texture for fixture " << fixture_name;
     return nullptr;
@@ -367,9 +375,8 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
   texture_descriptor.size = images[0].GetSize();
   texture_descriptor.mip_count = 1u;
 
-  auto texture =
-      renderer_->GetContext()->GetPermanentsAllocator()->CreateTexture(
-          StorageMode::kHostVisible, texture_descriptor);
+  auto texture = renderer_->GetContext()->GetResourceAllocator()->CreateTexture(
+      StorageMode::kHostVisible, texture_descriptor);
   if (!texture) {
     VALIDATION_LOG << "Could not allocate texture cube.";
     return nullptr;

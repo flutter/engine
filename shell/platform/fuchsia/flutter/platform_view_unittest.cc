@@ -48,6 +48,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override {
     return std::vector<SkCanvas*>();
   }
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
+    return std::vector<flutter::DisplayListBuilder*>();
+  }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -63,7 +66,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return nullptr; }
+  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {nullptr, nullptr};
+  }
 };
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {

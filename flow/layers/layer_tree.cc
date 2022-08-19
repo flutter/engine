@@ -64,6 +64,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .checkerboard_offscreen_layers = checkerboard_offscreen_layers_,
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .raster_cached_entries         = &raster_cache_items_,
+      .display_list_enabled          = frame.display_list_builder() != nullptr,
       // clang-format on
   };
 
@@ -118,6 +119,16 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       internal_nodes_canvas.addCanvas(overlay_canvases[i]);
     }
   }
+  DisplayListBuilder* builder = frame.display_list_builder();
+  DisplayListBuilderMultiplexer builder_multiplexer;
+  if (builder) {
+    builder_multiplexer.addBuilder(builder);
+    if (frame.view_embedder()) {
+      for (auto* view_builder : frame.view_embedder()->GetCurrentBuilders()) {
+        builder_multiplexer.addBuilder(view_builder);
+      }
+    }
+  }
 
   // clear the previous snapshots.
   LayerSnapshotStore* snapshot_store = nullptr;
@@ -145,7 +156,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
       .inherited_opacity             = SK_Scalar1,
-      .leaf_nodes_builder            = frame.display_list_builder(),
+      .leaf_nodes_builder            = builder,
+      .builder_multiplexer           = builder ? &builder_multiplexer : nullptr,
       // clang-format on
   };
 
@@ -166,7 +178,6 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
 
   MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
-  TextureRegistry unused_texture_registry;
   SkMatrix root_surface_transformation;
   // No root surface transformation. So assume identity.
   root_surface_transformation.reset();
@@ -182,7 +193,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
       .surface_needs_readback        = false,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
-      .texture_registry              = unused_texture_registry,
+      .texture_registry              = nullptr,
       .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = device_pixel_ratio_
       // clang-format on
@@ -191,6 +202,8 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
   SkISize canvas_size = builder.getBaseLayerSize();
   SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
   internal_nodes_canvas.addCanvas(&builder);
+  DisplayListBuilderMultiplexer multiplexer;
+  multiplexer.addBuilder(builder.builder().get());
 
   PaintContext paint_context = {
       // clang-format off
@@ -201,13 +214,14 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
       .view_embedder                 = nullptr,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
-      .texture_registry              = unused_texture_registry,
+      .texture_registry              = nullptr,
       .raster_cache                  = nullptr,
       .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = nullptr,
       .enable_leaf_layer_tracing     = false,
       .leaf_nodes_builder            = builder.builder().get(),
+      .builder_multiplexer           = &multiplexer,
       // clang-format on
   };
 

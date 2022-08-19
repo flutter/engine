@@ -54,6 +54,8 @@ class Canvas {
 
   void Concat(const Matrix& xformation);
 
+  void PreConcat(const Matrix& xformation);
+
   void Translate(const Vector3& offset);
 
   void Scale(const Vector2& scale);
@@ -69,6 +71,8 @@ class Canvas {
   void DrawPaint(Paint paint);
 
   void DrawRect(Rect rect, Paint paint);
+
+  void DrawRRect(Rect rect, Scalar corner_radius, Paint paint);
 
   void DrawCircle(Point center, Scalar radius, Paint paint);
 
@@ -86,8 +90,6 @@ class Canvas {
   void ClipPath(
       Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
-
-  void DrawShadow(Path path, Color color, Scalar elevation);
 
   void DrawPicture(Picture picture);
 
@@ -125,6 +127,10 @@ class Canvas {
             Entity::BlendMode = Entity::BlendMode::kSourceOver);
 
   void RestoreClip();
+
+  bool AttemptDrawBlurredRRect(const Rect& rect,
+                               Scalar corner_radius,
+                               Paint& paint);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
 };

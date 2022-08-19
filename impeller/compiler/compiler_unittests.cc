@@ -9,8 +9,6 @@
 #include "impeller/compiler/source_options.h"
 #include "impeller/compiler/types.h"
 
-#include "nlohmann/json.hpp"
-
 namespace impeller {
 namespace compiler {
 namespace testing {
@@ -52,11 +50,30 @@ TEST_P(CompilerTest, CanCompileComputeShader) {
   ASSERT_TRUE(CanCompileAndReflect("sample.comp", SourceType::kComputeShader));
 }
 
+TEST_P(CompilerTest, MustFailDueToExceedingResourcesLimit) {
+  ScopedValidationDisable disable_validation;
+  ASSERT_FALSE(
+      CanCompileAndReflect("resources_limit.vert", SourceType::kVertexShader));
+}
+
+TEST_P(CompilerTest, MustFailDueToMultipleLocationPerStructMember) {
+  if (GetParam() == TargetPlatform::kFlutterSPIRV) {
+    // This is a failure of reflection which this target doesn't perform.
+    GTEST_SKIP();
+  }
+  ScopedValidationDisable disable_validation;
+  ASSERT_FALSE(CanCompileAndReflect("struct_def_bug.vert"));
+}
+
 TEST_P(CompilerTest, BindingBaseForFragShader) {
   if (GetParam() == TargetPlatform::kFlutterSPIRV) {
     // This is a failure of reflection which this target doesn't perform.
     GTEST_SKIP();
   }
+
+#ifndef IMPELLER_ENABLE_VULKAN
+  GTEST_SKIP();
+#endif
 
   ASSERT_TRUE(CanCompileAndReflect("sample.vert", SourceType::kVertexShader));
   ASSERT_TRUE(CanCompileAndReflect("sample.frag", SourceType::kFragmentShader));
@@ -71,15 +88,6 @@ TEST_P(CompilerTest, BindingBaseForFragShader) {
   auto frag_uniform_binding = get_binding("sample.frag");
 
   ASSERT_GT(frag_uniform_binding, vert_uniform_binding);
-}
-
-TEST_P(CompilerTest, MustFailDueToMultipleLocationPerStructMember) {
-  if (GetParam() == TargetPlatform::kFlutterSPIRV) {
-    // This is a failure of reflection which this target doesn't perform.
-    GTEST_SKIP();
-  }
-  ScopedValidationDisable disable_validation;
-  ASSERT_FALSE(CanCompileAndReflect("struct_def_bug.vert"));
 }
 
 #define INSTANTIATE_TARGET_PLATFORM_TEST_SUITE_P(suite_name)              \

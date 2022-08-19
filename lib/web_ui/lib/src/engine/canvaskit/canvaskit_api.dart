@@ -7,8 +7,6 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 // ignore_for_file: non_constant_identifier_names
-
-// ignore_for_file: public_member_api_docs
 @JS()
 library canvaskit_api;
 
@@ -109,6 +107,7 @@ extension CanvasKitExtension on CanvasKit {
   external SkParagraphStyle ParagraphStyle(
       SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
+  external SkSurface MakeWebGLCanvasSurface(DomCanvasElement canvas);
   external SkSurface MakeSurface(
     int width,
     int height,

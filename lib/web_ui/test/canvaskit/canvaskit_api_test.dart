@@ -59,8 +59,7 @@ void testMain() {
     group('SkParagraph', () {
       _textStyleTests();
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }
 
 void _blendModeTests() {
@@ -693,7 +692,8 @@ void _matrix4x4CompositionTests() {
     final bool areEqual =
         await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
     expect(areEqual, true);
-  });
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+  }, skip: isFirefox);
 }
 
 void _toSkRectTests() {
@@ -1371,7 +1371,8 @@ void _canvasTests() {
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
-  });
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+  }, skip: isFirefox);
 }
 
 void _textStyleTests() {

@@ -132,11 +132,10 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
     return false;
   }
 
-  if (!SAFE_EXISTS(open_gl_config, populate_existing_damage_callback)) {
-    FML_LOG(INFO)
-        << "populate_existing_damage_callback was not defined, disabling "
-           "partial repaint. If you wish to enable partial repaint, "
-           "please define this callback.";
+  if (!SAFE_EXISTS(open_gl_config, populate_existing_damage)) {
+    FML_LOG(INFO) << "populate_existing_damage was not defined, disabling "
+                     "partial repaint. If you wish to enable partial repaint, "
+                     "please define this callback.";
   }
 
   return true;
@@ -330,13 +329,12 @@ InferOpenGLPlatformViewCreationCallback(
     }
   };
 
-  auto gl_populate_existing_damage_callback =
-      [populate_existing_damage_callback =
-           config->open_gl.populate_existing_damage_callback,
+  auto gl_populate_existing_damage =
+      [populate_existing_damage = config->open_gl.populate_existing_damage,
        user_data](intptr_t id) -> flutter::GLFBOInfo {
-    // If no populate_existing_damage_callback was provided, disable partial
+    // If no populate_existing_damage was provided, disable partial
     // repaint.
-    if (!populate_existing_damage_callback) {
+    if (!populate_existing_damage) {
       return flutter::GLFBOInfo{
           .fbo_id = static_cast<uint32_t>(id),
           .partial_repaint_enabled = false,
@@ -346,16 +344,16 @@ InferOpenGLPlatformViewCreationCallback(
 
     // Given the FBO's ID, get its existing damage.
     FlutterDamage existing_damage;
-    populate_existing_damage_callback(user_data, id, &existing_damage);
+    populate_existing_damage(user_data, id, &existing_damage);
 
     bool partial_repaint_enabled = true;
     SkIRect existing_damage_rect;
 
     // Verify that at least one damage rectangle was provided.
     if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
-      FML_LOG(INFO) << "No damage was provided. Setting the damage to an "
-                       "empty rectangle.";
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
       existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
     } else if (existing_damage.num_rects > 1) {
       // Log message notifying users that multi-damage is not yet available in
       // case they try to make use of it.
@@ -432,7 +430,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
-      gl_populate_existing_damage_callback,  // gl_populate_existing_damage_callback
+      gl_populate_existing_damage,         // gl_populate_existing_damage
   };
 
   return fml::MakeCopyable(
@@ -505,6 +503,8 @@ InferMetalPlatformViewCreationCallback(
               config->metal.present_command_queue),
           metal_dispatch_table, view_embedder);
 
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
        external_view_embedder = view_embedder](flutter::Shell& shell) mutable {
@@ -2826,6 +2826,36 @@ FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
                                   "Could not schedule frame.");
 }
 
+FlutterEngineResult FlutterEngineSetNextFrameCallback(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Next frame callback was null.");
+  }
+
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+
+  fml::WeakPtr<flutter::PlatformView> weak_platform_view =
+      embedder_engine->GetShell().GetPlatformView();
+
+  if (!weak_platform_view) {
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                              "Platform view unavailable.");
+  }
+
+  weak_platform_view->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
+
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2877,6 +2907,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
+  SET_PROC(SetNextFrameCallback, FlutterEngineSetNextFrameCallback);
 #undef SET_PROC
 
   return kSuccess;
