@@ -65,6 +65,9 @@ typedef struct MouseState {
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 
+/// VSyncClient for touch callback's rate correction.
+@property(nonatomic, retain) VSyncClient* touchRateCorrectionVSyncClient;
+
 /*
  * Mouse and trackpad gesture recognizers
  */
@@ -671,6 +674,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Register internal plugins.
   [self addInternalPlugins];
 
+  // Setup vsync client to correct touch rate.
+  [self setupTouchRateCorrectionVSyncClient];
+
   if (@available(iOS 13.4, *)) {
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
@@ -833,6 +839,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [self invalidateKeyboardAnimationVSyncClient];
+  [self invalidateTouchRateCorrectionVSyncClient];
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
@@ -965,6 +972,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       touches_to_remove_count++;
     }
   }
+
+  // Activate or pause touch rate correction according to the touches when user is interacting.
+  [self triggerTouchRateCorrectionIfNeeded:touches];
 
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet =
@@ -1109,6 +1119,53 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)forceTouchesCancelled:(NSSet*)touches {
   flutter::PointerData::Change cancel = flutter::PointerData::Change::kCancel;
   [self dispatchTouches:touches pointerDataChangeOverride:&cancel event:nullptr];
+}
+
+#pragma mark - Touch events rate correction
+
+- (void)setupTouchRateCorrectionVSyncClient {
+  NSAssert(_touchRateCorrectionVSyncClient == nil,
+           @"_touchRateCorrectionVSyncClient should be nil when setup");
+  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  if (displayRefreshRate <= 60) {
+    // If current device's max frame rate is not larger than 60HZ, the delivery rate of touch events
+    // is the same with render vsync rate. So we don't need to create
+    // _touchRateCorrectionVSyncClient to correct touch callback's rate.
+    return;
+  }
+
+  flutter::Shell& shell = [_engine.get() shell];
+  auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    // Do nothing in this block. Just trigger system to callback touch events with correct rate.
+  };
+  _touchRateCorrectionVSyncClient =
+      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
+                                     callback:callback];
+  _touchRateCorrectionVSyncClient.allowPauseAfterVsync = NO;
+}
+
+- (void)triggerTouchRateCorrectionIfNeeded:(NSSet*)touches {
+  // As long as there is a touch's phase is UITouchPhaseBegan or UITouchPhaseMoved,
+  // we should activate the correction. Otherwise we will pause the correction.
+  BOOL isUserInteracting = NO;
+  for (UITouch* touch in touches) {
+    if (touch.phase == UITouchPhaseBegan || touch.phase == UITouchPhaseMoved) {
+      isUserInteracting = YES;
+      break;
+    }
+  }
+
+  if (isUserInteracting && [_engine.get() viewController] == self) {
+    [_touchRateCorrectionVSyncClient await];
+  } else {
+    [_touchRateCorrectionVSyncClient pause];
+  }
+}
+
+- (void)invalidateTouchRateCorrectionVSyncClient {
+  [_touchRateCorrectionVSyncClient invalidate];
+  [_touchRateCorrectionVSyncClient release];
+  _touchRateCorrectionVSyncClient = nil;
 }
 
 #pragma mark - Handle view resizing
