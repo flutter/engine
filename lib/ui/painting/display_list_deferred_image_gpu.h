@@ -118,10 +118,10 @@ class DlDeferredImageGPU final : public DlImage {
                  fml::RefPtr<fml::TaskRunner> raster_task_runner,
                  fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
-    // If a layer tree is provided, it will be flattened during the raster thread
-    // task spwaned by this method. After being flattened into a display list,
-    // the image wrapper will be updated to hold this display list and the layer
-    // tree can be dropped.
+    // If a layer tree is provided, it will be flattened during the raster
+    // thread task spwaned by this method. After being flattened into a display
+    // list, the image wrapper will be updated to hold this display list and the
+    // layer tree can be dropped.
     void SnapshotDisplayList(std::shared_ptr<LayerTree> layer_tree = nullptr);
 
     // |ContextListener|
