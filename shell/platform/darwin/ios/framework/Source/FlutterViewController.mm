@@ -298,11 +298,6 @@ typedef struct MouseState {
                object:nil];
 
   [center addObserver:self
-             selector:@selector(keyboardWillBeHidden:)
-                 name:UIKeyboardWillHideNotification
-               object:nil];
-
-  [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilityVoiceOverStatusChanged
                object:nil];
@@ -1190,12 +1185,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Keyboard events
 
+// using keyboardWillChangeFrame instead of keyboardWill(Show/Hide) because of split/floating
+// keyboard on iPad
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
+  CGRect screenRect = [[UIScreen mainScreen] bounds];
   NSDictionary* info = [notification userInfo];
+  CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
 
-  // Ignore keyboard notifications related to other apps.
+  // Ignore keyboard notifications related to other apps if not dismissing.
+  bool isDismissing =
+      CGRectEqualToRect(keyboardFrame, CGRectZero) ||
+      keyboardFrame.origin.y >= screenRect.size.height;  // CGRectZero for floating keyboard on iPad
   id isLocal = info[UIKeyboardIsLocalUserInfoKey];
-  if (isLocal && ![isLocal boolValue]) {
+  if (!isDismissing && isLocal && ![isLocal boolValue]) {
     return;
   }
 
@@ -1203,13 +1205,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if ([_engine.get() viewController] != self) {
     return;
   }
-
-  CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
-  CGRect screenRect = [[UIScreen mainScreen] bounds];
-
-  // Get the animation duration
-  NSTimeInterval duration =
-      [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
 
   // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
   // in the screen to see if the keyboard is visible.
@@ -1223,32 +1218,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     self.targetViewInsetBottom = 0;
   }
+
+  // Get the animation duration
+  NSTimeInterval duration =
+      [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
   [self startKeyBoardAnimation:duration];
-}
-
-- (void)keyboardWillBeHidden:(NSNotification*)notification {
-  NSDictionary* info = [notification userInfo];
-
-  // Ignore keyboard notifications related to other apps.
-  id isLocal = info[UIKeyboardIsLocalUserInfoKey];
-  if (isLocal && ![isLocal boolValue]) {
-    return;
-  }
-
-  // Ignore keyboard notifications if engine’s viewController is not current viewController.
-  if ([_engine.get() viewController] != self) {
-    return;
-  }
-
-  if (self.targetViewInsetBottom != 0) {
-    // Ensure the keyboard will be dismissed. Just like the keyboardWillChangeFrame,
-    // keyboardWillBeHidden is also in an animation block in iOS sdk, so we don't need to set the
-    // animation curve. Related issue: https://github.com/flutter/flutter/issues/99951
-    self.targetViewInsetBottom = 0;
-    NSTimeInterval duration =
-        [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
-    [self startKeyBoardAnimation:duration];
-  }
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {
