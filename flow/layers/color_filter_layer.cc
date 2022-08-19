@@ -66,13 +66,13 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   cache_paint.setColorFilter(filter_.get());
   if (context.leaf_nodes_builder) {
     FML_DCHECK(context.builder_multiplexer);
-    context.builder_multiplexer->saveLayer(&paint_bounds(),
-                                           cache_paint.dl_paint());
+    // context.builder_multiplexer->saveLayer(&paint_bounds(),
+    //                                        cache_paint.dl_paint());
 
-    context.paint = context.paint->SetColorFilter(filter_.get());
+    // context.paint = context.paint->SetColorFilter(filter_.get());
 
     PaintChildren(context);
-    context.builder_multiplexer->restore();
+    // context.builder_multiplexer->restore();
   } else {
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());

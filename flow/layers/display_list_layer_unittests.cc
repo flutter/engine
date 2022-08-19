@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/display_list_paint.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/flow/layers/display_list_layer.h"
@@ -137,8 +138,8 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
         expected_builder.save();
         {
           expected_builder.translate(layer_offset.fX, layer_offset.fY);
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&save_layer_bounds, true);
+          auto dl_paint = DlPaint().setColor(opacity_alpha << 24);
+          expected_builder.saveLayer(&save_layer_bounds, &dl_paint);
           /* display_list contents */ {  //
             expected_builder.drawDisplayList(child_display_list);
           }
@@ -196,8 +197,8 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
     expected_builder.save();
     {
       expected_builder.translate(opacity_offset.fX, opacity_offset.fY);
-      expected_builder.setColor(opacity_alpha << 24);
-      expected_builder.saveLayer(&save_layer_bounds, true);
+      auto dl_paint = DlPaint().setColor(opacity_alpha << 24);
+      expected_builder.saveLayer(&save_layer_bounds, &dl_paint);
       {
         /* display_list_layer::Paint() */ {
           expected_builder.save();

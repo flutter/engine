@@ -8,11 +8,13 @@
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer.h"
 
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
 
 #include "flutter/display_list/display_list_builder_multiplexer.h"
+#include "flutter/flow/layers/paint_node.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/canvas_test.h"
@@ -46,6 +48,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
  public:
   LayerTestBase()
       : texture_registry_(std::make_shared<TextureRegistry>()),
+        paint_node_(std::make_unique<DlPaintNode>()),
         preroll_context_{
             // clang-format off
             .raster_cache                  = nullptr,
@@ -62,6 +65,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .raster_cached_entries         = &cacheable_items_,
+            .paint                         = paint_node_.get()
             // clang-format on
         },
         paint_context_{
@@ -76,6 +80,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .raster_cache                  = nullptr,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
+            .paint                         = paint_node_.get()
             // clang-format on
         },
         display_list_recorder_(kDlBounds),
@@ -94,6 +99,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .frame_device_pixel_ratio      = 1.0f,
             .leaf_nodes_builder            = display_list_recorder_.builder().get(),
             .builder_multiplexer           = &display_list_multiplexer_,
+            .paint                         = paint_node_.get()
             // clang-format on
         },
         check_board_context_{
@@ -213,9 +219,11 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;
   MutatorsStack mutators_stack_;
-  std::shared_ptr<TextureRegistry> texture_registry_;
 
+  std::shared_ptr<TextureRegistry> texture_registry_;
+  std::unique_ptr<DlPaintNode> paint_node_;
   std::unique_ptr<RasterCache> raster_cache_;
+
   PrerollContext preroll_context_;
   PaintContext paint_context_;
   DisplayListCanvasRecorder display_list_recorder_;

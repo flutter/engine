@@ -92,15 +92,14 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkScalar inherited_opacity = context.inherited_opacity;
   SkScalar subtree_opacity = opacity() * inherited_opacity;
 
-  auto* subtree_paint_node = context.paint->SetAlpha(subtree_opacity);
-  context.paint = subtree_paint_node;
-
   if (children_can_accept_opacity()) {
     context.inherited_opacity = subtree_opacity;
     PaintChildren(context);
     context.inherited_opacity = inherited_opacity;
     return;
   }
+
+  paint_node()->incompatible();
 
   SkPaint paint;
   paint.setAlphaf(subtree_opacity);

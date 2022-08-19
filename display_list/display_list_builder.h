@@ -507,7 +507,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
                                     current_opacity_compatibility_);
   }
 
-  void CheckLayerColorFilterCompatiblity() {}
+  void CheckLayerColorFilterCompatiblity(bool uses_blend_attribute = true) {
+    UpdateLayerColorFilterCompatiblity(!uses_blend_attribute ||
+                                       current_color_filter_compatibility_);
+  }
 
   void CheckLayerOpacityHairlineCompatibility() {
     UpdateLayerOpacityCompatibility(

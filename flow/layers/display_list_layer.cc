@@ -98,6 +98,7 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   AutoCache cache =
       AutoCache(display_list_raster_cache_item_.get(), context, matrix);
+  BindPaintNode(context->paint);
   if (disp_list->can_apply_group_opacity()) {
     context->subtree_can_inherit_opacity = true;
   }
@@ -152,7 +153,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   if (context.leaf_nodes_builder) {
     DlPaint paint;
     // we get all paints which need saveLayer
-    auto paint_nodes = context.paint->SaveLayerAttributePaintNodes();
+    auto paint_nodes = paint_node()->SaveLayerAttributePaintNodes();
     AutoCachePaint save_paint(paint_nodes, context);
 
     int restore_count = context.leaf_nodes_builder->getSaveCount();

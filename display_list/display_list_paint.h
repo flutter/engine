@@ -279,7 +279,7 @@ class DlPaint {
   bool operator==(DlPaint const& other) const;
   bool operator!=(DlPaint const& other) const { return !(*this == other); }
 
-  bool attribute_is_setted(DlPaintAttribute attribute) {
+  bool attribute_is_setted(DlPaintAttribute attribute) const {
     return setted_attributed_ & attribute;
   }
 

@@ -34,16 +34,22 @@ DlPaintNode* DlPaintNode::SetBackdropFilter(DlBlendMode blend_mode,
 }
 
 void BackdropFilterPaintNode::SetSaveLayerAttribute(DlPaint* paint) {
-  paint->setBlendMode(blend_mode_);
-  paint->setImageFilter(filter_);
+  if (compatibility) {
+    paint->setBlendMode(blend_mode_);
+    paint->setImageFilter(filter_);
+  }
 }
 
 void OpacityPaintNode::SetSaveLayerAttribute(DlPaint* paint) {
-  paint->setAlpha(alpha_);
+  if (compatibility) {
+    paint->setAlpha(alpha_);
+  }
 }
 
 void ColorFilterPaintNode::SetSaveLayerAttribute(DlPaint* paint) {
-  paint->setColorFilter(color_filter_);
+  if (compatibility) {
+    paint->setColorFilter(color_filter_);
+  }
 }
 
 }  // namespace flutter

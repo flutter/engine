@@ -33,6 +33,8 @@ class DlPaintNode {
 
   bool hasNext() const { return current_index_ >= children_.size(); }
 
+  void incompatible() { compatibility = false; }
+
   DlPaintNode* next() {
     if (current_index_ < children_.size()) {
       return children_[current_index_++].get();
@@ -43,18 +45,22 @@ class DlPaintNode {
   std::vector<DlPaintNode*> SaveLayerAttributePaintNodes() {
     DlPaintNode* nodes[depth_];
     auto* current = this;
-    auto index = depth_ - 1;
+    int index = depth_ - 1;
     while (current) {
+      if (!current->compatibility) {
+        break;
+      }
       nodes[index--] = current;
       current = current->parent_;
     }
-    std::vector<DlPaintNode*> a(nodes, nodes + depth_ - 1);
-    return a;
+    auto length = depth_ - (index + 1);
+    return {nodes, nodes + length};
   }
 
  protected:
-  std::vector<std::unique_ptr<DlPaintNode>> children_;
-  DlPaintNode* parent_;
+  std::vector<std::unique_ptr<DlPaintNode>> children_ = {};
+  DlPaintNode* parent_ = nullptr;
+  bool compatibility = true;
 
   unsigned current_index_ = 0;
   unsigned depth_ = 1;

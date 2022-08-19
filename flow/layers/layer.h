@@ -234,8 +234,11 @@ class Layer {
     explicit AutoCachePaint(std::vector<DlPaintNode*>& paint_nodes,
                             PaintContext& context)
         : context_(context) {
-      for (auto* paint_node : paint_nodes) {
-        paint_node->SetSaveLayerAttribute(&dl_paint_);
+      if (paint_nodes.size() > 1) {
+        needs_paint_ = true;
+        for (auto* paint_node : paint_nodes) {
+          paint_node->SetSaveLayerAttribute(&dl_paint_);
+        }
       }
     }
 
@@ -416,7 +419,7 @@ class Layer {
 
   void BindPaintNode(DlPaintNode* paint_node) { paint_node_ = paint_node; }
 
-  const DlPaintNode* paint_node() const { return paint_node_; }
+  DlPaintNode* paint_node() const { return paint_node_; }
 
  private:
   SkRect paint_bounds_;

@@ -198,7 +198,15 @@ void DisplayList::RenderTo(DisplayListBuilder* builder,
 }
 
 bool DisplayList::is_compatible(const DlPaint* paint) const {
-  // TODO(JsouLiang)
+  // if we set the opacity then we check can we compatible the alpha
+  if (paint->attribute_is_setted(DlPaintAttribute::kAlpha)) {
+    return can_apply_group_opacity_;
+  }
+  // if we set the colorFilter then we check can we compatible the color_filter
+  if (paint->attribute_is_setted(DlPaintAttribute::kColorFilter)) {
+    // return can_apply_color_filter_;
+  }
+  // check image_filter
   return true;
 }
 
