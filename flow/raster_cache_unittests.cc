@@ -454,6 +454,35 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
   ASSERT_TRUE(display_list_item.Draw(paint_context, &canvas, &paint));
 }
 
+TEST(RasterCache, DeviceRectRoundOutRasterize) {
+  flutter::RasterCache cache(1);
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  PaintContextHolder paint_context_holder =
+      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+  auto& paint_context = paint_context_holder.paint_context;
+  int surface_width = -1;
+  int surface_height = -1;
+  auto dummy_draw_function = [&](SkCanvas* canvas) {
+    SkSurface* surface = canvas->getSurface();
+    surface_width = surface->width();
+    surface_height = surface->height();
+  };
+  RasterCache::Context r_context = {
+      // clang-format off
+        .gr_context         = paint_context.gr_context,
+        .dst_color_space    = paint_context.dst_color_space,
+        .matrix             = SkMatrix::I(),
+        .logical_rect       = SkRect::MakeLTRB(-52.1, -19.5, 878.6, 457.5),
+        .flow_type          = "RasterCacheFlow::DisplayList",
+      // clang-format on
+  };
+
+  cache.Rasterize(r_context, dummy_draw_function, nullptr);
+  ASSERT_EQ(surface_width, 932);
+  ASSERT_EQ(surface_height, 478);
+}
+
 TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   size_t threshold = 1;
   flutter::RasterCache cache(threshold);
