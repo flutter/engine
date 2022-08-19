@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// This is testing some of the named constants.
+// ignore_for_file: use_named_constants
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -289,7 +292,7 @@ Future<void> testMain() async {
   group('TextRange', () {
     test('empty ranges are correct', () {
       const TextRange range = TextRange(start: -1, end: -1);
-      expect(range, equals(const TextRange.collapsed(-1)));
+      expect(range, equals(TextRange.collapsed(-1))); // ignore: prefer_const_constructors
       expect(range, equals(TextRange.empty));
     });
     test('isValid works', () {
@@ -348,5 +351,17 @@ Future<void> testMain() async {
       expect(const TextRange(start: 0, end: 5).textInside('hello'),
           equals('hello'));
     });
+  });
+
+  test('FontWeights have the correct value', () {
+    expect(FontWeight.w100.value, 100);
+    expect(FontWeight.w200.value, 200);
+    expect(FontWeight.w300.value, 300);
+    expect(FontWeight.w400.value, 400);
+    expect(FontWeight.w500.value, 500);
+    expect(FontWeight.w600.value, 600);
+    expect(FontWeight.w700.value, 700);
+    expect(FontWeight.w800.value, 800);
+    expect(FontWeight.w900.value, 900);
   });
 }

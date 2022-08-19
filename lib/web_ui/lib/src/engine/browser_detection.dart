@@ -47,7 +47,7 @@ abstract class WebGLVersion {
 }
 
 /// Lazily initialized current browser engine.
-late final BrowserEngine _browserEngine = _detectBrowserEngine();
+final BrowserEngine _browserEngine = _detectBrowserEngine();
 
 /// Override the value of [browserEngine].
 ///
@@ -142,7 +142,7 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-late final OperatingSystem _operatingSystem = detectOperatingSystem();
+final OperatingSystem _operatingSystem = detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
@@ -236,8 +236,16 @@ bool get isIOS15 {
       domWindow.navigator.userAgent.contains('OS 15_');
 }
 
+/// If set to true pretends that the current browser is iOS Safari.
+///
+/// Useful for tests. Do not use in production code.
+@visibleForTesting
+bool debugEmulateIosSafari = false;
+
 /// Returns true if the browser is iOS Safari, false otherwise.
-bool get isIosSafari =>
+bool get isIosSafari => debugEmulateIosSafari || _isActualIosSafari;
+
+bool get _isActualIosSafari =>
     browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs;
 

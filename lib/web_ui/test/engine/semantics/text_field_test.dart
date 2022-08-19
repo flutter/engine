@@ -12,9 +12,7 @@ import 'package:ui/ui.dart' as ui;
 
 import 'semantics_tester.dart';
 
-final InputConfiguration singlelineConfig = InputConfiguration(
-  inputType: EngineInputType.text,
-);
+final InputConfiguration singlelineConfig = InputConfiguration();
 
 final InputConfiguration multilineConfig = InputConfiguration(
   inputType: EngineInputType.multiline,
@@ -133,7 +131,6 @@ void testMain() {
       createTextFieldSemantics(
         value: 'bye',
         label: 'farewell',
-        isFocused: false,
         rect: const ui.Rect.fromLTWH(0, 0, 12, 17),
       );
 
@@ -335,7 +332,6 @@ void testMain() {
       createTextFieldSemantics(
         value: 'hello',
         isFocused: true,
-        rect: semanticsRect,
       );
 
       // Checks that the placement attributes come from semantics and not from

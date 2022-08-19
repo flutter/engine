@@ -4,7 +4,6 @@
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
@@ -22,22 +21,18 @@ void testMain() {
         fontSize: 16,
         shadows: <ui.Shadow>[
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(3.0, 3.0),
           ),
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(-3.0, 3.0),
           ),
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(3.0, -3.0),
           ),
           const ui.Shadow(
-            color: ui.Color.fromARGB(255, 0, 0, 0),
             blurRadius: 3.0,
             offset: ui.Offset(-3.0, -3.0),
           ),
@@ -70,6 +65,5 @@ void testMain() {
       // because the directionality of the 'h' is LTR.
       expect(boxes.single.direction, equals(ui.TextDirection.ltr));
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }

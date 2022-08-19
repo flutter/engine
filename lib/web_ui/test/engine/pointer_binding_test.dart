@@ -36,9 +36,6 @@ void _testEach<T extends _BasicEventContext>(
   }
 }
 
-/// Some methods in this class are skipped for iOS-Safari.
-// TODO(mdebbar): https://github.com/flutter/flutter/issues/60033
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -54,13 +51,18 @@ void testMain() {
   });
 
   test('ios workaround', () {
+    debugEmulateIosSafari = true;
+    addTearDown(() {
+      debugEmulateIosSafari = false;
+    });
+
     final MockSafariPointerEventWorkaround mockSafariPointer =
         MockSafariPointerEventWorkaround();
     SafariPointerEventWorkaround.instance = mockSafariPointer;
     final PointerBinding instance = PointerBinding(createDomHTMLDivElement());
     expect(mockSafariPointer.workAroundInvoked, isIosSafari);
     instance.dispose();
-  }, skip: !isIosSafari);
+  }, skip: !isSafari);
 
   test('_PointerEventContext generates expected events', () {
     if (!_PointerEventContext().isSupported) {
@@ -2497,7 +2499,7 @@ class _TouchEventContext extends _BasicEventContext
   @override
   bool get hasMouseEvents => false;
 
-  DomEventTarget _target;
+  final DomEventTarget _target;
 
   DomTouch _createTouch({
     int? identifier,

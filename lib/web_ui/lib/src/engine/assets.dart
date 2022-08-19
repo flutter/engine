@@ -14,13 +14,13 @@ import 'util.dart';
 /// The assets are resolved relative to [assetsDir] inside the directory
 /// containing the currently executing JS script.
 class AssetManager {
+  /// Initializes [AssetManager] with path to assets relative to baseUrl.
+  const AssetManager({this.assetsDir = _defaultAssetsDir});
+
   static const String _defaultAssetsDir = 'assets';
 
   /// The directory containing the assets.
   final String assetsDir;
-
-  /// Initializes [AssetManager] with path to assets relative to baseUrl.
-  const AssetManager({this.assetsDir = _defaultAssetsDir});
 
   String? get _baseUrl {
     return domWindow.document
@@ -54,7 +54,7 @@ class AssetManager {
     if (Uri.parse(asset).hasScheme) {
       return Uri.encodeFull(asset);
     }
-    return Uri.encodeFull((_baseUrl ?? '') + '$assetsDir/$asset');
+    return Uri.encodeFull('${_baseUrl ?? ''}$assetsDir/$asset');
   }
 
   /// Loads an asset using an [DomXMLHttpRequest] and returns data as [ByteData].
@@ -92,14 +92,14 @@ class AssetManager {
 
 /// Thrown to indicate http failure during asset loading.
 class AssetManagerException implements Exception {
+  /// Initializes exception with request url and http status.
+  AssetManagerException(this.url, this.httpStatus);
+
   /// Http request url for asset.
   final String url;
 
   /// Http status of response.
   final int httpStatus;
-
-  /// Initializes exception with request url and http status.
-  AssetManagerException(this.url, this.httpStatus);
 
   @override
   String toString() => 'Failed to load asset at "$url" ($httpStatus)';

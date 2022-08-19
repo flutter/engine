@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
 
@@ -58,26 +59,39 @@ class CommandBuffer {
   ///
   /// @param[in]  callback  The completion callback.
   ///
-  [[nodiscard]] virtual bool SubmitCommands(CompletionCallback callback) = 0;
+  [[nodiscard]] bool SubmitCommands(CompletionCallback callback);
 
   [[nodiscard]] bool SubmitCommands();
 
   //----------------------------------------------------------------------------
   /// @brief      Create a render pass to record render commands into.
   ///
-  /// @param[in]  desc  The description of the render target this pass will
-  ///                   target.
+  /// @param[in]  render_target  The description of the render target this pass
+  ///                            will target.
   ///
   /// @return     A valid render pass or null.
   ///
   std::shared_ptr<RenderPass> CreateRenderPass(
       RenderTarget render_target) const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Create a blit pass to record blit commands into.
+  ///
+  /// @return     A valid blit pass or null.
+  ///
+  std::shared_ptr<BlitPass> CreateBlitPass() const;
+
  protected:
-  CommandBuffer();
+  std::weak_ptr<const Context> context_;
+
+  explicit CommandBuffer(std::weak_ptr<const Context> context);
 
   virtual std::shared_ptr<RenderPass> OnCreateRenderPass(
       RenderTarget render_target) const = 0;
+
+  virtual std::shared_ptr<BlitPass> OnCreateBlitPass() const = 0;
+
+  [[nodiscard]] virtual bool OnSubmitCommands(CompletionCallback callback) = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBuffer);

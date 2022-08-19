@@ -29,6 +29,14 @@ TEST_F(ContainerLayerTest, LayerWithParentHasPlatformView) {
                             "!context->has_platform_view");
 }
 
+TEST_F(ContainerLayerTest, LayerWithParentHasTextureLayer) {
+  auto layer = std::make_shared<ContainerLayer>();
+
+  preroll_context()->has_texture_layer = true;
+  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()),
+                            "!context->has_texture_layer");
+}
+
 TEST_F(ContainerLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<ContainerLayer>();
 
@@ -54,6 +62,34 @@ TEST_F(ContainerLayerTest, PaintBeforePrerollDies) {
                             "needs_painting\\(context\\)");
 }
 #endif
+
+TEST_F(ContainerLayerTest, LayerWithParentHasTextureLayerNeedsResetFlag) {
+  SkPath child_path1;
+  child_path1.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  SkPath child_path2;
+  child_path2.addRect(8.0f, 2.0f, 16.5f, 14.5f);
+  SkPaint child_paint1(SkColors::kGray);
+  SkPaint child_paint2(SkColors::kGreen);
+
+  auto mock_layer1 = std::make_shared<MockLayer>(
+      child_path1, child_paint1, false /* fake_has_platform_view */, false,
+      false, true /* fake_has_texture_layer */);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
+
+  auto root = std::make_shared<ContainerLayer>();
+  auto container_layer1 = std::make_shared<ContainerLayer>();
+  auto container_layer2 = std::make_shared<ContainerLayer>();
+  root->Add(container_layer1);
+  root->Add(container_layer2);
+  container_layer1->Add(mock_layer1);
+  container_layer2->Add(mock_layer2);
+
+  EXPECT_EQ(preroll_context()->has_texture_layer, false);
+  root->Preroll(preroll_context(), SkMatrix());
+  EXPECT_EQ(preroll_context()->has_texture_layer, true);
+  // The flag for holding texture layer from parent needs to be clear
+  EXPECT_EQ(mock_layer2->parent_has_texture_layer(), false);
+}
 
 TEST_F(ContainerLayerTest, Simple) {
   SkPath child_path;
@@ -268,8 +304,9 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   {
     // frame1
     use_mock_raster_cache();
-    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cache->BeginFrame();
     layer->Preroll(preroll_context(), SkMatrix::I());
+    preroll_context()->raster_cache->EvictUnusedCacheEntries();
     // Cache the cacheable entries
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
                                 &paint_context());
@@ -299,7 +336,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     // render count < 2 don't cache it
     EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),
               RasterCacheItem::CacheState::kNone);
-    preroll_context()->raster_cache->CleanupAfterFrame();
+    preroll_context()->raster_cache->EndFrame();
   }
 
   {
@@ -307,8 +344,9 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     // new frame the layer tree will create new PrerollContext, so in here we
     // clear the cached_entries
     preroll_context()->raster_cached_entries->clear();
-    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cache->BeginFrame();
     layer->Preroll(preroll_context(), SkMatrix::I());
+    preroll_context()->raster_cache->EvictUnusedCacheEntries();
 
     // Cache the cacheable entries
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
@@ -342,17 +380,17 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     EXPECT_TRUE(raster_cache()->Draw(
         cacheable_layer21->raster_cache_item()->GetId().value(), cache_canvas,
         &paint));
-    preroll_context()->raster_cache->CleanupAfterFrame();
+    preroll_context()->raster_cache->EndFrame();
   }
 
   {
     // frame3
     // new frame the layer tree will create new PrerollContext, so in here we
     // clear the cached_entries
-    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cache->BeginFrame();
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context(), SkMatrix::I());
-
+    preroll_context()->raster_cache->EvictUnusedCacheEntries();
     // Cache the cacheable entries
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
                                 &paint_context());
@@ -385,33 +423,34 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     EXPECT_TRUE(raster_cache()->HasEntry(
         cacheable_layer21->raster_cache_item()->GetId().value(),
         SkMatrix::I()));
-    preroll_context()->raster_cache->CleanupAfterFrame();
+    preroll_context()->raster_cache->EndFrame();
   }
 
   {
-    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cache->BeginFrame();
     // frame4
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context(), SkMatrix::I());
+    preroll_context()->raster_cache->EvictUnusedCacheEntries();
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
                                 &paint_context());
-    preroll_context()->raster_cache->CleanupAfterFrame();
+    preroll_context()->raster_cache->EndFrame();
 
     // frame5
-    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cache->BeginFrame();
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context(), SkMatrix::I());
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
                                 &paint_context());
-    preroll_context()->raster_cache->CleanupAfterFrame();
+    preroll_context()->raster_cache->EndFrame();
 
     // frame6
-    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cache->BeginFrame();
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context(), SkMatrix::I());
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
                                 &paint_context());
-    preroll_context()->raster_cache->CleanupAfterFrame();
+    preroll_context()->raster_cache->EndFrame();
   }
 }
 

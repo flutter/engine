@@ -10,9 +10,6 @@ declare_args() {
   # Whether playgrounds are enabled for unit tests.
   impeller_enable_playground = false
 
-  # Whether Impeller is supported on the platform.
-  impeller_supports_platform = true
-
   # Whether the Metal backend is enabled.
   impeller_enable_metal = is_mac || is_ios
 
@@ -36,11 +33,6 @@ declare_args() {
 }
 
 declare_args() {
-  # Whether Impeller shaders are supported on the platform.
-  impeller_shaders_supports_platform =
-      impeller_enable_metal || impeller_enable_opengles ||
-      impeller_enable_vulkan
-
   # Whether Impeller supports rendering on the platform.
   impeller_supports_rendering =
       impeller_enable_metal || impeller_enable_opengles ||
@@ -61,7 +53,7 @@ template("impeller_component") {
     group(target_name) {
       not_needed(invoker, "*")
     }
-  } else if (impeller_supports_platform) {
+  } else {
     target_type = "source_set"
     if (defined(invoker.target_type)) {
       target_type = invoker.target_type
@@ -95,10 +87,6 @@ template("impeller_component") {
       if (is_ios || is_mac) {
         cflags_objcc += flutter_cflags_objcc_arc
       }
-    }
-  } else {
-    group(target_name) {
-      not_needed(invoker, "*")
     }
   }
 }
@@ -240,14 +228,10 @@ template("impellerc") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.shader_target_flag),
          "The flag to impellerc for target selection must be specified.")
+  assert(defined(invoker.sl_file_extension),
+         "The extension of the SL file must be specified (metal, glsl, etc..).")
 
-  flutter_spirv = invoker.shader_target_flag == "--flutter-spirv"
   sksl = invoker.shader_target_flag == "--sksl"
-  if (!flutter_spirv) {
-    assert(
-        defined(invoker.sl_file_extension),
-        "The extension of the SL file must be specified (metal, glsl, etc..).")
-  }
   iplr = false
   if (defined(invoker.iplr) && invoker.iplr) {
     iplr = invoker.iplr
@@ -291,10 +275,7 @@ template("impellerc") {
       "$shader_target_flag",
     ]
 
-    if (flutter_spirv) {
-      args += [ "--spirv=$spirv_intermediate_path" ]
-      outputs = [ spirv_intermediate ]
-    } else if (sksl) {
+    if (sksl) {
       sl_intermediate =
           "$generated_dir/{{source_file_part}}.${invoker.sl_file_extension}"
       sl_intermediate_path = rebase_path(sl_intermediate, root_build_dir)
@@ -593,7 +574,7 @@ template("impeller_shaders") {
     }
   }
 
-  if (!impeller_shaders_supports_platform) {
+  if (!impeller_supports_rendering) {
     not_needed(invoker, "*")
   }
 

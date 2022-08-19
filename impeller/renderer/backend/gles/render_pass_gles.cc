@@ -16,8 +16,10 @@
 
 namespace impeller {
 
-RenderPassGLES::RenderPassGLES(RenderTarget target, ReactorGLES::Ref reactor)
-    : RenderPass(std::move(target)),
+RenderPassGLES::RenderPassGLES(std::weak_ptr<const Context> context,
+                               RenderTarget target,
+                               ReactorGLES::Ref reactor)
+    : RenderPass(std::move(context), std::move(target)),
       reactor_(std::move(reactor)),
       is_valid_(reactor_ && reactor_->IsValid()) {}
 
@@ -174,19 +176,19 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              fbo, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kColor0)) {
         return false;
       }
     }
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              fbo, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              fbo, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kStencil)) {
         return false;
       }
     }
@@ -455,8 +457,7 @@ struct RenderPassData {
 }
 
 // |RenderPass|
-bool RenderPassGLES::EncodeCommands(
-    const std::shared_ptr<Allocator>& transients_allocator) const {
+bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   if (!IsValid()) {
     return false;
   }
@@ -507,10 +508,11 @@ bool RenderPassGLES::EncodeCommands(
         CanDiscardAttachmentWhenDone(stencil0->store_action);
   }
 
-  return reactor_->AddOperation([pass_data, transients_allocator,
+  return reactor_->AddOperation([pass_data,
+                                 allocator = context.GetResourceAllocator(),
                                  commands = commands_](const auto& reactor) {
-    auto result = EncodeCommandsInReactor(*pass_data, transients_allocator,
-                                          reactor, commands);
+    auto result =
+        EncodeCommandsInReactor(*pass_data, allocator, reactor, commands);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }

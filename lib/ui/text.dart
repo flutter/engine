@@ -14,37 +14,40 @@ enum FontStyle {
 
 /// The thickness of the glyphs used to draw the text
 class FontWeight {
-  const FontWeight._(this.index);
+  const FontWeight._(this.index, this.value);
 
   /// The encoded integer value of this font weight.
   final int index;
 
+  /// The thickness value of this font weight.
+  final int value;
+
   /// Thin, the least thick
-  static const FontWeight w100 = FontWeight._(0);
+  static const FontWeight w100 = FontWeight._(0, 100);
 
   /// Extra-light
-  static const FontWeight w200 = FontWeight._(1);
+  static const FontWeight w200 = FontWeight._(1, 200);
 
   /// Light
-  static const FontWeight w300 = FontWeight._(2);
+  static const FontWeight w300 = FontWeight._(2, 300);
 
   /// Normal / regular / plain
-  static const FontWeight w400 = FontWeight._(3);
+  static const FontWeight w400 = FontWeight._(3, 400);
 
   /// Medium
-  static const FontWeight w500 = FontWeight._(4);
+  static const FontWeight w500 = FontWeight._(4, 500);
 
   /// Semi-bold
-  static const FontWeight w600 = FontWeight._(5);
+  static const FontWeight w600 = FontWeight._(5, 600);
 
   /// Bold
-  static const FontWeight w700 = FontWeight._(6);
+  static const FontWeight w700 = FontWeight._(6, 700);
 
   /// Extra-bold
-  static const FontWeight w800 = FontWeight._(7);
+  static const FontWeight w800 = FontWeight._(7, 800);
 
   /// Black, the most thick
-  static const FontWeight w900 = FontWeight._(8);
+  static const FontWeight w900 = FontWeight._(8, 900);
 
   /// The default font weight.
   static const FontWeight normal = w400;
@@ -80,8 +83,9 @@ class FontWeight {
   /// an [AnimationController].
   static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
     assert(t != null);
-    if (a == null && b == null)
+    if (a == null && b == null) {
       return null;
+    }
     return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8)];
   }
 
@@ -917,8 +921,9 @@ class FontFeature {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is FontFeature
         && other.feature == feature
         && other.value == value;
@@ -978,8 +983,9 @@ class FontVariation {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is FontVariation
         && other.axis == axis
         && other.value == value;
@@ -1041,8 +1047,9 @@ class TextDecoration {
   /// Creates a decoration that paints the union of all the given decorations.
   factory TextDecoration.combine(List<TextDecoration> decorations) {
     int mask = 0;
-    for (final TextDecoration decoration in decorations)
+    for (final TextDecoration decoration in decorations) {
       mask |= decoration._mask;
+    }
     return TextDecoration._(mask);
   }
 
@@ -1076,17 +1083,22 @@ class TextDecoration {
 
   @override
   String toString() {
-    if (_mask == 0)
+    if (_mask == 0) {
       return 'TextDecoration.none';
+    }
     final List<String> values = <String>[];
-    if (_mask & underline._mask != 0)
+    if (_mask & underline._mask != 0) {
       values.add('underline');
-    if (_mask & overline._mask != 0)
+    }
+    if (_mask & overline._mask != 0) {
       values.add('overline');
-    if (_mask & lineThrough._mask != 0)
+    }
+    if (_mask & lineThrough._mask != 0) {
       values.add('lineThrough');
-    if (values.length == 1)
+    }
+    if (values.length == 1) {
       return 'TextDecoration.${values[0]}';
+    }
     return 'TextDecoration.combine([${values.join(", ")}])';
   }
 }
@@ -1224,8 +1236,9 @@ class TextHeightBehavior {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
         && other.applyHeightToLastDescent == applyHeightToLastDescent
@@ -1257,13 +1270,16 @@ class TextHeightBehavior {
 /// the same length, and contain the same elements in the same order. Returns
 /// false otherwise.
 bool _listEquals<T>(List<T>? a, List<T>? b) {
-  if (a == null)
+  if (a == null) {
     return b == null;
-  if (b == null || a.length != b.length)
+  }
+  if (b == null || a.length != b.length) {
     return false;
+  }
   for (int index = 0; index < a.length; index += 1) {
-    if (a[index] != b[index])
+    if (a[index] != b[index]) {
       return false;
+    }
   }
   return true;
 }
@@ -1517,8 +1533,9 @@ class TextStyle {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     return other is TextStyle
         && other._leadingDistribution == _leadingDistribution
         && other._fontFamily == _fontFamily
@@ -1783,10 +1800,12 @@ class ParagraphStyle {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is ParagraphStyle
         && other._fontFamily == _fontFamily
         && other._fontSize == _fontSize
@@ -1815,7 +1834,7 @@ class ParagraphStyle {
              'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
              'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
-             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? "\"$_ellipsis\""                  : "unspecified"}, '
+             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? '"$_ellipsis"'                    : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
            ')';
   }
@@ -1847,8 +1866,9 @@ ByteData _encodeStrut(
     leading == null &&
     fontWeight == null &&
     fontStyle == null &&
-    forceStrutHeight == null)
+    forceStrutHeight == null) {
     return ByteData(0);
+  }
 
   final ByteData data = ByteData(16); // Max size is 16 bytes
   int bitmask = 0; // 8 bit mask
@@ -1980,10 +2000,12 @@ class StrutStyle {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is StrutStyle
         && other._fontFamily == _fontFamily
         && other._leadingDistribution == _leadingDistribution
@@ -2145,10 +2167,12 @@ class TextBox {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is TextBox
         && other.left == left
         && other.top == top
@@ -2257,8 +2281,9 @@ class TextPosition {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is TextPosition
         && other.offset == offset
         && other.affinity == affinity;
@@ -2341,8 +2366,9 @@ class TextRange {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     return other is TextRange
         && other.start == start
         && other.end == end;
@@ -2384,7 +2410,7 @@ class ParagraphConstraints {
   /// follows).
   ///
   /// The width influences how ellipses are applied. See the discussion at
-  /// [new ParagraphStyle] for more details.
+  /// [ParagraphStyle.new] for more details.
   ///
   /// This width is also used to position glyphs according to the [TextAlign]
   /// alignment described in the [ParagraphStyle] used when building the
@@ -2393,8 +2419,9 @@ class ParagraphConstraints {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is ParagraphConstraints
         && other.width == width;
   }
@@ -2717,7 +2744,7 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// constraint.
   ///
   /// See the discussion of the `maxLines` and `ellipsis` arguments at
-  /// [new ParagraphStyle].
+  /// [ParagraphStyle.new].
   @FfiNative<Bool Function(Pointer<Void>)>('Paragraph::didExceedMaxLines', isLeaf: true)
   external bool get didExceedMaxLines;
 
@@ -2886,7 +2913,7 @@ class Paragraph extends NativeFieldWrapperClass1 {
 ///
 /// To set the paragraph's alignment, truncation, and ellipsizing behavior, pass
 /// an appropriately-configured [ParagraphStyle] object to the
-/// [new ParagraphBuilder] constructor.
+/// [ParagraphBuilder.new] constructor.
 ///
 /// Then, call combinations of [pushStyle], [addText], and [pop] to add styled
 /// text to the object.
@@ -2952,7 +2979,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
 
   /// The scales of the placeholders in the paragraph.
   List<double> get placeholderScales => _placeholderScales;
-  List<double> _placeholderScales = <double>[];
+  final List<double> _placeholderScales = <double>[];
 
   final TextLeadingDistribution _defaultLeadingDistribution;
   /// Applies the given style to the added text until [pop] is called.
@@ -2961,8 +2988,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   void pushStyle(TextStyle style) {
     final List<String> fullFontFamilies = <String>[];
     fullFontFamilies.add(style._fontFamily);
-    if (style._fontFamilyFallback != null)
+    if (style._fontFamilyFallback != null) {
       fullFontFamilies.addAll(style._fontFamilyFallback!);
+    }
 
     final Int32List encoded = style._encoded;
     final TextLeadingDistribution finalLeadingDistribution = style._leadingDistribution ?? _defaultLeadingDistribution;
@@ -3066,8 +3094,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// The text will be styled according to the current stack of text styles.
   void addText(String text) {
     final String? error = _addText(text);
-    if (error != null)
+    if (error != null) {
       throw ArgumentError(error);
+    }
   }
 
   @FfiNative<Handle Function(Pointer<Void>, Handle)>('ParagraphBuilder::addText')
@@ -3164,6 +3193,7 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
     (_Callback<void> callback) {
       _loadFontFromList(list, callback, fontFamily ?? '');
+      return null;
     }
   ).then((_) => _sendFontChangeMessage());
 }

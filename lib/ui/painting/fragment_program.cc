@@ -7,6 +7,7 @@
 #include "flutter/lib/ui/painting/fragment_program.h"
 
 #include "flutter/assets/asset_manager.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/impeller/runtime_stage/runtime_stage.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -23,6 +24,8 @@ namespace flutter {
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentProgram);
 
 std::string FragmentProgram::initFromAsset(std::string asset_name) {
+  FML_TRACE_EVENT("flutter", "FragmentProgram::initFromAsset", "asset",
+                  asset_name);
   std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
                                                     ->platform_configuration()
                                                     ->client()
@@ -62,6 +65,9 @@ std::string FragmentProgram::initFromAsset(std::string asset_name) {
       size_t size = uniform_description.dimensions.rows *
                     uniform_description.dimensions.cols *
                     uniform_description.bit_width / 8u;
+      if (uniform_description.array_elements > 0) {
+        size *= uniform_description.array_elements;
+      }
       other_uniforms_bytes += size;
     }
   }
@@ -89,22 +95,6 @@ std::string FragmentProgram::initFromAsset(std::string asset_name) {
   return "";
 }
 
-void FragmentProgram::init(std::string sksl, bool debugPrintSksl) {
-  SkRuntimeEffect::Result result =
-      SkRuntimeEffect::MakeForShader(SkString(sksl));
-  runtime_effect_ = result.effect;
-
-  if (runtime_effect_ == nullptr) {
-    Dart_ThrowException(tonic::ToDart(
-        std::string("Invalid SkSL:\n") + sksl.c_str() +
-        std::string("\nSkSL Error:\n") + result.errorText.c_str()));
-    return;
-  }
-  if (debugPrintSksl) {
-    FML_DLOG(INFO) << std::string("debugPrintSksl:\n") + sksl.c_str();
-  }
-}
-
 fml::RefPtr<FragmentShader> FragmentProgram::shader(Dart_Handle shader,
                                                     Dart_Handle uniforms_handle,
                                                     Dart_Handle samplers) {
@@ -122,7 +112,8 @@ fml::RefPtr<FragmentShader> FragmentProgram::shader(Dart_Handle shader,
     uniform_floats[i] = uniforms[i];
   }
   uniforms.Release();
-  std::vector<sk_sp<SkShader>> sk_samplers(sampler_shaders.size());
+  std::vector<std::shared_ptr<DlColorSource>> dl_samplers(
+      sampler_shaders.size());
   for (size_t i = 0; i < sampler_shaders.size(); i++) {
     DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
     ImageShader* image_shader = sampler_shaders[i];
@@ -132,13 +123,14 @@ fml::RefPtr<FragmentShader> FragmentProgram::shader(Dart_Handle shader,
     // contain a value to be used if the developer did not specify a preference
     // when they constructed the ImageShader, so we will use kNearest which is
     // the default filterQuality in a Paint object.
-    sk_samplers[i] = image_shader->shader(sampling)->skia_object();
+    dl_samplers[i] = image_shader->shader(sampling);
     uniform_floats[uniform_count + 2 * i] = image_shader->width();
     uniform_floats[uniform_count + 2 * i + 1] = image_shader->height();
   }
-  auto sk_shader = runtime_effect_->makeShader(
-      std::move(uniform_data), sk_samplers.data(), sk_samplers.size());
-  return FragmentShader::Create(shader, std::move(sk_shader));
+  return FragmentShader::Create(
+      shader,
+      DlColorSource::MakeRuntimeEffect(runtime_effect_, std::move(dl_samplers),
+                                       std::move(uniform_data)));
 }
 
 void FragmentProgram::Create(Dart_Handle wrapper) {

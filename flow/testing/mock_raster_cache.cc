@@ -24,7 +24,9 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   SkMatrix ctm = SkMatrix::I();
   SkPath path;
   path.addRect(100, 100, 100 + width, 100 + height);
-  MockCacheableLayer layer = MockCacheableLayer(path);
+  int layer_cached_threshold = 1;
+  MockCacheableLayer layer =
+      MockCacheableLayer(path, SkPaint(), layer_cached_threshold);
   layer.Preroll(&preroll_context_, ctm);
   layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_);
   RasterCache::Context r_context = {
@@ -54,16 +56,17 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   recorder.drawPath(path, SkPaint());
   sk_sp<DisplayList> display_list = recorder.Build();
 
-  PaintContextHolder holder = GetSamplePaintContextHolder(this);
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  PaintContextHolder holder =
+      GetSamplePaintContextHolder(this, &raster_time, &ui_time);
   holder.paint_context.dst_color_space = color_space_;
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
   for (int i = 0; i < access_threshold(); i++) {
-    MarkSeen(display_list_item.GetId().value(), ctm, true);
-    Draw(display_list_item.GetId().value(), mock_canvas_, nullptr);
+    AutoCache(&display_list_item, &preroll_context_, ctm);
   }
-  MarkSeen(display_list_item.GetId().value(), ctm, true);
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = preroll_context_.gr_context,
@@ -81,32 +84,31 @@ void MockRasterCache::AddMockPicture(int width, int height) {
                    });
 }
 
-static std::vector<RasterCacheItem*> raster_cache_items_;
-PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  MutatorsStack mutators_stack;
-  TextureRegistry texture_registry;
+PrerollContextHolder GetSamplePrerollContextHolder(
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time,
+    MutatorsStack* mutators_stack) {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
 
   PrerollContextHolder holder = {
       {
           // clang-format off
           .raster_cache                  = raster_cache,
-          .gr_context                    =  nullptr,
-          .view_embedder                 =  nullptr,
-          .mutators_stack                = mutators_stack,
-          .dst_color_space               =  srgb.get(),
-          .cull_rect                     =  kGiantRect,
+          .gr_context                    = nullptr,
+          .view_embedder                 = nullptr,
+          .mutators_stack                = *mutators_stack,
+          .dst_color_space               = srgb.get(),
+          .cull_rect                     = kGiantRect,
           .surface_needs_readback        = false,
-          .raster_time                   = raster_time,
-          .ui_time                       = ui_time,
-          .texture_registry              = texture_registry,
-          .checkerboard_offscreen_layers =  false,
-          .frame_device_pixel_ratio      =  1.0f,
-          .has_platform_view             =  false,
+          .raster_time                   = *raster_time,
+          .ui_time                       = *ui_time,
+          .texture_registry              = nullptr,
+          .checkerboard_offscreen_layers = false,
+          .frame_device_pixel_ratio      = 1.0f,
+          .has_platform_view             = false,
           .has_texture_layer             = false,
-          .raster_cached_entries         =  &raster_cache_items_,
+          .raster_cached_entries         = &raster_cache_items_,
           // clang-format on
       },
       srgb};
@@ -114,11 +116,10 @@ PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
   return holder;
 }
 
-PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  MutatorsStack mutators_stack;
-  TextureRegistry texture_registry;
+PaintContextHolder GetSamplePaintContextHolder(
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time) {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
   PaintContextHolder holder = {// clang-format off
     {
@@ -127,9 +128,9 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
           .gr_context                    = nullptr,
           .dst_color_space               = srgb.get(),
           .view_embedder                 = nullptr,
-          .raster_time                   = raster_time,
-          .ui_time                       = ui_time,
-          .texture_registry              = texture_registry,
+          .raster_time                   = *raster_time,
+          .ui_time                       = *ui_time,
+          .texture_registry              = nullptr,
           .raster_cache                  = raster_cache,
           .checkerboard_offscreen_layers = false,
           .frame_device_pixel_ratio      = 1.0f,
@@ -141,13 +142,26 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
   return holder;
 }
 
-bool DisplayListRasterCacheItemTryToRasterCache(
+bool RasterCacheItemPrerollAndTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,
     PrerollContext& context,
     PaintContext& paint_context,
     const SkMatrix& matrix) {
+  RasterCacheItemPreroll(display_list_item, context, matrix);
+  context.raster_cache->EvictUnusedCacheEntries();
+  return RasterCacheItemTryToRasterCache(display_list_item, paint_context);
+}
+
+void RasterCacheItemPreroll(DisplayListRasterCacheItem& display_list_item,
+                            PrerollContext& context,
+                            const SkMatrix& matrix) {
   display_list_item.PrerollSetup(&context, matrix);
   display_list_item.PrerollFinalize(&context, matrix);
+}
+
+bool RasterCacheItemTryToRasterCache(
+    DisplayListRasterCacheItem& display_list_item,
+    PaintContext& paint_context) {
   if (display_list_item.cache_state() ==
       RasterCacheItem::CacheState::kCurrent) {
     return display_list_item.TryToPrepareRasterCache(paint_context);

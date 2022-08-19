@@ -48,6 +48,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override {
     return std::vector<SkCanvas*>();
   }
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
+    return std::vector<flutter::DisplayListBuilder*>();
+  }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -63,7 +66,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return nullptr; }
+  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {nullptr, nullptr};
+  }
 };
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
@@ -316,7 +321,7 @@ class PlatformViewBuilder {
   // Once Build is called, the instance is no longer usable.
   GfxPlatformView Build() {
     EXPECT_FALSE(std::exchange(built_, true))
-        << "Build() was already called, this buider is good for one use only.";
+        << "Build() was already called, this builder is good for one use only.";
     return GfxPlatformView(
         delegate_, task_runners_, std::move(view_ref_pair_.view_ref),
         external_external_view_embedder_, std::move(ime_service_),
@@ -1394,8 +1399,7 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
   EXPECT_EQ(expected_result_string, response->result_string);
 }
 
-// TODO(fxbug.dev/85125): Enable when GFX converts to TouchSource.
-TEST_F(PlatformViewTests, DISABLED_TouchSourceLogicalToPhysicalConversion) {
+TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
   constexpr std::array<std::array<float, 2>, 2> kRect = {{{0, 0}, {20, 20}}};
   constexpr std::array<float, 9> kIdentity = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   constexpr fuchsia::ui::pointer::TouchInteractionId kIxnOne = {

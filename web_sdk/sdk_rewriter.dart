@@ -10,8 +10,8 @@ import 'package:path/path.dart' as path;
 final ArgParser argParser = ArgParser()
   ..addOption('output-dir')
   ..addOption('input-dir')
-  ..addFlag('ui', defaultsTo: false)
-  ..addFlag('engine', defaultsTo: false)
+  ..addFlag('ui')
+  ..addFlag('engine')
   ..addMultiOption('input')
   ..addOption('stamp');
 
@@ -45,7 +45,6 @@ import 'dart:developer' as developer;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 '''),
@@ -171,7 +170,7 @@ String _preprocessEnginePartFile(String source) {
     // Do nothing.
   } else {
     // Insert the part directive at the beginning of the file.
-    source = 'part of engine;\n' + source;
+    source = 'part of engine;\n$source';
   }
   return source;
 }

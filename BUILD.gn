@@ -84,9 +84,13 @@ group("flutter") {
       "//flutter/examples/glfw",
       "//flutter/examples/vulkan_glfw",
     ]
+
+    if (!is_mac) {
+      public_deps += [ "//flutter/examples/glfw_drm" ]
+    }
   }
 
-  # If enbaled, compile the SDK / snapshot.
+  # If enabled, compile the SDK / snapshot.
   if (!is_fuchsia) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
@@ -99,6 +103,9 @@ group("flutter") {
         # //flutter/lib/snapshot:generate_snapshot_bin will only build
         # gen_snapshot for the host and not the target.
         "//third_party/dart/runtime/bin:gen_snapshot",
+
+        # Built alongside gen_snapshot for 64 bit targets
+        "//third_party/dart/runtime/bin:analyze_snapshot",
 
         # Impeller artifacts - compiler and libtessellator
         "//flutter/impeller/compiler:impellerc",
@@ -126,6 +133,7 @@ group("flutter") {
   if (enable_unittests && !is_win && !is_fuchsia) {
     public_deps += [
       "//flutter/display_list:display_list_benchmarks",
+      "//flutter/display_list:display_list_builder_benchmarks",
       "//flutter/fml:fml_benchmarks",
       "//flutter/lib/ui:ui_benchmarks",
       "//flutter/shell/common:shell_benchmarks",
@@ -160,7 +168,6 @@ group("unittests") {
       "//flutter/display_list:display_list_unittests",
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
-      "//flutter/lib/spirv/test",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:dart_plugin_registrant_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",

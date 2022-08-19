@@ -13,6 +13,7 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/shader_library.h"
+#include "impeller/renderer/shader_types.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/runtime_stage/runtime_stage_playground.h"
 
@@ -29,7 +30,7 @@ TEST(RuntimeStageTest, CanReadValidBlob) {
   ASSERT_GT(fixture->GetSize(), 0u);
   RuntimeStage stage(std::move(fixture));
   ASSERT_TRUE(stage.IsValid());
-  ASSERT_EQ(stage.GetShaderStage(), ShaderStage::kFragment);
+  ASSERT_EQ(stage.GetShaderStage(), RuntimeShaderStage::kFragment);
 }
 
 TEST(RuntimeStageTest, CanRejectInvalidBlob) {
@@ -186,7 +187,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
 }
 
 TEST_P(RuntimeStageTest, CanRegisterStage) {
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP_("Skipped: https://github.com/flutter/flutter/issues/105538");
   }
   auto fixture =
@@ -199,9 +200,9 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
   auto future = registration.get_future();
   auto library = GetContext()->GetShaderLibrary();
   library->RegisterFunction(
-      stage.GetEntrypoint(),   //
-      stage.GetShaderStage(),  //
-      stage.GetCodeMapping(),  //
+      stage.GetEntrypoint(),                  //
+      ToShaderStage(stage.GetShaderStage()),  //
+      stage.GetCodeMapping(),                 //
       fml::MakeCopyable([reg = std::move(registration)](bool result) mutable {
         reg.set_value(result);
       }));
@@ -212,7 +213,7 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
 }
 
 TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP_("Skipped: https://github.com/flutter/flutter/issues/105538");
   }
   auto stage = CreateStageFromFixture("ink_sparkle.frag.iplr");

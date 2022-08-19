@@ -73,7 +73,7 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
 <!-- WILL AUTOMATICALLY FIND ALL .java FILES AND INCLUDE THEM HERE       -->
 <project>
   <sdk dir="${androidSdkDir.path}" />
-  <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-S">
+  <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-T">
   <manifest file="${path.join(androidDir.path, 'AndroidManifest.xml')}" />
 ''');
   for (final FileSystemEntity entity in androidDir.listSync(recursive: true)) {
@@ -95,7 +95,7 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   final List<String> lintArgs = <String>[
     path.join(androidSdkDir.path, 'cmdline-tools', 'latest', 'bin', 'lint'),
     '--project', projectXmlPath,
-    '--compile-sdk-version', '31',
+    '--compile-sdk-version', '33',
     '--showall',
     '--exitcode', // Set non-zero exit code on errors
     '-Wall',
@@ -140,21 +140,18 @@ ArgParser setupOptions() {
       'help',
       help: 'Print usage of the command.',
       negatable: false,
-      defaultsTo: false,
     )
     ..addFlag(
       'rebaseline',
       help: 'Recalculates the baseline for errors and warnings '
           'in this project.',
       negatable: false,
-      defaultsTo: false,
     )
     ..addFlag(
       'html',
       help: 'Creates an HTML output for this report instead of printing '
           'command line output.',
       negatable: false,
-      defaultsTo: false,
     )
     ..addOption(
       'out',

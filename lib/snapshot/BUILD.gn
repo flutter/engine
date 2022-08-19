@@ -205,26 +205,31 @@ bin_to_linkable("platform_strong_dill_linkable") {
 
 if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
   action("create_arm_gen_snapshot") {
-    output_dir = "$root_out_dir/clang_x64"
+    host_output_dir = get_label_info(
+            "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+            "root_out_dir")
+    clang_dir = rebase_path(host_output_dir, root_build_dir)
     script = "//flutter/sky/tools/create_macos_gen_snapshots.py"
     visibility = [ ":*" ]
     deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
     args = [
       "--dst",
-      rebase_path(output_dir),
+      rebase_path(host_output_dir),
+      "--clang-dir",
+      clang_dir,
     ]
     if (target_cpu == "arm") {
       args += [
         "--armv7-out-dir",
         rebase_path("$root_out_dir"),
       ]
-      outputs = [ "$output_dir/gen_snapshot_armv7" ]
+      outputs = [ "$host_output_dir/gen_snapshot_armv7" ]
     } else {
       args += [
         "--arm64-out-dir",
         rebase_path("$root_out_dir"),
       ]
-      outputs = [ "$output_dir/gen_snapshot_arm64" ]
+      outputs = [ "$host_output_dir/gen_snapshot_arm64" ]
     }
   }
 }
