@@ -86,7 +86,8 @@ SurfaceFrame::FramebufferInfo EmbedderSurfaceGL::GLContextFramebufferInfo()
   // Enable partial repaint by default on the embedders.
   auto info = SurfaceFrame::FramebufferInfo{};
   info.supports_readback = true;
-  info.supports_partial_repaint = true;
+  info.supports_partial_repaint =
+      gl_dispatch_table_.gl_populate_existing_damage != nullptr;
   return info;
 }
 
