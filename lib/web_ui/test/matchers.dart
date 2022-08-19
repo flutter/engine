@@ -5,7 +5,6 @@
 /// Provides utilities for testing engine code.
 library matchers;
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:html/dom.dart' as html_package;
@@ -417,11 +416,11 @@ String canonicalizeHtml(
 }
 
 /// Tests that [element] has the HTML structure described by [expectedHtml].
-void expectHtml(html.Element element, String expectedHtml,
+void expectHtml(DomElement element, String expectedHtml,
     {HtmlComparisonMode mode = HtmlComparisonMode.nonLayoutOnly}) {
   expectedHtml =
       canonicalizeHtml(expectedHtml, mode: mode, throwOnUnusedAttributes: true);
-  final String actualHtml = canonicalizeHtml(element.outerHtml!, mode: mode);
+  final String actualHtml = canonicalizeHtml(element.outerHTML!, mode: mode);
   expect(actualHtml, expectedHtml);
 }
 
@@ -462,7 +461,7 @@ void expectPageHtml(String expectedHtml,
 
 /// Currently rendered HTML DOM as an HTML string.
 String get currentHtml {
-  return flutterViewEmbedder.sceneElement?.outerHtml ?? '';
+  return flutterViewEmbedder.sceneElement?.outerHTML ?? '';
 }
 
 class SceneTester {

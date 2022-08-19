@@ -157,6 +157,10 @@ struct Settings {
   // Dart code is executed.
   std::string advisory_script_entrypoint = "main";
 
+  // The executable path associated with this process. This is returned by
+  // Platform.executable from dart:io. If unknown, defaults to "Flutter".
+  std::string executable_name = "Flutter";
+
   // Observatory settings
 
   // Whether the Dart VM service should be enabled.
@@ -186,6 +190,8 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  bool use_asset_fonts = true;
+
   // Indicates whether the embedding started a prefetch of the default font
   // manager before creating the engine.
   bool prefetched_default_font_manager = false;
@@ -196,9 +202,6 @@ struct Settings {
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
   bool enable_impeller = false;
-
-  // Selects the DisplayList for storage of rendering operations.
-  bool enable_display_list = true;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;

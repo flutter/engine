@@ -65,7 +65,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
     : cull_rect_(cull_rect) {
-  layer_stack_.emplace_back();
+  layer_stack_.emplace_back(SkM44(), cull_rect);
   current_layer_ = &layer_stack_.back();
 }
 
@@ -275,10 +275,25 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   }
   UpdateCurrentOpacityCompatibility();
 }
-void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
-  (current_path_effect_ = effect)  //
-      ? Push<SetPathEffectOp>(0, 0, std::move(effect))
-      : Push<ClearPathEffectOp>(0, 0);
+void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
+  if (effect == nullptr) {
+    current_.setPathEffect(nullptr);
+    Push<ClearPathEffectOp>(0, 0);
+  } else {
+    current_.setPathEffect(effect->shared());
+    switch (effect->type()) {
+      case DlPathEffectType::kDash: {
+        const DlDashPathEffect* dash_effect = effect->asDash();
+        void* pod = Push<SetPodPathEffectOp>(dash_effect->size(), 0);
+        new (pod) DlDashPathEffect(dash_effect);
+        break;
+      }
+      case DlPathEffectType::kUnknown: {
+        Push<SetSkPathEffectOp>(0, 0, effect->skia_object());
+        break;
+      }
+    }
+  }
 }
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
@@ -389,7 +404,8 @@ void DisplayListBuilder::setAttributesFromPaint(
     setImageFilter(DlImageFilter::From(paint.getImageFilter()).get());
   }
   if (flags.applies_path_effect()) {
-    setPathEffect(sk_ref_sp(paint.getPathEffect()));
+    SkPathEffect* path_effect = paint.getPathEffect();
+    setPathEffect(DlPathEffect::From(path_effect).get());
   }
   if (flags.applies_mask_filter()) {
     SkMaskFilter* mask_filter = paint.getMaskFilter();
@@ -399,7 +415,7 @@ void DisplayListBuilder::setAttributesFromPaint(
 
 void DisplayListBuilder::save() {
   Push<SaveOp>(0, 1);
-  layer_stack_.emplace_back();
+  layer_stack_.emplace_back(current_layer_);
   current_layer_ = &layer_stack_.back();
 }
 void DisplayListBuilder::restore() {
@@ -446,14 +462,21 @@ void DisplayListBuilder::restoreToCount(int restore_count) {
   }
 }
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
-                                   const SaveLayerOptions in_options) {
+                                   const SaveLayerOptions in_options,
+                                   const DlImageFilter* backdrop) {
   SaveLayerOptions options = in_options.without_optimizations();
   size_t save_layer_offset = used_;
-  bounds  //
-      ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
-      : Push<SaveLayerOp>(0, 1, options);
+  if (backdrop) {
+    bounds  //
+        ? Push<SaveLayerBackdropBoundsOp>(0, 1, *bounds, options, backdrop)
+        : Push<SaveLayerBackdropOp>(0, 1, options, backdrop);
+  } else {
+    bounds  //
+        ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
+        : Push<SaveLayerOp>(0, 1, options);
+  }
   CheckLayerOpacityCompatibility(options.renders_with_attributes());
-  layer_stack_.emplace_back(save_layer_offset, true);
+  layer_stack_.emplace_back(current_layer_, save_layer_offset, true);
   current_layer_ = &layer_stack_.back();
   if (options.renders_with_attributes()) {
     // |current_opacity_compatibility_| does not take an ImageFilter into
@@ -466,13 +489,15 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     }
   }
 }
-void DisplayListBuilder::saveLayer(const SkRect* bounds, const DlPaint* paint) {
+void DisplayListBuilder::saveLayer(const SkRect* bounds,
+                                   const DlPaint* paint,
+                                   const DlImageFilter* backdrop) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kSaveLayerWithPaintFlags);
-    saveLayer(bounds, true);
+    saveLayer(bounds, SaveLayerOptions::kWithAttributes, backdrop);
   } else {
-    saveLayer(bounds, false);
+    saveLayer(bounds, SaveLayerOptions::kNoAttributes, backdrop);
   }
 }
 
@@ -480,23 +505,27 @@ void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
   if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
       (tx != 0.0 || ty != 0.0)) {
     Push<TranslateOp>(0, 1, tx, ty);
+    current_layer_->matrix.preTranslate(tx, ty);
   }
 }
 void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 1.0 || sy != 1.0)) {
     Push<ScaleOp>(0, 1, sx, sy);
+    current_layer_->matrix.preScale(sx, sy);
   }
 }
 void DisplayListBuilder::rotate(SkScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
     Push<RotateOp>(0, 1, degrees);
+    current_layer_->matrix.preConcat(SkMatrix::RotateDeg(degrees));
   }
 }
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 0.0 || sy != 0.0)) {
     Push<SkewOp>(0, 1, sx, sy);
+    current_layer_->matrix.preConcat(SkMatrix::Skew(sx, sy));
   }
 }
 
@@ -514,6 +543,10 @@ void DisplayListBuilder::transform2DAffine(
     Push<Transform2DAffineOp>(0, 1,
                               mxx, mxy, mxt,
                               myx, myy, myt);
+    current_layer_->matrix.preConcat(SkM44(mxx, mxy,  0,  mxt,
+                                           myx, myy,  0,  myt,
+                                            0,   0,   1,   0,
+                                            0,   0,   0,   1));
   }
 }
 // full 4x4 transform in row major order
@@ -537,11 +570,16 @@ void DisplayListBuilder::transformFullPerspective(
                                      myx, myy, myz, myt,
                                      mzx, mzy, mzz, mzt,
                                      mwx, mwy, mwz, mwt);
+    current_layer_->matrix.preConcat(SkM44(mxx, mxy, mxz, mxt,
+                                           myx, myy, myz, myt,
+                                           mzx, mzy, mzz, mzt,
+                                           mwx, mwy, mwz, mwt));
   }
 }
 // clang-format on
 void DisplayListBuilder::transformReset() {
   Push<TransformResetOp>(0, 0);
+  current_layer_->matrix.setIdentity();
 }
 void DisplayListBuilder::transform(const SkMatrix* matrix) {
   if (matrix != nullptr) {
@@ -561,9 +599,17 @@ void DisplayListBuilder::transform(const SkM44* m44) {
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
                                   bool is_aa) {
-  clip_op == SkClipOp::kIntersect  //
-      ? Push<ClipIntersectRectOp>(0, 1, rect, is_aa)
-      : Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
+      if (!current_layer_->clip_bounds.intersect(rect)) {
+        current_layer_->clip_bounds.setEmpty();
+      }
+      break;
+    case SkClipOp::kDifference:
+      Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
+      break;
+  }
 }
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
                                    SkClipOp clip_op,
@@ -571,9 +617,17 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
   } else {
-    clip_op == SkClipOp::kIntersect  //
-        ? Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa)
-        : Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
+    switch (clip_op) {
+      case SkClipOp::kIntersect:
+        Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
+        if (!current_layer_->clip_bounds.intersect(rrect.getBounds())) {
+          current_layer_->clip_bounds.setEmpty();
+        }
+        break;
+      case SkClipOp::kDifference:
+        Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
+        break;
+    }
   }
 }
 void DisplayListBuilder::clipPath(const SkPath& path,
@@ -596,9 +650,26 @@ void DisplayListBuilder::clipPath(const SkPath& path,
       return;
     }
   }
-  clip_op == SkClipOp::kIntersect  //
-      ? Push<ClipIntersectPathOp>(0, 1, path, is_aa)
-      : Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      Push<ClipIntersectPathOp>(0, 1, path, is_aa);
+      if (!current_layer_->clip_bounds.intersect(path.getBounds())) {
+        current_layer_->clip_bounds.setEmpty();
+      }
+      break;
+    case SkClipOp::kDifference:
+      Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+      break;
+  }
+}
+SkRect DisplayListBuilder::getLocalClipBounds() {
+  SkM44 inverse;
+  if (current_layer_->matrix.invert(&inverse)) {
+    SkRect devBounds;
+    current_layer_->clip_bounds.roundOut(&devBounds);
+    return inverse.asM33().mapRect(devBounds);
+  }
+  return kMaxCullRect_;
 }
 
 void DisplayListBuilder::drawPaint() {
@@ -781,7 +852,7 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
 
 void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    const SkPoint point,
-                                   const SkSamplingOptions& sampling,
+                                   DlImageSampling sampling,
                                    bool render_with_attributes) {
   render_with_attributes
       ? Push<DrawImageWithAttrOp>(0, 1, std::move(image), point, sampling)
@@ -790,7 +861,7 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
 }
 void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    const SkPoint point,
-                                   const SkSamplingOptions& sampling,
+                                   DlImageSampling sampling,
                                    const DlPaint* paint) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
@@ -803,7 +874,7 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
 void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
-                                       const SkSamplingOptions& sampling,
+                                       DlImageSampling sampling,
                                        bool render_with_attributes,
                                        SkCanvas::SrcRectConstraint constraint) {
   Push<DrawImageRectOp>(0, 1, std::move(image), src, dst, sampling,
@@ -813,7 +884,7 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
 void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
-                                       const SkSamplingOptions& sampling,
+                                       DlImageSampling sampling,
                                        const DlPaint* paint,
                                        SkCanvas::SrcRectConstraint constraint) {
   if (paint != nullptr) {
@@ -827,7 +898,7 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                        const SkIRect& center,
                                        const SkRect& dst,
-                                       SkFilterMode filter,
+                                       DlFilterMode filter,
                                        bool render_with_attributes) {
   render_with_attributes
       ? Push<DrawImageNineWithAttrOp>(0, 1, std::move(image), center, dst,
@@ -838,7 +909,7 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                        const SkIRect& center,
                                        const SkRect& dst,
-                                       SkFilterMode filter,
+                                       DlFilterMode filter,
                                        const DlPaint* paint) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
@@ -851,7 +922,7 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
 void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
                                           const SkCanvas::Lattice& lattice,
                                           const SkRect& dst,
-                                          SkFilterMode filter,
+                                          DlFilterMode filter,
                                           bool render_with_attributes) {
   int xDivCount = lattice.fXCount;
   int yDivCount = lattice.fYCount;
@@ -876,7 +947,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const DlColor colors[],
                                    int count,
                                    DlBlendMode mode,
-                                   const SkSamplingOptions& sampling,
+                                   DlImageSampling sampling,
                                    const SkRect* cull_rect,
                                    bool render_with_attributes) {
   int bytes = count * (sizeof(SkRSXform) + sizeof(SkRect));
@@ -914,7 +985,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const DlColor colors[],
                                    int count,
                                    DlBlendMode mode,
-                                   const SkSamplingOptions& sampling,
+                                   DlImageSampling sampling,
                                    const SkRect* cull_rect,
                                    const DlPaint* paint) {
   if (paint != nullptr) {

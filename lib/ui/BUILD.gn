@@ -30,6 +30,8 @@ source_set("ui") {
     "painting/codec.h",
     "painting/color_filter.cc",
     "painting/color_filter.h",
+    "painting/display_list_deferred_image_gpu.cc",
+    "painting/display_list_deferred_image_gpu.h",
     "painting/display_list_image_gpu.cc",
     "painting/display_list_image_gpu.h",
     "painting/engine_layer.cc",
@@ -187,6 +189,8 @@ if (enable_unittests) {
       "fixtures/Horizontal.png",
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
+      "fixtures/FontManifest.json",
+      "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
   }
 
@@ -201,6 +205,7 @@ if (enable_unittests) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/benchmarking",
+      "//flutter/lib/snapshot",
       "//flutter/shell/common",
       "//flutter/testing:fixture_test",
     ]
@@ -229,6 +234,7 @@ if (enable_unittests) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/lib/snapshot",
       "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing",
       "//flutter/testing:dart",

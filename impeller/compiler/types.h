@@ -10,8 +10,8 @@
 
 #include "flutter/fml/macros.h"
 #include "shaderc/shaderc.hpp"
-#include "third_party/spirv_cross/spirv_cross.hpp"
-#include "third_party/spirv_cross/spirv_msl.hpp"
+#include "spirv_cross.hpp"
+#include "spirv_msl.hpp"
 
 namespace impeller {
 namespace compiler {
@@ -20,6 +20,9 @@ enum class SourceType {
   kUnknown,
   kVertexShader,
   kFragmentShader,
+  kTessellationControlShader,
+  kTessellationEvaluationShader,
+  kComputeShader,
 };
 
 enum class TargetPlatform {
@@ -29,7 +32,13 @@ enum class TargetPlatform {
   kFlutterSPIRV,
   kOpenGLES,
   kOpenGLDesktop,
+  kRuntimeStageMetal,
+  kRuntimeStageGLES,
 };
+
+bool TargetPlatformIsMetal(TargetPlatform platform);
+
+bool TargetPlatformIsOpenGL(TargetPlatform platform);
 
 SourceType SourceTypeFromFileName(const std::string& file_name);
 
@@ -40,8 +49,7 @@ std::string TargetPlatformToString(TargetPlatform platform);
 std::string TargetPlatformSLExtension(TargetPlatform platform);
 
 std::string EntryPointFunctionNameFromSourceName(const std::string& file_name,
-                                                 SourceType type,
-                                                 TargetPlatform platform);
+                                                 SourceType type);
 
 bool TargetPlatformNeedsSL(TargetPlatform platform);
 

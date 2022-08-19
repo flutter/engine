@@ -8,13 +8,13 @@ typedef VoidCallback = void Function();
 typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
-typedef KeyDataCallback = bool Function(KeyData packet);
+typedef KeyDataCallback = bool Function(KeyData data);
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-typedef ErrorCallback = bool Function(Object exception, StackTrace? stackTrace);
+typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
@@ -82,6 +82,8 @@ abstract class PlatformDispatcher {
 
   double get textScaleFactor => configuration.textScaleFactor;
 
+  bool get nativeSpellCheckServiceDefined => false;
+
   bool get brieflyShowPassword => true;
 
   VoidCallback? get onTextScaleFactorChanged;
@@ -118,7 +120,7 @@ abstract class PlatformDispatcher {
 
 class PlatformConfiguration {
   const PlatformConfiguration({
-    this.accessibilityFeatures = const AccessibilityFeatures._(0),
+    this.accessibilityFeatures = const engine.EngineAccessibilityFeatures(0),
     this.alwaysUse24HourFormat = false,
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,
@@ -366,7 +368,7 @@ class DisplayFeature {
   }
 
   @override
-  int get hashCode => hashValues(bounds, type, state);
+  int get hashCode => Object.hash(bounds, type, state);
 
   @override
   String toString() {
@@ -521,7 +523,7 @@ class Locale {
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => Object.hash(languageCode, scriptCode, countryCode);
 
   @override
   String toString() => _rawToString('_');

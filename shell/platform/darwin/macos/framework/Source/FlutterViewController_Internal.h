@@ -14,11 +14,6 @@
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
 
 /**
- * This just returns the NSPasteboard so that it can be mocked in the tests.
- */
-@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
-
-/**
  * The text input plugin that handles text editing state for text fields.
  */
 @property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
@@ -36,9 +31,14 @@
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 
+/**
+ * Returns YES if provided event is being currently redispatched by keyboard manager.
+ */
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
+
 @end
 
 // Private methods made visible for testing
 @interface FlutterViewController (TestMethods)
-- (void)onAccessibilityStatusChanged:(nonnull NSNotification*)notification;
+- (void)onAccessibilityStatusChanged:(BOOL)enabled;
 @end

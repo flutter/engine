@@ -160,6 +160,9 @@ class FlutterPlatformViewsController {
 
   PostPrerollResult PostPrerollAction(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
+  void EndFrame(bool should_resubmit_frame,
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+
   std::vector<SkCanvas*> GetCurrentCanvases();
 
   SkCanvas* CompositeEmbeddedView(int view_id);
@@ -176,6 +179,10 @@ class FlutterPlatformViewsController {
                    std::unique_ptr<SurfaceFrame> frame);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+
+  // Returns the platform view id if the platform view (or any of its descendant view) is the first
+  // responder. Returns -1 if no such platform view is found.
+  long FindFirstResponderPlatformViewId();
 
  private:
   static const size_t kMaxLayerAllocations = 2;
@@ -327,6 +334,11 @@ class FlutterPlatformViewsController {
 
 // Get embedded view
 - (UIView*)embeddedView;
+@end
+
+@interface UIView (FirstResponder)
+// Returns YES if a view or any of its descendant view is the first responder. Returns NO otherwise.
+@property(nonatomic, readonly) BOOL flt_hasFirstResponderInViewHierarchySubtree;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

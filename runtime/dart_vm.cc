@@ -53,7 +53,6 @@ static const char* kDartAllConfigsArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
-    "--lazy_async_stacks",
     // 'mark_when_idle' appears to cause a regression, turning off for now.
     // "--mark_when_idle",
     // clang-format on
@@ -435,6 +434,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   }
 
   DartUI::InitForGlobal();
+
+  dart::bin::SetExecutableName(settings_.executable_name.c_str());
 
   {
     TRACE_EVENT0("flutter", "Dart_Initialize");

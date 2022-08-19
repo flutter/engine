@@ -19,10 +19,12 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext() {
     FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
     return nullptr;
   }
+  FML_LOG(ERROR) << "Using the Impeller rendering backend.";
   return context;
 }
 
-IOSContextMetalImpeller::IOSContextMetalImpeller() : context_(CreateImpellerContext()) {}
+IOSContextMetalImpeller::IOSContextMetalImpeller()
+    : IOSContext(MsaaSampleCount::kFour), context_(CreateImpellerContext()) {}
 
 IOSContextMetalImpeller::~IOSContextMetalImpeller() = default;
 

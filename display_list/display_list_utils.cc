@@ -20,7 +20,7 @@
 namespace flutter {
 
 // clang-format off
-constexpr float invert_color_matrix[20] = {
+constexpr float kInvertColorMatrix[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
      0,    0, -1.0, 1.0, 0,
@@ -33,6 +33,9 @@ void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
   set_opacity(child_opacity);
 }
 void SkPaintDispatchHelper::restore_opacity() {
+  if (save_stack_.empty()) {
+    return;
+  }
   set_opacity(save_stack_.back().opacity);
   save_stack_.pop_back();
 }
@@ -85,8 +88,8 @@ void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
 }
-void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
-  paint_.setPathEffect(effect);
+void SkPaintDispatchHelper::setPathEffect(const DlPathEffect* effect) {
+  paint_.setPathEffect(effect ? effect->skia_object() : nullptr);
 }
 void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
   paint_.setMaskFilter(filter ? filter->skia_object() : nullptr);
@@ -97,7 +100,7 @@ sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
     return color_filter_ ? color_filter_->skia_object() : nullptr;
   }
   sk_sp<SkColorFilter> invert_filter =
-      SkColorFilters::Matrix(invert_color_matrix);
+      SkColorFilters::Matrix(kInvertColorMatrix);
   if (color_filter_) {
     invert_filter = invert_filter->makeComposed(color_filter_->skia_object());
   }
@@ -163,6 +166,9 @@ void SkMatrixDispatchHelper::save() {
   saved_.push_back(matrix_);
 }
 void SkMatrixDispatchHelper::restore() {
+  if (saved_.empty()) {
+    return;
+  }
   matrix_ = saved_.back();
   matrix33_ = matrix_.asM33();
   saved_.pop_back();
@@ -175,22 +181,34 @@ void SkMatrixDispatchHelper::reset() {
 void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rect, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rect, is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
                                          SkClipOp clip_op,
                                          bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rrect.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rrect.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(path.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(path.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::intersect(const SkRect& rect, bool is_aa) {
@@ -221,6 +239,9 @@ void ClipBoundsDispatchHelper::save() {
   }
 }
 void ClipBoundsDispatchHelper::restore() {
+  if (saved_.empty()) {
+    return;
+  }
   bounds_ = saved_.back();
   saved_.pop_back();
   has_clip_ = (bounds_.fLeft <= bounds_.fRight &&  //
@@ -277,8 +298,8 @@ void DisplayListBoundsCalculator::setImageFilter(const DlImageFilter* filter) {
 void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
 }
-void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
-  path_effect_ = std::move(effect);
+void DisplayListBoundsCalculator::setPathEffect(const DlPathEffect* effect) {
+  path_effect_ = effect ? effect->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
   mask_filter_ = filter ? filter->shared() : nullptr;
@@ -290,7 +311,8 @@ void DisplayListBoundsCalculator::save() {
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options) {
+                                            const SaveLayerOptions options,
+                                            const DlImageFilter* backdrop) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   if (options.renders_with_attributes()) {
@@ -317,6 +339,10 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   // we set them as if a clip operation were performed.
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
+  }
+  if (backdrop) {
+    // A backdrop will affect up to the entire surface, bounded by the clip
+    AccumulateUnbounded();
   }
 }
 void DisplayListBoundsCalculator::restore() {
@@ -459,7 +485,7 @@ void DisplayListBoundsCalculator::drawVertices(const DlVertices* vertices,
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             bool render_with_attributes) {
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
                                    image->width(), image->height());
@@ -472,7 +498,7 @@ void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<DlImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const SkSamplingOptions& sampling,
+    DlImageSampling sampling,
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   DisplayListAttributeFlags flags = render_with_attributes
@@ -483,7 +509,7 @@ void DisplayListBoundsCalculator::drawImageRect(
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
-                                                SkFilterMode filter,
+                                                DlFilterMode filter,
                                                 bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageNineWithPaintFlags
@@ -494,7 +520,7 @@ void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<DlImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
-    SkFilterMode filter,
+    DlFilterMode filter,
     bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageLatticeWithPaintFlags
@@ -507,7 +533,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             const SkRect* cullRect,
                                             bool render_with_attributes) {
   SkPoint quad[4];
@@ -580,14 +606,13 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
   if (flags.is_geometric()) {
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(path_effect_);
+        flags.WithPathEffect(path_effect_.get());
     if (path_effect_) {
-      SkPaint p;
-      p.setPathEffect(path_effect_);
-      if (!p.canComputeFastBounds()) {
+      auto effect_bounds = path_effect_->effect_bounds(bounds);
+      if (!effect_bounds.has_value()) {
         return false;
       }
-      bounds = p.computeFastBounds(bounds, &bounds);
+      bounds = effect_bounds.value();
     }
 
     if (flags.is_stroked(style_)) {

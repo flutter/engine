@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../util.dart';
 import 'slots.dart';
@@ -12,7 +11,7 @@ import 'slots.dart';
 /// A function which takes a unique `id` and some `params` and creates an HTML element.
 ///
 /// This is made available to end-users through dart:ui in web.
-typedef ParameterizedPlatformViewFactory = html.Element Function(
+typedef ParameterizedPlatformViewFactory = DomElement Function(
   int viewId, {
   Object? params,
 });
@@ -20,7 +19,7 @@ typedef ParameterizedPlatformViewFactory = html.Element Function(
 /// A function which takes a unique `id` and creates an HTML element.
 ///
 /// This is made available to end-users through dart:ui in web.
-typedef PlatformViewFactory = html.Element Function(int viewId);
+typedef PlatformViewFactory = DomElement Function(int viewId);
 
 /// This class handles the lifecycle of Platform Views in the DOM of a Flutter Web App.
 ///
@@ -29,7 +28,7 @@ typedef PlatformViewFactory = html.Element Function(int viewId);
 ///
 /// * `factories`: The functions used to render the contents of any given Platform
 /// View by its `viewType`.
-/// * `contents`: The result [html.Element] of calling a `factory` function.
+/// * `contents`: The result [DomElement] of calling a `factory` function.
 ///
 /// The third part is `slots`, which are created on demand by the
 /// [createPlatformViewSlot] function.
@@ -41,7 +40,7 @@ class PlatformViewManager {
   final Map<String, Function> _factories = <String, Function>{};
 
   // The references to content tags, indexed by their framework-given ID.
-  final Map<int, html.Element> _contents = <int, html.Element>{};
+  final Map<int, DomElement> _contents = <int, DomElement>{};
 
   final Set<String> _invisibleViews = <String>{};
   final Map<int, String> _viewIdToType = <int, String>{};
@@ -103,7 +102,7 @@ class PlatformViewManager {
   /// a place where to attach the `slot` property, that will tell the browser
   /// what `slot` tag will reveal this `contents`, **without modifying the returned
   /// html from the `factory` function**.
-  html.Element renderContent(
+  DomElement renderContent(
     String viewType,
     int viewId,
     Object? params,
@@ -115,12 +114,12 @@ class PlatformViewManager {
     _viewIdToType[viewId] = viewType;
 
     return _contents.putIfAbsent(viewId, () {
-      final html.Element wrapper = html.document
+      final DomElement wrapper = domDocument
           .createElement('flt-platform-view')
             ..setAttribute('slot', slotName);
 
       final Function factoryFunction = _factories[viewType]!;
-      late html.Element content;
+      late DomElement content;
 
       if (factoryFunction is ParameterizedPlatformViewFactory) {
         content = factoryFunction(viewId, params: params);
@@ -140,7 +139,7 @@ class PlatformViewManager {
   /// never been rendered before.
   void clearPlatformView(int viewId) {
     // Remove from our cache, and then from the DOM...
-    final html.Element? element = _contents.remove(viewId);
+    final DomElement? element = _contents.remove(viewId);
     _safelyRemoveSlottedElement(element);
   }
 
@@ -149,7 +148,7 @@ class PlatformViewManager {
   // than its slot (after the slot is removed).
   //
   // TODO(web): Cleanup https://github.com/flutter/flutter/issues/85816
-  void _safelyRemoveSlottedElement(html.Element? element) {
+  void _safelyRemoveSlottedElement(DomElement? element) {
     if (element == null) {
       return;
     }
@@ -159,7 +158,7 @@ class PlatformViewManager {
     }
     final String tombstoneName = "tombstone-${element.getAttribute('slot')}";
     // Create and inject a new slot in the shadow root
-    final html.Element slot = html.document.createElement('slot')
+    final DomElement slot = domDocument.createElement('slot')
       ..style.display = 'none'
       ..setAttribute('name', tombstoneName);
     flutterViewEmbedder.glassPaneShadow!.append(slot);
@@ -172,7 +171,7 @@ class PlatformViewManager {
 
   /// Attempt to ensure that the contents of the user-supplied DOM element will
   /// fill the space allocated for this platform view by the framework.
-  void _ensureContentCorrectlySized(html.Element content, String viewType) {
+  void _ensureContentCorrectlySized(DomElement content, String viewType) {
     // Scrutinize closely any other modifications to `content`.
     // We shouldn't modify users' returned `content` if at all possible.
     // Note there's also no getContent(viewId) function anymore, to prevent

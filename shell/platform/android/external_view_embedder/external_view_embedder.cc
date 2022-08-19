@@ -98,6 +98,9 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
   for (size_t i = 0; i < current_frame_view_count; i++) {
     int64_t view_id = composition_order_[i];
+    if (picture_recorders_.at(view_id)->getRecordingCanvas() == nullptr) {
+      continue;
+    }
 
     sk_sp<SkPicture> picture =
         picture_recorders_.at(view_id)->finishRecordingAsPicture();
@@ -242,7 +245,7 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
 }
 
 bool AndroidExternalViewEmbedder::FrameHasPlatformLayers() {
-  return composition_order_.size() > 0;
+  return !composition_order_.empty();
 }
 
 // |ExternalViewEmbedder|

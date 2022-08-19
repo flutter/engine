@@ -5,11 +5,11 @@
 // For member documentation see https://api.flutter.dev/flutter/dart-ui/Canvas-class.html
 // ignore_for_file: public_member_api_docs
 
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import 'dom.dart';
 import 'html/painting.dart';
 import 'html/render_vertices.dart';
 import 'text/canvas_paragraph.dart';
@@ -22,7 +22,7 @@ import 'vector_math.dart';
 /// This can be used either as an interface or super-class.
 abstract class EngineCanvas {
   /// The element that is attached to the DOM.
-  html.Element get rootElement;
+  DomElement get rootElement;
 
   void dispose() {
     clear();
@@ -257,14 +257,14 @@ mixin SaveStackTracking on EngineCanvas {
   }
 }
 
-html.Element drawParagraphElement(
+DomElement drawParagraphElement(
   CanvasParagraph paragraph,
   ui.Offset offset, {
   Matrix4? transform,
 }) {
   assert(paragraph.isLaidOut);
 
-  final html.HtmlElement paragraphElement = paragraph.toDomElement();
+  final DomHTMLElement paragraphElement = paragraph.toDomElement();
 
   if (transform != null) {
     setElementTransform(
@@ -281,7 +281,7 @@ class _SaveElementStackEntry {
     required this.transform,
   });
 
-  final html.Element savedElement;
+  final DomElement savedElement;
   final Matrix4 transform;
 }
 
@@ -294,18 +294,18 @@ mixin SaveElementStackTracking on EngineCanvas {
 
   /// The element at the top of the element stack, or [rootElement] if the stack
   /// is empty.
-  html.Element get currentElement =>
+  DomElement get currentElement =>
       _elementStack.isEmpty ? rootElement : _elementStack.last;
 
   /// The stack that maintains the DOM elements used to express certain paint
   /// operations, such as clips.
-  final List<html.Element> _elementStack = <html.Element>[];
+  final List<DomElement> _elementStack = <DomElement>[];
 
   /// Pushes the [element] onto the element stack for the purposes of applying
   /// a paint effect using a DOM element, e.g. for clipping.
   ///
   /// The [restore] method automatically pops the element off the stack.
-  void pushElement(html.Element element) {
+  void pushElement(DomElement element) {
     _elementStack.add(element);
   }
 

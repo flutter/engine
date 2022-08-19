@@ -54,7 +54,7 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
   static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg|Brewfile)$', caseSensitive: false);
   static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|swift\.swiftformat|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
   // The ICU library has sample code that will never get linked.
   static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
@@ -984,6 +984,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   ///   directory (a.k.a. buildroot).
   bool shouldRecurse(fs.IoNode entry) {
     return !entry.fullName.endsWith('third_party/gn') &&
+            !entry.fullName.endsWith('third_party/gradle') &&
             !entry.fullName.endsWith('third_party/imgui') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
@@ -992,6 +993,8 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
             entry.name != 'javatests' &&
+            entry.name != 'fixtures' &&
+            entry.name != 'playground' &&
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_runner' &&
@@ -1834,7 +1837,8 @@ class _RepositorySkiaDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'platform_tools' // contains nothing that ends up in the binary executable
+    return entry.name != 'bazel' // contains nothing that ends up in the binary executable
+        && entry.name != 'platform_tools' // contains nothing that ends up in the binary executable
         && entry.name != 'tools' // contains nothing that ends up in the binary executable
         && entry.name != 'resources' // contains nothing that ends up in the binary executable
         && super.shouldRecurse(entry);
@@ -1883,6 +1887,47 @@ class _RepositoryWuffsDirectory extends _RepositoryDirectory {
   }
 }
 
+class _RepositoryVulkanDepsDirectory extends _RepositoryDirectory {
+  _RepositoryVulkanDepsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != '.git' // source control
+        && entry.name != 'glslang' // only used on hosts for tests
+        && entry.name != 'spirv-cross' // Used by impellerc with separate license and host tests. See //flutter/impeller/compiler:impellerc_license
+        && entry.name != 'spirv-headers' // only used on hosts for tests
+        && entry.name != 'spirv-tools' // only used on hosts for tests
+        && entry.name != 'vulkan-loader' // on hosts for tests
+        && entry.name != 'vulkan-tools' // on hosts for tests
+        && entry.name != 'vulkan-validation-layers'; // on hosts for tests
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'vulkan-headers') {
+      return _RepositoryVulkanDepsSubDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryVulkanDepsSubDirectory extends _RepositoryDirectory {
+  _RepositoryVulkanDepsSubDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name == 'src';
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'src') {
+      return _RepositoryVulkanDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
+  }
+}
+
 class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
   _RepositoryRootThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1901,6 +1946,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'mockito' // only used by tests
         && entry.name != 'pymock' // presumably only used by tests
         && entry.name != 'pyyaml' // build-time dependency only
+        && entry.name != 'yapf'  // only used for code formatting
         && entry.name != 'android_embedding_dependencies' // testing framework for android
         && entry.name != 'yasm' // build-time dependency only
         && entry.name != 'binutils' // build-time dependency only
@@ -1911,14 +1957,10 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'skia' // treated as a separate component
         && entry.name != 'fontconfig' // not used in standard configurations
         && entry.name != 'swiftshader' // only used on hosts for tests
-        && entry.name != 'shaderc' // only used on hosts for tests
-        && entry.name != 'glslang' // only used on hosts for tests
-        && entry.name != 'spirv_tools' // only used on hosts for tests
-        && entry.name != 'spirv_headers' // only used on hosts for tests
-        && entry.name != 'spirv_cross' // only used on hosts for tests
+        && entry.name != 'shaderc' // Used by impellerc with separate license and host tests. See //flutter/impeller/compiler:impellerc_license
         && entry.name != 'ocmock' // only used for tests
         && entry.name != 'java' // only used for Android builds
-        && entry.name != 'inja' // only used on hosts for builds
+        && entry.name != 'inja' // Only used by impellerc, which ships a separate license. See //flutter/impeller/compiler:impellerc_license
         && super.shouldRecurse(entry);
   }
 
@@ -1936,8 +1978,10 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
       return _RepositoryDartDirectory(this, entry);
     if (entry.name == 'expat')
       return _RepositoryExpatDirectory(this, entry);
-    if (entry.name == 'externals')
-      return _RepositoryThirdPartyExternalsDirectory(this, entry);
+    if (entry.name == 'vulkan_memory_allocator')
+      return _RepositoryVulkanMemoryAllocatorDirectory(this, entry);
+    if (entry.name == 'vulkan-deps')
+      return _RepositoryVulkanDepsDirectory(this, entry);
     if (entry.name == 'freetype-android')
       throw '//third_party/freetype-android is no longer part of this client: remove it';
     if (entry.name == 'freetype2')
@@ -1982,18 +2026,6 @@ class _RepositoryThirdPartyWebDependenciesDirectory extends _RepositoryDirectory
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'canvaskit' // redundant; covered by Skia dependencies
         && super.shouldRecurse(entry);
-  }
-}
-
-/// Corresponds to the `src/third_party/externals` directory
-class _RepositoryThirdPartyExternalsDirectory extends _RepositoryDirectory {
-  _RepositoryThirdPartyExternalsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'vulkanmemoryallocator')
-      return _RepositoryVulkanMemoryAllocatorDirectory(this, entry);
-    return super.createSubdirectory(entry);
   }
 }
 
@@ -2396,7 +2428,11 @@ class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
         && entry.name != 'docs'
         && entry.name != 'images'
         && entry.name != 'meta'
-        && entry.name != 'tools';
+        && entry.name != 'tools'
+        // Applies to NOTICE.fuchsia file.
+        // This is a file that covers things that contribute to the Fuchsia SDK.
+        // See: fxb/94240
+        && !(entry.name == 'NOTICE.fuchsia');
   }
 }
 

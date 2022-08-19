@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include "flutter/fml/hash_combine.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
@@ -48,7 +49,7 @@ class Texture;
 ///
 enum class PixelFormat {
   kUnknown,
-  kR8UNormInt,
+  kA8UNormInt,
   kR8G8B8A8UNormInt,
   kR8G8B8A8UNormIntSRGB,
   kB8G8R8A8UNormInt,
@@ -86,8 +87,6 @@ enum class BlendOperation {
   kAdd,
   kSubtract,
   kReverseSubtract,
-  kMin,
-  kMax,
 };
 
 enum class LoadAction {
@@ -102,14 +101,38 @@ enum class StoreAction {
   kMultisampleResolve,
 };
 
+constexpr bool CanClearAttachment(LoadAction action) {
+  switch (action) {
+    case LoadAction::kLoad:
+      return false;
+    case LoadAction::kDontCare:
+    case LoadAction::kClear:
+      return true;
+  }
+  FML_UNREACHABLE();
+}
+
+constexpr bool CanDiscardAttachmentWhenDone(StoreAction action) {
+  switch (action) {
+    case StoreAction::kStore:
+      return false;
+    case StoreAction::kDontCare:
+    case StoreAction::kMultisampleResolve:
+      return true;
+  }
+  FML_UNREACHABLE();
+}
+
 enum class TextureType {
   kTexture2D,
   kTexture2DMultisample,
+  kTextureCube,
 };
 
 constexpr bool IsMultisampleCapable(TextureType type) {
   switch (type) {
     case TextureType::kTexture2D:
+    case TextureType::kTextureCube:
       return false;
     case TextureType::kTexture2DMultisample:
       return true;
@@ -129,6 +152,11 @@ enum class TextureUsage : TextureUsageMask {
   kShaderRead = 1 << 0,
   kShaderWrite = 1 << 1,
   kRenderTarget = 1 << 2,
+};
+
+enum class TextureIntent {
+  kUploadFromHost,
+  kRenderToTexture,
 };
 
 enum class CullMode {
@@ -153,17 +181,21 @@ enum class PrimitiveType {
   // checks. Hence, they are not supported here.
 };
 
+struct DepthRange {
+  Scalar z_near = 0.0;
+  Scalar z_far = 1.0;
+};
+
 struct Viewport {
   Rect rect;
-  Scalar znear = 0.0f;
-  Scalar zfar = 1.0f;
+  DepthRange depth_range;
 };
 
 enum class MinMagFilter {
   /// Select nearest to the sample point. Most widely supported.
   kNearest,
-  /// Select two points and linearly interpolate between them. Some formats may
-  /// not support this.
+  /// Select two points and linearly interpolate between them. Some formats
+  /// may not support this.
   kLinear,
 };
 
@@ -189,7 +221,7 @@ constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::kUnknown:
       return 0u;
-    case PixelFormat::kR8UNormInt:
+    case PixelFormat::kA8UNormInt:
     case PixelFormat::kS8UInt:
       return 1u;
     case PixelFormat::kR8G8B8A8UNormInt:

@@ -58,7 +58,7 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setColorSource(const DlColorSource* source) override {}
   void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
-  void setPathEffect(sk_sp<SkPathEffect> effect) override {}
+  void setPathEffect(const DlPathEffect* effect) override {}
   void setMaskFilter(const DlMaskFilter* filter) override {}
 };
 
@@ -96,7 +96,8 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
  public:
   void save() override {}
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options) override {}
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {}
   void restore() override {}
   void drawColor(DlColor color, DlBlendMode mode) override {}
   void drawPaint() override {}
@@ -119,23 +120,23 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {}
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  bool render_with_attributes) override {}
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override {}
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      bool render_with_attributes) override {}
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        DlFilterMode filter,
                         bool render_with_attributes) override {}
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
@@ -143,7 +144,7 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {}
   void drawPicture(const sk_sp<SkPicture> picture,
@@ -185,7 +186,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setInvertColors(bool invert) override;
   void setBlendMode(DlBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
-  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(const DlImageFilter* filter) override;
 
@@ -363,7 +364,7 @@ class BoundsAccumulator {
   bool is_not_empty() const { return min_x_ < max_x_ && min_y_ < max_y_; }
 
   SkRect bounds() const {
-    return (max_x_ > min_x_ && max_y_ > min_y_)
+    return (max_x_ >= min_x_ && max_y_ >= min_y_)
                ? SkRect::MakeLTRB(min_x_, min_y_, max_x_, max_y_)
                : SkRect::MakeEmpty();
   }
@@ -404,11 +405,13 @@ class DisplayListBoundsCalculator final
   void setBlender(sk_sp<SkBlender> blender) override;
   void setImageFilter(const DlImageFilter* filter) override;
   void setColorFilter(const DlColorFilter* filter) override;
-  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override;
   void restore() override;
 
   void drawPaint() override;
@@ -432,23 +435,23 @@ class DisplayListBoundsCalculator final
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  bool render_with_attributes) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      bool render_with_attributes) override;
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        DlFilterMode filter,
                         bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
@@ -456,7 +459,7 @@ class DisplayListBoundsCalculator final
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
   void drawPicture(const sk_sp<SkPicture> picture,
@@ -582,7 +585,7 @@ class DisplayListBoundsCalculator final
   bool join_is_miter_ = true;
   bool cap_is_square_ = false;
   std::shared_ptr<DlImageFilter> image_filter_;
-  sk_sp<SkPathEffect> path_effect_;
+  std::shared_ptr<const DlPathEffect> path_effect_;
   std::shared_ptr<const DlMaskFilter> mask_filter_;
 
   bool paint_nops_on_transparency();

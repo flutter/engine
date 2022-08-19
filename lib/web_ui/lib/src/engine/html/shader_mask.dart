@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import 'bitmap_canvas.dart';
 import 'color_filter.dart';
@@ -34,12 +33,12 @@ class PersistedShaderMask extends PersistedContainerSurface
     this.filterQuality,
   ) : super(oldLayer);
 
-  html.Element? _childContainer;
+  DomElement? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
-  html.Element? _shaderElement;
+  DomElement? _shaderElement;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -52,7 +51,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element? get childContainer => _childContainer;
+  DomElement? get childContainer => _childContainer;
 
   @override
   void discard() {
@@ -72,9 +71,9 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-shader-mask');
-    final html.Element container = html.Element.tag('flt-mask-interior');
+  DomElement createElement() {
+    final DomElement element = defaultCreateElement('flt-shader-mask');
+    final DomElement container = createDomElement('flt-mask-interior');
     container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);

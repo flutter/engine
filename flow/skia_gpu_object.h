@@ -74,9 +74,13 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
         context_(context) {}
 
   ~UnrefQueue() {
+    // The ResourceContext must be deleted on the task runner thread.
+    // Transfer ownership of the UnrefQueue's ResourceContext reference
+    // into a task queued to that thread.
+    ResourceContext* raw_context = context_.release();
     fml::TaskRunner::RunNowOrPostTask(
-        task_runner_, [objects = std::move(objects_),
-                       context = std::move(context_)]() mutable {
+        task_runner_, [objects = std::move(objects_), raw_context]() mutable {
+          sk_sp<ResourceContext> context(raw_context);
           DoDrain(objects, context);
           context.reset();
         });
@@ -89,7 +93,7 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
       skia_object->unref();
     }
 
-    if (context && skia_objects.size() > 0) {
+    if (context && !skia_objects.empty()) {
       context->performDeferredCleanup(std::chrono::milliseconds(0));
     }
   }

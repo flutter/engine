@@ -10,6 +10,7 @@
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_library_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
+#include "impeller/renderer/backend/gles/sampler_library_gles.h"
 #include "impeller/renderer/backend/gles/shader_library_gles.h"
 #include "impeller/renderer/context.h"
 
@@ -18,19 +19,31 @@ namespace impeller {
 class ContextGLES final : public Context,
                           public BackendCast<ContextGLES, Context> {
  public:
-  ContextGLES();
+  static std::shared_ptr<ContextGLES> Create(
+      std::unique_ptr<ProcTableGLES> gl,
+      std::vector<std::shared_ptr<fml::Mapping>> shader_libraries);
 
   // |Context|
   ~ContextGLES() override;
 
+  const ReactorGLES::Ref& GetReactor() const;
+
+  std::optional<ReactorGLES::WorkerID> AddReactorWorker(
+      std::shared_ptr<ReactorGLES::Worker> worker);
+
+  bool RemoveReactorWorker(ReactorGLES::WorkerID id);
+
  private:
-  std::shared_ptr<ReactorGLES> reactor_;
+  ReactorGLES::Ref reactor_;
   std::shared_ptr<ShaderLibraryGLES> shader_library_;
   std::shared_ptr<PipelineLibraryGLES> pipeline_library_;
-  std::shared_ptr<SamplerLibrary> sampler_library_;
+  std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<AllocatorGLES> permanents_allocator_;
   std::shared_ptr<AllocatorGLES> transients_allocator_;
   bool is_valid_ = false;
+
+  ContextGLES(std::unique_ptr<ProcTableGLES> gl,
+              std::vector<std::shared_ptr<fml::Mapping>> shader_libraries);
 
   // |Context|
   bool IsValid() const override;
@@ -55,6 +68,9 @@ class ContextGLES final : public Context,
 
   // |Context|
   std::shared_ptr<CommandBuffer> CreateTransferCommandBuffer() const override;
+
+  // |Context|
+  bool HasThreadingRestrictions() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };

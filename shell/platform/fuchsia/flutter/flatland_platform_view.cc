@@ -32,7 +32,8 @@ FlatlandPlatformView::FlatlandPlatformView(
     AwaitVsyncCallback await_vsync_callback,
     AwaitVsyncForSecondaryCallbackCallback
         await_vsync_for_secondary_callback_callback)
-    : PlatformView(delegate,
+    : PlatformView(true /* is_flatland */,
+                   delegate,
                    std::move(task_runners),
                    std::move(view_ref),
                    std::move(external_view_embedder),
@@ -73,10 +74,6 @@ void FlatlandPlatformView::OnGetLayout(
                         static_cast<float>(info.logical_size().height)};
 
   // TODO(fxbug.dev/94000): Set device pixel ratio.
-  if (info.pixel_scale().width != 1 || info.pixel_scale().height != 1) {
-    FML_LOG(ERROR)
-        << "Flutter does not currently support pixel_scale's other than 1";
-  }
 
   SetViewportMetrics({
       1,                              // device_pixel_ratio

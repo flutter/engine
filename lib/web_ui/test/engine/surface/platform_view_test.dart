@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -28,11 +27,11 @@ Future<void> testMain() async {
     setUp(() async {
       platformViewRegistry.registerViewFactory(
         'test-0',
-        (int viewId) => html.DivElement(),
+        (int viewId) => createDomHTMLDivElement(),
       );
       platformViewRegistry.registerViewFactory(
         'test-1',
-        (int viewId) => html.DivElement(),
+        (int viewId) => createDomHTMLDivElement(),
       );
       // Ensure the views are created...
       await Future.wait(<Future<void>>[
@@ -70,7 +69,7 @@ Future<void> testMain() async {
 
     group('createElement', () {
       test('creates slot element that can receive pointer events', () {
-        final html.Element element = view.createElement();
+        final DomElement element = view.createElement();
 
         expect(element.tagName, equalsIgnoringCase('flt-platform-view-slot'));
         expect(element.style.pointerEvents, 'auto');

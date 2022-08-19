@@ -3,15 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'package:web_engine_tester/golden_tester.dart';
-
-import '../../common.dart';
 
 /// Class that controls some details of how screenshotting is made.
 ///
@@ -68,7 +65,7 @@ class EngineScubaTester {
     bool write = false,
   }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -77,7 +74,7 @@ class EngineScubaTester {
     }
     try {
       sceneElement.append(canvas.rootElement);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       String screenshotName = '${fileName}_${canvas.runtimeType}';
       if (canvas is BitmapCanvas) {
         screenshotName += '+canvas_measurement';
@@ -106,7 +103,7 @@ void testEachCanvas(String description, CanvasTest body,
     return body(BitmapCanvas(bounds, RenderStrategy()));
   });
   test('$description (dom)', () {
-    return body(DomCanvas(html.document.createElement('flt-picture')));
+    return body(DomCanvas(domDocument.createElement('flt-picture')));
   });
 }
 

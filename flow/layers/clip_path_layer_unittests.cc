@@ -4,11 +4,15 @@
 
 #include "flutter/flow/layers/clip_path_layer.h"
 
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
+#include "include/core/SkPaint.h"
 
 namespace flutter {
 namespace testing {
@@ -391,16 +395,11 @@ TEST_F(ClipPathLayerTest, OpacityInheritancePainting) {
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-  auto opacity_integer_transform = SkM44::Translate(offset.fX, offset.fY);
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(offset.fX, offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-#endif
       /* ClipRectLayer::Paint() */ {
         expected_builder.save();
         expected_builder.clipPath(layer_clip, SkClipOp::kIntersect, true);
@@ -462,16 +461,11 @@ TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-  auto opacity_integer_transform = SkM44::Translate(offset.fX, offset.fY);
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(offset.fX, offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-#endif
       /* ClipRectLayer::Paint() */ {
         expected_builder.save();
         expected_builder.clipPath(layer_clip, SkClipOp::kIntersect, true);
@@ -492,6 +486,48 @@ TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
 
   opacity_layer->Paint(display_list_paint_context());
   EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+}
+
+TEST_F(ClipPathLayerTest, LayerCached) {
+  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto mock1 = MockLayer::MakeOpacityCompatible(path1);
+  auto layer_clip = SkPath()
+                        .addRect(SkRect::MakeLTRB(5, 5, 25, 25))
+                        .addOval(SkRect::MakeLTRB(20, 20, 40, 50));
+  auto layer =
+      std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAliasWithSaveLayer);
+  layer->Add(mock1);
+
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+
+  use_mock_raster_cache();
+
+  const auto* clip_cache_item = layer->raster_cache_item();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(clip_cache_item->cache_state(), RasterCacheItem::CacheState::kNone);
+
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(clip_cache_item->cache_state(), RasterCacheItem::CacheState::kNone);
+
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_EQ(clip_cache_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
+  SkPaint paint;
+  EXPECT_TRUE(raster_cache()->Draw(clip_cache_item->GetId().value(),
+                                   cache_canvas, &paint));
 }
 
 }  // namespace testing

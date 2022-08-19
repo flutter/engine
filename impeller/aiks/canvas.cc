@@ -11,7 +11,9 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -37,6 +39,21 @@ void Canvas::Reset() {
 
 void Canvas::Save() {
   Save(false);
+}
+
+void Canvas::Save(bool create_subpass, Entity::BlendMode blend_mode) {
+  auto entry = CanvasStackEntry{};
+  entry.xformation = xformation_stack_.back().xformation;
+  entry.stencil_depth = xformation_stack_.back().stencil_depth;
+  if (create_subpass) {
+    entry.is_subpass = true;
+    auto subpass = std::make_unique<EntityPass>();
+    subpass->SetBlendMode(blend_mode);
+    current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
+    current_pass_->SetTransformation(xformation_stack_.back().xformation);
+    current_pass_->SetStencilDepth(xformation_stack_.back().stencil_depth);
+  }
+  xformation_stack_.emplace_back(std::move(entry));
 }
 
 bool Canvas::Restore() {
@@ -137,23 +154,6 @@ void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
            std::move(paint));
 }
 
-void Canvas::SaveLayer(Paint paint, std::optional<Rect> bounds) {
-  GetCurrentPass().SetDelegate(
-      std::make_unique<PaintPassDelegate>(paint, bounds));
-
-  Save(true);
-  GetCurrentPass().SetBlendMode(paint.blend_mode);
-
-  if (bounds.has_value()) {
-    // Render target switches due to a save layer can be elided. In such cases
-    // where passes are collapsed into their parent, the clipping effect to
-    // the size of the render target that would have been allocated will be
-    // absent. Explicitly add back a clip to reproduce that behavior. Since
-    // clips never require a render target switch, this is a cheap operation.
-    ClipPath(PathBuilder{}.AddRect(bounds.value()).TakePath());
-  }
-}
-
 void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
   auto contents = std::make_shared<ClipContents>();
   contents->SetPath(std::move(path));
@@ -235,6 +235,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
   contents->SetTexture(image->GetTexture());
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));
+  contents->SetOpacity(paint.color.alpha);
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
@@ -264,17 +265,24 @@ size_t Canvas::GetStencilDepth() const {
   return xformation_stack_.back().stencil_depth;
 }
 
-void Canvas::Save(bool create_subpass) {
-  auto entry = CanvasStackEntry{};
-  entry.xformation = xformation_stack_.back().xformation;
-  entry.stencil_depth = xformation_stack_.back().stencil_depth;
-  if (create_subpass) {
-    entry.is_subpass = true;
-    current_pass_ = GetCurrentPass().AddSubpass(std::make_unique<EntityPass>());
-    current_pass_->SetTransformation(xformation_stack_.back().xformation);
-    current_pass_->SetStencilDepth(xformation_stack_.back().stencil_depth);
+void Canvas::SaveLayer(Paint paint,
+                       std::optional<Rect> bounds,
+                       std::optional<Paint::ImageFilterProc> backdrop_filter) {
+  Save(true, paint.blend_mode);
+
+  auto& new_layer_pass = GetCurrentPass();
+  new_layer_pass.SetDelegate(
+      std::make_unique<PaintPassDelegate>(paint, bounds));
+  new_layer_pass.SetBackdropFilter(backdrop_filter);
+
+  if (bounds.has_value() && !backdrop_filter.has_value()) {
+    // Render target switches due to a save layer can be elided. In such cases
+    // where passes are collapsed into their parent, the clipping effect to
+    // the size of the render target that would have been allocated will be
+    // absent. Explicitly add back a clip to reproduce that behavior. Since
+    // clips never require a render target switch, this is a cheap operation.
+    ClipPath(PathBuilder{}.AddRect(bounds.value()).TakePath());
   }
-  xformation_stack_.emplace_back(std::move(entry));
 }
 
 void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
@@ -293,6 +301,21 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+
+  GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::DrawVertices(Vertices vertices,
+                          Entity::BlendMode mode,
+                          Paint paint) {
+  std::shared_ptr<VerticesContents> contents =
+      std::make_shared<VerticesContents>(std::move(vertices));
+  contents->SetColor(paint.color);
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(std::move(contents), true));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

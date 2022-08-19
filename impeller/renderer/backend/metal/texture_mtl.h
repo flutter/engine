@@ -20,23 +20,29 @@ class TextureMTL final : public Texture,
   // |Texture|
   ~TextureMTL() override;
 
-  // |Texture|
-  void SetLabel(const std::string_view& label) override;
+  id<MTLTexture> GetMTLTexture() const;
+
+ private:
+  id<MTLTexture> texture_ = nullptr;
+  bool is_valid_ = false;
 
   // |Texture|
-  bool SetContents(const uint8_t* contents, size_t length) override;
+  void SetLabel(std::string_view label) override;
+
+  // |Texture|
+  bool OnSetContents(const uint8_t* contents,
+                     size_t length,
+                     size_t slice) override;
+
+  // |Texture|
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) override;
 
   // |Texture|
   bool IsValid() const override;
 
   // |Texture|
   ISize GetSize() const override;
-
-  id<MTLTexture> GetMTLTexture() const;
-
- private:
-  id<MTLTexture> texture_ = nullptr;
-  bool is_valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureMTL);
 };

@@ -13,6 +13,8 @@
 #include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_mask_filter.h"
 #include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/display_list_path_effect.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_vertices.h"
 
 namespace flutter {
@@ -52,7 +54,7 @@ class Dispatcher {
   virtual void setInvertColors(bool invert) = 0;
   virtual void setBlendMode(DlBlendMode mode) = 0;
   virtual void setBlender(sk_sp<SkBlender> blender) = 0;
-  virtual void setPathEffect(sk_sp<SkPathEffect> effect) = 0;
+  virtual void setPathEffect(const DlPathEffect* effect) = 0;
   virtual void setMaskFilter(const DlMaskFilter* filter) = 0;
   virtual void setImageFilter(const DlImageFilter* filter) = 0;
 
@@ -68,8 +70,11 @@ class Dispatcher {
   // to avoid creating a temporary layer, these optimization options will
   // be determined as the |DisplayList| is constructed and should not be
   // specified in calling a |DisplayListBuilder| as they will be ignored.
+  // The |backdrop| filter, if not null, is used to initialize the new
+  // layer before further rendering happens.
   virtual void saveLayer(const SkRect* bounds,
-                         const SaveLayerOptions options) = 0;
+                         const SaveLayerOptions options,
+                         const DlImageFilter* backdrop = nullptr) = 0;
   virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;
@@ -212,23 +217,23 @@ class Dispatcher {
   virtual void drawVertices(const DlVertices* vertices, DlBlendMode mode) = 0;
   virtual void drawImage(const sk_sp<DlImage> image,
                          const SkPoint point,
-                         const SkSamplingOptions& sampling,
+                         DlImageSampling sampling,
                          bool render_with_attributes) = 0;
   virtual void drawImageRect(const sk_sp<DlImage> image,
                              const SkRect& src,
                              const SkRect& dst,
-                             const SkSamplingOptions& sampling,
+                             DlImageSampling sampling,
                              bool render_with_attributes,
                              SkCanvas::SrcRectConstraint constraint) = 0;
   virtual void drawImageNine(const sk_sp<DlImage> image,
                              const SkIRect& center,
                              const SkRect& dst,
-                             SkFilterMode filter,
+                             DlFilterMode filter,
                              bool render_with_attributes) = 0;
   virtual void drawImageLattice(const sk_sp<DlImage> image,
                                 const SkCanvas::Lattice& lattice,
                                 const SkRect& dst,
-                                SkFilterMode filter,
+                                DlFilterMode filter,
                                 bool render_with_attributes) = 0;
   virtual void drawAtlas(const sk_sp<DlImage> atlas,
                          const SkRSXform xform[],
@@ -236,7 +241,7 @@ class Dispatcher {
                          const DlColor colors[],
                          int count,
                          DlBlendMode mode,
-                         const SkSamplingOptions& sampling,
+                         DlImageSampling sampling,
                          const SkRect* cull_rect,
                          bool render_with_attributes) = 0;
   virtual void drawPicture(const sk_sp<SkPicture> picture,

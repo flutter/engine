@@ -3,14 +3,18 @@
 // found in the LICENSE file.
 
 #include <array>
+#include <cmath>
+#include <tuple>
 
 #include "flutter/testing/testing.h"
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "third_party/skia/include/core/SkData.h"
@@ -49,7 +53,7 @@ TEST_P(AiksTest, CanvasCanPushPopCTM) {
 TEST_P(AiksTest, CanRenderColoredRect) {
   Canvas canvas;
   Paint paint;
-  paint.color = Color::Red();
+  paint.color = Color::Blue();
   canvas.DrawPath(PathBuilder{}
                       .AddRect(Rect::MakeXYWH(100.0, 100.0, 100.0, 100.0))
                       .TakePath(),
@@ -223,6 +227,47 @@ TEST_P(AiksTest, CanRenderGroupOpacity) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CoordinateConversionsAreCorrect) {
+  Canvas canvas;
+
+  // Render a texture directly.
+  {
+    Paint paint;
+    auto image =
+        std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
+    paint.color = Color::Red();
+
+    canvas.Save();
+    canvas.Translate({100, 200, 0});
+    canvas.Scale(Vector2{0.5, 0.5});
+    canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
+    canvas.Restore();
+  }
+
+  // Render an offscreen rendered texture.
+  {
+    Paint red;
+    red.color = Color::Red();
+    Paint green;
+    green.color = Color::Green();
+    Paint blue;
+    blue.color = Color::Blue();
+
+    Paint alpha;
+    alpha.color = Color::Red().WithAlpha(0.5);
+
+    canvas.SaveLayer(alpha);
+
+    canvas.DrawRect({000, 000, 100, 100}, red);
+    canvas.DrawRect({020, 020, 100, 100}, green);
+    canvas.DrawRect({040, 040, 100, 100}, blue);
+
+    canvas.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanPerformFullScreenMSAA) {
   Canvas canvas;
 
@@ -350,12 +395,14 @@ static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
   if (!mapping) {
     return nullptr;
   }
-  return SkData::MakeWithProc(
+  auto data = SkData::MakeWithProc(
       mapping->GetMapping(), mapping->GetSize(),
       [](const void* ptr, void* context) {
         delete reinterpret_cast<fml::Mapping*>(context);
       },
-      mapping.release());
+      mapping.get());
+  mapping.release();
+  return data;
 }
 
 bool RenderTextInCanvas(std::shared_ptr<Context> context,
@@ -467,6 +514,178 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, ColorWheel) {
+  // Compare with https://fiddle.skia.org/c/@BlendModes
+
+  std::vector<const char*> blend_mode_names;
+  std::vector<Entity::BlendMode> blend_mode_values;
+  {
+    const std::vector<std::tuple<const char*, Entity::BlendMode>> blends = {
+        // Pipeline blends (Porter-Duff alpha compositing)
+        {"Clear", Entity::BlendMode::kClear},
+        {"Source", Entity::BlendMode::kSource},
+        {"Destination", Entity::BlendMode::kDestination},
+        {"SourceOver", Entity::BlendMode::kSourceOver},
+        {"DestinationOver", Entity::BlendMode::kDestinationOver},
+        {"SourceIn", Entity::BlendMode::kSourceIn},
+        {"DestinationIn", Entity::BlendMode::kDestinationIn},
+        {"SourceOut", Entity::BlendMode::kSourceOut},
+        {"DestinationOut", Entity::BlendMode::kDestinationOut},
+        {"SourceATop", Entity::BlendMode::kSourceATop},
+        {"DestinationATop", Entity::BlendMode::kDestinationATop},
+        {"Xor", Entity::BlendMode::kXor},
+        {"Plus", Entity::BlendMode::kPlus},
+        {"Modulate", Entity::BlendMode::kModulate},
+        // Advanced blends (color component blends)
+        {"Screen", Entity::BlendMode::kScreen},
+        {"Overlay", Entity::BlendMode::kOverlay},
+        {"Darken", Entity::BlendMode::kDarken},
+        {"Lighten", Entity::BlendMode::kLighten},
+        {"ColorDodge", Entity::BlendMode::kColorDodge},
+        {"ColorBurn", Entity::BlendMode::kColorBurn},
+        {"HardLight", Entity::BlendMode::kHardLight},
+        {"SoftLight", Entity::BlendMode::kSoftLight},
+        {"Difference", Entity::BlendMode::kDifference},
+        {"Exclusion", Entity::BlendMode::kExclusion},
+        {"Multiply", Entity::BlendMode::kMultiply},
+        {"Hue", Entity::BlendMode::kHue},
+        {"Saturation", Entity::BlendMode::kSaturation},
+        {"Color", Entity::BlendMode::kColor},
+        {"Luminosity", Entity::BlendMode::kLuminosity},
+    };
+    assert(blends.size() ==
+           static_cast<size_t>(Entity::BlendMode::kLastAdvancedBlendMode) + 1);
+    for (const auto& [name, mode] : blends) {
+      blend_mode_names.push_back(name);
+      blend_mode_values.push_back(mode);
+    }
+  }
+
+  auto draw_color_wheel = [](Canvas& canvas) {
+    /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
+    /// cyan domain: r >= 0 (because modulo used is non euclidean)
+    auto color_wheel_sampler = [](Radians r) {
+      Scalar x = r.radians / k2Pi + 1;
+
+      // https://www.desmos.com/calculator/6nhjelyoaj
+      auto color_cycle = [](Scalar x) {
+        Scalar cycle = std::fmod(x, 6.0f);
+        return std::max(0.0f, std::min(1.0f, 2 - std::abs(2 - cycle)));
+      };
+      return Color(color_cycle(6 * x + 1),  //
+                   color_cycle(6 * x - 1),  //
+                   color_cycle(6 * x - 3),  //
+                   1);
+    };
+
+    Paint paint;
+    paint.blend_mode = Entity::BlendMode::kSourceOver;
+
+    // Draw a fancy color wheel for the backdrop.
+    // https://www.desmos.com/calculator/xw7kafthwd
+    const int max_dist = 900;
+    for (int i = 0; i <= 900; i++) {
+      Radians r(kPhi / k2Pi * i);
+      Scalar distance = r.radians / std::powf(4.12, 0.0026 * r.radians);
+      Scalar normalized_distance = static_cast<Scalar>(i) / max_dist;
+
+      paint.color =
+          color_wheel_sampler(r).WithAlpha(1.0f - normalized_distance);
+      Point position(distance * std::sin(r.radians),
+                     -distance * std::cos(r.radians));
+
+      canvas.DrawCircle(position, 9 + normalized_distance * 3, paint);
+    }
+  };
+
+  std::shared_ptr<Image> color_wheel;
+  Matrix color_wheel_transform;
+
+  bool first_frame = true;
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowSize({350, 260});
+      ImGui::SetNextWindowPos({25, 25});
+    }
+
+    // UI state.
+    static int current_blend_index = 3;
+    static float alpha = 1;
+    static Color color0 = Color::Red();
+    static Color color1 = Color::Green();
+    static Color color2 = Color::Blue();
+
+    ImGui::Begin("Controls");
+    {
+      ImGui::ListBox("Blending mode", &current_blend_index,
+                     blend_mode_names.data(), blend_mode_names.size());
+      ImGui::SliderFloat("Alpha", &alpha, 0, 1);
+      ImGui::ColorEdit4("Color A", reinterpret_cast<float*>(&color0));
+      ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
+      ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&color2));
+    }
+    ImGui::End();
+
+    static Point content_scale;
+    Point new_content_scale = GetContentScale();
+
+    if (new_content_scale != content_scale) {
+      content_scale = new_content_scale;
+
+      // Render the color wheel to an image.
+
+      Canvas canvas;
+      canvas.Scale(content_scale);
+
+      canvas.Translate(Vector2(500, 400));
+      canvas.Scale(Vector2(3, 3));
+
+      draw_color_wheel(canvas);
+      auto color_wheel_picture = canvas.EndRecordingAsPicture();
+      auto snapshot = color_wheel_picture.Snapshot(renderer);
+      if (!snapshot.has_value() || !snapshot->texture) {
+        return false;
+      }
+      color_wheel = std::make_shared<Image>(snapshot->texture);
+      color_wheel_transform = snapshot->transform;
+    }
+
+    Canvas canvas;
+    canvas.DrawPaint({.color = Color::White()});
+
+    canvas.Save();
+    canvas.Transform(color_wheel_transform);
+    canvas.DrawImage(color_wheel, Point(), Paint());
+    canvas.Restore();
+
+    canvas.Scale(content_scale);
+    canvas.Translate(Vector2(500, 400));
+    canvas.Scale(Vector2(3, 3));
+
+    // Draw 3 circles to a subpass and blend it in.
+    canvas.SaveLayer({.color = Color::White().WithAlpha(alpha),
+                      .blend_mode = blend_mode_values[current_blend_index]});
+    {
+      Paint paint;
+      paint.blend_mode = Entity::BlendMode::kPlus;
+      const Scalar x = std::sin(k2Pi / 3);
+      const Scalar y = -std::cos(k2Pi / 3);
+      paint.color = color0;
+      canvas.DrawCircle(Point(-x, y) * 45, 65, paint);
+      paint.color = color1;
+      canvas.DrawCircle(Point(0, -1) * 45, 65, paint);
+      paint.color = color2;
+      canvas.DrawCircle(Point(x, y) * 45, 65, paint);
+    }
+    canvas.Restore();
+
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
   Canvas canvas;
   ASSERT_MATRIX_NEAR(canvas.GetCurrentTransformation(), Matrix());
@@ -509,7 +728,7 @@ TEST_P(AiksTest, TransformMultipliesCorrectly) {
 TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
   // Compare with https://fiddle.skia.org/c/027392122bec8ac2b5d5de00a4b9bbe2
   bool first_frame = true;
-  auto callback = [&](AiksContext& renderer, RenderPass& pass) {
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     if (first_frame) {
       first_frame = false;
       ImGui::SetNextWindowSize({480, 100});
@@ -527,6 +746,7 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     ImGui::End();
 
     Canvas canvas;
+    canvas.Scale(GetContentScale());
     Paint paint;
 
     paint.color = Color::White();
@@ -573,14 +793,14 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
       canvas.Translate({-240, 60});
     }
 
-    return renderer.Render(canvas.EndRecordingAsPicture(), pass);
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
-  auto callback = [](AiksContext& renderer, RenderPass& pass) {
+  auto callback = [](AiksContext& renderer, RenderTarget& render_target) {
     Canvas canvas;
     Paint alpha;
     alpha.color = Color::Red().WithAlpha(0.5);
@@ -605,7 +825,7 @@ TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
 
     canvas.Restore();
 
-    return renderer.Render(canvas.EndRecordingAsPicture(), pass);
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -645,6 +865,60 @@ TEST_P(AiksTest, SaveLayerDrawsBehindSubsequentEntities) {
   canvas.Translate({10, 10});
   paint.color = Color::Red();
   canvas.DrawRect(rect, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SiblingSaveLayerBoundsAreRespected) {
+  Canvas canvas;
+  Paint paint;
+  Rect rect(0, 0, 1000, 1000);
+
+  // Black, green, and red squares offset by [10, 10].
+  {
+    canvas.SaveLayer({}, Rect::MakeXYWH(25, 25, 25, 25));
+    paint.color = Color::Black();
+    canvas.DrawRect(rect, paint);
+    canvas.Restore();
+  }
+
+  {
+    canvas.SaveLayer({}, Rect::MakeXYWH(35, 35, 25, 25));
+    paint.color = Color::Green();
+    canvas.DrawRect(rect, paint);
+    canvas.Restore();
+  }
+
+  {
+    canvas.SaveLayer({}, Rect::MakeXYWH(45, 45, 25, 25));
+    paint.color = Color::Red();
+    canvas.DrawRect(rect, paint);
+    canvas.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderClippedLayers) {
+  Canvas canvas;
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  // Draw a green circle on the screen.
+  {
+    // Increase the clip depth for the savelayer to contend with.
+    canvas.ClipPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath());
+
+    canvas.SaveLayer({}, Rect::MakeXYWH(50, 50, 100, 100));
+
+    // Fill the layer with white.
+    canvas.DrawRect(Rect::MakeSize({400, 400}), {.color = Color::White()});
+    // Fill the layer with green, but do so with a color blend that can't be
+    // collapsed into the parent pass.
+    canvas.DrawRect(
+        Rect::MakeSize({400, 400}),
+        {.color = Color::Green(), .blend_mode = Entity::BlendMode::kColorBurn});
+  }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

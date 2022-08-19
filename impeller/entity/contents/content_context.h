@@ -11,25 +11,41 @@
 #include "flutter/fml/macros.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/entity/advanced_blend.vert.h"
+#include "impeller/entity/advanced_blend_color.frag.h"
+#include "impeller/entity/advanced_blend_colorburn.frag.h"
+#include "impeller/entity/advanced_blend_colordodge.frag.h"
+#include "impeller/entity/advanced_blend_darken.frag.h"
+#include "impeller/entity/advanced_blend_difference.frag.h"
+#include "impeller/entity/advanced_blend_exclusion.frag.h"
+#include "impeller/entity/advanced_blend_hardlight.frag.h"
+#include "impeller/entity/advanced_blend_hue.frag.h"
+#include "impeller/entity/advanced_blend_lighten.frag.h"
+#include "impeller/entity/advanced_blend_luminosity.frag.h"
+#include "impeller/entity/advanced_blend_multiply.frag.h"
+#include "impeller/entity/advanced_blend_overlay.frag.h"
+#include "impeller/entity/advanced_blend_saturation.frag.h"
+#include "impeller/entity/advanced_blend_screen.frag.h"
+#include "impeller/entity/advanced_blend_softlight.frag.h"
+#include "impeller/entity/blend.frag.h"
+#include "impeller/entity/blend.vert.h"
+#include "impeller/entity/border_mask_blur.frag.h"
+#include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/mtl/border_mask_blur.frag.h"
-#include "impeller/entity/mtl/border_mask_blur.vert.h"
-#include "impeller/entity/mtl/gaussian_blur.frag.h"
-#include "impeller/entity/mtl/gaussian_blur.vert.h"
-#include "impeller/entity/mtl/glyph_atlas.frag.h"
-#include "impeller/entity/mtl/glyph_atlas.vert.h"
-#include "impeller/entity/mtl/gradient_fill.frag.h"
-#include "impeller/entity/mtl/gradient_fill.vert.h"
-#include "impeller/entity/mtl/solid_fill.frag.h"
-#include "impeller/entity/mtl/solid_fill.vert.h"
-#include "impeller/entity/mtl/solid_stroke.frag.h"
-#include "impeller/entity/mtl/solid_stroke.vert.h"
-#include "impeller/entity/mtl/texture_blend.frag.h"
-#include "impeller/entity/mtl/texture_blend.vert.h"
-#include "impeller/entity/mtl/texture_blend_screen.frag.h"
-#include "impeller/entity/mtl/texture_blend_screen.vert.h"
-#include "impeller/entity/mtl/texture_fill.frag.h"
-#include "impeller/entity/mtl/texture_fill.vert.h"
+#include "impeller/entity/gaussian_blur.frag.h"
+#include "impeller/entity/gaussian_blur.vert.h"
+#include "impeller/entity/glyph_atlas.frag.h"
+#include "impeller/entity/glyph_atlas.vert.h"
+#include "impeller/entity/gradient_fill.frag.h"
+#include "impeller/entity/gradient_fill.vert.h"
+#include "impeller/entity/solid_fill.frag.h"
+#include "impeller/entity/solid_fill.vert.h"
+#include "impeller/entity/solid_stroke.frag.h"
+#include "impeller/entity/solid_stroke.vert.h"
+#include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/vertices.frag.h"
+#include "impeller/entity/vertices.vert.h"
 #include "impeller/renderer/formats.h"
 
 namespace impeller {
@@ -38,10 +54,37 @@ using GradientFillPipeline =
     PipelineT<GradientFillVertexShader, GradientFillFragmentShader>;
 using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
-using TextureBlendPipeline =
-    PipelineT<TextureBlendVertexShader, TextureBlendFragmentShader>;
-using TextureBlendScreenPipeline =
-    PipelineT<TextureBlendScreenVertexShader, TextureBlendScreenFragmentShader>;
+using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
+using BlendColorPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorFragmentShader>;
+using BlendColorBurnPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorburnFragmentShader>;
+using BlendColorDodgePipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColordodgeFragmentShader>;
+using BlendDarkenPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendDarkenFragmentShader>;
+using BlendDifferencePipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendDifferenceFragmentShader>;
+using BlendExclusionPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendExclusionFragmentShader>;
+using BlendHardLightPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendHardlightFragmentShader>;
+using BlendHuePipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendHueFragmentShader>;
+using BlendLightenPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendLightenFragmentShader>;
+using BlendLuminosityPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendLuminosityFragmentShader>;
+using BlendMultiplyPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendMultiplyFragmentShader>;
+using BlendOverlayPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendOverlayFragmentShader>;
+using BlendSaturationPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendSaturationFragmentShader>;
+using BlendScreenPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendScreenFragmentShader>;
+using BlendSoftLightPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendSoftlightFragmentShader>;
 using TexturePipeline =
     PipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
 using GaussianBlurPipeline =
@@ -52,6 +95,8 @@ using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
     PipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
+using VerticesPipeline =
+    PipelineT<VerticesVertexShader, VerticesFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
@@ -78,6 +123,8 @@ struct ContentContextOptions {
              lhs.stencil_operation == rhs.stencil_operation;
     }
   };
+
+  void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
 
 class ContentContext {
@@ -98,14 +145,8 @@ class ContentContext {
     return GetPipeline(solid_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline> GetTextureBlendPipeline(
-      ContentContextOptions opts) const {
+  std::shared_ptr<Pipeline> GetBlendPipeline(ContentContextOptions opts) const {
     return GetPipeline(texture_blend_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline> GetTextureBlendScreenPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(texture_blend_screen_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetTexturePipeline(
@@ -137,6 +178,88 @@ class ContentContext {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline> GetVerticesPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(vertices_pipelines_, opts);
+  }
+
+  // Advanced blends.
+
+  std::shared_ptr<Pipeline> GetBlendColorPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_color_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendColorBurnPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_colorburn_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendColorDodgePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_colordodge_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendDarkenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_darken_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendDifferencePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_difference_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendExclusionPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_exclusion_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendHardLightPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_hardlight_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendHuePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_hue_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendLightenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_lighten_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendLuminosityPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_luminosity_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendMultiplyPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_multiply_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendOverlayPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_overlay_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendSaturationPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_saturation_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendScreenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_screen_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendSoftLightPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_softlight_pipelines_, opts);
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   using SubpassCallback =
@@ -161,133 +284,30 @@ class ContentContext {
   // map.
   mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
-  mutable Variants<TextureBlendPipeline> texture_blend_pipelines_;
-  mutable Variants<TextureBlendScreenPipeline> texture_blend_screen_pipelines_;
+  mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-
-  static void ApplyOptionsToDescriptor(PipelineDescriptor& desc,
-                                       const ContentContextOptions& options) {
-    auto blend_mode = options.blend_mode;
-    if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
-      VALIDATION_LOG << "Cannot use blend mode "
-                     << static_cast<int>(options.blend_mode)
-                     << " as a pipeline blend.";
-      blend_mode = Entity::BlendMode::kSourceOver;
-    }
-
-    desc.SetSampleCount(options.sample_count);
-
-    ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
-    color0.alpha_blend_op = BlendOperation::kAdd;
-    color0.color_blend_op = BlendOperation::kAdd;
-
-    static_assert(Entity::BlendMode::kLastPipelineBlendMode ==
-                  Entity::BlendMode::kModulate);
-
-    switch (blend_mode) {
-      case Entity::BlendMode::kClear:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSource:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case Entity::BlendMode::kDestination:
-        color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSourceOver:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case Entity::BlendMode::kDestinationOver:
-        color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kSourceIn:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
-        break;
-      case Entity::BlendMode::kDestinationIn:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSourceOut:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kDestinationOut:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSourceATop:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
-        break;
-      case Entity::BlendMode::kDestinationATop:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kXor:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kPlus:
-        color0.dst_alpha_blend_factor = BlendFactor::kOne;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kOne;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case Entity::BlendMode::kModulate:
-        // kSourceColor and kDestinationColor override the alpha blend factor.
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kSourceColor;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      default:
-        FML_UNREACHABLE();
-    }
-    desc.SetColorAttachmentDescriptor(0u, std::move(color0));
-
-    if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
-      StencilAttachmentDescriptor stencil =
-          desc.GetFrontStencilAttachmentDescriptor().value();
-      stencil.stencil_compare = options.stencil_compare;
-      stencil.depth_stencil_pass = options.stencil_operation;
-      desc.SetStencilAttachmentDescriptors(stencil);
-    }
-  }
+  mutable Variants<VerticesPipeline> vertices_pipelines_;
+  // Advanced blends.
+  mutable Variants<BlendColorPipeline> blend_color_pipelines_;
+  mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
+  mutable Variants<BlendColorDodgePipeline> blend_colordodge_pipelines_;
+  mutable Variants<BlendDarkenPipeline> blend_darken_pipelines_;
+  mutable Variants<BlendDifferencePipeline> blend_difference_pipelines_;
+  mutable Variants<BlendExclusionPipeline> blend_exclusion_pipelines_;
+  mutable Variants<BlendHardLightPipeline> blend_hardlight_pipelines_;
+  mutable Variants<BlendHuePipeline> blend_hue_pipelines_;
+  mutable Variants<BlendLightenPipeline> blend_lighten_pipelines_;
+  mutable Variants<BlendLuminosityPipeline> blend_luminosity_pipelines_;
+  mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
+  mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
+  mutable Variants<BlendSaturationPipeline> blend_saturation_pipelines_;
+  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
+  mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline> GetPipeline(Variants<TypedPipeline>& container,
@@ -307,7 +327,7 @@ class ContentContext {
 
     auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
         [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
-          ApplyOptionsToDescriptor(desc, opts);
+          opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });

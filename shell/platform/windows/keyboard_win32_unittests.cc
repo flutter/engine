@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
@@ -46,6 +46,7 @@ constexpr uint64_t kScanCodeKeyO = 0x18;
 constexpr uint64_t kScanCodeKeyQ = 0x10;
 constexpr uint64_t kScanCodeKeyW = 0x11;
 constexpr uint64_t kScanCodeDigit1 = 0x02;
+constexpr uint64_t kScanCodeDigit2 = 0x03;
 constexpr uint64_t kScanCodeDigit6 = 0x07;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
@@ -1915,55 +1916,42 @@ TEST(KeyboardTest, ImeExtendedEventsAreIgnored) {
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
-TEST(KeyboardTest, DisorderlyRespondedEvents) {
+// Ensures that synthesization works correctly when a Shift key is pressed and
+// (only) its up event is labeled as an IME event (VK_PROCESSKEY).
+//
+// Regression test for https://github.com/flutter/flutter/issues/104169. These
+// are real messages recorded when pressing Shift-2 using Microsoft Pinyin IME
+// on Win 10 Enterprise, which crashed the app before the fix.
+TEST(KeyboardTest, UpOnlyImeEventsAreCorrectlyHandled) {
   KeyboardTester tester;
+  tester.Responding(true);
 
-  // Store callbacks to manually call them.
-  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
-  tester.LateResponding(
-      [&recorded_callbacks](
-          const FlutterKeyEvent* event,
-          MockKeyResponseController::ResponseCallback callback) {
-        recorded_callbacks.push_back(callback);
-      });
+  // US Keyboard layout.
 
-  // Press A
+  // Press CtrlRight in IME mode.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
-      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+      KeyStateChange{VK_LSHIFT, true, false},
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended, kWasUp}.Build(
           kWmResultZero),
-      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+      WmKeyDownInfo{VK_PROCESSKEY, kScanCodeDigit2, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      KeyStateChange{VK_LSHIFT, false, true},
+      WmKeyUpInfo{VK_PROCESSKEY, kScanCodeShiftLeft, kNotExtended}.Build(
+          kWmResultZero),
+      WmKeyUpInfo{'2', kScanCodeDigit2, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
-  // Press B
-  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
-      WmKeyDownInfo{kVirtualKeyB, kScanCodeKeyB, kNotExtended, kWasUp}.Build(
-          kWmResultZero),
-      WmCharInfo{'b', kScanCodeKeyB, kNotExtended, kWasUp}.Build(
-          kWmResultZero)});
-
-  EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_EQ(recorded_callbacks.size(), 2);
+  EXPECT_EQ(key_calls.size(), 4);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalShiftLeft, kLogicalShiftLeft, "",
+                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown, 0, 0, "",
+                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
+                       kLogicalShiftLeft, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[3], kFlutterKeyEventTypeDown, 0, 0, "",
+                       kNotSynthesized);
   clear_key_calls();
-  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
-
-  // Resolve the second event first to test disordered responses.
-  recorded_callbacks.back()(false);
-
-  EXPECT_EQ(key_calls.size(), 0);
-  clear_key_calls();
-  // TODO(dkwingsmt): This should probably be 0. Redispatching the messages of
-  // the second event this early means that the messages are not redispatched
-  // in the order of arrival. https://github.com/flutter/flutter/issues/98308
-  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
-
-  // Resolve the first event.
-  recorded_callbacks.front()(false);
-
-  EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
-  EXPECT_CALL_IS_TEXT(key_calls[1], u"b");
-  clear_key_calls();
-  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 }
 
 // Regression test for a crash in an earlier implementation.
@@ -1999,24 +1987,27 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasDown}.Build(
           kWmResultZero)});
 
-  EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_EQ(recorded_callbacks.size(), 2);
-  clear_key_calls();
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "a", kNotSynthesized);
+  EXPECT_EQ(recorded_callbacks.size(), 1);
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   // The first response.
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
-  clear_key_calls();
+  EXPECT_EQ(key_calls.size(), 3);
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
+  EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeRepeat, kPhysicalKeyA,
+                       kLogicalKeyA, "a", kNotSynthesized);
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // The second response.
   recorded_callbacks.back()(false);
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  EXPECT_EQ(key_calls.size(), 4);
+  EXPECT_CALL_IS_TEXT(key_calls[3], u"a");
   clear_key_calls();
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 }
@@ -2063,18 +2054,17 @@ TEST(KeyboardTest, SlowFrameworkResponseForIdenticalEvents) {
       WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
           kWmResultZero)});
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
-                       kLogicalKeyA, "", kNotSynthesized);
-  clear_key_calls();
+  EXPECT_EQ(key_calls.size(), 0);
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   // The first down event responded with false.
-  EXPECT_EQ(recorded_callbacks.size(), 2);
+  EXPECT_EQ(recorded_callbacks.size(), 1);
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
@@ -2085,21 +2075,28 @@ TEST(KeyboardTest, SlowFrameworkResponseForIdenticalEvents) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
+  // Nothing more was dispatched because the first up event hasn't been
+  // responded yet.
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  EXPECT_EQ(key_calls.size(), 0);
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
+
+  // The first up event responded with false, which was redispatched, and caused
+  // the down event to be dispatched.
+  recorded_callbacks.back()(false);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "a", kNotSynthesized);
   clear_key_calls();
-  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
+  EXPECT_EQ(recorded_callbacks.size(), 3);
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release A again
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
           kWmResultZero)});
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
-                       kLogicalKeyA, "", kNotSynthesized);
-  clear_key_calls();
+  EXPECT_EQ(key_calls.size(), 0);
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
@@ -2320,26 +2317,27 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
   // it will send a setEditingState message that updates the text state that has
   // the last character deleted  (denoted by `string1`). Processing the char
   // message before then will cause the final text to set to `string1`.
-  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalBackspace, kLogicalBackspace, "",
                        kNotSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalBackspace,
-                       kLogicalBackspace, "", kNotSynthesized);
   clear_key_calls();
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
-  EXPECT_EQ(recorded_callbacks.size(), 2);
+  EXPECT_EQ(recorded_callbacks.size(), 1);
   recorded_callbacks[0](backspace_response);
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"à");
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalBackspace,
+                       kLogicalBackspace, "", kNotSynthesized);
   clear_key_calls();
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(),
             backspace_response ? 0 : 2);
 
   recorded_callbacks[1](false);
-  EXPECT_EQ(key_calls.size(), 0);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"à");
+  clear_key_calls();
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.Responding(false);

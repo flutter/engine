@@ -34,6 +34,18 @@ SourceType SourceTypeFromFileName(const std::string& file_name) {
     return SourceType::kFragmentShader;
   }
 
+  if (StringEndWith(file_name, ".tesc")) {
+    return SourceType::kTessellationControlShader;
+  }
+
+  if (StringEndWith(file_name, ".tese")) {
+    return SourceType::kTessellationEvaluationShader;
+  }
+
+  if (StringEndWith(file_name, ".comp")) {
+    return SourceType::kComputeShader;
+  }
+
   return SourceType::kUnknown;
 }
 
@@ -51,13 +63,16 @@ std::string TargetPlatformToString(TargetPlatform platform) {
       return "OpenGLES";
     case TargetPlatform::kOpenGLDesktop:
       return "OpenGLDesktop";
+    case TargetPlatform::kRuntimeStageMetal:
+      return "RuntimeStageMetal";
+    case TargetPlatform::kRuntimeStageGLES:
+      return "RuntimeStageGLES";
   }
   FML_UNREACHABLE();
 }
 
-static std::string UniqueEntryPointFunctionNameFromSourceName(
-    const std::string& file_name,
-    SourceType type) {
+std::string EntryPointFunctionNameFromSourceName(const std::string& file_name,
+                                                 SourceType type) {
   std::stringstream stream;
   std::filesystem::path file_path(file_name);
   stream << ToUtf8(file_path.stem().native()) << "_";
@@ -71,25 +86,18 @@ static std::string UniqueEntryPointFunctionNameFromSourceName(
     case SourceType::kFragmentShader:
       stream << "fragment";
       break;
+    case SourceType::kTessellationControlShader:
+      stream << "tess_control";
+      break;
+    case SourceType::kTessellationEvaluationShader:
+      stream << "tess_eval";
+      break;
+    case SourceType::kComputeShader:
+      stream << "compute";
+      break;
   }
   stream << "_main";
   return stream.str();
-}
-
-std::string EntryPointFunctionNameFromSourceName(const std::string& file_name,
-                                                 SourceType type,
-                                                 TargetPlatform platform) {
-  switch (platform) {
-    case TargetPlatform::kMetalDesktop:
-    case TargetPlatform::kMetalIOS:
-      return UniqueEntryPointFunctionNameFromSourceName(file_name, type);
-    case TargetPlatform::kUnknown:
-    case TargetPlatform::kFlutterSPIRV:
-    case TargetPlatform::kOpenGLES:
-    case TargetPlatform::kOpenGLDesktop:
-      return "main";
-  }
-  FML_UNREACHABLE();
 }
 
 bool TargetPlatformNeedsSL(TargetPlatform platform) {
@@ -98,6 +106,8 @@ bool TargetPlatformNeedsSL(TargetPlatform platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
       return true;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kFlutterSPIRV:
@@ -112,6 +122,8 @@ bool TargetPlatformNeedsReflection(TargetPlatform platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
       return true;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kFlutterSPIRV:
@@ -151,6 +163,12 @@ shaderc_shader_kind ToShaderCShaderKind(SourceType type) {
       return shaderc_shader_kind::shaderc_vertex_shader;
     case SourceType::kFragmentShader:
       return shaderc_shader_kind::shaderc_fragment_shader;
+    case SourceType::kTessellationControlShader:
+      return shaderc_shader_kind::shaderc_tess_control_shader;
+    case SourceType::kTessellationEvaluationShader:
+      return shaderc_shader_kind::shaderc_tess_evaluation_shader;
+    case SourceType::kComputeShader:
+      return shaderc_shader_kind::shaderc_compute_shader;
     case SourceType::kUnknown:
       break;
   }
@@ -163,6 +181,12 @@ spv::ExecutionModel ToExecutionModel(SourceType type) {
       return spv::ExecutionModel::ExecutionModelVertex;
     case SourceType::kFragmentShader:
       return spv::ExecutionModel::ExecutionModelFragment;
+    case SourceType::kTessellationControlShader:
+      return spv::ExecutionModel::ExecutionModelTessellationControl;
+    case SourceType::kTessellationEvaluationShader:
+      return spv::ExecutionModel::ExecutionModelTessellationEvaluation;
+    case SourceType::kComputeShader:
+      return spv::ExecutionModel::ExecutionModelGLCompute;
     case SourceType::kUnknown:
       break;
   }
@@ -173,12 +197,14 @@ spirv_cross::CompilerMSL::Options::Platform TargetPlatformToMSLPlatform(
     TargetPlatform platform) {
   switch (platform) {
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       return spirv_cross::CompilerMSL::Options::Platform::iOS;
     case TargetPlatform::kMetalDesktop:
       return spirv_cross::CompilerMSL::Options::Platform::macOS;
     case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
     case TargetPlatform::kUnknown:
       return spirv_cross::CompilerMSL::Options::Platform::macOS;
   }
@@ -193,6 +219,12 @@ std::string SourceTypeToString(SourceType type) {
       return "vert";
     case SourceType::kFragmentShader:
       return "frag";
+    case SourceType::kTessellationControlShader:
+      return "tesc";
+    case SourceType::kTessellationEvaluationShader:
+      return "tese";
+    case SourceType::kComputeShader:
+      return "comp";
   }
   FML_UNREACHABLE();
 }
@@ -203,10 +235,12 @@ std::string TargetPlatformSLExtension(TargetPlatform platform) {
       return "unknown";
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       return "metal";
     case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       return "glsl";
   }
   FML_UNREACHABLE();
@@ -219,6 +253,39 @@ std::string ToUtf8(const std::wstring& wstring) {
 
 std::string ToUtf8(const std::string& string) {
   return string;
+}
+
+bool TargetPlatformIsOpenGL(TargetPlatform platform) {
+  switch (platform) {
+    case TargetPlatform::kOpenGLES:
+    case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
+      return true;
+    case TargetPlatform::kMetalDesktop:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kUnknown:
+    case TargetPlatform::kFlutterSPIRV:
+      return false;
+  }
+  FML_UNREACHABLE();
+}
+
+bool TargetPlatformIsMetal(TargetPlatform platform) {
+  switch (platform) {
+    case TargetPlatform::kMetalDesktop:
+    case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
+      return true;
+    case TargetPlatform::kUnknown:
+    case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kOpenGLES:
+    case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
+      return false;
+      break;
+  }
+  FML_UNREACHABLE();
 }
 
 }  // namespace compiler

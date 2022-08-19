@@ -185,7 +185,7 @@ OperatingSystem detectOperatingSystem({
     return OperatingSystem.iOs;
   } else if (userAgent.contains('Android')) {
     // The Android OS reports itself as "Linux armv8l" in
-    // [html.window.navigator.platform]. So we have to check the user-agent to
+    // [domWindow.navigator.platform]. So we have to check the user-agent to
     // determine if the OS is Android or not.
     return OperatingSystem.android;
   } else if (platform.startsWith('Linux')) {
@@ -235,6 +235,17 @@ bool get isIOS15 {
   return operatingSystem == OperatingSystem.iOs &&
       domWindow.navigator.userAgent.contains('OS 15_');
 }
+
+/// Returns true if the browser is iOS Safari, false otherwise.
+bool get isIosSafari =>
+    browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
+
+/// Whether the current browser is Safari.
+bool get isSafari => browserEngine == BrowserEngine.webkit;
+
+/// Whether the current browser is Firefox.
+bool get isFirefox => browserEngine == BrowserEngine.firefox;
 
 /// Use in tests to simulate the detection of iOS 15.
 bool? debugIsIOS15;

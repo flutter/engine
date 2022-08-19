@@ -8,6 +8,9 @@
 
 namespace impeller {
 namespace {
+
+// NOLINTBEGIN(readability-identifier-naming)
+
 // TODO(dnfield): remove this declaration when we no longer need to build on
 // machines with lower SDK versions than 11.0.
 #if !defined(MAC_OS_VERSION_11_0) || \
@@ -20,6 +23,8 @@ typedef NS_ENUM(NSInteger, MTLCommandEncoderErrorState) {
   MTLCommandEncoderErrorStateFaulted = 4,
 } API_AVAILABLE(macos(11.0), ios(14.0));
 #endif
+
+// NOLINTEND(readability-identifier-naming)
 
 API_AVAILABLE(ios(14.0), macos(11.0))
 NSString* MTLCommandEncoderErrorStateToString(
@@ -39,6 +44,8 @@ NSString* MTLCommandEncoderErrorStateToString(
   return @"unknown";
 }
 
+// NOLINTBEGIN(readability-identifier-naming)
+
 // TODO(dnfield): This can be removed when all bots have been sufficiently
 // upgraded for MAC_OS_VERSION_12_0.
 #if !defined(MAC_OS_VERSION_12_0) || \
@@ -46,6 +53,8 @@ NSString* MTLCommandEncoderErrorStateToString(
 constexpr int MTLCommandBufferErrorAccessRevoked = 4;
 constexpr int MTLCommandBufferErrorStackOverflow = 12;
 #endif
+
+// NOLINTEND(readability-identifier-naming)
 
 static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
   switch (code) {
@@ -145,17 +154,12 @@ id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
 }
 
 CommandBufferMTL::CommandBufferMTL(id<MTLCommandQueue> queue)
-    : buffer_(CreateCommandBuffer(queue)) {
-  if (!buffer_) {
-    return;
-  }
-  is_valid_ = true;
-}
+    : buffer_(CreateCommandBuffer(queue)) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
 bool CommandBufferMTL::IsValid() const {
-  return is_valid_;
+  return buffer_ != nil;
 }
 
 void CommandBufferMTL::SetLabel(const std::string& label) const {
@@ -179,8 +183,8 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
 }
 
 bool CommandBufferMTL::SubmitCommands(CompletionCallback callback) {
-  if (!buffer_) {
-    // Already committed. This is caller error.
+  if (!IsValid()) {
+    // Already committed or was never valid. Either way, this is caller error.
     if (callback) {
       callback(Status::kError);
     }
@@ -200,11 +204,7 @@ bool CommandBufferMTL::SubmitCommands(CompletionCallback callback) {
   return true;
 }
 
-void CommandBufferMTL::ReserveSpotInQueue() {
-  [buffer_ enqueue];
-}
-
-std::shared_ptr<RenderPass> CommandBufferMTL::CreateRenderPass(
+std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
     RenderTarget target) const {
   if (!buffer_) {
     return nullptr;

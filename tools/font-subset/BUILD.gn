@@ -29,7 +29,7 @@ generated_file("_font-subset-license") {
   license_path =
       rebase_path("//flutter/sky/packages/sky_engine/LICENSE", "//flutter")
   git_url = "https://github.com/flutter/engine/tree/$engine_version"
-  outputs = [ "$target_gen_dir/README.md" ]
+  outputs = [ "$target_gen_dir/LICENSE.font-subset.md" ]
   contents = [
     "# font-subset",
     "",
@@ -41,7 +41,13 @@ generated_file("_font-subset-license") {
 }
 
 zip_bundle("font-subset") {
-  output = "${full_platform_name}/font-subset.zip"
+  if (is_mac) {
+    # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
+    # names will require changes in the list of artifacts the tool is downloading.
+    output = "darwin-${target_cpu}/font-subset.zip"
+  } else {
+    output = "${full_target_platform_name}/font-subset.zip"
+  }
 
   font_subset_bin = "font-subset"
   if (is_win) {
@@ -58,8 +64,8 @@ zip_bundle("font-subset") {
       destination = "const_finder.dart.snapshot"
     },
     {
-      source = "$target_gen_dir/README.md"
-      destination = "README.md"
+      source = "$target_gen_dir/LICENSE.font-subset.md"
+      destination = "LICENSE.font-subset.md"
     },
   ]
 

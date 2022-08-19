@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
@@ -76,6 +75,8 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   bool get didExceedMaxLines => _layoutService.didExceedMaxLines;
 
+  List<ParagraphLine> get lines => _layoutService.lines;
+
   /// The bounds that contain the text painted inside this paragraph.
   ui.Rect get paintBounds => _layoutService.paintBounds;
 
@@ -136,28 +137,28 @@ class CanvasParagraph implements ui.Paragraph {
   /// Generates a flat string computed from all the spans of the paragraph.
   String toPlainText() => plainText;
 
-  html.HtmlElement? _cachedDomElement;
+  DomHTMLElement? _cachedDomElement;
 
   /// Returns a DOM element that represents the entire paragraph and its
   /// children.
   ///
   /// Generates a new DOM element on every invocation.
-  html.HtmlElement toDomElement() {
+  DomHTMLElement toDomElement() {
     assert(isLaidOut);
-    final html.HtmlElement? domElement = _cachedDomElement;
+    final DomHTMLElement? domElement = _cachedDomElement;
     if (domElement == null) {
       return _cachedDomElement ??= _createDomElement();
     }
-    return domElement.clone(true) as html.HtmlElement;
+    return domElement.cloneNode(true) as DomHTMLElement;
   }
 
-  html.HtmlElement _createDomElement() {
-    final html.HtmlElement rootElement =
-        html.document.createElement('flt-paragraph') as html.HtmlElement;
+  DomHTMLElement _createDomElement() {
+    final DomHTMLElement rootElement =
+        domDocument.createElement('flt-paragraph') as DomHTMLElement;
 
     // 1. Set paragraph-level styles.
 
-    final html.CssStyleDeclaration cssStyle = rootElement.style;
+    final DomCSSStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
       // Prevent the browser from doing any line breaks in the paragraph. We want
@@ -166,11 +167,9 @@ class CanvasParagraph implements ui.Paragraph {
 
     // 2. Append all spans to the paragraph.
 
-    html.HtmlElement? lastSpanElement;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
-
+    DomHTMLElement? lastSpanElement;
     for (int i = 0; i < lines.length; i++) {
-      final EngineLineMetrics line = lines[i];
+      final ParagraphLine line = lines[i];
       final List<RangeBox> boxes = line.boxes;
       final StringBuffer buffer = StringBuffer();
 
@@ -179,7 +178,8 @@ class CanvasParagraph implements ui.Paragraph {
         final RangeBox box = boxes[j++];
 
         if (box is SpanBox) {
-          lastSpanElement = html.document.createElement('flt-span') as html.HtmlElement;
+          lastSpanElement = domDocument.createElement('flt-span') as
+              DomHTMLElement;
           applyTextStyleToElement(
             element: lastSpanElement,
             style: box.span.style,
@@ -237,27 +237,26 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
     final int index = position.offset;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
 
     int i;
     for (i = 0; i < lines.length - 1; i++) {
-      final EngineLineMetrics line = lines[i];
+      final ParagraphLine line = lines[i];
       if (index >= line.startIndex && index < line.endIndex) {
         break;
       }
     }
 
-    final EngineLineMetrics line = lines[i];
+    final ParagraphLine line = lines[i];
     return ui.TextRange(start: line.startIndex, end: line.endIndex);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
-    return _layoutService.lines;
+    return lines.map((ParagraphLine line) => line.lineMetrics).toList();
   }
 }
 
-void _positionSpanElement(html.Element element, EngineLineMetrics line, RangeBox box) {
+void _positionSpanElement(DomElement element, ParagraphLine line, RangeBox box) {
   final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
   element.style
     ..position = 'absolute'

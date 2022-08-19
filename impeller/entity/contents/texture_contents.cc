@@ -4,10 +4,12 @@
 
 #include "texture_contents.h"
 
+#include <optional>
+
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/mtl/texture_fill.frag.h"
-#include "impeller/entity/mtl/texture_fill.vert.h"
+#include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
@@ -35,6 +37,9 @@ void TextureContents::SetOpacity(Scalar opacity) {
 }
 
 std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
+  if (opacity_ == 0) {
+    return std::nullopt;
+  }
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
 
@@ -101,6 +106,9 @@ bool TextureContents::Render(const ContentContext& renderer,
                    entity.GetTransformation();
   frame_info.alpha = opacity_;
 
+  FS::FragInfo frag_info;
+  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
+
   Command cmd;
   cmd.label = "TextureFill";
   cmd.pipeline =
@@ -108,6 +116,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              sampler_descriptor_));

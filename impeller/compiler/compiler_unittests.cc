@@ -16,12 +16,38 @@ namespace testing {
 TEST(CompilerTest, ShaderKindMatchingIsSuccessful) {
   ASSERT_EQ(SourceTypeFromFileName("hello.vert"), SourceType::kVertexShader);
   ASSERT_EQ(SourceTypeFromFileName("hello.frag"), SourceType::kFragmentShader);
+  ASSERT_EQ(SourceTypeFromFileName("hello.tesc"),
+            SourceType::kTessellationControlShader);
+  ASSERT_EQ(SourceTypeFromFileName("hello.tese"),
+            SourceType::kTessellationEvaluationShader);
+  ASSERT_EQ(SourceTypeFromFileName("hello.comp"), SourceType::kComputeShader);
   ASSERT_EQ(SourceTypeFromFileName("hello.msl"), SourceType::kUnknown);
   ASSERT_EQ(SourceTypeFromFileName("hello.glsl"), SourceType::kUnknown);
 }
 
 TEST_P(CompilerTest, CanCompile) {
   ASSERT_TRUE(CanCompileAndReflect("sample.vert"));
+  ASSERT_TRUE(CanCompileAndReflect("sample.vert", SourceType::kVertexShader));
+}
+
+TEST_P(CompilerTest, CanCompileTessellationControlShader) {
+  ASSERT_TRUE(CanCompileAndReflect("sample.tesc"));
+  ASSERT_TRUE(CanCompileAndReflect("sample.tesc",
+                                   SourceType::kTessellationControlShader));
+}
+
+TEST_P(CompilerTest, CanCompileTessellationEvaluationShader) {
+  ASSERT_TRUE(CanCompileAndReflect("sample.tese"));
+  ASSERT_TRUE(CanCompileAndReflect("sample.tese",
+                                   SourceType::kTessellationEvaluationShader));
+}
+
+TEST_P(CompilerTest, CanCompileComputeShader) {
+  if (!TargetPlatformIsMetal(GetParam())) {
+    GTEST_SKIP_("Only enabled on Metal backends till ES 3.2 support is added.");
+  }
+  ASSERT_TRUE(CanCompileAndReflect("sample.comp"));
+  ASSERT_TRUE(CanCompileAndReflect("sample.comp", SourceType::kComputeShader));
 }
 
 TEST_P(CompilerTest, MustFailDueToMultipleLocationPerStructMember) {
@@ -29,6 +55,7 @@ TEST_P(CompilerTest, MustFailDueToMultipleLocationPerStructMember) {
     // This is a failure of reflection which this target doesn't perform.
     GTEST_SKIP();
   }
+  ScopedValidationDisable disable_validation;
   ASSERT_FALSE(CanCompileAndReflect("struct_def_bug.vert"));
 }
 

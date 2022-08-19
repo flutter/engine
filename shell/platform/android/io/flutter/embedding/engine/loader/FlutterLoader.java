@@ -23,6 +23,7 @@ import io.flutter.BuildConfig;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.util.HandlerCompat;
 import io.flutter.util.PathUtils;
 import io.flutter.util.TraceSection;
 import io.flutter.view.VsyncWaiter;
@@ -40,6 +41,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.OldGenHeapSize";
   private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
       "io.flutter.embedding.android.EnableSkParagraph";
+  private static final String ENABLE_IMPELLER_META_DATA_KEY =
+      "io.flutter.embedding.android.EnableImpeller";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -315,9 +318,12 @@ public class FlutterLoader {
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true)) {
+      boolean enableSkParagraph =
+          metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true);
+      shellArgs.add("--enable-skparagraph=" + enableSkParagraph);
 
-        shellArgs.add("--enable-skparagraph");
+      if (metaData != null && metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
+        shellArgs.add("--enable-impeller");
       }
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";
@@ -380,7 +386,7 @@ public class FlutterLoader {
             Log.e(TAG, "Flutter initialization failed.", e);
             throw new RuntimeException(e);
           }
-          new Handler(Looper.getMainLooper())
+          HandlerCompat.createAsyncHandler(Looper.getMainLooper())
               .post(
                   () -> {
                     ensureInitializationComplete(applicationContext.getApplicationContext(), args);

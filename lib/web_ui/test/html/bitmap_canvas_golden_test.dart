@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -11,7 +10,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
-import '../common.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -25,7 +23,7 @@ Future<void> testMain() async {
 
   void appendToScene() {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
-    final html.Element testScene = html.Element.tag('flt-scene');
+    final DomElement testScene = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       testScene.style.position = 'absolute';
@@ -178,7 +176,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((html.Element e) => e.innerText).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((DomElement e) => e.innerText).toList(),
       <String>['Am I blurry?', 'Am I blurry?'],
       reason: 'Expected to render text using HTML',
     );
@@ -236,7 +234,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, const Offset(180, 50));
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((html.Element e) => e.text).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
       <String>[text],
       reason: 'Expected to render text using HTML',
     );
@@ -252,7 +250,7 @@ Future<void> testMain() async {
     sb.pop();
     sb.pop();
     final SurfaceScene scene = sb.build() as SurfaceScene;
-    final html.Element sceneElement = scene.webOnlyRootElement!;
+    final DomElement sceneElement = scene.webOnlyRootElement!;
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
