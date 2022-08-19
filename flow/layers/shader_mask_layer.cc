@@ -7,12 +7,12 @@
 
 namespace flutter {
 
-ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
+ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> shader,
                                  const SkRect& mask_rect,
-                                 SkBlendMode blend_mode)
+                                 DlBlendMode blend_mode)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
-      shader_(shader),
+      shader_(std::move(shader)),
       mask_rect_(mask_rect),
       blend_mode_(blend_mode) {}
 
@@ -54,17 +54,32 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
       return;
     }
   }
+  auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
 
-  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-      context, paint_bounds(), cache_paint.sk_paint());
-  PaintChildren(context);
+  if (context.leaf_nodes_builder) {
+    context.builder_multiplexer->saveLayer(&paint_bounds(),
+                                           cache_paint.dl_paint());
+    PaintChildren(context);
 
-  SkPaint paint;
-  paint.setBlendMode(blend_mode_);
-  paint.setShader(shader_);
-  context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
-  context.leaf_nodes_canvas->drawRect(
-      SkRect::MakeWH(mask_rect_.width(), mask_rect_.height()), paint);
+    DlPaint dl_paint;
+    dl_paint.setBlendMode(blend_mode_);
+    if (shader_) {
+      dl_paint.setColorSource(shader_.get());
+    }
+    context.leaf_nodes_builder->translate(mask_rect_.left(), mask_rect_.top());
+    context.leaf_nodes_builder->drawRect(shader_rect, dl_paint);
+  } else {
+    Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+        context, paint_bounds(), cache_paint.sk_paint());
+    PaintChildren(context);
+    SkPaint paint;
+    paint.setBlendMode(ToSk(blend_mode_));
+    if (shader_) {
+      paint.setShader(shader_->skia_object());
+    }
+    context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
+    context.leaf_nodes_canvas->drawRect(shader_rect, paint);
+  }
 }
 
 }  // namespace flutter

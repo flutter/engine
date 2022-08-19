@@ -102,8 +102,17 @@ std::shared_ptr<Texture> AllocatorVK::CreateTexture(
     return nullptr;
   }
 
-  return std::make_shared<TextureVK>(desc, context_, allocator_, img,
-                                     allocation, allocation_info);
+  auto texture_info = std::make_unique<TextureInfoVK>(TextureInfoVK{
+      .backing_type = TextureBackingTypeVK::kAllocatedTexture,
+      .allocated_texture =
+          {
+              .allocator = &allocator_,
+              .allocation = allocation,
+              .allocation_info = allocation_info,
+              .image = img,
+          },
+  });
+  return std::make_shared<TextureVK>(desc, &context_, std::move(texture_info));
 }
 
 // |Allocator|
@@ -144,4 +153,11 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
                                           std::move(device_allocation));
 }
 
+// |Allocator|
+ISize AllocatorVK::GetMaxTextureSizeSupported() const {
+  // TODO(magicianA): Get correct max texture size for Vulkan.
+  // 4096 is the required limit, see below:
+  // https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#limits-minmax
+  return {4096, 4096};
+}
 }  // namespace impeller

@@ -12,14 +12,14 @@ uniform GradientInfo {
   float tile_mode;
 } gradient_info;
 
-in vec2 interpolated_vertices;
+in vec2 v_position;
 
 out vec4 frag_color;
 
 void main() {
   float len = length(gradient_info.end_point - gradient_info.start_point);
   float dot = dot(
-    interpolated_vertices - gradient_info.start_point,
+    v_position - gradient_info.start_point,
     gradient_info.end_point - gradient_info.start_point
   );
   float t = dot / (len * len);
@@ -28,6 +28,6 @@ void main() {
     return;
   }
 
-  t = IPTileTextureCoords(t, gradient_info.tile_mode);
+  t = IPFloatTile(t, gradient_info.tile_mode);
   frag_color = mix(gradient_info.start_color, gradient_info.end_color, t);
 }

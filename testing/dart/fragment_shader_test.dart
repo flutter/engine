@@ -36,7 +36,24 @@ void main() async {
       samplerUniforms: <ImageShader>[imageShader],
     );
     await _expectShaderRendersGreen(shader);
+    blueGreenImage.dispose();
   });
+
+  test('blue-green image renders green - GPU image', () async {
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+    final Image blueGreenImage = _createBlueGreenImageSync();
+    final ImageShader imageShader = ImageShader(
+        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
+    final Shader shader = program.shader(
+      floatUniforms: Float32List.fromList(<double>[]),
+      samplerUniforms: <ImageShader>[imageShader],
+    );
+    await _expectShaderRendersGreen(shader);
+    blueGreenImage.dispose();
+  });
+
 
   test('shader with uniforms renders correctly', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
@@ -62,6 +79,22 @@ void main() async {
     expect(toFloat(renderedBytes.getUint8(1)), closeTo(0.25, epsilon));
     expect(toFloat(renderedBytes.getUint8(2)), closeTo(0.75, epsilon));
     expect(toFloat(renderedBytes.getUint8(3)), closeTo(1.0, epsilon));
+  });
+
+  test('shader with array uniforms renders correctly', () async {
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'uniform_arrays.frag.iplr',
+    );
+
+    final List<double> floatArray = List<double>.generate(
+      24, (int i) => i.toDouble(),
+    );
+    final Shader shader = program.shader(
+      floatUniforms: Float32List.fromList(<double>[
+        ...floatArray,
+    ]));
+
+    await _expectShaderRendersGreen(shader);
   });
 
   test('The ink_sparkle shader is accepted', () async {
@@ -301,6 +334,21 @@ Future<Image> _createBlueGreenImage() async {
   final FrameInfo frame = await codec.getNextFrame();
   return frame.image;
 }
+
+// A 10x10 image where the left half is blue and the right half is green.
+Image _createBlueGreenImageSync() {
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  canvas.drawRect(const Rect.fromLTWH(0, 0, 5, 10), Paint()..color = const Color(0xFF0000FF));
+  canvas.drawRect(const Rect.fromLTWH(5, 0, 5, 10), Paint()..color = const Color(0xFF00FF00));
+  final Picture picture = recorder.endRecording();
+  try {
+    return picture.toImageSync(10, 10);
+  } finally {
+    picture.dispose();
+  }
+}
+
 
 final Float64List _identityMatrix = Float64List.fromList(<double>[
   1, 0, 0, 0,

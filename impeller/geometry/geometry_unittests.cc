@@ -284,8 +284,8 @@ TEST(GeometryTest, MatrixMakePerspective) {
     auto expect = Matrix{
         3.4641, 0,       0,        0,   //
         0,      1.73205, 0,        0,   //
-        0,      0,       -1.22222, -1,  //
-        0,      0,       -2.22222, 0,   //
+        0,      0,       -1.11111, -1,  //
+        0,      0,       -1.11111, 0,   //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
@@ -295,8 +295,8 @@ TEST(GeometryTest, MatrixMakePerspective) {
     auto expect = Matrix{
         0.915244, 0,       0,   0,   //
         0,        1.83049, 0,   0,   //
-        0,        0,       -3,  -1,  //
-        0,        0,       -40, 0,   //
+        0,        0,       -2,  -1,  //
+        0,        0,       -20, 0,   //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
@@ -771,6 +771,35 @@ TEST(GeometryTest, PointAbs) {
   auto a_abs = a.Abs();
   auto expected = Point(1, 2);
   ASSERT_POINT_NEAR(a_abs, expected);
+}
+
+TEST(GeometryTest, PointAngleTo) {
+  // Negative result in the CCW (with up = -Y) direction.
+  {
+    Point a(1, 1);
+    Point b(1, -1);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+
+  // Check the other direction to ensure the result is signed correctly.
+  {
+    Point a(1, -1);
+    Point b(1, 1);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+
+  // Differences in magnitude should have no impact on the result.
+  {
+    Point a(100, -100);
+    Point b(0.01, 0.01);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
 }
 
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {

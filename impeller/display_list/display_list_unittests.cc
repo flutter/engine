@@ -16,6 +16,7 @@
 #include "impeller/display_list/display_list_playground.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "include/core/SkRRect.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -297,12 +298,14 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
     }
 
     static float sigma[] = {10, 10};
+    static float ctm_scale = 1;
     static bool use_bounds = true;
     static bool draw_circle = true;
     static bool add_clip = true;
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat2("Sigma", sigma, 0, 100);
+    ImGui::SliderFloat("Scale", &ctm_scale, 0, 10);
     ImGui::NewLine();
     ImGui::TextWrapped(
         "If everything is working correctly, none of the options below should "
@@ -314,7 +317,7 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
 
     flutter::DisplayListBuilder builder;
 
-    Vector2 scale = GetContentScale();
+    Vector2 scale = ctm_scale * GetContentScale();
     builder.scale(scale.x, scale.y);
 
     auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
@@ -430,6 +433,91 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCornersScaledDown) {
                         size.height * 3 / 4),
       SkRect::MakeLTRB(0, 0, size.width / 4, size.height / 4),
       flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawPoints) {
+  flutter::DisplayListBuilder builder;
+  SkPoint points[7] = {
+      {0, 0},      //
+      {100, 100},  //
+      {100, 0},    //
+      {0, 100},    //
+      {0, 0},      //
+      {48, 48},    //
+      {52, 52},    //
+  };
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =
+      flutter::DlPaint()                                         //
+          .setColor(flutter::DlColor::kYellow().withAlpha(127))  //
+          .setStrokeWidth(20);
+  builder.translate(50, 50);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.save();
+    builder.drawPoints(SkCanvas::kPoints_PointMode, 7, points, paint);
+    builder.translate(150, 0);
+    builder.drawPoints(SkCanvas::kLines_PointMode, 5, points, paint);
+    builder.translate(150, 0);
+    builder.drawPoints(SkCanvas::kPolygon_PointMode, 5, points, paint);
+    builder.restore();
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =
+      flutter::DlPaint()                                         //
+          .setColor(flutter::DlColor::kYellow().withAlpha(127))  //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)           //
+          .setStrokeCap(flutter::DlStrokeCap::kButt)             //
+          .setStrokeWidth(20);
+  SkPath path = SkPath().addPoly({{150, 50}, {150, 50}}, false);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.drawLine({50, 50}, {50, 50}, paint);
+    builder.drawPath(path, paint);
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawShadow) {
+  flutter::DisplayListBuilder builder;
+  std::array<SkPath, 3> paths = {
+      SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+      SkPath{}.addRRect(
+          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
+      SkPath{}.addCircle(100, 50, 50),
+  };
+  builder.setColor(flutter::DlColor::kWhite());
+  builder.drawPaint();
+  builder.setColor(flutter::DlColor::kCyan());
+  builder.translate(100, 100);
+  for (size_t x = 0; x < paths.size(); x++) {
+    builder.save();
+    for (size_t y = 0; y < 5; y++) {
+      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 5, false,
+                         1);
+      builder.drawPath(paths[x]);
+      builder.translate(0, 200);
+    }
+    builder.restore();
+    builder.translate(300, 0);
+  }
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

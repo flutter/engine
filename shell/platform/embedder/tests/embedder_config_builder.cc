@@ -59,7 +59,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
-  opengl_renderer_config_.populate_existing_damage_callback = nullptr;
+  opengl_renderer_config_.populate_existing_damage = nullptr;
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
         ->GLMakeResourceCurrent();
