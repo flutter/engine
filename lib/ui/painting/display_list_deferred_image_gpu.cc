@@ -22,6 +22,20 @@ sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(
       raster_task_runner));
 }
 
+sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::MakeFromLayerTree(
+    const SkImageInfo& image_info,
+    std::shared_ptr<LayerTree> layer_tree,
+    const SkRect& size,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    fml::RefPtr<SkiaUnrefQueue> unref_queue) {
+  return sk_sp<DlDeferredImageGPU>(new DlDeferredImageGPU(
+      ImageWrapper::MakeFromLayerTree(
+          image_info, std::move(layer_tree), size, std::move(snapshot_delegate),
+          raster_task_runner, std::move(unref_queue)),
+      raster_task_runner));
+}
+
 DlDeferredImageGPU::DlDeferredImageGPU(
     std::shared_ptr<ImageWrapper> image_wrapper,
     fml::RefPtr<fml::TaskRunner> raster_task_runner)
@@ -86,23 +100,47 @@ DlDeferredImageGPU::ImageWrapper::Make(
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
-      image_info, std::move(display_list), std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue)));
+      image_info,
+      std::variant<sk_sp<DisplayList>, std::shared_ptr<LayerTree>>(
+          std::move(display_list)),
+      std::move(snapshot_delegate), std::move(raster_task_runner),
+      std::move(unref_queue)));
+  wrapper->SnapshotDisplayList();
+  return wrapper;
+}
+
+std::shared_ptr<DlDeferredImageGPU::ImageWrapper>
+DlDeferredImageGPU::ImageWrapper::MakeFromLayerTree(
+    const SkImageInfo& image_info,
+    std::shared_ptr<LayerTree> layer_tree,
+    const SkRect& size,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    fml::RefPtr<SkiaUnrefQueue> unref_queue) {
+  auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
+      image_info,
+      std::variant<sk_sp<DisplayList>, std::shared_ptr<LayerTree>>(
+          std::move(layer_tree)),
+      std::move(snapshot_delegate), std::move(raster_task_runner),
+      std::move(unref_queue), size));
   wrapper->SnapshotDisplayList();
   return wrapper;
 }
 
 DlDeferredImageGPU::ImageWrapper::ImageWrapper(
     const SkImageInfo& image_info,
-    sk_sp<DisplayList> display_list,
+    std::variant<sk_sp<DisplayList>, std::shared_ptr<LayerTree>>
+        display_list_or_layer_tree,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
-    fml::RefPtr<SkiaUnrefQueue> unref_queue)
+    fml::RefPtr<SkiaUnrefQueue> unref_queue,
+    const SkRect& size)
     : image_info_(image_info),
-      display_list_(std::move(display_list)),
+      display_list_or_layer_tree_(std::move(display_list_or_layer_tree)),
       snapshot_delegate_(std::move(snapshot_delegate)),
       raster_task_runner_(std::move(raster_task_runner)),
-      unref_queue_(std::move(unref_queue)) {}
+      unref_queue_(std::move(unref_queue)),
+      size_(size) {}
 
 void DlDeferredImageGPU::ImageWrapper::OnGrContextCreated() {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
@@ -142,8 +180,19 @@ void DlDeferredImageGPU::ImageWrapper::SnapshotDisplayList() {
         if (!snapshot_delegate) {
           return;
         }
-        auto result = snapshot_delegate->MakeGpuImage(wrapper->display_list_,
-                                                      wrapper->image_info_);
+        if (std::holds_alternative<std::shared_ptr<LayerTree>>(
+                wrapper->display_list_or_layer_tree_)) {
+          auto layer_tree = std::get<std::shared_ptr<LayerTree>>(
+              wrapper->display_list_or_layer_tree_);
+          auto display_list = layer_tree->Flatten(
+              wrapper->size_, snapshot_delegate.get()->GetTextureRegistry(),
+              snapshot_delegate.get()->GetGrContext());
+          wrapper->display_list_or_layer_tree_.emplace<sk_sp<DisplayList>>(
+              display_list);
+        }
+        auto result = snapshot_delegate->MakeGpuImage(
+            std::get<sk_sp<DisplayList>>(wrapper->display_list_or_layer_tree_),
+            wrapper->image_info_);
         if (result->texture.isValid()) {
           wrapper->texture_ = result->texture;
           wrapper->context_ = std::move(result->context);

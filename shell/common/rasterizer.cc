@@ -145,7 +145,7 @@ std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
   return compositor_context_->texture_registry();
 }
 
-std::shared_ptr<GrDirectContext> Rasterizer::GetGrContext() {
+GrDirectContext* Rasterizer::GetGrContext() {
   return surface_->GetContext();
 }
 

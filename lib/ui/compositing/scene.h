@@ -34,8 +34,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
-                      Dart_Handle raw_image_handle,
-                      Dart_Handle image_callback);
+                      Dart_Handle raw_image_handle);
 
   void dispose();
 
@@ -47,8 +46,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   void RasterizeToImage(uint32_t width,
                         uint32_t height,
-                        Dart_Handle raw_image_handle,
-                        Dart_Handle raw_image_callback = nullptr);
+                        Dart_Handle raw_image_handle);
 
   // This is a shared_ptr to support flattening the layer tree from the UI
   // thread onto the raster thread - allowing access to the texture registry
