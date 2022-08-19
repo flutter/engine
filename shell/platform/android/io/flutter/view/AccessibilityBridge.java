@@ -257,17 +257,23 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   @Nullable private OnAccessibilityChangeListener onAccessibilityChangeListener;
 
-  // Whether there is assitive technology[s] running.
+  // Whether the users are using assistive technologies to interact with the devices.
   //
-  // Use the setter to update this property if needed.
-  @VisibleForTesting public boolean hasAssistiveTechnology = false;
+  // The getter returns true when at least one of the assistive technologies is running:
+  // TalkBack, SwitchAccess, or VoiceAccess.
+  @VisibleForTesting
+  public boolean getAccessibleNavigation() {
+    return accessibleNavigation;
+  }
 
-  private void setHasAssistiveTechnology(boolean value) {
-    if (hasAssistiveTechnology == value) {
+  private boolean accessibleNavigation = false;
+
+  private void setAccessibleNavigation(boolean value) {
+    if (accessibleNavigation == value) {
       return;
     }
-    hasAssistiveTechnology = value;
-    if (hasAssistiveTechnology) {
+    accessibleNavigation = value;
+    if (accessibleNavigation) {
       accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
     } else {
       accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
@@ -349,7 +355,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
                 accessibilityChannel.onAndroidAccessibilityEnabled();
               } else {
-                setHasAssistiveTechnology(false);
+                setAccessibleNavigation(false);
                 accessibilityChannel.setAccessibilityMessageHandler(null);
                 accessibilityChannel.onAndroidAccessibilityDisabled();
               }
@@ -444,7 +450,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 return;
               }
               if (!isTouchExplorationEnabled) {
-                setHasAssistiveTechnology(false);
+                setAccessibleNavigation(false);
                 onTouchExplorationExit();
               }
 
@@ -566,7 +572,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
-    setHasAssistiveTechnology(true);
+    setAccessibleNavigation(true);
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
       // The node is in the engine generated range, and is provided by the accessibility view
       // embedder.

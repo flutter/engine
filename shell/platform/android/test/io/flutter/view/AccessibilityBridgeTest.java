@@ -125,7 +125,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Test
-  public void itSetsHasAssistiveTechnology() {
+  public void itSetsAccessibleNavigation() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
@@ -146,20 +146,20 @@ public class AccessibilityBridgeTest {
         ArgumentCaptor.forClass(AccessibilityManager.TouchExplorationStateChangeListener.class);
     verify(mockManager).addTouchExplorationStateChangeListener(listenerCaptor.capture());
 
-    assertEquals(accessibilityBridge.hasAssistiveTechnology, false);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), false);
     verify(mockChannel).setAccessibilityFeatures(0);
     reset(mockChannel);
 
     // Simulate assistive technology accessing accessibility tree.
     accessibilityBridge.createAccessibilityNodeInfo(0);
     verify(mockChannel).setAccessibilityFeatures(1);
-    assertEquals(accessibilityBridge.hasAssistiveTechnology, true);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), true);
 
     // Simulate turning off TalkBack.
     reset(mockChannel);
     listenerCaptor.getValue().onTouchExplorationStateChanged(false);
     verify(mockChannel).setAccessibilityFeatures(0);
-    assertEquals(accessibilityBridge.hasAssistiveTechnology, false);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), false);
   }
 
   @Test
