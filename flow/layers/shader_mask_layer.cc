@@ -54,13 +54,13 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
       return;
     }
   }
-
-  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-      context, paint_bounds(), cache_paint.sk_paint());
-  PaintChildren(context);
-
   auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
+
   if (context.leaf_nodes_builder) {
+    context.builder_multiplexer->saveLayer(&paint_bounds(),
+                                           cache_paint.dl_paint());
+    PaintChildren(context);
+
     DlPaint dl_paint;
     dl_paint.setBlendMode(blend_mode_);
     if (shader_) {
@@ -69,6 +69,9 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
     context.leaf_nodes_builder->translate(mask_rect_.left(), mask_rect_.top());
     context.leaf_nodes_builder->drawRect(shader_rect, dl_paint);
   } else {
+    Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+        context, paint_bounds(), cache_paint.sk_paint());
+    PaintChildren(context);
     SkPaint paint;
     paint.setBlendMode(ToSk(blend_mode_));
     if (shader_) {
