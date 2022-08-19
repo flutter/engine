@@ -134,6 +134,12 @@ static const std::shared_ptr<DlColorSource> kTestSource5 =
                              kColors,
                              kStops,
                              DlTileMode::kDecal);
+static const sk_sp<SkRuntimeEffect> kTestRuntimeEffect1 =
+    SkRuntimeEffect::MakeForShader(
+        SkString("vec4 main(vec2 p) { return vec4(0); }"))
+        .effect;
+static const std::shared_ptr<DlColorSource> kTestSource6 =
+      DlColorSource::MakeRuntimeEffect(kTestRuntimeEffect1, {}, nullptr);
 static const DlBlendColorFilter kTestBlendColorFilter1(DlColor::kRed(),
                                                        DlBlendMode::kDstATop);
 static const DlBlendColorFilter kTestBlendColorFilter2(DlColor::kBlue(),
