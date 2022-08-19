@@ -19,6 +19,11 @@ import 'html_image_codec.dart';
 final Renderer _renderer = Renderer._internal();
 Renderer get renderer => _renderer;
 
+/// This class is an abstraction over the rendering backend for the web engine.
+/// Which backend is selected is based off of the `--web-renderer` command-line
+/// argument passed to the flutter tool. It provides many of the rendering
+/// primitives of the dart:ui library, as well as other backend-specific pieces
+/// of functionality needed by the rest of the generic web engine code.
 abstract class Renderer {
   factory Renderer._internal() {
     bool useCanvasKit;
