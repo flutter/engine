@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
+#include <iostream>
 
 #include "display_list_deferred_image_gpu.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -25,14 +26,16 @@ sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(
 sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::MakeFromLayerTree(
     const SkImageInfo& image_info,
     std::shared_ptr<LayerTree> layer_tree,
-    const SkRect& size,
+    uint32_t width,
+    uint32_t height,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPU>(new DlDeferredImageGPU(
-      ImageWrapper::MakeFromLayerTree(
-          image_info, std::move(layer_tree), size, std::move(snapshot_delegate),
-          raster_task_runner, std::move(unref_queue)),
+      ImageWrapper::MakeFromLayerTree(image_info, std::move(layer_tree), width,
+                                      height, std::move(snapshot_delegate),
+                                      raster_task_runner,
+                                      std::move(unref_queue)),
       raster_task_runner));
 }
 
@@ -104,7 +107,7 @@ DlDeferredImageGPU::ImageWrapper::Make(
       std::variant<sk_sp<DisplayList>, std::shared_ptr<LayerTree>>(
           std::move(display_list)),
       std::move(snapshot_delegate), std::move(raster_task_runner),
-      std::move(unref_queue)));
+      std::move(unref_queue), 0, 0));
   wrapper->SnapshotDisplayList();
   return wrapper;
 }
@@ -113,7 +116,8 @@ std::shared_ptr<DlDeferredImageGPU::ImageWrapper>
 DlDeferredImageGPU::ImageWrapper::MakeFromLayerTree(
     const SkImageInfo& image_info,
     std::shared_ptr<LayerTree> layer_tree,
-    const SkRect& size,
+    uint32_t width,
+    uint32_t height,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
@@ -122,7 +126,7 @@ DlDeferredImageGPU::ImageWrapper::MakeFromLayerTree(
       std::variant<sk_sp<DisplayList>, std::shared_ptr<LayerTree>>(
           std::move(layer_tree)),
       std::move(snapshot_delegate), std::move(raster_task_runner),
-      std::move(unref_queue), size));
+      std::move(unref_queue), width, height));
   wrapper->SnapshotDisplayList();
   return wrapper;
 }
@@ -134,13 +138,15 @@ DlDeferredImageGPU::ImageWrapper::ImageWrapper(
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
-    const SkRect& size)
+    uint32_t width,
+    uint32_t height)
     : image_info_(image_info),
       display_list_or_layer_tree_(std::move(display_list_or_layer_tree)),
       snapshot_delegate_(std::move(snapshot_delegate)),
       raster_task_runner_(std::move(raster_task_runner)),
       unref_queue_(std::move(unref_queue)),
-      size_(size) {}
+      width_(width),
+      height_(height) {}
 
 void DlDeferredImageGPU::ImageWrapper::OnGrContextCreated() {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
@@ -184,9 +190,10 @@ void DlDeferredImageGPU::ImageWrapper::SnapshotDisplayList() {
                 wrapper->display_list_or_layer_tree_)) {
           auto layer_tree = std::get<std::shared_ptr<LayerTree>>(
               wrapper->display_list_or_layer_tree_);
-          auto display_list = layer_tree->Flatten(
-              wrapper->size_, snapshot_delegate.get()->GetTextureRegistry(),
-              snapshot_delegate.get()->GetGrContext());
+          auto display_list =
+              layer_tree->Flatten(SkRect::MakeWH(100, 100),
+                                  snapshot_delegate.get()->GetTextureRegistry(),
+                                  snapshot_delegate.get()->GetGrContext());
           wrapper->display_list_or_layer_tree_.emplace<sk_sp<DisplayList>>(
               display_list);
         }

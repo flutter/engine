@@ -4,7 +4,6 @@
 
 #include "flutter/lib/ui/compositing/scene.h"
 
-#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -18,8 +17,6 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/dart_persistent_value.h"
-#include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
 
@@ -105,7 +102,7 @@ void Scene::RasterizeToImage(uint32_t width,
   const SkImageInfo image_info = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   auto dl_image = DlDeferredImageGPU::MakeFromLayerTree(
-      image_info, std::move(layer_tree_), SkRect::MakeWH(width, height),
+      image_info, std::move(layer_tree_), width, height,
       std::move(snapshot_delegate), std::move(raster_task_runner),
       std::move(unref_queue));
   image->set_image(dl_image);

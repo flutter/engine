@@ -33,7 +33,8 @@ class DlDeferredImageGPU final : public DlImage {
   static sk_sp<DlDeferredImageGPU> MakeFromLayerTree(
       const SkImageInfo& image_info,
       std::shared_ptr<LayerTree> layer_tree,
-      const SkRect& size,
+      uint32_t width,
+      uint32_t height,
       fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner,
       fml::RefPtr<SkiaUnrefQueue> unref_queue);
@@ -86,7 +87,8 @@ class DlDeferredImageGPU final : public DlImage {
     static std::shared_ptr<ImageWrapper> MakeFromLayerTree(
         const SkImageInfo& image_info,
         std::shared_ptr<LayerTree> layer_tree,
-        const SkRect& size,
+        uint32_t width,
+        uint32_t height,
         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner,
         fml::RefPtr<SkiaUnrefQueue> unref_queue);
@@ -108,7 +110,8 @@ class DlDeferredImageGPU final : public DlImage {
     fml::RefPtr<SkiaUnrefQueue> unref_queue_;
     std::shared_ptr<TextureRegistry> texture_registry_;
     // Only valid if constructed via MakeFromLayerTree.
-    const SkRect& size_;
+    uint32_t width_;
+    uint32_t height_;
 
     mutable std::mutex error_mutex_;
     std::optional<std::string> error_;
@@ -124,7 +127,8 @@ class DlDeferredImageGPU final : public DlImage {
                  fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                  fml::RefPtr<fml::TaskRunner> raster_task_runner,
                  fml::RefPtr<SkiaUnrefQueue> unref_queue,
-                 const SkRect& size = {});
+                 uint32_t width,
+                 uint32_t height);
 
     void SnapshotDisplayList();
 
