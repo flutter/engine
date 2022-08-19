@@ -39,7 +39,7 @@ void testMain() {
 
       sb.addPicture(ui.Offset.zero, picture);
       final LayerTree layerTree = sb.build().layerTree;
-      (renderer as CanvasKitRenderer).rasterizer.draw(layerTree);
+      canvasKitRenderer.rasterizer.draw(layerTree);
       final ClipRectEngineLayer clipRect = layerTree.rootLayer.debugLayers.single as ClipRectEngineLayer;
       expect(clipRect.paintBounds, const ui.Rect.fromLTRB(15, 15, 30, 30));
 

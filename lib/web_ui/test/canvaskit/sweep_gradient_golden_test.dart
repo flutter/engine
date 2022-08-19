@@ -24,7 +24,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  (renderer as CanvasKitRenderer).rasterizer.draw(sb.build().layerTree);
+  canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
   await matchGoldenFile(goldenFile, region: region, write: write);
 }
 

@@ -9,7 +9,6 @@ import '../configuration.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
-import '../renderer.dart';
 import '../svg.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -29,7 +28,7 @@ class HtmlViewEmbedder {
   /// The [HtmlViewEmbedder] singleton.
   static HtmlViewEmbedder instance = HtmlViewEmbedder._();
 
-  DomElement get skiaSceneHost => (renderer as CanvasKitRenderer).sceneHost!;
+  DomElement get skiaSceneHost => canvasKitRenderer.sceneHost!;
 
   /// Force the view embedder to disable overlays.
   ///

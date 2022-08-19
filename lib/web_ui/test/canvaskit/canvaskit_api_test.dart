@@ -1488,7 +1488,7 @@ void _paragraphTests() {
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
     final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.Make(
       paragraphStyle,
-      (renderer.fontCollection as SkiaFontCollection).skFontMgr,
+      canvasKitRenderer.fontCollection.skFontMgr,
     );
 
     builder.addText('Hello');
@@ -1585,7 +1585,7 @@ void _paragraphTests() {
     final SkParagraphBuilder builder =
         canvasKit.ParagraphBuilder.MakeFromFontProvider(
       paragraphStyle,
-      (renderer.fontCollection as SkiaFontCollection).fontProvider,
+      canvasKitRenderer.fontCollection.fontProvider,
     );
     builder.addText('hello');
 

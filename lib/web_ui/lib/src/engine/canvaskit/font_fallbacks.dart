@@ -120,8 +120,8 @@ class FontFallbackData {
 
     final List<SkFont> fonts = <SkFont>[];
     for (final String font in fontFamilies) {
-      final List<SkFont>? typefacesForFamily =
-          (renderer.fontCollection as SkiaFontCollection).familyToFontMap[font];
+      final List<SkFont>? typefacesForFamily = 
+        canvasKitRenderer.fontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
       }
@@ -148,7 +148,7 @@ class FontFallbackData {
       if (!_scheduledCodeUnitCheck) {
         _scheduledCodeUnitCheck = true;
         // ignore: invalid_use_of_visible_for_testing_member
-        (renderer as CanvasKitRenderer).rasterizer.addPostFrameCallback(_ensureFallbackFonts);
+        canvasKitRenderer.rasterizer.addPostFrameCallback(_ensureFallbackFonts);
       }
     }
   }
@@ -173,7 +173,7 @@ class FontFallbackData {
 
     for (final String font in globalFontFallbacks) {
       final List<SkFont>? fontsForFamily =
-          (renderer.fontCollection as SkiaFontCollection).familyToFontMap[font];
+          canvasKitRenderer.fontCollection.familyToFontMap[font];
       if (fontsForFamily == null) {
         printWarning('A fallback font was registered but we '
             'cannot retrieve the typeface for it.');

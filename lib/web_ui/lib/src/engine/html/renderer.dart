@@ -9,16 +9,18 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+HtmlRenderer get htmlRenderer => renderer as HtmlRenderer;
+
 class HtmlRenderer implements Renderer {
   @override
   String get rendererTag => 'html';
 
-  late final FontCollection _fontCollection = HtmlFontCollection();
+  late final HtmlFontCollection _fontCollection = HtmlFontCollection();
 
   late FlutterViewEmbedder _viewEmbedder;
 
   @override
-  FontCollection get fontCollection => _fontCollection;
+  HtmlFontCollection get fontCollection => _fontCollection;
 
   @override
   void initialize() {

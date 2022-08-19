@@ -510,7 +510,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
 
-        (renderer as CanvasKitRenderer).rasterizer.draw(sb.build().layerTree);
+        canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
         await matchGoldenFile(
           'canvaskit_read_back_decoded_image_$mode.png',
           region: const ui.Rect.fromLTRB(0, 0, 150, 150),
@@ -561,7 +561,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         canvas.drawParagraph(makeSimpleText('2'), const ui.Offset(2, 2));
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
       }
-      (renderer as CanvasKitRenderer).rasterizer.draw(sb.build().layerTree);
+      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
       await matchGoldenFile(
         'canvaskit_cross_gl_context_image_$mode.png',
         region: const ui.Rect.fromLTRB(0, 0, 100, 100),

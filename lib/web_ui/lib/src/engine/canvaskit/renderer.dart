@@ -12,7 +12,6 @@ import 'package:ui/ui.dart' as ui;
 import '../configuration.dart';
 import '../dom.dart';
 import '../embedder.dart';
-import '../fonts.dart';
 import '../html_image_codec.dart';
 import '../initialization.dart';
 import '../profiler.dart';
@@ -33,14 +32,16 @@ import 'text.dart';
 import 'util.dart';
 import 'vertices.dart';
 
+CanvasKitRenderer get canvasKitRenderer => renderer as CanvasKitRenderer;
+
 class CanvasKitRenderer implements Renderer {
   @override
   String get rendererTag => 'canvaskit';
 
-  late final FontCollection _fontCollection = SkiaFontCollection();
+  late final SkiaFontCollection _fontCollection = SkiaFontCollection();
 
   @override
-  FontCollection get fontCollection => _fontCollection;
+  SkiaFontCollection get fontCollection => _fontCollection;
 
   /// The scene host, where the root canvas and overlay canvases are added to.
   DomElement? _sceneHost;
@@ -116,9 +117,9 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    /// CanvasKit uses a static scene element that never gets replaced, so it's
-    /// added eagerly during initialization here and never touched, unless the
-    /// system is reset due to hot restart or in a test.
+    // CanvasKit uses a static scene element that never gets replaced, so it's
+    // added eagerly during initialization here and never touched, unless the
+    // system is reset due to hot restart or in a test.
     _sceneHost = createDomElement('flt-scene');
     embedder.addSceneToSceneHost(_sceneHost);
   }
@@ -233,7 +234,7 @@ class CanvasKitRenderer implements Renderer {
   @override
   ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError('ImageFilter.erode not implemented for web platform.');
+    throw UnimplementedError('ImageFilter.erode not implemented for CanvasKit.');
   }
 
   @override

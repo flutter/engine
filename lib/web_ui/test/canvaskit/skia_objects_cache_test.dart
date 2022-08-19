@@ -38,7 +38,7 @@ void _tests() {
   group(ManagedSkiaObject, () {
     test('implements create, cache, delete, resurrect, delete lifecycle', () {
       final FakeRasterizer fakeRasterizer = FakeRasterizer();
-      (renderer as CanvasKitRenderer).rasterizer = fakeRasterizer;
+      canvasKitRenderer.rasterizer = fakeRasterizer;
 
       // Trigger first create
       final TestSkiaObject testObject = TestSkiaObject();

@@ -8,7 +8,6 @@ import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
 import '../platform_dispatcher.dart';
-import '../renderer.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
 import '../window.dart';
@@ -132,7 +131,7 @@ class Surface {
 
   void addToScene() {
     if (!_addedToScene) {
-      (renderer as CanvasKitRenderer).sceneHost!.prepend(htmlElement);
+      canvasKitRenderer.sceneHost!.prepend(htmlElement);
     }
     _addedToScene = true;
   }
