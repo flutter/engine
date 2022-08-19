@@ -345,6 +345,12 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
         } else if (bestFonts.contains(_notoSansSC)) {
           bestFont = _notoSansSC;
         }
+      } else {
+        // To be predictable, if Simplified Chinese is one of the best fonts,
+        // choose that since it is the most common script.
+        if (bestFonts.contains(_notoSansSC)) {
+          bestFont = _notoSansSC;
+        }
       }
     }
     codeUnits.removeWhere((int codeUnit) {
