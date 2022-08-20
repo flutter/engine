@@ -80,7 +80,7 @@ FLUTTER_ASSERT_NOT_ARC
   XCTAssertNotNil(viewController.touchRateCorrectionVSyncClient);
 }
 
-- (void)testCreateTouchRateCorrectionVSyncClientWillCreateVsyncClientWhenRefreshRateIs60HZ {
+- (void)testCreateTouchRateCorrectionVSyncClientWillNotCreateVsyncClientWhenRefreshRateIs60HZ {
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 60;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
