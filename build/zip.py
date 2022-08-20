@@ -18,8 +18,9 @@ def _zip_dir(path, zip_file, prefix):
     for directory in directories:
       if os.path.islink(os.path.join(root, directory)):
         add_symlink(
-            zip_file, os.path.join(root, directory),
-            os.path.join(root.replace(path, prefix), directory)
+            zip_file,
+            os.path.join(root, '%s/' % directory),
+            os.path.join(root.replace(path, prefix), directory),
         )
     for file in files:
       if os.path.islink(os.path.join(root, file)):
