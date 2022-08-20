@@ -8,6 +8,7 @@
 
 #include <cstring>
 
+#include "flutter/fml/paths.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_dart_project_private.h"
@@ -483,10 +484,11 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   g_autoptr(GPtrArray) command_line_args =
       fl_dart_project_get_switches(self->project);
-  // FlutterProjectArgs expects a full argv, so when processing it for flags
-  // the first item is treated as the executable and ignored. Add a dummy value
-  // so that all switches are used.
-  g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
+  auto executable_path = fml::paths::GetExecutablePath();
+  std::string executable_path_str =
+      executable_path.first ? executable_path.second : "Flutter";
+  g_ptr_array_insert(command_line_args, 0,
+                     g_strdup(executable_path_str.c_str()));
 
   gchar** dart_entrypoint_args =
       fl_dart_project_get_dart_entrypoint_arguments(self->project);
