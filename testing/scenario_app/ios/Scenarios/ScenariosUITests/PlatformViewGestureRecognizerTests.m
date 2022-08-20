@@ -28,7 +28,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
+  XCUIElement* platformView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
   if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
     XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
@@ -59,7 +60,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
+  XCUIElement* platformView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
   if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
     XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
@@ -94,7 +96,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
+  XCUIElement* platformView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
   if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
     XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
@@ -128,7 +131,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
+  XCUIElement* platformView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
   if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
     XCTFail(@"Failed due to not able to find any platformView with %@ seconds",

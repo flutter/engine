@@ -66,7 +66,6 @@
 
 @implementation TextPlatformView {
   UIView* _containerView;
-  UITextView* _textView;
   FlutterMethodChannel* _channel;
   BOOL _viewCreated;
 }
@@ -76,25 +75,25 @@
                     arguments:(id _Nullable)args
               binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
   if ([super init]) {
-    _containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 0, 0)];
-    _containerView.accessibilityIdentifier = @"platform_view";
+    _containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 250, 100)];
     _containerView.backgroundColor = UIColor.lightGrayColor;
     _containerView.clipsToBounds = YES;
+    _containerView.accessibilityIdentifier = @"platform_view";
 
-    _textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250, 100)];
-    _textView.backgroundColor = UIColor.lightGrayColor;
-    _textView.textColor = UIColor.blueColor;
-    [_textView setFont:[UIFont systemFontOfSize:52]];
-    _textView.text = args;
-    _textView.autoresizingMask =
+    UITextView* textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250, 100)];
+    textView.backgroundColor = UIColor.lightGrayColor;
+    textView.textColor = UIColor.blueColor;
+    [textView setFont:[UIFont systemFontOfSize:52]];
+    textView.text = args;
+    textView.autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-    [_containerView addSubview:_textView];
+    [_containerView addSubview:textView];
 
     TestTapGestureRecognizer* gestureRecognizer =
         [[TestTapGestureRecognizer alloc] initWithTarget:self action:@selector(platformViewTapped)];
+    gestureRecognizer.testTapGestureRecognizerDelegate = self;
 
     [_containerView addGestureRecognizer:gestureRecognizer];
-    gestureRecognizer.testTapGestureRecognizerDelegate = self;
     _containerView.accessibilityLabel = @"";
 
     _viewCreated = NO;

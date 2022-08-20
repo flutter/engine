@@ -27,7 +27,7 @@ static const CGFloat kCompareAccuracy = 0.001;
       @[ @"--platform-view-no-overlay-intersection", @"--enable-software-rendering" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view.frame.origin.x, 0);
   XCTAssertEqual(platform_view.frame.origin.y, 0);
@@ -49,7 +49,7 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view.frame.origin.x, 0);
   XCTAssertEqual(platform_view.frame.origin.y, 0);
@@ -83,7 +83,7 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view-partial-intersection" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view.frame.origin.x, 0);
   XCTAssertEqual(platform_view.frame.origin.y, 0);
@@ -120,7 +120,7 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view-two-intersecting-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view.frame.origin.x, 0);
   XCTAssertEqual(platform_view.frame.origin.y, 0);
@@ -149,7 +149,7 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view-one-overlay-two-intersecting-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view.frame.origin.x, 0);
   XCTAssertEqual(platform_view.frame.origin.y, 0);
@@ -201,14 +201,14 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view-multiple-without-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view1 = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view1 = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view1 waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view1.frame.origin.x, 0);
   XCTAssertEqual(platform_view1.frame.origin.y, 300);
   XCTAssertEqual(platform_view1.frame.size.width, 250);
   XCTAssertEqual(platform_view1.frame.size.height, 250);
 
-  XCUIElement* platform_view2 = app.textViews[@"platform_view[1]"];
+  XCUIElement* platform_view2 = app.otherElements[@"platform_view[1]"];
   XCTAssertTrue(platform_view2.exists);
   XCTAssertEqual(platform_view2.frame.origin.x, 0);
   XCTAssertEqual(platform_view2.frame.origin.y, 0);
@@ -233,14 +233,14 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view-multiple-background-foreground" ];
   [app launch];
 
-  XCUIElement* platform_view1 = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view1 = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view1 waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view1.frame.origin.x, 25);
   XCTAssertEqual(platform_view1.frame.origin.y, 300);
   XCTAssertEqual(platform_view1.frame.size.width, 250);
   XCTAssertEqual(platform_view1.frame.size.height, 250);
 
-  XCUIElement* platform_view2 = app.textViews[@"platform_view[1]"];
+  XCUIElement* platform_view2 = app.otherElements[@"platform_view[1]"];
   XCTAssertTrue(platform_view2.exists);
   XCTAssertEqual(platform_view2.frame.origin.x, 25);
   XCTAssertEqual(platform_view2.frame.origin.y, 0);
@@ -293,7 +293,7 @@ static const CGFloat kCompareAccuracy = 0.001;
   app.launchArguments = @[ @"--platform-view-max-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
   XCTAssertEqual(platform_view.frame.origin.x, 0);
   XCTAssertEqual(platform_view.frame.origin.y, 0);
