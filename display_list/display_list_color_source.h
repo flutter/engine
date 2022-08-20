@@ -667,8 +667,8 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
       std::vector<std::shared_ptr<DlColorSource>> samplers,
       std::shared_ptr<std::vector<uint8_t>> uniform_data)
       : runtime_effect_(std::move(runtime_effect)),
-        samplers_(std::move(samplers)),
-        uniform_data_(std::move(uniform_data)) {}
+        uniform_data_(std::move(uniform_data)),
+        samplers_(std::move(samplers)) {}
 
   const DlRuntimeEffectColorSource* asRuntimeEffect() const override {
     return this;
@@ -748,8 +748,8 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
 
  private:
   sk_sp<DlRuntimeEffect> runtime_effect_;
-  std::vector<std::shared_ptr<DlColorSource>> samplers_;
   std::shared_ptr<std::vector<uint8_t>> uniform_data_;
+  std::vector<std::shared_ptr<DlColorSource>> samplers_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlRuntimeEffectColorSource);
 };
