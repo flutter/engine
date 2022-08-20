@@ -114,6 +114,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 @property(nonatomic, assign) double targetViewInsetBottom;
 
+- (void)setupTouchRateCorrectionVSyncClient;
 - (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
@@ -158,6 +159,18 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
   self.messageSent = nil;
+}
+
+- (void)testViewDidLoadWillInvokeSetupTouchRateCorrectionVSyncClient {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  [viewControllerMock loadView];
+  [viewControllerMock viewDidLoad];
+  OCMVerify([viewControllerMock setupTouchRateCorrectionVSyncClient]);
 }
 
 - (void)testStartKeyboardAnimationWillInvokeSetupKeyboardAnimationVsyncClient {
