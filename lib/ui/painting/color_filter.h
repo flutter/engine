@@ -30,7 +30,10 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
 
   ~ColorFilter() override;
 
-  const std::shared_ptr<const DlColorFilter> filter() const { return filter_; }
+  const std::shared_ptr<const DlColorFilter> filter() const {
+    FML_LOG(ERROR) << "Uhhh " << this << " .. " << filter_.get();
+    return filter_;
+  }
   const DlColorFilter* dl_filter() const {
     return (filter_ && filter_->skia_object()) ? filter_.get() : nullptr;
   }

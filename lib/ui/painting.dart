@@ -1089,91 +1089,33 @@ enum Clip {
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
 /// to use for that operation.
-class Paint {
+class Paint extends NativeFieldWrapperClass1 {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   Paint() {
-    if (enableDithering) {
-      _dither = true;
-    }
+    _constructor(enableDithering);
   }
 
-  // Paint objects are encoded in two buffers:
-  //
-  // * _data is binary data in four-byte fields, each of which is either a
-  //   uint32_t or a float. The default value for each field is encoded as
-  //   zero to make initialization trivial. Most values already have a default
-  //   value of zero, but some, such as color, have a non-zero default value.
-  //   To encode or decode these values, XOR the value with the default value.
-  //
-  // * _objects is a list of unencodable objects, typically wrappers for native
-  //   objects. The objects are simply stored in the list without any additional
-  //   encoding.
-  //
-  // The binary format must match the deserialization code in paint.cc.
+  @FfiNative<Void Function(Handle, Bool)>('Paint::Create')
+  external void _constructor(bool enableDithering);
 
-  final ByteData _data = ByteData(_kDataByteCount);
-
-  static const int _kIsAntiAliasIndex = 0;
-  static const int _kColorIndex = 1;
-  static const int _kBlendModeIndex = 2;
-  static const int _kStyleIndex = 3;
-  static const int _kStrokeWidthIndex = 4;
-  static const int _kStrokeCapIndex = 5;
-  static const int _kStrokeJoinIndex = 6;
-  static const int _kStrokeMiterLimitIndex = 7;
-  static const int _kFilterQualityIndex = 8;
-  static const int _kMaskFilterIndex = 9;
-  static const int _kMaskFilterBlurStyleIndex = 10;
-  static const int _kMaskFilterSigmaIndex = 11;
-  static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
-
-  static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
-  static const int _kColorOffset = _kColorIndex << 2;
-  static const int _kBlendModeOffset = _kBlendModeIndex << 2;
-  static const int _kStyleOffset = _kStyleIndex << 2;
-  static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
-  static const int _kStrokeCapOffset = _kStrokeCapIndex << 2;
-  static const int _kStrokeJoinOffset = _kStrokeJoinIndex << 2;
-  static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
-  static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
-  static const int _kMaskFilterOffset = _kMaskFilterIndex << 2;
-  static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
-  static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
-  static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-  static const int _kDitherOffset = _kDitherIndex << 2;
-  // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
-
-  // Binary format must match the deserialization code in paint.cc.
-  List<Object?>? _objects;
-
-  List<Object?> _ensureObjectsInitialized() {
-    return _objects ??= List<Object?>.filled(_kObjectCount, null);
-  }
-
-  static const int _kShaderIndex = 0;
-  static const int _kColorFilterIndex = 1;
-  static const int _kImageFilterIndex = 2;
-  static const int _kObjectCount = 3; // Must be one larger than the largest index.
+  static const int _kColorDefault = 0xFF000000;
+  static const double _kStrokeMiterLimitDefault = 4.0;
+  static final int _kBlendModeDefault = BlendMode.srcOver.index;
 
   /// Whether to apply anti-aliasing to lines and images drawn on the
   /// canvas.
   ///
   /// Defaults to true.
-  bool get isAntiAlias {
-    return _data.getInt32(_kIsAntiAliasOffset, _kFakeHostEndian) == 0;
-  }
+  bool get isAntiAlias => _gisAntiAlias;
   set isAntiAlias(bool value) {
-    // We encode true as zero and false as one because the default value, which
-    // we always encode as zero, is true.
-    final int encoded = value ? 0 : 1;
-    _data.setInt32(_kIsAntiAliasOffset, encoded, _kFakeHostEndian);
+    _sisAntiAlias = value;
   }
 
-  // Must be kept in sync with the default in paint.cc.
-  static const int _kColorDefault = 0xFF000000;
+  @FfiNative<Bool Function(Pointer<Void>)>('Paint::getIsAntiAlias', isLeaf: true)
+  external bool get _gisAntiAlias;
+  @FfiNative<Void Function(Pointer<Void>, Bool)>('Paint::setIsAntiAlias', isLeaf: true)
+  external set _sisAntiAlias(bool value);
 
   /// The color to use when stroking or filling a shape.
   ///
@@ -1188,17 +1130,17 @@ class Paint {
   /// This color is not used when compositing. To colorize a layer, use
   /// [colorFilter].
   Color get color {
-    final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return Color(encoded ^ _kColorDefault);
+    return Color(_gcolor);
   }
   set color(Color value) {
     assert(value != null);
-    final int encoded = value.value ^ _kColorDefault;
-    _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
+    _scolor = value.value;
   }
 
-  // Must be kept in sync with the default in paint.cc.
-  static final int _kBlendModeDefault = BlendMode.srcOver.index;
+  @FfiNative<Uint32 Function(Pointer<Void>)>('Paint::getColor', isLeaf: true)
+  external int get _gcolor;
+  @FfiNative<Void Function(Pointer<Void>, Uint32)>('Paint::setColor', isLeaf: true)
+  external set _scolor(int value);
 
   /// A blend mode to apply when a shape is drawn or a layer is composited.
   ///
@@ -1219,53 +1161,65 @@ class Paint {
   ///  * [BlendMode], which discusses the user of [Canvas.saveLayer] with
   ///    [blendMode].
   BlendMode get blendMode {
-    final int encoded = _data.getInt32(_kBlendModeOffset, _kFakeHostEndian);
-    return BlendMode.values[encoded ^ _kBlendModeDefault];
+    return BlendMode.values[_gblendMode];
   }
   set blendMode(BlendMode value) {
     assert(value != null);
-    final int encoded = value.index ^ _kBlendModeDefault;
-    _data.setInt32(_kBlendModeOffset, encoded, _kFakeHostEndian);
+    _sblendMode = value.index;
   }
+
+  @FfiNative<Uint8 Function(Pointer<Void>)>('Paint::getBlendMode', isLeaf: true)
+  external int get _gblendMode;
+  @FfiNative<Void Function(Pointer<Void>, Uint8)>('Paint::setBlendMode', isLeaf: true)
+  external set _sblendMode(int value);
 
   /// Whether to paint inside shapes, the edges of shapes, or both.
   ///
   /// Defaults to [PaintingStyle.fill].
   PaintingStyle get style {
-    return PaintingStyle.values[_data.getInt32(_kStyleOffset, _kFakeHostEndian)];
+    return PaintingStyle.values[_gstyle];
   }
   set style(PaintingStyle value) {
     assert(value != null);
-    final int encoded = value.index;
-    _data.setInt32(_kStyleOffset, encoded, _kFakeHostEndian);
+    _sstyle = value.index;
   }
+
+  @FfiNative<Uint8 Function(Pointer<Void>)>('Paint::getStyle', isLeaf: true)
+  external int get _gstyle;
+  @FfiNative<Void Function(Pointer<Void>, Uint8)>('Paint::setStyle', isLeaf: true)
+  external set _sstyle(int value);
 
   /// How wide to make edges drawn when [style] is set to
   /// [PaintingStyle.stroke]. The width is given in logical pixels measured in
   /// the direction orthogonal to the direction of the path.
   ///
   /// Defaults to 0.0, which correspond to a hairline width.
-  double get strokeWidth {
-    return _data.getFloat32(_kStrokeWidthOffset, _kFakeHostEndian);
-  }
+  double get strokeWidth => _gstrokeWidth;
   set strokeWidth(double value) {
-    assert(value != null);
-    final double encoded = value;
-    _data.setFloat32(_kStrokeWidthOffset, encoded, _kFakeHostEndian);
+    _sstrokeWidth = value;
   }
+
+  @FfiNative<Float Function(Pointer<Void>)>('Paint::getStrokeWidth')
+  external double get _gstrokeWidth;
+  @FfiNative<Void Function(Pointer<Void>, Float)>('Paint::setStrokeWidth', isLeaf: true)
+  external set _sstrokeWidth(double value);
 
   /// The kind of finish to place on the end of lines drawn when
   /// [style] is set to [PaintingStyle.stroke].
   ///
   /// Defaults to [StrokeCap.butt], i.e. no caps.
   StrokeCap get strokeCap {
-    return StrokeCap.values[_data.getInt32(_kStrokeCapOffset, _kFakeHostEndian)];
+    return StrokeCap.values[_gstrokeCap];
   }
   set strokeCap(StrokeCap value) {
     assert(value != null);
-    final int encoded = value.index;
-    _data.setInt32(_kStrokeCapOffset, encoded, _kFakeHostEndian);
+    _sstrokeCap = value.index;
   }
+
+  @FfiNative<Uint8 Function(Pointer<Void>)>('Paint::getStrokeCap', isLeaf: true)
+  external int get _gstrokeCap;
+  @FfiNative<Void Function(Pointer<Void>, Uint8)>('Paint::setStrokeCap', isLeaf: true)
+  external set _sstrokeCap(int value);
 
   /// The kind of finish to place on the joins between segments.
   ///
@@ -1293,16 +1247,17 @@ class Paint {
   ///  * [strokeCap] to control what is drawn at the ends of the stroke.
   ///  * [StrokeJoin] for the definitive list of stroke joins.
   StrokeJoin get strokeJoin {
-    return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
+    return StrokeJoin.values[_gstrokeJoin];
   }
   set strokeJoin(StrokeJoin value) {
     assert(value != null);
-    final int encoded = value.index;
-    _data.setInt32(_kStrokeJoinOffset, encoded, _kFakeHostEndian);
+    _sstrokeJoin = value.index;
   }
 
-  // Must be kept in sync with the default in paint.cc.
-  static const double _kStrokeMiterLimitDefault = 4.0;
+  @FfiNative<Uint8 Function(Pointer<Void>)>('Paint::getStrokeJoin', isLeaf: true)
+  external int get _gstrokeJoin;
+  @FfiNative<Void Function(Pointer<Void>, Uint8)>('Paint::setStrokeJoin', isLeaf: true)
+  external set _sstrokeJoin(int value);
 
   /// The limit for miters to be drawn on segments when the join is set to
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
@@ -1330,59 +1285,46 @@ class Paint {
   ///  * [strokeJoin] to control the kind of finish to place on the joins
   ///    between segments.
   ///  * [strokeCap] to control what is drawn at the ends of the stroke.
-  double get strokeMiterLimit {
-    return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
-  }
+  double get strokeMiterLimit => _gstrokeMiterLimit;
   set strokeMiterLimit(double value) {
-    assert(value != null);
-    final double encoded = value - _kStrokeMiterLimitDefault;
-    _data.setFloat32(_kStrokeMiterLimitOffset, encoded, _kFakeHostEndian);
+    _sstrokeMiterLimit = value;
   }
+
+  @FfiNative<Float Function(Pointer<Void>)>('Paint::getStrokeMiterLimit')
+  external double get _gstrokeMiterLimit;
+  @FfiNative<Void Function(Pointer<Void>, Float)>('Paint::setStrokeMiterLimit')
+  external set _sstrokeMiterLimit(double value);
+
+  MaskFilter? _maskFilter;
 
   /// A mask filter (for example, a blur) to apply to a shape after it has been
   /// drawn but before it has been composited into the image.
   ///
   /// See [MaskFilter] for details.
-  MaskFilter? get maskFilter {
-    switch (_data.getInt32(_kMaskFilterOffset, _kFakeHostEndian)) {
-      case MaskFilter._TypeNone:
-        return null;
-      case MaskFilter._TypeBlur:
-        return MaskFilter.blur(
-          BlurStyle.values[_data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
-          _data.getFloat32(_kMaskFilterSigmaOffset, _kFakeHostEndian),
-        );
-    }
-    return null;
-  }
+  MaskFilter? get maskFilter => _maskFilter;
   set maskFilter(MaskFilter? value) {
-    if (value == null) {
-      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeNone, _kFakeHostEndian);
-      _data.setInt32(_kMaskFilterBlurStyleOffset, 0, _kFakeHostEndian);
-      _data.setFloat32(_kMaskFilterSigmaOffset, 0.0, _kFakeHostEndian);
-    } else {
-      // For now we only support one kind of MaskFilter, so we don't need to
-      // check what the type is if it's not null.
-      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeBlur, _kFakeHostEndian);
-      _data.setInt32(_kMaskFilterBlurStyleOffset, value._style.index, _kFakeHostEndian);
-      _data.setFloat32(_kMaskFilterSigmaOffset, value._sigma, _kFakeHostEndian);
+    if (_maskFilter == value) {
+      return;
     }
+    if (value == null) {
+      _clearMaskFilter();
+    } else {
+      _setBlurMaskFilter(value._style.index, value._sigma);
+    }
+    _maskFilter = value;
   }
+
+  @FfiNative<Void Function(Pointer<Void>)>('Paint::clearMaskFilter')
+  external void _clearMaskFilter();
+  @FfiNative<Void Function(Pointer<Void>, Uint8, Float)>('Paint::setBlurMaskFilter')
+  external void _setBlurMaskFilter(int style, double sigma);
 
   /// Controls the performance vs quality trade-off to use when sampling bitmaps,
   /// as with an [ImageShader], or when drawing images, as with [Canvas.drawImage],
   /// [Canvas.drawImageRect], [Canvas.drawImageNine] or [Canvas.drawAtlas].
   ///
   /// Defaults to [FilterQuality.none].
-  // TODO(ianh): verify that the image drawing methods actually respect this
-  FilterQuality get filterQuality {
-    return FilterQuality.values[_data.getInt32(_kFilterQualityOffset, _kFakeHostEndian)];
-  }
-  set filterQuality(FilterQuality value) {
-    assert(value != null);
-    final int encoded = value.index;
-    _data.setInt32(_kFilterQualityOffset, encoded, _kFakeHostEndian);
-  }
+  FilterQuality filterQuality = FilterQuality.none;
 
   /// The shader to use when stroking or filling a shape.
   ///
@@ -1394,12 +1336,16 @@ class Paint {
   ///  * [ImageShader], a shader that tiles an [Image].
   ///  * [colorFilter], which overrides [shader].
   ///  * [color], which is used if [shader] and [colorFilter] are null.
-  Shader? get shader {
-    return _objects?[_kShaderIndex] as Shader?;
-  }
+  Shader? get shader => _gshader;
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Paint::getShader')
+  external Shader? get _gshader;
   set shader(Shader? value) {
-    _ensureObjectsInitialized()[_kShaderIndex] = value;
+    _setShader(value, filterQuality.index);
   }
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Uint8)>('Paint::setShader')
+  external void _setShader(Shader? value, int filterQuality);
 
   /// A color filter to apply when a shape is drawn or when a layer is
   /// composited.
@@ -1408,19 +1354,18 @@ class Paint {
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
   ColorFilter? get colorFilter {
-    final _ColorFilter? nativeFilter = _objects?[_kColorFilterIndex] as _ColorFilter?;
+    final _ColorFilter? nativeFilter = _gcolorFilter;
     return nativeFilter?.creator;
   }
   set colorFilter(ColorFilter? value) {
-    final _ColorFilter? nativeFilter = value?._toNativeColorFilter();
-    if (nativeFilter == null) {
-      if (_objects != null) {
-        _objects![_kColorFilterIndex] = null;
-      }
-    } else {
-      _ensureObjectsInitialized()[_kColorFilterIndex] = nativeFilter;
-    }
+    _scolorFilter = value?._toNativeColorFilter();
   }
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Paint::getColorFilter')
+  external _ColorFilter? get _gcolorFilter;
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Paint::setColorFilter')
+  external set _scolorFilter(_ColorFilter? value);
+
 
   /// The [ImageFilter] to use when drawing raster images.
   ///
@@ -1441,41 +1386,32 @@ class Paint {
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
   ImageFilter? get imageFilter {
-    final _ImageFilter? nativeFilter = _objects?[_kImageFilterIndex] as _ImageFilter?;
+    final _ImageFilter? nativeFilter = _gimageFilter;
     return nativeFilter?.creator;
   }
   set imageFilter(ImageFilter? value) {
-    if (value == null) {
-      if (_objects != null) {
-        _objects![_kImageFilterIndex] = null;
-      }
-    } else {
-      final List<Object?> objects = _ensureObjectsInitialized();
-      final _ImageFilter? imageFilter = objects[_kImageFilterIndex] as _ImageFilter?;
-      if (imageFilter?.creator != value) {
-        objects[_kImageFilterIndex] = value._toNativeImageFilter();
-      }
-    }
+    _simageFilter = value?._toNativeImageFilter();
   }
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Paint::getImageFilter')
+  external _ImageFilter? get _gimageFilter;
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Paint::setImageFilter')
+  external set _simageFilter(_ImageFilter? value);
 
   /// Whether the colors of the image are inverted when drawn.
   ///
   /// Inverting the colors of an image applies a new color filter that will
   /// be composed with any user provided color filters. This is primarily
   /// used for implementing smart invert on iOS.
-  bool get invertColors {
-    return _data.getInt32(_kInvertColorOffset, _kFakeHostEndian) == 1;
-  }
+  bool get invertColors => _ginvertColors;
   set invertColors(bool value) {
-    _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
+    _sinvertColors = value;
   }
 
-  bool get _dither {
-    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
-  }
-  set _dither(bool value) {
-    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
-  }
+  @FfiNative<Bool Function(Pointer<Void>)>('Paint::getIsInvertColors')
+  external bool get _ginvertColors;
+  @FfiNative<Void Function(Pointer<Void>, Bool)>('Paint::setIsInvertColors')
+  external set _sinvertColors(bool value);
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1493,6 +1429,8 @@ class Paint {
   /// To ensure that dithering is consistently enabled for your entire
   /// application, set this to true before invoking any drawing related code.
   static bool enableDithering = false;
+
+  final bool _dither = enableDithering;
 
   @override
   String toString() {
@@ -3082,11 +3020,6 @@ class MaskFilter {
   final BlurStyle _style;
   final double _sigma;
 
-  // The type of MaskFilter class to create for Skia.
-  // These constants must be kept in sync with MaskFilterType in paint.cc.
-  static const int _TypeNone = 0; // null
-  static const int _TypeBlur = 1; // SkBlurMaskFilter
-
   @override
   bool operator ==(Object other) {
     return other is MaskFilter
@@ -4050,6 +3983,44 @@ class ImageShader extends Shader {
 
   @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>('ImageShader::initWithImage')
   external String? _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4);
+
+  bool _debugDisposed = false;
+
+  /// Whether [dispose] has been called.
+  ///
+  /// This must only be used when asserts are enabled. Otherwise, it will throw.
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _debugDisposed;
+      return true;
+    }());
+    return disposed;
+  }
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// The underlying memory allocated by this object will be retained beyond
+  /// this call if it is still needed by another object that has not been
+  /// disposed. For example, an [ImageDescriptor] that has not been disposed
+  /// may still retain a reference to the memory from this buffer even if it
+  /// has been disposed. Freeing that memory requires disposing all resources
+  /// that may still hold it.
+  void dispose() {
+    assert(() {
+      assert(!_debugDisposed);
+      _debugDisposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Picture::dispose')
+  external void _dispose();
+
 }
 
 /// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
@@ -4592,18 +4563,18 @@ class Canvas extends NativeFieldWrapperClass1 {
   void saveLayer(Rect? bounds, Paint paint) {
     assert(paint != null);
     if (bounds == null) {
-      _saveLayerWithoutBounds(paint._objects, paint._data);
+      _saveLayerWithoutBounds(paint);
     } else {
       assert(_rectIsValid(bounds));
-      _saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom, paint._objects, paint._data);
+      _saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom, paint);
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::saveLayerWithoutBounds')
-  external void _saveLayerWithoutBounds(List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::saveLayerWithoutBounds')
+  external void _saveLayerWithoutBounds(Paint paint);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::saveLayer')
-  external void _saveLayer(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle)>('Canvas::saveLayer')
+  external void _saveLayer(double left, double top, double right, double bottom, Paint paint);
 
   /// Pops the current save stack, if there is anything to pop.
   /// Otherwise, does nothing.
@@ -4840,11 +4811,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(_offsetIsValid(p1));
     assert(_offsetIsValid(p2));
     assert(paint != null);
-    _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
+    _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawLine')
-  external void _drawLine(double x1, double y1, double x2, double y2, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle)>('Canvas::drawLine')
+  external void _drawLine(double x1, double y1, double x2, double y2, Paint paint);
 
   /// Fills the canvas with the given [Paint].
   ///
@@ -4852,33 +4823,33 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [drawColor] instead.
   void drawPaint(Paint paint) {
     assert(paint != null);
-    _drawPaint(paint._objects, paint._data);
+    _drawPaint(paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::drawPaint')
-  external void _drawPaint(List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::drawPaint')
+  external void _drawPaint(Paint paint);
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawRect')
-  external void _drawRect(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle)>('Canvas::drawRect')
+  external void _drawRect(double left, double top, double right, double bottom, Paint paint);
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
   /// filled or stroked (or both) is controlled by [Paint.style].
   void drawRRect(RRect rrect, Paint paint) {
     assert(_rrectIsValid(rrect));
     assert(paint != null);
-    _drawRRect(rrect._getValue32(), paint._objects, paint._data);
+    _drawRRect(rrect._getValue32(), paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>('Canvas::drawRRect')
-  external void _drawRRect(Float32List rrect, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::drawRRect')
+  external void _drawRRect(Float32List rrect, Paint paint);
 
   /// Draws a shape consisting of the difference between two rounded rectangles
   /// with the given [Paint]. Whether this shape is filled or stroked (or both)
@@ -4889,11 +4860,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(_rrectIsValid(outer));
     assert(_rrectIsValid(inner));
     assert(paint != null);
-    _drawDRRect(outer._getValue32(), inner._getValue32(), paint._objects, paint._data);
+    _drawDRRect(outer._getValue32(), inner._getValue32(), paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('Canvas::drawDRRect')
-  external void _drawDRRect(Float32List outer, Float32List inner, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>('Canvas::drawDRRect')
+  external void _drawDRRect(Float32List outer, Float32List inner, Paint paint);
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
   /// with the given [Paint]. Whether the oval is filled or stroked (or both) is
@@ -4901,11 +4872,11 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawOval')
-  external void _drawOval(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle)>('Canvas::drawOval')
+  external void _drawOval(double left, double top, double right, double bottom, Paint paint);
 
   /// Draws a circle centered at the point given by the first argument and
   /// that has the radius given by the second argument, with the [Paint] given in
@@ -4914,11 +4885,11 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawCircle(Offset c, double radius, Paint paint) {
     assert(_offsetIsValid(c));
     assert(paint != null);
-    _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
+    _drawCircle(c.dx, c.dy, radius, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle)>('Canvas::drawCircle')
-  external void _drawCircle(double x, double y, double radius, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle)>('Canvas::drawCircle')
+  external void _drawCircle(double x, double y, double radius, Paint paint);
 
   /// Draw an arc scaled to fit inside the given rectangle.
   ///
@@ -4934,10 +4905,10 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
-    _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, useCenter, paint._objects, paint._data);
+    _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, useCenter, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Bool, Handle, Handle)>('Canvas::drawArc')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Bool, Handle)>('Canvas::drawArc')
   external void _drawArc(
       double left,
       double top,
@@ -4946,8 +4917,7 @@ class Canvas extends NativeFieldWrapperClass1 {
       double startAngle,
       double sweepAngle,
       bool useCenter,
-      List<Object?>? paintObjects,
-      ByteData paintData);
+      Paint paint);
 
   /// Draws the given [Path] with the given [Paint].
   ///
@@ -4957,11 +4927,11 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawPath(Path path, Paint paint) {
     assert(path != null); // path is checked on the engine side
     assert(paint != null);
-    _drawPath(path, paint._objects, paint._data);
+    _drawPath(path, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>('Canvas::drawPath')
-  external void _drawPath(Path path, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle)>('Canvas::drawPath')
+  external void _drawPath(Path path, Paint paint);
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
@@ -4969,14 +4939,14 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
     assert(paint != null);
-    final String? error = _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
+    final String? error = _drawImage(image._image, offset.dx, offset.dy, paint, paint.filterQuality.index);
     if (error != null) {
       throw PictureRasterizationException._(error, stack: image._debugStack);
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Handle, Int32)>('Canvas::drawImage')
-  external String? _drawImage(_Image image, double x, double y, List<Object?>? paintObjects, ByteData paintData, int filterQualityIndex);
+  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Int32)>('Canvas::drawImage')
+  external String? _drawImage(_Image image, double x, double y, Paint paint, int filterQualityIndex);
 
   /// Draws the subset of the given image described by the `src` argument into
   /// the canvas in the axis-aligned rectangle given by the `dst` argument.
@@ -5001,15 +4971,14 @@ class Canvas extends NativeFieldWrapperClass1 {
                                          dst.top,
                                          dst.right,
                                          dst.bottom,
-                                         paint._objects,
-                                         paint._data,
+                                         paint,
                                          paint.filterQuality.index);
     if (error != null) {
       throw PictureRasterizationException._(error, stack: image._debugStack);
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32)>('Canvas::drawImageRect')
+  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Int32)>('Canvas::drawImageRect')
   external String? _drawImageRect(
       _Image image,
       double srcLeft,
@@ -5020,8 +4989,7 @@ class Canvas extends NativeFieldWrapperClass1 {
       double dstTop,
       double dstRight,
       double dstBottom,
-      List<Object?>? paintObjects,
-      ByteData paintData,
+      Paint paint,
       int filterQualityIndex);
 
   /// Draws the given [Image] into the canvas using the given [Paint].
@@ -5051,15 +5019,14 @@ class Canvas extends NativeFieldWrapperClass1 {
                                          dst.top,
                                          dst.right,
                                          dst.bottom,
-                                         paint._objects,
-                                         paint._data,
+                                         paint,
                                          paint.filterQuality.index);
     if (error != null) {
       throw PictureRasterizationException._(error, stack: image._debugStack);
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32)>('Canvas::drawImageNine')
+  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Int32)>('Canvas::drawImageNine')
   external String? _drawImageNine(
       _Image image,
       double centerLeft,
@@ -5070,8 +5037,7 @@ class Canvas extends NativeFieldWrapperClass1 {
       double dstTop,
       double dstRight,
       double dstBottom,
-      List<Object?>? paintObjects,
-      ByteData paintData,
+      Paint paint,
       int filterQualityIndex);
 
   /// Draw the given picture onto the canvas. To create a picture, see
@@ -5123,7 +5089,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    _drawPoints(paint._objects, paint._data, pointMode.index, _encodePointList(points));
+    _drawPoints(paint, pointMode.index, _encodePointList(points));
   }
 
   /// Draws a sequence of points according to the given [PointMode].
@@ -5142,11 +5108,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
     }
-    _drawPoints(paint._objects, paint._data, pointMode.index, points);
+    _drawPoints(paint, pointMode.index, points);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>('Canvas::drawPoints')
-  external void _drawPoints(List<Object?>? paintObjects, ByteData paintData, int pointMode, Float32List points);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Int32, Handle)>('Canvas::drawPoints')
+  external void _drawPoints(Paint paint, int pointMode, Float32List points);
 
   /// Draws the set of [Vertices] onto the canvas.
   ///
@@ -5173,11 +5139,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);
-    _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
+    _drawVertices(vertices, blendMode.index, paint);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle, Handle)>('Canvas::drawVertices')
-  external void _drawVertices(Vertices vertices, int blendMode, List<Object?>? paintObjects, ByteData paintData);
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle)>('Canvas::drawVertices')
+  external void _drawVertices(Vertices vertices, int blendMode, Paint paint);
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
   ///
@@ -5357,7 +5323,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     final int qualityIndex = paint.filterQuality.index;
 
     final String? error = _drawAtlas(
-      paint._objects, paint._data, qualityIndex, atlas._image, rstTransformBuffer, rectBuffer,
+      paint, qualityIndex, atlas._image, rstTransformBuffer, rectBuffer,
       colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
 
@@ -5539,7 +5505,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     final int qualityIndex = paint.filterQuality.index;
 
     final String? error = _drawAtlas(
-      paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms, rects,
+      paint, qualityIndex, atlas._image, rstTransforms, rects,
       colors, (blendMode ?? BlendMode.src).index, cullRect?._getValue32()
     );
 
@@ -5548,10 +5514,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle, Handle, Int32, Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>('Canvas::drawAtlas')
+  @FfiNative<Handle Function(Pointer<Void>, Handle, Int32, Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>('Canvas::drawAtlas')
   external String? _drawAtlas(
-      List<Object?>? paintObjects,
-      ByteData paintData,
+      Paint paint,
       int filterQualityIndex,
       _Image atlas,
       Float32List rstTransforms,

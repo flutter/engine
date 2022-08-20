@@ -36,15 +36,13 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   ~Canvas() override;
 
   void save();
-  void saveLayerWithoutBounds(Dart_Handle paint_objects,
-                              Dart_Handle paint_data);
+  void saveLayerWithoutBounds(fml::RefPtr<Paint> paint);
 
   void saveLayer(double left,
                  double top,
                  double right,
                  double bottom,
-                 Dart_Handle paint_objects,
-                 Dart_Handle paint_data);
+                 fml::RefPtr<Paint> paint);
 
   void restore();
   int getSaveCount();
@@ -73,39 +71,29 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                 double y1,
                 double x2,
                 double y2,
-                Dart_Handle paint_objects,
-                Dart_Handle paint_data);
+                fml::RefPtr<Paint> paint);
 
-  void drawPaint(Dart_Handle paint_objects, Dart_Handle paint_data);
+  void drawPaint(fml::RefPtr<Paint> paint);
 
   void drawRect(double left,
                 double top,
                 double right,
                 double bottom,
-                Dart_Handle paint_objects,
-                Dart_Handle paint_data);
+                fml::RefPtr<Paint> paint);
 
-  void drawRRect(const RRect& rrect,
-                 Dart_Handle paint_objects,
-                 Dart_Handle paint_data);
+  void drawRRect(const RRect& rrect, fml::RefPtr<Paint> paint);
 
   void drawDRRect(const RRect& outer,
                   const RRect& inner,
-                  Dart_Handle paint_objects,
-                  Dart_Handle paint_data);
+                  fml::RefPtr<Paint> paint);
 
   void drawOval(double left,
                 double top,
                 double right,
                 double bottom,
-                Dart_Handle paint_objects,
-                Dart_Handle paint_data);
+                fml::RefPtr<Paint> paint);
 
-  void drawCircle(double x,
-                  double y,
-                  double radius,
-                  Dart_Handle paint_objects,
-                  Dart_Handle paint_data);
+  void drawCircle(double x, double y, double radius, fml::RefPtr<Paint> paint);
 
   void drawArc(double left,
                double top,
@@ -114,18 +102,14 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                double startAngle,
                double sweepAngle,
                bool useCenter,
-               Dart_Handle paint_objects,
-               Dart_Handle paint_data);
+               fml::RefPtr<Paint> paint);
 
-  void drawPath(const CanvasPath* path,
-                Dart_Handle paint_objects,
-                Dart_Handle paint_data);
+  void drawPath(const CanvasPath* path, fml::RefPtr<Paint> paint);
 
   Dart_Handle drawImage(const CanvasImage* image,
                         double x,
                         double y,
-                        Dart_Handle paint_objects,
-                        Dart_Handle paint_data,
+                        fml::RefPtr<Paint> paint,
                         int filterQualityIndex);
 
   Dart_Handle drawImageRect(const CanvasImage* image,
@@ -137,8 +121,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                             double dst_top,
                             double dst_right,
                             double dst_bottom,
-                            Dart_Handle paint_objects,
-                            Dart_Handle paint_data,
+                            fml::RefPtr<Paint> paint,
                             int filterQualityIndex);
 
   Dart_Handle drawImageNine(const CanvasImage* image,
@@ -150,8 +133,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                             double dst_top,
                             double dst_right,
                             double dst_bottom,
-                            Dart_Handle paint_objects,
-                            Dart_Handle paint_data,
+                            fml::RefPtr<Paint> paint,
                             int bitmapSamplingIndex);
 
   void drawPicture(Picture* picture);
@@ -161,18 +143,15 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   // Float32List, we cannot re-enter the VM to unwrap objects. That means we
   // either need to process the paint argument first.
 
-  void drawPoints(Dart_Handle paint_objects,
-                  Dart_Handle paint_data,
+  void drawPoints(fml::RefPtr<Paint> paint,
                   SkCanvas::PointMode point_mode,
                   const tonic::Float32List& points);
 
   void drawVertices(const Vertices* vertices,
                     DlBlendMode blend_mode,
-                    Dart_Handle paint_objects,
-                    Dart_Handle paint_data);
+                    fml::RefPtr<Paint> paint);
 
-  Dart_Handle drawAtlas(Dart_Handle paint_objects,
-                        Dart_Handle paint_data,
+  Dart_Handle drawAtlas(fml::RefPtr<Paint> paint,
                         int filterQualityIndex,
                         CanvasImage* atlas,
                         Dart_Handle transforms_handle,

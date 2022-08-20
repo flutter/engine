@@ -24,6 +24,7 @@
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/immutable_buffer.h"
+#include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/path_measure.h"
 #include "flutter/lib/ui/painting/picture.h"
@@ -71,6 +72,7 @@ typedef CanvasPath Path;
   V(ImageFilter::Create, 1)                                           \
   V(ImageShader::Create, 1)                                           \
   V(ParagraphBuilder::Create, 9)                                      \
+  V(Paint::Create, 2)                                                 \
   V(PathMeasure::Create, 3)                                           \
   V(Path::Create, 1)                                                  \
   V(PictureRecorder::Create, 1)                                       \
@@ -188,6 +190,32 @@ typedef CanvasPath Path;
   V(ImageShader, initWithImage, 6)                     \
   V(ImmutableBuffer, dispose, 1)                       \
   V(ImmutableBuffer, length, 1)                        \
+  V(Paint, clearMaskFilter, 1)                         \
+  V(Paint, getBlendMode, 1)                            \
+  V(Paint, getColor, 1)                                \
+  V(Paint, getColorFilter, 1)                          \
+  V(Paint, getImageFilter, 1)                          \
+  V(Paint, getIsAntiAlias, 1)                          \
+  V(Paint, getIsInvertColors, 1)                       \
+  V(Paint, getShader, 1)                               \
+  V(Paint, getStrokeCap, 1)                            \
+  V(Paint, getStrokeJoin, 1)                           \
+  V(Paint, getStrokeMiter, 1)                          \
+  V(Paint, getStrokeWidth, 1)                          \
+  V(Paint, getStyle, 1)                                \
+  V(Paint, setBlendMode, 2)                            \
+  V(Paint, setBlurMaskFilter, 3)                       \
+  V(Paint, setColor, 2)                                \
+  V(Paint, setColorFilter, 2)                          \
+  V(Paint, setImageFilter, 2)                          \
+  V(Paint, setIsAntiAlias, 2)                          \
+  V(Paint, setIsInvertColors, 2)                       \
+  V(Paint, setShader, 3)                               \
+  V(Paint, setStrokeCap, 2)                            \
+  V(Paint, setStrokeJoin, 2)                           \
+  V(Paint, setStrokeMiter, 2)                          \
+  V(Paint, setStrokeWidth, 2)                          \
+  V(Paint, setStyle, 2)                                \
   V(ParagraphBuilder, addPlaceholder, 6)               \
   V(ParagraphBuilder, addText, 2)                      \
   V(ParagraphBuilder, build, 2)                        \

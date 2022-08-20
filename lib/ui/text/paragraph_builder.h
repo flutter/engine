@@ -42,10 +42,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                  double height,
                  double decorationThickness,
                  const std::string& locale,
-                 Dart_Handle background_objects,
-                 Dart_Handle background_data,
-                 Dart_Handle foreground_objects,
-                 Dart_Handle foreground_data,
+                 fml::RefPtr<Paint> background,
+                 fml::RefPtr<Paint> foreground,
                  Dart_Handle shadows_data,
                  Dart_Handle font_features_data,
                  Dart_Handle font_variations_data);

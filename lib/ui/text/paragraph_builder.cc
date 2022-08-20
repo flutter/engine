@@ -385,10 +385,8 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
                                  double height,
                                  double decorationThickness,
                                  const std::string& locale,
-                                 Dart_Handle background_objects,
-                                 Dart_Handle background_data,
-                                 Dart_Handle foreground_objects,
-                                 Dart_Handle foreground_data,
+                                 fml::RefPtr<Paint> background,
+                                 fml::RefPtr<Paint> foreground,
                                  Dart_Handle shadows_data,
                                  Dart_Handle font_features_data,
                                  Dart_Handle font_variations_data) {
@@ -465,20 +463,18 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
   }
 
   if (mask & kTSBackgroundMask) {
-    Paint background(background_objects, background_data);
-    if (background.isNotNull()) {
+    if (background) {
       SkPaint sk_paint;
       style.has_background = true;
-      style.background = *background.paint(sk_paint);
+      style.background = *background->paint(sk_paint);
     }
   }
 
   if (mask & kTSForegroundMask) {
-    Paint foreground(foreground_objects, foreground_data);
-    if (foreground.isNotNull()) {
+    if (foreground) {
       SkPaint sk_paint;
       style.has_foreground = true;
-      style.foreground = *foreground.paint(sk_paint);
+      style.foreground = *foreground->paint(sk_paint);
     }
   }
 
