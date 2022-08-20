@@ -674,8 +674,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Register internal plugins.
   [self addInternalPlugins];
 
-  // Setup vsync client to correct touch rate.
-  [self setupTouchRateCorrectionVSyncClient];
+  // Create a vsync client to correct touch rate if needed.
+  [self createTouchRateCorrectionVSyncClientIfNeeded];
 
   if (@available(iOS 13.4, *)) {
     _hoverGestureRecognizer =
@@ -1123,9 +1123,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Touch events rate correction
 
-- (void)setupTouchRateCorrectionVSyncClient {
+- (void)createTouchRateCorrectionVSyncClientIfNeeded {
   NSAssert(_touchRateCorrectionVSyncClient == nil,
-           @"_touchRateCorrectionVSyncClient should be nil when setup");
+           @"_touchRateCorrectionVSyncClient should be nil when setup it");
   double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
   if (displayRefreshRate <= 60) {
     // If current device's max frame rate is not larger than 60HZ, the delivery rate of touch events
@@ -1145,6 +1145,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)triggerTouchRateCorrectionIfNeeded:(NSSet*)touches {
+  if (_touchRateCorrectionVSyncClient == nil) {
+    // If the _touchRateCorrectionVSyncClient is not created, means current devices doesn't
+    // need to correct the touch rate. So just return.
+    return;
+  }
+
   // As long as there is a touch's phase is UITouchPhaseBegan or UITouchPhaseMoved,
   // we should activate the correction. Otherwise we will pause the correction.
   BOOL isUserInteracting = NO;

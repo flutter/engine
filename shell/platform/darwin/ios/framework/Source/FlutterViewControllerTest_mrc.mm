@@ -30,7 +30,7 @@ FLUTTER_ASSERT_NOT_ARC
 
 @property(nonatomic, retain) VSyncClient* touchRateCorrectionVSyncClient;
 
-- (void)setupTouchRateCorrectionVSyncClient;
+- (void)createTouchRateCorrectionVSyncClientIfNeeded;
 - (void)setupKeyboardAnimationVsyncClient;
 - (void)triggerTouchRateCorrectionIfNeeded:(NSSet*)touches;
 
@@ -67,7 +67,7 @@ FLUTTER_ASSERT_NOT_ARC
 }
 
 - (void)
-    testSetupTouchRateCorrectionVSyncClientWillCreateVsyncClientWhenRefreshRateIsLargerThan60HZ {
+    testCreateTouchRateCorrectionVSyncClientWillCreateVsyncClientWhenRefreshRateIsLargerThan60HZ {
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
@@ -76,11 +76,11 @@ FLUTTER_ASSERT_NOT_ARC
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  [viewController setupTouchRateCorrectionVSyncClient];
+  [viewController createTouchRateCorrectionVSyncClientIfNeeded];
   XCTAssertNotNil(viewController.touchRateCorrectionVSyncClient);
 }
 
-- (void)testSetupTouchRateCorrectionVSyncClientWillCreateVsyncClientWhenRefreshRateIs60HZ {
+- (void)testCreateTouchRateCorrectionVSyncClientWillCreateVsyncClientWhenRefreshRateIs60HZ {
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 60;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
@@ -89,7 +89,7 @@ FLUTTER_ASSERT_NOT_ARC
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  [viewController setupTouchRateCorrectionVSyncClient];
+  [viewController createTouchRateCorrectionVSyncClientIfNeeded];
   XCTAssertNil(viewController.touchRateCorrectionVSyncClient);
 }
 
