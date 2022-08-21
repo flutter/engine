@@ -781,7 +781,7 @@ static std::vector<Color> fromColors(const flutter::DlVertices* vertices) {
   }
   auto color_count = vertices->vertex_count();
   colors.reserve(color_count);
-  for (int i = 0; i < color_count(); i++) {
+  for (int i = 0; i < color_count; i++) {
     auto dl_color = dl_colors[i];
     colors.push_back({
         dl_color.getRedF(),
@@ -796,10 +796,10 @@ static std::vector<Color> fromColors(const flutter::DlVertices* vertices) {
 static std::vector<Point> fromPoints(const flutter::DlVertices* vertices) {
   std::vector<Point> points;
   auto vertex_count = vertices->vertex_count();
-  auto* vertices = vertices->vertices();
+  auto* dl_vertices = vertices->vertices();
   points.reserve(vertex_count);
   for (int i = 0; i < vertex_count; i++) {
-    auto point = vertices[i];
+    auto point = dl_vertices[i];
     points.push_back(Point(point.x(), point.y()));
   }
   return points;
@@ -809,7 +809,7 @@ static std::vector<Point> fromPoints(const flutter::DlVertices* vertices) {
 // manipulating the index array.
 //
 // In Triangle fan, the first vertex is shared across all triangles, and then
-// each sliding window of two vertices plus that first vertex defines the
+// each sliding window of two vertices plus that first vertex defines a
 // triangle.
 static std::vector<uint16_t> fromFanIndices(
     const flutter::DlVertices* vertices) {
@@ -820,11 +820,12 @@ static std::vector<uint16_t> fromFanIndices(
 
   // Un-fan index buffer if provided.
   if (vertices->index_count() > 0) {
-    auto center_point = vertices->indices()[0];
+    auto* dl_indices = vertices->indices();
+    auto center_point = dl_indices[0];
     for (int i = 1; i < vertices->index_count() - 1; i++) {
       indices.push_back(center_point);
-      indices.push_back(vertices->indices()[i]);
-      indices.push_back(vertices->indices()[i + 1]);
+      indices.push_back(dl_indices[i]);
+      indices.push_back(dl_indices[i + 1]);
     }
   } else {
     // If indices were not provided, create an index buffer that unfans
@@ -835,6 +836,7 @@ static std::vector<uint16_t> fromFanIndices(
       indices.push_back(i + 1);
     }
   }
+  return indices;
 }
 
 static std::vector<uint16_t> fromIndices(const flutter::DlVertices* vertices) {
@@ -844,10 +846,10 @@ static std::vector<uint16_t> fromIndices(const flutter::DlVertices* vertices) {
 
   std::vector<uint16_t> indices;
   auto index_count = vertices->index_count();
-  auto* indices = vertices->indices();
+  auto* dl_indices = vertices->indices();
   indices.reserve(index_count);
   for (int i = 0; i < index_count; i++) {
-    auto index = indices[i];
+    auto index = dl_indices[i];
     indices.push_back(index);
   }
   return indices;
