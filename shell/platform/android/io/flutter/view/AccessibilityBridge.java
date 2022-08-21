@@ -476,6 +476,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
     }
 
+    // Tells Flutter whether the text should be bolded or not. If the user changes bold text 
+    // setting, the configuration will change and trigger a re-build of the accesibiltyBridge.
+    setBoldTextFlag();
+
     platformViewsAccessibilityDelegate.attachAccessibilityBridge(this);
   }
 
@@ -537,6 +541,18 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o == semanticsNode)
             || !SemanticsNode.nullableHasAncestor(
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
+  }
+
+  @VisibleForTesting
+  private void setBoldTextFlag() {
+    boolean shouldBeBold = 
+        rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment >= 300;
+    if (shouldBeBold) {
+     accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
+    } else {
+     accessibilityFeatureFlags &=  AccessibilityFeature.BOLD_TEXT.value;
+    }
+    sendLatestAccessibilityFlagsToFlutter();
   }
 
   @VisibleForTesting
