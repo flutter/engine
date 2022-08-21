@@ -161,6 +161,9 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void SendInitialAccessibilityFeatures() override;
 
  private:
+  // Sends a lifecycle event based on |has_focus_| and |is_visible_|.
+  void SendLifecycleEvent();
+
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.
   WindowBindingHandlerDelegate* binding_handler_delegate_;
@@ -170,6 +173,12 @@ class FlutterWindow : public Window, public WindowBindingHandler {
 
   // The cursor rect set by Flutter.
   RECT cursor_rect_;
+
+  // True when the window has focus.
+  bool has_focus_ = false;
+
+  // True when the window is visible.
+  bool is_visible_ = false;
 };
 
 }  // namespace flutter

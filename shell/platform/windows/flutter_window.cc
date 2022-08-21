@@ -72,6 +72,7 @@ FlutterWindow::FlutterWindow(int width, int height)
     : binding_handler_delegate_(nullptr) {
   Window::InitializeChild("FLUTTERVIEW", width, height);
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
+  is_visible_ = true;
 }
 
 FlutterWindow::~FlutterWindow() {}
@@ -242,19 +243,37 @@ void FlutterWindow::OnScroll(double delta_x,
 }
 
 void FlutterWindow::OnSetFocus() {
-  binding_handler_delegate_->OnResumed();
+  has_focus_ = true;
+  SendLifecycleEvent();
 }
 
 void FlutterWindow::OnKillFocus() {
-  binding_handler_delegate_->OnInactive();
+  has_focus_ = false;
+  SendLifecycleEvent();
 }
 
 void FlutterWindow::OnMinimized() {
-  binding_handler_delegate_->OnPaused();
+  is_visible_ = false;
+  SendLifecycleEvent();
 }
 
 void FlutterWindow::OnRestoredFromMinimized() {
-  binding_handler_delegate_->OnInactive();
+  is_visible_ = true;
+  SendLifecycleEvent();
+}
+
+void FlutterWindow::SendLifecycleEvent() {
+  if (is_visible_) {
+    if (has_focus_) {
+      binding_handler_delegate_->OnResumed();
+    } else {
+      binding_handler_delegate_->OnInactive();
+    }
+  } else {
+    // The window is invisible.
+    // Send pause event regardless of the window has focus.
+    binding_handler_delegate_->OnPaused();
+  }
 }
 
 void FlutterWindow::OnCursorRectUpdated(const Rect& rect) {

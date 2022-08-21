@@ -400,5 +400,29 @@ TEST(FlutterWindowTest, InitialAccessibilityFeatures) {
   win32window.SendInitialAccessibilityFeatures();
 }
 
+TEST(FlutterWindowTest, SendLifecycleEvent) {
+  MockFlutterWindow win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  // Fix the states.
+  win32window.OnMinimized();
+  win32window.OnKillFocus();
+
+  // Simulates restoring window size.
+  EXPECT_CALL(delegate, OnInactive()).Times(1);
+  win32window.OnRestoredFromMinimized();
+
+  EXPECT_CALL(delegate, OnResumed()).Times(1);
+  win32window.OnSetFocus();
+
+  // Simulates minimizing window.
+  EXPECT_CALL(delegate, OnInactive()).Times(1);
+  win32window.OnKillFocus();
+
+  EXPECT_CALL(delegate, OnPaused()).Times(1);
+  win32window.OnMinimized();
+}
+
 }  // namespace testing
 }  // namespace flutter

@@ -195,7 +195,6 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
 
   lifecycle_plugin_ =
       std::make_unique<LifecyclePlugin>(messenger_wrapper_.get());
-  lifecycle_plugin_->SendAppIsDetached();
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -367,8 +366,6 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
   settings_plugin_->StartWatching();
   settings_plugin_->SendSettings();
-
-  lifecycle_plugin_->SendAppIsResumed();
 
   return true;
 }
