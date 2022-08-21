@@ -22,7 +22,6 @@ uniform FragInfo {
 frag_info;
 
 in vec2 v_texture_coords;
-in vec2 v_src_texture_coords;
 out vec4 frag_color;
 
 void main() {
@@ -32,17 +31,18 @@ void main() {
     vec2 texture_coords = v_texture_coords + uv_offset * i;
     vec4 color;
     color =
-      IPSampleWithTileMode(
-          texture_sampler,                          // sampler
-          texture_coords,                           // texture coordinates
-          frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
-          kTileModeDecal                           // tile mode
-      );
+        IPSampleWithTileMode(
+            texture_sampler,                          // sampler
+            texture_coords,                           // texture coordinates
+            frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
+            kTileModeDecal                            // tile mode
+        );
     if (frag_info.morph_type == kMorphTypeDilate) {
       result = max(color, result);
     } else {
       result = min(color, result);
     }
   }
+
   frag_color = result;
 }

@@ -1007,13 +1007,13 @@ TEST_P(EntityTest, MorphologyFilter) {
     static Color input_color = Color::Black();
     // UI state.
     static int selected_morphology_type = 0;
-    static float radius[2] = {30, 200};
+    static float radius[2] = {20, 20};
     static Color cover_color(1, 0, 0, 0.2);
     static Color bounds_color(0, 1, 0, 0.1);
     static float offset[2] = {500, 400};
-    static float rotation = 1.5;
-    static float scale[2] = {0.3, 0.3};
-    static float skew[2] = {0.409, 0};
+    static float rotation = 0;
+    static float scale[2] = {0.65, 0.65};
+    static float skew[2] = {0, 0};
     static float path_rect[4] = {0, 0,
                                  static_cast<float>(boston->GetSize().width),
                                  static_cast<float>(boston->GetSize().height)};

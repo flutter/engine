@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/contents/filters/morphology_filter_contents.h"
-#include <cmath>
-#include "impeller/entity/contents/content_context.h"
 
+#include <cmath>
+
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -23,7 +24,10 @@ void DirectionalMorphologyFilterContents::SetRadius(Radius radius) {
 }
 
 void DirectionalMorphologyFilterContents::SetDirection(Vector2 direction) {
-  direction_ = direction;
+  direction_ = direction.Normalize();
+  if (direction_.IsZero()) {
+    direction_ = Vector2(0, 1);
+  }
 }
 
 void DirectionalMorphologyFilterContents::SetMorphType(MorphType morph_type) {
