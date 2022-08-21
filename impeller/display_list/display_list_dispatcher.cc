@@ -911,7 +911,8 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                          flutter::DlBlendMode dl_mode) {
   VerticesConverter converter = {};
-  canvas_.DrawVertices(converter.ToVertices(vertices), ToBlendMode(dl_mode), paint_);
+  canvas_.DrawVertices(converter.ToVertices(vertices), ToBlendMode(dl_mode),
+                       paint_);
 }
 
 // |flutter::Dispatcher|
