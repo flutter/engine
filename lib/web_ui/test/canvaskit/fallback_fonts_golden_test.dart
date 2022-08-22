@@ -38,13 +38,12 @@ void testMain() {
       ui.window.onPlatformMessage = savedCallback;
     });
 
-    final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-
     test('Roboto is always a fallback font', () {
       expect(FontFallbackData.instance.globalFontFallbacks, contains('Roboto'));
     });
 
     test('will download Noto Naskh Arabic if Arabic text is added', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           '''
@@ -97,6 +96,7 @@ void testMain() {
 
     test('will put the Noto Emoji font before other fallback fonts in the list',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
@@ -155,6 +155,7 @@ void testMain() {
 
     test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
@@ -203,6 +204,7 @@ void testMain() {
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           'invalid CSS... this should cause our parser to fail';
@@ -230,6 +232,7 @@ void testMain() {
     test(
         'Can find fonts for two adjacent unmatched code units from different fonts',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       final LoggingDownloader loggingDownloader =
           LoggingDownloader(NotoDownloader());
       notoDownloadQueue.downloader = loggingDownloader;

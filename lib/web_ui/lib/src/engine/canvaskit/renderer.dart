@@ -6,17 +6,13 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../configuration.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../html_image_codec.dart';
-import '../initialization.dart';
 import '../profiler.dart';
 import '../renderer.dart';
-import '../safe_browser_api.dart';
 import 'canvaskit_api.dart';
 import 'canvaskit_canvas.dart';
 import 'fonts.dart';
@@ -67,53 +63,6 @@ class CanvasKitRenderer implements Renderer {
       canvasKit = await downloadCanvasKit();
       windowFlutterCanvasKit = canvasKit;
     }
-  }
-
-  String get canvasKitBuildUrl =>
-    configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
-  String get canvasKitJavaScriptBindingsUrl =>
-      '${canvasKitBuildUrl}canvaskit.js';
-  String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
-      canvasKitBase + file;
-
-  /// Download and initialize the CanvasKit module.
-  ///
-  /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
-  /// and intialize the CanvasKit wasm.
-  @visibleForTesting
-  Future<CanvasKit> downloadCanvasKit() async {
-    await _downloadCanvasKitJs();
-    final Completer<CanvasKit> canvasKitInitCompleter = Completer<CanvasKit>();
-    final CanvasKitInitPromise canvasKitInitPromise =
-        CanvasKitInit(CanvasKitInitOptions(
-      locateFile: allowInterop((String file, String unusedBase) =>
-          canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
-    ));
-    canvasKitInitPromise.then(allowInterop((CanvasKit ck) {
-      canvasKitInitCompleter.complete(ck);
-    }));
-    return canvasKitInitCompleter.future;
-  }
-
-  /// Downloads the CanvasKit JavaScript file at [canvasKitBase].
-  Future<void> _downloadCanvasKitJs() {
-    final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
-
-    final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
-    canvasKitScript.src = canvasKitJavaScriptUrl;
-
-    final Completer<void> canvasKitLoadCompleter = Completer<void>();
-    late DomEventListener callback;
-    void loadEventHandler(DomEvent _) {
-      canvasKitLoadCompleter.complete();
-      canvasKitScript.removeEventListener('load', callback);
-    }
-    callback = allowInterop(loadEventHandler);
-    canvasKitScript.addEventListener('load', callback);
-
-    patchCanvasKitModule(canvasKitScript);
-
-    return canvasKitLoadCompleter.future;
   }
 
   @override

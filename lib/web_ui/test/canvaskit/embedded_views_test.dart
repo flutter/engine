@@ -23,9 +23,8 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1);
     });
 
-    final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-
     test('embeds interactive platform views', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -60,6 +59,7 @@ void testMain() {
     });
 
     test('clips platform views with RRects', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -98,6 +98,7 @@ void testMain() {
     });
 
     test('correctly transforms platform views', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -602,6 +603,7 @@ void testMain() {
     });
 
     test('removed the DOM node of an unrendered platform view', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -661,6 +663,7 @@ void testMain() {
     test(
         'removes old SVG clip definitions from the DOM when the view is recomposited',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'test-view',
@@ -695,6 +698,7 @@ void testMain() {
 
     test('does not crash when a prerolled platform view is not composited',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -714,6 +718,7 @@ void testMain() {
     });
 
     test('does not crash when overlays are disabled', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       HtmlViewEmbedder.debugDisableOverlays = true;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
@@ -735,6 +740,7 @@ void testMain() {
     });
 
     test('works correctly with max overlays == 2', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       debugSetConfiguration(FlutterConfiguration(
           JsFlutterConfiguration()..canvasKitMaximumSurfaces = 2));
       SurfaceFactory.instance.debugClear();
@@ -784,6 +790,7 @@ void testMain() {
     test(
         'correctly renders when overlays are disabled and a subset '
         'of views is used', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       HtmlViewEmbedder.debugDisableOverlays = true;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
@@ -820,6 +827,7 @@ void testMain() {
     });
 
     test('does not create overlays for invisible platform views', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui.platformViewRegistry.registerViewFactory(
           'test-visible-view',
           (int viewId) =>
