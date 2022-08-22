@@ -602,7 +602,7 @@ TEST(FlutterWindowsViewTest, WindowRepaintTests) {
 // Resulted in the issue seen at
 // https://github.com/flutter/flutter/issues/96218
 // This test ensures that the native state of Checkboxes on Windows,
-// specifically, is updated as desired
+// specifically, is updated as desired.
 TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
