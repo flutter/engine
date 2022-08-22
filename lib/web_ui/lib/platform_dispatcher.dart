@@ -54,6 +54,10 @@ abstract class PlatformDispatcher {
 
   void setIsolateDebugName(String name) {}
 
+  DartPerformanceMode requestDartPerformanceMode(DartPerformanceMode mode) {
+    return DartPerformanceMode.balanced;
+  }
+
   ByteData? getPersistentIsolateData() => null;
 
   void scheduleFrame();
@@ -543,4 +547,8 @@ class Locale {
     }
     return out.toString();
   }
+}
+
+enum DartPerformanceMode {
+  balanced,
 }
