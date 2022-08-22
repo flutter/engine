@@ -118,6 +118,30 @@ TEST_F(WindowsTest, VerifyNativeFunctionWithParameters) {
   EXPECT_TRUE(bool_value);
 }
 
+// Verify that Platform.executable returns the executable name.
+TEST_F(WindowsTest, PlatformExecutable) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  builder.SetDartEntrypoint("readPlatformExecutable");
+
+  std::string executable_name;
+  fml::AutoResetWaitableEvent latch;
+  auto native_entry = CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+    auto handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_FALSE(Dart_IsError(handle));
+    executable_name = tonic::DartConverter<std::string>::FromDart(handle);
+    latch.Signal();
+  });
+  context.AddNativeFunction("SignalStringValue", native_entry);
+
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  // Wait until signalStringValue has been called.
+  latch.Wait();
+  EXPECT_EQ(executable_name, "flutter_windows_unittests.exe");
+}
+
 // Verify that native functions that return values can be registered and
 // resolved.
 TEST_F(WindowsTest, VerifyNativeFunctionWithReturn) {
@@ -147,6 +171,60 @@ TEST_F(WindowsTest, VerifyNativeFunctionWithReturn) {
   // Wait until signalBoolReturn and signalBoolValue have been called.
   latch.Wait();
   EXPECT_TRUE(bool_value_passed);
+}
+
+// Verify the next frame callback is executed.
+TEST_F(WindowsTest, NextFrameCallback) {
+  struct Captures {
+    fml::AutoResetWaitableEvent frame_scheduled_latch;
+    fml::AutoResetWaitableEvent frame_drawn_latch;
+    std::thread::id thread_id;
+  };
+  Captures captures;
+
+  CreateNewThread("test_platform_thread")->PostTask([&]() {
+    captures.thread_id = std::this_thread::get_id();
+
+    auto& context = GetContext();
+    WindowsConfigBuilder builder(context);
+    builder.SetDartEntrypoint("drawHelloWorld");
+
+    auto native_entry = CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+      ASSERT_FALSE(captures.frame_drawn_latch.IsSignaledForTest());
+      captures.frame_scheduled_latch.Signal();
+    });
+    context.AddNativeFunction("NotifyFirstFrameScheduled", native_entry);
+
+    ViewControllerPtr controller{builder.Run()};
+    ASSERT_NE(controller, nullptr);
+
+    auto engine = FlutterDesktopViewControllerGetEngine(controller.get());
+
+    FlutterDesktopEngineSetNextFrameCallback(
+        engine,
+        [](void* user_data) {
+          auto captures = static_cast<Captures*>(user_data);
+
+          ASSERT_TRUE(captures->frame_scheduled_latch.IsSignaledForTest());
+
+          // Callback should execute on platform thread.
+          ASSERT_EQ(std::this_thread::get_id(), captures->thread_id);
+
+          // Signal the test passed and end the Windows message loop.
+          captures->frame_drawn_latch.Signal();
+          ::PostQuitMessage(0);
+        },
+        &captures);
+
+    // Pump messages for the Windows platform task runner.
+    ::MSG msg;
+    while (::GetMessage(&msg, nullptr, 0, 0)) {
+      ::TranslateMessage(&msg);
+      ::DispatchMessage(&msg);
+    }
+  });
+
+  captures.frame_drawn_latch.Wait();
 }
 
 }  // namespace testing
