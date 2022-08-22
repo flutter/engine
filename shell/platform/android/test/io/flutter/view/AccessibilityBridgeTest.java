@@ -1041,9 +1041,9 @@ public class AccessibilityBridgeTest {
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
     View mockRootView = mock(View.class);
     Context context = mock(Context.class);
-    Resources resource= mock(Resources.class);
+    Resources resource = mock(Resources.class);
     Configuration config = new Configuration();
-    config.fontWeightAdjustment=300;
+    config.fontWeightAdjustment = 300;
 
     when(mockRootView.getContext()).thenReturn(context);
     when(mockRootView.getResources()).thenReturn(resource);
@@ -1058,7 +1058,7 @@ public class AccessibilityBridgeTest {
             /*accessibilityViewEmbedder=*/ mockViewEmbedder,
             /*platformViewsAccessibilityDelegate=*/ null);
 
-    verify(mockChannel).setAccessibilityFeatures(1<<3);
+    verify(mockChannel).setAccessibilityFeatures(1 << 3);
   }
 
   @Test

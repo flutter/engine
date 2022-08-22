@@ -550,9 +550,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (rootAccessibilityView == null || rootAccessibilityView.getResources() == null) {
       return;
     }
-    int fontWeightAdjustment = rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
-    boolean shouldBold = fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
-        && fontWeightAdjustment >= 300;
+    int fontWeightAdjustment =
+        rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
+    boolean shouldBold =
+        fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
+            && fontWeightAdjustment >= 300;
 
     if (shouldBold) {
       accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
