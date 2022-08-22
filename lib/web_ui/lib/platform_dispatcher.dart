@@ -54,9 +54,7 @@ abstract class PlatformDispatcher {
 
   void setIsolateDebugName(String name) {}
 
-  DartPerformanceMode requestDartPerformanceMode(DartPerformanceMode mode) {
-    return DartPerformanceMode.balanced;
-  }
+  void requestDartPerformanceMode(DartPerformanceMode mode) {}
 
   ByteData? getPersistentIsolateData() => null;
 

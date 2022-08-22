@@ -625,12 +625,9 @@ class PlatformDispatcher {
 
   /// Requests the Dart VM to adjusts the GC heuristics based on the requested `performance_mode`.
   ///
-  /// Returns the old performance mode of the Dart VM.
-  ///
   /// See [DartPerformanceMode] for more information on individual performance modes.
-  DartPerformanceMode requestDartPerformanceMode(DartPerformanceMode mode) {
-    final int index = _requestDartPerformanceMode(mode.index);
-    return DartPerformanceMode.values[index];
+  void requestDartPerformanceMode(DartPerformanceMode mode) {
+    _requestDartPerformanceMode(mode.index);
   }
 
   @FfiNative<Int Function(Handle)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
