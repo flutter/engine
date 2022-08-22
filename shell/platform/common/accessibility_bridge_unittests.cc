@@ -341,7 +341,7 @@ TEST(AccessibilityBridgeTest, SliderHasSliderRole) {
 // Previously, only Radios could have this flag updated
 // Resulted in the issue seen at
 // https://github.com/flutter/flutter/issues/96218
-// As this fix involved code run on all platforms, it is included here
+// As this fix involved code run on all platforms, it is included here.
 TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
   std::shared_ptr<AccessibilityBridge> bridge =
       std::make_shared<AccessibilityBridge>(
