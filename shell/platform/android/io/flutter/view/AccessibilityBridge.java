@@ -477,7 +477,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
     }
 
-    // Tells Flutter whether the text should be bolded or not. If the user changes bold text 
+    // Tells Flutter whether the text should be bolded or not. If the user changes bold text
     // setting, the configuration will change and trigger a re-build of the accesibiltyBridge.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       setBoldTextFlag();
