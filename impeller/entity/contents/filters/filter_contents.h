@@ -66,6 +66,12 @@ class FilterContents : public Contents {
       FilterInput::Ref input,
       const ColorMatrix& matrix);
 
+  static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
+      FilterInput::Ref input);
+
+  static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
+      FilterInput::Ref input);
+
   FilterContents();
 
   ~FilterContents() override;
@@ -101,13 +107,12 @@ class FilterContents : public Contents {
       const FilterInput::Vector& inputs,
       const Entity& entity) const;
 
-  /// @brief  Takes a set of zero or more input textures and writes to an output
-  ///         texture.
-  virtual bool RenderFilter(const FilterInput::Vector& inputs,
-                            const ContentContext& renderer,
-                            const Entity& entity,
-                            RenderPass& pass,
-                            const Rect& coverage) const = 0;
+  /// @brief  Converts zero or more filter inputs into a new texture.
+  virtual std::optional<Snapshot> RenderFilter(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 

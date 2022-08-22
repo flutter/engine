@@ -13,10 +13,8 @@
 
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
-#include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/layers/layer_raster_cache_item.h"
-#include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/dart/dart_converter.h"
@@ -767,62 +765,8 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
 
   PumpOneFrame(shell.get(), 100, 100, builder);
   end_frame_latch.Wait();
+
   ASSERT_TRUE(end_frame_called);
-
-  DestroyShell(std::move(shell));
-}
-
-TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
-  auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent end_frame_latch;
-  bool end_frame_called = false;
-  auto end_frame_callback =
-      [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        ASSERT_TRUE(raster_thread_merger.get() == nullptr);
-        ASSERT_FALSE(should_resubmit_frame);
-        end_frame_called = true;
-        end_frame_latch.Signal();
-      };
-  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kResubmitFrame, false);
-  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
-                           false, external_view_embedder);
-
-  // Create the surface needed by rasterizer
-  PlatformViewNotifyCreated(shell.get());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("emptyMain");
-
-  RunEngine(shell.get(), std::move(configuration));
-
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    auto platform_view_layer = std::make_shared<PlatformViewLayer>(
-        SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
-    root->Add(platform_view_layer);
-    auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-    auto backdrop_filter_layer =
-        std::make_shared<BackdropFilterLayer>(filter, DlBlendMode::kSrcOver);
-    root->Add(backdrop_filter_layer);
-    auto platform_view_layer2 = std::make_shared<PlatformViewLayer>(
-        SkPoint::Make(10, 10), SkSize::Make(10, 10), 75);
-    backdrop_filter_layer->Add(platform_view_layer2);
-  };
-
-  PumpOneFrame(shell.get(), 100, 100, builder);
-  end_frame_latch.Wait();
-  ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews().size(),
-            (const unsigned long)2);
-  ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[0], 50);
-  ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[1], 75);
-  ASSERT_TRUE(external_view_embedder->GetStack(75).is_empty());
-  ASSERT_FALSE(external_view_embedder->GetStack(50).is_empty());
-
-  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
-  auto mutator = *external_view_embedder->GetStack(50).Begin();
-  ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
-  ASSERT_EQ(mutator->GetFilter(), filter);
 
   DestroyShell(std::move(shell));
 }
@@ -3339,9 +3283,9 @@ TEST_F(ShellTest, ImageGeneratorRegistryNotNullAfterParentShellDestroyed) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3351,7 +3295,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3381,9 +3328,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3393,7 +3340,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3456,10 +3406,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform));
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3469,7 +3418,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
