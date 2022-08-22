@@ -64,6 +64,10 @@ Future<void> matchGoldenFile(String filename,
             'height': region.height
           },
     'pixelComparison': pixelComparison.toString(),
+    // We use the renderer tag here rather than `renderer is CanvasKitRenderer`
+    // because these unit tests operate on the post-transformed (sdk_rewriter)
+    // sdk where the internal classes like `CanvasKitRenderer` are no longer
+    // visible.
     'isCanvaskitTest': renderer.rendererTag == 'canvaskit',
   };
 
