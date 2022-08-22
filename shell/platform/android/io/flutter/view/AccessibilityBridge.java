@@ -546,6 +546,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
+  @TargetApi(31)
+  @RequiresApi(31)
   private void setBoldTextFlag() {
     if (rootAccessibilityView == null || rootAccessibilityView.getResources() == null) {
       return;
