@@ -805,14 +805,9 @@ TEST_F(RasterCacheTest, RasterCacheBleedingNoClipNeeded) {
   EXPECT_EQ(canvas.draw_calls(),
             std::vector({
                 MockCanvas::DrawCall{
-                    0,
-                    MockCanvas::SetMatrixData{SkM44::Scale(2, 2)},
-                },
+                    0, MockCanvas::SetMatrixData{SkM44::Scale(2, 2)}},
                 MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                MockCanvas::DrawCall{
-                    1,
-                    MockCanvas::SetMatrixData{SkM44()},
-                },
+                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
                 MockCanvas::DrawCall{
                     1, MockCanvas::DrawImageData{image, 200.6, 200.6,
                                                  SkSamplingOptions(), paint}},
@@ -837,15 +832,10 @@ TEST_F(RasterCacheTest, RasterCacheBleedingClipNeeded) {
   EXPECT_EQ(
       canvas.draw_calls(),
       std::vector({
-          MockCanvas::DrawCall{
-              0,
-              MockCanvas::SetMatrixData{SkM44::Scale(2, 2)},
-          },
+          MockCanvas::DrawCall{0,
+                               MockCanvas::SetMatrixData{SkM44::Scale(2, 2)}},
           MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-          MockCanvas::DrawCall{
-              1,
-              MockCanvas::SetMatrixData{SkM44()},
-          },
+          MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
           MockCanvas::DrawCall{1, MockCanvas::SaveData{2}},
           MockCanvas::DrawCall{
               2, MockCanvas::ClipRectData{SkRect::MakeLTRB(200, 200, 240, 240),
