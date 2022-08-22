@@ -21,7 +21,7 @@ const MethodCodec codec = StandardMethodCodec();
 /// Common test setup for all CanvasKit unit-tests.
 void setUpCanvasKitTest() {
   setUpAll(() async {
-    expect(renderer, isA<CanvasKitRenderer>, reason: 'This test must run in CanvasKit mode.');
+    expect(renderer, isA<CanvasKitRenderer>(), reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
     await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
