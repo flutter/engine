@@ -638,10 +638,13 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
 
   bridge->CommitUpdates();
 
-  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock();
+  auto root_node = bridge
+                       ->GetFlutterPlatformNodeDelegateFromID(
+                           AccessibilityBridge::kRootNodeId)
+                       .lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
-  EXPECT_EQ(
-      root_node->GetData().GetCheckedState(), ax::mojom::CheckedState::kTrue);
+  EXPECT_EQ(root_node->GetData().GetCheckedState(),
+            ax::mojom::CheckedState::kTrue);
 
   // Get the IAccessible for the root node.
   IAccessible* native_view = root_node->GetNativeViewAccessible();
@@ -664,8 +667,8 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
   root_node = bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
-  EXPECT_EQ(
-      root_node->GetData().GetCheckedState(), ax::mojom::CheckedState::kFalse);
+  EXPECT_EQ(root_node->GetData().GetCheckedState(),
+            ax::mojom::CheckedState::kFalse);
 
   // Get the IAccessible for the root node.
   native_view = root_node->GetNativeViewAccessible();

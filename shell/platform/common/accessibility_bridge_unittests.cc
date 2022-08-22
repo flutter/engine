@@ -364,8 +364,8 @@ TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
-  EXPECT_EQ(
-      root_node->GetData().GetCheckedState(), ax::mojom::CheckedState::kTrue);
+  EXPECT_EQ(root_node->GetData().GetCheckedState(),
+            ax::mojom::CheckedState::kTrue);
 }
 
 }  // namespace testing
