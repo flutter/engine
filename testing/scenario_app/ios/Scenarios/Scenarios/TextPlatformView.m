@@ -66,6 +66,7 @@
 
 @implementation TextPlatformView {
   UIView* _containerView;
+  UITextView* _textView;
   FlutterMethodChannel* _channel;
   BOOL _viewCreated;
 }
@@ -80,21 +81,22 @@
     _containerView.clipsToBounds = YES;
     _containerView.accessibilityIdentifier = @"platform_view";
 
-    UITextView* textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250, 100)];
-    textView.backgroundColor = UIColor.lightGrayColor;
-    textView.textColor = UIColor.blueColor;
-    [textView setFont:[UIFont systemFontOfSize:52]];
-    textView.text = args;
-    textView.autoresizingMask =
+    _textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250, 100)];
+    _textView.backgroundColor = UIColor.lightGrayColor;
+    _textView.textColor = UIColor.blueColor;
+    [_textView setFont:[UIFont systemFontOfSize:52]];
+    _textView.text = args;
+    _textView.autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-    [_containerView addSubview:textView];
+    [_containerView addSubview:_textView];
 
     TestTapGestureRecognizer* gestureRecognizer =
         [[TestTapGestureRecognizer alloc] initWithTarget:self action:@selector(platformViewTapped)];
+
+    [_textView addGestureRecognizer:gestureRecognizer];
     gestureRecognizer.testTapGestureRecognizerDelegate = self;
 
-    [_containerView addGestureRecognizer:gestureRecognizer];
-    _containerView.accessibilityLabel = @"";
+    _textView.accessibilityLabel = @"";
 
     _viewCreated = NO;
   }
@@ -111,18 +113,18 @@
 }
 
 - (void)platformViewTapped {
-  _containerView.accessibilityLabel =
-      [_containerView.accessibilityLabel stringByAppendingString:@"-platformViewTapped"];
+  _textView.accessibilityLabel =
+      [_textView.accessibilityLabel stringByAppendingString:@"-platformViewTapped"];
 }
 
 - (void)gestureTouchesBegan {
-  _containerView.accessibilityLabel =
-      [_containerView.accessibilityLabel stringByAppendingString:@"-gestureTouchesBegan"];
+  _textView.accessibilityLabel =
+      [_textView.accessibilityLabel stringByAppendingString:@"-gestureTouchesBegan"];
 }
 
 - (void)gestureTouchesEnded {
-  _containerView.accessibilityLabel =
-      [_containerView.accessibilityLabel stringByAppendingString:@"-gestureTouchesEnded"];
+  _textView.accessibilityLabel =
+      [_textView.accessibilityLabel stringByAppendingString:@"-gestureTouchesEnded"];
 }
 
 @end

@@ -28,25 +28,25 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView =
-      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
-  if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
+  XCUIElement* textView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView].textViews.firstMatch;
+  if (![textView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
-    XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
+    XCTFail(@"Failed due to not able to find any textView with %@ seconds",
             @(kSecondsToWaitForPlatformView));
   }
 
-  XCTAssertNotNil(platformView);
-  XCTAssertEqualObjects(platformView.label, @"");
+  XCTAssertNotNil(textView);
+  XCTAssertEqualObjects(textView.label, @"");
 
   NSPredicate* predicate =
       [NSPredicate predicateWithFormat:@"label == %@", @"-gestureTouchesBegan-gestureTouchesEnded"];
   XCTNSPredicateExpectation* exception =
-      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:platformView];
+      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:textView];
 
-  [platformView tap];
+  [textView tap];
   [self waitForExpectations:@[ exception ] timeout:kSecondsToWaitForPlatformView];
-  XCTAssertEqualObjects(platformView.label, @"-gestureTouchesBegan-gestureTouchesEnded");
+  XCTAssertEqualObjects(textView.label, @"-gestureTouchesBegan-gestureTouchesEnded");
 }
 
 - (void)testRejectPolicyEager {
@@ -60,16 +60,16 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView =
-      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
-  if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
+  XCUIElement* textView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView].textViews.firstMatch;
+  if (![textView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
-    XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
+    XCTFail(@"Failed due to not able to find any textView with %@ seconds",
             @(kSecondsToWaitForPlatformView));
   }
 
-  XCTAssertNotNil(platformView);
-  XCTAssertEqualObjects(platformView.label, @"");
+  XCTAssertNotNil(textView);
+  XCTAssertEqualObjects(textView.label, @"");
 
   NSPredicate* predicate =
       [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
@@ -78,11 +78,11 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         return [view.label containsString:@"-gestureTouchesBegan"];
       }];
   XCTNSPredicateExpectation* exception =
-      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:platformView];
+      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:textView];
 
-  [platformView tap];
+  [textView tap];
   [self waitForExpectations:@[ exception ] timeout:kSecondsToWaitForPlatformView];
-  XCTAssertTrue([platformView.label containsString:@"-gestureTouchesBegan"]);
+  XCTAssertTrue([textView.label containsString:@"-gestureTouchesBegan"]);
 }
 
 - (void)testAccept {
@@ -96,27 +96,27 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier hasPrefix:@"platform_view"];
       }];
-  XCUIElement* platformView =
-      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
-  if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
+  XCUIElement* textView =
+      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView].textViews.firstMatch;
+  if (![textView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
-    XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
+    XCTFail(@"Failed due to not able to find any textView with %@ seconds",
             @(kSecondsToWaitForPlatformView));
   }
 
-  XCTAssertNotNil(platformView);
-  XCTAssertEqualObjects(platformView.label, @"");
+  XCTAssertNotNil(textView);
+  XCTAssertEqualObjects(textView.label, @"");
 
   NSPredicate* predicate = [NSPredicate
       predicateWithFormat:@"label == %@",
                           @"-gestureTouchesBegan-gestureTouchesEnded-platformViewTapped"];
   XCTNSPredicateExpectation* exception =
-      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:platformView];
+      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:textView];
 
-  [platformView tap];
+  [textView tap];
 
   [self waitForExpectations:@[ exception ] timeout:kSecondsToWaitForPlatformView];
-  XCTAssertEqualObjects(platformView.label,
+  XCTAssertEqualObjects(textView.label,
                         @"-gestureTouchesBegan-gestureTouchesEnded-platformViewTapped");
 }
 
