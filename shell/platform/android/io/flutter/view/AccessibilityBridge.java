@@ -554,6 +554,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
     int fontWeightAdjustment =
         rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
+    // FontWeight.Bold - FontWeight.Normal = w700 - w400 = 300.
     boolean shouldBold =
         fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
             && fontWeightAdjustment >= 300;
