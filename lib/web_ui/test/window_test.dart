@@ -173,7 +173,7 @@ void testMain() {
     ).then<void>((bool data) {
       success = true;
     });
-    expect(true, isTrue);
+    expect(success, isTrue);
   });
 
   test('handleNavigationMessage execute request in order.', () async {
