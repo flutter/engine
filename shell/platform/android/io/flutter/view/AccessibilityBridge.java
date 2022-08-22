@@ -9,6 +9,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -478,7 +479,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // Tells Flutter whether the text should be bolded or not. If the user changes bold text 
     // setting, the configuration will change and trigger a re-build of the accesibiltyBridge.
-    setBoldTextFlag();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      setBoldTextFlag();
+    }
 
     platformViewsAccessibilityDelegate.attachAccessibilityBridge(this);
   }
@@ -543,14 +546,18 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
-  @VisibleForTesting
   private void setBoldTextFlag() {
-    boolean shouldBeBold = 
-        rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment >= 300;
-    if (shouldBeBold) {
-     accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
+    if (rootAccessibilityView == null || rootAccessibilityView.getResources() == null) {
+      return;
+    }
+    int fontWeightAdjustment = rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
+    boolean shouldBold = fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
+        && fontWeightAdjustment >= 300;
+
+    if (shouldBold) {
+      accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
     } else {
-     accessibilityFeatureFlags &=  AccessibilityFeature.BOLD_TEXT.value;
+      accessibilityFeatureFlags &= AccessibilityFeature.BOLD_TEXT.value;
     }
     sendLatestAccessibilityFlagsToFlutter();
   }
