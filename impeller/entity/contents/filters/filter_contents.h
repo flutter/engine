@@ -66,6 +66,12 @@ class FilterContents : public Contents {
       FilterInput::Ref input,
       const ColorMatrix& matrix);
 
+  static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
+      FilterInput::Ref input);
+
+  static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
+      FilterInput::Ref input);
+
   FilterContents();
 
   ~FilterContents() override;
