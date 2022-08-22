@@ -102,8 +102,9 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-    frame_info.sigma_uv = Vector2(sigma_x_.sigma, sigma_y_.sigma).Abs() /
-                          input_snapshot->texture->GetSize();
+
+    auto sigma = effect_transform * Vector2(sigma_x_.sigma, sigma_y_.sigma);
+    frame_info.sigma_uv = sigma.Abs() / input_snapshot->texture->GetSize();
     frame_info.src_factor = src_color_factor_;
     frame_info.inner_blur_factor = inner_blur_factor_;
     frame_info.outer_blur_factor = outer_blur_factor_;
@@ -138,7 +139,7 @@ std::optional<Rect> BorderMaskBlurFilterContents::GetFilterCoverage(
   if (!coverage.has_value()) {
     return std::nullopt;
   }
-  auto transform = inputs[0]->GetTransform(entity);
+  auto transform = inputs[0]->GetTransform(entity) * effect_transform;
   auto transformed_blur_vector =
       transform.TransformDirection(Vector2(Radius{sigma_x_}.radius, 0)).Abs() +
       transform.TransformDirection(Vector2(0, Radius{sigma_y_}.radius)).Abs();
