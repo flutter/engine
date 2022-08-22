@@ -5,11 +5,14 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_COLOR_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_COLOR_FILTER_H_
 
+#include <memory>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_color.h"
+#include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
+#include "include/core/SkColorFilter.h"
 
 namespace flutter {
 
@@ -29,6 +32,7 @@ enum class DlColorFilterType {
   kMatrix,
   kSrgbToLinearGamma,
   kLinearToSrgbGamma,
+  kComposedFilter,
   kUnknown
 };
 
@@ -50,6 +54,9 @@ class DlColorFilter
   static std::shared_ptr<DlColorFilter> From(sk_sp<SkColorFilter> sk_filter) {
     return From(sk_filter.get());
   }
+
+  std::shared_ptr<DlColorFilter> makeComposed(
+      std::shared_ptr<DlColorFilter> inner) const;
 
   // Return a boolean indicating whether the color filtering operation will
   // modify transparent black. This is typically used to determine if applying
@@ -237,6 +244,61 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
 
  private:
   static const sk_sp<SkColorFilter> sk_filter_;
+  friend class DlColorFilter;
+};
+
+class DlComposedColorFilter final : public DlColorFilter {
+ public:
+  DlComposedColorFilter(std::shared_ptr<DlColorFilter> outer,
+                        std::shared_ptr<DlColorFilter> inner)
+      : outer_(std::move(outer)), inner_(std::move(inner)) {}
+  DlComposedColorFilter(const DlColorFilter* outer, const DlColorFilter* inner)
+      : outer_(outer->shared()), inner_(inner->shared()) {}
+  DlComposedColorFilter(const DlColorFilter& outer, const DlColorFilter& inner)
+      : DlComposedColorFilter(&outer, &inner) {}
+  DlComposedColorFilter(const DlComposedColorFilter& filter)
+      : DlComposedColorFilter(filter.outer_->shared(),
+                              filter.inner_->shared()) {}
+  explicit DlComposedColorFilter(const DlComposedColorFilter* filter)
+      : DlComposedColorFilter(filter->outer_, filter->inner_) {}
+
+  DlColorFilterType type() const override {
+    return DlColorFilterType::kComposedFilter;
+  }
+  size_t size() const override { return sizeof(*this); }
+
+  std::shared_ptr<DlColorFilter> outer() const { return outer_; }
+  std::shared_ptr<DlColorFilter> inner() const { return inner_; }
+
+  bool modifies_transparent_black() const override {
+    if (inner_ && inner_->modifies_transparent_black()) {
+      return true;
+    }
+    if (outer_ && outer_->modifies_transparent_black()) {
+      return true;
+    }
+    return false;
+  }
+
+  std::shared_ptr<DlColorFilter> shared() const override {
+    return std::make_shared<DlComposedColorFilter>(this);
+  }
+
+  sk_sp<SkColorFilter> skia_object() const override {
+    return SkColorFilters::Compose(outer_->skia_object(),
+                                   inner_->skia_object());
+  }
+
+ protected:
+  bool equals_(const DlColorFilter& other) const override {
+    FML_DCHECK(other.type() == DlColorFilterType::kComposedFilter);
+    auto that = static_cast<const DlComposedColorFilter*>(&other);
+    return (Equals(outer_, that->outer_) && Equals(inner_, that->inner_));
+  }
+
+ private:
+  std::shared_ptr<DlColorFilter> outer_;
+  std::shared_ptr<DlColorFilter> inner_;
   friend class DlColorFilter;
 };
 

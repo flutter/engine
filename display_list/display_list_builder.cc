@@ -276,6 +276,10 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
         new (pod) DlLinearToSrgbGammaColorFilter();
         break;
       }
+      case DlColorFilterType::kComposedFilter: {
+        Push<SetSharedColorFilterOp>(0, 0, filter);
+        break;
+      }
       case DlColorFilterType::kUnknown: {
         Push<SetSkColorFilterOp>(0, 0, filter->skia_object());
         break;

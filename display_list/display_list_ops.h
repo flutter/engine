@@ -269,6 +269,24 @@ struct SetRuntimeEffectColorSourceOp : DLOp {
   }
 };
 
+struct SetSharedColorFilterOp : DLOp {
+  static const auto kType = DisplayListOpType::kSetSharedColorFilter;
+
+  SetSharedColorFilterOp(const DlColorFilter* filter)
+      : filter(filter->shared()) {}
+
+  const std::shared_ptr<DlColorFilter> filter;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorFilter(filter.get());
+  }
+
+  DisplayListCompare equals(const SetSharedColorFilterOp* other) const {
+    return Equals(filter, other->filter) ? DisplayListCompare::kEqual
+                                         : DisplayListCompare::kNotEqual;
+  }
+};
+
 // 4 byte header + 16 byte payload uses 24 total bytes (4 bytes unused)
 struct SetSharedImageFilterOp : DLOp {
   static const auto kType = DisplayListOpType::kSetSharedImageFilter;

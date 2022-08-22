@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_color_filter.h"
+#include <memory>
 
 #include "flutter/display_list/display_list_color.h"
 
@@ -34,6 +35,11 @@ std::shared_ptr<DlColorFilter> DlColorFilter::From(SkColorFilter* sk_filter) {
     }
   }
   return std::make_shared<DlUnknownColorFilter>(sk_ref_sp(sk_filter));
+}
+
+std::shared_ptr<DlColorFilter> DlColorFilter::makeComposed(
+    std::shared_ptr<DlColorFilter> inner) const {
+  return std::make_shared<DlComposedColorFilter>(this, inner.get());
 }
 
 const std::shared_ptr<DlSrgbToLinearGammaColorFilter>

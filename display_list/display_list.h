@@ -85,6 +85,7 @@ namespace flutter {
   V(ClearColorFilter)               \
   V(SetPodColorFilter)              \
   V(SetSkColorFilter)               \
+  V(SetSharedColorFilter)           \
                                     \
   V(ClearColorSource)               \
   V(SetPodColorSource)              \
