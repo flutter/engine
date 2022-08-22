@@ -51,6 +51,7 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
+    const Matrix& effect_transform,
     const Rect& coverage) const {
   using VS = BorderMaskBlurPipeline::VertexShader;
   using FS = BorderMaskBlurPipeline::FragmentShader;
@@ -127,7 +128,8 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
 
 std::optional<Rect> BorderMaskBlurFilterContents::GetFilterCoverage(
     const FilterInput::Vector& inputs,
-    const Entity& entity) const {
+    const Entity& entity,
+    const Matrix& effect_transform) const {
   if (inputs.empty()) {
     return std::nullopt;
   }
