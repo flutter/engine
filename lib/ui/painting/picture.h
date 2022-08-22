@@ -52,19 +52,8 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                       uint32_t height,
                                       Dart_Handle raw_image_callback);
 
-  static Dart_Handle RasterizeLayerTreeToImage(
-      std::shared_ptr<LayerTree> layer_tree,
-      uint32_t width,
-      uint32_t height,
-      Dart_Handle raw_image_callback);
-
-  // Callers may provide either a draw_callback (which should reference a
-  // display list) or a layer tree. If a layer tree is provided, it will be
-  // flattened on the raster thread. In this case the draw callback will be
-  // ignored.
   static Dart_Handle RasterizeToImage(
       std::function<void(SkCanvas*)> draw_callback,
-      std::shared_ptr<LayerTree> layer_tree,
       uint32_t width,
       uint32_t height,
       Dart_Handle raw_image_callback);
