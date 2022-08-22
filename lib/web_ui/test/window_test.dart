@@ -172,6 +172,8 @@ void testMain() {
       ))
     ).then<void>((bool data) {
       success = true;
+    }).onError((error, stackTrace) {
+      print('caught error!!!! $error');
     });
     expect(success, isTrue);
   });
