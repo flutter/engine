@@ -51,16 +51,22 @@ static const int kMaxTouchDeviceId = 128;
 
 }  // namespace
 
-WindowWin32::WindowWin32() : WindowWin32(nullptr) {}
+WindowWin32::WindowWin32() : WindowWin32(nullptr, nullptr) {}
 
 WindowWin32::WindowWin32(
+    std::unique_ptr<WindowsProcTable> windows_proc_table,
     std::unique_ptr<TextInputManagerWin32> text_input_manager)
     : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
+      windows_proc_table_(std::move(windows_proc_table)),
       text_input_manager_(std::move(text_input_manager)) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
+
+  if (windows_proc_table_ == nullptr) {
+    windows_proc_table_ = std::make_unique<WindowsProcTable>();
+  }
   if (text_input_manager_ == nullptr) {
     text_input_manager_ = std::make_unique<TextInputManagerWin32>();
   }
@@ -473,11 +479,11 @@ WindowWin32::HandleMessage(UINT const message,
       break;
     case DM_POINTERHITTEST: {
       if (direct_manipulation_owner_) {
-        UINT contactId = GET_POINTERID_WPARAM(wparam);
-        POINTER_INPUT_TYPE pointerType;
-        if (GetPointerType(contactId, &pointerType) &&
-            pointerType == PT_TOUCHPAD) {
-          direct_manipulation_owner_->SetContact(contactId);
+        UINT contact_id = GET_POINTERID_WPARAM(wparam);
+        POINTER_INPUT_TYPE pointer_type;
+        if (windows_proc_table_->GetPointerType(contact_id, &pointer_type) &&
+            pointer_type == PT_TOUCHPAD) {
+          direct_manipulation_owner_->SetContact(contact_id);
         }
       }
       break;
