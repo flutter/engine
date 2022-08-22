@@ -435,7 +435,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 'Argument to Skia.setResourceCacheMaxBytes must be an int, but was ${decoded.arguments.runtimeType}',
               );
               final int cacheSizeInBytes = decoded.arguments as int;
-              canvasKitRenderer.resourceCacheMaxBytes = cacheSizeInBytes;
+              CanvasKitRenderer.instance.resourceCacheMaxBytes = cacheSizeInBytes;
             }
 
             // Also respond in HTML mode. Otherwise, apps would have to detect

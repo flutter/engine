@@ -21,7 +21,7 @@ const MethodCodec codec = StandardMethodCodec();
 /// Common test setup for all CanvasKit unit-tests.
 void setUpCanvasKitTest() {
   setUpAll(() async {
-    expect(renderer is CanvasKitRenderer, true, reason: 'This test must run in CanvasKit mode.');
+    expect(renderer, isA<CanvasKitRenderer>, reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
     await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
@@ -183,7 +183,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+  CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
   await matchGoldenFile(goldenFile,
       region: region, maxDiffRatePercent: 0.0, write: write);
 }

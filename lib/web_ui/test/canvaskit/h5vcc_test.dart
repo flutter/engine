@@ -21,7 +21,7 @@ void testMain() {
 
     setUpAll(() async {
       // Set `window.h5vcc` to PatchedH5vcc which uses a downloaded CanvasKit.
-      final CanvasKit downloadedCanvasKit = await canvasKitRenderer.downloadCanvasKit();
+      final CanvasKit downloadedCanvasKit = await CanvasKitRenderer.instance.downloadCanvasKit();
       debugH5vccSetter = PatchedH5vcc(canvasKit: downloadedCanvasKit);
 
       // Monkey-patch the getH5vccSkSurface function of

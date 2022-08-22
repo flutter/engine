@@ -131,7 +131,7 @@ class Surface {
 
   void addToScene() {
     if (!_addedToScene) {
-      canvasKitRenderer.sceneHost!.prepend(htmlElement);
+      CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);
     }
     _addedToScene = true;
   }

@@ -28,7 +28,7 @@ class HtmlViewEmbedder {
   /// The [HtmlViewEmbedder] singleton.
   static HtmlViewEmbedder instance = HtmlViewEmbedder._();
 
-  DomElement get skiaSceneHost => canvasKitRenderer.sceneHost!;
+  DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
 
   /// Force the view embedder to disable overlays.
   ///

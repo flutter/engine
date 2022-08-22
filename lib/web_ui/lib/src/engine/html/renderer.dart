@@ -9,9 +9,10 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-HtmlRenderer get htmlRenderer => renderer as HtmlRenderer;
-
 class HtmlRenderer implements Renderer {
+  static HtmlRenderer get instance => _instance;
+  static late HtmlRenderer _instance;
+
   @override
   String get rendererTag => 'html';
 
@@ -24,6 +25,8 @@ class HtmlRenderer implements Renderer {
 
   @override
   void initialize() {
+    _instance = this;
+
     scheduleMicrotask(() {
       // Access [lineLookup] to force the lazy unpacking of line break data
       // now. Removing this line won't break anything. It's just an optimization

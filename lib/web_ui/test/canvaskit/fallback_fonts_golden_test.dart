@@ -38,7 +38,7 @@ void testMain() {
       ui.window.onPlatformMessage = savedCallback;
     });
 
-    final Rasterizer rasterizer = canvasKitRenderer.rasterizer;
+    final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
 
     test('Roboto is always a fallback font', () {
       expect(FontFallbackData.instance.globalFontFallbacks, contains('Roboto'));

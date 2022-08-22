@@ -410,11 +410,9 @@ class ImageFilter {
     tileMode: tileMode
   );
 
-  // ignore: avoid_unused_constructor_parameters
   factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) =>
     engine.renderer.createDilateImageFilter(radiusX: radiusX, radiusY: radiusY);
 
-  // ignore: avoid_unused_constructor_parameters
   factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) =>
     engine.renderer.createErodeImageFilter(radiusX: radiusX, radiusY: radiusY);
 

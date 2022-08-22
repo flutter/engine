@@ -32,9 +32,10 @@ import 'text.dart';
 import 'util.dart';
 import 'vertices.dart';
 
-CanvasKitRenderer get canvasKitRenderer => renderer as CanvasKitRenderer;
-
 class CanvasKitRenderer implements Renderer {
+  static CanvasKitRenderer get instance => _instance;
+  static late CanvasKitRenderer _instance;
+
   @override
   String get rendererTag => 'canvaskit';
 
@@ -47,13 +48,13 @@ class CanvasKitRenderer implements Renderer {
   DomElement? _sceneHost;
   DomElement? get sceneHost => _sceneHost;
 
-  @visibleForTesting
   late Rasterizer rasterizer = Rasterizer();
 
   set resourceCacheMaxBytes(int bytes) => rasterizer.setSkiaResourceCacheMaxBytes(bytes);
 
   @override
   Future<void> initialize() async {
+    _instance = this;
     if (windowFlutterCanvasKit != null) {
       canvasKit = windowFlutterCanvasKit!;
     } else if (useH5vccCanvasKit) {

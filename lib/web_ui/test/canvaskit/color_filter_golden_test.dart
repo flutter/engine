@@ -19,7 +19,7 @@ const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 Future<void> matchSceneGolden(String goldenFile, LayerScene scene,
     {bool write = false}) async {
-  canvasKitRenderer.rasterizer.draw(scene.layerTree);
+  CanvasKitRenderer.instance.rasterizer.draw(scene.layerTree);
   await matchGoldenFile(goldenFile, region: region, write: write);
 }
 

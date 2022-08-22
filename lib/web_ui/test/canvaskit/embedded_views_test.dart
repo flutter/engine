@@ -23,7 +23,7 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1);
     });
 
-    final Rasterizer rasterizer = canvasKitRenderer.rasterizer;
+    final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
 
     test('embeds interactive platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
@@ -136,7 +136,7 @@ void testMain() {
 
       final LayerSceneBuilder sb = LayerSceneBuilder();
       sb.addPlatformView(0, offset: const ui.Offset(3, 4), width: 5, height: 6);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
 
       final DomElement slotHost = flutterViewEmbedder.sceneElement!
           .querySelector('flt-platform-view-slot')!;
@@ -178,7 +178,7 @@ void testMain() {
       sb.pushOffset(6, 6);
       sb.addPlatformView(0, width: 10, height: 10);
       sb.pop();
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
       DomElement slotHost = flutterViewEmbedder.sceneElement!
@@ -199,7 +199,7 @@ void testMain() {
       sb.pushClipRect(ui.Rect.largest);
       sb.pushOffset(9, 9);
       sb.addPlatformView(0, width: 10, height: 10);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
       slotHost = flutterViewEmbedder.sceneElement!
@@ -228,7 +228,7 @@ void testMain() {
       sb.pushOffset(2, 2);
       sb.pushOffset(3, 3);
       sb.addPlatformView(0, width: 10, height: 10);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
       final DomElement slotHost = flutterViewEmbedder.sceneElement!
@@ -255,7 +255,7 @@ void testMain() {
       sb.pushClipRect(ui.Rect.largest);
       sb.pushOffset(9, 9);
       sb.addPlatformView(0, width: 10, height: 10);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
       final DomElement slotHost = flutterViewEmbedder.sceneElement!
@@ -297,7 +297,7 @@ void testMain() {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(i, width: 10, height: 10);
         }
-        canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+        CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       }
 
       // Frame 1:
@@ -450,7 +450,7 @@ void testMain() {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(view, width: 10, height: 10);
         }
-        canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+        CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       }
 
       // Frame 1:
@@ -571,7 +571,7 @@ void testMain() {
       LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -588,7 +588,7 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
 
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
@@ -611,7 +611,7 @@ void testMain() {
       LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -645,7 +645,7 @@ void testMain() {
       // the platform view.
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      canvasKitRenderer.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
       ]);
