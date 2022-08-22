@@ -19,6 +19,7 @@ import subprocess
 from turtle import clone, up
 import requests
 from typing import Any, Dict, Optional
+import time
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
@@ -27,6 +28,9 @@ HELP_STR = "To find complete information on this vulnerability, navigate to "
 # TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
 DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdeps.json')
+
+failed_deps = [] # deps which fail to be be cloned or git-merge based 
+old_deps = [] # deps which have not been updated in more than 1 year
 
 sarif_log = {
   "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -115,13 +119,12 @@ def ParseDepsFile(deps_flat_file):
     osv_url = 'https://api.osv.dev/v1/querybatch'
 
     os.mkdir('clone-test') #clone deps with upstream into temporary dir
-
-    failed_deps = []
-
+    
     # Extract commit hash, save in dictionary
     for line in Lines:
         os.chdir(CHECKOUT_ROOT)
         dep = line.strip().split('@') # separate fully qualified dep into name + pinned hash 
+
         common_commit = getCommonAncestorCommit(dep)
         if common_commit is not None:
           queries.append({"commit" : common_commit})
@@ -129,6 +132,10 @@ def ParseDepsFile(deps_flat_file):
           failed_deps.append(dep[0])
 
     print("Dependencies that could not be parsed for ancestor commits: " + ', '.join(failed_deps))
+    print("Dependencies that have not been rolled in at least 1 year: " + ', '.join(old_deps))
+
+    # Query OSV API using common ancestor commit for each dep
+    # return any vulnerabilities found 
     responses = requests.post(osv_url, headers=headers, json={"queries": queries}, allow_redirects=True)
     if responses.status_code != 200:
         print("Request error")
@@ -163,23 +170,39 @@ def getCommonAncestorCommit(dep):
         data = json.load(f)
         if dep_name in data:
           try:
-            print("chdir")
+            # clone dependency from mirror
             os.chdir('./clone-test')
             print(f'attempting: git clone {dep[0]} --quiet')
             os.system(f'git clone {dep[0]} {dep_name} --quiet')
             os.chdir(f'./{dep_name}')
-            os.system(f'git for-each-ref --format=\'%(refname:short) %(objectname:short)\' refs/heads')
+
+            # check how old pinned commit is
+            dep_roll_date = subprocess.check_output(f'git show -s --format=%ct {dep[1]}', shell=True).decode()
+            print("dep roll date is " + dep_roll_date)
+            years = (time.time() - int(dep_roll_date)) / 31556952
+            if years >= 1:
+              print(f'Old dep found: {dep[0]} is from {dep_roll_date}')
+              old_deps.append(dep[0])
+
+            # create branch that will track the upstream dep
             print('attempting to add upstream remote from: ' + data[dep_name])
             os.system(f'git remote add upstream {data[dep_name]}')
             os.system(f'git fetch upstream')
-            default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True)
-            default_branch = default_branch.decode()
+
+            # get name of default branch for upstream
+            default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
             print("default_branch found: " + default_branch)
+
+            # make upstream branch track the upstream dep
             os.system(f'git checkout -b upstream --track upstream/{default_branch}')
+            
+            # get the most recent commit from defaul branch of upstream
             commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
             commit = commit.decode().strip()
             print("commit found: " + commit)
             print(f'git merge-base {commit} {dep[1]}')
+
+            # perform merge-base on most recent default branch commit and pinned mirror commit
             ancestorCommit = subprocess.check_output(f'git merge-base {commit} {dep[1]}', shell=True)
             ancestorCommit = ancestorCommit.decode().strip()
             print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
