@@ -665,7 +665,10 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
-  root_node = bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock();
+  root_node = bridge
+                  ->GetFlutterPlatformNodeDelegateFromID(
+                      AccessibilityBridge::kRootNodeId)
+                  .lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
   EXPECT_EQ(root_node->GetData().GetCheckedState(),
             ax::mojom::CheckedState::kFalse);
