@@ -114,6 +114,13 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
     subprocess.check_call(["strip", "-x", "-S", fat_framework_binary])
 
+  # Zip FlutterMacOS.framework.
+  subprocess.check_call([
+      'zip', '-r',
+      '%s/FlutterMacOS.framework.zip' % dst,
+      '%s/FlutterMacOS.framework' % dst
+  ])
+
 
 if __name__ == '__main__':
   sys.exit(main())
