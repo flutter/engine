@@ -116,9 +116,12 @@ typedef struct MouseState {
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
-  // When an iOS app is running in emulation on an Apple Silicon Mac, direct trackpad input is
-  // not received, so we can't rely on checking for a stationary trackpad event. An event of type
-  // UIEventTypeScroll will be received following a scroll when inertia should stop.
+  // When an iOS app is running in emulation on an Apple Silicon Mac, trackpad input goes through
+  // a translation layer, and events are not received with precise deltas. Due to this, we can't
+  // rely on checking for a stationary trackpad event. Fortunately, AppKit will send an event of
+  // type UIEventTypeScroll following a scroll when inertia should stop. This field is needed to
+  // estimate if such an event represents the natural end of scrolling inertia or a user-initiated
+  // cancellation.
   NSTimeInterval _scrollInertiaEventAppKitDeadline;
 }
 
@@ -1842,18 +1845,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
        shouldReceiveEvent:(UIEvent*)event API_AVAILABLE(ios(13.4)) {
   if (gestureRecognizer == _continuousScrollingPanGestureRecognizer &&
       event.type == UIEventTypeScroll) {
+    // Events with type UIEventTypeScroll are only received when running on macOS under emulation.
     flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
     pointer_data.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
     pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
     pointer_data.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
 
     if (event.timestamp < _scrollInertiaEventAppKitDeadline) {
+      // Only send the event if it occured before the expected natural end of gesture momentum.
+      // If received after the deadline, it's not likely the event is from a user-initiated cancel.
       auto packet = std::make_unique<flutter::PointerDataPacket>(1);
       packet->SetPointerData(/*index=*/0, pointer_data);
       [_engine.get() dispatchPointerDataPacket:std::move(packet)];
       _scrollInertiaEventAppKitDeadline = 0;
     }
   }
+  // This method is also called for UITouches, should return YES to process all touches.
   return YES;
 }
 
@@ -1888,8 +1895,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   NSTimeInterval time = [NSProcessInfo processInfo].systemUptime;
   BOOL isRunningOnMac = NO;
   if (@available(iOS 14.0, *)) {
-    // This "stationary pointer" heuristic is not needed when running within macOS.
-    // We instead receive a scroll cancel event directly translated from AppKit.
+    // This "stationary pointer" heuristic is not reliable when running within macOS.
+    // We instead receive a scroll cancel event directly from AppKit.
     // See gestureRecognizer:shouldReceiveEvent:
     isRunningOnMac = [NSProcessInfo processInfo].iOSAppOnMac;
   }
@@ -1974,11 +1981,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       // only send a PointerScrollInertiaCancel event for user-initiated cancellations.
       // The following (curve-fitted) calculation provides a cutoff point after which any
       // UIEventTypeScroll event will likely be from the system instead of the user.
+      // See https://github.com/flutter/engine/pull/34929.
       _scrollInertiaEventAppKitDeadline =
           [[NSProcessInfo processInfo] systemUptime] +
-          (0.1725 * log(hypotf([recognizer velocityInView:self.view].x,
-                               [recognizer velocityInView:self.view].y))) -
-          0.1196;
+          (0.1821 * log(fmax([recognizer velocityInView:self.view].x,
+                             [recognizer velocityInView:self.view].y))) -
+          0.4825;
       pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
       break;
     default:
