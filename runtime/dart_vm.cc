@@ -470,11 +470,12 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // Use a duration event so about:tracing will consider this event when
     // deciding the earliest event to use as time 0.
     if (settings_.engine_start_timestamp.count()) {
+      int64_t micros = Dart_TimelineGetMicros();
       Dart_TimelineEvent(
           "FlutterEngineMainEnter",                  // label
-          settings_.engine_start_timestamp.count(),  // timestamp0
-          Dart_TimelineGetMicros(),                  // timestamp1_or_async_id
-          Dart_Timeline_Event_Duration,              // event type
+          micros,                  // timestamp0
+          micros,                  // timestamp1_or_async_id
+          Dart_Timeline_Event_Instant,              // event type
           0,                                         // argument_count
           nullptr,                                   // argument_names
           nullptr                                    // argument_values
