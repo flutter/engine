@@ -11,6 +11,7 @@
 
 namespace flutter {
 
+/// A \ref PlatformMessageResponse that will respond over a Dart port.
 class PlatformMessageResponseDartPort : public PlatformMessageResponse {
   FML_FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseDartPort);
 

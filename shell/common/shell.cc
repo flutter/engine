@@ -607,6 +607,7 @@ void Shell::RunEngine(
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
 
+            // Enable platform channels for background isolates.
             std::shared_ptr<DartIsolate> root_isolate =
                 weak_engine->GetRuntimeController()->GetRootIsolate().lock();
             FML_DCHECK(root_isolate);

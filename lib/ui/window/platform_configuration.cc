@@ -311,9 +311,7 @@ Dart_Handle PlatformConfigurationNativeApi::SendPlatformMessage(
   UIDartState* dart_state = UIDartState::Current();
 
   if (!dart_state->platform_configuration()) {
-    return tonic::ToDart(
-        "Sending messages off the root isolate should happen via "
-        "SendPortPlatformMessage.");
+    return tonic::ToDart("SendPlatformMessage only works on the root isolate.");
   }
 
   fml::RefPtr<PlatformMessageResponse> response;

@@ -73,11 +73,14 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
     byteData == null ? null : UnmodifiableByteDataView(byteData);
 
+/// A token that represents a root isolate.
 class RootIsolateToken {
   RootIsolateToken._(this._rootIsolateId);
 
   final int _rootIsolateId;
 
+  /// The token for the root isolate that is executing this Dart code.  If this
+  /// Dart code is not executing on a root isolate [instance] will be null.
   late final RootIsolateToken? instance = () {
     int rootIsolateId = __getRootIsolateId();
     return rootIsolateId == 0 ? null : RootIsolateToken._(rootIsolateId);
@@ -552,6 +555,13 @@ class PlatformDispatcher {
   @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
 
+  /// Sends a message to a platform-specific plugin via a [SendPort].
+  ///
+  /// This operates similarly to [sendPlatformMessage] but is used when sending
+  /// messages from background isolates. [port] allows Flutter to know which
+  /// isolate to send the result to.  [name] is the name of the channel
+  /// communication will happen on.  [data] is the payload of the message.
+  /// [identifier] is a unique integer assigned to the message.
   void sendPortPlatformMessage(
     String name,
     ByteData? data,
@@ -570,6 +580,9 @@ class PlatformDispatcher {
   @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
   external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
 
+  /// Registers the current isolate with the isolate identified with by the
+  /// [token]. This is required if platform channels are to be used on a
+  /// background isolate.
   void registerBackgroundIsolate(RootIsolateToken token) => __registerBackgroundIsolate(token._rootIsolateId);
   @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);
