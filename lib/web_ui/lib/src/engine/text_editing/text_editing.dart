@@ -1181,7 +1181,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     if (config.inputType == EngineInputType.none) {
       activeDomElement.setAttribute('inputmode', 'none');
     }
-    
+
     final EngineInputAction action = EngineInputAction.fromName(config.inputAction);
     action.configureInputAction(activeDomElement);
 
