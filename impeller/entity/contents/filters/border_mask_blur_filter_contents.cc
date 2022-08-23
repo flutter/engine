@@ -115,7 +115,7 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
     return pass.AddCommand(std::move(cmd));
   };
 
-  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), callback);
+  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), true, callback);
   if (!out_texture) {
     return std::nullopt;
   }

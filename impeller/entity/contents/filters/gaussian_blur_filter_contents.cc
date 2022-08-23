@@ -216,7 +216,7 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   auto out_texture =
       renderer.MakeSubpass(ISize(pass_texture_rect.size.width * x_scale,
                                  pass_texture_rect.size.height),
-                           callback);
+                           true, callback);
   if (!out_texture) {
     return std::nullopt;
   }

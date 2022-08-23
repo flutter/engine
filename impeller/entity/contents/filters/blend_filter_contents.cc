@@ -132,7 +132,7 @@ static std::optional<Snapshot> AdvancedBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), callback);
+  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), true, callback);
   if (!out_texture) {
     return std::nullopt;
   }
@@ -242,7 +242,7 @@ static std::optional<Snapshot> PipelineBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), callback);
+  auto out_texture = renderer.MakeSubpass(ISize(coverage.size), true, callback);
   if (!out_texture) {
     return std::nullopt;
   }

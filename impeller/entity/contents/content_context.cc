@@ -242,10 +242,12 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
+    bool enable_msaa,
     SubpassCallback subpass_callback) const {
   auto context = GetContext();
 
-  auto subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+  auto subpass_target =
+      RenderTarget::CreateOffscreenMSAA(*context, texture_size);
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
     return nullptr;
