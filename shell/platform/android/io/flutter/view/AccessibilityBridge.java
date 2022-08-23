@@ -121,6 +121,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // and the most significant 16 bits are used for engine generated IDs.
   private static final int MIN_ENGINE_GENERATED_NODE_ID = 1 << 16;
 
+  // Font weight adjustment for bold text. FontWeight.Bold - FontWeight.Normal = w700 - w400 = 300.
+  private static final int BOLD_TEXT_WEIGHT_ADJUSTMENT = 300;
+
   /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
   private static int FIRST_RESOURCE_ID = 267386881;
 
@@ -554,10 +557,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
     int fontWeightAdjustment =
         rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
-    // FontWeight.Bold - FontWeight.Normal = w700 - w400 = 300.
     boolean shouldBold =
         fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
-            && fontWeightAdjustment >= 300;
+            && fontWeightAdjustment >= BOLD_TEXT_WEIGHT_ADJUSTMENT;
 
     if (shouldBold) {
       accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
