@@ -239,6 +239,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     ISize size,
     std::string label,
     StorageMode color_storage_mode,
+    StorageMode color_resolve_storage_mode,
     LoadAction color_load_action,
     StoreAction color_store_action,
     StorageMode stencil_storage_mode,
@@ -255,7 +256,8 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0_tex_desc.sample_count = SampleCount::kCount4;
   color0_tex_desc.format = PixelFormat::kDefaultColor;
   color0_tex_desc.size = size;
-  color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+  color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
+                          static_cast<uint64_t>(TextureUsage::kShaderRead);
 
   auto color0_msaa_tex = context.GetResourceAllocator()->CreateTexture(
       color_storage_mode, color0_tex_desc);
@@ -276,7 +278,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
       static_cast<uint64_t>(TextureUsage::kShaderRead);
 
   auto color0_resolve_tex = context.GetResourceAllocator()->CreateTexture(
-      color_storage_mode, color0_resolve_tex_desc);
+      color_resolve_storage_mode, color0_resolve_tex_desc);
   if (!color0_resolve_tex) {
     VALIDATION_LOG << "Could not create color texture.";
     return {};
@@ -288,7 +290,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   ColorAttachment color0;
   color0.clear_color = Color::BlackTransparent();
   color0.load_action = color_load_action;
-  color0.store_action = StoreAction::kMultisampleResolve;
+  color0.store_action = color_store_action;
   color0.texture = color0_msaa_tex;
   color0.resolve_texture = color0_resolve_tex;
 
