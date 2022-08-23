@@ -537,6 +537,9 @@ Window::HandleMessage(UINT const message,
       // DefWindowProc will send WM_CHAR for this WM_UNICHAR.
       break;
     }
+    case WM_THEMECHANGED:
+      OnThemeChange();
+      break;
     case WM_DEADCHAR:
     case WM_SYSDEADCHAR:
     case WM_CHAR:

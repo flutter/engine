@@ -224,6 +224,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // gestures.
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
 
+  // Called when a theme change message is issued
+  virtual void OnThemeChange() = 0;
+
  private:
   // Release OS resources associated with window.
   void Destroy();
