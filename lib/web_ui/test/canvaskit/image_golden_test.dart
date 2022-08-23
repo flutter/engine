@@ -607,9 +607,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         canvas.restore();
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
       }
-      final EnginePlatformDispatcher dispatcher =
-          ui.window.platformDispatcher as EnginePlatformDispatcher;
-      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       await matchGoldenFile(
         'canvaskit_picture_texture_toimage',
         region: const ui.Rect.fromLTRB(0, 0, 128, 128),
