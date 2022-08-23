@@ -630,7 +630,7 @@ class PlatformDispatcher {
     _requestDartPerformanceMode(mode.index);
   }
 
-  @FfiNative<Int Function(Handle)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
+  @FfiNative<Int Function(Int)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
   external static int _requestDartPerformanceMode(int mode);
 
   /// The embedder can specify data that the isolate can request synchronously
