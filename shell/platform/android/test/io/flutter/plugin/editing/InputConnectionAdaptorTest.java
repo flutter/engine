@@ -176,7 +176,7 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testCommitContent() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));

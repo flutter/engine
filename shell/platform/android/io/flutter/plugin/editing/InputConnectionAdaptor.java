@@ -34,8 +34,8 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -546,7 +546,8 @@ public class InputConnectionAdaptor extends BaseInputConnection
       int len = -1;
       try {
         len = is.read(buffer);
-      } catch (IOException ex) {}
+      } catch (IOException ex) {
+      }
       if (len == -1) break;
       baos.write(buffer, 0, len);
     }
