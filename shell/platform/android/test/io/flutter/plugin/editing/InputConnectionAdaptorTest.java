@@ -206,9 +206,9 @@ public class InputConnectionAdaptorTest {
         bufferCaptor.getValue(),
         "TextInputClient.performAction",
         new String[] {
-            "0",
-            "TextInputAction.commitContent",
-            "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
+          "0",
+          "TextInputAction.commitContent",
+          "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
         });
   }
 

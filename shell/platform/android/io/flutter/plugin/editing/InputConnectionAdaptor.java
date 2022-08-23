@@ -28,7 +28,6 @@ import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.core.os.BuildCompat;
 import androidx.core.view.inputmethod.InputConnectionCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -494,7 +493,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
   public boolean commitContent(InputContentInfo inputContentInfo, int flags, Bundle opts) {
     // Ensure permission is granted.
     if (Build.VERSION.SDK_INT >= 25
-            && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
+        && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
       try {
         inputContentInfo.requestPermission();
       } catch (Exception e) {
@@ -512,23 +511,27 @@ public class InputConnectionAdaptor extends BaseInputConnection
       Context context = mFlutterView.getContext();
 
       if (uri != null) {
+        InputStream is;
         try {
           // Extract byte data from the given URI.
-          final InputStream is = context.getContentResolver().openInputStream(uri);
+          is = context.getContentResolver().openInputStream(uri);
         } catch (FileNotFoundException ex) {
           return false;
         }
-        final byte[] data = this.readStreamFully(is, 64 * 1024);
 
-        final Map<String, Object> obj = new HashMap<>();
-        obj.put("mimeType", mimeType);
-        obj.put("data", data);
-        obj.put("uri", uri.toString());
+        if (is != null) {
+          final byte[] data = this.readStreamFully(is, 64 * 1024);
 
-        // Commit the content to the text input channel and release the permission.
-        textInputChannel.commitContent(mClient, obj);
-        inputContentInfo.releasePermission();
-        return true;
+          final Map<String, Object> obj = new HashMap<>();
+          obj.put("mimeType", mimeType);
+          obj.put("data", data);
+          obj.put("uri", uri.toString());
+
+          // Commit the content to the text input channel and release the permission.
+          textInputChannel.commitContent(mClient, obj);
+          inputContentInfo.releasePermission();
+          return true;
+        }
       }
     }
     return false;
