@@ -133,6 +133,7 @@ class FontFallbackData {
         }
       }
       _codeUnitsToCheckAgainstFallbackFonts.addAll(missingCodeUnits);
+      print('CURRENT STACKTRACE !!!!!!!!!\n${StackTrace.current}');
       if (!_scheduledCodeUnitCheck) {
         _scheduledCodeUnitCheck = true;
         // ignore: invalid_use_of_visible_for_testing_member
@@ -346,16 +347,22 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
           bestFont = _notoSansSC;
         }
       } else {
-        // To be predictable, if Simplified Chinese is one of the best fonts,
-        // choose that since it is the most common script.
-        if (bestFonts.contains(_notoSansSC)) {
+        // To be predictable, if there is a tie for best font, choose a font
+        // from this list first, then just choose the first font.
+        if (bestFonts.contains(_notoSymbols)) {
+          bestFont = _notoSymbols;
+        } else if (bestFonts.contains(_notoSansSC)) {
           bestFont = _notoSansSC;
         }
       }
     }
+    print('BEST FONTS: ${bestFonts.map((f) => f.name).toList()}');
+    print('ADDING ${bestFont.name}');
+    print('CODE UNITS BEFORE: $codeUnits');
     codeUnits.removeWhere((int codeUnit) {
       return bestFont.contains(codeUnit);
     });
+    print('CODE UNITS AFTER: $codeUnits');
     minimumFonts.add(bestFont);
   }
   return minimumFonts;
@@ -367,6 +374,8 @@ NotoFont _notoSansHK = fallbackFonts.singleWhere((NotoFont font) => font.name ==
 NotoFont _notoSansJP = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans JP');
 NotoFont _notoSansKR = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans KR');
 List<NotoFont> _cjkFonts = <NotoFont>[_notoSansSC, _notoSansTC, _notoSansHK, _notoSansJP, _notoSansKR];
+
+NotoFont _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols');
 
 class FallbackFontDownloadQueue {
   NotoDownloader downloader = NotoDownloader();
@@ -405,6 +414,7 @@ class FallbackFontDownloadQueue {
     }
     final bool firstInBatch = pendingFonts.isEmpty;
     pendingFonts[font.url] = font;
+    print('ADDING ${font.name}');
     if (firstInBatch) {
       Timer.run(startDownloads);
     }
