@@ -68,6 +68,7 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
     }
     context.leaf_nodes_builder->translate(mask_rect_.left(), mask_rect_.top());
     context.leaf_nodes_builder->drawRect(shader_rect, dl_paint);
+    context.builder_multiplexer->restore();
   } else {
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());
