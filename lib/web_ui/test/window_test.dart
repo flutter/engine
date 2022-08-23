@@ -172,10 +172,10 @@ void testMain() {
       ))
     ).then<void>((bool data) {
       success = true;
-    }).onError((error, stackTrace) {
-      print('caught error!!!! $error');
     });
+    print('before expect');
     expect(success, isTrue);
+    print('after expect');
   });
 
   test('handleNavigationMessage execute request in order.', () async {

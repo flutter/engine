@@ -190,11 +190,13 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
           return true;
         case 'routeInformationUpdated':
           assert(arguments != null);
+          print('browser set name ${arguments!.tryString('location')}');
           browserHistory.setRouteName(
             arguments!.tryString('location'),
             state: arguments['state'],
             replace: arguments.tryBool('replace') ?? false,
           );
+          print('return true');
           return true;
       }
       return false;
