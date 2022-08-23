@@ -13,7 +13,6 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/memory/threadsafe_unique_ptr.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/io_manager.h"
@@ -21,6 +20,7 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -108,15 +108,7 @@ class UIDartState : public tonic::DartState {
     return platform_configuration_.get();
   }
 
-  fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-  GetWeakPlatformConfiguration() const {
-    return platform_configuration_ ? platform_configuration_.GetWeakPtr()
-                                   : weak_platform_configuration_;
-  }
-
-  void SetWeakPlatformConfiguration(
-      fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-          platform_configuration);
+  void SetPlatformMessageHandler(std::weak_ptr<PlatformMessageHandler> handler);
 
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
@@ -167,6 +159,8 @@ class UIDartState : public tonic::DartState {
     return unhandled_exception_callback_;
   }
 
+  int64_t GetRootIsolateId() const;
+
  protected:
   UIDartState(TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
@@ -181,7 +175,7 @@ class UIDartState : public tonic::DartState {
   ~UIDartState() override;
 
   void SetPlatformConfiguration(
-      fml::threadsafe_unique_ptr<PlatformConfiguration> platform_configuration);
+      std::unique_ptr<PlatformConfiguration> platform_configuration);
 
   const std::string& GetAdvisoryScriptURI() const;
 
@@ -194,9 +188,8 @@ class UIDartState : public tonic::DartState {
   Dart_Port main_port_ = ILLEGAL_PORT;
   const bool is_root_isolate_;
   std::string debug_name_;
-  fml::threadsafe_unique_ptr<PlatformConfiguration> platform_configuration_;
-  fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-      weak_platform_configuration_;
+  std::unique_ptr<PlatformConfiguration> platform_configuration_;
+  std::weak_ptr<PlatformMessageHandler> platform_message_handler_;
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;

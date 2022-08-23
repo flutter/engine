@@ -20,6 +20,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
@@ -593,7 +594,8 @@ void Shell::RunEngine(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable(
           [run_configuration = std::move(run_configuration),
-           weak_engine = weak_engine_, result]() mutable {
+           weak_engine = weak_engine_, result,
+           platform_message_handler = platform_message_handler_]() mutable {
             if (!weak_engine) {
               FML_LOG(ERROR)
                   << "Could not launch engine with configuration - no engine.";
@@ -604,6 +606,13 @@ void Shell::RunEngine(
             if (run_result == flutter::Engine::RunStatus::Failure) {
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
+
+            std::shared_ptr<DartIsolate> root_isolate =
+                weak_engine->GetRuntimeController()->GetRootIsolate().lock();
+            FML_DCHECK(root_isolate);
+            root_isolate->GetIsolateGroupData().SetPlatformMessageHandler(
+                root_isolate->GetRootIsolateId(), platform_message_handler);
+
             result(run_result);
           }));
 }
@@ -1212,15 +1221,10 @@ void Shell::OnEngineUpdateSemantics(SemanticsNodeUpdates update,
 // |Engine::Delegate|
 void Shell::OnEngineHandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
-  /// Called from any isolate's thread. This is safe because the only instance
-  /// variables accessed here are set once at startup, except
-  /// `route_messages_through_platform_thread_` which if misread is not a
-  /// logical error. `UIDartState` has a lock that makes sure that calling this
-  /// doesn't happen while the `Shell` is being destructed.
   FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (message->channel() == kSkiaChannel) {
-    FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
     HandleEngineSkiaMessage(std::move(message));
     return;
   }

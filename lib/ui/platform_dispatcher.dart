@@ -74,13 +74,14 @@ ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
     byteData == null ? null : UnmodifiableByteDataView(byteData);
 
 class RootIsolateToken {
-  final int _rootIsolateId;
-  const RootIsolateToken._(this._rootIsolateId);
+  RootIsolateToken._(this._rootIsolateId);
 
-  static RootIsolateToken? get instance {
-    final int rootIsolateId = __getRootIsolateId();
+  final int _rootIsolateId;
+
+  late final RootIsolateToken? instance = () {
+    int rootIsolateId = __getRootIsolateId();
     return rootIsolateId == 0 ? null : RootIsolateToken._(rootIsolateId);
-  }
+  }();
 
   @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateId')
   external static int __getRootIsolateId();

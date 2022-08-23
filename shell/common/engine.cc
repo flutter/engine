@@ -460,7 +460,6 @@ void Engine::UpdateSemantics(SemanticsNodeUpdates update,
 
 void Engine::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   if (message->channel() == kAssetChannel) {
-    FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
     HandleAssetPlatformMessage(std::move(message));
   } else {
     delegate_.OnEngineHandlePlatformMessage(std::move(message));

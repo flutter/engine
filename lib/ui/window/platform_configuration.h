@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "flutter/assets/asset_manager.h"
-#include "flutter/fml/memory/threadsafe_unique_ptr.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
@@ -24,6 +23,7 @@
 namespace flutter {
 class FontCollection;
 class PlatformMessage;
+class PlatformMessageHandler;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -446,16 +446,15 @@ class PlatformConfiguration final {
 //----------------------------------------------------------------------------
 /// An inteface that the result of `Dart_CurrentIsolateGroupData` should
 /// implement for registering background isolates to work.
-class PlatformConfigurationStorage {
+class PlatformMessageHandlerStorage {
  public:
-  virtual ~PlatformConfigurationStorage() = default;
-  virtual void SetPlatformConfiguration(
+  virtual ~PlatformMessageHandlerStorage() = default;
+  virtual void SetPlatformMessageHandler(
       int64_t root_isolate_id,
-      fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-          platform_configuration) = 0;
+      std::weak_ptr<PlatformMessageHandler> handler) = 0;
 
-  virtual fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-  GetPlatformConfiguration(int64_t root_isolate_id) const = 0;
+  virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
+      int64_t root_isolate_id) const = 0;
 };
 
 //----------------------------------------------------------------------------

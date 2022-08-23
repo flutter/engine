@@ -12,13 +12,13 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/fml/memory/threadsafe_unique_ptr.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 
 namespace flutter {
 
 class DartIsolate;
 class DartSnapshot;
+class PlatformMessageHandler;
 
 using ChildIsolatePreparer = std::function<bool(DartIsolate*)>;
 
@@ -28,7 +28,7 @@ using ChildIsolatePreparer = std::function<bool(DartIsolate*)>;
 //
 // This object must be thread safe because the Dart VM can invoke the isolate
 // group cleanup callback on any thread.
-class DartIsolateGroupData : public PlatformConfigurationStorage {
+class DartIsolateGroupData : public PlatformMessageHandlerStorage {
  public:
   DartIsolateGroupData(const Settings& settings,
                        fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -56,15 +56,14 @@ class DartIsolateGroupData : public PlatformConfigurationStorage {
 
   void SetChildIsolatePreparer(const ChildIsolatePreparer& value);
 
-  /// |PlatformConfigurationStorage|
-  void SetPlatformConfiguration(
+  // |PlatformMessageHandlerStorage|
+  void SetPlatformMessageHandler(
       int64_t root_isolate_id,
-      fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-          platform_configuration) override;
+      std::weak_ptr<PlatformMessageHandler> handler) override;
 
-  /// |PlatformConfigurationStorage|
-  fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr
-  GetPlatformConfiguration(int64_t root_isolate_id) const override;
+  // |PlatformMessageHandlerStorage|
+  std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
+      int64_t root_isolate_id) const override;
 
  private:
   const Settings settings_;
@@ -75,9 +74,9 @@ class DartIsolateGroupData : public PlatformConfigurationStorage {
   ChildIsolatePreparer child_isolate_preparer_;
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
-  std::map<int64_t, fml::threadsafe_unique_ptr<PlatformConfiguration>::weak_ptr>
-      platform_configurations_;
-  mutable std::mutex platform_configurations_mutex_;
+  std::map<int64_t, std::weak_ptr<PlatformMessageHandler>>
+      platform_message_handlers_;
+  mutable std::mutex platform_message_handlers_mutex_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolateGroupData);
 };

@@ -432,27 +432,20 @@ std::string PlatformConfigurationNativeApi::DefaultRouteName() {
 
 int64_t PlatformConfigurationNativeApi::GetRootIsolateId() {
   UIDartState* dart_state = UIDartState::Current();
-  if (dart_state->IsRootIsolate()) {
-    int64_t identifier = reinterpret_cast<int64_t>(dart_state);
-    (*static_cast<std::shared_ptr<PlatformConfigurationStorage>*>(
-         Dart_CurrentIsolateGroupData()))
-        ->SetPlatformConfiguration(identifier,
-                                   dart_state->GetWeakPlatformConfiguration());
-    return identifier;
-  } else {
-    return 0;
-  }
+  FML_DCHECK(dart_state);
+  return dart_state->GetRootIsolateId();
 }
 
 void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
     int64_t isolate_id) {
   UIDartState* dart_state = UIDartState::Current();
   FML_DCHECK(dart_state && !dart_state->IsRootIsolate());
-  auto weak_platform_configuration =
-      (*static_cast<std::shared_ptr<PlatformConfigurationStorage>*>(
+  auto weak_platform_message_handler =
+      (*static_cast<std::shared_ptr<PlatformMessageHandlerStorage>*>(
            Dart_CurrentIsolateGroupData()))
-          ->GetPlatformConfiguration(isolate_id);
-  dart_state->SetWeakPlatformConfiguration(weak_platform_configuration);
+          ->GetPlatformMessageHandler(isolate_id);
+  FML_DCHECK(weak_platform_message_handler.lock());
+  dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 
 }  // namespace flutter
