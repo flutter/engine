@@ -19,9 +19,9 @@ namespace flutter {
 namespace testing {
 
 #define SetFlag(value, bit_num, flag) \
-  (flag ? (value |= 1 << bit_num) : (value &= ~(1 << bit_num)))
+  (flag ? (value |= bit_num) : (value &= ~(bit_num)))
 
-#define GetFlag(value, bit_num) (value & 1 << bit_num)
+#define GetFlag(value, bit_num) (value & bit_num)
 
 // Mock implementation of the |Layer| interface that does nothing but paint
 // the specified |path| into the canvas.  It records the |PrerollContext| and
@@ -109,14 +109,12 @@ class MockLayer : public Layer {
   SkPath fake_paint_path_;
   SkPaint fake_paint_;
 
-  enum MockFlags {
-    kParentHasPlatformView,  // 0
-    kParentHasTextureLayer,  // 1
-    kFakeHasPlatformView,    // 2
-    kFakeReadsSurface,       // 3
-    kFakeOpacityCompatible,  // 4
-    kFakeHasTextureLayer,    // 5
-  };
+  static constexpr int kParentHasPlatformView = 1 << 0;
+  static constexpr int kParentHasTextureLayer = 1 << 1;
+  static constexpr int kFakeHasPlatformView = 1 << 2;
+  static constexpr int kFakeReadsSurface = 1 << 3;
+  static constexpr int kFakeOpacityCompatible = 1 << 4;
+  static constexpr int kFakeHasTextureLayer = 1 << 5;
 
   int mock_flags_ = 0;
 
