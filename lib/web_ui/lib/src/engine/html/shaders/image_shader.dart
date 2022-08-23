@@ -266,8 +266,24 @@ class EngineImageShader implements ui.ImageShader {
     return context!.createPattern(bitmapImage!, 'no-repeat')!;
   }
 
+  bool _disposed = false;
+
+  @override
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed;
+  }
+
   @override
   void dispose() {
-    image.dispose();
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+      image.dispose();
   }
 }

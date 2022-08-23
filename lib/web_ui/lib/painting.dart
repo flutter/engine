@@ -751,7 +751,9 @@ abstract class ImageShader extends Shader {
       ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
       : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
 
-  abstract void dispose();
+  void dispose();
+
+  bool get debugDisposed;
 }
 
 class ImmutableBuffer {
