@@ -45,126 +45,126 @@ class RasterCacheItem;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
-class LayerStateStack {
- public:
-  LayerStateStack();
+// class LayerStateStack {
+//  public:
+//   LayerStateStack();
 
-  void setCanvasDelegate(SkCanvas* canvas);
-  void setBuilderDelegate(DisplayListBuilder* canvas);
-  void setMutatorDelegate(MutatorsStack* mutators);
+//   void setCanvasDelegate(SkCanvas* canvas);
+//   void setBuilderDelegate(DisplayListBuilder* canvas);
+//   void setMutatorDelegate(MutatorsStack* mutators);
 
-  class AutoRestore {
-   public:
-    ~AutoRestore();
+//   class AutoRestore {
+//    public:
+//     ~AutoRestore();
 
-   private:
-    AutoRestore(LayerStateStack* stack);
-    friend class LayerStateStack;
+//    private:
+//     AutoRestore(LayerStateStack* stack);
+//     friend class LayerStateStack;
 
-    LayerStateStack* stack_;
-    const int stack_restore_count_;
-  };
+//     LayerStateStack* stack_;
+//     const int stack_restore_count_;
+//   };
 
-  void save();
-  [[nodiscard]] AutoRestore autoSave();
-  void saveLayer(const SkRect* bounds = nullptr,
-                 const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop_filter = nullptr);
-  [[nodiscard]] AutoRestore autoSaveLayer(
-      const SkRect* bounds = nullptr,
-      const DlPaint* paint = nullptr,
-      const DlImageFilter* backdrop_filter = nullptr);
-  void restore();
-  void restoreToCount(int restore_count);
-  int getSaveCount();
+//   [[nodiscard]] AutoRestore autoSave();
+//   [[nodiscard]] AutoRestore pushImageFilter(const SkRect* bounds,
+//                                             const DlImageFilter* filter);
+//   [[nodiscard]] AutoRestore pushColorFilter(const SkRect* bounds,
+//                                             const DlColorFilter* filter);
+//   [[nodiscard]] AutoRestore pushBackdropFilter(const SkRect* bounds,
+//                                                const DlImageFilter* backdrop);
+//   void translate(SkScalar tx, SkScalar ty);
+//   void scale(SkScalar sx, SkScalar sy);
+//   void skew(SkScalar sx, SkScalar sy);
+//   void rotate(SkScalar degrees);
+//   void transform(SkM44& matrix);
+//   void transform(SkMatrix& matrix);
 
-  void translate(SkScalar tx, SkScalar ty);
-  void scale(SkScalar sx, SkScalar sy);
-  void skew(SkScalar sx, SkScalar sy);
-  void rotate(SkScalar degrees);
-  void transform(SkM44& matrix);
-  void transform(SkMatrix& matrix);
+//   void clipRect(const SkRect& rect, SkClipOp op, bool is_aa);
+//   void clipRRect(const SkRRect& rect, SkClipOp op, bool is_aa);
+//   void clipPath(const SkPath& rect, SkClipOp op, bool is_aa);
 
-  void clipRect(const SkRect& rect, SkClipOp op, bool is_aa);
-  void clipRRect(const SkRRect& rect, SkClipOp op, bool is_aa);
-  void clipPath(const SkPath& rect, SkClipOp op, bool is_aa);
+//  private:
+//   int getStackCount();
+//   void restoreToCount(int restore_count);
 
- private:
-  class ClipEntry {
-   public:
-    virtual void apply(SkCanvas& canvas) const = 0;
-    virtual void apply(DisplayListBuilder& builder) const = 0;
+//   class StateEntry {
+//    public:
+//     virtual void apply(SkCanvas& canvas) const = 0;
+//     virtual void apply(DisplayListBuilder& canvas) const = 0;
+//     virtual void apply(MutatorsStack& mutators) const = 0;
+//   };
 
-   protected:
-    ClipEntry(SkClipOp op, bool is_aa);
+//   class ClipEntry : public StateEntry {
+//    protected:
+//     ClipEntry(SkClipOp op, bool is_aa);
 
-    const SkClipOp clip_op_;
-    const bool is_aa_;
-  };
+//     const SkClipOp clip_op_;
+//     const bool is_aa_;
+//   };
 
-  class ClipRectEntry : public ClipEntry {
-    ClipRectEntry(const SkRect& rect, SkClipOp op, bool is_aa);
+//   class ClipRectEntry : public ClipEntry {
+//     ClipRectEntry(const SkRect& rect, SkClipOp op, bool is_aa);
 
-    void apply(SkCanvas& canvas) const override;
-    void apply(DisplayListBuilder& canvas) const override;
+//     void apply(SkCanvas& canvas) const override;
+//     void apply(DisplayListBuilder& canvas) const override;
 
-   private:
-    const SkRect rect_;
-  };
+//    private:
+//     const SkRect rect_;
+//   };
 
-  class ClipRRectEntry : public ClipEntry {
-    ClipRRectEntry(const SkRRect& rrect, SkClipOp op, bool is_aa);
+//   class ClipRRectEntry : public ClipEntry {
+//     ClipRRectEntry(const SkRRect& rrect, SkClipOp op, bool is_aa);
 
-    void apply(SkCanvas& canvas) const override;
-    void apply(DisplayListBuilder& canvas) const override;
+//     void apply(SkCanvas& canvas) const override;
+//     void apply(DisplayListBuilder& canvas) const override;
 
-   private:
-    const SkRRect rrect_;
-  };
+//    private:
+//     const SkRRect rrect_;
+//   };
 
-  class ClipPathEntry : public ClipEntry {
-    ClipPathEntry(const SkPath& path, SkClipOp op, bool is_aa);
+//   class ClipPathEntry : public ClipEntry {
+//     ClipPathEntry(const SkPath& path, SkClipOp op, bool is_aa);
 
-    void apply(SkCanvas& canvas) const override;
-    void apply(DisplayListBuilder& canvas) const override;
+//     void apply(SkCanvas& canvas) const override;
+//     void apply(DisplayListBuilder& canvas) const override;
 
-   private:
-    const SkPath path_;
-  };
+//    private:
+//     const SkPath path_;
+//   };
 
-  struct RenderState {
-    RenderState(SkM44& incoming_matrix);
+//   struct RenderState {
+//     RenderState(SkM44& incoming_matrix);
 
-    SkRect* save_bounds() { return layer_has_bounds ? &layer_bounds : nullptr; }
-    SkPaint* save_skpaint(SkPaint& paint) {
-      if (!layer_has_paint) {
-        return nullptr;
-      }
-      layer_paint.toSkPaint(paint);
-      return &paint;
-    }
-    DlPaint* save_dlpaint() { return layer_has_paint ? &layer_paint : nullptr; }
+//     SkRect* save_bounds() { return layer_has_bounds ? &layer_bounds : nullptr; }
+//     SkPaint* save_skpaint(SkPaint& paint) {
+//       if (!layer_has_paint) {
+//         return nullptr;
+//       }
+//       layer_paint.toSkPaint(paint);
+//       return &paint;
+//     }
+//     DlPaint* save_dlpaint() { return layer_has_paint ? &layer_paint : nullptr; }
 
-    bool is_layer;
+//     bool is_layer;
 
-    bool layer_has_bounds;
-    SkRect layer_bounds;
+//     bool layer_has_bounds;
+//     SkRect layer_bounds;
 
-    bool layer_has_paint;
-    DlPaint layer_paint;
+//     bool layer_has_paint;
+//     DlPaint layer_paint;
 
-    SkM44 matrix;
-    std::vector<std::unique_ptr<ClipEntry>> clip_ops;
-  };
+//     SkM44 matrix;
+//     std::vector<std::unique_ptr<ClipEntry>> clip_ops;
+//   };
 
-  std::vector<RenderState> state_stack_;
+//   std::vector<RenderState> state_stack_;
 
-  SkCanvas* canvas_ = nullptr;
-  int canvas_restore_count_;
-  DisplayListBuilder* builder_ = nullptr;
-  int builder_restore_count_;
-  MutatorsStack* mutators_ = nullptr;
-};
+//   SkCanvas* canvas_ = nullptr;
+//   int canvas_restore_count_;
+//   DisplayListBuilder* builder_ = nullptr;
+//   int builder_restore_count_;
+//   MutatorsStack* mutators_ = nullptr;
+// };
 
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
