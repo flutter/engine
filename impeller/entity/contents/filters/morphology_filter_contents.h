@@ -24,8 +24,10 @@ class DirectionalMorphologyFilterContents final : public FilterContents {
   void SetMorphType(MorphType morph_type);
 
   // |FilterContents|
-  std::optional<Rect> GetFilterCoverage(const FilterInput::Vector& inputs,
-                                        const Entity& entity) const override;
+  std::optional<Rect> GetFilterCoverage(
+      const FilterInput::Vector& inputs,
+      const Entity& entity,
+      const Matrix& effect_transform) const override;
 
  private:
   // |FilterContents|
@@ -33,6 +35,7 @@ class DirectionalMorphologyFilterContents final : public FilterContents {
       const FilterInput::Vector& input_textures,
       const ContentContext& renderer,
       const Entity& entity,
+      const Matrix& effect_transform,
       const Rect& coverage) const override;
 
   Radius radius_;

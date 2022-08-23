@@ -38,6 +38,7 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
+    const Matrix& effect_transform,
     const Rect& coverage) const {
   using VS = MorphologyFilterPipeline::VertexShader;
   using FS = MorphologyFilterPipeline::FragmentShader;
@@ -145,7 +146,8 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
 
 std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
     const FilterInput::Vector& inputs,
-    const Entity& entity) const {
+    const Entity& entity,
+    const Matrix& effect_transform) const {
   if (inputs.empty()) {
     return std::nullopt;
   }

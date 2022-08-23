@@ -542,7 +542,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       auto radius_x = Radius(dilate->radius_x());
       auto radius_y = Radius(dilate->radius_y());
-      return [radius_x, radius_y](FilterInput::Ref input) {
+      return [radius_x, radius_y](FilterInput::Ref input,
+                                  const Matrix& effect_transform) {
         return FilterContents::MakeMorphology(
             input, radius_x, radius_y, FilterContents::MorphType::kDilate);
       };
@@ -556,7 +557,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       auto radius_x = Radius(erode->radius_x());
       auto radius_y = Radius(erode->radius_y());
-      return [radius_x, radius_y](FilterInput::Ref input) {
+      return [radius_x, radius_y](FilterInput::Ref input,
+                                  const Matrix& effect_transform) {
         return FilterContents::MakeMorphology(
             input, radius_x, radius_y, FilterContents::MorphType::kErode);
       };
