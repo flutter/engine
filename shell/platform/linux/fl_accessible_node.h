@@ -14,7 +14,9 @@ G_BEGIN_DECLS
 
 // ATK doesn't have the g_autoptr macros, so add them manually.
 // https://gitlab.gnome.org/GNOME/atk/-/issues/10
+#if !ATK_CHECK_VERSION(2, 38, 0)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(AtkObject, g_object_unref)
+#endif
 
 #define FL_TYPE_ACCESSIBLE_NODE fl_accessible_node_get_type()
 G_DECLARE_DERIVABLE_TYPE(FlAccessibleNode,
