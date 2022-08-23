@@ -172,7 +172,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       // TODO(chunhtai): remove fallback logic once the migration is done.
       // https://github.com/flutter/flutter/issues/63121.
       final MethodCall decoded = _decodeMethodCallWithFallback(data, const JSONMethodCodec(), const StandardMethodCodec());
+      print('finished decoding!!1');
       final Map<String, dynamic>? arguments = decoded.arguments?.cast<String, dynamic>() as Map<String, dynamic>?;
+      print('finished assigning');
       switch (decoded.method) {
         case 'selectMultiEntryHistory':
           await _useMultiEntryBrowserHistory();
@@ -206,8 +208,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   ) {
     MethodCall decoded;
     try {
+      print('decoding using json');
       decoded = codec.decodeMethodCall(data);
     } on FormatException {
+      print('decoding using standard');
       decoded = fallbackCodec.decodeMethodCall(data);
     }
     return decoded;
