@@ -161,8 +161,7 @@ void testMain() {
   // https://github.com/flutter/flutter/issues/63121.
   test('handleNavigationMessage can handle standard codec',
       () async {
-    bool success = false;
-    await window.handleNavigationMessage(
+    final bool success = await window.handleNavigationMessage(
         const StandardMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
         <String, dynamic>{
@@ -170,9 +169,7 @@ void testMain() {
           'state': null,
         }, // boom
       ))
-    ).then<void>((bool data) {
-      success = true;
-    });
+    );
     print('before expect');
     expect(success, isTrue);
     print('after expect');
