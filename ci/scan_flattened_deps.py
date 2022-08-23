@@ -29,7 +29,7 @@ HELP_STR = "To find complete information on this vulnerability, navigate to "
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
 DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdeps.json')
 
-failed_deps = [] # deps which fail to be be cloned or git-merge based 
+failed_deps = [] # deps which fail to be be cloned or git-merge based
 old_deps = [] # deps which have not been updated in more than 1 year
 
 sarif_log = {
@@ -119,11 +119,11 @@ def ParseDepsFile(deps_flat_file):
     osv_url = 'https://api.osv.dev/v1/querybatch'
 
     os.mkdir('clone-test') #clone deps with upstream into temporary dir
-    
+
     # Extract commit hash, save in dictionary
     for line in Lines:
         os.chdir(CHECKOUT_ROOT)
-        dep = line.strip().split('@') # separate fully qualified dep into name + pinned hash 
+        dep = line.strip().split('@') # separate fully qualified dep into name + pinned hash
 
         common_commit = getCommonAncestorCommit(dep)
         if common_commit is not None:
@@ -135,7 +135,7 @@ def ParseDepsFile(deps_flat_file):
     print("Dependencies that have not been rolled in at least 1 year: " + ', '.join(old_deps))
 
     # Query OSV API using common ancestor commit for each dep
-    # return any vulnerabilities found 
+    # return any vulnerabilities found
     responses = requests.post(osv_url, headers=headers, json={"queries": queries}, allow_redirects=True)
     if responses.status_code != 200:
         print("Request error")
@@ -172,8 +172,8 @@ def getCommonAncestorCommit(dep):
           try:
             # clone dependency from mirror
             os.chdir('./clone-test')
-            print(f'attempting: git clone {dep[0]} --quiet')
-            os.system(f'git clone {dep[0]} {dep_name} --quiet')
+            print(f'attempting: git clone --quiet {dep[0]}')
+            os.system(f'git clone {dep[0]} --quiet {dep_name}')
             os.chdir(f'./{dep_name}')
 
             # check how old pinned commit is
@@ -187,7 +187,7 @@ def getCommonAncestorCommit(dep):
             # create branch that will track the upstream dep
             print('attempting to add upstream remote from: ' + data[dep_name])
             os.system(f'git remote add upstream {data[dep_name]}')
-            os.system(f'git fetch upstream')
+            os.system(f'git fetch --quiet upstream')
 
             # get name of default branch for upstream
             default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
@@ -195,7 +195,7 @@ def getCommonAncestorCommit(dep):
 
             # make upstream branch track the upstream dep
             os.system(f'git checkout -b upstream --track upstream/{default_branch}')
-            
+
             # get the most recent commit from defaul branch of upstream
             commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
             commit = commit.decode().strip()
