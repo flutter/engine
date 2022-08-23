@@ -25,14 +25,14 @@ class HtmlRenderer implements Renderer {
 
   @override
   void initialize() {
-    _instance = this;
-
     scheduleMicrotask(() {
       // Access [lineLookup] to force the lazy unpacking of line break data
       // now. Removing this line won't break anything. It's just an optimization
       // to make the unpacking happen while we are waiting for network requests.
       lineLookup;
     });
+
+    _instance = this;
   }
 
   @override

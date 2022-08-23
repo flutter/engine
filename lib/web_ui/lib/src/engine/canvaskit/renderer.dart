@@ -50,7 +50,6 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   Future<void> initialize() async {
-    _instance = this;
     if (windowFlutterCanvasKit != null) {
       canvasKit = windowFlutterCanvasKit!;
     } else if (useH5vccCanvasKit) {
@@ -63,6 +62,8 @@ class CanvasKitRenderer implements Renderer {
       canvasKit = await downloadCanvasKit();
       windowFlutterCanvasKit = canvasKit;
     }
+
+    _instance = this;
   }
 
   @override
