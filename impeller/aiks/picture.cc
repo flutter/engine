@@ -14,9 +14,13 @@
 
 namespace impeller {
 
-std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
+std::optional<Snapshot> Picture::Snapshot(AiksContext& context,
+                                          std::optional<ISize> size) {
   auto coverage = pass->GetElementsCoverage(std::nullopt);
-  if (!coverage.has_value() || coverage->IsEmpty()) {
+  auto render_target_size =
+      size.value_or(ISize(coverage->size.width, coverage->size.height));
+  if (!coverage.has_value() || coverage->IsEmpty() ||
+      render_target_size.IsEmpty()) {
     return std::nullopt;
   }
 
@@ -28,9 +32,8 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
 
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
-  auto target = RenderTarget::CreateOffscreen(
-      *context.GetContext(),
-      ISize(coverage->size.width, coverage->size.height));
+  auto target =
+      RenderTarget::CreateOffscreen(*context.GetContext(), render_target_size);
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";
     return std::nullopt;

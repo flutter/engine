@@ -18,7 +18,8 @@ namespace impeller {
 struct Picture {
   std::unique_ptr<EntityPass> pass;
 
-  std::optional<Snapshot> Snapshot(AiksContext& context);
+  std::optional<Snapshot> Snapshot(AiksContext& context,
+                                   std::optional<ISize> size = std::nullopt);
 };
 
 }  // namespace impeller
