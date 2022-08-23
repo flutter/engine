@@ -224,4 +224,9 @@ class CkImageShader extends CkShader implements ui.ImageShader {
   void delete() {
     rawSkiaObject?.delete();
   }
+
+  @override
+  void dispose() {
+    _image.dispose();
+  }
 }
