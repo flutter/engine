@@ -582,6 +582,10 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
+FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
@@ -644,6 +648,8 @@ FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.vert
@@ -651,6 +657,8 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
+FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
@@ -1684,6 +1692,7 @@ FILE: ../../../flutter/shell/platform/common/geometry.h
 FILE: ../../../flutter/shell/platform/common/geometry_unittests.cc
 FILE: ../../../flutter/shell/platform/common/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/incoming_message_dispatcher.h
+FILE: ../../../flutter/shell/platform/common/incoming_message_dispatcher_unittests.cc
 FILE: ../../../flutter/shell/platform/common/json_message_codec.cc
 FILE: ../../../flutter/shell/platform/common/json_message_codec.h
 FILE: ../../../flutter/shell/platform/common/json_message_codec_unittests.cc
@@ -1812,6 +1821,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewControllerTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewControllerTest_mrc.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewTest.mm
@@ -2121,18 +2131,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_platform_view.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_platform_view.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/child-view2/child_view2.dart
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/child-view2/meta/child-view2.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test2.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test2.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/meta/flutter-embedder-test2.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view2/meta/parent-view2.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view2/parent_view2.dart
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/base_view.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/base_view.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/embedded_view_utils.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/embedded_view_utils.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/math.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart
@@ -2489,6 +2487,8 @@ FILE: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.h
 FILE: ../../../flutter/shell/platform/windows/window_proc_delegate_manager_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/window_state.h
 FILE: ../../../flutter/shell/platform/windows/window_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/windows_proc_table.cc
+FILE: ../../../flutter/shell/platform/windows/windows_proc_table.h
 FILE: ../../../flutter/shell/profiling/sampling_profiler.cc
 FILE: ../../../flutter/shell/profiling/sampling_profiler.h
 FILE: ../../../flutter/shell/profiling/sampling_profiler_unittest.cc

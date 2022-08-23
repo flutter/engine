@@ -42,6 +42,8 @@
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
+#include "impeller/entity/linear_to_srgb_filter.frag.h"
+#include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -49,6 +51,8 @@
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/solid_stroke.frag.h"
 #include "impeller/entity/solid_stroke.vert.h"
+#include "impeller/entity/srgb_to_linear_filter.frag.h"
+#include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
@@ -113,6 +117,10 @@ using BorderMaskBlurPipeline =
 using ColorMatrixColorFilterPipeline =
     PipelineT<ColorMatrixColorFilterVertexShader,
               ColorMatrixColorFilterFragmentShader>;
+using LinearToSrgbFilterPipeline =
+    PipelineT<LinearToSrgbFilterVertexShader, LinearToSrgbFilterFragmentShader>;
+using SrgbToLinearFilterPipeline =
+    PipelineT<SrgbToLinearFilterVertexShader, SrgbToLinearFilterFragmentShader>;
 using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
@@ -209,6 +217,16 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetColorMatrixColorFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(color_matrix_color_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetLinearToSrgbFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(linear_to_srgb_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetSrgbToLinearFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(srgb_to_linear_filter_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidStrokePipeline(
@@ -345,6 +363,8 @@ class ContentContext {
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
       color_matrix_color_filter_pipelines_;
+  mutable Variants<LinearToSrgbFilterPipeline> linear_to_srgb_filter_pipelines_;
+  mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;

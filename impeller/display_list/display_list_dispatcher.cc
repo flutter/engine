@@ -397,6 +397,7 @@ void DisplayListDispatcher::setColorSource(
       return;
     }
     case flutter::DlColorSourceType::kConicalGradient:
+    case flutter::DlColorSourceType::kRuntimeEffect:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;
@@ -437,13 +438,15 @@ void DisplayListDispatcher::setColorFilter(
       return;
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      FML_LOG(ERROR) << "requested DlColorFilterType::kSrgbToLinearGamma";
-      UNIMPLEMENTED;
-      break;
+      paint_.color_filter = [](FilterInput::Ref input) {
+        return FilterContents::MakeSrgbToLinearFilter({input});
+      };
+      return;
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      FML_LOG(ERROR) << "requested DlColorFilterType::kLinearToSrgbGamma";
-      UNIMPLEMENTED;
-      break;
+      paint_.color_filter = [](FilterInput::Ref input) {
+        return FilterContents::MakeLinearToSrgbFilter({input});
+      };
+      return;
     case flutter::DlColorFilterType::kUnknown:
       FML_LOG(ERROR) << "requested DlColorFilterType::kUnknown";
       UNIMPLEMENTED;
@@ -510,8 +513,7 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
 }
 
 static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
-    const flutter::DlImageFilter* filter,
-    const Vector2& effect_scale = {1, 1}) {
+    const flutter::DlImageFilter* filter) {
   if (filter == nullptr) {
     return std::nullopt;
   }
@@ -519,16 +521,15 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
-      Vector2 scaled_blur =
-          Vector2(blur->sigma_x(), blur->sigma_y()) * effect_scale;
-      auto sigma_x = Sigma(scaled_blur.x);
-      auto sigma_y = Sigma(scaled_blur.y);
+      auto sigma_x = Sigma(blur->sigma_x());
+      auto sigma_y = Sigma(blur->sigma_y());
       auto tile_mode = ToTileMode(blur->tile_mode());
 
-      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input) {
+      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input,
+                                           const Matrix& effect_transform) {
         return FilterContents::MakeGaussianBlur(
             input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
-            tile_mode);
+            tile_mode, effect_transform);
       };
 
       break;
@@ -575,10 +576,7 @@ void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
                                       const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  auto scale = canvas_.GetCurrentTransformation().GetScale();
-  canvas_.SaveLayer(
-      paint, ToRect(bounds),
-      ToImageFilterProc(backdrop, Vector2::MakeXY(scale.x, scale.y)));
+  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
 }
 
 // |flutter::Dispatcher|
