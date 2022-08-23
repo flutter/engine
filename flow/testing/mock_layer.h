@@ -18,11 +18,6 @@
 namespace flutter {
 namespace testing {
 
-#define SetFlag(value, bit_num, flag) \
-  (flag ? (value |= bit_num) : (value &= ~(bit_num)))
-
-#define GetFlag(value, bit_num) (value & bit_num)
-
 // Mock implementation of the |Layer| interface that does nothing but paint
 // the specified |path| into the canvas.  It records the |PrerollContext| and
 // |PaintContext| data passed in by its parent |Layer|, so the test can later
@@ -57,49 +52,51 @@ class MockLayer : public Layer {
   const MockLayer* as_mock_layer() const override { return this; }
 
   bool parent_has_platform_view() {
-    return GetFlag(mock_flags_, kParentHasPlatformView);
+    return mock_flags_ & kParentHasPlatformView;
   }
 
   bool parent_has_texture_layer() {
-    return GetFlag(mock_flags_, kParentHasTextureLayer);
+    return mock_flags_ & kParentHasTextureLayer;
   }
 
-  bool fake_has_platform_view() {
-    return GetFlag(mock_flags_, kFakeHasPlatformView);
-  }
+  bool fake_has_platform_view() { return mock_flags_ & kFakeHasPlatformView; }
 
-  bool fake_reads_surface() { return GetFlag(mock_flags_, kFakeReadsSurface); }
+  bool fake_reads_surface() { return mock_flags_ & kFakeReadsSurface; }
 
   bool fake_opacity_compatible() {
-    return GetFlag(mock_flags_, kFakeOpacityCompatible);
+    return mock_flags_ & kFakeOpacityCompatible;
   }
 
-  bool fake_has_texture_layer() {
-    return GetFlag(mock_flags_, kFakeHasTextureLayer);
-  }
+  bool fake_has_texture_layer() { return mock_flags_ & kFakeHasTextureLayer; }
 
   void set_parent_has_platform_view(bool flag) {
-    SetFlag(mock_flags_, kParentHasPlatformView, flag);
+    flag ? (mock_flags_ |= kParentHasPlatformView)
+         : (mock_flags_ &= ~(kParentHasPlatformView));
   }
 
   void set_parent_has_texture_layer(bool flag) {
-    SetFlag(mock_flags_, kParentHasTextureLayer, flag);
+    flag ? (mock_flags_ |= kParentHasTextureLayer)
+         : (mock_flags_ &= ~(kParentHasTextureLayer));
   }
 
   void set_fake_has_platform_view(bool flag) {
-    SetFlag(mock_flags_, kFakeHasPlatformView, flag);
+    flag ? (mock_flags_ |= kFakeHasPlatformView)
+         : (mock_flags_ &= ~(kFakeHasPlatformView));
   }
 
   void set_fake_reads_surface(bool flag) {
-    SetFlag(mock_flags_, kFakeReadsSurface, flag);
+    flag ? (mock_flags_ |= kFakeReadsSurface)
+         : (mock_flags_ &= ~(kFakeReadsSurface));
   }
 
   void set_fake_opacity_compatible(bool flag) {
-    SetFlag(mock_flags_, kFakeOpacityCompatible, flag);
+    flag ? (mock_flags_ |= kFakeOpacityCompatible)
+         : (mock_flags_ &= ~(kFakeOpacityCompatible));
   }
 
   void set_fake_has_texture_layer(bool flag) {
-    SetFlag(mock_flags_, kFakeHasTextureLayer, flag);
+    flag ? (mock_flags_ |= kFakeHasTextureLayer)
+         : (mock_flags_ &= ~(kFakeHasTextureLayer));
   }
 
  private:
