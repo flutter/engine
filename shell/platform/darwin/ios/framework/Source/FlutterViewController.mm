@@ -1127,7 +1127,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   NSAssert(_touchRateCorrectionVSyncClient == nil,
            @"_touchRateCorrectionVSyncClient should be nil when setup it");
   double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
-  if (displayRefreshRate <= 60) {
+  const double normalRefreshRate = 60.0;
+  const double epsilon = 0.1;
+  if (displayRefreshRate < normalRefreshRate ||
+      fabs(displayRefreshRate - normalRefreshRate) < epsilon) {
     // If current device's max frame rate is not larger than 60HZ, the delivery rate of touch events
     // is the same with render vsync rate. So we don't need to create
     // _touchRateCorrectionVSyncClient to correct touch callback's rate.
