@@ -6,10 +6,10 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/canvaskit/renderer.dart';
-import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../font_change_util.dart';
+import '../initialization.dart';
 import '../renderer.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
@@ -75,7 +75,7 @@ class FontFallbackData {
   void ensureFontsSupportText(String text, List<String> fontFamilies) {
     // TODO(hterkelsen): Make this faster for the common case where the text
     // is supported by the given fonts.
-    if (ui.debugDisableFontFallbacks) {
+    if (debugDisableFontFallbacks) {
       return;
     }
 

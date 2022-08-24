@@ -23,7 +23,7 @@ void setUpCanvasKitTest() {
   setUpAll(() async {
     expect(renderer, isA<CanvasKitRenderer>(), reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
-    ui.debugDisableFontFallbacks = false;
+    debugDisableFontFallbacks = false;
     await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
 
