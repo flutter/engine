@@ -1,4 +1,4 @@
-Signature: e280f9c1e16928c270dc463392d72b76
+Signature: 785aed939cedae2da29bcf033244936c
 
 UNUSED LICENSES:
 
@@ -2513,7 +2513,6 @@ FILE: ../../../third_party/skia/include/gpu/graphite/Context.h
 FILE: ../../../third_party/skia/include/gpu/graphite/GraphiteTypes.h
 FILE: ../../../third_party/skia/include/gpu/graphite/Recorder.h
 FILE: ../../../third_party/skia/include/gpu/graphite/Recording.h
-FILE: ../../../third_party/skia/include/gpu/graphite/SkStuff.h
 FILE: ../../../third_party/skia/include/gpu/graphite/TextureInfo.h
 FILE: ../../../third_party/skia/include/gpu/graphite/mtl/MtlBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/graphite/mtl/MtlTypes.h
@@ -2609,7 +2608,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/ResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ResourceTypes.h
 FILE: ../../../third_party/skia/src/gpu/graphite/SharedContext.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/SharedContext.h
-FILE: ../../../third_party/skia/src/gpu/graphite/SkStuff.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Surface_Graphite.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Surface_Graphite.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Task.cpp
@@ -5627,6 +5625,8 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/LinearTolerances.h
 FILE: ../../../third_party/skia/src/shaders/SkEmptyShader.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/SkGradientShaderBase.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLModuleLoader.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLModuleLoader.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLFinalizationChecks.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsSameExpressionTree.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsTrivialExpression.cpp

@@ -5,14 +5,15 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/canvaskit/renderer.dart';
+
 import '../dom.dart';
 import '../font_change_util.dart';
-import '../platform_dispatcher.dart';
+import '../renderer.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallback_data.dart';
 import 'fonts.dart';
-import 'initialization.dart';
 import 'interval_tree.dart';
 import 'noto_font.dart';
 
@@ -109,7 +110,7 @@ class FontFallbackData {
     final List<SkFont> fonts = <SkFont>[];
     for (final String font in fontFamilies) {
       final List<SkFont>? typefacesForFamily =
-          skiaFontCollection.familyToFontMap[font];
+        CanvasKitRenderer.instance.fontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
       }
@@ -136,9 +137,7 @@ class FontFallbackData {
       print('CURRENT STACKTRACE !!!!!!!!!\n${StackTrace.current}');
       if (!_scheduledCodeUnitCheck) {
         _scheduledCodeUnitCheck = true;
-        // ignore: invalid_use_of_visible_for_testing_member
-        EnginePlatformDispatcher.instance.rasterizer!
-            .addPostFrameCallback(_ensureFallbackFonts);
+        CanvasKitRenderer.instance.rasterizer.addPostFrameCallback(_ensureFallbackFonts);
       }
     }
   }
@@ -166,7 +165,7 @@ class FontFallbackData {
 
     for (final String font in globalFontFallbacks) {
       final List<SkFont>? fontsForFamily =
-          skiaFontCollection.familyToFontMap[font];
+          CanvasKitRenderer.instance.fontCollection.familyToFontMap[font];
       if (fontsForFamily == null) {
         printWarning('A fallback font was registered but we '
             'cannot retrieve the typeface for it.');
@@ -452,7 +451,7 @@ class FallbackFontDownloadQueue {
       final Uint8List bytes = downloadedData[url]!;
       FontFallbackData.instance.registerFallbackFont(font.name, bytes);
       if (pendingFonts.isEmpty) {
-        _fontsLoading = skiaFontCollection.ensureFontsLoaded();
+        _fontsLoading = renderer.fontCollection.ensureFontsLoaded();
         try {
           await _fontsLoading;
         } finally {
