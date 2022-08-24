@@ -54,7 +54,7 @@ Future<void> testMain() async {
   });
 }
 
-Future<ui.Image> _createImage() async => await _createPicture().toImage(10, 10);
+Future<ui.Image> _createImage() => _createPicture().toImage(10, 10);
 
 ui.Picture _createPicture() {
   final ui.PictureRecorder recorder = ui.PictureRecorder();
