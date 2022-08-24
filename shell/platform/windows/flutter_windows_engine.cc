@@ -620,6 +620,7 @@ void FlutterWindowsEngine::UpdateAccessibilityFeatures(
 }
 
 void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
+  high_contrast_enabled_ = enabled;
   int flags = EnabledAccessibilityFeatures();
   if (enabled) {
     flags |= FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
