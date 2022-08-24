@@ -501,7 +501,7 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
                  });
 }
 
-boid ContextVK::SupportsOffscreenMSAA() const {
+bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
 }
 
