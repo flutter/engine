@@ -78,10 +78,9 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
       }));
   // Accessibility updates must do nothing when the embedder engine is mocked
   modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
-      UpdateAccessibilityFeatures, [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         FlutterAccessibilityFeature flags) {
-        return kSuccess;
-      });
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
 
   // It should send locale info.
   bool update_locales_called = false;
@@ -427,12 +426,14 @@ TEST(FlutterWindowsEngine, UpdateHighContrastFeature) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
 
   engine->UpdateHighContrastEnabled(true);
-  EXPECT_TRUE(engine->EnabledAccessibilityFeatures() &
+  EXPECT_TRUE(
+      engine->EnabledAccessibilityFeatures() &
       FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
   EXPECT_TRUE(engine->high_contrast_enabled());
 
   engine->UpdateHighContrastEnabled(false);
-  EXPECT_FALSE(engine->EnabledAccessibilityFeatures() &
+  EXPECT_FALSE(
+      engine->EnabledAccessibilityFeatures() &
       FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
   EXPECT_FALSE(engine->high_contrast_enabled());
 }

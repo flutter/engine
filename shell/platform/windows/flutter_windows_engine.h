@@ -318,7 +318,8 @@ class FlutterWindowsEngine {
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
 
-  FlutterAccessibilityFeature queued_flags_ = static_cast<FlutterAccessibilityFeature>(0);
+  FlutterAccessibilityFeature queued_flags_ =
+      static_cast<FlutterAccessibilityFeature>(0);
 };
 
 }  // namespace flutter

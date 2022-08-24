@@ -185,9 +185,7 @@ void MockEmbedderApiForKeyboard(
   // update
   modifier.embedder_api().UpdateAccessibilityFeatures =
       [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         FlutterAccessibilityFeature flags) {
-        return kSuccess;
-      };
+         FlutterAccessibilityFeature flags) { return kSuccess; };
   modifier.embedder_api().UpdateLocales =
       [](auto engine, const FlutterLocale** locales, size_t locales_count) {
         return kSuccess;
