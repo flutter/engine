@@ -200,10 +200,9 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
       }));
   // Accessibility updates must do nothing when the embedder engine is mocked
   modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
-      UpdateAccessibilityFeatures, [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         FlutterAccessibilityFeature flags) {
-        return kSuccess;
-      });
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
 
   // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
   // initialized engine instance.
