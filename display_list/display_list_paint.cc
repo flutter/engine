@@ -4,8 +4,6 @@
 
 #include "flutter/display_list/display_list_paint.h"
 
-#include "flutter/display_list/display_list_utils.h"
-
 namespace flutter {
 
 DlPaint::DlPaint()
@@ -34,23 +32,6 @@ bool DlPaint::operator==(DlPaint const& other) const {
          Equals(colorFilter_, other.colorFilter_) &&  //
          Equals(imageFilter_, other.imageFilter_) &&  //
          Equals(maskFilter_, other.maskFilter_);
-}
-
-void DlPaint::toSkPaint(SkPaint& paint) const {
-  paint.setAntiAlias(isAntiAlias_);
-  paint.setDither(isDither_);
-  paint.setColor(color_);
-  paint.setBlendMode(getSkBlendMode());
-  paint.setStyle(getSkDrawStyle());
-  paint.setStrokeCap(getSkStrokeCap());
-  paint.setStrokeJoin(getSkStrokeJoin());
-  paint.setStrokeWidth(strokeWidth_);
-  paint.setStrokeMiter(strokeMiter_);
-  paint.setShader(colorSource_ ? colorSource_->skia_object() : nullptr);
-  paint.setColorFilter(SkPaintDispatchHelper::MakeColorFilter(
-      isInvertColors_, colorFilter_.get()));
-  paint.setImageFilter(imageFilter_->skia_object());
-  paint.setMaskFilter(maskFilter_->skia_object());
 }
 
 }  // namespace flutter

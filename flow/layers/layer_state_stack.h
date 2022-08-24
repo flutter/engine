@@ -30,17 +30,18 @@ class LayerStateStack {
     const int stack_restore_count_;
   };
 
-  [[nodiscard]] AutoRestore autoSave();
-  [[nodiscard]] AutoRestore pushImageFilter(const SkRect* bounds,
-                                            const DlImageFilter* filter);
-  [[nodiscard]] AutoRestore pushColorFilter(const SkRect* bounds,
-                                            const DlColorFilter* filter);
-  [[nodiscard]] AutoRestore pushBackdropFilter(const SkRect* bounds,
-                                               const DlImageFilter* backdrop);
+  [[nodiscard]] AutoRestore save();
+  [[nodiscard]] AutoRestore saveWithImageFilter(
+      const SkRect* bounds,
+      const std::shared_ptr<const DlImageFilter> filter);
+  [[nodiscard]] AutoRestore saveWithColorFilter(
+      const SkRect* bounds,
+      const std::shared_ptr<const DlColorFilter> filter);
+  [[nodiscard]] AutoRestore saveWithBackdropFilter(
+      const SkRect* bounds,
+      const std::shared_ptr<const DlImageFilter> filter);
+
   void translate(SkScalar tx, SkScalar ty);
-  void scale(SkScalar sx, SkScalar sy);
-  void skew(SkScalar sx, SkScalar sy);
-  void rotate(SkScalar degrees);
   void transform(SkM44& matrix);
   void transform(SkMatrix& matrix);
 
@@ -54,79 +55,152 @@ class LayerStateStack {
 
   class StateEntry {
    public:
-    virtual void apply(SkCanvas& canvas) const = 0;
-    virtual void apply(DisplayListBuilder& canvas) const = 0;
-    virtual void apply(MutatorsStack& mutators) const = 0;
+    virtual void apply(SkCanvas* canvas, DisplayListBuilder* builder) const = 0;
+    virtual bool is_backdrop_filter() const { return false; }
   };
 
-  class TransformEntry : public StateEntry {
-    
+  class SaveEntry : public StateEntry {
+   public:
+    SaveEntry() = default;
+  };
+
+  class SaveLayerEntry : public StateEntry {
+   public:
+    SaveLayerEntry(const SkRect* bounds)
+        : bounds_(bounds ? *bounds : SkRect::MakeEmpty()),
+          has_bounds_(bounds != nullptr) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+   protected:
+    const SkRect bounds_;
+    const bool has_bounds_;
+
+    const SkRect* save_bounds() const {
+      return has_bounds_ ? &bounds_ : nullptr;
+    }
+  };
+
+  class ImageFilterEntry : public SaveLayerEntry {
+   public:
+    ImageFilterEntry(const SkRect* bounds,
+                     const std::shared_ptr<const DlImageFilter> filter)
+        : SaveLayerEntry(bounds), filter_(filter) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+   private:
+    const std::shared_ptr<const DlImageFilter> filter_;
+  };
+
+  class ColorFilterEntry : public SaveLayerEntry {
+   public:
+    ColorFilterEntry(const SkRect* bounds,
+                     const std::shared_ptr<const DlColorFilter> filter)
+        : SaveLayerEntry(bounds), filter_(filter) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+   private:
+    const std::shared_ptr<const DlColorFilter> filter_;
+  };
+
+  class BackdropFilterEntry : public SaveLayerEntry {
+   public:
+    BackdropFilterEntry(const SkRect* bounds,
+                        const std::shared_ptr<const DlImageFilter> filter)
+        : SaveLayerEntry(bounds), filter_(filter) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+    bool is_backdrop_filter() const override { return false; }
+
+   private:
+    const std::shared_ptr<const DlImageFilter> filter_;
+  };
+
+  class TransformEntry : public StateEntry {};
+
+  class TranslateEntry : public TransformEntry {
+   public:
+    TranslateEntry(SkScalar tx, SkScalar ty) : tx_(tx), ty_(ty) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+   private:
+    const SkScalar tx_;
+    const SkScalar ty_;
+  };
+
+  class TransformMatrixEntry : public TransformEntry {
+   public:
+    TransformMatrixEntry(SkMatrix& matrix) : matrix_(matrix) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+   private:
+    const SkMatrix matrix_;
+  };
+
+  class TransformM44Entry : public TransformEntry {
+   public:
+    TransformM44Entry(SkM44 m44) : m44_(m44) {}
+
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
+
+   private:
+    const SkM44 m44_;
   };
 
   class ClipEntry : public StateEntry {
    protected:
-    ClipEntry(SkClipOp op, bool is_aa);
+    ClipEntry(SkClipOp op, bool is_aa) : clip_op_(op), is_aa_(is_aa) {}
 
     const SkClipOp clip_op_;
     const bool is_aa_;
   };
 
   class ClipRectEntry : public ClipEntry {
-    ClipRectEntry(const SkRect& rect, SkClipOp op, bool is_aa);
+    ClipRectEntry(const SkRect& rect, SkClipOp op, bool is_aa)
+        : ClipEntry(op, is_aa), rect_(rect) {}
 
-    void apply(SkCanvas& canvas) const override;
-    void apply(DisplayListBuilder& canvas) const override;
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
 
    private:
     const SkRect rect_;
   };
 
   class ClipRRectEntry : public ClipEntry {
-    ClipRRectEntry(const SkRRect& rrect, SkClipOp op, bool is_aa);
+    ClipRRectEntry(const SkRRect& rrect, SkClipOp op, bool is_aa)
+        : ClipEntry(op, is_aa), rrect_(rrect) {}
 
-    void apply(SkCanvas& canvas) const override;
-    void apply(DisplayListBuilder& canvas) const override;
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
 
    private:
     const SkRRect rrect_;
   };
 
   class ClipPathEntry : public ClipEntry {
-    ClipPathEntry(const SkPath& path, SkClipOp op, bool is_aa);
+    ClipPathEntry(const SkPath& path, SkClipOp op, bool is_aa)
+        : ClipEntry(op, is_aa), path_(path) {}
 
-    void apply(SkCanvas& canvas) const override;
-    void apply(DisplayListBuilder& canvas) const override;
+    void apply(SkCanvas* canvas,
+               DisplayListBuilder* builder) const override = 0;
 
    private:
     const SkPath path_;
   };
 
-  struct RenderState {
-    RenderState(SkM44& incoming_matrix);
-
-    SkRect* save_bounds() { return layer_has_bounds ? &layer_bounds : nullptr; }
-    SkPaint* save_skpaint(SkPaint& paint) {
-      if (!layer_has_paint) {
-        return nullptr;
-      }
-      layer_paint.toSkPaint(paint);
-      return &paint;
-    }
-    DlPaint* save_dlpaint() { return layer_has_paint ? &layer_paint : nullptr; }
-
-    bool is_layer;
-
-    bool layer_has_bounds;
-    SkRect layer_bounds;
-
-    bool layer_has_paint;
-    DlPaint layer_paint;
-
-    SkM44 matrix;
-    std::vector<std::unique_ptr<ClipEntry>> clip_ops;
-  };
-
-  std::vector<RenderState> state_stack_;
+  std::vector<std::unique_ptr<StateEntry>> state_stack_;
 
   SkCanvas* canvas_ = nullptr;
   int canvas_restore_count_;

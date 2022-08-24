@@ -91,7 +91,8 @@ sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
 }
 
 sk_sp<SkColorFilter> SkPaintDispatchHelper::MakeColorFilter(
-    bool isInvertColors, const DlColorFilter* color_filter) {
+    bool isInvertColors,
+    const DlColorFilter* color_filter) {
   if (!isInvertColors) {
     return color_filter ? color_filter->skia_object() : nullptr;
   }

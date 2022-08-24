@@ -183,7 +183,8 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   };
   // clang-format on
   static sk_sp<SkColorFilter> MakeColorFilter(
-      bool isInvertColors, const DlColorFilter* color_filter);
+      bool isInvertColors,
+      const DlColorFilter* color_filter);
 
   void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;

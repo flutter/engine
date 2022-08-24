@@ -166,7 +166,7 @@ class DlPaint {
     return colorFilter_;
   }
   const DlColorFilter* getColorFilterPtr() const { return colorFilter_.get(); }
-  DlPaint& setColorFilter(std::shared_ptr<DlColorFilter> filter) {
+  DlPaint& setColorFilter(const std::shared_ptr<const DlColorFilter> filter) {
     colorFilter_ = filter ? filter->shared() : nullptr;
     return *this;
   }
@@ -179,7 +179,7 @@ class DlPaint {
     return imageFilter_;
   }
   const DlImageFilter* getImageFilterPtr() const { return imageFilter_.get(); }
-  DlPaint& setImageFilter(std::shared_ptr<DlImageFilter> filter) {
+  DlPaint& setImageFilter(const std::shared_ptr<const DlImageFilter> filter) {
     imageFilter_ = filter;
     return *this;
   }
@@ -213,8 +213,6 @@ class DlPaint {
   bool operator==(DlPaint const& other) const;
   bool operator!=(DlPaint const& other) const { return !(*this == other); }
 
-  void toSkPaint(SkPaint& paint) const;
-
  private:
 #define ASSERT_ENUM_FITS(last_enum, num_bits)                    \
   static_assert(static_cast<int>(last_enum) < (1 << num_bits) && \
@@ -240,19 +238,6 @@ class DlPaint {
       unsigned isInvertColors_ : 1;
     };
   };
-
-  SkBlendMode getSkBlendMode() const {
-    return static_cast<SkBlendMode>(blendMode_);
-  }
-  SkPaint::Style getSkDrawStyle() const {
-    return static_cast<SkPaint::Style>(drawStyle_);
-  }
-  SkPaint::Cap getSkStrokeCap() const {
-    return static_cast<SkPaint::Cap>(strokeCap_);
-  }
-  SkPaint::Join getSkStrokeJoin() const {
-    return static_cast<SkPaint::Join>(strokeJoin_);
-  }
 
   DlColor color_;
   float strokeWidth_;
