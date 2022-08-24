@@ -283,12 +283,12 @@ PointerLocation FlutterWindow::GetPrimaryPointerLocation() {
 
 void FlutterWindow::OnThemeChange() {
   HIGHCONTRAST high_contrast = {sizeof(HIGHCONTRAST)};
-  if (SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(HIGHCONTRAST), &high_contrast, 0)) {
+  if (SystemParametersInfoW(SPI_GETHIGHCONTRAST,
+      sizeof(HIGHCONTRAST), &high_contrast, 0)) {
     BOOL hc_on = high_contrast.dwFlags & HCF_HIGHCONTRASTON;
-    FlutterWindowsView* view = reinterpret_cast<FlutterWindowsView*>(binding_handler_delegate_);
-    if (view == nullptr) {
-      FML_LOG(ERROR) << "Binding handler delegate is not a FlutterWindowsView";
-    }
+    // Currently, only FlutterWindowsView should be used as delegate on Windows
+    FlutterWindowsView* view =
+        reinterpret_cast<FlutterWindowsView*>(binding_handler_delegate_);
     else {
       FlutterWindowsEngine* engine = view->GetEngine();
       engine->UpdateHighContrastEnabled(hc_on);
