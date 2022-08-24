@@ -103,6 +103,8 @@ source_set("flutter_windows_source") {
     "window_proc_delegate_manager.cc",
     "window_proc_delegate_manager.h",
     "window_state.h",
+    "windows_proc_table.cc",
+    "windows_proc_table.h",
   ]
 
   libs = [
@@ -158,6 +160,7 @@ shared_library("flutter_windows") {
 }
 
 test_fixtures("flutter_windows_fixtures") {
+  dart_main = "fixtures/main.dart"
   fixtures = []
 }
 
@@ -173,6 +176,7 @@ executable("flutter_windows_unittests") {
     "flutter_window_unittests.cc",
     "flutter_windows_engine_unittests.cc",
     "flutter_windows_texture_registrar_unittests.cc",
+    "flutter_windows_unittests.cc",
     "flutter_windows_view_unittests.cc",
     "keyboard_key_channel_handler_unittests.cc",
     "keyboard_key_embedder_handler_unittests.cc",
@@ -187,6 +191,7 @@ executable("flutter_windows_unittests") {
     "testing/engine_modifier.h",
     "testing/flutter_window_test.cc",
     "testing/flutter_window_test.h",
+    "testing/mock_direct_manipulation.h",
     "testing/mock_gl_functions.h",
     "testing/mock_text_input_manager.cc",
     "testing/mock_text_input_manager.h",
@@ -194,15 +199,25 @@ executable("flutter_windows_unittests") {
     "testing/mock_window.h",
     "testing/mock_window_binding_handler.cc",
     "testing/mock_window_binding_handler.h",
+    "testing/mock_windows_proc_table.h",
     "testing/test_keyboard.cc",
     "testing/test_keyboard.h",
     "testing/test_keyboard_unittests.cc",
+    "testing/windows_test.cc",
+    "testing/windows_test.h",
+    "testing/windows_test_config_builder.cc",
+    "testing/windows_test_config_builder.h",
+    "testing/windows_test_context.cc",
+    "testing/windows_test_context.h",
     "testing/wm_builders.cc",
     "testing/wm_builders.h",
     "text_input_plugin_unittest.cc",
     "window_proc_delegate_manager_unittests.cc",
     "window_unittests.cc",
   ]
+
+  configs +=
+      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
 
   public_configs = [ "//flutter:config" ]
 
@@ -214,6 +229,8 @@ executable("flutter_windows_unittests") {
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
+    "//flutter/testing:dart",
+    "//flutter/third_party/tonic",
     "//third_party/rapidjson",
   ]
 }

@@ -265,10 +265,10 @@ class FrameTiming {
     ]);
   }
 
-  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
-
   FrameTiming._(this._data)
       : assert(_data.length == _dataLength);
+
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
   int timestampInMicroseconds(FramePhase phase) => _data[phase.index];
 
@@ -396,7 +396,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != null), // ignore: unnecessary_null_comparison
+  ])  : assert(_languageCode != null),
         assert(_languageCode != ''),
         scriptCode = null;
 
@@ -404,7 +404,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  })  : assert(languageCode != null), // ignore: unnecessary_null_comparison
+  })  : assert(languageCode != null),
         assert(languageCode != ''),
         _languageCode = languageCode,
         assert(scriptCode != ''),

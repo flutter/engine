@@ -454,6 +454,10 @@ Shell::Shell(DartVMRef vm,
           task_runners_.GetRasterTaskRunner(),
           std::bind(&Shell::OnServiceProtocolRenderFrameWithRasterStats, this,
                     std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_[ServiceProtocol::kReloadAssetFonts] = {
+      task_runners_.GetPlatformTaskRunner(),
+      std::bind(&Shell::OnServiceProtocolReloadAssetFonts, this,
+                std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
@@ -958,6 +962,8 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = engine_->GetWeakPtr(), message = std::move(message)]() mutable {
         if (engine) {
@@ -1034,7 +1040,7 @@ void Shell::OnPlatformViewRegisterTexture(
   task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture] {
         if (rasterizer) {
-          if (auto* registry = rasterizer->GetTextureRegistry()) {
+          if (auto registry = rasterizer->GetTextureRegistry()) {
             registry->RegisterTexture(texture);
           }
         }
@@ -1049,7 +1055,7 @@ void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
   task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
         if (rasterizer) {
-          if (auto* registry = rasterizer->GetTextureRegistry()) {
+          if (auto registry = rasterizer->GetTextureRegistry()) {
             registry->UnregisterTexture(texture_id);
           }
         }
@@ -1064,7 +1070,7 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
   // Tell the rasterizer that one of its textures has a new frame available.
   task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
-        auto* registry = rasterizer->GetTextureRegistry();
+        auto registry = rasterizer->GetTextureRegistry();
 
         if (!registry) {
           return;
@@ -1230,6 +1236,9 @@ void Shell::OnEngineHandlePlatformMessage(
           [weak_platform_message_handler =
                std::weak_ptr<PlatformMessageHandler>(platform_message_handler_),
            message = std::move(message), ui_task_runner]() mutable {
+            // The static leak checker gets confused by the use of
+            // fml::MakeCopyable.
+            // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
             ui_task_runner->PostTask(fml::MakeCopyable(
                 [weak_platform_message_handler, message = std::move(message),
                  ui_task_runner]() mutable {
@@ -1362,15 +1371,29 @@ void Shell::LoadDartDeferredLibrary(
 void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                          const std::string error_message,
                                          bool transient) {
-  engine_->LoadDartDeferredLibraryError(loading_unit_id, error_message,
-                                        transient);
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      [engine = weak_engine_, loading_unit_id, error_message, transient] {
+        if (engine) {
+          engine->LoadDartDeferredLibraryError(loading_unit_id, error_message,
+                                               transient);
+        }
+      });
 }
 
 void Shell::UpdateAssetResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
-  engine_->GetAssetManager()->UpdateResolverByType(
-      std::move(updated_asset_resolver), type);
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable(
+          [engine = weak_engine_, type,
+           asset_resolver = std::move(updated_asset_resolver)]() mutable {
+            if (engine) {
+              engine->GetAssetManager()->UpdateResolverByType(
+                  std::move(asset_resolver), type);
+            }
+          }));
 }
 
 // |Engine::Delegate|
@@ -1773,10 +1796,15 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   auto asset_manager = std::make_shared<AssetManager>();
 
-  asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
-      fml::OpenDirectory(params.at("assetDirectory").data(), false,
-                         fml::FilePermission::kRead),
-      false));
+  if (!asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
+          fml::OpenDirectory(params.at("assetDirectory").data(), false,
+                             fml::FilePermission::kRead),
+          false))) {
+    // The new asset directory path was invalid.
+    FML_DLOG(ERROR) << "Could not update asset directory.";
+    ServiceProtocolFailureError(response, "Could not update asset directory.");
+    return false;
+  }
 
   // Preserve any original asset resolvers to avoid syncing unchanged assets
   // over the DevFS connection.
@@ -1890,6 +1918,45 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
   }
 }
 
+void Shell::SendFontChangeNotification() {
+  // After system fonts are reloaded, we send a system channel message
+  // to notify flutter framework.
+  rapidjson::Document document;
+  document.SetObject();
+  auto& allocator = document.GetAllocator();
+  rapidjson::Value message_value;
+  message_value.SetString(kFontChange, allocator);
+  document.AddMember(kTypeKey, message_value, allocator);
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  std::string message = buffer.GetString();
+  std::unique_ptr<PlatformMessage> fontsChangeMessage =
+      std::make_unique<flutter::PlatformMessage>(
+          kSystemChannel,
+          fml::MallocMapping::Copy(message.c_str(), message.length()), nullptr);
+  OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
+}
+
+bool Shell::OnServiceProtocolReloadAssetFonts(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document* response) {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  if (!engine_) {
+    return false;
+  }
+  engine_->GetFontCollection().RegisterFonts(engine_->GetAssetManager());
+  engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
+  SendFontChangeNotification();
+
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
+  response->AddMember("type", "Success", allocator);
+
+  return true;
+}
+
 Rasterizer::Screenshot Shell::Screenshot(
     Rasterizer::ScreenshotType screenshot_type,
     bool base64_encode) {
@@ -1952,23 +2019,7 @@ bool Shell::ReloadSystemFonts() {
   engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
   // After system fonts are reloaded, we send a system channel message
   // to notify flutter framework.
-  rapidjson::Document document;
-  document.SetObject();
-  auto& allocator = document.GetAllocator();
-  rapidjson::Value message_value;
-  message_value.SetString(kFontChange, allocator);
-  document.AddMember(kTypeKey, message_value, allocator);
-
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  document.Accept(writer);
-  std::string message = buffer.GetString();
-  std::unique_ptr<PlatformMessage> fontsChangeMessage =
-      std::make_unique<flutter::PlatformMessage>(
-          kSystemChannel,
-          fml::MallocMapping::Copy(message.c_str(), message.length()), nullptr);
-
-  OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
+  SendFontChangeNotification();
   return true;
 }
 

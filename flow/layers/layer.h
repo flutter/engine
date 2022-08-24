@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/display_list/display_list_builder_multiplexer.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
@@ -29,7 +30,9 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
+
 namespace flutter {
+
 namespace testing {
 class MockLayer;
 }  // namespace testing
@@ -57,7 +60,7 @@ struct PrerollContext {
   // These allow us to paint in the end of subtree Preroll.
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
-  TextureRegistry& texture_registry;
+  std::shared_ptr<TextureRegistry> texture_registry;
   const bool checkerboard_offscreen_layers;
   const float frame_device_pixel_ratio = 1.0f;
 
@@ -106,6 +109,12 @@ struct PrerollContext {
   bool subtree_can_inherit_opacity = false;
 
   std::vector<RasterCacheItem*>* raster_cached_entries;
+
+  // This flag will be set to true iff the frame will be constructing
+  // a DisplayList for the layer tree. This flag is mostly of note to
+  // the embedders that must decide between creating SkPicture or
+  // DisplayList objects for the inter-view slices of the layer tree.
+  bool display_list_enabled = false;
 };
 
 struct PaintContext {
@@ -126,7 +135,7 @@ struct PaintContext {
   ExternalViewEmbedder* view_embedder;
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
-  TextureRegistry& texture_registry;
+  std::shared_ptr<TextureRegistry> texture_registry;
   const RasterCache* raster_cache;
   const bool checkerboard_offscreen_layers;
   const float frame_device_pixel_ratio = 1.0f;
@@ -144,6 +153,7 @@ struct PaintContext {
   // a |kSrcOver| blend mode.
   SkScalar inherited_opacity = SK_Scalar1;
   DisplayListBuilder* leaf_nodes_builder = nullptr;
+  DisplayListBuilderMultiplexer* builder_multiplexer = nullptr;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -217,15 +227,15 @@ class Layer {
 
     ~AutoCachePaint() { context_.inherited_opacity = sk_paint_.getAlphaf(); }
 
-    void setImageFilter(sk_sp<SkImageFilter> filter) {
-      sk_paint_.setImageFilter(filter);
-      dl_paint_.setImageFilter(DlImageFilter::From(filter));
+    void setImageFilter(const DlImageFilter* filter) {
+      sk_paint_.setImageFilter(!filter ? nullptr : filter->skia_object());
+      dl_paint_.setImageFilter(filter);
       update_needs_paint();
     }
 
-    void setColorFilter(sk_sp<SkColorFilter> filter) {
-      sk_paint_.setColorFilter(filter);
-      dl_paint_.setColorFilter(DlColorFilter::From(filter));
+    void setColorFilter(const DlColorFilter* filter) {
+      sk_paint_.setColorFilter(!filter ? nullptr : filter->skia_object());
+      dl_paint_.setColorFilter(filter);
       update_needs_paint();
     }
 

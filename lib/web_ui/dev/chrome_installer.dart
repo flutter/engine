@@ -100,16 +100,16 @@ class ChromeInstaller {
     );
   }
 
-  static Future<ChromeInstaller> latest() async {
-    final String latestVersion = await fetchLatestChromeVersion();
-    return ChromeInstaller(version: latestVersion);
-  }
-
   ChromeInstaller._({
     required this.version,
     required this.chromeInstallationDir,
     required this.versionDir,
   });
+
+  static Future<ChromeInstaller> latest() async {
+    final String latestVersion = await fetchLatestChromeVersion();
+    return ChromeInstaller(version: latestVersion);
+  }
 
   /// Chrome version managed by this installer.
   final String version;
@@ -196,7 +196,8 @@ class ChromeInstaller {
 
       stopwatch.stop();
       print(
-          'INFO: The unzip took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
+        'The unzip took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.'
+      );
     } else {
       // We have to unzip into a temporary directory and then copy the files
       // out because our tests expect the files to be direct children of the

@@ -38,6 +38,7 @@ class Scene extends NativeFieldWrapperClass1 {
   external String? _toImageSync(int width, int height, _Image outImage);
 
   /// Creates a raster image representation of the current state of the scene.
+  ///
   /// This is a slow operation that is performed on a background thread.
   ///
   /// Callers must dispose the [Image] when they are done with it. If the result
@@ -240,7 +241,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   //
   // The key is the layer used. The value is the description of what the layer
   // is used for, e.g. "pushOpacity" or "addRetained".
-  Map<EngineLayer, String> _usedLayers = <EngineLayer, String>{};
+  final Map<EngineLayer, String> _usedLayers = <EngineLayer, String>{};
 
   // In debug mode checks that the `layer` is only used once in a given scene.
   bool _debugCheckUsedOnce(EngineLayer layer, String usage) {
@@ -625,6 +626,10 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
+  @Deprecated(
+    'Use a clip and canvas operations directly (See RenderPhysicalModel). '
+    'This feature was deprecated after v3.1.0-0.0.pre.',
+  )
   PhysicalShapeEngineLayer pushPhysicalShape({
     required Path path,
     required double elevation,

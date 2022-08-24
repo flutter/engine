@@ -43,6 +43,7 @@ void testMain() {
     });
 
     test('will download Noto Naskh Arabic if Arabic text is added', () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           '''
@@ -65,8 +66,7 @@ void testMain() {
       );
       pb.addText('مرحبا');
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
@@ -91,12 +91,12 @@ void testMain() {
         recorder.endRecording(),
         region: kDefaultRegion,
       );
-      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isSafari || isFirefox);
 
     test('will put the Noto Emoji font before other fallback fonts in the list',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
@@ -128,8 +128,7 @@ void testMain() {
       );
       pb.addText('مرحبا');
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
@@ -144,8 +143,7 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
@@ -157,6 +155,7 @@ void testMain() {
 
     test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
@@ -175,8 +174,7 @@ void testMain() {
       );
       pb.addText('Hello 😊');
 
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
@@ -201,12 +199,12 @@ void testMain() {
         recorder.endRecording(),
         region: kDefaultRegion,
       );
-      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isSafari || isFirefox);
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           'invalid CSS... this should cause our parser to fail';
@@ -221,8 +219,7 @@ void testMain() {
       pb.addText('مرحبا');
 
       // Flush microtasks and test that we didn't start any downloads.
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await Future<void>.delayed(Duration.zero);
 
       expect(notoDownloadQueue.isPending, isFalse);
@@ -235,14 +232,14 @@ void testMain() {
     test(
         'Can find fonts for two adjacent unmatched code units from different fonts',
         () async {
+      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       final LoggingDownloader loggingDownloader =
           LoggingDownloader(NotoDownloader());
       notoDownloadQueue.downloader = loggingDownloader;
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
 
       CkParagraphBuilder(CkParagraphStyle()).addText('ヽಠ');
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.downloader.debugWhenIdle();
       expect(
         loggingDownloader.log,
@@ -259,8 +256,7 @@ void testMain() {
       // Do the same thing but this time with loaded fonts.
       loggingDownloader.log.clear();
       CkParagraphBuilder(CkParagraphStyle()).addText('ヽಠ');
-      EnginePlatformDispatcher.instance.rasterizer!
-          .debugRunPostFrameCallbacks();
+      rasterizer.debugRunPostFrameCallbacks();
       await notoDownloadQueue.downloader.debugWhenIdle();
       expect(loggingDownloader.log, isEmpty);
     });
@@ -356,7 +352,6 @@ void testMain() {
         }
       }
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isSafari);
 }
 
@@ -374,9 +369,9 @@ class TestDownloader extends NotoDownloader {
 }
 
 class LoggingDownloader implements NotoDownloader {
-  final List<String> log = <String>[];
-
   LoggingDownloader(this.delegate);
+
+  final List<String> log = <String>[];
 
   final NotoDownloader delegate;
 

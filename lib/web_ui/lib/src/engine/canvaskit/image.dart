@@ -83,7 +83,6 @@ class ImageCodecException implements Exception {
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
 typedef HttpRequestFactory = DomXMLHttpRequest Function();
-// ignore: prefer_function_declarations_over_variables
 HttpRequestFactory httpRequestFactory = () => createDomXMLHttpRequest();
 void debugRestoreHttpRequestFactory() {
   httpRequestFactory = () => createDomXMLHttpRequest();
@@ -345,10 +344,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
 /// Data for a single frame of an animated image.
 class AnimatedImageFrameInfo implements ui.FrameInfo {
+  AnimatedImageFrameInfo(this._duration, this._image);
+
   final Duration _duration;
   final CkImage _image;
-
-  AnimatedImageFrameInfo(this._duration, this._image);
 
   @override
   Duration get duration => _duration;

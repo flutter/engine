@@ -52,8 +52,13 @@ std::optional<Rect> SolidStrokeContents::GetCoverage(
   if (join_ == Join::kMiter) {
     max_radius = std::max(max_radius, miter_limit_ * 0.5f);
   }
+  Scalar determinant = entity.GetTransformation().GetDeterminant();
+  if (determinant == 0) {
+    return std::nullopt;
+  }
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Vector2 max_radius_xy = entity.GetTransformation().TransformDirection(
-      Vector2(max_radius, max_radius) * stroke_size_);
+      Vector2(max_radius, max_radius) * std::max(stroke_size_, min_size));
 
   return Rect(path_coverage.origin - max_radius_xy,
               Size(path_coverage.size.width + max_radius_xy.x * 2,
@@ -71,10 +76,6 @@ static VertexBuffer CreateSolidStrokeVertices(
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   auto polyline = path.CreatePolyline();
-
-  if (polyline.points.size() < 2) {
-    return {};  // Nothing to render.
-  }
 
   VS::PerVertexData vtx;
 
@@ -95,8 +96,17 @@ static VertexBuffer CreateSolidStrokeVertices(
     std::tie(contour_start_point_i, contour_end_point_i) =
         polyline.GetContourPointBounds(contour_i);
 
-    if (contour_end_point_i - contour_start_point_i < 2) {
-      continue;  // This contour has no renderable content.
+    switch (contour_end_point_i - contour_start_point_i) {
+      case 1: {
+        Point p = polyline.points[contour_start_point_i];
+        cap_proc(vtx_builder, p, {-1, 0}, smoothing);
+        cap_proc(vtx_builder, p, {1, 0}, smoothing);
+        continue;
+      }
+      case 0:
+        continue;  // This contour has no renderable content.
+      default:
+        break;
     }
 
     // The first point's normal is always the same as
@@ -177,7 +187,7 @@ static VertexBuffer CreateSolidStrokeVertices(
 bool SolidStrokeContents::Render(const ContentContext& renderer,
                                  const Entity& entity,
                                  RenderPass& pass) const {
-  if (stroke_size_ <= 0.0) {
+  if (stroke_size_ < 0.0) {
     return true;
   }
 
@@ -187,7 +197,12 @@ bool SolidStrokeContents::Render(const ContentContext& renderer,
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                   entity.GetTransformation();
-  vert_info.size = stroke_size_;
+  Scalar determinant = entity.GetTransformation().GetDeterminant();
+  if (determinant == 0) {
+    return true;
+  }
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  vert_info.size = std::max(stroke_size_, min_size);
 
   FS::FragInfo frag_info;
   frag_info.color = color_.Premultiply();

@@ -10,7 +10,9 @@ namespace impeller {
 
 std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
                                                          bool cover) const {
-  if (contents) {
+  if (color_source.has_value()) {
+    auto& source = color_source.value();
+    auto contents = source();
     contents->SetPath(std::move(path));
     return contents;
   }
@@ -40,17 +42,18 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
 
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input,
-    std::optional<bool> is_solid_color) const {
-  bool is_solid_color_val = is_solid_color.value_or(!contents);
+    std::optional<bool> is_solid_color,
+    const Matrix& effect_transform) const {
+  bool is_solid_color_val = is_solid_color.value_or(!color_source);
 
-  if (mask_filter.has_value()) {
-    const MaskFilterProc& filter = mask_filter.value();
-    input = filter(FilterInput::Make(input), is_solid_color_val);
+  if (mask_blur_descriptor.has_value()) {
+    input = mask_blur_descriptor->CreateMaskBlur(
+        FilterInput::Make(input), is_solid_color_val, effect_transform);
   }
 
   if (image_filter.has_value()) {
     const ImageFilterProc& filter = image_filter.value();
-    input = filter(FilterInput::Make(input));
+    input = filter(FilterInput::Make(input), effect_transform);
   }
 
   if (color_filter.has_value()) {
@@ -59,6 +62,18 @@ std::shared_ptr<Contents> Paint::WithFilters(
   }
 
   return input;
+}
+
+std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
+    FilterInput::Ref input,
+    bool is_solid_color,
+    const Matrix& effect_transform) const {
+  if (is_solid_color) {
+    return FilterContents::MakeGaussianBlur(
+        input, sigma, sigma, style, Entity::TileMode::kDecal, effect_transform);
+  }
+  return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style,
+                                            effect_transform);
 }
 
 }  // namespace impeller

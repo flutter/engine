@@ -6,13 +6,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/canvaskit/renderer.dart';
+
 import '../dom.dart';
 import '../font_change_util.dart';
-import '../platform_dispatcher.dart';
+import '../renderer.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'fonts.dart';
-import 'initialization.dart';
 import 'interval_tree.dart';
 
 /// Global static font fallback data.
@@ -120,7 +121,7 @@ class FontFallbackData {
     final List<SkFont> fonts = <SkFont>[];
     for (final String font in fontFamilies) {
       final List<SkFont>? typefacesForFamily =
-          skiaFontCollection.familyToFontMap[font];
+        CanvasKitRenderer.instance.fontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
       }
@@ -146,9 +147,7 @@ class FontFallbackData {
       _codeUnitsToCheckAgainstFallbackFonts.addAll(missingCodeUnits);
       if (!_scheduledCodeUnitCheck) {
         _scheduledCodeUnitCheck = true;
-        // ignore: invalid_use_of_visible_for_testing_member
-        EnginePlatformDispatcher.instance.rasterizer!
-            .addPostFrameCallback(_ensureFallbackFonts);
+        CanvasKitRenderer.instance.rasterizer.addPostFrameCallback(_ensureFallbackFonts);
       }
     }
   }
@@ -173,7 +172,7 @@ class FontFallbackData {
 
     for (final String font in globalFontFallbacks) {
       final List<SkFont>? fontsForFamily =
-          skiaFontCollection.familyToFontMap[font];
+          CanvasKitRenderer.instance.fontCollection.familyToFontMap[font];
       if (fontsForFamily == null) {
         printWarning('A fallback font was registered but we '
             'cannot retrieve the typeface for it.');
@@ -547,13 +546,13 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
 }
 
 class NotoFont {
+  NotoFont(this.name, this.approximateUnicodeRanges);
+
   final String name;
   final List<CodeunitRange> approximateUnicodeRanges;
 
   Completer<void>? _decodingCompleter;
   _ResolvedNotoFont? resolvedFont;
-
-  NotoFont(this.name, this.approximateUnicodeRanges);
 
   String get googleFontsCssUrl =>
       'https://fonts.googleapis.com/css2?family=${name.replaceAll(' ', '+')}';
@@ -581,10 +580,10 @@ class NotoFont {
 }
 
 class CodeunitRange {
+  const CodeunitRange(this.start, this.end);
+
   final int start;
   final int end;
-
-  const CodeunitRange(this.start, this.end);
 
   bool contains(int codeUnit) {
     return start <= codeUnit && codeUnit <= end;
@@ -607,19 +606,19 @@ class CodeunitRange {
 }
 
 class _ResolvedNotoFont {
+  const _ResolvedNotoFont(this.name, this.subsets, this.tree);
+
   final String name;
   final List<_ResolvedNotoSubset> subsets;
   final IntervalTree<_ResolvedNotoSubset> tree;
-
-  const _ResolvedNotoFont(this.name, this.subsets, this.tree);
 }
 
 class _ResolvedNotoSubset {
+  _ResolvedNotoSubset(this.url, this.family, this.ranges);
+
   final String url;
   final String family;
   final List<CodeunitRange> ranges;
-
-  _ResolvedNotoSubset(this.url, this.family, this.ranges);
 
   @override
   String toString() => '_ResolvedNotoSubset($family, $url)';
@@ -917,7 +916,7 @@ class FallbackFontDownloadQueue {
       final Uint8List bytes = downloadedData[url]!;
       FontFallbackData.instance.registerFallbackFont(subset.family, bytes);
       if (pendingSubsets.isEmpty) {
-        _fontsLoading = skiaFontCollection.ensureFontsLoaded();
+        _fontsLoading = renderer.fontCollection.ensureFontsLoaded();
         try {
           await _fontsLoading;
         } finally {

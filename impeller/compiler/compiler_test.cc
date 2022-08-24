@@ -6,11 +6,6 @@
 
 #include <algorithm>
 
-#include "flutter/fml/file.h"
-#include "flutter/fml/logging.h"
-#include "flutter/fml/mapping.h"
-#include "flutter/fml/unique_fd.h"
-
 namespace impeller {
 namespace compiler {
 namespace testing {
@@ -171,7 +166,6 @@ bool CompilerTest::CanCompileAndReflect(const char* fixture_name,
       return false;
     }
   }
-
   return true;
 }
 

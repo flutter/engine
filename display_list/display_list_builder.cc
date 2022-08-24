@@ -6,7 +6,9 @@
 
 #include "flutter/display_list/display_list_builder.h"
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_color_source.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -328,6 +330,12 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
         new (pod) DlSweepGradientColorSource(sweep);
         break;
       }
+      case DlColorSourceType::kRuntimeEffect: {
+        const DlRuntimeEffectColorSource* effect = source->asRuntimeEffect();
+        FML_DCHECK(effect);
+        Push<SetRuntimeEffectColorSourceOp>(0, 0, effect);
+        break;
+      }
       case DlColorSourceType::kUnknown:
         Push<SetSkColorSourceOp>(0, 0, source->skia_object());
         break;
@@ -370,6 +378,7 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
         break;
       }
       case DlImageFilterType::kComposeFilter:
+      case DlImageFilterType::kLocalMatrixFilter:
       case DlImageFilterType::kColorFilter: {
         Push<SetSharedImageFilterOp>(0, 0, filter);
         break;
@@ -558,19 +567,29 @@ void DisplayListBuilder::setAttributesFromPaint(
   }
 }
 
+void DisplayListBuilder::checkForDeferredSave() {
+  if (current_layer_->has_deferred_save_op_) {
+    Push<SaveOp>(0, 1);
+    current_layer_->has_deferred_save_op_ = false;
+  }
+}
+
 void DisplayListBuilder::save() {
-  Push<SaveOp>(0, 1);
   layer_stack_.emplace_back(current_layer_);
   current_layer_ = &layer_stack_.back();
+  current_layer_->has_deferred_save_op_ = true;
 }
+
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
+    if (!current_layer_->has_deferred_save_op_) {
+      Push<RestoreOp>(0, 1);
+    }
     // Grab the current layer info before we push the restore
     // on the stack.
     LayerInfo layer_info = layer_stack_.back();
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
-    Push<RestoreOp>(0, 1);
     if (layer_info.has_layer) {
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
@@ -649,6 +668,7 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
   if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
       (tx != 0.0 || ty != 0.0)) {
+    checkForDeferredSave();
     Push<TranslateOp>(0, 1, tx, ty);
     current_layer_->matrix.preTranslate(tx, ty);
   }
@@ -656,12 +676,14 @@ void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
 void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 1.0 || sy != 1.0)) {
+    checkForDeferredSave();
     Push<ScaleOp>(0, 1, sx, sy);
     current_layer_->matrix.preScale(sx, sy);
   }
 }
 void DisplayListBuilder::rotate(SkScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
+    checkForDeferredSave();
     Push<RotateOp>(0, 1, degrees);
     current_layer_->matrix.preConcat(SkMatrix::RotateDeg(degrees));
   }
@@ -669,6 +691,7 @@ void DisplayListBuilder::rotate(SkScalar degrees) {
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 0.0 || sy != 0.0)) {
+    checkForDeferredSave();
     Push<SkewOp>(0, 1, sx, sy);
     current_layer_->matrix.preConcat(SkMatrix::Skew(sx, sy));
   }
@@ -685,6 +708,7 @@ void DisplayListBuilder::transform2DAffine(
       SkScalarsAreFinite(mxt, myt) &&
       !(mxx == 1 && mxy == 0 && mxt == 0 &&
         myx == 0 && myy == 1 && myt == 0)) {
+    checkForDeferredSave();
     Push<Transform2DAffineOp>(0, 1,
                               mxx, mxy, mxt,
                               myx, myy, myt);
@@ -710,6 +734,7 @@ void DisplayListBuilder::transformFullPerspective(
              SkScalarsAreFinite(myx, myy) && SkScalarsAreFinite(myz, myt) &&
              SkScalarsAreFinite(mzx, mzy) && SkScalarsAreFinite(mzz, mzt) &&
              SkScalarsAreFinite(mwx, mwy) && SkScalarsAreFinite(mwz, mwt)) {
+    checkForDeferredSave();
     Push<TransformFullPerspectiveOp>(0, 1,
                                      mxx, mxy, mxz, mxt,
                                      myx, myy, myz, myt,
@@ -723,6 +748,7 @@ void DisplayListBuilder::transformFullPerspective(
 }
 // clang-format on
 void DisplayListBuilder::transformReset() {
+  checkForDeferredSave();
   Push<TransformResetOp>(0, 0);
   current_layer_->matrix.setIdentity();
 }
@@ -744,6 +770,10 @@ void DisplayListBuilder::transform(const SkM44* m44) {
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
                                   bool is_aa) {
+  if (!rect.isFinite()) {
+    return;
+  }
+  checkForDeferredSave();
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
@@ -760,6 +790,7 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
   } else {
+    checkForDeferredSave();
     switch (clip_op) {
       case SkClipOp::kIntersect:
         Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
@@ -791,6 +822,7 @@ void DisplayListBuilder::clipPath(const SkPath& path,
       return;
     }
   }
+  checkForDeferredSave();
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectPathOp>(0, 1, path, is_aa);

@@ -2382,7 +2382,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
         MutatorsStack mutators_stack;
-        TextureRegistry texture_registry;
         PaintContext paint_context = {
             // clang-format off
             .internal_nodes_canvas         = nullptr,
@@ -2392,7 +2391,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
-            .texture_registry              = texture_registry,
+            .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
@@ -2411,7 +2410,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .surface_needs_readback        = false,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
-            .texture_registry              = texture_registry,
+            .texture_registry              = nullptr,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
@@ -3284,9 +3283,9 @@ TEST_F(ShellTest, ImageGeneratorRegistryNotNullAfterParentShellDestroyed) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3296,7 +3295,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3326,9 +3328,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3338,7 +3340,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3401,10 +3406,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform));
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3414,7 +3418,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3765,7 +3772,7 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
 
 TEST_F(ShellTest, PictureToImageSync) {
 #if !SHELL_ENABLE_GL
-  // GL emulation does not exist on Fuchsia.
+  // This test uses the GL backend.
   GTEST_SKIP();
 #endif  // !SHELL_ENABLE_GL
   auto settings = CreateSettingsForFixture();
@@ -3778,9 +3785,12 @@ TEST_F(ShellTest, PictureToImageSync) {
                   ShellTestPlatformView::BackendType::kGLBackend  //
       );
 
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
-                      latch.Signal();
+  fml::CountDownLatch latch(2);
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      // Teardown and set up rasterizer again.
+                      PlatformViewNotifyDestroyed(shell.get());
+                      PlatformViewNotifyCreated(shell.get());
+                      latch.CountDown();
                     }));
 
   ASSERT_NE(shell, nullptr);

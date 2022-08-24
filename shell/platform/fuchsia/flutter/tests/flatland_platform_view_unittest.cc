@@ -47,6 +47,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override {
     return std::vector<SkCanvas*>();
   }
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
+    return std::vector<flutter::DisplayListBuilder*>();
+  }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -62,7 +65,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return nullptr; }
+  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {nullptr, nullptr};
+  }
 };
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
@@ -421,7 +426,7 @@ class PlatformViewBuilder {
   // Once Build is called, the instance is no longer usable.
   FlatlandPlatformView Build() {
     EXPECT_FALSE(std::exchange(built_, true))
-        << "Build() was already called, this buider is good for one use only.";
+        << "Build() was already called, this builder is good for one use only.";
     return FlatlandPlatformView(
         delegate_, task_runners_, std::move(view_ref_pair_.view_ref),
         external_external_view_embedder_, std::move(ime_service_),

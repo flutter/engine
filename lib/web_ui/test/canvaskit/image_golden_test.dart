@@ -54,7 +54,6 @@ void testMain() {
         isTrue,
       );
     });
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isSafari);
 }
 
@@ -511,8 +510,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
 
-        final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
-        dispatcher.rasterizer!.draw(sb.build().layerTree);
+        CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
         await matchGoldenFile(
           'canvaskit_read_back_decoded_image_$mode.png',
           region: const ui.Rect.fromLTRB(0, 0, 150, 150),
@@ -522,7 +520,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
       image.dispose();
       codec.dispose();
-    });
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+    }, skip: isFirefox || isSafari);
 
     // This is a regression test for the issues with transferring textures from
     // one GL context to another, such as:
@@ -535,9 +534,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
-
-      final EnginePlatformDispatcher dispatcher =
-          ui.window.platformDispatcher as EnginePlatformDispatcher;
 
       final ui.Codec codec = await ui.instantiateImageCodec(k4x4PngImage);
       final CkImage image = (await codec.getNextFrame()).image as CkImage;
@@ -566,7 +562,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         canvas.drawParagraph(makeSimpleText('2'), const ui.Offset(2, 2));
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
       }
-      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       await matchGoldenFile(
         'canvaskit_cross_gl_context_image_$mode.png',
         region: const ui.Rect.fromLTRB(0, 0, 100, 100),
@@ -575,6 +571,52 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
       await disposePlatformView(0);
     });
+
+    test('toImageSync with texture-backed image', () async {
+      final DomResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
+      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final CkImage mandrill = frame.image as CkImage;
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.drawImageRect(
+        mandrill,
+        const ui.Rect.fromLTWH(0, 0, 128, 128),
+        const ui.Rect.fromLTWH(0, 0, 128, 128),
+        ui.Paint(),
+      );
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image image = picture.toImageSync(50, 50);
+
+      expect(image.width, 50);
+      expect(image.height, 50);
+
+      final ByteData? data = await image.toByteData();
+      expect(data, isNotNull);
+      expect(data!.lengthInBytes, 50 * 50 * 4);
+      expect(data.buffer.asUint32List().any((int byte) => byte != 0), isTrue);
+
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      {
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.save();
+        canvas.drawImage(image as CkImage, ui.Offset.zero, CkPaint());
+        canvas.restore();
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+      }
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      await matchGoldenFile(
+        'canvaskit_picture_texture_toimage',
+        region: const ui.Rect.fromLTRB(0, 0, 128, 128),
+        maxDiffRatePercent: 0,
+      );
+      mandrill.dispose();
+      codec.dispose();
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+    }, skip: isFirefox || isSafari);
 
     test('can detect JPEG from just magic number', () async {
       expect(

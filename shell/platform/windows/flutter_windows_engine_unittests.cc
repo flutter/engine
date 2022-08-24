@@ -129,7 +129,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   // Set the AngleSurfaceManager to !nullptr to test ANGLE rendering.
   modifier.SetSurfaceManager(reinterpret_cast<AngleSurfaceManager*>(1));
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
 
   EXPECT_TRUE(run_called);
   EXPECT_TRUE(update_locales_called);
@@ -206,7 +206,7 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
   // Set the AngleSurfaceManager to nullptr to test software fallback path.
   modifier.SetSurfaceManager(nullptr);
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
 
   EXPECT_TRUE(run_called);
 
@@ -351,7 +351,7 @@ TEST(FlutterWindowsEngine, AddPluginRegistrarDestructionCallback) {
   MockEmbedderApiForKeyboard(modifier,
                              std::make_shared<MockKeyResponseController>());
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
 
   // Verify that destruction handlers don't overwrite each other.
   int result1 = 0;
@@ -387,6 +387,26 @@ TEST(FlutterWindowsEngine, ScheduleFrame) {
 
   engine->ScheduleFrame();
   EXPECT_TRUE(called);
+}
+
+TEST(FlutterWindowsEngine, SetNextFrameCallback) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  bool called = false;
+  modifier.embedder_api().SetNextFrameCallback = MOCK_ENGINE_PROC(
+      SetNextFrameCallback, ([&called](auto engine, auto callback, auto data) {
+        called = true;
+        return kSuccess;
+      }));
+
+  engine->SetNextFrameCallback([]() {});
+  EXPECT_TRUE(called);
+}
+
+TEST(FlutterWindowsEngine, GetExecutableName) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EXPECT_EQ(engine->GetExecutableName(), "flutter_windows_unittests.exe");
 }
 
 }  // namespace testing

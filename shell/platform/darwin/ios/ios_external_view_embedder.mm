@@ -65,7 +65,13 @@ std::vector<SkCanvas*> IOSExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+std::vector<DisplayListBuilder*> IOSExternalViewEmbedder::GetCurrentBuilders() {
+  FML_CHECK(platform_views_controller_);
+  return platform_views_controller_->GetCurrentBuilders();
+}
+
+// |ExternalViewEmbedder|
+EmbedderPaintContext IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
   FML_CHECK(platform_views_controller_);
   return platform_views_controller_->CompositeEmbeddedView(view_id);

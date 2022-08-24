@@ -59,7 +59,10 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
+
+  // |ExternalViewEmbedder|
+  EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
