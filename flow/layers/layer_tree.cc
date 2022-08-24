@@ -110,24 +110,12 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     return;
   }
 
-  SkISize canvas_size = frame.canvas()->getBaseLayerSize();
-  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
-  internal_nodes_canvas.addCanvas(frame.canvas());
-  if (frame.view_embedder() != nullptr) {
-    auto overlay_canvases = frame.view_embedder()->GetCurrentCanvases();
-    for (size_t i = 0; i < overlay_canvases.size(); i++) {
-      internal_nodes_canvas.addCanvas(overlay_canvases[i]);
-    }
-  }
   DisplayListBuilder* builder = frame.display_list_builder();
-  DisplayListBuilderMultiplexer builder_multiplexer;
+  LayerStateStack state_stack;
   if (builder) {
-    builder_multiplexer.addBuilder(builder);
-    if (frame.view_embedder()) {
-      for (auto* view_builder : frame.view_embedder()->GetCurrentBuilders()) {
-        builder_multiplexer.addBuilder(view_builder);
-      }
-    }
+    state_stack.setBuilderDelegate(builder);
+  } else {
+    state_stack.setCanvasDelegate(frame.canvas());
   }
 
   // clear the previous snapshots.
@@ -142,8 +130,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   PaintContext context = {
       // clang-format off
-      .internal_nodes_canvas         = &internal_nodes_canvas,
-      .leaf_nodes_canvas             = frame.canvas(),
+      .state_stack                   = state_stack,
+      .canvas                        = frame.canvas(),
       .gr_context                    = frame.gr_context(),
       .dst_color_space               = color_space,
       .view_embedder                 = frame.view_embedder(),
@@ -156,8 +144,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
       .inherited_opacity             = SK_Scalar1,
-      .leaf_nodes_builder            = builder,
-      .builder_multiplexer           = builder ? &builder_multiplexer : nullptr,
+      .builder                       = builder
       // clang-format on
   };
 
@@ -177,7 +164,7 @@ sk_sp<DisplayList> LayerTree::Flatten(
     GrDirectContext* gr_context) {
   TRACE_EVENT0("flutter", "LayerTree::Flatten");
 
-  DisplayListCanvasRecorder builder(bounds);
+  DisplayListCanvasRecorder recorder(bounds);
 
   MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
@@ -203,16 +190,13 @@ sk_sp<DisplayList> LayerTree::Flatten(
       // clang-format on
   };
 
-  SkISize canvas_size = builder.getBaseLayerSize();
-  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
-  internal_nodes_canvas.addCanvas(&builder);
-  DisplayListBuilderMultiplexer multiplexer;
-  multiplexer.addBuilder(builder.builder().get());
+  LayerStateStack state_stack;
+  state_stack.setBuilderDelegate(recorder.builder().get());
 
   PaintContext paint_context = {
       // clang-format off
-      .internal_nodes_canvas         = &internal_nodes_canvas,
-      .leaf_nodes_canvas             = &builder,
+      .state_stack                   = state_stack,
+      .canvas                        = &recorder,
       .gr_context                    = gr_context,
       .dst_color_space               = nullptr,
       .view_embedder                 = nullptr,
@@ -224,8 +208,7 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = nullptr,
       .enable_leaf_layer_tracing     = false,
-      .leaf_nodes_builder            = builder.builder().get(),
-      .builder_multiplexer           = &multiplexer,
+      .builder                       = recorder.builder().get(),
       // clang-format on
   };
 
@@ -239,7 +222,7 @@ sk_sp<DisplayList> LayerTree::Flatten(
     }
   }
 
-  return builder.Build();
+  return recorder.Build();
 }
 
 }  // namespace flutter

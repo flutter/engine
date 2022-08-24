@@ -84,32 +84,19 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  AutoCachePaint cache_paint(context);
-  if (context.raster_cache) {
-    if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setImageFilter(transformed_filter_.get());
-    }
-    if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
-      return;
-    }
-  }
+  // AutoCachePaint cache_paint(context);
+  // if (context.raster_cache) {
+  //   if (layer_raster_cache_item_->IsCacheChildren()) {
+  //     cache_paint.setImageFilter(transformed_filter_.get());
+  //   }
+  //   if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+  //     return;
+  //   }
+  // }
 
-  cache_paint.setImageFilter(filter_.get());
-  if (context.leaf_nodes_builder) {
-    FML_DCHECK(context.builder_multiplexer);
-    context.builder_multiplexer->saveLayer(&child_paint_bounds(),
-                                           cache_paint.dl_paint());
-    PaintChildren(context);
-    context.builder_multiplexer->restore();
-  } else {
-    // Normally a save_layer is sized to the current layer bounds, but in this
-    // case the bounds of the child may not be the same as the filtered version
-    // so we use the bounds of the child container which do not include any
-    // modifications that the filter might apply.
-    Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-        context, child_paint_bounds(), cache_paint.sk_paint());
-    PaintChildren(context);
-  }
+  auto save =
+      context.state_stack.saveWithImageFilter(&child_paint_bounds(), filter_);
+  PaintChildren(context);
 }
 
 }  // namespace flutter

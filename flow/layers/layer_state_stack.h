@@ -6,17 +6,15 @@
 #define FLUTTER_FLOW_LAYERS_LAYER_STATE_STACK_H_
 
 #include "flutter/display_list/display_list_builder.h"
-#include "layer.h"
 
 namespace flutter {
 
 class LayerStateStack {
  public:
-  LayerStateStack();
+  LayerStateStack() = default;
 
   void setCanvasDelegate(SkCanvas* canvas);
   void setBuilderDelegate(DisplayListBuilder* canvas);
-  void setMutatorDelegate(MutatorsStack* mutators);
 
   class AutoRestore {
    public:
@@ -27,10 +25,13 @@ class LayerStateStack {
     friend class LayerStateStack;
 
     LayerStateStack* stack_;
-    const int stack_restore_count_;
+    const size_t stack_restore_count_;
   };
 
   [[nodiscard]] AutoRestore save();
+  [[nodiscard]] AutoRestore saveLayer(const SkRect* bounds);
+  [[nodiscard]] AutoRestore saveWithOpacity(const SkRect* bounds,
+                                            SkScalar opacity);
   [[nodiscard]] AutoRestore saveWithImageFilter(
       const SkRect* bounds,
       const std::shared_ptr<const DlImageFilter> filter);
@@ -39,39 +40,46 @@ class LayerStateStack {
       const std::shared_ptr<const DlColorFilter> filter);
   [[nodiscard]] AutoRestore saveWithBackdropFilter(
       const SkRect* bounds,
-      const std::shared_ptr<const DlImageFilter> filter);
+      const std::shared_ptr<const DlImageFilter> filter,
+      DlBlendMode blend_mode);
 
   void translate(SkScalar tx, SkScalar ty);
-  void transform(SkM44& matrix);
-  void transform(SkMatrix& matrix);
+  void transform(const SkM44& matrix);
+  void transform(const SkMatrix& matrix);
 
-  void clipRect(const SkRect& rect, SkClipOp op, bool is_aa);
-  void clipRRect(const SkRRect& rect, SkClipOp op, bool is_aa);
-  void clipPath(const SkPath& rect, SkClipOp op, bool is_aa);
+  void clipRect(const SkRect& rect, bool is_aa);
+  void clipRRect(const SkRRect& rect, bool is_aa);
+  void clipPath(const SkPath& rect, bool is_aa);
 
  private:
-  int getStackCount();
-  void restoreToCount(int restore_count);
+  size_t getStackCount() { return state_stack_.size(); }
+  void restoreToCount(size_t restore_count);
 
   class StateEntry {
    public:
+    virtual ~StateEntry() = default;
+
     virtual void apply(SkCanvas* canvas, DisplayListBuilder* builder) const = 0;
+    virtual void restore(SkCanvas* canvas, DisplayListBuilder* builder) const {}
     virtual bool is_backdrop_filter() const { return false; }
   };
 
   class SaveEntry : public StateEntry {
    public:
     SaveEntry() = default;
+
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    virtual void restore(SkCanvas* canvas,
+                         DisplayListBuilder* builder) const override;
   };
 
-  class SaveLayerEntry : public StateEntry {
+  class SaveLayerEntry : public SaveEntry {
    public:
     SaveLayerEntry(const SkRect* bounds)
         : bounds_(bounds ? *bounds : SkRect::MakeEmpty()),
           has_bounds_(bounds != nullptr) {}
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    protected:
     const SkRect bounds_;
@@ -82,14 +90,25 @@ class LayerStateStack {
     }
   };
 
+  class OpacityEntry : public SaveLayerEntry {
+   public:
+    OpacityEntry(const SkRect* bounds, SkScalar opacity)
+        : SaveLayerEntry(bounds), opacity_(opacity) {}
+
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+
+   private:
+    const SkScalar opacity_;
+  };
+
   class ImageFilterEntry : public SaveLayerEntry {
    public:
     ImageFilterEntry(const SkRect* bounds,
                      const std::shared_ptr<const DlImageFilter> filter)
         : SaveLayerEntry(bounds), filter_(filter) {}
+    ~ImageFilterEntry() override = default;
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const std::shared_ptr<const DlImageFilter> filter_;
@@ -100,9 +119,9 @@ class LayerStateStack {
     ColorFilterEntry(const SkRect* bounds,
                      const std::shared_ptr<const DlColorFilter> filter)
         : SaveLayerEntry(bounds), filter_(filter) {}
+    ~ColorFilterEntry() override = default;
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const std::shared_ptr<const DlColorFilter> filter_;
@@ -111,16 +130,18 @@ class LayerStateStack {
   class BackdropFilterEntry : public SaveLayerEntry {
    public:
     BackdropFilterEntry(const SkRect* bounds,
-                        const std::shared_ptr<const DlImageFilter> filter)
-        : SaveLayerEntry(bounds), filter_(filter) {}
+                        const std::shared_ptr<const DlImageFilter> filter,
+                        DlBlendMode blend_mode)
+        : SaveLayerEntry(bounds), filter_(filter), blend_mode_(blend_mode) {}
+    ~BackdropFilterEntry() override = default;
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
     bool is_backdrop_filter() const override { return false; }
 
    private:
     const std::shared_ptr<const DlImageFilter> filter_;
+    const DlBlendMode blend_mode_;
   };
 
   class TransformEntry : public StateEntry {};
@@ -129,8 +150,7 @@ class LayerStateStack {
    public:
     TranslateEntry(SkScalar tx, SkScalar ty) : tx_(tx), ty_(ty) {}
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const SkScalar tx_;
@@ -139,10 +159,9 @@ class LayerStateStack {
 
   class TransformMatrixEntry : public TransformEntry {
    public:
-    TransformMatrixEntry(SkMatrix& matrix) : matrix_(matrix) {}
+    TransformMatrixEntry(const SkMatrix& matrix) : matrix_(matrix) {}
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const SkMatrix matrix_;
@@ -150,10 +169,9 @@ class LayerStateStack {
 
   class TransformM44Entry : public TransformEntry {
    public:
-    TransformM44Entry(SkM44 m44) : m44_(m44) {}
+    TransformM44Entry(const SkM44& m44) : m44_(m44) {}
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const SkM44 m44_;
@@ -161,40 +179,40 @@ class LayerStateStack {
 
   class ClipEntry : public StateEntry {
    protected:
-    ClipEntry(SkClipOp op, bool is_aa) : clip_op_(op), is_aa_(is_aa) {}
+    ClipEntry(bool is_aa) : is_aa_(is_aa) {}
 
-    const SkClipOp clip_op_;
     const bool is_aa_;
   };
 
   class ClipRectEntry : public ClipEntry {
-    ClipRectEntry(const SkRect& rect, SkClipOp op, bool is_aa)
-        : ClipEntry(op, is_aa), rect_(rect) {}
+   public:
+    ClipRectEntry(const SkRect& rect, bool is_aa)
+        : ClipEntry(is_aa), rect_(rect) {}
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const SkRect rect_;
   };
 
   class ClipRRectEntry : public ClipEntry {
-    ClipRRectEntry(const SkRRect& rrect, SkClipOp op, bool is_aa)
-        : ClipEntry(op, is_aa), rrect_(rrect) {}
+   public:
+    ClipRRectEntry(const SkRRect& rrect, bool is_aa)
+        : ClipEntry(is_aa), rrect_(rrect) {}
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const SkRRect rrect_;
   };
 
   class ClipPathEntry : public ClipEntry {
-    ClipPathEntry(const SkPath& path, SkClipOp op, bool is_aa)
-        : ClipEntry(op, is_aa), path_(path) {}
+   public:
+    ClipPathEntry(const SkPath& path, bool is_aa)
+        : ClipEntry(is_aa), path_(path) {}
+    ~ClipPathEntry() override = default;
 
-    void apply(SkCanvas* canvas,
-               DisplayListBuilder* builder) const override = 0;
+    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    private:
     const SkPath path_;
@@ -206,7 +224,6 @@ class LayerStateStack {
   int canvas_restore_count_;
   DisplayListBuilder* builder_ = nullptr;
   int builder_restore_count_;
-  MutatorsStack* mutators_ = nullptr;
 };
 
 }  // namespace flutter

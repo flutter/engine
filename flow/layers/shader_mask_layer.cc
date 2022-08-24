@@ -56,30 +56,25 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   }
   auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
 
-  if (context.leaf_nodes_builder) {
-    context.builder_multiplexer->saveLayer(&paint_bounds(),
-                                           cache_paint.dl_paint());
-    PaintChildren(context);
+  auto save = context.state_stack.saveLayer(&paint_bounds());
+  PaintChildren(context);
 
+  if (context.builder) {
     DlPaint dl_paint;
     dl_paint.setBlendMode(blend_mode_);
     if (color_source_) {
       dl_paint.setColorSource(color_source_.get());
     }
-    context.leaf_nodes_builder->translate(mask_rect_.left(), mask_rect_.top());
-    context.leaf_nodes_builder->drawRect(shader_rect, dl_paint);
-    context.builder_multiplexer->restore();
+    context.builder->translate(mask_rect_.left(), mask_rect_.top());
+    context.builder->drawRect(shader_rect, dl_paint);
   } else {
-    Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-        context, paint_bounds(), cache_paint.sk_paint());
-    PaintChildren(context);
     SkPaint paint;
     paint.setBlendMode(ToSk(blend_mode_));
     if (color_source_) {
       paint.setShader(color_source_->skia_object());
     }
-    context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
-    context.leaf_nodes_canvas->drawRect(shader_rect, paint);
+    context.canvas->translate(mask_rect_.left(), mask_rect_.top());
+    context.canvas->drawRect(shader_rect, paint);
   }
 }
 

@@ -6,10 +6,6 @@
 
 namespace flutter {
 
-LayerStateStack::LayerStateStack() {
-  state_stack_.emplace_back(SkM44());
-}
-
 void LayerStateStack::setCanvasDelegate(SkCanvas* canvas) {
   if (canvas_) {
     canvas_->restoreToCount(canvas_restore_count_);
@@ -60,12 +56,23 @@ LayerStateStack::AutoRestore::~AutoRestore() {
 LayerStateStack::AutoRestore LayerStateStack::save() {
   auto ret = LayerStateStack::AutoRestore(this);
   state_stack_.emplace_back(std::make_unique<SaveEntry>());
-  if (canvas_) {
-    canvas_->save();
-  }
-  if (builder_) {
-    builder_->save();
-  }
+  state_stack_.back()->apply(canvas_, builder_);
+  return ret;
+}
+
+LayerStateStack::AutoRestore LayerStateStack::saveLayer(const SkRect* bounds) {
+  auto ret = LayerStateStack::AutoRestore(this);
+  state_stack_.emplace_back(std::make_unique<SaveLayerEntry>(bounds));
+  state_stack_.back()->apply(canvas_, builder_);
+  return ret;
+}
+
+LayerStateStack::AutoRestore LayerStateStack::saveWithOpacity(
+    const SkRect* bounds,
+    SkScalar opacity) {
+  auto ret = LayerStateStack::AutoRestore(this);
+  state_stack_.emplace_back(std::make_unique<OpacityEntry>(bounds, opacity));
+  state_stack_.back()->apply(canvas_, builder_);
   return ret;
 }
 
@@ -89,10 +96,11 @@ LayerStateStack::AutoRestore LayerStateStack::saveWithColorFilter(
 
 LayerStateStack::AutoRestore LayerStateStack::saveWithBackdropFilter(
     const SkRect* bounds,
-    const std::shared_ptr<const DlImageFilter> filter) {
+    const std::shared_ptr<const DlImageFilter> filter,
+    DlBlendMode blend_mode) {
   auto ret = LayerStateStack::AutoRestore(this);
   state_stack_.emplace_back(
-      std::make_unique<BackdropFilterEntry>(bounds, filter));
+      std::make_unique<BackdropFilterEntry>(bounds, filter, blend_mode));
   state_stack_.back()->apply(canvas_, builder_);
   return ret;
 }
@@ -102,29 +110,81 @@ void LayerStateStack::translate(SkScalar tx, SkScalar ty) {
   state_stack_.back()->apply(canvas_, builder_);
 }
 
-void LayerStateStack::transform(SkMatrix& matrix) {
+void LayerStateStack::transform(const SkMatrix& matrix) {
   state_stack_.emplace_back(std::make_unique<TransformMatrixEntry>(matrix));
   state_stack_.back()->apply(canvas_, builder_);
 }
 
-void LayerStateStack::transform(SkM44& matrix) {
+void LayerStateStack::transform(const SkM44& matrix) {
   state_stack_.emplace_back(std::make_unique<TransformM44Entry>(matrix));
   state_stack_.back()->apply(canvas_, builder_);
 }
 
-void LayerStateStack::clipRect(const SkRect& rect, SkClipOp op, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipRectEntry>(rect, op, is_aa));
+void LayerStateStack::clipRect(const SkRect& rect, bool is_aa) {
+  state_stack_.emplace_back(std::make_unique<ClipRectEntry>(rect, is_aa));
   state_stack_.back()->apply(canvas_, builder_);
 }
 
-void LayerStateStack::clipRRect(const SkRRect& rrect, SkClipOp op, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipRRectEntry>(rrect, op, is_aa));
+void LayerStateStack::clipRRect(const SkRRect& rrect, bool is_aa) {
+  state_stack_.emplace_back(std::make_unique<ClipRRectEntry>(rrect, is_aa));
   state_stack_.back()->apply(canvas_, builder_);
 }
 
-void LayerStateStack::clipPath(const SkPath& path, SkClipOp op, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipPathEntry>(path, op, is_aa));
+void LayerStateStack::clipPath(const SkPath& path, bool is_aa) {
+  state_stack_.emplace_back(std::make_unique<ClipPathEntry>(path, is_aa));
   state_stack_.back()->apply(canvas_, builder_);
+}
+
+void LayerStateStack::restoreToCount(size_t restore_count) {
+  while (state_stack_.size() > restore_count) {
+    state_stack_.back()->restore(canvas_, builder_);
+    state_stack_.pop_back();
+  }
+}
+
+void LayerStateStack::SaveEntry::apply(SkCanvas* canvas,
+                                       DisplayListBuilder* builder) const {
+  if (canvas) {
+    canvas->save();
+  }
+  if (builder) {
+    builder->save();
+  }
+}
+
+void LayerStateStack::SaveEntry::restore(SkCanvas* canvas,
+                                         DisplayListBuilder* builder) const {
+  if (canvas) {
+    canvas->restore();
+  }
+  if (builder) {
+    builder->restore();
+  }
+  // Draw checkerboard if this was a SaveLayer...
+}
+
+void LayerStateStack::SaveLayerEntry::apply(SkCanvas* canvas,
+                                            DisplayListBuilder* builder) const {
+  if (canvas) {
+    canvas->saveLayer(save_bounds(), nullptr);
+  }
+  if (builder) {
+    builder->saveLayer(save_bounds(), nullptr);
+  }
+}
+
+void LayerStateStack::OpacityEntry::apply(SkCanvas* canvas,
+                                          DisplayListBuilder* builder) const {
+  if (canvas) {
+    SkPaint paint;
+    paint.setAlphaf(opacity_);
+    canvas->saveLayer(save_bounds(), &paint);
+  }
+  if (builder) {
+    DlPaint paint;
+    paint.setAlpha(SkScalarRoundToInt(opacity_ * 255));
+    builder->saveLayer(save_bounds(), &paint);
+  }
 }
 
 void LayerStateStack::ImageFilterEntry::apply(
@@ -162,11 +222,24 @@ void LayerStateStack::BackdropFilterEntry::apply(
     DisplayListBuilder* builder) const {
   if (canvas) {
     sk_sp<SkImageFilter> backdrop_filter = filter_->skia_object();
-    canvas->saveLayer(SkCanvas::SaveLayerRec{save_bounds(), nullptr,
-                                             backdrop_filter.get(), 0});
+    if (blend_mode_ != DlBlendMode::kSrcOver) {
+      SkPaint paint;
+      paint.setBlendMode(ToSk(blend_mode_));
+      canvas->saveLayer(SkCanvas::SaveLayerRec{save_bounds(), &paint,
+                                               backdrop_filter.get(), 0});
+    } else {
+      canvas->saveLayer(SkCanvas::SaveLayerRec{save_bounds(), nullptr,
+                                               backdrop_filter.get(), 0});
+    }
   }
   if (builder) {
-    builder->saveLayer(save_bounds(), nullptr, filter_.get());
+    if (blend_mode_ != DlBlendMode::kSrcOver) {
+      DlPaint paint;
+      paint.setBlendMode(blend_mode_);
+      builder->saveLayer(save_bounds(), &paint, filter_.get());
+    } else {
+      builder->saveLayer(save_bounds(), nullptr, filter_.get());
+    }
   }
 }
 
@@ -205,30 +278,30 @@ void LayerStateStack::TransformM44Entry::apply(
 void LayerStateStack::ClipRectEntry::apply(SkCanvas* canvas,
                                            DisplayListBuilder* builder) const {
   if (canvas != nullptr) {
-    canvas->clipRect(rect_, clip_op_, is_aa_);
+    canvas->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
   }
   if (builder != nullptr) {
-    builder->clipRect(rect_, clip_op_, is_aa_);
+    builder->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
   }
 }
 
 void LayerStateStack::ClipRRectEntry::apply(SkCanvas* canvas,
                                             DisplayListBuilder* builder) const {
   if (canvas != nullptr) {
-    canvas->clipRRect(rrect_, clip_op_, is_aa_);
+    canvas->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
   }
   if (builder != nullptr) {
-    builder->clipRRect(rrect_, clip_op_, is_aa_);
+    builder->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
   }
 }
 
 void LayerStateStack::ClipPathEntry::apply(SkCanvas* canvas,
                                            DisplayListBuilder* builder) const {
   if (canvas != nullptr) {
-    canvas->clipPath(path_, clip_op_, is_aa_);
+    canvas->clipPath(path_, SkClipOp::kIntersect, is_aa_);
   }
   if (builder != nullptr) {
-    builder->clipPath(path_, clip_op_, is_aa_);
+    builder->clipPath(path_, SkClipOp::kIntersect, is_aa_);
   }
 }
 

@@ -48,29 +48,20 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  if (context.raster_cache) {
-    AutoCachePaint cache_paint(context);
-    if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setColorFilter(filter_.get());
-    }
-    if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
-      return;
-    }
-  }
+  // if (context.raster_cache) {
+  //   AutoCachePaint cache_paint(context);
+  //   if (layer_raster_cache_item_->IsCacheChildren()) {
+  //     cache_paint.setColorFilter(filter_.get());
+  //   }
+  //   if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+  //     return;
+  //   }
+  // }
 
-  AutoCachePaint cache_paint(context);
-  cache_paint.setColorFilter(filter_.get());
-  if (context.leaf_nodes_builder) {
-    FML_DCHECK(context.builder_multiplexer);
-    context.builder_multiplexer->saveLayer(&paint_bounds(),
-                                           cache_paint.dl_paint());
-    PaintChildren(context);
-    context.builder_multiplexer->restore();
-  } else {
-    Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-        context, paint_bounds(), cache_paint.sk_paint());
-    PaintChildren(context);
-  }
+  // AutoCachePaint cache_paint(context);
+  // cache_paint.setColorFilter(filter_.get());
+  auto save = context.state_stack.saveWithColorFilter(&paint_bounds(), filter_);
+  PaintChildren(context);
 }
 
 }  // namespace flutter

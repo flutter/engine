@@ -79,23 +79,22 @@ class ClipShapeLayer : public CacheableContainerLayer {
   void Paint(PaintContext& context) const override {
     FML_DCHECK(needs_painting(context));
 
-    SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
-    OnCanvasClipShape(context.internal_nodes_canvas);
+    auto save = context.state_stack.save();
+    OnStackClipShape(context.state_stack);
 
     if (!UsesSaveLayer()) {
       PaintChildren(context);
       return;
     }
 
-    AutoCachePaint cache_paint(context);
-    if (context.raster_cache) {
-      if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
-        return;
-      }
-    }
+    // AutoCachePaint cache_paint(context);
+    // if (context.raster_cache) {
+    //   if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+    //     return;
+    //   }
+    // }
 
-    Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-        context, paint_bounds(), cache_paint.sk_paint());
+    auto save_layer = context.state_stack.saveLayer(&paint_bounds());
     PaintChildren(context);
   }
 
@@ -106,7 +105,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
  protected:
   virtual const SkRect& clip_shape_bounds() const = 0;
   virtual void OnMutatorsStackPushClipShape(MutatorsStack& mutators_stack) = 0;
-  virtual void OnCanvasClipShape(SkCanvas* canvas) const = 0;
+  virtual void OnStackClipShape(LayerStateStack& stack) const = 0;
   virtual ~ClipShapeLayer() = default;
 
   const ClipShape& clip_shape() const { return clip_shape_; }

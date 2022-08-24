@@ -62,11 +62,11 @@ void MockLayer::Paint(PaintContext& context) const {
   if (context.inherited_opacity < SK_Scalar1) {
     SkPaint p;
     p.setAlphaf(context.inherited_opacity);
-    context.leaf_nodes_canvas->saveLayer(fake_paint_path_.getBounds(), &p);
+    context.canvas->saveLayer(fake_paint_path_.getBounds(), &p);
   }
-  context.leaf_nodes_canvas->drawPath(fake_paint_path_, fake_paint_);
+  context.canvas->drawPath(fake_paint_path_, fake_paint_);
   if (context.inherited_opacity < SK_Scalar1) {
-    context.leaf_nodes_canvas->restore();
+    context.canvas->restore();
   }
 }
 

@@ -56,10 +56,11 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   recorder.drawPath(path, SkPaint());
   sk_sp<DisplayList> display_list = recorder.Build();
 
+  LayerStateStack state_stack;
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PaintContextHolder holder =
-      GetSamplePaintContextHolder(this, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, this, &raster_time, &ui_time);
   holder.paint_context.dst_color_space = color_space_;
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
@@ -117,14 +118,15 @@ PrerollContextHolder GetSamplePrerollContextHolder(
 }
 
 PaintContextHolder GetSamplePaintContextHolder(
+    LayerStateStack& state_stack,
     RasterCache* raster_cache,
     FixedRefreshRateStopwatch* raster_time,
     FixedRefreshRateStopwatch* ui_time) {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
   PaintContextHolder holder = {// clang-format off
     {
-          .internal_nodes_canvas         = nullptr,
-          .leaf_nodes_canvas             = nullptr,
+          .state_stack                   = state_stack,
+          .canvas                        = nullptr,
           .gr_context                    = nullptr,
           .dst_color_space               = srgb.get(),
           .view_embedder                 = nullptr,

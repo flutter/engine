@@ -77,12 +77,16 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
+  //
+  // Is this layer even used any more ????
+  //
+
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   if (elevation_ != 0) {
     DisplayListCanvasDispatcher::DrawShadow(
-        context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
+        context.canvas, path_, shadow_color_, elevation_,
         SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
@@ -91,21 +95,21 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   paint.setColor(color_);
   paint.setAntiAlias(true);
   if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
-    context.leaf_nodes_canvas->drawPath(path_, paint);
+    context.canvas->drawPath(path_, paint);
   }
 
-  int saveCount = context.internal_nodes_canvas->save();
+  int saveCount = context.canvas->save();
   switch (clip_behavior_) {
     case Clip::hardEdge:
-      context.internal_nodes_canvas->clipPath(path_, false);
+      context.canvas->clipPath(path_, false);
       break;
     case Clip::antiAlias:
-      context.internal_nodes_canvas->clipPath(path_, true);
+      context.canvas->clipPath(path_, true);
       break;
     case Clip::antiAliasWithSaveLayer: {
       TRACE_EVENT0("flutter", "Canvas::saveLayer");
-      context.internal_nodes_canvas->clipPath(path_, true);
-      context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
+      context.canvas->clipPath(path_, true);
+      context.canvas->saveLayer(paint_bounds(), nullptr);
     } break;
     case Clip::none:
       break;
@@ -116,16 +120,16 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
     // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
     // using saveLayer, we have to call drawPaint instead of drawPath as
     // anti-aliased drawPath will always have such artifacts.
-    context.leaf_nodes_canvas->drawPaint(paint);
+    context.canvas->drawPaint(paint);
   }
 
   PaintChildren(context);
 
-  context.internal_nodes_canvas->restoreToCount(saveCount);
+  context.canvas->restoreToCount(saveCount);
 
   if (UsesSaveLayer()) {
     if (context.checkerboard_offscreen_layers) {
-      DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
+      // DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
     }
   }
 }

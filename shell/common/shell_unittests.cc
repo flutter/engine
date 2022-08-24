@@ -2382,10 +2382,11 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
         MutatorsStack mutators_stack;
+        LayerStateStack state_stack;
         PaintContext paint_context = {
             // clang-format off
-            .internal_nodes_canvas         = nullptr,
-            .leaf_nodes_canvas             = nullptr,
+            .state_stack                   = state_stack,
+            .canvas                        = nullptr,
             .gr_context                    = nullptr,
             .dst_color_space               = nullptr,
             .view_embedder                 = nullptr,

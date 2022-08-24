@@ -102,14 +102,11 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
                const PaintContext& paint_context,
                SkCanvas* canvas) {
   FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
-  SkISize canvas_size = canvas->getBaseLayerSize();
-  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
-  internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
-  internal_nodes_canvas.addCanvas(canvas);
+  LayerStateStack state_stack;
   PaintContext context = {
       // clang-format off
-          .internal_nodes_canvas         = static_cast<SkCanvas*>(&internal_nodes_canvas),
-          .leaf_nodes_canvas             = canvas,
+          .state_stack                   = state_stack,
+          .canvas                        = canvas,
           .gr_context                    = paint_context.gr_context,
           .dst_color_space               = paint_context.dst_color_space,
           .view_embedder                 = paint_context.view_embedder,
@@ -168,7 +165,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
 
 bool LayerRasterCacheItem::Draw(const PaintContext& context,
                                 const SkPaint* paint) const {
-  return Draw(context, context.leaf_nodes_canvas, paint);
+  return Draw(context, context.canvas, paint);
 }
 
 bool LayerRasterCacheItem::Draw(const PaintContext& context,

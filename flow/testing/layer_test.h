@@ -66,8 +66,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
         },
         paint_context_{
             // clang-format off
-            .internal_nodes_canvas         = TestT::mock_internal_canvas(),
-            .leaf_nodes_canvas             = &TestT::mock_canvas(),
+            .state_stack                   = canvas_state_stack_,
+            .canvas                        = &TestT::mock_canvas(),
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
@@ -79,11 +79,10 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         },
         display_list_recorder_(kDlBounds),
-        internal_display_list_canvas_(kDlBounds.width(), kDlBounds.height()),
         display_list_paint_context_{
             // clang-format off
-            .internal_nodes_canvas         = &internal_display_list_canvas_,
-            .leaf_nodes_canvas             = &display_list_recorder_,
+            .state_stack                   = display_list_state_stack_,
+            .canvas                        = &display_list_recorder_,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
@@ -92,14 +91,13 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .raster_cache                  = nullptr,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
-            .leaf_nodes_builder            = display_list_recorder_.builder().get(),
-            .builder_multiplexer           = &display_list_multiplexer_,
+            .builder                       = display_list_recorder_.builder().get(),
             // clang-format on
         },
         check_board_context_{
             // clang-format off
-            .internal_nodes_canvas         = TestT::mock_internal_canvas(),
-            .leaf_nodes_canvas             = &TestT::mock_canvas(),
+            .state_stack                   = canvas_state_stack_,
+            .canvas                        = &TestT::mock_canvas(),
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
@@ -110,9 +108,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {
-    internal_display_list_canvas_.addCanvas(&display_list_recorder_);
-    display_list_multiplexer_.addBuilder(
-        display_list_recorder_.builder().get());
+    canvas_state_stack_.setCanvasDelegate(&TestT::mock_canvas());
+    display_list_state_stack_.setCanvasDelegate(&display_list_recorder_);
     use_null_raster_cache();
   }
 
@@ -184,10 +181,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
       display_list_ = display_list_recorder_.Build();
       // null out the canvas and recorder fields of the PaintContext
       // to prevent future use.
-      display_list_paint_context_.leaf_nodes_canvas = nullptr;
-      display_list_paint_context_.internal_nodes_canvas = nullptr;
-      display_list_paint_context_.leaf_nodes_builder = nullptr;
-      display_list_paint_context_.builder_multiplexer = nullptr;
+      display_list_paint_context_.canvas = nullptr;
+      display_list_paint_context_.builder = nullptr;
     }
     return display_list_;
   }
@@ -218,10 +213,10 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   std::unique_ptr<RasterCache> raster_cache_;
   PrerollContext preroll_context_;
   PaintContext paint_context_;
+  LayerStateStack canvas_state_stack_;
   DisplayListCanvasRecorder display_list_recorder_;
-  DisplayListBuilderMultiplexer display_list_multiplexer_;
   sk_sp<DisplayList> display_list_;
-  SkNWayCanvas internal_display_list_canvas_;
+  LayerStateStack display_list_state_stack_;
   PaintContext display_list_paint_context_;
   PaintContext check_board_context_;
   LayerSnapshotStore snapshot_store_;

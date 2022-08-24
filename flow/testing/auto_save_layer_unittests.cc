@@ -9,6 +9,8 @@
 namespace flutter {
 namespace testing {
 
+#if 0
+
 using AutoSaveLayerTests = LayerTest;
 
 TEST_F(AutoSaveLayerTests, SaveLayerOnInternalNodesCanvasByDefault) {
@@ -112,6 +114,8 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnlyOnLeafNodesCanvas) {
               saved_count_before);
   }
 }
+
+#endif
 
 }  // namespace testing
 }  // namespace flutter

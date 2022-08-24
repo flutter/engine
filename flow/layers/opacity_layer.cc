@@ -83,8 +83,8 @@ void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
-  context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
+  auto save = context.state_stack.save();
+  context.state_stack.translate(offset_.fX, offset_.fY);
 
   SkScalar inherited_opacity = context.inherited_opacity;
   SkScalar subtree_opacity = opacity() * inherited_opacity;
@@ -116,8 +116,8 @@ void OpacityLayer::Paint(PaintContext& context) const {
       .makeOffset(-offset_.fX, -offset_.fY)
       .roundOut(&saveLayerBounds);
 
-  Layer::AutoSaveLayer save_layer =
-      Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
+  auto save_layer =
+      context.state_stack.saveWithOpacity(&saveLayerBounds, subtree_opacity);
   context.inherited_opacity = SK_Scalar1;
   PaintChildren(context);
   context.inherited_opacity = inherited_opacity;

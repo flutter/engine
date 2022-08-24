@@ -45,6 +45,8 @@ source_set("flow") {
     "layers/layer.h",
     "layers/layer_raster_cache_item.cc",
     "layers/layer_raster_cache_item.h",
+    "layers/layer_state_stack.cc",
+    "layers/layer_state_stack.h",
     "layers/layer_tree.cc",
     "layers/layer_tree.h",
     "layers/offscreen_surface.cc",

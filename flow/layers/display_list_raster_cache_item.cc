@@ -121,7 +121,7 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
                                       const SkPaint* paint) const {
-  return Draw(context, context.leaf_nodes_canvas, paint);
+  return Draw(context, context.canvas, paint);
 }
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,

@@ -109,58 +109,57 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   FML_DCHECK(display_list_.skia_object());
   FML_DCHECK(needs_painting(context));
 
-  SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
-  context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
+  auto save = context.state_stack.save();
+  context.state_stack.translate(offset_.x(), offset_.y());
 
-  if (context.raster_cache && display_list_raster_cache_item_) {
-    AutoCachePaint cache_paint(context);
-    if (display_list_raster_cache_item_->Draw(context,
-                                              cache_paint.sk_paint())) {
-      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-      return;
-    }
-  }
+  // if (context.raster_cache && display_list_raster_cache_item_) {
+  //   AutoCachePaint cache_paint(context);
+  //   if (display_list_raster_cache_item_->Draw(context,
+  //                                             cache_paint.sk_paint())) {
+  //     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+  //     return;
+  //   }
+  // }
 
-  if (context.enable_leaf_layer_tracing) {
-    const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
-    auto offscreen_surface =
-        std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
+  // if (context.enable_leaf_layer_tracing) {
+  //   const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
+  //   auto offscreen_surface =
+  //       std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
 
-    const auto& ctm = context.leaf_nodes_canvas->getTotalMatrix();
+  //   const auto& ctm = context.leaf_nodes_canvas->getTotalMatrix();
 
-    const auto start_time = fml::TimePoint::Now();
-    {
-      // render display list to offscreen surface.
-      auto* canvas = offscreen_surface->GetCanvas();
-      SkAutoCanvasRestore save(canvas, true);
-      canvas->clear(SK_ColorTRANSPARENT);
-      canvas->setMatrix(ctm);
-      display_list()->RenderTo(canvas, context.inherited_opacity);
-      canvas->flush();
-    }
-    const fml::TimeDelta offscreen_render_time =
-        fml::TimePoint::Now() - start_time;
+  //   const auto start_time = fml::TimePoint::Now();
+  //   {
+  //     // render display list to offscreen surface.
+  //     auto* canvas = offscreen_surface->GetCanvas();
+  //     SkAutoCanvasRestore save(canvas, true);
+  //     canvas->clear(SK_ColorTRANSPARENT);
+  //     canvas->setMatrix(ctm);
+  //     display_list()->RenderTo(canvas, context.inherited_opacity);
+  //     canvas->flush();
+  //   }
+  //   const fml::TimeDelta offscreen_render_time =
+  //       fml::TimePoint::Now() - start_time;
 
-    const SkRect device_bounds =
-        RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
-    sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
-    LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,
-                                    raster_data, device_bounds);
-    context.layer_snapshot_store->Add(snapshot_data);
-  }
+  //   const SkRect device_bounds =
+  //       RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
+  //   sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
+  //   LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,
+  //                                   raster_data, device_bounds);
+  //   context.layer_snapshot_store->Add(snapshot_data);
+  // }
 
-  if (context.leaf_nodes_builder) {
-    AutoCachePaint save_paint(context);
-    int restore_count = context.leaf_nodes_builder->getSaveCount();
-    if (save_paint.dl_paint() != nullptr) {
-      context.leaf_nodes_builder->saveLayer(&paint_bounds(),
-                                            save_paint.dl_paint());
-    }
-    context.leaf_nodes_builder->drawDisplayList(display_list_.skia_object());
-    context.leaf_nodes_builder->restoreToCount(restore_count);
+  if (context.builder) {
+    // AutoCachePaint save_paint(context);
+    // int restore_count = context.leaf_nodes_builder->getSaveCount();
+    // if (save_paint.dl_paint() != nullptr) {
+    //   context.leaf_nodes_builder->saveLayer(&paint_bounds(),
+    //                                         save_paint.dl_paint());
+    // }
+    context.builder->drawDisplayList(display_list_.skia_object());
+    // context.leaf_nodes_builder->restoreToCount(restore_count);
   } else {
-    display_list()->RenderTo(context.leaf_nodes_canvas,
-                             context.inherited_opacity);
+    display_list()->RenderTo(context.canvas, context.inherited_opacity);
   }
 }
 

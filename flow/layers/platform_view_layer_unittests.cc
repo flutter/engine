@@ -32,7 +32,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   EXPECT_FALSE(layer->subtree_has_platform_view());
 
   layer->Paint(paint_context());
-  EXPECT_EQ(paint_context().leaf_nodes_canvas, &mock_canvas());
+  EXPECT_EQ(paint_context().canvas, &mock_canvas());
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 
@@ -67,7 +67,7 @@ TEST_F(PlatformViewLayerTest, ClippedPlatformViewPrerollsAndPaintsNothing) {
   EXPECT_TRUE(parent_clip_layer->subtree_has_platform_view());
 
   parent_clip_layer->Paint(paint_context());
-  EXPECT_EQ(paint_context().leaf_nodes_canvas, &mock_canvas());
+  EXPECT_EQ(paint_context().canvas, &mock_canvas());
   EXPECT_EQ(
       mock_canvas().draw_calls(),
       std::vector(

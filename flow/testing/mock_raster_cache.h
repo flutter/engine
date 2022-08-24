@@ -67,6 +67,7 @@ class MockRasterCache : public RasterCache {
   void AddMockPicture(int width, int height);
 
  private:
+  LayerStateStack mock_state_stack_;
   MockCanvas mock_canvas_;
   SkColorSpace* color_space_ = mock_canvas_.imageInfo().colorSpace();
   MutatorsStack mutators_stack_;
@@ -95,8 +96,8 @@ class MockRasterCache : public RasterCache {
 
   PaintContext paint_context_ = {
       // clang-format off
-          .internal_nodes_canvas         = nullptr,
-          .leaf_nodes_canvas             = nullptr,
+          .state_stack                   = mock_state_stack_,
+          .canvas                        = nullptr,
           .gr_context                    = nullptr,
           .dst_color_space               = color_space_,
           .view_embedder                 = nullptr,
@@ -128,6 +129,7 @@ PrerollContextHolder GetSamplePrerollContextHolder(
     MutatorsStack* mutators_stack);
 
 PaintContextHolder GetSamplePaintContextHolder(
+    LayerStateStack& state_stack,
     RasterCache* raster_cache,
     FixedRefreshRateStopwatch* raster_time,
     FixedRefreshRateStopwatch* ui_time);

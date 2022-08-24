@@ -16,6 +16,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
+#include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
@@ -128,8 +129,8 @@ struct PaintContext {
   // and applies the operations to all canvases.
   // The leaf_nodes_canvas is the "current" canvas and is used by leaf
   // layers.
-  SkCanvas* internal_nodes_canvas;
-  SkCanvas* leaf_nodes_canvas;
+  LayerStateStack& state_stack;
+  SkCanvas* canvas;
   GrDirectContext* gr_context;
   SkColorSpace* dst_color_space;
   ExternalViewEmbedder* view_embedder;
@@ -152,8 +153,7 @@ struct PaintContext {
   // |saveLayer| with an |SkPaint| initialized to this alphaf value and
   // a |kSrcOver| blend mode.
   SkScalar inherited_opacity = SK_Scalar1;
-  DisplayListBuilder* leaf_nodes_builder = nullptr;
-  DisplayListBuilderMultiplexer* builder_multiplexer = nullptr;
+  DisplayListBuilder* builder = nullptr;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -262,66 +262,6 @@ class Layer {
     }
   };
 
-  // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
-  // draws a checkerboard over the layer if that is enabled in the PaintContext.
-  class AutoSaveLayer {
-   public:
-    // Indicates which canvas the layer should be saved on.
-    //
-    // Usually layers are saved on the internal_nodes_canvas, so that all
-    // the canvas keep track of the current state of the layer tree.
-    // In some special cases, layers should only save on the leaf_nodes_canvas,
-    // See https:://flutter.dev/go/backdrop-filter-with-overlay-canvas for why
-    // it is the case for Backdrop filter layer.
-    enum SaveMode {
-      // The layer is saved on the internal_nodes_canvas.
-      kInternalNodesCanvas,
-      // The layer is saved on the leaf_nodes_canvas.
-      kLeafNodesCanvas
-    };
-
-    // Create a layer and save it on the canvas.
-    //
-    // The layer is restored from the canvas in destructor.
-    //
-    // By default, the layer is saved on and restored from
-    // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
-    // save the layer on other canvases.
-    [[nodiscard]] static AutoSaveLayer Create(
-        const PaintContext& paint_context,
-        const SkRect& bounds,
-        const SkPaint* paint,
-        SaveMode save_mode = SaveMode::kInternalNodesCanvas);
-    // Create a layer and save it on the canvas.
-    //
-    // The layer is restored from the canvas in destructor.
-    //
-    // By default, the layer is saved on and restored from
-    // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
-    // save the layer on other canvases.
-    [[nodiscard]] static AutoSaveLayer Create(
-        const PaintContext& paint_context,
-        const SkCanvas::SaveLayerRec& layer_rec,
-        SaveMode save_mode = SaveMode::kInternalNodesCanvas);
-
-    ~AutoSaveLayer();
-
-   private:
-    AutoSaveLayer(const PaintContext& paint_context,
-                  const SkRect& bounds,
-                  const SkPaint* paint,
-                  SaveMode save_mode = SaveMode::kInternalNodesCanvas);
-
-    AutoSaveLayer(const PaintContext& paint_context,
-                  const SkCanvas::SaveLayerRec& layer_rec,
-                  SaveMode save_mode = SaveMode::kInternalNodesCanvas);
-
-    const PaintContext& paint_context_;
-    const SkRect bounds_;
-    // The canvas that this layer is saved on and popped from.
-    SkCanvas& canvas_;
-  };
-
   virtual void Paint(PaintContext& context) const = 0;
 
   virtual void PaintChildren(PaintContext& context) const { FML_DCHECK(false); }
@@ -376,7 +316,7 @@ class Layer {
     if (paint_bounds_.isEmpty()) {
       return false;
     }
-    return !context.leaf_nodes_canvas->quickReject(paint_bounds_);
+    return !context.canvas->quickReject(paint_bounds_);
   }
 
   // Propagated unique_id of the first layer in "chain" of replacement layers

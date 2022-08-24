@@ -29,6 +29,7 @@ TEST(RasterCache, SimpleInitialization) {
 
 TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   size_t threshold = 2;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -44,7 +45,7 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -85,6 +86,7 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
 
 TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
   size_t threshold = 2;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -100,7 +102,7 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -133,6 +135,7 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
 
 TEST(RasterCache, SetCheckboardCacheImages) {
   size_t threshold = 1;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -141,7 +144,7 @@ TEST(RasterCache, SetCheckboardCacheImages) {
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& paint_context = paint_context_holder.paint_context;
   auto dummy_draw_function = [](SkCanvas* canvas) {};
   bool did_draw_checkerboard = false;
@@ -169,6 +172,7 @@ TEST(RasterCache, SetCheckboardCacheImages) {
 
 TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
   size_t threshold = 0;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -184,7 +188,7 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -198,6 +202,7 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
 
 TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
   size_t threshold = 0;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -213,7 +218,7 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -228,12 +233,12 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
 
 TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
   size_t picture_cache_limit_per_frame = 0;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(3, picture_cache_limit_per_frame);
 
   SkMatrix matrix = SkMatrix::I();
 
   auto display_list = GetSampleDisplayList();
-  ;
 
   SkCanvas dummy_canvas;
   SkPaint paint;
@@ -244,7 +249,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -265,6 +270,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
 
 TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
   size_t picture_cache_limit_per_frame = 0;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(3, picture_cache_limit_per_frame);
 
   SkMatrix matrix = SkMatrix::I();
@@ -280,7 +286,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -304,6 +310,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
 
 TEST(RasterCache, EvitUnusedCacheEntries) {
   size_t threshold = 1;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -320,7 +327,7 @@ TEST(RasterCache, EvitUnusedCacheEntries) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -410,6 +417,7 @@ TEST(RasterCache, ComputeDeviceRectBasedOnFractionalTranslation) {
 // triggering any assertions.
 TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
   size_t threshold = 1;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkRect logical_rect = SkRect::MakeLTRB(28, 0, 354.56731, 310.288);
@@ -430,7 +438,7 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -456,6 +464,7 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
 
 TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   size_t threshold = 1;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -473,7 +482,7 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -499,6 +508,7 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
       DisplayListNaiveComplexityCalculator::GetInstance();
 
   size_t threshold = 1;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
@@ -520,7 +530,7 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -566,6 +576,7 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
 
 TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
   size_t threshold = 2;
+  LayerStateStack state_stack;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrices[] = {
@@ -586,7 +597,7 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
       &cache, &raster_time, &ui_time, &mutators_stack);
   PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
