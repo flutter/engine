@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/canvaskit/renderer.dart';
+import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../font_change_util.dart';
@@ -74,6 +75,9 @@ class FontFallbackData {
   void ensureFontsSupportText(String text, List<String> fontFamilies) {
     // TODO(hterkelsen): Make this faster for the common case where the text
     // is supported by the given fonts.
+    if (ui.debugDisableFontFallbacks) {
+      return;
+    }
 
     // If the text is ASCII, then skip this check.
     bool isAscii = true;
@@ -134,7 +138,6 @@ class FontFallbackData {
         }
       }
       _codeUnitsToCheckAgainstFallbackFonts.addAll(missingCodeUnits);
-      print('CURRENT STACKTRACE !!!!!!!!!\n${StackTrace.current}');
       if (!_scheduledCodeUnitCheck) {
         _scheduledCodeUnitCheck = true;
         CanvasKitRenderer.instance.rasterizer.addPostFrameCallback(_ensureFallbackFonts);
@@ -258,9 +261,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   fonts.forEach(notoDownloadQueue.add);
 
   // We looked through the Noto font tree and didn't find any font families
-  // covering some code units, or we did find a font family, but when we
-  // downloaded the fonts we found that they actually didn't cover them. So
-  // we try looking them up in the symbols and emojis fonts.
+  // covering some code units.
   if (missingCodeUnits.isNotEmpty || unmatchedCodeUnits.isNotEmpty) {
     if (!notoDownloadQueue.isPending) {
       printWarning('Could not find a set of Noto fonts to display all missing '
@@ -355,13 +356,9 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
         }
       }
     }
-    print('BEST FONTS: ${bestFonts.map((f) => f.name).toList()}');
-    print('ADDING ${bestFont.name}');
-    print('CODE UNITS BEFORE: $codeUnits');
     codeUnits.removeWhere((int codeUnit) {
       return bestFont.contains(codeUnit);
     });
-    print('CODE UNITS AFTER: $codeUnits');
     minimumFonts.add(bestFont);
   }
   return minimumFonts;
@@ -413,7 +410,6 @@ class FallbackFontDownloadQueue {
     }
     final bool firstInBatch = pendingFonts.isEmpty;
     pendingFonts[font.url] = font;
-    print('ADDING ${font.name}');
     if (firstInBatch) {
       Timer.run(startDownloads);
     }

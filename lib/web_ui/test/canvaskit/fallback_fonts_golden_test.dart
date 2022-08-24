@@ -168,30 +168,6 @@ void testMain() {
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isSafari || isFirefox);
 
-    test('will gracefully fail if we cannot parse the Google Fonts CSS',
-        () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      TestDownloader.mockDownloads[
-              'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
-          'invalid CSS... this should cause our parser to fail';
-
-      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
-
-      // Creating this paragraph should cause us to start to download the
-      // fallback font.
-      final CkParagraphBuilder pb = CkParagraphBuilder(
-        CkParagraphStyle(),
-      );
-      pb.addText('مرحبا');
-
-      // Flush microtasks and test that we didn't start any downloads.
-      rasterizer.debugRunPostFrameCallbacks();
-      await Future<void>.delayed(Duration.zero);
-
-      expect(notoDownloadQueue.isPending, isFalse);
-      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
-    });
-
     // Regression test for https://github.com/flutter/flutter/issues/75836
     // When we had this bug our font fallback resolution logic would end up in an
     // infinite loop and this test would freeze and time out.
