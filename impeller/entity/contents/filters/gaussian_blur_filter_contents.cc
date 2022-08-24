@@ -112,7 +112,8 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   auto transformed_blur_radius_length = transformed_blur_radius.GetLength();
 
-  // If the radius length is < .5, the shader will take no samples.
+  // If the radius length is < .5, the shader will take at most 1 sample,
+  // resulting in no blur.
   if (transformed_blur_radius_length < .5) {
     return input_snapshot.value();  // No blur to render.
   }
