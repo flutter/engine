@@ -346,6 +346,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     return false;
   }
 
+  UpdateAccessibilityFeatures(queued_flags_);
+
   // Configure device frame rate displayed via devtools.
   FlutterEngineDisplay display = {};
   display.struct_size = sizeof(FlutterEngineDisplay);
@@ -605,6 +607,38 @@ std::string FlutterWindowsEngine::GetExecutableName() const {
     return executable_path.substr(last_separator + 1);
   }
   return "Flutter";
+}
+
+void FlutterWindowsEngine::UpdateAccessibilityFeatures(
+    FlutterAccessibilityFeature flags) {
+  if (!engine_) {
+    // Queue the accessibility flags to set them once the engine is available
+    queued_flags_ = flags;
+    return;
+  }
+  embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
+}
+
+void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
+  int flags = EnabledAccessibilityFeatures();
+  if (enabled) {
+    flags |= FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  else {
+    flags &= ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
+}
+
+int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
+  int flags = 0;
+  if (high_contrast_enabled()) {
+    flags |=
+        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  // As more accessibility features are enabled for Windows,
+  // the corresponding checks and flags should be added here.
+  return flags;
 }
 
 }  // namespace flutter

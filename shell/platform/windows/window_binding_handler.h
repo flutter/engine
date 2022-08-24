@@ -89,6 +89,8 @@ class WindowBindingHandler {
   // Returns the last known position of the primary pointer in window
   // coordinates.
   virtual PointerLocation GetPrimaryPointerLocation() = 0;
+
+  virtual void AfterEngineSet() = 0;
 };
 
 }  // namespace flutter

@@ -56,6 +56,7 @@ void FlutterWindowsView::SetEngine(
   engine_ = std::move(engine);
 
   engine_->SetView(this);
+  binding_handler_->AfterEngineSet();
 
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(engine_->GetRegistrar());
