@@ -558,8 +558,6 @@ class RuntimeController : public PlatformConfigurationClient {
     return context_.snapshot_delegate;
   }
 
-  std::weak_ptr<DartIsolate> GetRootIsolate() { return root_isolate_; }
-
   std::weak_ptr<const DartIsolate> GetRootIsolate() const {
     return root_isolate_;
   }

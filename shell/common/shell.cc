@@ -20,7 +20,6 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
@@ -606,13 +605,6 @@ void Shell::RunEngine(
             if (run_result == flutter::Engine::RunStatus::Failure) {
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
-
-            // Enable platform channels for background isolates.
-            std::shared_ptr<DartIsolate> root_isolate =
-                weak_engine->GetRuntimeController()->GetRootIsolate().lock();
-            FML_DCHECK(root_isolate);
-            root_isolate->GetIsolateGroupData().SetPlatformMessageHandler(
-                root_isolate->GetRootIsolateId(), platform_message_handler);
 
             result(run_result);
           }));
