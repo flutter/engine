@@ -74,11 +74,8 @@ void PlatformMessageResponseDart::Complete(std::unique_ptr<fml::Mapping> data) {
         Dart_Handle byte_buffer;
         intptr_t size = data->GetSize();
         if (data->GetSize() > tonic::DartByteData::kExternalSizeThreshold) {
-          // The ByteData will be wrapped with an
-          // UnmodifiableByteDataView below to protect constness in
-          // Dart.
-          void* mapping = const_cast<uint8_t*>(data->GetMapping());
-          byte_buffer = Dart_NewExternalTypedDataWithFinalizer(
+          const void* mapping = data->GetMapping();
+          byte_buffer = Dart_NewUnmodifiableExternalTypedDataWithFinalizer(
               /*type=*/Dart_TypedData_kByteData,
               /*data=*/mapping,
               /*length=*/size,
@@ -89,16 +86,7 @@ void PlatformMessageResponseDart::Complete(std::unique_ptr<fml::Mapping> data) {
           byte_buffer =
               tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
         }
-        Dart_Handle ui_lib = Dart_LookupLibrary(
-            tonic::DartConverter<std::string>().ToDart("dart:ui"));
-        FML_DCHECK(!(Dart_IsNull(ui_lib) || Dart_IsError(ui_lib)));
-        Dart_Handle result =
-            Dart_Invoke(ui_lib,
-                        tonic::DartConverter<std::string>().ToDart(
-                            "_wrapUnmodifiableByteData"),
-                        1, &byte_buffer);
-        FML_DCHECK(!(Dart_IsNull(result) || Dart_IsError(result)));
-        return result;
+        return byte_buffer;
       });
 }
 
