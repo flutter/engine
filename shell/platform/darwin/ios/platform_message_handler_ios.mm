@@ -5,6 +5,7 @@
 #import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
 
 #import "flutter/fml/trace_event.h"
+#import "flutter/lib/ui/window/platform_message.h"
 #import "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 
