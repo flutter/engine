@@ -146,7 +146,7 @@ std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
 }
 
 GrDirectContext* Rasterizer::GetGrContext() {
-  return surface_->GetContext();
+  return surface_ ? surface_->GetContext() : nullptr;
 }
 
 flutter::LayerTree* Rasterizer::GetLastLayerTree() {
