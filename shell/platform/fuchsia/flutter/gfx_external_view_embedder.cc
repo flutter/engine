@@ -26,28 +26,28 @@ ViewMutators ParseMutatorStack(const flutter::MutatorsStack& mutators_stack) {
   for (auto i = mutators_stack.Begin(); i != mutators_stack.End(); ++i) {
     const auto& mutator = *i;
     switch (mutator->GetType()) {
-      case flutter::MutatorType::opacity: {
+      case flutter::MutatorType::kOpacity: {
         mutators.opacity *= std::clamp(mutator->GetAlphaFloat(), 0.f, 1.f);
       } break;
-      case flutter::MutatorType::transform: {
+      case flutter::MutatorType::kTransform: {
         total_transform.preConcat(mutator->GetMatrix());
         transform_accumulator.preConcat(mutator->GetMatrix());
       } break;
-      case flutter::MutatorType::clip_rect: {
+      case flutter::MutatorType::kClipRect: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetRect(),
         });
         transform_accumulator = SkMatrix::I();
       } break;
-      case flutter::MutatorType::clip_rrect: {
+      case flutter::MutatorType::kClipRRect: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetRRect().getBounds(),
         });
         transform_accumulator = SkMatrix::I();
       } break;
-      case flutter::MutatorType::clip_path: {
+      case flutter::MutatorType::kClipPath: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetPath().getBounds(),
@@ -164,6 +164,11 @@ std::vector<SkCanvas*> GfxExternalViewEmbedder::GetCurrentCanvases() {
   return canvases;
 }
 
+std::vector<flutter::DisplayListBuilder*>
+GfxExternalViewEmbedder::GetCurrentBuilders() {
+  return std::vector<flutter::DisplayListBuilder*>({});
+}
+
 void GfxExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<flutter::EmbeddedViewParams> params) {
@@ -176,12 +181,13 @@ void GfxExternalViewEmbedder::PrerollCompositeEmbeddedView(
   frame_composition_order_.push_back(handle);
 }
 
-SkCanvas* GfxExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+flutter::EmbedderPaintContext GfxExternalViewEmbedder::CompositeEmbeddedView(
+    int view_id) {
   zx_handle_t handle = static_cast<zx_handle_t>(view_id);
   auto found = frame_layers_.find(handle);
   FML_CHECK(found != frame_layers_.end());
 
-  return found->second.canvas_spy->GetSpyingCanvas();
+  return {found->second.canvas_spy->GetSpyingCanvas(), nullptr};
 }
 
 flutter::PostPrerollResult GfxExternalViewEmbedder::PostPrerollAction(

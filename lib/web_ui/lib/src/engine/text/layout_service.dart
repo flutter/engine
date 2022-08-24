@@ -400,7 +400,6 @@ class TextLayoutService {
     if (offset.dx <= line.left) {
       return ui.TextPosition(
         offset: line.startIndex,
-        affinity: ui.TextAffinity.downstream,
       );
     }
 
@@ -854,7 +853,6 @@ class SpanBox extends RangeBox {
       // The offset is closer to cutoff.
       return ui.TextPosition(
         offset: cutoff,
-        affinity: ui.TextAffinity.downstream,
       );
     } else {
       // The offset is closer to cutoff + 1.
@@ -1325,9 +1323,9 @@ class Spanometer {
   final CanvasParagraph paragraph;
   final DomCanvasRenderingContext2D context;
 
-  static RulerHost _rulerHost = RulerHost();
+  static final RulerHost _rulerHost = RulerHost();
 
-  static Map<TextHeightStyle, TextHeightRuler> _rulers =
+  static final Map<TextHeightStyle, TextHeightRuler> _rulers =
       <TextHeightStyle, TextHeightRuler>{};
 
   @visibleForTesting

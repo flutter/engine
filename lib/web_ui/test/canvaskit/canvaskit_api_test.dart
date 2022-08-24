@@ -59,8 +59,7 @@ void testMain() {
     group('SkParagraph', () {
       _textStyleTests();
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }
 
 void _blendModeTests() {
@@ -693,7 +692,8 @@ void _matrix4x4CompositionTests() {
     final bool areEqual =
         await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
     expect(areEqual, true);
-  });
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+  }, skip: isFirefox);
 }
 
 void _toSkRectTests() {
@@ -1355,7 +1355,7 @@ void _canvasTests() {
         CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
-        await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        await image.toByteData();
     expect(rawData.lengthInBytes, greaterThan(0));
     expect(
       rawData.buffer.asUint32List(),
@@ -1371,7 +1371,8 @@ void _canvasTests() {
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
-  });
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+  }, skip: isFirefox);
 }
 
 void _textStyleTests() {
@@ -1489,7 +1490,7 @@ void _paragraphTests() {
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
     final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.Make(
       paragraphStyle,
-      skiaFontCollection.skFontMgr,
+      CanvasKitRenderer.instance.fontCollection.skFontMgr,
     );
 
     builder.addText('Hello');
@@ -1586,7 +1587,7 @@ void _paragraphTests() {
     final SkParagraphBuilder builder =
         canvasKit.ParagraphBuilder.MakeFromFontProvider(
       paragraphStyle,
-      skiaFontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.fontProvider,
     );
     builder.addText('hello');
 
@@ -1608,22 +1609,17 @@ void _paragraphTests() {
 
   test('TextHeightBehavior', () {
     expect(
-      toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        applyHeightToFirstAscent: true,
-        applyHeightToLastDescent: true,
-      )),
+      toSkTextHeightBehavior(const ui.TextHeightBehavior()),
       canvasKit.TextHeightBehavior.All,
     );
     expect(
       toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: false,
-        applyHeightToLastDescent: true,
       )),
       canvasKit.TextHeightBehavior.DisableFirstAscent,
     );
     expect(
       toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        applyHeightToFirstAscent: true,
         applyHeightToLastDescent: false,
       )),
       canvasKit.TextHeightBehavior.DisableLastDescent,

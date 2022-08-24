@@ -20,7 +20,7 @@ void testMain() {
 
     setUpAll(() async {
       ensureFlutterViewEmbedderInitialized();
-      await initializeCanvasKit();
+      await renderer.initialize();
       oldPrintWarning = printWarning;
       printWarning = (String warning) {
         warnings.add(warning);
@@ -124,6 +124,5 @@ void testMain() {
       // what's specified in the manifest, and the manifest takes precedence.
       expect(ahem.bytes.length, ahemData.lengthInBytes);
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }

@@ -8,11 +8,6 @@
 #include "display_list/display_list_image_filter.h"
 #include "display_list/display_list_paint.h"
 #include "display_list/display_list_tile_mode.h"
-#include "gtest/gtest.h"
-#include "third_party/imgui/imgui.h"
-#include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkPathBuilder.h"
-
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_mask_filter.h"
 #include "flutter/display_list/types.h"
@@ -21,6 +16,11 @@
 #include "impeller/display_list/display_list_playground.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "include/core/SkRRect.h"
+#include "third_party/imgui/imgui.h"
+#include "third_party/skia/include/core/SkClipOp.h"
+#include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkPathBuilder.h"
 
 namespace impeller {
 namespace testing {
@@ -294,23 +294,30 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
   auto callback = [&]() {
     if (first_frame) {
       first_frame = false;
-      ImGui::SetNextWindowSize({400, 100});
-      ImGui::SetNextWindowPos({300, 650});
+      ImGui::SetNextWindowPos({10, 10});
     }
 
     static float sigma[] = {10, 10};
+    static float ctm_scale = 1;
     static bool use_bounds = true;
     static bool draw_circle = true;
+    static bool add_clip = true;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat2("Sigma", sigma, 0, 100);
+    ImGui::SliderFloat("Scale", &ctm_scale, 0, 10);
+    ImGui::NewLine();
+    ImGui::TextWrapped(
+        "If everything is working correctly, none of the options below should "
+        "impact the filter's appearance.");
     ImGui::Checkbox("Use SaveLayer bounds", &use_bounds);
     ImGui::Checkbox("Draw child element", &draw_circle);
+    ImGui::Checkbox("Add pre-clip", &add_clip);
     ImGui::End();
 
     flutter::DisplayListBuilder builder;
 
-    Vector2 scale = GetContentScale();
+    Vector2 scale = ctm_scale * GetContentScale();
     builder.scale(scale.x, scale.y);
 
     auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
@@ -319,8 +326,15 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
     std::optional<SkRect> bounds;
     if (use_bounds) {
       auto [p1, p2] = IMPELLER_PLAYGROUND_LINE(
-          Point(250, 150), Point(800, 600), 20, Color::White(), Color::White());
+          Point(350, 150), Point(800, 600), 20, Color::White(), Color::White());
       bounds = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
+    }
+
+    // Insert a clip to test that the backdrop filter handles stencil depths > 0
+    // correctly.
+    if (add_clip) {
+      builder.clipRect(SkRect::MakeLTRB(0, 0, 99999, 99999),
+                       SkClipOp::kIntersect, true);
     }
 
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
@@ -344,6 +358,201 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImage) {
+  // Image is drawn with corners to scale and center pieces stretched to fit.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width * 2, size.height * 2),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCenterWidthBiggerThanDest) {
+  // Edge case, the width of the corners does not leave any room for the
+  // center slice. The center (across the vertical axis) is folded out of the
+  // resulting image.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width / 2, size.height),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCenterHeightBiggerThanDest) {
+  // Edge case, the height of the corners does not leave any room for the
+  // center slice. The center (across the horizontal axis) is folded out of the
+  // resulting image.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width, size.height / 2),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCenterBiggerThanDest) {
+  // Edge case, the width and height of the corners does not leave any
+  // room for the center slices. Only the corners are displayed.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width / 2, size.height / 2),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawNinePatchImageCornersScaledDown) {
+  // Edge case, there is not enough room for the corners to be drawn
+  // without scaling them down.
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+  flutter::DisplayListBuilder builder;
+  auto size = texture->GetSize();
+  builder.drawImageNine(
+      DlImageImpeller::Make(texture),
+      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+                        size.height * 3 / 4),
+      SkRect::MakeLTRB(0, 0, size.width / 4, size.height / 4),
+      flutter::DlFilterMode::kNearest, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawPoints) {
+  flutter::DisplayListBuilder builder;
+  SkPoint points[7] = {
+      {0, 0},      //
+      {100, 100},  //
+      {100, 0},    //
+      {0, 100},    //
+      {0, 0},      //
+      {48, 48},    //
+      {52, 52},    //
+  };
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =
+      flutter::DlPaint()                                         //
+          .setColor(flutter::DlColor::kYellow().withAlpha(127))  //
+          .setStrokeWidth(20);
+  builder.translate(50, 50);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.save();
+    builder.drawPoints(SkCanvas::kPoints_PointMode, 7, points, paint);
+    builder.translate(150, 0);
+    builder.drawPoints(SkCanvas::kLines_PointMode, 5, points, paint);
+    builder.translate(150, 0);
+    builder.drawPoints(SkCanvas::kPolygon_PointMode, 5, points, paint);
+    builder.restore();
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =
+      flutter::DlPaint()                                         //
+          .setColor(flutter::DlColor::kYellow().withAlpha(127))  //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)           //
+          .setStrokeCap(flutter::DlStrokeCap::kButt)             //
+          .setStrokeWidth(20);
+  SkPath path = SkPath().addPoly({{150, 50}, {150, 50}}, false);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.drawLine({50, 50}, {50, 50}, paint);
+    builder.drawPath(path, paint);
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawShadow) {
+  flutter::DisplayListBuilder builder;
+  std::array<SkPath, 3> paths = {
+      SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+      SkPath{}.addRRect(
+          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
+      SkPath{}.addCircle(100, 50, 50),
+  };
+  builder.setColor(flutter::DlColor::kWhite());
+  builder.drawPaint();
+  builder.setColor(flutter::DlColor::kCyan());
+  builder.translate(100, 100);
+  for (size_t x = 0; x < paths.size(); x++) {
+    builder.save();
+    for (size_t y = 0; y < 5; y++) {
+      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 5, false,
+                         1);
+      builder.drawPath(paths[x]);
+      builder.translate(0, 200);
+    }
+    builder.restore();
+    builder.translate(300, 0);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =                              //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kWhite())         //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeWidth(0);
+  flutter::DlPaint outline_paint =                      //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kYellow())        //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeCap(flutter::DlStrokeCap::kSquare)  //
+          .setStrokeWidth(1);
+  SkPath path = SkPath().addPoly({{150, 50}, {160, 50}}, false);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.drawLine({50, 50}, {60, 50}, paint);
+    builder.drawRect({45, 45, 65, 55}, outline_paint);
+    builder.drawLine({100, 50}, {100, 50}, paint);
+    if (cap != flutter::DlStrokeCap::kButt) {
+      builder.drawRect({95, 45, 105, 55}, outline_paint);
+    }
+    builder.drawPath(path, paint);
+    builder.drawRect(path.getBounds().makeOutset(5, 5), outline_paint);
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 }  // namespace testing

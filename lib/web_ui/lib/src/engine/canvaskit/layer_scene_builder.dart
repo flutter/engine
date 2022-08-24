@@ -13,9 +13,9 @@ import 'path.dart';
 import 'picture.dart';
 
 class LayerScene implements ui.Scene {
-  final LayerTree layerTree;
-
   LayerScene(RootLayer rootLayer) : layerTree = LayerTree(rootLayer);
+
+  final LayerTree layerTree;
 
   @override
   void dispose() {}
@@ -27,9 +27,9 @@ class LayerScene implements ui.Scene {
   }
 
   @override
-  ui.Image toGpuImage(int width, int height) {
+  ui.Image toImageSync(int width, int height) {
     final ui.Picture picture = layerTree.flatten();
-    return picture.toGpuImage(width, height);
+    return picture.toImageSync(width, height);
   }
 }
 
@@ -147,7 +147,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
+    assert(filter != null);
     return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
   }
 
@@ -156,7 +156,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
+    assert(filter != null);
     return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter));
   }
 

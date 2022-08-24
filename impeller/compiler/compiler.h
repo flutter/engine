@@ -33,7 +33,7 @@ class Compiler {
 
   std::unique_ptr<fml::Mapping> GetSPIRVAssembly() const;
 
-  std::unique_ptr<fml::Mapping> GetSLShaderSource() const;
+  std::shared_ptr<fml::Mapping> GetSLShaderSource() const;
 
   std::string GetErrorMessages() const;
 
@@ -47,7 +47,7 @@ class Compiler {
  private:
   SourceOptions options_;
   std::shared_ptr<shaderc::SpvCompilationResult> spv_result_;
-  std::shared_ptr<std::string> sl_string_;
+  std::shared_ptr<fml::Mapping> sl_mapping_;
   std::stringstream error_stream_;
   std::unique_ptr<Reflector> reflector_;
   std::vector<std::string> included_file_names_;
@@ -56,6 +56,8 @@ class Compiler {
   std::string GetSourcePrefix() const;
 
   std::string GetDependencyNames(std::string separator) const;
+
+  void SetBindingBase(shaderc::CompileOptions& compiler_opts) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Compiler);
 };

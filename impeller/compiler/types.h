@@ -32,8 +32,10 @@ enum class TargetPlatform {
   kFlutterSPIRV,
   kOpenGLES,
   kOpenGLDesktop,
+  kVulkan,
   kRuntimeStageMetal,
   kRuntimeStageGLES,
+  kSkSL,
 };
 
 bool TargetPlatformIsMetal(TargetPlatform platform);

@@ -5,8 +5,10 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_H_
 
+#include <memory>
 #include <optional>
 
+#include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
@@ -88,6 +90,7 @@ namespace flutter {
   V(SetPodColorSource)              \
   V(SetSkColorSource)               \
   V(SetImageColorSource)            \
+  V(SetRuntimeEffectColorSource)    \
                                     \
   V(ClearImageFilter)               \
   V(SetPodImageFilter)              \
@@ -254,6 +257,13 @@ class DisplayList : public SkRefCnt {
     return bounds_;
   }
 
+  sk_sp<const DlRTree> rtree() {
+    if (!rtree_) {
+      ComputeRTree();
+    }
+    return rtree_;
+  }
+
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
   bool Equals(sk_sp<const DisplayList> other) const {
@@ -282,6 +292,7 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id_;
   SkRect bounds_;
+  sk_sp<const DlRTree> rtree_;
 
   // Only used for drawPaint() and drawColor()
   SkRect bounds_cull_;
@@ -289,6 +300,7 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity_;
 
   void ComputeBounds();
+  void ComputeRTree();
   void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 
   friend class DisplayListBuilder;

@@ -73,6 +73,15 @@ class SafariPointerEventWorkaround {
 }
 
 class PointerBinding {
+  PointerBinding(this.glassPaneElement)
+    : _pointerDataConverter = PointerDataConverter(),
+      _detector = const PointerSupportDetector() {
+    if (isIosSafari) {
+      SafariPointerEventWorkaround.instance.workAroundMissingPointerEvents();
+    }
+    _adapter = _createAdapter();
+  }
+
   /// The singleton instance of this object.
   static PointerBinding? get instance => _instance;
   static PointerBinding? _instance;
@@ -94,19 +103,10 @@ class PointerBinding {
     _pointerDataConverter.clearPointerState();
   }
 
-  PointerBinding(this.glassPaneElement)
-    : _pointerDataConverter = PointerDataConverter(),
-      _detector = const PointerSupportDetector() {
-    if (isIosSafari) {
-      SafariPointerEventWorkaround.instance.workAroundMissingPointerEvents();
-    }
-    _adapter = _createAdapter();
-  }
-
   final DomElement glassPaneElement;
 
   PointerSupportDetector _detector;
-  PointerDataConverter _pointerDataConverter;
+  final PointerDataConverter _pointerDataConverter;
   late _BaseAdapter _adapter;
 
   /// Should be used in tests to define custom detection of pointer support.
@@ -245,8 +245,8 @@ abstract class _BaseAdapter {
 
   final List<_Listener> _listeners = <_Listener>[];
   final DomElement glassPaneElement;
-  _PointerDataCallback _callback;
-  PointerDataConverter _pointerDataConverter;
+  final _PointerDataCallback _callback;
+  final PointerDataConverter _pointerDataConverter;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
@@ -355,7 +355,6 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       physicalY: event.clientY.toDouble() * ui.window.devicePixelRatio,
       buttons: event.buttons!,
       pressure: 1.0,
-      pressureMin: 0.0,
       pressureMax: 1.0,
       scrollDeltaX: deltaX,
       scrollDeltaY: deltaY,
@@ -562,10 +561,10 @@ typedef _PointerEventListener = dynamic Function(DomPointerEvent event);
 /// For the difference between MouseEvent and PointerEvent, see _MouseAdapter.
 class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _PointerAdapter(
-    _PointerDataCallback callback,
-    DomElement glassPaneElement,
-    PointerDataConverter pointerDataConverter
-  ) : super(callback, glassPaneElement, pointerDataConverter);
+    super.callback,
+    super.glassPaneElement,
+    super.pointerDataConverter
+  );
 
   final Map<int, _ButtonSanitizer> _sanitizers = <int, _ButtonSanitizer>{};
 
@@ -577,9 +576,12 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   }
 
   _ButtonSanitizer _getSanitizer(int device) {
-    final _ButtonSanitizer sanitizer = _sanitizers[device]!;
-    assert(sanitizer != null); // ignore: unnecessary_null_comparison
-    return sanitizer;
+    assert(_sanitizers[device] != null);
+    return _sanitizers[device]!;
+  }
+
+  bool _hasSanitizer(int device) {
+    return _sanitizers.containsKey(device);
   }
 
   void _removePointerIfUnhoverable(DomPointerEvent event) {
@@ -649,12 +651,14 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addPointerEventListener(domWindow, 'pointerup', (DomPointerEvent event) {
       final int device = _getPointerId(event);
-      final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons);
-      _removePointerIfUnhoverable(event);
-      if (details != null) {
-        _convertEventsToPointerData(data: pointerData, event: event, details: details);
-        _callback(pointerData);
+      if (_hasSanitizer(device)) {
+        final List<ui.PointerData> pointerData = <ui.PointerData>[];
+        final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons);
+        _removePointerIfUnhoverable(event);
+        if (details != null) {
+          _convertEventsToPointerData(data: pointerData, event: event, details: details);
+          _callback(pointerData);
+        }
       }
     });
 
@@ -662,11 +666,13 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // be able to generate events (example: device is deactivated)
     _addPointerEventListener(glassPaneElement, 'pointercancel', (DomPointerEvent event) {
       final int device = _getPointerId(event);
-      final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails details = _getSanitizer(device).sanitizeCancelEvent();
-      _removePointerIfUnhoverable(event);
-      _convertEventsToPointerData(data: pointerData, event: event, details: details);
-      _callback(pointerData);
+      if (_hasSanitizer(device)) {
+        final List<ui.PointerData> pointerData = <ui.PointerData>[];
+        final _SanitizedDetails details = _getSanitizer(device).sanitizeCancelEvent();
+        _removePointerIfUnhoverable(event);
+        _convertEventsToPointerData(data: pointerData, event: event, details: details);
+        _callback(pointerData);
+      }
     });
 
     _addWheelEventListener((DomEvent event) {
@@ -681,9 +687,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomPointerEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null); // ignore: unnecessary_null_comparison
-    assert(event != null); // ignore: unnecessary_null_comparison
-    assert(details != null); // ignore: unnecessary_null_comparison
+    assert(data != null);
+    assert(event != null);
+    assert(details != null);
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
@@ -699,7 +705,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       physicalY: event.clientY.toDouble() * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure:  pressure == null ? 0.0 : pressure.toDouble(),
-      pressureMin: 0.0,
       pressureMax: 1.0,
       tilt: tilt,
     );
@@ -753,10 +758,10 @@ typedef _TouchEventListener = dynamic Function(DomTouchEvent event);
 /// Adapter to be used with browsers that support touch events.
 class _TouchAdapter extends _BaseAdapter {
   _TouchAdapter(
-    _PointerDataCallback callback,
-    DomElement glassPaneElement,
-    PointerDataConverter pointerDataConverter
-  ) : super(callback, glassPaneElement, pointerDataConverter);
+    super.callback,
+    super.glassPaneElement,
+    super.pointerDataConverter
+  );
 
   final Set<int> _pressedTouches = <int>{};
   bool _isTouchPressed(int identifier) => _pressedTouches.contains(identifier);
@@ -863,14 +868,12 @@ class _TouchAdapter extends _BaseAdapter {
       data,
       change: change,
       timeStamp: timeStamp,
-      kind: ui.PointerDeviceKind.touch,
       signalKind: ui.PointerSignalKind.none,
       device: touch.identifier!,
       physicalX: touch.clientX.toDouble() * ui.window.devicePixelRatio,
       physicalY: touch.clientY.toDouble() * ui.window.devicePixelRatio,
       buttons: pressed ? _kPrimaryMouseButton : 0,
       pressure: 1.0,
-      pressureMin: 0.0,
       pressureMax: 1.0,
     );
   }
@@ -898,10 +901,10 @@ typedef _MouseEventListener = dynamic Function(DomMouseEvent event);
 ///  * The `button` for dragging or hovering.
 class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
-    _PointerDataCallback callback,
-    DomElement glassPaneElement,
-    PointerDataConverter pointerDataConverter
-  ) : super(callback, glassPaneElement, pointerDataConverter);
+    super.callback,
+    super.glassPaneElement,
+    super.pointerDataConverter
+  );
 
   final _ButtonSanitizer _sanitizer = _ButtonSanitizer();
 
@@ -976,9 +979,9 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomMouseEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null); // ignore: unnecessary_null_comparison
-    assert(event != null); // ignore: unnecessary_null_comparison
-    assert(details != null); // ignore: unnecessary_null_comparison
+    assert(data != null);
+    assert(event != null);
+    assert(details != null);
     _pointerDataConverter.convert(
       data,
       change: details.change,
@@ -990,7 +993,6 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       physicalY: event.clientY.toDouble() * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure: 1.0,
-      pressureMin: 0.0,
       pressureMax: 1.0,
     );
   }

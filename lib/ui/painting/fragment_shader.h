@@ -17,10 +17,6 @@
 #include <string>
 #include <vector>
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class FragmentShader : public Shader {
@@ -29,17 +25,16 @@ class FragmentShader : public Shader {
 
  public:
   ~FragmentShader() override;
-  static fml::RefPtr<FragmentShader> Create(Dart_Handle dart_handle,
-                                            sk_sp<SkShader> shader);
+  static fml::RefPtr<FragmentShader> Create(
+      Dart_Handle dart_handle,
+      std::shared_ptr<DlRuntimeEffectColorSource> shader);
 
   std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
  private:
-  explicit FragmentShader(sk_sp<SkShader> shader);
+  explicit FragmentShader(std::shared_ptr<DlRuntimeEffectColorSource> shader);
 
-  std::shared_ptr<DlColorSource> source_;
+  std::shared_ptr<DlRuntimeEffectColorSource> source_;
 };
 
 }  // namespace flutter

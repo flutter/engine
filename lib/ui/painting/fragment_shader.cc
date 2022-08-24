@@ -15,8 +15,6 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-using tonic::ToDart;
-
 namespace flutter {
 
 // Since _FragmentShader is a private class, we can't use
@@ -29,10 +27,6 @@ static const tonic::DartWrapperInfo kDartWrapperInfo_ui_FragmentShader = {
 const tonic::DartWrapperInfo& FragmentShader::dart_wrapper_info_ =
     kDartWrapperInfo_ui_FragmentShader;
 
-void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({});
-}
-
 std::shared_ptr<DlColorSource> FragmentShader::shader(
     DlImageSampling sampling) {
   // Sampling options are ignored, since sampling options don't make sense for
@@ -40,15 +34,17 @@ std::shared_ptr<DlColorSource> FragmentShader::shader(
   return source_;
 }
 
-fml::RefPtr<FragmentShader> FragmentShader::Create(Dart_Handle dart_handle,
-                                                   sk_sp<SkShader> shader) {
+fml::RefPtr<FragmentShader> FragmentShader::Create(
+    Dart_Handle dart_handle,
+    std::shared_ptr<DlRuntimeEffectColorSource> shader) {
   auto fragment_shader = fml::MakeRefCounted<FragmentShader>(std::move(shader));
   fragment_shader->AssociateWithDartWrapper(dart_handle);
   return fragment_shader;
 }
 
-FragmentShader::FragmentShader(sk_sp<SkShader> shader)
-    : source_(DlColorSource::From(shader)) {}
+FragmentShader::FragmentShader(
+    std::shared_ptr<DlRuntimeEffectColorSource> shader)
+    : source_(std::move(shader)) {}
 
 FragmentShader::~FragmentShader() = default;
 

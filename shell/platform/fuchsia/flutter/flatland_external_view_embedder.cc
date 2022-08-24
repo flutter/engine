@@ -56,6 +56,11 @@ std::vector<SkCanvas*> FlatlandExternalViewEmbedder::GetCurrentCanvases() {
   return canvases;
 }
 
+std::vector<flutter::DisplayListBuilder*>
+FlatlandExternalViewEmbedder::GetCurrentBuilders() {
+  return std::vector<flutter::DisplayListBuilder*>();
+}
+
 void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<flutter::EmbeddedViewParams> params) {
@@ -67,12 +72,13 @@ void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
   frame_composition_order_.push_back(handle);
 }
 
-SkCanvas* FlatlandExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+flutter::EmbedderPaintContext
+FlatlandExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   zx_handle_t handle = static_cast<zx_handle_t>(view_id);
   auto found = frame_layers_.find(handle);
   FML_CHECK(found != frame_layers_.end());
 
-  return found->second.canvas_spy->GetSpyingCanvas();
+  return {found->second.canvas_spy->GetSpyingCanvas(), nullptr};
 }
 
 flutter::PostPrerollResult FlatlandExternalViewEmbedder::PostPrerollAction(
@@ -358,7 +364,7 @@ void FlatlandExternalViewEmbedder::CreateView(
   FlatlandView new_view = {.transform_id = transform_id,
                            .viewport_id = viewport_id};
   flatland_->flatland()->CreateTransform(new_view.transform_id);
-  fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher;
+  fuchsia::ui::composition::ChildViewWatcherHandle child_view_watcher;
   new_view.pending_create_viewport_callback =
       [this, transform_id, viewport_id, view_id,
        child_view_watcher_request =
@@ -442,28 +448,28 @@ FlatlandExternalViewEmbedder::ParseMutatorStack(
   for (auto i = mutators_stack.Begin(); i != mutators_stack.End(); ++i) {
     const auto& mutator = *i;
     switch (mutator->GetType()) {
-      case flutter::MutatorType::opacity: {
+      case flutter::MutatorType::kOpacity: {
         mutators.opacity *= std::clamp(mutator->GetAlphaFloat(), 0.f, 1.f);
       } break;
-      case flutter::MutatorType::transform: {
+      case flutter::MutatorType::kTransform: {
         total_transform.preConcat(mutator->GetMatrix());
         transform_accumulator.preConcat(mutator->GetMatrix());
       } break;
-      case flutter::MutatorType::clip_rect: {
+      case flutter::MutatorType::kClipRect: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetRect(),
         });
         transform_accumulator = SkMatrix::I();
       } break;
-      case flutter::MutatorType::clip_rrect: {
+      case flutter::MutatorType::kClipRRect: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetRRect().getBounds(),
         });
         transform_accumulator = SkMatrix::I();
       } break;
-      case flutter::MutatorType::clip_path: {
+      case flutter::MutatorType::kClipPath: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetPath().getBounds(),

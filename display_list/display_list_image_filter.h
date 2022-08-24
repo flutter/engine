@@ -34,6 +34,7 @@ enum class DlImageFilterType {
   kMatrix,
   kComposeFilter,
   kColorFilter,
+  kLocalMatrixFilter,
   kUnknown
 };
 
@@ -41,12 +42,19 @@ class DlBlurImageFilter;
 class DlDilateImageFilter;
 class DlErodeImageFilter;
 class DlMatrixImageFilter;
+class DlLocalMatrixImageFilter;
 class DlComposeImageFilter;
 class DlColorFilterImageFilter;
 
 class DlImageFilter
     : public DlAttribute<DlImageFilter, SkImageFilter, DlImageFilterType> {
  public:
+  enum class MatrixCapability {
+    kTranslate,
+    kScaleTranslate,
+    kComplex,
+  };
+
   // Return a shared_ptr holding a DlImageFilter representing the indicated
   // Skia SkImageFilter pointer.
   //
@@ -81,6 +89,13 @@ class DlImageFilter
   // Return a DlMatrixImageFilter pointer to this object iff it is a Matrix
   // type of ImageFilter, otherwise return nullptr.
   virtual const DlMatrixImageFilter* asMatrix() const { return nullptr; }
+
+  virtual const DlLocalMatrixImageFilter* asLocalMatrix() const {
+    return nullptr;
+  }
+
+  virtual std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
+      const SkMatrix& matrix) const;
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -136,6 +151,10 @@ class DlImageFilter
   virtual SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                            const SkMatrix& ctm,
                                            SkIRect& input_bounds) const = 0;
+
+  virtual MatrixCapability matrix_capability() const {
+    return MatrixCapability::kScaleTranslate;
+  }
 
  protected:
   static SkVector map_vectors_affine(const SkMatrix& ctm,
@@ -519,67 +538,23 @@ class DlComposeImageFilter final : public DlImageFilter {
   }
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
-    SkRect cur_bounds = input_bounds;
-    // We set this result in case neither filter is present.
-    output_bounds = input_bounds;
-    if (inner_) {
-      if (!inner_->map_local_bounds(cur_bounds, output_bounds)) {
-        return nullptr;
-      }
-      cur_bounds = output_bounds;
-    }
-    if (outer_) {
-      if (!outer_->map_local_bounds(cur_bounds, output_bounds)) {
-        return nullptr;
-      }
-    }
-    return &output_bounds;
-  }
+                           SkRect& output_bounds) const override;
 
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
-    SkIRect cur_bounds = input_bounds;
-    // We set this result in case neither filter is present.
-    output_bounds = input_bounds;
-    if (inner_) {
-      if (!inner_->map_device_bounds(cur_bounds, ctm, output_bounds)) {
-        return nullptr;
-      }
-      cur_bounds = output_bounds;
-    }
-    if (outer_) {
-      if (!outer_->map_device_bounds(cur_bounds, ctm, output_bounds)) {
-        return nullptr;
-      }
-    }
-    return &output_bounds;
-  }
+                             SkIRect& output_bounds) const override;
 
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
-    SkIRect cur_bounds = output_bounds;
-    // We set this result in case neither filter is present.
-    input_bounds = output_bounds;
-    if (outer_) {
-      if (!outer_->get_input_device_bounds(cur_bounds, ctm, input_bounds)) {
-        return nullptr;
-      }
-      cur_bounds = output_bounds;
-    }
-    if (inner_) {
-      if (!inner_->get_input_device_bounds(cur_bounds, ctm, input_bounds)) {
-        return nullptr;
-      }
-    }
-    return &input_bounds;
-  }
+                                   SkIRect& input_bounds) const override;
 
   sk_sp<SkImageFilter> skia_object() const override {
     return SkImageFilters::Compose(outer_->skia_object(),
                                    inner_->skia_object());
+  }
+
+  MatrixCapability matrix_capability() const override {
+    return std::min(outer_->matrix_capability(), inner_->matrix_capability());
   }
 
  protected:
@@ -654,6 +629,15 @@ class DlColorFilterImageFilter final : public DlImageFilter {
     return SkImageFilters::ColorFilter(color_filter_->skia_object(), nullptr);
   }
 
+  MatrixCapability matrix_capability() const override {
+    return MatrixCapability::kComplex;
+  }
+
+  std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
+      const SkMatrix& matrix) const override {
+    return shared();
+  }
+
  protected:
   bool equals_(const DlImageFilter& other) const override {
     FML_DCHECK(other.type() == DlImageFilterType::kColorFilter);
@@ -663,6 +647,85 @@ class DlColorFilterImageFilter final : public DlImageFilter {
 
  private:
   std::shared_ptr<DlColorFilter> color_filter_;
+};
+
+class DlLocalMatrixImageFilter final : public DlImageFilter {
+ public:
+  explicit DlLocalMatrixImageFilter(const SkMatrix& matrix,
+                                    std::shared_ptr<DlImageFilter> filter)
+      : matrix_(matrix), image_filter_(filter) {}
+  explicit DlLocalMatrixImageFilter(const DlLocalMatrixImageFilter* filter)
+      : DlLocalMatrixImageFilter(filter->matrix_, filter->image_filter_) {}
+  DlLocalMatrixImageFilter(const DlLocalMatrixImageFilter& filter)
+      : DlLocalMatrixImageFilter(&filter) {}
+  std::shared_ptr<DlImageFilter> shared() const override {
+    return std::make_shared<DlLocalMatrixImageFilter>(this);
+  }
+
+  DlImageFilterType type() const override {
+    return DlImageFilterType::kLocalMatrixFilter;
+  }
+  size_t size() const override { return sizeof(*this); }
+
+  const SkMatrix& matrix() const { return matrix_; }
+
+  const DlLocalMatrixImageFilter* asLocalMatrix() const override {
+    return this;
+  }
+
+  bool modifies_transparent_black() const override {
+    if (!image_filter_) {
+      return false;
+    }
+    return image_filter_->modifies_transparent_black();
+  }
+
+  SkRect* map_local_bounds(const SkRect& input_bounds,
+                           SkRect& output_bounds) const override {
+    if (!image_filter_) {
+      return nullptr;
+    }
+    return image_filter_->map_local_bounds(input_bounds, output_bounds);
+  }
+
+  SkIRect* map_device_bounds(const SkIRect& input_bounds,
+                             const SkMatrix& ctm,
+                             SkIRect& output_bounds) const override {
+    if (!image_filter_) {
+      return nullptr;
+    }
+    return image_filter_->map_device_bounds(
+        input_bounds, SkMatrix::Concat(ctm, matrix_), output_bounds);
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    if (!image_filter_) {
+      return nullptr;
+    }
+    return image_filter_->get_input_device_bounds(
+        output_bounds, SkMatrix::Concat(ctm, matrix_), input_bounds);
+  }
+
+  sk_sp<SkImageFilter> skia_object() const override {
+    if (!image_filter_) {
+      return nullptr;
+    }
+    return image_filter_->skia_object()->makeWithLocalMatrix(matrix_);
+  }
+
+ protected:
+  bool equals_(const DlImageFilter& other) const override {
+    FML_DCHECK(other.type() == DlImageFilterType::kMatrix);
+    auto that = static_cast<const DlLocalMatrixImageFilter*>(&other);
+    return (matrix_ == that->matrix_ &&
+            Equals(image_filter_, that->image_filter_));
+  }
+
+ private:
+  SkMatrix matrix_;
+  std::shared_ptr<DlImageFilter> image_filter_;
 };
 
 // A wrapper class for a Skia ImageFilter of unknown type. The above 4 types
@@ -701,7 +764,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
     }
@@ -712,7 +775,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
     }
@@ -724,7 +787,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       input_bounds = output_bounds;
       return nullptr;
     }

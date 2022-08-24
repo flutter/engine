@@ -10,14 +10,14 @@ declare_args() {
   # Whether playgrounds are enabled for unit tests.
   impeller_enable_playground = false
 
-  # Whether Impeller is supported on the platform.
-  impeller_supports_platform = true
-
   # Whether the Metal backend is enabled.
   impeller_enable_metal = is_mac || is_ios
 
   # Whether the OpenGLES backend is enabled.
-  impeller_enable_opengles = is_mac || is_linux || is_android || is_win
+  impeller_enable_opengles = is_mac || is_linux || is_android
+
+  # Whether the Vulkan backend is enabled.
+  impeller_enable_vulkan = false
 
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.
@@ -33,13 +33,10 @@ declare_args() {
 }
 
 declare_args() {
-  # Whether Impeller shaders are supported on the platform.
-  impeller_shaders_supports_platform =
-      impeller_enable_metal || impeller_enable_opengles
-
   # Whether Impeller supports rendering on the platform.
   impeller_supports_rendering =
-      impeller_enable_metal || impeller_enable_opengles
+      impeller_enable_metal || impeller_enable_opengles ||
+      impeller_enable_vulkan
 }
 
 # ------------------------------------------------------------------------------
@@ -56,7 +53,7 @@ template("impeller_component") {
     group(target_name) {
       not_needed(invoker, "*")
     }
-  } else if (impeller_supports_platform) {
+  } else {
     target_type = "source_set"
     if (defined(invoker.target_type)) {
       target_type = invoker.target_type
@@ -90,10 +87,6 @@ template("impeller_component") {
       if (is_ios || is_mac) {
         cflags_objcc += flutter_cflags_objcc_arc
       }
-    }
-  } else {
-    group(target_name) {
-      not_needed(invoker, "*")
     }
   }
 }
@@ -235,14 +228,22 @@ template("impellerc") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.shader_target_flag),
          "The flag to impellerc for target selection must be specified.")
+  assert(defined(invoker.sl_file_extension),
+         "The extension of the SL file must be specified (metal, glsl, etc..).")
 
-  flutter_spirv = invoker.shader_target_flag == "--flutter-spirv"
-  if (!flutter_spirv) {
-    assert(
-        defined(invoker.sl_file_extension),
-        "The extension of the SL file must be specified (metal, glsl, etc..).")
+  sksl = invoker.shader_target_flag == "--sksl"
+  iplr = false
+  if (defined(invoker.iplr) && invoker.iplr) {
+    iplr = invoker.iplr
   }
 
+  # Not needed on every path.
+  not_needed([
+               "iplr",
+               "sksl",
+             ])
+
+  # Optional: invoker.iplr Causes --sl output to be in iplr format.
   # Optional: invoker.defines specifies a list of valueless macro definitions.
   # Optional: invoker.intermediates_subdir specifies the subdirectory in which
   #           to put intermediates.
@@ -265,16 +266,28 @@ template("impellerc") {
     depfile_intermediate_path = rebase_path(depfile_path, root_build_dir)
     depfile = depfile_path
 
+    shader_lib_dir = rebase_path("//flutter/impeller/compiler/shader_lib")
     args = [
       "--input={{source}}",
       "--include={{source_dir}}",
+      "--include=$shader_lib_dir",
       "--depfile=$depfile_intermediate_path",
       "$shader_target_flag",
     ]
 
-    if (flutter_spirv) {
-      args += [ "--spirv=$spirv_intermediate_path" ]
-      outputs = [ spirv_intermediate ]
+    if (sksl) {
+      sl_intermediate =
+          "$generated_dir/{{source_file_part}}.${invoker.sl_file_extension}"
+      sl_intermediate_path = rebase_path(sl_intermediate, root_build_dir)
+      args += [
+        "--sl=$sl_intermediate_path",
+        "--spirv=$spirv_intermediate_path",
+      ]
+      if (iplr) {
+        args += [ "--iplr" ]
+      }
+
+      outputs = [ sl_intermediate ]
     } else {
       sl_intermediate =
           "$generated_dir/{{source_file_part}}.${invoker.sl_file_extension}"
@@ -297,6 +310,9 @@ template("impellerc") {
         "--reflection-header=$reflection_header_path",
         "--reflection-cc=$reflection_cc_path",
       ]
+      if (iplr) {
+        args += [ "--iplr" ]
+      }
 
       outputs = [
         sl_intermediate,
@@ -479,6 +495,60 @@ template("impeller_shaders_gles") {
   }
 }
 
+template("impeller_shaders_vk") {
+  assert(defined(invoker.shaders), "Impeller shaders must be specified.")
+  assert(defined(invoker.name), "Name of the shader library must be specified.")
+
+  shaders_base_name = string_join("",
+                                  [
+                                    invoker.name,
+                                    "_shaders_vk",
+                                  ])
+  impellerc_vk = "impellerc_$target_name"
+  impellerc(impellerc_vk) {
+    shaders = invoker.shaders
+    sl_file_extension = "vkspv"
+
+    # Metal reflectors generate a superset of information.
+    if (impeller_enable_metal) {
+      intermediates_subdir = "vk"
+    }
+    shader_target_flag = "--vulkan"
+
+    defines = [ "IMPELLER_TARGET_VULKAN" ]
+  }
+
+  vk_lib = "genlib_$target_name"
+  blobcat_library(vk_lib) {
+    shaders =
+        filter_include(get_target_outputs(":$impellerc_vk"), [ "*.vkspv" ])
+    deps = [ ":$impellerc_vk" ]
+  }
+
+  reflect_vk = "reflect_$target_name"
+  impellerc_reflect(reflect_vk) {
+    impellerc_invocation = ":$impellerc_vk"
+  }
+
+  embed_vk_lib = "embed_$target_name"
+  embed_blob(embed_vk_lib) {
+    vk_library_files = get_target_outputs(":$vk_lib")
+    symbol_name = shaders_base_name
+    blob = vk_library_files[0]
+    hdr = "$target_gen_dir/vk/$shaders_base_name.h"
+    cc = "$target_gen_dir/vk/$shaders_base_name.c"
+    deps = [ ":$vk_lib" ]
+  }
+
+  group(target_name) {
+    public_deps = [ ":$embed_vk_lib" ]
+
+    if (!impeller_enable_metal) {
+      public_deps += [ ":$reflect_vk" ]
+    }
+  }
+}
+
 template("impeller_shaders") {
   if (impeller_enable_metal) {
     mtl_shaders = "mtl_$target_name"
@@ -496,7 +566,15 @@ template("impeller_shaders") {
     }
   }
 
-  if (!impeller_shaders_supports_platform) {
+  if (impeller_enable_vulkan) {
+    vk_shaders = "vk_$target_name"
+    impeller_shaders_vk(vk_shaders) {
+      name = invoker.name
+      shaders = invoker.shaders
+    }
+  }
+
+  if (!impeller_supports_rendering) {
     not_needed(invoker, "*")
   }
 
@@ -508,6 +586,10 @@ template("impeller_shaders") {
 
     if (impeller_enable_opengles) {
       public_deps += [ ":$gles_shaders" ]
+    }
+
+    if (impeller_enable_vulkan) {
+      public_deps += [ ":$vk_shaders" ]
     }
   }
 }

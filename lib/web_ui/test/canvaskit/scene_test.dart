@@ -39,13 +39,14 @@ void testMain() {
       expect(builder, isA<LayerSceneBuilder>());
 
       builder.pushOffset(0, 0);
-      builder.addPicture(const ui.Offset(0, 0), picture);
+      builder.addPicture(ui.Offset.zero, picture);
 
       final ui.Scene scene = builder.build();
 
       final ui.Image sceneImage = await scene.toImage(100, 100);
       expect(sceneImage, isA<CkImage>());
-    });
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
+    }, skip: isFirefox || isSafari);
 
     test('pushColorFilter does not throw', () async {
       final ui.SceneBuilder builder = ui.SceneBuilder();
@@ -57,6 +58,5 @@ void testMain() {
       final ui.Scene scene = builder.build();
       expect(scene, isNotNull);
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }

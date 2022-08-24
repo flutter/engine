@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/fonts.dart';
+
 import '../assets.dart';
 import '../browser_detection.dart';
 import '../dom.dart';
@@ -26,12 +28,13 @@ const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_
 /// [registerFonts] with it to register fonts declared in the
 /// font manifest. If test fonts are enabled, then call
 /// [registerTestFonts] as well.
-class FontCollection {
+class HtmlFontCollection implements FontCollection {
   FontManager? _assetFontManager;
   FontManager? _testFontManager;
 
   /// Reads the font manifest using the [assetManager] and registers all of the
   /// fonts declared within.
+  @override
   Future<void> registerFonts(AssetManager assetManager) async {
     ByteData byteData;
 
@@ -78,11 +81,16 @@ class FontCollection {
     }
   }
 
-  Future<void> loadFontFromList(Uint8List list, {required String fontFamily}) {
+  @override
+  Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
+    if (fontFamily == null) {
+      throw AssertionError('Font family must be provided to HtmlFontCollection.');
+    }
     return _assetFontManager!._loadFontFaceBytes(fontFamily, list);
   }
 
   /// Registers fonts that are used by tests.
+  @override
   void debugRegisterTestFonts() {
     _testFontManager = FontManager();
     _testFontManager!.registerAsset(
@@ -95,12 +103,14 @@ class FontCollection {
 
   /// Returns a [Future] that completes when the registered fonts are loaded
   /// and ready to be used.
+  @override
   Future<void> ensureFontsLoaded() async {
     await _assetFontManager?.ensureFontsLoaded();
     await _testFontManager?.ensureFontsLoaded();
   }
 
   /// Unregister all fonts that have been registered.
+  @override
   void clear() {
     _assetFontManager = null;
     _testFontManager = null;
@@ -112,6 +122,16 @@ class FontCollection {
 
 /// Manages a collection of fonts and ensures they are loaded.
 class FontManager {
+  factory FontManager() {
+    if (supportsFontLoadingApi) {
+      return FontManager._();
+    } else {
+      return _PolyfillFontManager();
+    }
+  }
+
+  FontManager._();
+
   final List<Future<void>> _fontLoadingFutures = <Future<void>>[];
 
   // Regular expression to detect a string with no punctuations.
@@ -123,16 +143,6 @@ class FontManager {
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
   static final RegExp startWithDigit = RegExp(r'\b\d');
-
-  factory FontManager() {
-    if (supportsFontLoadingApi) {
-      return FontManager._();
-    } else {
-      return _PolyfillFontManager();
-    }
-  }
-
-  FontManager._();
 
   /// Registers assets to Flutter Web Engine.
   ///
@@ -174,7 +184,7 @@ class FontManager {
         notPunctuation.stringMatch(family) != family) {
       // Load a font family name with special characters once here wrapped in
       // quotes.
-      _loadFontFace('\'$family\'', asset, descriptors);
+      _loadFontFace("'$family'", asset, descriptors);
     }
     // Load all fonts, without quoted family names.
     _loadFontFace(family, asset, descriptors);
@@ -267,20 +277,20 @@ class _PolyfillFontManager extends FontManager {
 
     final Completer<void> completer = Completer<void>();
 
-    late DateTime _fontLoadStart;
+    late DateTime fontLoadStart;
 
-    void _watchWidth() {
+    void watchWidth() {
       if (paragraph.offsetWidth != sansSerifWidth) {
         paragraph.remove();
         completer.complete();
       } else {
-        if (DateTime.now().difference(_fontLoadStart) > _fontLoadTimeout) {
+        if (DateTime.now().difference(fontLoadStart) > _fontLoadTimeout) {
           // Let application waiting for fonts continue with fallback.
           completer.complete();
           // Throw unhandled exception for logging.
           throw Exception('Timed out trying to load font: $family');
         } else {
-          Timer(_fontLoadRetryDuration, _watchWidth);
+          Timer(_fontLoadRetryDuration, watchWidth);
         }
       }
     }
@@ -310,8 +320,8 @@ class _PolyfillFontManager extends FontManager {
       return;
     }
 
-    _fontLoadStart = DateTime.now();
-    _watchWidth();
+    fontLoadStart = DateTime.now();
+    watchWidth();
 
     _fontLoadingFutures.add(completer.future);
   }

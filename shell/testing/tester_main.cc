@@ -27,6 +27,10 @@
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
+#if defined(FML_OS_WIN)
+#include <combaseapi.h>
+#endif  // defined(FML_OS_WIN)
+
 #if defined(FML_OS_POSIX)
 #include <signal.h>
 #endif  // defined(FML_OS_POSIX)
@@ -56,7 +60,12 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return &canvas_; }
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override { return {}; }
+
+  // |ExternalViewEmbedder|
+  EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {&canvas_, nullptr};
+  }
 
  private:
   SkCanvas canvas_;
@@ -413,6 +422,10 @@ int main(int argc, char* argv[]) {
     ::exit(1);
     return true;
   };
+
+#if defined(FML_OS_WIN)
+  CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif  // defined(FML_OS_WIN)
 
   return flutter::RunTester(settings,
                             command_line.HasOption(flutter::FlagForSwitch(

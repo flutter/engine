@@ -35,7 +35,7 @@ namespace flutter_runner {
 using ViewCallback = std::function<void()>;
 using FlatlandViewCreatedCallback = std::function<void(
     fuchsia::ui::composition::ContentId,
-    fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher)>;
+    fuchsia::ui::composition::ChildViewWatcherHandle child_view_watcher)>;
 using FlatlandViewIdCallback =
     std::function<void(fuchsia::ui::composition::ContentId)>;
 
@@ -65,12 +65,15 @@ class FlatlandExternalViewEmbedder final
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override;
+
+  // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
+  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
   flutter::PostPrerollResult PostPrerollAction(

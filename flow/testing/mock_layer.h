@@ -5,7 +5,15 @@
 #ifndef FLOW_TESTING_MOCK_LAYER_H_
 #define FLOW_TESTING_MOCK_LAYER_H_
 
+#include <functional>
+#include <memory>
+#include "flutter/flow/diff_context.h"
+#include "flutter/flow/layers/cacheable_layer.h"
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/layers/layer_raster_cache_item.h"
+#include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 
 namespace flutter {
 namespace testing {
@@ -20,7 +28,8 @@ class MockLayer : public Layer {
                      SkPaint paint = SkPaint(),
                      bool fake_has_platform_view = false,
                      bool fake_reads_surface = false,
-                     bool fake_opacity_compatible_ = false);
+                     bool fake_opacity_compatible_ = false,
+                     bool fake_has_texture_layer = false);
 
   static std::shared_ptr<MockLayer> Make(SkPath path,
                                          SkPaint paint = SkPaint()) {
@@ -38,6 +47,7 @@ class MockLayer : public Layer {
   const SkMatrix& parent_matrix() { return parent_matrix_; }
   const SkRect& parent_cull_rect() { return parent_cull_rect_; }
   bool parent_has_platform_view() { return parent_has_platform_view_; }
+  bool parent_has_texture_layer() { return parent_has_texture_layer_; }
 
   bool IsReplacing(DiffContext* context, const Layer* layer) const override;
   void Diff(DiffContext* context, const Layer* old_layer) override;
@@ -50,11 +60,64 @@ class MockLayer : public Layer {
   SkPath fake_paint_path_;
   SkPaint fake_paint_;
   bool parent_has_platform_view_ = false;
+  bool parent_has_texture_layer_ = false;
   bool fake_has_platform_view_ = false;
   bool fake_reads_surface_ = false;
   bool fake_opacity_compatible_ = false;
+  bool fake_has_texture_layer_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MockLayer);
+};
+
+class MockCacheableContainerLayer : public CacheableContainerLayer {
+ public:
+  // if render more than 3 frames, try to cache itself.
+  // if less 3 frames, cache his children
+  static std::shared_ptr<MockCacheableContainerLayer> CacheLayerOrChildren() {
+    return std::make_shared<MockCacheableContainerLayer>(true);
+  }
+
+  // if render more than 3 frames, try to cache itself.
+  // if less 3 frames, cache nothing
+  static std::shared_ptr<MockCacheableContainerLayer> CacheLayerOnly() {
+    return std::make_shared<MockCacheableContainerLayer>();
+  }
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+  explicit MockCacheableContainerLayer(bool cache_children = false)
+      : CacheableContainerLayer(3, cache_children) {}
+};
+
+class MockLayerCacheableItem : public LayerRasterCacheItem {
+ public:
+  using LayerRasterCacheItem::LayerRasterCacheItem;
+};
+class MockCacheableLayer : public MockLayer {
+ public:
+  explicit MockCacheableLayer(SkPath path,
+                              SkPaint paint = SkPaint(),
+                              int render_limit = 3,
+                              bool fake_has_platform_view = false,
+                              bool fake_reads_surface = false,
+                              bool fake_opacity_compatible = false)
+      : MockLayer(path,
+                  paint,
+                  fake_has_platform_view,
+                  fake_reads_surface,
+                  fake_opacity_compatible) {
+    raster_cache_item_ =
+        std::make_unique<MockLayerCacheableItem>(this, render_limit);
+  }
+
+  const LayerRasterCacheItem* raster_cache_item() const {
+    return raster_cache_item_.get();
+  }
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+ private:
+  std::unique_ptr<LayerRasterCacheItem> raster_cache_item_;
 };
 
 }  // namespace testing

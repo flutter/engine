@@ -47,6 +47,9 @@ class Contents {
       const ContentContext& renderer,
       const Entity& entity) const;
 
+  virtual bool ShouldRender(const Entity& entity,
+                            const ISize& target_size) const;
+
  protected:
 
  private:

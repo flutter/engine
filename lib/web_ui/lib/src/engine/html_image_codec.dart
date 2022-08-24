@@ -25,10 +25,10 @@ typedef WebOnlyImageCodecChunkCallback = void Function(
     int cumulativeBytesLoaded, int expectedTotalBytes);
 
 class HtmlCodec implements ui.Codec {
+  HtmlCodec(this.src, {this.chunkCallback});
+
   final String src;
   final WebOnlyImageCodecChunkCallback? chunkCallback;
-
-  HtmlCodec(this.src, {this.chunkCallback});
 
   @override
   int get frameCount => 1;
@@ -101,7 +101,7 @@ class HtmlCodec implements ui.Codec {
       if (chunkCallback != null) {
         chunkCallback!(100, 100);
       }
-      imgElement.removeEventListener('load', loadListener!);
+      imgElement.removeEventListener('load', loadListener);
       imgElement.removeEventListener('error', errorListener);
       final HtmlImage image = HtmlImage(
         imgElement,
@@ -119,9 +119,9 @@ class HtmlCodec implements ui.Codec {
 }
 
 class HtmlBlobCodec extends HtmlCodec {
-  final DomBlob blob;
-
   HtmlBlobCodec(this.blob) : super(domWindow.URL.createObjectURL(blob));
+
+  final DomBlob blob;
 
   @override
   void dispose() {
@@ -133,16 +133,17 @@ class SingleFrameInfo implements ui.FrameInfo {
   SingleFrameInfo(this.image);
 
   @override
-  Duration get duration => const Duration(milliseconds: 0);
+  Duration get duration => Duration.zero;
 
   @override
   final ui.Image image;
 }
 
 class HtmlImage implements ui.Image {
+  HtmlImage(this.imgElement, this.width, this.height);
+
   final DomHTMLImageElement imgElement;
   bool _requiresClone = false;
-  HtmlImage(this.imgElement, this.width, this.height);
 
   bool _disposed = false;
   @override
@@ -193,11 +194,11 @@ class HtmlImage implements ui.Image {
         final DomImageData imageData = ctx.getImageData(0, 0, width, height);
         return Future<ByteData?>.value(imageData.data.buffer.asByteData());
       default:
-        if (imgElement.src?.startsWith('data:') == true) {
+        if (imgElement.src?.startsWith('data:') ?? false) {
           final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
           return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
         } else {
-          return Future<ByteData?>.value(null);
+          return Future<ByteData?>.value();
         }
     }
   }

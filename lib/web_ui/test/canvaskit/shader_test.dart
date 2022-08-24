@@ -70,9 +70,12 @@ void testMain() {
         Float64List.fromList(Matrix4.diagonal3Values(1, 2, 3).storage),
       ) as CkImageShader;
       expect(imageShader, isA<CkImageShader>());
+
+      expect(imageShader.debugDisposed, false);
+      imageShader.dispose();
+      expect(imageShader.debugDisposed, true);
     });
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }
 
 const List<ui.Color> testColors = <ui.Color>[ui.Color(0xFFFFFF00), ui.Color(0xFFFFFFFF)];

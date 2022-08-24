@@ -5,7 +5,7 @@
 part of ui;
 
 class SemanticsAction {
-  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
+  const SemanticsAction._(this.index) : assert(index != null);
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -134,7 +134,7 @@ class SemanticsAction {
 }
 
 class SemanticsFlag {
-  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
+  const SemanticsFlag._(this.index) : assert(index != null);
 
   final int index;
 
@@ -297,8 +297,8 @@ abstract class StringAttribute {
 
 class SpellOutStringAttribute extends StringAttribute {
   SpellOutStringAttribute({
-    required TextRange range,
-  }) : super._(range: range);
+    required super.range,
+  }) : super._();
 
   @override
   StringAttribute copy({required TextRange range}) {
@@ -313,9 +313,9 @@ class SpellOutStringAttribute extends StringAttribute {
 
 class LocaleStringAttribute extends StringAttribute {
   LocaleStringAttribute({
-    required TextRange range,
+    required super.range,
     required this.locale,
-  }) : super._(range: range);
+  }) : super._();
 
   final Locale locale;
 
@@ -368,8 +368,9 @@ class SemanticsUpdateBuilder {
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
   }) {
-    if (transform.length != 16)
+    if (transform.length != 16) {
       throw ArgumentError('transform argument must have 16 entries.');
+    }
     _nodeUpdates.add(engine.SemanticsNodeUpdate(
       id: id,
       flags: flags,

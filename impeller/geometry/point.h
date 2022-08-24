@@ -189,7 +189,7 @@ struct TPoint {
   constexpr TPoint Normalize() const {
     const auto length = GetLength();
     if (length == 0) {
-      return {};
+      return {1, 0};
     }
     return {x / length, y / length};
   }
@@ -202,6 +202,10 @@ struct TPoint {
 
   constexpr TPoint Reflect(const TPoint& axis) const {
     return *this - axis * this->Dot(axis) * 2;
+  }
+
+  constexpr Radians AngleTo(const TPoint& p) const {
+    return Radians{std::atan2(this->Cross(p), this->Dot(p))};
   }
 
   constexpr bool IsZero() const { return x == 0 && y == 0; }

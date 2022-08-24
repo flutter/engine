@@ -6,6 +6,7 @@
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/base/work_queue_common.h"
 
 namespace impeller {
 
@@ -42,27 +43,29 @@ ContextGLES::ContextGLES(
         std::shared_ptr<PipelineLibraryGLES>(new PipelineLibraryGLES(reactor_));
   }
 
-  // Create all allocators.
+  // Create allocators.
   {
-    permanents_allocator_ =
+    resource_allocator_ =
         std::shared_ptr<AllocatorGLES>(new AllocatorGLES(reactor_));
-    if (!permanents_allocator_->IsValid()) {
-      VALIDATION_LOG << "Could not create permanents allocator.";
-      return;
-    }
-
-    transients_allocator_ =
-        std::shared_ptr<AllocatorGLES>(new AllocatorGLES(reactor_));
-    if (!transients_allocator_->IsValid()) {
-      VALIDATION_LOG << "Could not create transients allocator.";
+    if (!resource_allocator_->IsValid()) {
+      VALIDATION_LOG << "Could not create a resource allocator.";
       return;
     }
   }
 
-  // Create the sampler library
+  // Create the sampler library.
   {
     sampler_library_ =
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
+  }
+
+  // Create the work queue.
+  {
+    work_queue_ = WorkQueueCommon::Create();
+    if (!work_queue_) {
+      VALIDATION_LOG << "Could not create work queue.";
+      return;
+    }
   }
 
   is_valid_ = true;
@@ -93,39 +96,45 @@ bool ContextGLES::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Allocator> ContextGLES::GetPermanentsAllocator() const {
-  return permanents_allocator_;
+// |Context|
+std::shared_ptr<Allocator> ContextGLES::GetResourceAllocator() const {
+  return resource_allocator_;
 }
 
-std::shared_ptr<Allocator> ContextGLES::GetTransientsAllocator() const {
-  return transients_allocator_;
-}
-
+// |Context|
 std::shared_ptr<ShaderLibrary> ContextGLES::GetShaderLibrary() const {
   return shader_library_;
 }
 
+// |Context|
 std::shared_ptr<SamplerLibrary> ContextGLES::GetSamplerLibrary() const {
   return sampler_library_;
 }
 
+// |Context|
 std::shared_ptr<PipelineLibrary> ContextGLES::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
-std::shared_ptr<CommandBuffer> ContextGLES::CreateRenderCommandBuffer() const {
-  return std::shared_ptr<CommandBufferGLES>(new CommandBufferGLES(reactor_));
+// |Context|
+std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
+  return std::shared_ptr<CommandBufferGLES>(
+      new CommandBufferGLES(weak_from_this(), reactor_));
 }
 
-std::shared_ptr<CommandBuffer> ContextGLES::CreateTransferCommandBuffer()
-    const {
-  // There is no such concept. Just use a render command buffer.
-  return CreateRenderCommandBuffer();
+// |Context|
+std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
+  return work_queue_;
 }
 
 // |Context|
 bool ContextGLES::HasThreadingRestrictions() const {
   return true;
+}
+
+// |Context|
+bool ContextGLES::SupportsOffscreenMSAA() const {
+  return false;
 }
 
 }  // namespace impeller

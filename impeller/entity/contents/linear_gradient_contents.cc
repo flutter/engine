@@ -16,10 +16,6 @@ LinearGradientContents::LinearGradientContents() = default;
 
 LinearGradientContents::~LinearGradientContents() = default;
 
-void LinearGradientContents::SetPath(Path path) {
-  path_ = std::move(path);
-}
-
 void LinearGradientContents::SetEndPoints(Point start_point, Point end_point) {
   start_point_ = start_point;
   end_point_ = end_point;
@@ -35,30 +31,29 @@ void LinearGradientContents::SetColors(std::vector<Color> colors) {
   }
 }
 
+void LinearGradientContents::SetTileMode(Entity::TileMode tile_mode) {
+  tile_mode_ = tile_mode;
+}
+
 const std::vector<Color>& LinearGradientContents::GetColors() const {
   return colors_;
 }
 
-std::optional<Rect> LinearGradientContents::GetCoverage(
-    const Entity& entity) const {
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
-};
-
 bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-  using VS = GradientFillPipeline::VertexShader;
-  using FS = GradientFillPipeline::FragmentShader;
+  using VS = LinearGradientFillPipeline::VertexShader;
+  using FS = LinearGradientFillPipeline::FragmentShader;
 
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
   {
-    auto result =
-        Tessellator{}.Tessellate(path_.GetFillType(), path_.CreatePolyline(),
-                                 [&vertices_builder](Point point) {
-                                   VS::PerVertexData vtx;
-                                   vtx.vertices = point;
-                                   vertices_builder.AppendVertex(vtx);
-                                 });
+    auto result = Tessellator{}.Tessellate(GetPath().GetFillType(),
+                                           GetPath().CreatePolyline(),
+                                           [&vertices_builder](Point point) {
+                                             VS::PerVertexData vtx;
+                                             vtx.position = point;
+                                             vertices_builder.AppendVertex(vtx);
+                                           });
 
     if (result == Tessellator::Result::kInputError) {
       return true;
@@ -71,17 +66,19 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
+  frame_info.matrix = GetInverseMatrix();
 
   FS::GradientInfo gradient_info;
   gradient_info.start_point = start_point_;
   gradient_info.end_point = end_point_;
   gradient_info.start_color = colors_[0].Premultiply();
   gradient_info.end_color = colors_[1].Premultiply();
+  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
 
   Command cmd;
   cmd.label = "LinearGradientFill";
-  cmd.pipeline =
-      renderer.GetGradientFillPipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.pipeline = renderer.GetLinearGradientFillPipeline(
+      OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(
       vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));

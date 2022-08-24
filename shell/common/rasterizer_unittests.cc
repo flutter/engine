@@ -66,7 +66,8 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
                PostPrerollResult(
                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
   MOCK_METHOD0(GetCurrentCanvases, std::vector<SkCanvas*>());
-  MOCK_METHOD1(CompositeEmbeddedView, SkCanvas*(int view_id));
+  MOCK_METHOD0(GetCurrentBuilders, std::vector<DisplayListBuilder*>());
+  MOCK_METHOD1(CompositeEmbeddedView, EmbedderPaintContext(int view_id));
   MOCK_METHOD2(SubmitFrame,
                void(GrDirectContext* context,
                     std::unique_ptr<SurfaceFrame> frame));
@@ -175,7 +176,7 @@ TEST(RasterizerTest,
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -237,7 +238,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -305,7 +306,7 @@ TEST(
   rasterizer->Setup(std::move(surface));
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-  auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+  auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                 /*device_pixel_ratio=*/2.0f);
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -375,7 +376,7 @@ TEST(RasterizerTest,
   rasterizer->Setup(std::move(surface));
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-  auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+  auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                 /*device_pixel_ratio=*/2.0f);
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -422,7 +423,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -475,7 +476,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -572,7 +573,7 @@ TEST(RasterizerTest,
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -626,7 +627,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -680,7 +681,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -733,7 +734,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -810,7 +811,7 @@ TEST(RasterizerTest,
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree =
-          std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+          std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                       /*device_pixel_ratio=*/2.0f);
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]));
@@ -971,7 +972,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree =
-          std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+          std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                       /*device_pixel_ratio=*/2.0f);
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]));
@@ -1044,7 +1045,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(first_timestamp));

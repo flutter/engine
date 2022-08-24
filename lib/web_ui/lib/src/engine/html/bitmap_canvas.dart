@@ -31,13 +31,46 @@ import 'shaders/image_shader.dart';
 
 /// A raw HTML canvas that is directly written to.
 class BitmapCanvas extends EngineCanvas {
+  /// Allocates a canvas with enough memory to paint a picture within the given
+  /// [bounds].
+  ///
+  /// This canvas can be reused by pictures with different paint bounds as long
+  /// as the [Rect.size] of the bounds fully fit within the size used to
+  /// initialize this canvas.
+  BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
+      {double density = 1.0})
+      : assert(_bounds != null),
+        _density = density,
+        _renderStrategy = renderStrategy,
+        widthInBitmapPixels = widthToPhysical(_bounds.width),
+        heightInBitmapPixels = heightToPhysical(_bounds.height),
+        _canvasPool = CanvasPool(widthToPhysical(_bounds.width),
+            heightToPhysical(_bounds.height), density) {
+    rootElement.style.position = 'absolute';
+    // Adds one extra pixel to the requested size. This is to compensate for
+    // _initializeViewport() snapping canvas position to 1 pixel, causing
+    // painting to overflow by at most 1 pixel.
+    _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
+    _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
+    _updateRootElementTransform();
+    _canvasPool.mount(rootElement as DomHTMLElement);
+    _setupInitialTransform();
+  }
+
+  /// Constructs bitmap canvas to capture image data.
+  factory BitmapCanvas.imageData(ui.Rect bounds) {
+    final BitmapCanvas bitmapCanvas = BitmapCanvas(bounds, RenderStrategy());
+    bitmapCanvas._preserveImageData = true;
+    return bitmapCanvas;
+  }
+
   /// The rectangle positioned relative to the parent layer's coordinate
   /// system's origin, within which this canvas paints.
   ///
   /// Painting outside these bounds will result in cropping.
   ui.Rect get bounds => _bounds;
   set bounds(ui.Rect newValue) {
-    assert(newValue != null); // ignore: unnecessary_null_comparison
+    assert(newValue != null);
     _bounds = newValue;
     final int newCanvasPositionX = _bounds.left.floor() - kPaddingPixels;
     final int newCanvasPositionY = _bounds.top.floor() - kPaddingPixels;
@@ -136,39 +169,6 @@ class BitmapCanvas extends EngineCanvas {
 
   final RenderStrategy _renderStrategy;
 
-  /// Allocates a canvas with enough memory to paint a picture within the given
-  /// [bounds].
-  ///
-  /// This canvas can be reused by pictures with different paint bounds as long
-  /// as the [Rect.size] of the bounds fully fit within the size used to
-  /// initialize this canvas.
-  BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
-      {double density = 1.0})
-      : assert(_bounds != null), // ignore: unnecessary_null_comparison
-        _density = density,
-        _renderStrategy = renderStrategy,
-        widthInBitmapPixels = widthToPhysical(_bounds.width),
-        heightInBitmapPixels = heightToPhysical(_bounds.height),
-        _canvasPool = CanvasPool(widthToPhysical(_bounds.width),
-            heightToPhysical(_bounds.height), density) {
-    rootElement.style.position = 'absolute';
-    // Adds one extra pixel to the requested size. This is to compensate for
-    // _initializeViewport() snapping canvas position to 1 pixel, causing
-    // painting to overflow by at most 1 pixel.
-    _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
-    _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
-    _updateRootElementTransform();
-    _canvasPool.mount(rootElement as DomHTMLElement);
-    _setupInitialTransform();
-  }
-
-  /// Constructs bitmap canvas to capture image data.
-  factory BitmapCanvas.imageData(ui.Rect bounds) {
-    final BitmapCanvas bitmapCanvas = BitmapCanvas(bounds, RenderStrategy());
-    bitmapCanvas._preserveImageData = true;
-    return bitmapCanvas;
-  }
-
   /// Setup cache for reusing DOM elements across frames.
   void setElementCache(CrossFrameCache<DomHTMLElement>? cache) {
     _elementCache = cache;
@@ -218,7 +218,7 @@ class BitmapCanvas extends EngineCanvas {
 
   // Used by picture to assess if canvas is large enough to reuse as is.
   bool doesFitBounds(ui.Rect newBounds, double newDensity) {
-    assert(newBounds != null); // ignore: unnecessary_null_comparison
+    assert(newBounds != null);
     return widthInBitmapPixels >= widthToPhysical(newBounds.width) &&
         heightInBitmapPixels >= heightToPhysical(newBounds.height) &&
         _density == newDensity;
@@ -585,7 +585,7 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
       _applyFilter(svgElm, paint);
-      _drawElement(svgElm, const ui.Offset(0, 0), paint);
+      _drawElement(svgElm, ui.Offset.zero, paint);
     } else {
       setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
       if (paint.style == null && paint.strokeWidth != null) {
@@ -915,7 +915,7 @@ class BitmapCanvas extends EngineCanvas {
     if (shadows != null) {
       ctx.save();
       for (final ui.Shadow shadow in shadows) {
-        ctx.shadowColor = colorToCssString(shadow.color)!;
+        ctx.shadowColor = colorToCssString(shadow.color);
         ctx.shadowBlur = shadow.blurRadius;
         ctx.shadowOffsetX = shadow.offset.dx;
         ctx.shadowOffsetY = shadow.offset.dy;
@@ -1036,7 +1036,7 @@ class BitmapCanvas extends EngineCanvas {
   /// Stores paint data used by [drawPoints]. We cannot use the original paint
   /// data object because painting style is determined by [ui.PointMode] and
   /// not by [SurfacePointData.style].
-  static SurfacePaintData _drawPointsPaint = SurfacePaintData()
+  static final SurfacePaintData _drawPointsPaint = SurfacePaintData()
     ..strokeCap = ui.StrokeCap.round
     ..strokeJoin = ui.StrokeJoin.round
     ..blendMode = ui.BlendMode.srcOver;
@@ -1343,7 +1343,7 @@ String? stringForStrokeCap(ui.StrokeCap? strokeCap) {
 }
 
 String stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
-  assert(strokeJoin != null); // ignore: unnecessary_null_comparison
+  assert(strokeJoin != null);
   switch (strokeJoin) {
     case ui.StrokeJoin.round:
       return 'round';

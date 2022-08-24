@@ -16,7 +16,8 @@ impeller_shaders("shader_fixtures") {
     "impeller.vert",
     "instanced_draw.frag",
     "instanced_draw.vert",
-    "sample.vert",
+    "mipmaps.frag",
+    "mipmaps.vert",
     "simple.vert",
     "test_texture.frag",
     "test_texture.vert",
@@ -27,6 +28,7 @@ impellerc("runtime_stages") {
   shaders = [ "ink_sparkle.frag" ]
   sl_file_extension = "iplr"
   shader_target_flag = "--runtime-stage-metal"
+  iplr = true
 }
 
 test_fixtures("file_fixtures") {
@@ -40,10 +42,13 @@ test_fixtures("file_fixtures") {
     "boston.jpg",
     "embarcadero.jpg",
     "kalimba.jpg",
+    "resources_limit.vert",
     "sample.comp",
+    "sample.frag",
     "sample.tesc",
     "sample.tese",
     "sample.vert",
+    "sa%m#ple.vert",
     "struct_def_bug.vert",
     "table_mountain_nx.png",
     "table_mountain_ny.png",

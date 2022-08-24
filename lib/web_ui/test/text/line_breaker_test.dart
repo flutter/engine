@@ -310,7 +310,7 @@ void testMain() {
               currentFragment.end,
               greaterThan(i),
               reason: 'Failed at test case number $t:\n'
-                  '${testCase.toString()}\n'
+                  '$testCase\n'
                   '"$text"\n'
                   '\nFragment ended in the middle of a surrogate pair at {${currentFragment.end}}.',
             );
@@ -323,7 +323,7 @@ void testMain() {
               currentFragment.end,
               i,
               reason: 'Failed at test case number $t:\n'
-                  '${testCase.toString()}\n'
+                  '$testCase\n'
                   '"$text"\n'
                   '\nExpected fragment to end at {$i} but ended at {${currentFragment.end}}.',
             );
@@ -333,7 +333,7 @@ void testMain() {
               currentFragment.end,
               greaterThan(i),
               reason: 'Failed at test case number $t:\n'
-                  '${testCase.toString()}\n'
+                  '$testCase\n'
                   '"$text"\n'
                   '\nFragment ended in early at {${currentFragment.end}}.',
             );
@@ -351,7 +351,7 @@ void testMain() {
             fragments,
             hasLength(f + 2),
             reason: 'Failed at test case number $t:\n'
-                '${testCase.toString()}\n'
+                '$testCase\n'
                 '"$text"\n'
                 '\nExpected an extra fragment for endOfText but there wasn\'t one.',
           );
@@ -363,7 +363,7 @@ void testMain() {
           currentFragment.type,
           endOfText,
           reason: 'Failed at test case number $t:\n'
-              '${testCase.toString()}\n'
+              '$testCase\n'
               '"$text"\n\n'
               'Expected an endOfText fragment but found: $currentFragment',
         );
@@ -371,7 +371,7 @@ void testMain() {
           currentFragment.end,
           text.length,
           reason: 'Failed at test case number $t:\n'
-              '${testCase.toString()}\n'
+              '$testCase\n'
               '"$text"\n\n'
               'Expected an endOfText fragment ending at {${text.length}} but found: $currentFragment',
         );

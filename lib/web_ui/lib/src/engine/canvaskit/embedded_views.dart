@@ -15,18 +15,20 @@ import '../vector_math.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
-import 'initialization.dart';
 import 'path.dart';
 import 'picture_recorder.dart';
+import 'renderer.dart';
 import 'surface.dart';
 import 'surface_factory.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
+  HtmlViewEmbedder._();
+
   /// The [HtmlViewEmbedder] singleton.
   static HtmlViewEmbedder instance = HtmlViewEmbedder._();
 
-  HtmlViewEmbedder._();
+  DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
 
   /// Force the view embedder to disable overlays.
   ///
@@ -92,10 +94,10 @@ class HtmlViewEmbedder {
   final Set<int> _viewsToRecomposite = <int>{};
 
   /// The list of view ids that should be composited, in order.
-  List<int> _compositionOrder = <int>[];
+  final List<int> _compositionOrder = <int>[];
 
   /// The most recent composition order.
-  List<int> _activeCompositionOrder = <int>[];
+  final List<int> _activeCompositionOrder = <int>[];
 
   /// The size of the frame, in physical pixels.
   ui.Size _frameSize = ui.window.physicalSize;
@@ -270,7 +272,7 @@ class HtmlViewEmbedder {
 
     // If the chain was previously attached, attach it to the same position.
     if (headClipViewWasAttached) {
-      skiaSceneHost!.insertBefore(head, headClipViewNextSibling);
+      skiaSceneHost.insertBefore(head, headClipViewNextSibling);
     }
     return head;
   }
@@ -398,7 +400,7 @@ class HtmlViewEmbedder {
   DomElement? _svgPathDefs;
 
   /// The nodes containing the SVG clip definitions needed to clip this view.
-  Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
+  final Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
 
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
@@ -408,7 +410,7 @@ class HtmlViewEmbedder {
     }
     _svgPathDefs = kSvgResourceHeader.cloneNode(false) as SVGElement;
     _svgPathDefs!.append(createSVGDefsElement()..id = 'sk_path_defs');
-    skiaSceneHost!.append(_svgPathDefs!);
+    skiaSceneHost.append(_svgPathDefs!);
   }
 
   void submitFrame() {
@@ -476,18 +478,18 @@ class HtmlViewEmbedder {
         }
         if (diffResult.addToBeginning) {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-          skiaSceneHost!.insertBefore(platformViewRoot, elementToInsertBefore);
+          skiaSceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
           final Surface? overlay = _overlays[viewId];
           if (overlay != null) {
-            skiaSceneHost!
+            skiaSceneHost
                 .insertBefore(overlay.htmlElement, elementToInsertBefore);
           }
         } else {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-          skiaSceneHost!.append(platformViewRoot);
+          skiaSceneHost.append(platformViewRoot);
           final Surface? overlay = _overlays[viewId];
           if (overlay != null) {
-            skiaSceneHost!.append(overlay.htmlElement);
+            skiaSceneHost.append(overlay.htmlElement);
           }
         }
       }
@@ -500,11 +502,11 @@ class HtmlViewEmbedder {
           if (!overlayElement.isConnected!) {
             // This overlay wasn't added to the DOM.
             if (i == _compositionOrder.length - 1) {
-              skiaSceneHost!.append(overlayElement);
+              skiaSceneHost.append(overlayElement);
             } else {
               final int nextView = _compositionOrder[i + 1];
               final DomElement nextElement = _viewClipChains[nextView]!.root;
-              skiaSceneHost!.insertBefore(overlayElement, nextElement);
+              skiaSceneHost.insertBefore(overlayElement, nextElement);
             }
           }
         }
@@ -524,9 +526,9 @@ class HtmlViewEmbedder {
 
         final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
         final Surface? overlay = _overlays[viewId];
-        skiaSceneHost!.append(platformViewRoot);
+        skiaSceneHost.append(platformViewRoot);
         if (overlay != null) {
-          skiaSceneHost!.append(overlay.htmlElement);
+          skiaSceneHost.append(overlay.htmlElement);
         }
         _activeCompositionOrder.add(viewId);
         unusedViews.remove(viewId);
@@ -714,13 +716,13 @@ class HtmlViewEmbedder {
 /// * The slot view in the stack (the actual contents of the platform view).
 /// * The number of clipping elements used last time the view was composited.
 class ViewClipChain {
-  DomElement _root;
-  DomElement _slot;
-  int _clipCount = -1;
-
   ViewClipChain({required DomElement view})
       : _root = view,
         _slot = view;
+
+  DomElement _root;
+  final DomElement _slot;
+  int _clipCount = -1;
 
   DomElement get root => _root;
   DomElement get slot => _slot;
@@ -766,6 +768,17 @@ enum MutatorType {
 
 /// Stores mutation information like clipping or transform.
 class Mutator {
+  const Mutator.clipRect(ui.Rect rect)
+      : this._(MutatorType.clipRect, rect, null, null, null, null);
+  const Mutator.clipRRect(ui.RRect rrect)
+      : this._(MutatorType.clipRRect, null, rrect, null, null, null);
+  const Mutator.clipPath(ui.Path path)
+      : this._(MutatorType.clipPath, null, null, path, null, null);
+  const Mutator.transform(Matrix4 matrix)
+      : this._(MutatorType.transform, null, null, null, matrix, null);
+  const Mutator.opacity(int alpha)
+      : this._(MutatorType.opacity, null, null, null, null, alpha);
+
   const Mutator._(
     this.type,
     this.rect,
@@ -781,17 +794,6 @@ class Mutator {
   final ui.Path? path;
   final Matrix4? matrix;
   final int? alpha;
-
-  const Mutator.clipRect(ui.Rect rect)
-      : this._(MutatorType.clipRect, rect, null, null, null, null);
-  const Mutator.clipRRect(ui.RRect rrect)
-      : this._(MutatorType.clipRRect, null, rrect, null, null, null);
-  const Mutator.clipPath(ui.Path path)
-      : this._(MutatorType.clipPath, null, null, path, null, null);
-  const Mutator.transform(Matrix4 matrix)
-      : this._(MutatorType.transform, null, null, null, matrix, null);
-  const Mutator.opacity(int alpha)
-      : this._(MutatorType.opacity, null, null, null, null, alpha);
 
   bool get isClipType =>
       type == MutatorType.clipRect ||

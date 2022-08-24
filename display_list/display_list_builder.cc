@@ -4,7 +4,9 @@
 
 #include "flutter/display_list/display_list_builder.h"
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_color_source.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -183,6 +185,12 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
         new (pod) DlSweepGradientColorSource(sweep);
         break;
       }
+      case DlColorSourceType::kRuntimeEffect: {
+        const DlRuntimeEffectColorSource* effect = source->asRuntimeEffect();
+        FML_DCHECK(effect);
+        Push<SetRuntimeEffectColorSourceOp>(0, 0, effect);
+        break;
+      }
       case DlColorSourceType::kUnknown:
         Push<SetSkColorSourceOp>(0, 0, source->skia_object());
         break;
@@ -225,6 +233,7 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
         break;
       }
       case DlImageFilterType::kComposeFilter:
+      case DlImageFilterType::kLocalMatrixFilter:
       case DlImageFilterType::kColorFilter: {
         Push<SetSharedImageFilterOp>(0, 0, filter);
         break;
@@ -413,19 +422,29 @@ void DisplayListBuilder::setAttributesFromPaint(
   }
 }
 
+void DisplayListBuilder::checkForDeferredSave() {
+  if (current_layer_->has_deferred_save_op_) {
+    Push<SaveOp>(0, 1);
+    current_layer_->has_deferred_save_op_ = false;
+  }
+}
+
 void DisplayListBuilder::save() {
-  Push<SaveOp>(0, 1);
   layer_stack_.emplace_back(current_layer_);
   current_layer_ = &layer_stack_.back();
+  current_layer_->has_deferred_save_op_ = true;
 }
+
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
+    if (!current_layer_->has_deferred_save_op_) {
+      Push<RestoreOp>(0, 1);
+    }
     // Grab the current layer info before we push the restore
     // on the stack.
     LayerInfo layer_info = layer_stack_.back();
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
-    Push<RestoreOp>(0, 1);
     if (layer_info.has_layer) {
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
@@ -504,6 +523,7 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
   if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
       (tx != 0.0 || ty != 0.0)) {
+    checkForDeferredSave();
     Push<TranslateOp>(0, 1, tx, ty);
     current_layer_->matrix.preTranslate(tx, ty);
   }
@@ -511,12 +531,14 @@ void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
 void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 1.0 || sy != 1.0)) {
+    checkForDeferredSave();
     Push<ScaleOp>(0, 1, sx, sy);
     current_layer_->matrix.preScale(sx, sy);
   }
 }
 void DisplayListBuilder::rotate(SkScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
+    checkForDeferredSave();
     Push<RotateOp>(0, 1, degrees);
     current_layer_->matrix.preConcat(SkMatrix::RotateDeg(degrees));
   }
@@ -524,6 +546,7 @@ void DisplayListBuilder::rotate(SkScalar degrees) {
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 0.0 || sy != 0.0)) {
+    checkForDeferredSave();
     Push<SkewOp>(0, 1, sx, sy);
     current_layer_->matrix.preConcat(SkMatrix::Skew(sx, sy));
   }
@@ -540,6 +563,7 @@ void DisplayListBuilder::transform2DAffine(
       SkScalarsAreFinite(mxt, myt) &&
       !(mxx == 1 && mxy == 0 && mxt == 0 &&
         myx == 0 && myy == 1 && myt == 0)) {
+    checkForDeferredSave();
     Push<Transform2DAffineOp>(0, 1,
                               mxx, mxy, mxt,
                               myx, myy, myt);
@@ -565,6 +589,7 @@ void DisplayListBuilder::transformFullPerspective(
              SkScalarsAreFinite(myx, myy) && SkScalarsAreFinite(myz, myt) &&
              SkScalarsAreFinite(mzx, mzy) && SkScalarsAreFinite(mzz, mzt) &&
              SkScalarsAreFinite(mwx, mwy) && SkScalarsAreFinite(mwz, mwt)) {
+    checkForDeferredSave();
     Push<TransformFullPerspectiveOp>(0, 1,
                                      mxx, mxy, mxz, mxt,
                                      myx, myy, myz, myt,
@@ -578,6 +603,7 @@ void DisplayListBuilder::transformFullPerspective(
 }
 // clang-format on
 void DisplayListBuilder::transformReset() {
+  checkForDeferredSave();
   Push<TransformResetOp>(0, 0);
   current_layer_->matrix.setIdentity();
 }
@@ -599,12 +625,14 @@ void DisplayListBuilder::transform(const SkM44* m44) {
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
                                   bool is_aa) {
+  if (!rect.isFinite()) {
+    return;
+  }
+  checkForDeferredSave();
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
-      if (!current_layer_->clip_bounds.intersect(rect)) {
-        current_layer_->clip_bounds.setEmpty();
-      }
+      intersect(rect);
       break;
     case SkClipOp::kDifference:
       Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
@@ -617,12 +645,11 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
   } else {
+    checkForDeferredSave();
     switch (clip_op) {
       case SkClipOp::kIntersect:
         Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
-        if (!current_layer_->clip_bounds.intersect(rrect.getBounds())) {
-          current_layer_->clip_bounds.setEmpty();
-        }
+        intersect(rrect.getBounds());
         break;
       case SkClipOp::kDifference:
         Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
@@ -650,16 +677,27 @@ void DisplayListBuilder::clipPath(const SkPath& path,
       return;
     }
   }
+  checkForDeferredSave();
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectPathOp>(0, 1, path, is_aa);
-      if (!current_layer_->clip_bounds.intersect(path.getBounds())) {
-        current_layer_->clip_bounds.setEmpty();
+      if (!path.isInverseFillType()) {
+        intersect(path.getBounds());
       }
       break;
     case SkClipOp::kDifference:
       Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+      // Map "kDifference of inverse path" to "kIntersect of the original path".
+      if (path.isInverseFillType()) {
+        intersect(path.getBounds());
+      }
       break;
+  }
+}
+void DisplayListBuilder::intersect(const SkRect& rect) {
+  SkRect devClipBounds = getTransform().mapRect(rect);
+  if (!current_layer_->clip_bounds.intersect(devClipBounds)) {
+    current_layer_->clip_bounds.setEmpty();
   }
 }
 SkRect DisplayListBuilder::getLocalClipBounds() {
@@ -1045,166 +1083,5 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
       : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
   UpdateLayerOpacityCompatibility(false);
 }
-
-// clang-format off
-// Flags common to all primitives that apply colors
-#define PAINT_FLAGS (kUsesDither_ |      \
-                     kUsesColor_ |       \
-                     kUsesAlpha_ |       \
-                     kUsesBlend_ |       \
-                     kUsesShader_ |      \
-                     kUsesColorFilter_ | \
-                     kUsesImageFilter_)
-
-// Flags common to all primitives that stroke or fill
-#define STROKE_OR_FILL_FLAGS (kIsDrawnGeometry_ | \
-                              kUsesAntiAlias_ |   \
-                              kUsesMaskFilter_ |  \
-                              kUsesPathEffect_)
-
-// Flags common to primitives that stroke geometry
-#define STROKE_FLAGS (kIsStrokedGeometry_ | \
-                      kUsesAntiAlias_ |     \
-                      kUsesMaskFilter_ |    \
-                      kUsesPathEffect_)
-
-// Flags common to primitives that render an image with paint attributes
-#define IMAGE_FLAGS_BASE (kIsNonGeometric_ |  \
-                          kUsesAlpha_ |       \
-                          kUsesDither_ |      \
-                          kUsesBlend_ |       \
-                          kUsesColorFilter_ | \
-                          kUsesImageFilter_)
-// clang-format on
-
-const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerWithPaintFlags =
-    DisplayListAttributeFlags(kIsNonGeometric_ |   //
-                              kUsesAlpha_ |        //
-                              kUsesBlend_ |        //
-                              kUsesColorFilter_ |  //
-                              kUsesImageFilter_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawColorFlags =
-    DisplayListAttributeFlags(kFloodsSurface_ | kIgnoresPaint_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPaintFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | kFloodsSurface_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawHVLineFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS | kMayHaveCaps_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawLineFlags =
-    kDrawHVLineFlags.with(kMayHaveDiagonalCaps_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawRectFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
-                              kMayHaveJoins_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawOvalFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawCircleFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawRRectFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawDRRectFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPathFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
-                              kMayHaveCaps_ | kMayHaveDiagonalCaps_ |
-                              kMayHaveJoins_ | kMayHaveAcuteJoins_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawArcNoCenterFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
-                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawArcWithCenterFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
-                              kMayHaveJoins_ | kMayHaveAcuteJoins_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsPointsFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
-                              kMayHaveCaps_ | kButtCapIsSquare_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsLinesFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
-                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
-
-// Polygon mode just draws (count-1) separate lines, no joins
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsPolygonFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
-                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawVerticesFlags =
-    DisplayListAttributeFlags(kIsNonGeometric_ |   //
-                              kUsesDither_ |       //
-                              kUsesAlpha_ |        //
-                              kUsesShader_ |       //
-                              kUsesBlend_ |        //
-                              kUsesColorFilter_ |  //
-                              kUsesImageFilter_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageWithPaintFlags =
-    DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
-                              kUsesAntiAlias_ | kUsesMaskFilter_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageRectFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags
-    DisplayListOpFlags::kDrawImageRectWithPaintFlags =
-        DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
-                                  kUsesAntiAlias_ | kUsesMaskFilter_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageNineFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags
-    DisplayListOpFlags::kDrawImageNineWithPaintFlags =
-        DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageLatticeFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags
-    DisplayListOpFlags::kDrawImageLatticeWithPaintFlags =
-        DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasWithPaintFlags =
-    DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureWithPaintFlags =
-    kSaveLayerWithPaintFlags;
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawDisplayListFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawTextBlobFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
-                              kMayHaveJoins_)
-        .without(kUsesAntiAlias_);
-
-const DisplayListAttributeFlags DisplayListOpFlags::kDrawShadowFlags =
-    DisplayListAttributeFlags(kIgnoresPaint_);
-
-#undef PAINT_FLAGS
-#undef STROKE_OR_FILL_FLAGS
-#undef STROKE_FLAGS
-#undef IMAGE_FLAGS_BASE
 
 }  // namespace flutter

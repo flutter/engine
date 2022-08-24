@@ -6,10 +6,9 @@
 
 #include <windows.h>
 
-#include <iostream>
-
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
-#include "flutter/shell/platform/windows/keyboard_win32_common.h"
+#include "flutter/shell/platform/windows/keyboard_utils.h"
 
 namespace flutter {
 
@@ -139,7 +138,7 @@ void KeyboardKeyChannelHandler::KeyboardHook(
       event.AddMember(kTypeKey, kKeyUp, allocator);
       break;
     default:
-      std::cerr << "Unknown key event action: " << action << std::endl;
+      FML_LOG(WARNING) << "Unknown key event action: " << action;
       callback(false);
       return;
   }
