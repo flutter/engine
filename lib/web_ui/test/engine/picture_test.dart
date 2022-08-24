@@ -4,7 +4,7 @@
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart';
+import 'package:ui/ui.dart' as ui;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -13,50 +13,50 @@ void main() {
 Future<void> testMain() async {
   test('Picture constructor invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
-    Picture? createdPicture;
-    Picture.onCreate = (Picture picture) {
+    ui.Picture? createdPicture;
+    ui.Picture.onCreate = (ui.Picture picture) {
       onCreateInvokedCount++;
       createdPicture = picture;
     };
 
-    final Picture picture1 = _createPicture();
+    final ui.Picture picture1 = _createPicture();
 
     expect(onCreateInvokedCount, 1);
     expect(createdPicture, picture1);
 
-    final Picture picture2 = _createPicture();
+    final ui.Picture picture2 = _createPicture();
 
     expect(onCreateInvokedCount, 2);
     expect(createdPicture, picture2);
-    Picture.onCreate = null;
+    ui.Picture.onCreate = null;
   });
 
   test('dispose() invokes onDispose once', () async {
     int onDisposeInvokedCount = 0;
-    Picture? disposedPicture;
-    Picture.onDispose = (Picture picture) {
+    ui.Picture? disposedPicture;
+    ui.Picture.onDispose = (ui.Picture picture) {
       onDisposeInvokedCount++;
       disposedPicture = picture;
     };
 
-    final Picture picture1 = _createPicture()..dispose();
+    final ui.Picture picture1 = _createPicture()..dispose();
 
     expect(onDisposeInvokedCount, 1);
     expect(disposedPicture, picture1);
 
-    final Picture picture2 = _createPicture()..dispose();
+    final ui.Picture picture2 = _createPicture()..dispose();
 
     expect(onDisposeInvokedCount, 2);
     expect(disposedPicture, picture2);
 
-    Picture.onDispose = null;
+    ui.Picture.onDispose = null;
   });
 }
 
-Picture _createPicture() {
-  final PictureRecorder recorder = PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
-  const Rect rect = Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
+ui.Picture _createPicture() {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(recorder);
+  const ui.Rect rect = ui.Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
   canvas.clipRect(rect);
   return recorder.endRecording();
 }
