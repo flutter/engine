@@ -38,7 +38,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   }
 
   auto texture = renderer.MakeSubpass(
-      ISize::Ceil(coverage->size), true,
+      ISize::Ceil(coverage->size),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;

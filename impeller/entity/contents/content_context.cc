@@ -242,7 +242,6 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
-    bool enable_msaa,
     SubpassCallback subpass_callback) const {
   auto context = GetContext();
 
