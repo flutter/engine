@@ -83,9 +83,18 @@ void PlatformMessageResponseDart::Complete(std::unique_ptr<fml::Mapping> data) {
               /*external_allocation_size=*/size,
               /*callback=*/MappingFinalizer);
         } else {
-          byte_buffer =
+          Dart_Handle mutable_byte_buffer =
               tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
+          Dart_Handle ui_lib = Dart_LookupLibrary(
+              tonic::DartConverter<std::string>().ToDart("dart:ui"));
+          FML_DCHECK(!(Dart_IsNull(ui_lib) || Dart_IsError(ui_lib)));
+          byte_buffer = Dart_Invoke(ui_lib,
+                                    tonic::DartConverter<std::string>().ToDart(
+                                        "_wrapUnmodifiableByteData"),
+                                    1, &mutable_byte_buffer);
+          FML_DCHECK(!(Dart_IsNull(byte_buffer) || Dart_IsError(byte_buffer)));
         }
+
         return byte_buffer;
       });
 }
