@@ -4,10 +4,10 @@
 
 #include "flutter/shell/platform/windows/flutter_window.h"
 
+#include <WinUser.h>
 #include <dwmapi.h>
 #include <chrono>
 #include <map>
-#include <WinUser.h>
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/embedder.h"
