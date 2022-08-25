@@ -617,7 +617,7 @@ void FlutterWindowsView::DestroyRenderSurface() {
 }
 
 void FlutterWindowsView::SendInitialAccessibilityFeatures() {
-  binding_handler_->UpdateInitialAccessibilityFeatures();
+  binding_handler_->SendInitialAccessibilityFeatures();
 }
 
 void FlutterWindowsView::UpdateHighContrastEnabled(bool enabled) {

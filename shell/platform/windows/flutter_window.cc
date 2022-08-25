@@ -287,7 +287,6 @@ void FlutterWindow::OnThemeChange() {
   if (SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(HIGHCONTRAST),
                             &high_contrast, 0)) {
     BOOL hc_on = high_contrast.dwFlags & HCF_HIGHCONTRASTON;
-    // Currently, only FlutterWindowsView should be used as delegate on Windows
     binding_handler_delegate_->UpdateHighContrastEnabled(hc_on);
   } else {
     FML_LOG(INFO) << "Failed to get status of high contrast feature,"
@@ -295,7 +294,7 @@ void FlutterWindow::OnThemeChange() {
   }
 }
 
-void FlutterWindow::UpdateInitialAccessibilityFeatures() {
+void FlutterWindow::SendInitialAccessibilityFeatures() {
   OnThemeChange();
 }
 

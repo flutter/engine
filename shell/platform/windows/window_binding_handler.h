@@ -91,7 +91,7 @@ class WindowBindingHandler {
   virtual PointerLocation GetPrimaryPointerLocation() = 0;
 
   // Called to set the initial state of accessibility features
-  virtual void UpdateInitialAccessibilityFeatures() = 0;
+  virtual void SendInitialAccessibilityFeatures() = 0;
 };
 
 }  // namespace flutter

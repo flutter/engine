@@ -146,7 +146,7 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void OnThemeChange() override;
 
   // |WindowBindingHandler|
-  void UpdateInitialAccessibilityFeatures() override;
+  void SendInitialAccessibilityFeatures() override;
 
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine
