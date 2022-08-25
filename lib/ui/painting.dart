@@ -1618,6 +1618,10 @@ enum PixelFormat {
   bgra8888,
 }
 
+
+/// Signature for [Image] lifecycle events.
+typedef ImageEventCallback = void Function(Image);
+
 /// Opaque handle to raw decoded image data (pixels).
 ///
 /// To obtain an [Image] object, use the [ImageDescriptor] API.
@@ -1661,14 +1665,14 @@ class Image {
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Image)? onCreate;
+  static ImageEventCallback? onCreate;
 
   /// A callback that is invoked to report the object disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onDispose] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Image)? onDispose;
+  static ImageEventCallback? onDispose;
 
   StackTrace? _debugStack;
 
@@ -5593,6 +5597,9 @@ class Canvas extends NativeFieldWrapperClass1 {
   external void _drawShadow(Path path, int color, double elevation, bool transparentOccluder);
 }
 
+/// Signature for [Picture] lifecycle events.
+typedef PictureEventCallback = void Function(Picture);
+
 /// An object representing a sequence of recorded graphical operations.
 ///
 /// To create a [Picture], use a [PictureRecorder].
@@ -5614,14 +5621,14 @@ class Picture extends NativeFieldWrapperClass1 {
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Picture)? onCreate;
+  static PictureEventCallback? onCreate;
 
   /// A callback that is invoked to report the object disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onDispose] directly because [MemoryAllocations]
   /// allows multiple callbacks.
-  static void Function(Picture)? onDispose;
+  static PictureEventCallback? onDispose;
 
   /// Creates an image from this picture.
   ///
