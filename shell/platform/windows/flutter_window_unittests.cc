@@ -384,7 +384,6 @@ TEST(FlutterWindowTest, OnThemeChange) {
   win32window.SetView(&delegate);
 
   ON_CALL(win32window, GetHighContrastEnabled()).WillByDefault(Return(true));
-  EXPECT_CALL(win32window, GetHighContrastEnabled()).Times(1);
   EXPECT_CALL(delegate, UpdateHighContrastEnabled(true)).Times(1);
 
   win32window.InjectWindowMessage(WM_THEMECHANGED, 0, 0);
