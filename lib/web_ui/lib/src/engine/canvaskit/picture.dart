@@ -78,6 +78,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
       _debugDisposalStackTrace = StackTrace.current;
       return true;
     }());
+    ui.Picture.onDispose?.call(this);
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('Picture disposed');
     }

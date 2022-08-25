@@ -12,6 +12,7 @@ void main() {
 
 Future<void> testMain() async {
   test('Picture constructor invokes onCreate once', () async {
+    print('!!!!! picture onCreate start');
     int onCreateInvokedCount = 0;
     ui.Picture? createdPicture;
     ui.Picture.onCreate = (ui.Picture picture) {
@@ -29,6 +30,7 @@ Future<void> testMain() async {
     expect(onCreateInvokedCount, 2);
     expect(createdPicture, picture2);
     ui.Picture.onCreate = null;
+    print('!!!!! picture onCreate end');
   });
 
   test('dispose() invokes onDispose once', () async {

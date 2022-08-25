@@ -154,12 +154,11 @@ abstract class Canvas {
 }
 
 abstract class Picture {
-  Picture() { onCreate?.call(this); }
   static void Function(Picture)? onCreate;
   static void Function(Picture)? onDispose;
   Future<Image> toImage(int width, int height);
   Image toImageSync(int width, int height);
-  void dispose() { onDispose?.call(this); }
+  void dispose();
   bool get debugDisposed;
   int get approximateBytesUsed;
 }

@@ -40,7 +40,9 @@ class EnginePictureRecorder implements ui.PictureRecorder {
     }
     _isRecording = false;
     _canvas!.endRecording();
-    return EnginePicture(_canvas, cullRect);
+    final EnginePicture result = EnginePicture(_canvas, cullRect);
+    ui.Picture.onCreate?.call(result);
+    return result;
   }
 }
 
@@ -97,6 +99,7 @@ class EnginePicture implements ui.Picture {
 
   @override
   void dispose() {
+    ui.Picture.onDispose?.call(this);
     _disposed = true;
   }
 

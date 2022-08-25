@@ -5753,6 +5753,7 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
     _endRecording(picture);
     _canvas!._recorder = null;
     _canvas = null;
+    Picture.onCreate?.call(picture);
     return picture;
   }
 
