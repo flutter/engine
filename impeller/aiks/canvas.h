@@ -35,7 +35,10 @@ class Canvas {
 
   void Save();
 
-  void SaveLayer(Paint paint, std::optional<Rect> bounds = std::nullopt);
+  void SaveLayer(
+      Paint paint,
+      std::optional<Rect> bounds = std::nullopt,
+      std::optional<Paint::ImageFilterProc> backdrop_filter = std::nullopt);
 
   bool Restore();
 
@@ -50,6 +53,8 @@ class Canvas {
   void Transform(const Matrix& xformation);
 
   void Concat(const Matrix& xformation);
+
+  void PreConcat(const Matrix& xformation);
 
   void Translate(const Vector3& offset);
 
@@ -66,6 +71,8 @@ class Canvas {
   void DrawPaint(Paint paint);
 
   void DrawRect(Rect rect, Paint paint);
+
+  void DrawRRect(Rect rect, Scalar corner_radius, Paint paint);
 
   void DrawCircle(Point center, Scalar radius, Paint paint);
 
@@ -84,13 +91,22 @@ class Canvas {
       Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawShadow(Path path, Color color, Scalar elevation);
-
   void DrawPicture(Picture picture);
 
   void DrawTextFrame(TextFrame text_frame, Point position, Paint paint);
 
-  void DrawVertices(Vertices vertices, Entity::BlendMode mode, Paint paint);
+  void DrawVertices(Vertices vertices,
+                    Entity::BlendMode blend_mode,
+                    Paint paint);
+
+  void DrawAtlas(std::shared_ptr<Image> atlas,
+                 std::vector<Matrix> transforms,
+                 std::vector<Rect> texture_coordinates,
+                 std::vector<Color> colors,
+                 Entity::BlendMode blend_mode,
+                 SamplerDescriptor sampler,
+                 std::optional<Rect> cull_rect,
+                 Paint paint);
 
   Picture EndRecordingAsPicture();
 
@@ -111,6 +127,10 @@ class Canvas {
             Entity::BlendMode = Entity::BlendMode::kSourceOver);
 
   void RestoreClip();
+
+  bool AttemptDrawBlurredRRect(const Rect& rect,
+                               Scalar corner_radius,
+                               Paint& paint);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
 };

@@ -8,12 +8,13 @@
 #include <vector>
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
+namespace testing {
 
 namespace {
 
@@ -71,11 +72,6 @@ UINT DefaultMapVkToScan(UINT virtual_key, bool extended) {
                        extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
 }
 
-}  // namespace
-
-namespace testing {
-
-namespace {
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeAltLeft = 0x38;
 constexpr uint64_t kScanCodeNumpad1 = 0x4f;
@@ -86,8 +82,9 @@ constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
 
-using namespace ::flutter::testing::keycodes;
 }  // namespace
+
+using namespace ::flutter::testing::keycodes;
 
 TEST(KeyboardKeyEmbedderHandlerTest, ConvertChar32ToUtf8) {
   std::string result;

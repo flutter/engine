@@ -4,19 +4,21 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <dwmapi.h>
+
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
+#include "flutter/fml/logging.h"
+#include "flutter/fml/paths.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/path_utils.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_delegate_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-
-#include <dwmapi.h>
-#include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -156,17 +158,18 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
-  task_runner_ = TaskRunner::Create(
-      embedder_api_.GetCurrentTime, [this](const auto* task) {
-        if (!engine_) {
-          std::cerr << "Cannot post an engine task when engine is not running."
-                    << std::endl;
-          return;
-        }
-        if (embedder_api_.RunTask(engine_, task) != kSuccess) {
-          std::cerr << "Failed to post an engine task." << std::endl;
-        }
-      });
+  task_runner_ =
+      std::make_unique<TaskRunner>(
+          embedder_api_.GetCurrentTime, [this](const auto* task) {
+            if (!engine_) {
+              FML_LOG(ERROR)
+                  << "Cannot post an engine task when engine is not running.";
+              return;
+            }
+            if (embedder_api_.RunTask(engine_, task) != kSuccess) {
+              FML_LOG(ERROR) << "Failed to post an engine task.";
+            }
+          });
 
   // Set up the legacy structs backing the API handles.
   messenger_ = std::make_unique<FlutterDesktopMessenger>();
@@ -182,14 +185,13 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   texture_registrar_ =
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
   surface_manager_ = AngleSurfaceManager::Create();
-  window_proc_delegate_manager_ =
-      std::make_unique<WindowProcDelegateManagerWin32>();
+  window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
 
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
   // https://github.com/flutter/flutter/issues/71099
-  settings_plugin_ =
-      SettingsPlugin::Create(messenger_wrapper_.get(), task_runner_.get());
+  settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
+                                                      task_runner_.get());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -201,9 +203,13 @@ void FlutterWindowsEngine::SetSwitches(
   project_->SetSwitches(switches);
 }
 
-bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
+bool FlutterWindowsEngine::Run() {
+  return Run("");
+}
+
+bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   if (!project_->HasValidPaths()) {
-    std::cerr << "Missing or unresolvable paths to assets." << std::endl;
+    FML_LOG(ERROR) << "Missing or unresolvable paths to assets.";
     return false;
   }
   std::string assets_path_string = project_->assets_path().u8string();
@@ -211,7 +217,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   if (embedder_api_.RunsAOTCompiledDartCode()) {
     aot_data_ = project_->LoadAotData(embedder_api_);
     if (!aot_data_) {
-      std::cerr << "Unable to start engine without AOT data." << std::endl;
+      FML_LOG(ERROR) << "Unable to start engine without AOT data.";
       return false;
     }
   }
@@ -219,8 +225,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
+  std::string executable_name = GetExecutableName();
+  std::vector<const char*> argv = {executable_name.c_str()};
   std::vector<std::string> switches = project_->GetSwitches();
-  std::vector<const char*> argv = {"placeholder"};
   std::transform(
       switches.begin(), switches.end(), std::back_inserter(argv),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
@@ -255,10 +262,30 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
+  args.shutdown_dart_vm_when_done = true;
   args.assets_path = assets_path_string.c_str();
   args.icu_data_path = icu_path_string.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = argv.empty() ? nullptr : argv.data();
+
+  // Fail if conflicting non-default entrypoints are specified in the method
+  // argument and the project.
+  //
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/109285
+  // The entrypoint method parameter should eventually be removed from this
+  // method and only the entrypoint specified in project_ should be used.
+  if (!project_->dart_entrypoint().empty() && !entrypoint.empty() &&
+      project_->dart_entrypoint() != entrypoint) {
+    FML_LOG(ERROR) << "Conflicting entrypoints were specified in "
+                      "FlutterDesktopEngineProperties.dart_entrypoint and "
+                      "FlutterDesktopEngineRun(engine, entry_point). ";
+    return false;
+  }
+  if (!entrypoint.empty()) {
+    args.custom_dart_entrypoint = entrypoint.data();
+  } else if (!project_->dart_entrypoint().empty()) {
+    args.custom_dart_entrypoint = project_->dart_entrypoint().c_str();
+  }
   args.dart_entrypoint_argc = static_cast<int>(entrypoint_argv.size());
   args.dart_entrypoint_argv =
       entrypoint_argv.empty() ? nullptr : entrypoint_argv.data();
@@ -295,14 +322,17 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
         host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
             action);
       };
+  args.root_isolate_create_callback = [](void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (host->root_isolate_create_callback_) {
+      host->root_isolate_create_callback_();
+    }
+  };
 
   args.custom_task_runners = &custom_task_runners;
 
   if (aot_data_) {
     args.aot_data = aot_data_.get();
-  }
-  if (entrypoint) {
-    args.custom_dart_entrypoint = entrypoint;
   }
 
   FlutterRendererConfig renderer_config = surface_manager_
@@ -312,8 +342,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
                                   &args, this, &engine_);
   if (result != kSuccess || engine_ == nullptr) {
-    std::cerr << "Failed to start Flutter engine: error " << result
-              << std::endl;
+    FML_LOG(ERROR) << "Failed to start Flutter engine: error " << result;
     return false;
   }
 
@@ -427,7 +456,7 @@ bool FlutterWindowsEngine::SendPlatformMessage(
         embedder_api_.PlatformMessageCreateResponseHandle(
             engine_, reply, user_data, &response_handle);
     if (result != kSuccess) {
-      std::cout << "Failed to create response handle\n";
+      FML_LOG(ERROR) << "Failed to create response handle";
       return false;
     }
   }
@@ -459,9 +488,9 @@ void FlutterWindowsEngine::SendPlatformMessageResponse(
 void FlutterWindowsEngine::HandlePlatformMessage(
     const FlutterPlatformMessage* engine_message) {
   if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
-    std::cerr << "Invalid message size received. Expected: "
-              << sizeof(FlutterPlatformMessage) << " but received "
-              << engine_message->struct_size << std::endl;
+    FML_LOG(ERROR) << "Invalid message size received. Expected: "
+                   << sizeof(FlutterPlatformMessage) << " but received "
+                   << engine_message->struct_size;
     return;
   }
 
@@ -475,6 +504,26 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
   embedder_api_.ReloadSystemFonts(engine_);
 }
 
+void FlutterWindowsEngine::ScheduleFrame() {
+  embedder_api_.ScheduleFrame(engine_);
+}
+
+void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
+  next_frame_callback_ = std::move(callback);
+
+  embedder_api_.SetNextFrameCallback(
+      engine_,
+      [](void* user_data) {
+        // Embedder callback runs on raster thread. Switch back to platform
+        // thread.
+        FlutterWindowsEngine* self =
+            static_cast<FlutterWindowsEngine*>(user_data);
+
+        self->task_runner_->PostTask(std::move(self->next_frame_callback_));
+      },
+      this);
+}
+
 void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   std::vector<FlutterLocale> flutter_locales;
@@ -485,10 +534,9 @@ void FlutterWindowsEngine::SendSystemLocales() {
   // Convert the locale list to the locale pointer list that must be provided.
   std::vector<const FlutterLocale*> flutter_locale_list;
   flutter_locale_list.reserve(flutter_locales.size());
-  std::transform(
-      flutter_locales.begin(), flutter_locales.end(),
-      std::back_inserter(flutter_locale_list),
-      [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(flutter_locales.begin(), flutter_locales.end(),
+                 std::back_inserter(flutter_locale_list),
+                 [](const auto& arg) -> const auto* { return &arg; });
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
 }
@@ -519,8 +567,6 @@ bool FlutterWindowsEngine::DispatchSemanticsAction(
 }
 
 void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
-  using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWin32;
-
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
@@ -545,6 +591,20 @@ gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
     return nullptr;
   }
   return node_delegate->GetNativeViewAccessible();
+}
+
+std::string FlutterWindowsEngine::GetExecutableName() const {
+  std::pair<bool, std::string> result = fml::paths::GetExecutablePath();
+  if (result.first) {
+    const std::string& executable_path = result.second;
+    size_t last_separator = executable_path.find_last_of("/\\");
+    if (last_separator == std::string::npos ||
+        last_separator == executable_path.size() - 1) {
+      return executable_path;
+    }
+    return executable_path.substr(last_separator + 1);
+  }
+  return "Flutter";
 }
 
 }  // namespace flutter

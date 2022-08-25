@@ -16,15 +16,17 @@ constexpr std::string_view kReflectionHeaderTemplate =
 {# Note: The nogncheck decorations are only to make GN not mad at the template#}
 {# this file is generated from. There are no GN rule violations in the generated#}
 {# file itself and the no-check declarations will be stripped in generated files.#}
-#include "impeller/renderer/buffer_view.h"  {# // nogncheck #}
+#include "impeller/renderer/buffer_view.h"                {# // nogncheck #}
 
-#include "impeller/renderer/command.h"      {# // nogncheck #}
+#include "impeller/renderer/command.h"                    {# // nogncheck #}
 
-#include "impeller/renderer/sampler.h"      {# // nogncheck #}
+#include "impeller/renderer/descriptor_set_layout.h"      {# // nogncheck #}
 
-#include "impeller/renderer/shader_types.h" {# // nogncheck #}
+#include "impeller/renderer/sampler.h"                    {# // nogncheck #}
 
-#include "impeller/renderer/texture.h"      {# // nogncheck #}
+#include "impeller/renderer/shader_types.h"               {# // nogncheck #}
+
+#include "impeller/renderer/texture.h"                    {# // nogncheck #}
 
 
 namespace impeller {
@@ -146,6 +148,28 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
   }
 
 {% endfor %}
+
+  // ===========================================================================
+  // Metadata for Vulkan =======================================================
+  // ===========================================================================
+  static constexpr std::array<DescriptorSetLayout,{{length(buffers)+length(sampled_images)}}> kDescriptorSetLayouts{
+{% for buffer in buffers %}
+    DescriptorSetLayout{
+      {{buffer.binding}}, // binding = {{buffer.binding}}
+      DescriptorType::kUniformBuffer, // descriptorType = Uniform Buffer
+      1, // descriptorCount = 1
+      {{to_shader_stage(shader_stage)}}, // stageFlags = {{to_shader_stage(shader_stage)}}
+    },
+{% endfor %}
+{% for sampled_image in sampled_images %}
+    DescriptorSetLayout{
+      {{sampled_image.binding}}, // binding = {{sampled_image.binding}}
+      DescriptorType::kSampledImage, // descriptorType = Sampled Image
+      1, // descriptorCount = 1
+      {{to_shader_stage(shader_stage)}}, // stageFlags = {{to_shader_stage(shader_stage)}}
+    },
+{% endfor %}
+  };
 
 };  // struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader
 

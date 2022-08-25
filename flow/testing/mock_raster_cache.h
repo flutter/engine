@@ -5,10 +5,13 @@
 #ifndef FLOW_TESTING_MOCK_RASTER_CACHE_H_
 #define FLOW_TESTING_MOCK_RASTER_CACHE_H_
 
+#include <vector>
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
+#include "include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -26,11 +29,13 @@ namespace testing {
  */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
-  explicit MockRasterCacheResult(SkIRect device_rect);
+  explicit MockRasterCacheResult(SkRect device_rect);
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override{};
 
-  SkISize image_dimensions() const override { return device_rect_.size(); };
+  SkISize image_dimensions() const override {
+    return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
+  };
 
   int64_t image_bytes() const override {
     return image_dimensions().area() *
@@ -38,8 +43,10 @@ class MockRasterCacheResult : public RasterCacheResult {
   }
 
  private:
-  SkIRect device_rect_;
+  SkRect device_rect_;
 };
+
+static std::vector<RasterCacheItem*> raster_cache_items_;
 
 /**
  * @brief A RasterCache implementation that simulates the act of rendering a
@@ -52,30 +59,9 @@ class MockRasterCache : public RasterCache {
   explicit MockRasterCache(
       size_t access_threshold = 3,
       size_t picture_and_display_list_cache_limit_per_frame =
-          kDefaultPictureAndDispLayListCacheLimitPerFrame)
+          RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame)
       : RasterCache(access_threshold,
                     picture_and_display_list_cache_limit_per_frame) {}
-
-  std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const override;
-
-  std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
-      DisplayList* display_list,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const override;
-
-  std::unique_ptr<RasterCacheResult> RasterizeLayer(
-      PrerollContext* context,
-      Layer* layer,
-      RasterCacheLayerStrategy stategy,
-      const SkMatrix& ctm,
-      bool checkerboard) const override;
 
   void AddMockLayer(int width, int height);
   void AddMockPicture(int width, int height);
@@ -86,10 +72,10 @@ class MockRasterCache : public RasterCache {
   MutatorsStack mutators_stack_;
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;
-  TextureRegistry texture_registry_;
+  std::shared_ptr<TextureRegistry> texture_registry_;
   PrerollContext preroll_context_ = {
       // clang-format off
-      .raster_cache                  = nullptr,
+      .raster_cache                  = this,
       .gr_context                    = nullptr,
       .view_embedder                 = nullptr,
       .mutators_stack                = mutators_stack_,
@@ -103,6 +89,24 @@ class MockRasterCache : public RasterCache {
       .frame_device_pixel_ratio      = 1.0f,
       .has_platform_view             = false,
       .has_texture_layer             = false,
+      .raster_cached_entries         = &raster_cache_items_
+      // clang-format on
+  };
+
+  PaintContext paint_context_ = {
+      // clang-format off
+          .internal_nodes_canvas         = nullptr,
+          .leaf_nodes_canvas             = nullptr,
+          .gr_context                    = nullptr,
+          .dst_color_space               = color_space_,
+          .view_embedder                 = nullptr,
+          .raster_time                   = raster_time_,
+          .ui_time                       = ui_time_,
+          .texture_registry              = texture_registry_,
+          .raster_cache                  = nullptr,
+          .checkerboard_offscreen_layers = false,
+          .frame_device_pixel_ratio      = 1.0f,
+          .inherited_opacity             = SK_Scalar1,
       // clang-format on
   };
 };
@@ -112,7 +116,35 @@ struct PrerollContextHolder {
   sk_sp<SkColorSpace> srgb;
 };
 
-PrerollContextHolder GetSamplePrerollContextHolder();
+struct PaintContextHolder {
+  PaintContext paint_context;
+  sk_sp<SkColorSpace> srgb;
+};
+
+PrerollContextHolder GetSamplePrerollContextHolder(
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time,
+    MutatorsStack* mutators_stack);
+
+PaintContextHolder GetSamplePaintContextHolder(
+    RasterCache* raster_cache,
+    FixedRefreshRateStopwatch* raster_time,
+    FixedRefreshRateStopwatch* ui_time);
+
+bool RasterCacheItemPrerollAndTryToRasterCache(
+    DisplayListRasterCacheItem& display_list_item,
+    PrerollContext& context,
+    PaintContext& paint_context,
+    const SkMatrix& matrix);
+
+void RasterCacheItemPreroll(DisplayListRasterCacheItem& display_list_item,
+                            PrerollContext& context,
+                            const SkMatrix& matrix);
+
+bool RasterCacheItemTryToRasterCache(
+    DisplayListRasterCacheItem& display_list_item,
+    PaintContext& paint_context);
 
 }  // namespace testing
 }  // namespace flutter

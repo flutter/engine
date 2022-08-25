@@ -229,16 +229,13 @@ if (enable_unittests) {
       ":shell_unittests_gpu_configuration_config",
     ]
 
-    # SwiftShader only supports x86/x86_64
-    if (target_cpu == "x86" || target_cpu == "x64") {
-      if (test_enable_gl) {
-        sources += [
-          "shell_test_platform_view_gl.cc",
-          "shell_test_platform_view_gl.h",
-        ]
+    if (test_enable_gl) {
+      sources += [
+        "shell_test_platform_view_gl.cc",
+        "shell_test_platform_view_gl.h",
+      ]
 
-        public_deps += [ "//flutter/testing:opengl" ]
-      }
+      public_deps += [ "//flutter/testing:opengl" ]
     }
 
     if (test_enable_vulkan) {
@@ -274,7 +271,6 @@ if (enable_unittests) {
       "rasterizer_unittests.cc",
       "resource_cache_limit_calculator_unittests.cc",
       "shell_unittests.cc",
-      "skp_shader_warmup_unittests.cc",
       "switches_unittests.cc",
       "variable_refresh_rate_display_unittests.cc",
     ]
@@ -302,6 +298,11 @@ if (enable_unittests) {
     } else {
       # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
       sources += [ "shell_io_manager_unittests.cc" ]
+
+      # Swiftshader only needed on non-Fuchsia platforms.
+      if (shell_enable_vulkan) {
+        deps += [ "//third_party/swiftshader" ]
+      }
     }
   }
 }

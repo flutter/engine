@@ -4,7 +4,10 @@
 
 #include "impeller/renderer/backend/gles/sampler_gles.h"
 
+#include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -16,12 +19,29 @@ bool SamplerGLES::IsValid() const {
   return true;
 }
 
-static GLint ToParam(MinMagFilter filter) {
-  switch (filter) {
-    case MinMagFilter::kNearest:
-      return GL_NEAREST;
-    case MinMagFilter::kLinear:
-      return GL_LINEAR;
+static GLint ToParam(MinMagFilter minmag_filter, MipFilter mip_filter) {
+  switch (mip_filter) {
+    case MipFilter::kNone:
+      switch (minmag_filter) {
+        case MinMagFilter::kNearest:
+          return GL_NEAREST;
+        case MinMagFilter::kLinear:
+          return GL_LINEAR;
+      }
+    case MipFilter::kNearest:
+      switch (minmag_filter) {
+        case MinMagFilter::kNearest:
+          return GL_NEAREST_MIPMAP_NEAREST;
+        case MinMagFilter::kLinear:
+          return GL_LINEAR_MIPMAP_NEAREST;
+      }
+    case MipFilter::kLinear:
+      switch (minmag_filter) {
+        case MinMagFilter::kNearest:
+          return GL_NEAREST_MIPMAP_LINEAR;
+        case MinMagFilter::kLinear:
+          return GL_LINEAR_MIPMAP_LINEAR;
+      }
   }
   FML_UNREACHABLE();
 }
@@ -38,19 +58,26 @@ static GLint ToAddressMode(SamplerAddressMode mode) {
   FML_UNREACHABLE();
 }
 
-bool SamplerGLES::ConfigureBoundTexture(const ProcTableGLES& gl) const {
+bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
+                                        const ProcTableGLES& gl) const {
   if (!IsValid()) {
     return false;
   }
 
+  auto target = ToTextureTarget(texture.GetTextureDescriptor().type);
+
+  if (!target.has_value()) {
+    return false;
+  }
+
   const auto& desc = GetDescriptor();
-  gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                   ToParam(desc.min_filter));
-  gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                   ToParam(desc.mag_filter));
-  gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+  gl.TexParameteri(target.value(), GL_TEXTURE_MIN_FILTER,
+                   ToParam(desc.min_filter, desc.mip_filter));
+  gl.TexParameteri(target.value(), GL_TEXTURE_MAG_FILTER,
+                   ToParam(desc.mag_filter, MipFilter::kNone));
+  gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_S,
                    ToAddressMode(desc.width_address_mode));
-  gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+  gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_T,
                    ToAddressMode(desc.height_address_mode));
   return true;
 }

@@ -74,7 +74,7 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     texture_descriptor.size = {width, height};
     texture_descriptor.mip_count = 1u;
 
-    bd->font_texture = context->GetPermanentsAllocator()->CreateTexture(
+    bd->font_texture = context->GetResourceAllocator()->CreateTexture(
         impeller::StorageMode::kHostVisible, texture_descriptor);
     IM_ASSERT(bd->font_texture != nullptr &&
               "Could not allocate ImGui font texture.");
@@ -136,7 +136,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   }
 
   // Allocate buffer for vertices + indices.
-  auto buffer = bd->context->GetTransientsAllocator()->CreateBuffer(
+  auto buffer = bd->context->GetResourceAllocator()->CreateBuffer(
       impeller::StorageMode::kHostVisible, total_vtx_bytes + total_idx_bytes);
   buffer->SetLabel(impeller::SPrintF("ImGui vertex+index buffer"));
 
@@ -224,8 +224,8 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         {
           // Clamp the clip to ensure it never goes outside of the render
           // target.
-          auto visible_clip = clip_rect.Intersection(impeller::Rect::MakeSize(
-              impeller::Size(render_pass.GetRenderTargetSize())));
+          auto visible_clip = clip_rect.Intersection(
+              impeller::Rect::MakeSize(render_pass.GetRenderTargetSize()));
           if (!visible_clip.has_value()) {
             continue;  // Nothing to render.
           }
@@ -239,7 +239,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         cmd.viewport = viewport;
         cmd.scissor = impeller::IRect(clip_rect);
 
-        cmd.winding = impeller::WindingOrder::kClockwise;
         cmd.pipeline = bd->pipeline;
         VS::BindUniformBuffer(cmd, vtx_uniforms);
         FS::BindTex(cmd, bd->font_texture, bd->sampler);

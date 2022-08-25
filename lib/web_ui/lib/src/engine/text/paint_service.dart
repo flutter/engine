@@ -4,6 +4,7 @@
 
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../html/bitmap_canvas.dart';
 import '../html/painting.dart';
 import 'canvas_paragraph.dart';
@@ -20,13 +21,13 @@ class TextPaintService {
     // Loop through all the lines, for each line, loop through all the boxes and
     // paint them. The boxes have enough information so they can be painted
     // individually.
-    final List<EngineLineMetrics> lines = paragraph.computeLineMetrics();
+    final List<ParagraphLine> lines = paragraph.lines;
 
     if (lines.isEmpty) {
       return;
     }
 
-    for (final EngineLineMetrics line in lines) {
+    for (final ParagraphLine line in lines) {
       if (line.boxes.isEmpty) {
         continue;
       }
@@ -49,7 +50,7 @@ class TextPaintService {
   void _paintBackground(
     BitmapCanvas canvas,
     ui.Offset offset,
-    EngineLineMetrics line,
+    ParagraphLine line,
     RangeBox box,
   ) {
     if (box is SpanBox) {
@@ -67,7 +68,7 @@ class TextPaintService {
   void _paintText(
     BitmapCanvas canvas,
     ui.Offset offset,
-    EngineLineMetrics line,
+    ParagraphLine line,
     RangeBox box,
   ) {
     // There's no text to paint in placeholder spans.

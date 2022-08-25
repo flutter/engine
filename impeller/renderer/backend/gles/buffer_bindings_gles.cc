@@ -234,6 +234,13 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                               buffer_ptr + member.offset)  // data
             );
             continue;
+          case sizeof(Vector3):
+            gl.Uniform3fv(location->second,  // location
+                          1u,                // count
+                          reinterpret_cast<const GLfloat*>(
+                              buffer_ptr + member.offset)  // data
+            );
+            continue;
           case sizeof(Vector2):
             gl.Uniform2fv(location->second,  // location
                           1u,                // count
@@ -317,7 +324,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
     auto sampler = bindings.samplers.find(texture.first);
     if (sampler != bindings.samplers.end()) {
       const auto& sampler_gles = SamplerGLES::Cast(*sampler->second.resource);
-      if (!sampler_gles.ConfigureBoundTexture(gl)) {
+      if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
         return false;
       }
     }

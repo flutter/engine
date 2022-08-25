@@ -19,8 +19,8 @@ using TextureLayerTest = LayerTest;
 TEST_F(TextureLayerTest, InvalidTexture) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
-  auto layer = std::make_shared<TextureLayer>(layer_offset, layer_size, 0,
-                                              false, SkSamplingOptions());
+  auto layer = std::make_shared<TextureLayer>(
+      layer_offset, layer_size, 0, false, DlImageSampling::kNearestNeighbor);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(),
@@ -38,11 +38,12 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   const SkSize layer_size = SkSize::Make(0.0f, 0.0f);
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
-  auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false, SkSamplingOptions());
+  auto layer =
+      std::make_shared<TextureLayer>(layer_offset, layer_size, texture_id,
+                                     false, DlImageSampling::kNearestNeighbor);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -58,11 +59,10 @@ TEST_F(TextureLayerTest, PaintBeforePrerollDies) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
@@ -75,11 +75,10 @@ TEST_F(TextureLayerTest, PaintingWithLinearSampling) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(),
@@ -101,9 +100,9 @@ TEST_F(TextureLayerDiffTest, TextureInRetainedLayer) {
   MockLayerTree tree1;
   auto container = std::make_shared<ContainerLayer>();
   tree1.root()->Add(container);
-  auto layer = std::make_shared<TextureLayer>(
-      SkPoint::Make(0, 0), SkSize::Make(100, 100), 0, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+  auto layer = std::make_shared<TextureLayer>(SkPoint::Make(0, 0),
+                                              SkSize::Make(100, 100), 0, false,
+                                              DlImageSampling::kLinear);
   container->Add(layer);
 
   MockLayerTree tree2;
@@ -122,16 +121,15 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
   // The texture layer always reports opacity compatibility.
   PrerollContext* context = preroll_context();
   context->subtree_can_inherit_opacity = false;
-  context->texture_registry.RegisterTexture(mock_texture);
+  context->texture_registry->RegisterTexture(mock_texture);
   layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(context->subtree_can_inherit_opacity);
 

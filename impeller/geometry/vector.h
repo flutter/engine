@@ -41,7 +41,7 @@ struct Vector3 {
    *
    *  @return the calculated length.
    */
-  Scalar Length() const { return sqrt(x * x + y * y + z * z); }
+  constexpr Scalar Length() const { return sqrt(x * x + y * y + z * z); }
 
   constexpr Vector3 Normalize() const {
     const auto len = Length();
@@ -66,6 +66,34 @@ struct Vector3 {
 
   constexpr bool operator!=(const Vector3& v) const {
     return v.x != x || v.y != y || v.z != z;
+  }
+
+  constexpr Vector3 operator+=(const Vector3& p) {
+    x += p.x;
+    y += p.y;
+    z += p.z;
+    return *this;
+  }
+
+  constexpr Vector3 operator-=(const Vector3& p) {
+    x -= p.x;
+    y -= p.y;
+    z -= p.z;
+    return *this;
+  }
+
+  constexpr Vector3 operator*=(const Vector3& p) {
+    x *= p.x;
+    y *= p.y;
+    z *= p.z;
+    return *this;
+  }
+
+  constexpr Vector3 operator/=(const Vector3& p) {
+    x /= p.x;
+    y /= p.y;
+    z /= p.z;
+    return *this;
   }
 
   constexpr Vector3 operator-() const { return Vector3(-x, -y, -z); }
@@ -101,6 +129,18 @@ struct Vector3 {
 
   std::string ToString() const;
 };
+
+// RHS algebraic operations with arithmetic types.
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator*(U s, const Vector3& p) {
+  return p * s;
+}
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator/(U s, const Vector3& p) {
+  return {static_cast<Scalar>(s) / p.x, static_cast<Scalar>(s) / p.y};
+}
 
 struct Vector4 {
   union {

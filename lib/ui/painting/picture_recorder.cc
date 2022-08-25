@@ -14,25 +14,12 @@
 
 namespace flutter {
 
-static void PictureRecorder_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&PictureRecorder::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, PictureRecorder);
 
-#define FOR_EACH_BINDING(V) V(PictureRecorder, endRecording)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void PictureRecorder::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"PictureRecorder_constructor", PictureRecorder_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
-fml::RefPtr<PictureRecorder> PictureRecorder::Create() {
-  return fml::MakeRefCounted<PictureRecorder>();
+void PictureRecorder::Create(Dart_Handle wrapper) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = fml::MakeRefCounted<PictureRecorder>();
+  res->AssociateWithDartWrapper(wrapper);
 }
 
 PictureRecorder::PictureRecorder() {}
@@ -40,13 +27,8 @@ PictureRecorder::PictureRecorder() {}
 PictureRecorder::~PictureRecorder() {}
 
 SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
-  bool enable_display_list = UIDartState::Current()->enable_display_list();
-  if (enable_display_list) {
-    display_list_recorder_ = sk_make_sp<DisplayListCanvasRecorder>(bounds);
-    return display_list_recorder_.get();
-  } else {
-    return picture_recorder_.beginRecording(bounds, &rtree_factory_);
-  }
+  display_list_recorder_ = sk_make_sp<DisplayListCanvasRecorder>(bounds);
+  return display_list_recorder_.get();
 }
 
 fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
@@ -56,16 +38,9 @@ fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
 
   fml::RefPtr<Picture> picture;
 
-  if (display_list_recorder_) {
-    picture = Picture::Create(
-        dart_picture,
-        UIDartState::CreateGPUObject(display_list_recorder_->Build()));
-    display_list_recorder_ = nullptr;
-  } else {
-    picture = Picture::Create(
-        dart_picture, UIDartState::CreateGPUObject(
-                          picture_recorder_.finishRecordingAsPicture()));
-  }
+  picture = Picture::Create(dart_picture, UIDartState::CreateGPUObject(
+                                              display_list_recorder_->Build()));
+  display_list_recorder_ = nullptr;
 
   canvas_->Invalidate();
   canvas_ = nullptr;

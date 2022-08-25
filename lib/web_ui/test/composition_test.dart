@@ -3,15 +3,14 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/text_editing/composition_aware_mixin.dart';
-import 'package:ui/src/engine/text_editing/input_type.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 
 void main() {
@@ -26,8 +25,8 @@ class _MockWithCompositionAwareMixin with CompositionAwareMixin {
   static const String _kCompositionEnd = 'compositionend';
 }
 
-html.InputElement get _inputElement {
-  return defaultTextEditingRoot.querySelectorAll('input').first as html.InputElement;
+DomHTMLInputElement get _inputElement {
+  return defaultTextEditingRoot.querySelectorAll('input').first as DomHTMLInputElement;
 }
 
 GloballyPositionedTextEditingStrategy _enableEditingStrategy({
@@ -36,7 +35,7 @@ GloballyPositionedTextEditingStrategy _enableEditingStrategy({
   }) {
   final HybridTextEditing owner = HybridTextEditing();
 
-  owner.configuration = InputConfiguration(inputType: EngineInputType.text, enableDeltaModel: deltaModel);
+  owner.configuration = InputConfiguration(enableDeltaModel: deltaModel);
 
   final GloballyPositionedTextEditingStrategy editingStrategy =
       GloballyPositionedTextEditingStrategy(owner);
@@ -70,7 +69,7 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = fakeComposingText;
         mockWithCompositionAwareMixin.addCompositionEventHandlers(_inputElement);
 
-        _inputElement.dispatchEvent(html.Event(_MockWithCompositionAwareMixin._kCompositionEnd));
+        _inputElement.dispatchEvent(createDomEvent('Event', _MockWithCompositionAwareMixin._kCompositionEnd));
 
         expect(mockWithCompositionAwareMixin.composingText, null);
       });
@@ -83,7 +82,7 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = fakeComposingText;
         mockWithCompositionAwareMixin.addCompositionEventHandlers(_inputElement);
 
-        _inputElement.dispatchEvent(html.Event(_MockWithCompositionAwareMixin._kCompositionStart));
+        _inputElement.dispatchEvent(createDomEvent('Event', _MockWithCompositionAwareMixin._kCompositionStart));
 
         expect(mockWithCompositionAwareMixin.composingText, null);
       });
@@ -97,9 +96,9 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = fakeComposingText;
         mockWithCompositionAwareMixin.addCompositionEventHandlers(_inputElement);
 
-        _inputElement.dispatchEvent(html.CompositionEvent(
+        _inputElement.dispatchEvent(createDomCompositionEvent(
             _MockWithCompositionAwareMixin._kCompositionUpdate,
-            data: fakeEventText
+            <Object?, Object?>{ 'data': fakeEventText }
         ));
 
         expect(mockWithCompositionAwareMixin.composingText, fakeEventText);
@@ -146,11 +145,13 @@ Future<void> testMain() async {
     test('should be [0, compostionStrLength] on new composition', () {
       const String composingText = 'hi';
 
-      _inputElement.dispatchEvent(html.CompositionEvent(_MockWithCompositionAwareMixin._kCompositionUpdate, data: composingText));
+      _inputElement.dispatchEvent(createDomCompositionEvent(
+              _MockWithCompositionAwareMixin._kCompositionUpdate,
+              <Object?, Object?>{'data': composingText}));
 
       // Set the selection text.
       _inputElement.value = composingText;
-      _inputElement.dispatchEvent(html.Event.eventType('Event', 'input'));
+      _inputElement.dispatchEvent(createDomEvent('Event', 'input'));
 
       expect(
           editingStrategy.lastEditingState,
@@ -172,13 +173,13 @@ Future<void> testMain() async {
       _inputElement.value = '$beforeComposingText$afterComposingText';
       _inputElement.setSelectionRange(beforeComposingText.length, beforeComposingText.length);
 
-      _inputElement.dispatchEvent(html.CompositionEvent(
+      _inputElement.dispatchEvent(createDomCompositionEvent(
           _MockWithCompositionAwareMixin._kCompositionUpdate,
-          data: composingText
+          <Object?, Object?>{ 'data': composingText }
       ));
 
       // Flush editing state (since we did not compositionend).
-      _inputElement.dispatchEvent(html.Event.eventType('Event', 'input'));
+      _inputElement.dispatchEvent(createDomEvent('Event', 'input'));
 
       expect(
           editingStrategy.lastEditingState,
@@ -220,9 +221,9 @@ Future<void> testMain() async {
           ));
 
 
-      _inputElement.dispatchEvent(html.CompositionEvent(
+      _inputElement.dispatchEvent(createDomCompositionEvent(
           _MockWithCompositionAwareMixin._kCompositionUpdate,
-          data: newComposingText));
+          <Object?, Object?>{ 'data': newComposingText }));
 
       await containExpect;
     });
@@ -244,9 +245,9 @@ Future<void> testMain() async {
             .having((TextEditingDeltaState deltaState) => deltaState.composingExtent, 'composingExtent', currCharIndex + 1)
         ));
 
-        _inputElement.dispatchEvent(html.CompositionEvent(
+        _inputElement.dispatchEvent(createDomCompositionEvent(
           _MockWithCompositionAwareMixin._kCompositionUpdate,
-          data: currComposingSubstr));
+          <Object?, Object?>{ 'data': currComposingSubstr }));
 
         await containExpect;
       }

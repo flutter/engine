@@ -35,8 +35,16 @@ void SolidColorContents::SetCover(bool cover) {
 
 std::optional<Rect> SolidColorContents::GetCoverage(
     const Entity& entity) const {
+  if (color_.IsTransparent()) {
+    return std::nullopt;
+  }
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
+
+bool SolidColorContents::ShouldRender(const Entity& entity,
+                                      const ISize& target_size) const {
+  return cover_ || Contents::ShouldRender(entity, target_size);
+}
 
 VertexBuffer SolidColorContents::CreateSolidFillVertices(const Path& path,
                                                          HostBuffer& buffer) {
@@ -45,11 +53,8 @@ VertexBuffer SolidColorContents::CreateSolidFillVertices(const Path& path,
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
   auto tesselation_result = Tessellator{}.Tessellate(
-      path.GetFillType(), path.CreatePolyline(), [&vtx_builder](auto point) {
-        VS::PerVertexData vtx;
-        vtx.vertices = point;
-        vtx_builder.AppendVertex(vtx);
-      });
+      path.GetFillType(), path.CreatePolyline(),
+      [&vtx_builder](auto point) { vtx_builder.AppendVertex({point}); });
   if (tesselation_result != Tessellator::Result::kSuccess) {
     return {};
   }
@@ -60,11 +65,8 @@ VertexBuffer SolidColorContents::CreateSolidFillVertices(const Path& path,
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
-  if (color_.IsTransparent()) {
-    return true;
-  }
-
   using VS = SolidFillPipeline::VertexShader;
+  using FS = SolidFillPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "Solid Fill";
@@ -78,11 +80,14 @@ bool SolidColorContents::Render(const ContentContext& renderer,
           : path_,
       pass.GetTransientsBuffer()));
 
-  VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
-  frame_info.color = color_.Premultiply();
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::VertInfo vert_info;
+  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                  entity.GetTransformation();
+  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));
+
+  FS::FragInfo frag_info;
+  frag_info.color = color_.Premultiply();
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   cmd.primitive_type = PrimitiveType::kTriangle;
 

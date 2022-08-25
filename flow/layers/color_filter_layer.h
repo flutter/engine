@@ -5,14 +5,15 @@
 #ifndef FLUTTER_FLOW_LAYERS_COLOR_FILTER_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_COLOR_FILTER_LAYER_H_
 
-#include "flutter/flow/layers/container_layer.h"
+#include "flutter/display_list/display_list_color_filter.h"
+#include "flutter/flow/layers/cacheable_layer.h"
+#include "flutter/flow/layers/layer.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
-
 namespace flutter {
 
-class ColorFilterLayer : public ContainerLayer {
+class ColorFilterLayer : public CacheableContainerLayer {
  public:
-  explicit ColorFilterLayer(sk_sp<SkColorFilter> filter);
+  explicit ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -21,10 +22,7 @@ class ColorFilterLayer : public ContainerLayer {
   void Paint(PaintContext& context) const override;
 
  private:
-  sk_sp<SkColorFilter> filter_;
-
-  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
-  int render_count_;
+  std::shared_ptr<const DlColorFilter> filter_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };

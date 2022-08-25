@@ -36,6 +36,27 @@ static constexpr int32_t kPointerPanZoomDeviceId = 1;
  */
 struct MouseState {
   /**
+   * The currently pressed buttons, as represented in FlutterPointerEvent.
+   */
+  int64_t buttons = 0;
+
+  /**
+   * The accumulated gesture pan.
+   */
+  CGFloat delta_x = 0;
+  CGFloat delta_y = 0;
+
+  /**
+   * The accumulated gesture zoom scale.
+   */
+  CGFloat scale = 0;
+
+  /**
+   * The accumulated gesture rotation.
+   */
+  CGFloat rotation = 0;
+
+  /**
    * Whether or not a kAdd event has been sent (or sent again since the last kRemove if tracking is
    * enabled). Used to determine whether to send a kAdd event before sending an incoming mouse
    * event, since Flutter expects pointers to be added before events are sent for them.
@@ -57,20 +78,9 @@ struct MouseState {
   bool has_pending_exit = false;
 
   /**
-   * The currently pressed buttons, as represented in FlutterPointerEvent.
-   */
-  int64_t buttons = 0;
-
-  /**
    * Pan gesture is currently sending us events.
    */
   bool pan_gesture_active = false;
-
-  /**
-   * The accumulated gesture pan.
-   */
-  CGFloat delta_x = 0;
-  CGFloat delta_y = 0;
 
   /**
    * Scale gesture is currently sending us events.
@@ -78,19 +88,14 @@ struct MouseState {
   bool scale_gesture_active = false;
 
   /**
-   * The accumulated gesture zoom scale.
-   */
-  CGFloat scale = 0;
-
-  /**
    * Rotate gesture is currently sending use events.
    */
   bool rotate_gesture_active = false;
 
   /**
-   * The accumulated gesture rotation.
+   * System scroll inertia is currently sending us events.
    */
-  CGFloat rotation = 0;
+  bool system_scroll_inertia_active = false;
 
   /**
    * Resets all gesture state to default values.
@@ -181,7 +186,7 @@ NSData* currentKeyboardLayoutData() {
  * dispatched to various Flutter key responders, and whether the event is
  * propagated to the next NSResponder.
  */
-@property(nonatomic) FlutterKeyboardManager* keyboardManager;
+@property(nonatomic, readonly, nonnull) FlutterKeyboardManager* keyboardManager;
 
 @property(nonatomic) KeyboardLayoutNotifier keyboardLayoutNotifier;
 
@@ -341,6 +346,10 @@ static void CommonInit(FlutterViewController* controller) {
   return self;
 }
 
+- (BOOL)isDispatchingKeyEvent:(NSEvent*)event {
+  return [_keyboardManager isDispatchingKeyEvent:event];
+}
+
 - (void)loadView {
   FlutterView* flutterView;
   if ([FlutterRenderingBackend renderUsingMetal]) {
@@ -371,6 +380,8 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)viewDidLoad {
   [self configureTrackingArea];
+  [self.view setAllowedTouchTypes:NSTouchTypeMaskIndirect];
+  [self.view setWantsRestingTouches:YES];
 }
 
 - (void)viewWillAppear {
@@ -425,16 +436,21 @@ static void CommonInit(FlutterViewController* controller) {
 // ViewController as a listener for a keyUp event before it's handled by NSApplication, and should
 // NOT modify the event to avoid any unexpected behavior.
 - (void)listenForMetaModifiedKeyUpEvents {
-  NSAssert(_keyUpMonitor == nil, @"_keyUpMonitor was already created");
+  if (_keyUpMonitor != nil) {
+    // It is possible for [NSViewController viewWillAppear] to be invoked multiple times
+    // in a row. https://github.com/flutter/flutter/issues/105963
+    return;
+  }
   FlutterViewController* __weak weakSelf = self;
   _keyUpMonitor = [NSEvent
       addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                    handler:^NSEvent*(NSEvent* event) {
                                      // Intercept keyUp only for events triggered on the current
-                                     // view.
+                                     // view or textInputPlugin.
+                                     NSResponder* firstResponder = [[event window] firstResponder];
                                      if (weakSelf.viewLoaded && weakSelf.flutterView &&
-                                         ([[event window] firstResponder] ==
-                                          weakSelf.flutterView) &&
+                                         (firstResponder == weakSelf.flutterView ||
+                                          firstResponder == weakSelf.textInputPlugin) &&
                                          ([event modifierFlags] & NSEventModifierFlagCommand) &&
                                          ([event type] == NSEventTypeKeyUp)) {
                                        [weakSelf keyUp:event];
@@ -481,7 +497,6 @@ static void CommonInit(FlutterViewController* controller) {
   // TODO(goderbauer): Seperate keyboard/textinput stuff into ViewController specific and Engine
   // global parts. Move the global parts to FlutterEngine.
   __weak FlutterViewController* weakSelf = self;
-  _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
   _keyboardManager = [[FlutterKeyboardManager alloc] initWithViewDelegate:weakSelf];
 }
 
@@ -502,7 +517,13 @@ static void CommonInit(FlutterViewController* controller) {
   } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
     [self dispatchMouseEvent:event phase:kHover];
   } else {
-    // Skip momentum events, the framework will generate scroll momentum.
+    if (event.momentumPhase == NSEventPhaseBegan) {
+      _mouseState.system_scroll_inertia_active = true;
+    } else if (event.momentumPhase == NSEventPhaseEnded ||
+               event.momentumPhase == NSEventPhaseCancelled) {
+      _mouseState.system_scroll_inertia_active = false;
+    }
+    // Skip momentum update events, the framework will generate scroll momentum.
     NSAssert(event.momentumPhase != NSEventPhaseNone,
              @"Received gesture event with unexpected phase");
   }
@@ -635,16 +656,11 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)onAccessibilityStatusChanged:(BOOL)enabled {
   if (!enabled && self.viewLoaded && [_textInputPlugin isFirstResponder]) {
-    // The client (i.e. the FlutterTextField) of the textInputPlugin is a sibling
-    // of the FlutterView. macOS will pick the ancestor to be the next responder
-    // when the client is removed from the view hierarchy, which is the result of
-    // turning off semantics. This will cause the keyboard focus to stick at the
-    // NSWindow.
-    //
-    // Since the view controller creates the illustion that the FlutterTextField is
-    // below the FlutterView in accessibility (See FlutterViewWrapper), it has to
-    // manually pick the next responder.
-    [self.view.window makeFirstResponder:_flutterView];
+    // Normally TextInputPlugin, when editing, is child of FlutterViewWrapper.
+    // When accessiblity is enabled the TextInputPlugin gets added as an indirect
+    // child to FlutterTextField. When disabling the plugin needs to be reparented
+    // back.
+    [self.view addSubview:_textInputPlugin];
   }
 }
 
@@ -671,10 +687,6 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 #pragma mark - FlutterKeyboardViewDelegate
-
-- (BOOL)isComposing {
-  return [_textInputPlugin isComposing];
-}
 
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(nullable FlutterKeyEventCallback)callback
@@ -738,27 +750,6 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)keyUp:(NSEvent*)event {
   [_keyboardManager handleEvent:event];
-}
-
-- (BOOL)performKeyEquivalent:(NSEvent*)event {
-  [_keyboardManager handleEvent:event];
-  if (event.type == NSEventTypeKeyDown) {
-    // macOS only sends keydown for performKeyEquivalent, but the Flutter framework
-    // always expects a keyup for every keydown. Synthesizes a key up event so that
-    // the Flutter framework continues to work.
-    NSEvent* synthesizedUp = [NSEvent keyEventWithType:NSEventTypeKeyUp
-                                              location:event.locationInWindow
-                                         modifierFlags:event.modifierFlags
-                                             timestamp:event.timestamp
-                                          windowNumber:event.windowNumber
-                                               context:event.context
-                                            characters:event.characters
-                           charactersIgnoringModifiers:event.charactersIgnoringModifiers
-                                             isARepeat:event.isARepeat
-                                               keyCode:event.keyCode];
-    [_keyboardManager handleEvent:synthesizedUp];
-  }
-  return YES;
 }
 
 - (void)flagsChanged:(NSEvent*)event {
@@ -841,6 +832,30 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)swipeWithEvent:(NSEvent*)event {
   // Not needed, it's handled by scrollWheel.
+}
+
+- (void)touchesBeganWithEvent:(NSEvent*)event {
+  NSTouch* touch = event.allTouches.anyObject;
+  if (touch != nil) {
+    if (_mouseState.system_scroll_inertia_active) {
+      // The trackpad has been touched and a scroll gesture is still sending inertia events.
+      // A scroll inertia cancel message should be sent to the framework.
+      NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
+      NSPoint locationInBackingCoordinates =
+          [self.flutterView convertPointToBacking:locationInView];
+      FlutterPointerEvent flutterEvent = {
+          .struct_size = sizeof(flutterEvent),
+          .timestamp = static_cast<size_t>(event.timestamp * USEC_PER_SEC),
+          .x = locationInBackingCoordinates.x,
+          .y = -locationInBackingCoordinates.y,  // convertPointToBacking makes this negative.
+          .device = kPointerPanZoomDeviceId,
+          .signal_kind = kFlutterPointerSignalKindScrollInertiaCancel,
+          .device_kind = kFlutterPointerDeviceKindTrackpad,
+      };
+
+      [_engine sendPointerEvent:flutterEvent];
+    }
+  }
 }
 
 @end

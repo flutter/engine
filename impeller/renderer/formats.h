@@ -99,6 +99,7 @@ enum class StoreAction {
   kDontCare,
   kStore,
   kMultisampleResolve,
+  kStoreAndMultisampleResolve,
 };
 
 constexpr bool CanClearAttachment(LoadAction action) {
@@ -115,6 +116,7 @@ constexpr bool CanClearAttachment(LoadAction action) {
 constexpr bool CanDiscardAttachmentWhenDone(StoreAction action) {
   switch (action) {
     case StoreAction::kStore:
+    case StoreAction::kStoreAndMultisampleResolve:
       return false;
     case StoreAction::kDontCare:
     case StoreAction::kMultisampleResolve:
@@ -184,11 +186,19 @@ enum class PrimitiveType {
 struct DepthRange {
   Scalar z_near = 0.0;
   Scalar z_far = 1.0;
+
+  constexpr bool operator==(const DepthRange& other) const {
+    return z_near == other.z_near && z_far == other.z_far;
+  }
 };
 
 struct Viewport {
   Rect rect;
   DepthRange depth_range;
+
+  constexpr bool operator==(const Viewport& other) const {
+    return rect == other.rect && depth_range == other.depth_range;
+  }
 };
 
 enum class MinMagFilter {
@@ -196,6 +206,16 @@ enum class MinMagFilter {
   kNearest,
   /// Select two points and linearly interpolate between them. Some formats
   /// may not support this.
+  kLinear,
+};
+
+enum class MipFilter {
+  /// Always sample from mip level 0. Other mip levels are ignored.
+  kNone,
+  /// Sample from the nearest mip level.
+  kNearest,
+  /// Sample from the two nearest mip levels and linearly interpolate between
+  /// them.
   kLinear,
 };
 

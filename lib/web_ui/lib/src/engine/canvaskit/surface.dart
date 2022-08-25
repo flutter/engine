@@ -13,27 +13,27 @@ import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
-import 'initialization.dart';
+import 'renderer.dart';
 import 'surface_factory.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
 // removes the ability for disabling AA on Paint objects.
 const bool _kUsingMSAA =
-    bool.fromEnvironment('flutter.canvaskit.msaa', defaultValue: false);
+    bool.fromEnvironment('flutter.canvaskit.msaa');
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
 /// A frame which contains a canvas to be drawn into.
 class SurfaceFrame {
-  final CkSurface skiaSurface;
-  final SubmitCallback submitCallback;
-  bool _submitted;
-
   SurfaceFrame(this.skiaSurface, this.submitCallback)
       : _submitted = false,
-        assert(skiaSurface != null), // ignore: unnecessary_null_comparison
-        assert(submitCallback != null); // ignore: unnecessary_null_comparison
+        assert(skiaSurface != null),
+        assert(submitCallback != null);
+
+  final CkSurface skiaSurface;
+  final SubmitCallback submitCallback;
+  final bool _submitted;
 
   /// Submit this frame to be drawn.
   bool submit() {
@@ -131,7 +131,7 @@ class Surface {
 
   void addToScene() {
     if (!_addedToScene) {
-      skiaSceneHost!.prepend(htmlElement);
+      CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);
     }
     _addedToScene = true;
   }
@@ -161,6 +161,7 @@ class Surface {
       // The existing surface is still reusable.
       if (window.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
+        _translateCanvas();
       }
       return _surface!;
     }

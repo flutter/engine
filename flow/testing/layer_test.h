@@ -10,7 +10,9 @@
 
 #include <optional>
 #include <utility>
+#include <vector>
 
+#include "flutter/display_list/display_list_builder_multiplexer.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/canvas_test.h"
@@ -43,7 +45,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
  public:
   LayerTestBase()
-      : preroll_context_{
+      : texture_registry_(std::make_shared<TextureRegistry>()),
+        preroll_context_{
             // clang-format off
             .raster_cache                  = nullptr,
             .gr_context                    = nullptr,
@@ -58,6 +61,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
+            .raster_cached_entries         = &cacheable_items_,
             // clang-format on
         },
         paint_context_{
@@ -89,6 +93,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .leaf_nodes_builder            = display_list_recorder_.builder().get(),
+            .builder_multiplexer           = &display_list_multiplexer_,
             // clang-format on
         },
         check_board_context_{
@@ -106,6 +111,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         } {
     internal_display_list_canvas_.addCanvas(&display_list_recorder_);
+    display_list_multiplexer_.addBuilder(
+        display_list_recorder_.builder().get());
     use_null_raster_cache();
   }
 
@@ -158,14 +165,18 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     set_raster_cache_(std::make_unique<RasterCache>());
   }
 
-  TextureRegistry& texture_regitry() { return texture_registry_; }
+  std::vector<RasterCacheItem*>& cacheable_items() { return cacheable_items_; }
+
+  std::shared_ptr<TextureRegistry> texture_registry() {
+    return texture_registry_;
+  }
   RasterCache* raster_cache() { return raster_cache_.get(); }
   PrerollContext* preroll_context() { return &preroll_context_; }
-  Layer::PaintContext& paint_context() { return paint_context_; }
-  Layer::PaintContext& display_list_paint_context() {
+  PaintContext& paint_context() { return paint_context_; }
+  PaintContext& display_list_paint_context() {
     return display_list_paint_context_;
   }
-  Layer::PaintContext& check_board_context() { return check_board_context_; }
+  PaintContext& check_board_context() { return check_board_context_; }
   LayerSnapshotStore& layer_snapshot_store() { return snapshot_store_; }
 
   sk_sp<DisplayList> display_list() {
@@ -176,6 +187,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
       display_list_paint_context_.leaf_nodes_canvas = nullptr;
       display_list_paint_context_.internal_nodes_canvas = nullptr;
       display_list_paint_context_.leaf_nodes_builder = nullptr;
+      display_list_paint_context_.builder_multiplexer = nullptr;
     }
     return display_list_;
   }
@@ -201,17 +213,20 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;
   MutatorsStack mutators_stack_;
-  TextureRegistry texture_registry_;
+  std::shared_ptr<TextureRegistry> texture_registry_;
 
   std::unique_ptr<RasterCache> raster_cache_;
   PrerollContext preroll_context_;
-  Layer::PaintContext paint_context_;
+  PaintContext paint_context_;
   DisplayListCanvasRecorder display_list_recorder_;
+  DisplayListBuilderMultiplexer display_list_multiplexer_;
   sk_sp<DisplayList> display_list_;
   SkNWayCanvas internal_display_list_canvas_;
-  Layer::PaintContext display_list_paint_context_;
-  Layer::PaintContext check_board_context_;
+  PaintContext display_list_paint_context_;
+  PaintContext check_board_context_;
   LayerSnapshotStore snapshot_store_;
+
+  std::vector<RasterCacheItem*> cacheable_items_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTestBase);
 };

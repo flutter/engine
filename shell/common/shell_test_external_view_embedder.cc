@@ -56,8 +56,15 @@ std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return nullptr;
+std::vector<DisplayListBuilder*>
+ShellTestExternalViewEmbedder::GetCurrentBuilders() {
+  return {};
+}
+
+// |ExternalViewEmbedder|
+EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
+    int view_id) {
+  return {nullptr, nullptr};
 }
 
 // |ExternalViewEmbedder|

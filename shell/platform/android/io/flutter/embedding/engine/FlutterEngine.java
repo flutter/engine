@@ -349,6 +349,8 @@ public class FlutterEngine {
     this.pluginRegistry =
         new FlutterEngineConnectionRegistry(context.getApplicationContext(), this, flutterLoader);
 
+    localizationPlugin.sendLocalesToFlutter(context.getResources().getConfiguration());
+
     // Only automatically register plugins if both constructor parameter and
     // loaded AndroidManifest config turn this feature on.
     if (automaticallyRegisterPlugins && flutterLoader.automaticallyRegisterPlugins()) {
@@ -391,7 +393,10 @@ public class FlutterEngine {
       @NonNull Context context,
       @NonNull DartEntrypoint dartEntrypoint,
       @Nullable String initialRoute,
-      @Nullable List<String> dartEntrypointArgs) {
+      @Nullable List<String> dartEntrypointArgs,
+      @Nullable PlatformViewsController platformViewsController,
+      boolean automaticallyRegisterPlugins,
+      boolean waitForRestorationData) {
     if (!isAttachedToJni()) {
       throw new IllegalStateException(
           "Spawn can only be called on a fully constructed FlutterEngine");
@@ -407,7 +412,11 @@ public class FlutterEngine {
         context, // Context.
         null, // FlutterLoader. A null value passed here causes the constructor to get it from the
         // FlutterInjector.
-        newFlutterJNI); // FlutterJNI.
+        newFlutterJNI, // FlutterJNI.
+        platformViewsController, // PlatformViewsController.
+        null, // String[]. The Dart VM has already started, this arguments will have no effect.
+        automaticallyRegisterPlugins, // boolean.
+        waitForRestorationData); // boolean
   }
 
   /**

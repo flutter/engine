@@ -17,10 +17,14 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   BuildCommand() {
     argParser.addFlag(
       'watch',
-      defaultsTo: false,
       abbr: 'w',
       help: 'Run the build in watch mode so it rebuilds whenever a change is '
           'made. Disabled by default.',
+    );
+    argParser.addFlag(
+      'build-canvaskit',
+      help: 'Build CanvasKit locally instead of getting it from CIPD. Disabled '
+          'by default.',
     );
   }
 
@@ -32,12 +36,17 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get isWatchMode => boolArg('watch');
 
+  bool get buildCanvaskit => boolArg('build-canvaskit');
+
   @override
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
       GnPipelineStep(),
-      NinjaPipelineStep(target: environment.flutterWebSdkOutDir),
+      if (buildCanvaskit) 
+        NinjaPipelineStep(target: environment.flutterWebSdkOutDir),
+      if (!buildCanvaskit)
+        NinjaPipelineStep(target: environment.hostDebugUnoptDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
     await buildPipeline.run();

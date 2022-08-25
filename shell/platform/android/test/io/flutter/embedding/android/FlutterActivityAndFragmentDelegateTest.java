@@ -864,23 +864,6 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itNotifiesDartExecutorAndSendsMessageOverSystemChannelWhenInformedOfLowMemory() {
-    // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
-
-    // --- Execute the behavior under test ---
-    // The FlutterEngine is set up in onAttach().
-    delegate.onAttach(ctx);
-
-    // Emulate the host and call the method that we expect to be forwarded.
-    delegate.onLowMemory();
-
-    // Verify that the call was forwarded to the engine.
-    verify(mockFlutterEngine.getDartExecutor(), times(1)).notifyLowMemoryWarning();
-    verify(mockFlutterEngine.getSystemChannel(), times(1)).sendMemoryPressureWarning();
-  }
-
-  @Test
   public void itDestroysItsOwnEngineIfHostRequestsIt() {
     // ---- Test setup ----
     // Adjust fake host to request engine destruction.
@@ -1055,11 +1038,27 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Verify that the flutterView is visible.
     assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
     delegate.onStop();
-    // Verify that the flutterView is not visible.
+    // Verify that the flutterView is gone.
     assertEquals(View.GONE, delegate.flutterView.getVisibility());
     delegate.onStart();
     // Verify that the flutterView is visible.
     assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
+
+    delegate.flutterView.setVisibility(View.INVISIBLE);
+    delegate.onStop();
+    // Verify that the flutterView is gone.
+    assertEquals(View.GONE, delegate.flutterView.getVisibility());
+    delegate.onStart();
+    // Verify that the flutterView is invisible.
+    assertEquals(View.INVISIBLE, delegate.flutterView.getVisibility());
+
+    delegate.flutterView.setVisibility(View.GONE);
+    delegate.onStop();
+    // Verify that the flutterView is gone.
+    assertEquals(View.GONE, delegate.flutterView.getVisibility());
+    delegate.onStart();
+    // Verify that the flutterView is gone.
+    assertEquals(View.GONE, delegate.flutterView.getVisibility());
   }
 
   @Test

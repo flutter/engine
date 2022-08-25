@@ -36,6 +36,16 @@ class Environment {
     return _prepareEnvironmentFromEngineDir(script, directory);
   }
 
+  Environment._({
+    required this.self,
+    required this.webUiRootDir,
+    required this.engineSrcDir,
+    required this.engineToolsDir,
+    required this.outDir,
+    required this.hostDebugUnoptDir,
+    required this.dartSdkDir,
+  });
+
   static Environment _prepareEnvironmentFromEngineDir(
       io.File self, io.Directory engineSrcDir) {
     final io.Directory engineToolsDir =
@@ -68,15 +78,6 @@ class Environment {
     );
   }
 
-  Environment._({
-    required this.self,
-    required this.webUiRootDir,
-    required this.engineSrcDir,
-    required this.engineToolsDir,
-    required this.outDir,
-    required this.dartSdkDir,
-  });
-
   /// The Dart script that's currently running.
   final io.File self;
 
@@ -93,6 +94,9 @@ class Environment {
   ///
   /// This is where you'll find the ninja output, such as the Dart SDK.
   final io.Directory outDir;
+
+  /// Path to the engine's "host_debug_unopt" build.
+  final io.Directory hostDebugUnoptDir;
 
   /// The root of the Dart SDK.
   final io.Directory dartSdkDir;

@@ -179,8 +179,11 @@ To your `AndroidManifest.xml` file, add under the `<application>` tag:
 
 ## Documentation, References, and Additional Reading
 
+* [Frequently Asked Questions](docs/faq.md)
 * [Impellers Coordinate System](docs/coordinate_system.md)
 * [How to Setup Xcode for GPU Frame Captures with Metal.](docs/xcode_frame_capture.md)
 * [Learning to Read GPU Frame Captures](docs/read_frame_captures.md)
 * [How to Enable Metal Validation for Command Line Apps.](docs/metal_validation.md)
 * [How Impeller Works Around The Lack of Uniform Buffers in Open GL ES 2.0.](docs/ubo_gles2.md)
+* [Guidance for writing efficient shaders](docs/shader_optimization.md)
+* [How color blending works in Impeller](docs/blending.md)

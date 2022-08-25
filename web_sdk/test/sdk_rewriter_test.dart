@@ -30,12 +30,9 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
-import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -81,7 +78,7 @@ export 'engine/file3.dart';
       '$caught',
       'Exception: on line 3: unexpected code in /path/to/lib/web_ui/lib/src/engine.dart. '
       'This file may only contain comments and exports. Found:\n'
-      'import \'dart:something\';',
+      "import 'dart:something';",
     );
   });
 

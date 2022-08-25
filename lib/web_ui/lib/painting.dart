@@ -3,30 +3,31 @@
 // found in the LICENSE file.
 
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
-// ignore_for_file: public_member_api_docs
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
-  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
+  assert(offset != null, 'Offset argument was null.');
   assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
   return true;
 }
 
 // ignore: unused_element, Used in Shader assert.
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
+  assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
 
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
-    if (colors.length != 2)
+    if (colors.length != 2) {
       throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
+    }
   } else {
-    if (colors.length != colorStops.length)
+    if (colors.length != colorStops.length) {
       throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
+    }
   }
 }
 
@@ -35,7 +36,7 @@ Color _scaleAlpha(Color a, double factor) {
 }
 
 class Color {
-  const Color(int value) : this.value = value & 0xFFFFFFFF;// ignore: unnecessary_this
+  const Color(int value) : value = value & 0xFFFFFFFF;
   const Color.fromARGB(int a, int r, int g, int b)
       : value = (((a & 0xff) << 24) |
                 ((r & 0xff) << 16) |
@@ -92,7 +93,7 @@ class Color {
   }
 
   static Color? lerp(Color? a, Color? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -144,7 +145,7 @@ class Color {
   }
 
   static int getAlphaFromOpacity(double opacity) {
-    assert(opacity != null); // ignore: unnecessary_null_comparison
+    assert(opacity != null);
     return (opacity.clamp(0.0, 1.0) * 255).round();
   }
 
@@ -231,7 +232,7 @@ enum Clip {
 }
 
 abstract class Paint {
-  factory Paint() => engine.useCanvasKit ? engine.CkPaint() : engine.SurfacePaint();
+  factory Paint() => engine.renderer.createPaint();
   static bool enableDithering = false;
   BlendMode get blendMode;
   set blendMode(BlendMode value);
@@ -281,10 +282,13 @@ abstract class Gradient extends Shader {
     Float64List? matrix4,
   ]) {
     final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
-    return engine.useCanvasKit
-        ? engine.CkGradientLinear(
-        from, to, colors, colorStops, tileMode, matrix)
-        : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix);
+    return engine.renderer.createLinearGradient(
+      from,
+      to,
+      colors,
+      colorStops,
+      tileMode,
+      matrix);
   }
 
   factory Gradient.radial(
@@ -302,17 +306,13 @@ abstract class Gradient extends Shader {
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      return engine.useCanvasKit
-          ? engine.CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix32)
-          : engine.GradientRadial(center, radius, colors, colorStops, tileMode, matrix32);
+      return engine.renderer.createRadialGradient(
+        center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.useCanvasKit
-          ? engine.CkGradientConical(
-              focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32)
-          : engine.GradientConical(
-              focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32);
+      return engine.renderer.createConicalGradient(
+        focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32);
     }
   }
   factory Gradient.sweep(
@@ -323,11 +323,14 @@ abstract class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) => engine.useCanvasKit
-    ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
-          endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
-    : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
-          endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null);
+  ]) => engine.renderer.createSweepGradient(
+    center,
+    colors,
+    colorStops,
+    tileMode,
+    startAngle,
+    endAngle,
+    matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
 abstract class Image {
@@ -367,8 +370,8 @@ class MaskFilter {
   const MaskFilter.blur(
     this._style,
     this._sigma,
-  )   : assert(_style != null), // ignore: unnecessary_null_comparison
-        assert(_sigma != null); // ignore: unnecessary_null_comparison
+  )   : assert(_style != null),
+        assert(_sigma != null);
 
   final BlurStyle _style;
   final double _sigma;
@@ -397,44 +400,31 @@ enum FilterQuality {
 }
 
 class ImageFilter {
-  factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp}) {
-    if (engine.useCanvasKit) {
-      return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
-    }
-    // TODO(ferhat): implement TileMode.
-    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
-  }
+  factory ImageFilter.blur({
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
+    TileMode tileMode = TileMode.clamp
+  }) => engine.renderer.createBlurImageFilter(
+    sigmaX: sigmaX,
+    sigmaY: sigmaY,
+    tileMode: tileMode
+  );
 
-  // ignore: avoid_unused_constructor_parameters
-  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) {
-    // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.dilate not implemented for web platform.');
-  }
+  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) =>
+    engine.renderer.createDilateImageFilter(radiusX: radiusX, radiusY: radiusY);
 
-  // ignore: avoid_unused_constructor_parameters
-  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) {
-    // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.erode not implemented for web platform.');
-  }
+  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) =>
+    engine.renderer.createErodeImageFilter(radiusX: radiusX, radiusY: radiusY);
 
   factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
-    if (engine.useCanvasKit) {
-      return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
     }
-    // TODO(yjbanov): implement FilterQuality.
-    return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
+    return engine.renderer.createMatrixImageFilter(matrix4, filterQuality: filterQuality);
   }
 
-  // TODO(ferhat): add implementation and remove the "ignore".
-  // ignore: avoid_unused_constructor_parameters
-  ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
-    throw UnimplementedError(
-        'ImageFilter.compose not implemented for web platform.');
-  }
+  factory ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) =>
+    engine.renderer.composeImageFilters(outer: outer, inner: inner);
 }
 
 enum ImageByteFormat {
@@ -475,48 +465,26 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) async {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateImageCodec(list, targetWidth, targetHeight);
-  } else {
-    final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
-    return engine.HtmlBlobCodec(blob);
-  }
-}
+}) => engine.renderer.instantiateImageCodec(
+  list,
+  targetWidth: targetWidth,
+  targetHeight: targetHeight,
+  allowUpscaling: allowUpscaling);
 
 Future<Codec> instantiateImageCodecFromBuffer(
   ImmutableBuffer buffer, {
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) async {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateImageCodec(buffer._list!, targetWidth, targetHeight);
-  } else {
-    final html.Blob blob = html.Blob(<dynamic>[buffer._list!.buffer]);
-    return engine.HtmlBlobCodec(blob);
-  }
-}
+}) => engine.renderer.instantiateImageCodec(
+  buffer._list!,
+  targetWidth: targetWidth,
+  targetHeight: targetHeight,
+  allowUpscaling: allowUpscaling);
 
 Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateWebImageCodec(
-      uri.toString(), chunkCallback);
-  } else {
-    return engine.futurize<Codec>((engine.Callback<Codec> callback) =>
-      _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
-  }
-}
-
-String? _instantiateImageCodecFromUrl(
-  Uri uri,
-  engine.WebOnlyImageCodecChunkCallback? chunkCallback,
-  engine.Callback<Codec> callback,
-) {
-  callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
-  return null;
-}
+  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
+  engine.renderer.instantiateImageCodecFromUrl(uri, chunkCallback: chunkCallback);
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
@@ -533,7 +501,7 @@ Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
 // The `pixels` should be the scanlined raw pixels, 4 bytes per pixel, from left
 // to right, then from top to down. The order of the 4 bytes of pixels is
 // decided by `format`.
-Future<Codec> _createBmp(
+Future<Codec> createBmp(
   Uint8List pixels,
   int width,
   int height,
@@ -559,7 +527,7 @@ Future<Codec> _createBmp(
   final int bufferSize = headerSize + (width * height * 4);
   final ByteData bmpData = ByteData(bufferSize);
   // 'BM' header
-  bmpData.setUint16(0x00, 0x424D, Endian.big);
+  bmpData.setUint16(0x00, 0x424D);
   // Size of data
   bmpData.setUint32(0x02, bufferSize, Endian.little);
   // Offset where pixel array begins
@@ -622,39 +590,24 @@ void decodeImageFromPixels(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) {
-  if (engine.useCanvasKit) {
-    engine.skiaDecodeImageFromPixels(
-      pixels,
-      width,
-      height,
-      format,
-      callback,
-      rowBytes: rowBytes,
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
-      allowUpscaling: allowUpscaling,
-    );
-    return;
-  }
-
-  void executeCallback(Codec codec) {
-    codec.getNextFrame().then((FrameInfo frameInfo) {
-      callback(frameInfo.image);
-    });
-  }
-  _createBmp(pixels, width, height, rowBytes ?? width, format).then(
-      executeCallback);
-
-}
+}) => engine.renderer.decodeImageFromPixels(
+  pixels,
+  width,
+  height,
+  format,
+  callback,
+  rowBytes: rowBytes,
+  targetWidth: targetWidth,
+  targetHeight: targetHeight,
+  allowUpscaling: allowUpscaling);
 
 class Shadow {
   const Shadow({
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null, 'Text shadow color was null.'), // ignore: unnecessary_null_comparison
-        assert(offset != null, 'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
+  })  : assert(color != null, 'Text shadow color was null.'),
+        assert(offset != null, 'Text shadow offset was null.'),
         assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
@@ -683,7 +636,7 @@ class Shadow {
   }
 
   static Shadow? lerp(Shadow? a, Shadow? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -704,7 +657,7 @@ class Shadow {
   }
 
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (a == null && b == null) {
       return null;
     }
@@ -712,10 +665,12 @@ class Shadow {
     b ??= <Shadow>[];
     final List<Shadow> result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
-    for (int i = 0; i < commonLength; i += 1)
+    for (int i = 0; i < commonLength; i += 1) {
       result.add(Shadow.lerp(a[i], b[i], t)!);
-    for (int i = commonLength; i < a.length; i += 1)
+    }
+    for (int i = commonLength; i < a.length; i += 1) {
       result.add(a[i].scale(1.0 - t));
+    }
     for (int i = commonLength; i < b.length; i += 1) {
       result.add(b[i].scale(t));
     }
@@ -740,12 +695,14 @@ class Shadow {
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
 }
 
-class ImageShader extends Shader {
+abstract class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) => engine.useCanvasKit
-      ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
-      : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
+  }) => engine.renderer.createImageShader(image, tmx, tmy, matrix4, filterQuality);
+
+  void dispose();
+
+  bool get debugDisposed;
 }
 
 class ImmutableBuffer {
@@ -763,7 +720,7 @@ class ImmutableBuffer {
   Uint8List? _list;
 
   int get length => _length;
-  int _length;
+  final int _length;
 
   bool get debugDisposed {
     late bool disposed;
@@ -777,17 +734,6 @@ class ImmutableBuffer {
 }
 
 class ImageDescriptor {
-  ImageDescriptor._()
-      : _width = null,
-        _height = null,
-        _rowBytes = null,
-        _format = null;
-  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
-    final ImageDescriptor descriptor = ImageDescriptor._();
-    descriptor._data = buffer._list;
-    return descriptor;
-  }
-
   // Not async because there's no expensive work to do here.
   ImageDescriptor.raw(
     ImmutableBuffer buffer, {
@@ -800,6 +746,18 @@ class ImageDescriptor {
         _rowBytes = rowBytes,
         _format = pixelFormat {
     _data = buffer._list;
+  }
+
+  ImageDescriptor._()
+      : _width = null,
+        _height = null,
+        _rowBytes = null,
+        _format = null;
+
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    descriptor._data = buffer._list;
+    return descriptor;
   }
 
   Uint8List? _data;
@@ -830,19 +788,20 @@ class ImageDescriptor {
       );
     }
 
-    return _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
+    return createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }
 
 class FragmentProgram {
-  static Future<FragmentProgram> compile({
-    required ByteBuffer spirv,
-    bool debugPrint = false,
-  }) {
+  FragmentProgram._();
+
+  static Future<FragmentProgram> fromAsset(String assetKey) {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
 
-  FragmentProgram._();
+  static Future<FragmentProgram> fromAssetAsync(String assetKey) {
+    return Future<FragmentProgram>.microtask(() => FragmentProgram.fromAsset(assetKey));
+  }
 
   Shader shader({
     Float32List? floatUniforms,

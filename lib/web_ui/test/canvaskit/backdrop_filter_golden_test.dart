@@ -49,12 +49,10 @@ void testMain() {
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, checkerboard);
       builder.pushBackdropFilter(ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10));
-      EnginePlatformDispatcher.instance.rasterizer!
-          .draw(builder.build().layerTree);
+      CanvasKitRenderer.instance.rasterizer.draw(builder.build().layerTree);
       await matchGoldenFile('canvaskit_backdropfilter_blur_edges.png',
           region: region);
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-  }, skip: isIosSafari || isFirefox);
+  }, skip: isSafari || isFirefox);
 }

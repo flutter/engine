@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
+import 'dom.dart';
 import 'util.dart';
 
 /// Renders an RRect using path primitives.
@@ -183,8 +183,8 @@ abstract class RRectRenderer {
 
 /// Renders RRect to a 2d canvas.
 class RRectToCanvasRenderer extends RRectRenderer {
-  final html.CanvasRenderingContext2D context;
   RRectToCanvasRenderer(this.context);
+  final DomCanvasRenderingContext2D context;
   @override
   void beginPath() {
     context.beginPath();
@@ -210,8 +210,8 @@ class RRectToCanvasRenderer extends RRectRenderer {
 
 /// Renders RRect to a path.
 class RRectToPathRenderer extends RRectRenderer {
-  final ui.Path path;
   RRectToPathRenderer(this.path);
+  final ui.Path path;
   @override
   void beginPath() {}
 

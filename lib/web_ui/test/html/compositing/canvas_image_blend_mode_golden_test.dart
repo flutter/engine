@@ -24,8 +24,8 @@ Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    renderer.fontCollection.debugRegisterTestFonts();
+    await renderer.fontCollection.ensureFontsLoaded();
   });
 
   const Color red = Color(0xFFFF0000);
@@ -92,8 +92,7 @@ Future<void> testMain() async {
       await canvasScreenshot(rc, 'canvas_image_blend_group$blendGroup',
           maxDiffRatePercent: 8.0, region: screenRect);
     },
-        skip: browserEngine == BrowserEngine.webkit &&
-            operatingSystem == OperatingSystem.iOs);
+        skip: isSafari);
   }
 
   // Regression test for https://github.com/flutter/flutter/issues/56971

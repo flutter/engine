@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-import 'dart:svg' as svg;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -61,7 +58,7 @@ Future<void> testMain() async {
 
     canvas.drawPath(path, paint!);
 
-    final html.Element svgElement = pathToSvgElement(path, paint, enableFill);
+    final DomElement svgElement = pathToSvgElement(path, paint, enableFill);
 
     canvas.endRecording();
     canvas.apply(bitmapCanvas, canvasBounds);
@@ -75,7 +72,7 @@ Future<void> testMain() async {
       sceneElement.style.transform = 'scale(0.3)';
     }
     sceneElement.append(bitmapCanvas.rootElement);
-    sceneElement.append(svgElement as DomElement);
+    sceneElement.append(svgElement);
 
     await matchGoldenFile('$scubaFileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
@@ -85,7 +82,7 @@ Future<void> testMain() async {
   }
 
   tearDown(() {
-    html.document.body!.children.clear();
+    domDocument.body!.clearChildren();
   });
 
   test('render line strokes', () async {
@@ -115,20 +112,16 @@ Future<void> testMain() async {
 
   test('render arcs', () async {
     final List<ArcSample> arcs = <ArcSample>[
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: false, distance: 20),
+      ArcSample(Offset.zero, distance: 20),
       ArcSample(const Offset(200, 0),
-          largeArc: true, clockwise: false, distance: 20),
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: true, distance: 20),
+          largeArc: true, distance: 20),
+      ArcSample(Offset.zero, clockwise: true, distance: 20),
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: 20),
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: false, distance: -20),
+      ArcSample(Offset.zero, distance: -20),
       ArcSample(const Offset(200, 0),
-          largeArc: true, clockwise: false, distance: -20),
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: true, distance: -20),
+          largeArc: true, distance: -20),
+      ArcSample(Offset.zero, clockwise: true, distance: -20),
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: -20)
     ];
@@ -154,9 +147,7 @@ Future<void> testMain() async {
     path.quadraticBezierTo(98, 0, 99.97, 7.8);
     path.arcToPoint(const Offset(162, 7.8),
         radius: const Radius.circular(32),
-        largeArc: false,
-        clockwise: false,
-        rotation: 0);
+        clockwise: false);
     path.lineTo(200, 7.8);
     path.lineTo(200, 80);
     path.lineTo(0, 80);
@@ -193,15 +184,15 @@ Future<void> testMain() async {
   });
 }
 
-html.Element pathToSvgElement(Path path, Paint paint, bool enableFill) {
+DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
   final Rect bounds = path.getBounds();
-  final svg.SvgSvgElement root = svg.SvgSvgElement();
+  final SVGSVGElement root = createSVGSVGElement();
   root.style.transform = 'translate(200px, 0px)';
   root.setAttribute('viewBox', '0 0 ${bounds.right} ${bounds.bottom}');
-  root.width!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, bounds.right);
-  root.height!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, bounds.bottom);
+  root.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.right);
+  root.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.bottom);
 
-  final svg.PathElement pathElement = svg.PathElement();
+  final SVGPathElement pathElement = createSVGPathElement();
   root.append(pathElement);
   if (paint.style == PaintingStyle.stroke ||
       paint.strokeWidth != 0.0) {
@@ -219,13 +210,13 @@ html.Element pathToSvgElement(Path path, Paint paint, bool enableFill) {
 }
 
 class ArcSample {
+  ArcSample(this.offset,
+      {this.largeArc = false, this.clockwise = false, this.distance = 0});
+
   final Offset offset;
   final bool largeArc;
   final bool clockwise;
   final double distance;
-
-  ArcSample(this.offset,
-      {this.largeArc = false, this.clockwise = false, this.distance = 0});
 
   Path createPath() {
     final Offset startP =

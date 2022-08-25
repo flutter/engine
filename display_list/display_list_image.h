@@ -6,6 +6,8 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
 
 #include <memory>
+#include <optional>
+#include <string>
 
 #include "flutter/fml/macros.h"
 #include "include/core/SkRefCnt.h"
@@ -27,6 +29,9 @@ namespace flutter {
 ///
 class DlImage : public SkRefCnt {
  public:
+  // Describes which GPU context owns this image.
+  enum class OwningContext { kRaster, kIO };
+
   static sk_sp<DlImage> Make(const SkImage* image);
 
   static sk_sp<DlImage> Make(sk_sp<SkImage> image);
@@ -48,6 +53,17 @@ class DlImage : public SkRefCnt {
   /// @return     An Impeller texture instance or null.
   ///
   virtual std::shared_ptr<impeller::Texture> impeller_texture() const = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      If the pixel format of this image ignores alpha, this returns
+  ///             true. This method might conservatively return false when it
+  ///             cannot guarnatee an opaque image, for example when the pixel
+  ///             format of the image supports alpha but the image is made up of
+  ///             entirely opaque pixels.
+  ///
+  /// @return     True if the pixel format of this image ignores alpha.
+  ///
+  virtual bool isOpaque() const = 0;
 
   virtual bool isTextureBacked() const = 0;
 
@@ -80,6 +96,32 @@ class DlImage : public SkRefCnt {
   ///             convenience method that calls |DlImage::dimensions|.
   ///
   SkIRect bounds() const;
+
+  //----------------------------------------------------------------------------
+  /// @return     Specifies which context was used to create this image. The
+  ///             image must be collected on the same task runner as its
+  ///             context.
+  virtual OwningContext owning_context() const { return OwningContext::kIO; }
+
+  //----------------------------------------------------------------------------
+  /// @return     An error, if any, that occurred when trying to create the
+  ///             image.
+  virtual std::optional<std::string> get_error() const;
+
+  bool Equals(const DlImage* other) const {
+    if (!other) {
+      return false;
+    }
+    if (this == other) {
+      return true;
+    }
+    return skia_image() == other->skia_image() &&
+           impeller_texture() == other->impeller_texture();
+  }
+
+  bool Equals(const DlImage& other) const { return Equals(&other); }
+
+  bool Equals(sk_sp<const DlImage> other) const { return Equals(other.get()); }
 
  protected:
   DlImage();

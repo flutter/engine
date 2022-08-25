@@ -25,6 +25,8 @@
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -99,14 +101,28 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   //----------------------------------------------------------------------------
+  /// @brief     How to handle calls to MakeGpuImage.
+  enum class MakeGpuImageBehavior {
+    /// MakeGpuImage returns a GPU resident image, if possible.
+    kGpu,
+    /// MakeGpuImage returns a checkerboard bitmap. This is useful in test
+    /// contexts where no GPU surface is available.
+    kBitmap,
+  };
+
+  //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
   ///             be created on the raster task runner. Rasterizers are
   ///             currently only created by the shell (which also sets itself up
   ///             as the rasterizer delegate).
   ///
   /// @param[in]  delegate                   The rasterizer delegate.
+  /// @param[in]  gpu_image_behavior         How to handle calls to
+  ///                                        MakeGpuImage.
   ///
-  explicit Rasterizer(Delegate& delegate);
+  explicit Rasterizer(
+      Delegate& delegate,
+      MakeGpuImageBehavior gpu_image_behavior = MakeGpuImageBehavior::kGpu);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
@@ -197,16 +213,10 @@ class Rasterizer final : public SnapshotDelegate,
   void DrawLastLayerTree(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
-  //----------------------------------------------------------------------------
-  /// @brief      Gets the registry of external textures currently in use by the
-  ///             rasterizer. These textures may be updated at a cadence
-  ///             different from that of the Flutter application. When an
-  ///             external texture is referenced in the Flutter layer tree, that
-  ///             texture is composited within the Flutter layer tree.
-  ///
-  /// @return     A pointer to the external texture registry.
-  ///
-  flutter::TextureRegistry* GetTextureRegistry();
+  // |SnapshotDelegate|
+  GrDirectContext* GetGrContext() override;
+
+  std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
   using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;
 
@@ -455,6 +465,11 @@ class Rasterizer final : public SnapshotDelegate,
 
  private:
   // |SnapshotDelegate|
+  std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeGpuImage(
+      sk_sp<DisplayList> display_list,
+      const SkImageInfo& image_info) override;
+
+  // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,
       SkISize picture_size) override;
@@ -484,7 +499,7 @@ class Rasterizer final : public SnapshotDelegate,
 
   RasterStatus DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::unique_ptr<flutter::LayerTree> layer_tree);
+      std::shared_ptr<flutter::LayerTree> layer_tree);
 
   RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree& layer_tree);
@@ -498,15 +513,16 @@ class Rasterizer final : public SnapshotDelegate,
   static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
   Delegate& delegate_;
+  MakeGpuImageBehavior gpu_image_behavior_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
+  std::shared_ptr<flutter::LayerTree> last_layer_tree_;
   // Set when we need attempt to rasterize the layer tree again. This layer_tree
   // has not successfully rasterized. This can happen due to the change in the
   // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  std::shared_ptr<flutter::LayerTree> resubmitted_layer_tree_;
   std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;

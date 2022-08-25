@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -14,27 +13,16 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-typedef _ListPredicate<T> = bool Function(List<T>);
-_ListPredicate<T> deepEqualList<T>(List<T> a) {
-  return (List<T> b) {
-    if (a.length != b.length)
-      return false;
-    for (int i = 0; i < a.length; i += 1) {
-      if (a[i] != b[i])
-        return false;
-    }
-    return true;
-  };
-}
-
 Matcher listEqual(List<int> source, {int tolerance = 0}) {
   return predicate(
     (List<int> target) {
-      if (source.length != target.length)
+      if (source.length != target.length) {
         return false;
+      }
       for (int i = 0; i < source.length; i += 1) {
-        if ((source[i] - target[i]).abs() > tolerance)
+        if ((source[i] - target[i]).abs() > tolerance) {
           return false;
+        }
       }
       return true;
     },
@@ -156,14 +144,14 @@ Future<void> testMain() async {
     // if any pixels are left semi-transparent, which might be caused by
     // converting to and from pre-multiplied values. See
     // https://github.com/flutter/flutter/issues/92958 .
-    final CanvasElement canvas = CanvasElement()
+    final DomCanvasElement canvas = createDomCanvasElement()
       ..width = 2
       ..height = 2;
-    final CanvasRenderingContext2D ctx = canvas.context2D;
+    final DomCanvasRenderingContext2D ctx = canvas.context2D;
     ctx.drawImage((blueBackground as HtmlImage).imgElement, 0, 0);
     ctx.drawImage((sourceImage as HtmlImage).imgElement, 0, 0);
 
-    final ImageData imageData = ctx.getImageData(0, 0, 2, 2);
+    final DomImageData imageData = ctx.getImageData(0, 0, 2, 2);
     final List<int> actualPixels = imageData.data;
 
     final Uint8List benchmarkPixels = _pixelsToBytes(

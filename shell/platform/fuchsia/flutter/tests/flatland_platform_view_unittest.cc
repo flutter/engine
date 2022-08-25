@@ -47,6 +47,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override {
     return std::vector<SkCanvas*>();
   }
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
+    return std::vector<flutter::DisplayListBuilder*>();
+  }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -62,7 +65,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return nullptr; }
+  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {nullptr, nullptr};
+  }
 };
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
@@ -287,18 +292,11 @@ class MockParentViewportWatcher
     }
   }
 
-  void SetLayout(uint32_t logical_size_x,
-                 uint32_t logical_size_y,
-                 uint32_t pixel_scale_x = 1u,
-                 uint32_t pixel_scale_y = 1u) {
+  void SetLayout(uint32_t logical_size_x, uint32_t logical_size_y) {
     ::fuchsia::math::SizeU logical_size;
     logical_size.width = logical_size_x;
     logical_size.height = logical_size_y;
     layout_.set_logical_size(logical_size);
-    ::fuchsia::math::SizeU pixel_scale;
-    pixel_scale.width = pixel_scale_x;
-    pixel_scale.height = pixel_scale_y;
-    layout_.set_pixel_scale(pixel_scale);
 
     if (pending_callback_valid_) {
       pending_layout_callback_(std::move(layout_));
@@ -382,6 +380,12 @@ class PlatformViewBuilder {
     return *this;
   }
 
+  PlatformViewBuilder& SetPointerInjectorRegistry(
+      fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry) {
+    pointerinjector_registry_ = std::move(pointerinjector_registry);
+    return *this;
+  }
+
   PlatformViewBuilder& SetEnableWireframeCallback(OnEnableWireframe callback) {
     wireframe_enabled_callback_ = std::move(callback);
     return *this;
@@ -422,13 +426,14 @@ class PlatformViewBuilder {
   // Once Build is called, the instance is no longer usable.
   FlatlandPlatformView Build() {
     EXPECT_FALSE(std::exchange(built_, true))
-        << "Build() was already called, this buider is good for one use only.";
+        << "Build() was already called, this builder is good for one use only.";
     return FlatlandPlatformView(
         delegate_, task_runners_, std::move(view_ref_pair_.view_ref),
         external_external_view_embedder_, std::move(ime_service_),
         std::move(keyboard_), std::move(touch_source_),
         std::move(mouse_source_), std::move(focuser_),
         std::move(view_ref_focused_), std::move(parent_viewport_watcher_),
+        std::move(pointerinjector_registry_),
         std::move(wireframe_enabled_callback_),
         std::move(on_create_view_callback_),
         std::move(on_update_view_callback_),
@@ -454,6 +459,7 @@ class PlatformViewBuilder {
   fuchsia::ui::pointer::MouseSourceHandle mouse_source_;
   fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused_;
   fuchsia::ui::views::FocuserHandle focuser_;
+  fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry_;
   fit::closure on_session_listener_error_callback_;
   OnEnableWireframe wireframe_enabled_callback_;
   fuchsia::ui::composition::ParentViewportWatcherHandle

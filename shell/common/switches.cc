@@ -43,7 +43,6 @@ struct SwitchDesc {
 static const std::string kAllowedDartFlags[] = {
     "--enable-isolate-groups",
     "--no-enable-isolate-groups",
-    "--lazy_async_stacks",
 };
 // clang-format on
 
@@ -55,7 +54,6 @@ static const std::string kAllowedDartFlags[] = {
     "--no-enable-isolate-groups",
     "--enable_mirrors",
     "--enable-service-port-fallback",
-    "--lazy_async_stacks",
     "--max_profile_depth",
     "--profile_period",
     "--random_seed",
@@ -66,8 +64,6 @@ static const std::string kAllowedDartFlags[] = {
     "--write-service-info",
     "--null_assertions",
     "--strict_null_safety_checks",
-    "--enable-display-list",
-    "--no-enable-display-list",
     "--max_subtype_cache_entries",
 };
 // clang-format on
@@ -445,16 +441,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       }
       settings.dart_flags.push_back(flag);
     }
-  }
-  if (std::find(settings.dart_flags.begin(), settings.dart_flags.end(),
-                "--enable-display-list") != settings.dart_flags.end()) {
-    FML_LOG(ERROR) << "Manually enabling display lists";
-    settings.enable_display_list = true;
-  } else if (std::find(settings.dart_flags.begin(), settings.dart_flags.end(),
-                       "--no-enable-display-list") !=
-             settings.dart_flags.end()) {
-    FML_LOG(ERROR) << "Manually disabling display lists";
-    settings.enable_display_list = false;
   }
 
 #if !FLUTTER_RELEASE

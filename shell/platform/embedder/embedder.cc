@@ -55,6 +55,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
+#include "flutter/shell/platform/embedder/pixel_formats.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
@@ -129,6 +130,12 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
                           fbo_with_frame_info_callback) ||
       !SAFE_EXISTS_ONE_OF(open_gl_config, present, present_with_info)) {
     return false;
+  }
+
+  if (!SAFE_EXISTS(open_gl_config, populate_existing_damage)) {
+    FML_LOG(INFO) << "populate_existing_damage was not defined, disabling "
+                     "partial repaint. If you wish to enable partial repaint, "
+                     "please define this callback.";
   }
 
   return true;
@@ -221,7 +228,29 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
-static flutter::Shell::CreateCallback<flutter::PlatformView>
+#ifdef SHELL_ENABLE_GL
+// Auxiliary function used to translate rectangles of type SkIRect to
+// FlutterRect.
+static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
+  FlutterRect flutter_rect = {static_cast<double>(sk_rect.fLeft),
+                              static_cast<double>(sk_rect.fTop),
+                              static_cast<double>(sk_rect.fRight),
+                              static_cast<double>(sk_rect.fBottom)};
+  return flutter_rect;
+}
+
+// Auxiliary function used to translate rectangles of type FlutterRect to
+// SkIRect.
+static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+#endif
+
+static inline flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -240,15 +269,45 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](uint32_t fbo_id) -> bool {
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
-      FlutterPresentInfo present_info = {};
-      present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = fbo_id;
+      // Format the frame and buffer damages accordingly. Note that, since the
+      // current compute damage algorithm only returns one rectangle for damage
+      // we are assuming the number of rectangles provided in frame and buffer
+      // damage are always 1. Once the function that computes damage implements
+      // support for multiple damage rectangles, GLPresentInfo should also
+      // contain the number of damage rectangles.
+      const size_t num_rects = 1;
+
+      std::array<FlutterRect, num_rects> frame_damage_rect = {
+          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
+      std::array<FlutterRect, num_rects> buffer_damage_rect = {
+          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+
+      FlutterDamage frame_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = frame_damage_rect.size(),
+          .damage = frame_damage_rect.data(),
+      };
+      FlutterDamage buffer_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = buffer_damage_rect.size(),
+          .damage = buffer_damage_rect.data(),
+      };
+
+      // Construct the present information concerning the frame being rendered.
+      FlutterPresentInfo present_info = {
+          .struct_size = sizeof(FlutterPresentInfo),
+          .fbo_id = gl_present_info.fbo_id,
+          .frame_damage = frame_damage,
+          .buffer_damage = buffer_damage,
+      };
+
       return present_with_info(user_data, &present_info);
     }
   };
@@ -266,6 +325,50 @@ InferOpenGLPlatformViewCreationCallback(
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
       return fbo_with_frame_info_callback(user_data, &frame_info);
     }
+  };
+
+  auto gl_populate_existing_damage =
+      [populate_existing_damage = config->open_gl.populate_existing_damage,
+       user_data](intptr_t id) -> flutter::GLFBOInfo {
+    // If no populate_existing_damage was provided, disable partial
+    // repaint.
+    if (!populate_existing_damage) {
+      return flutter::GLFBOInfo{
+          .fbo_id = static_cast<uint32_t>(id),
+          .partial_repaint_enabled = false,
+          .existing_damage = SkIRect::MakeEmpty(),
+      };
+    }
+
+    // Given the FBO's ID, get its existing damage.
+    FlutterDamage existing_damage;
+    populate_existing_damage(user_data, id, &existing_damage);
+
+    bool partial_repaint_enabled = true;
+    SkIRect existing_damage_rect;
+
+    // Verify that at least one damage rectangle was provided.
+    if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
+    } else if (existing_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
+      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
+                       "Repainting the whole frame.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
+    } else {
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+    }
+
+    // Pass the information about this FBO to the rendering backend.
+    return flutter::GLFBOInfo{
+        .fbo_id = static_cast<uint32_t>(id),
+        .partial_repaint_enabled = partial_repaint_enabled,
+        .existing_damage = existing_damage_rect,
+    };
   };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
@@ -325,6 +428,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
+      gl_populate_existing_damage,         // gl_populate_existing_damage
   };
 
   return fml::MakeCopyable(
@@ -397,6 +501,8 @@ InferMetalPlatformViewCreationCallback(
               config->metal.present_command_queue),
           metal_dispatch_table, view_embedder);
 
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
        external_view_embedder = view_embedder](flutter::Shell& shell) mutable {
@@ -698,6 +804,51 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
+    const FlutterSoftwareBackingStore2* software) {
+  const auto color_info = getSkColorInfo(software->pixel_format);
+  if (!color_info) {
+    return nullptr;
+  }
+
+  const auto image_info = SkImageInfo::Make(
+      SkISize::Make(config.size.width, config.size.height), *color_info);
+
+  struct Captures {
+    VoidCallback destruction_callback;
+    void* user_data;
+  };
+  auto captures = std::make_unique<Captures>();
+  captures->destruction_callback = software->destruction_callback;
+  captures->user_data = software->user_data;
+  auto release_proc = [](void* pixels, void* context) {
+    auto captures = reinterpret_cast<Captures*>(context);
+    if (captures->destruction_callback) {
+      captures->destruction_callback(captures->user_data);
+    }
+  };
+
+  auto surface = SkSurface::MakeRasterDirectReleaseProc(
+      image_info,                               // image info
+      const_cast<void*>(software->allocation),  // pixels
+      software->row_bytes,                      // row bytes
+      release_proc,                             // release proc
+      captures.release()                        // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR)
+        << "Could not wrap embedder supplied software render buffer.";
+    if (software->destruction_callback) {
+      software->destruction_callback(software->user_data);
+    }
+    return nullptr;
+  }
+  return surface;
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
     const FlutterMetalBackingStore* metal) {
 #ifdef SHELL_ENABLE_METAL
   GrMtlTextureInfo texture_info;
@@ -851,6 +1002,10 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
     case kFlutterBackingStoreTypeSoftware:
       render_surface = MakeSkSurfaceFromBackingStore(context, config,
                                                      &backing_store.software);
+      break;
+    case kFlutterBackingStoreTypeSoftware2:
+      render_surface = MakeSkSurfaceFromBackingStore(context, config,
+                                                     &backing_store.software2);
       break;
     case kFlutterBackingStoreTypeMetal:
       render_surface =
@@ -1006,7 +1161,44 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   return kSuccess;
 }
 
-void PopulateSnapshotMappingCallbacks(
+// Constructs appropriate mapping callbacks if JIT snapshot locations have been
+// explictly specified.
+void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
+                                         flutter::Settings& settings) {
+  auto make_mapping_callback = [](const char* path, bool executable) {
+    return [path, executable]() {
+      if (executable) {
+        return fml::FileMapping::CreateReadExecute(path);
+      } else {
+        return fml::FileMapping::CreateReadOnly(path);
+      }
+    };
+  };
+
+  // Users are allowed to specify only certain snapshots if they so desire.
+  if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data = make_mapping_callback(
+        reinterpret_cast<const char*>(args->vm_snapshot_data), false);
+  }
+
+  if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+    settings.vm_snapshot_instr = make_mapping_callback(
+        reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
+  }
+
+  if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+    settings.isolate_snapshot_data = make_mapping_callback(
+        reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
+  }
+
+  if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+    settings.isolate_snapshot_instr = make_mapping_callback(
+        reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
+        true);
+  }
+}
+
+void PopulateAOTSnapshotMappingCallbacks(
     const FlutterProjectArgs* args,
     flutter::Settings& settings) {  // NOLINT(google-runtime-references)
   // There are no ownership concerns here as all mappings are owned by the
@@ -1017,43 +1209,41 @@ void PopulateSnapshotMappingCallbacks(
     };
   };
 
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data =
-          make_mapping_callback(args->aot_data->vm_snapshot_data, 0);
+  if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data =
+        make_mapping_callback(args->aot_data->vm_snapshot_data, 0);
 
-      settings.vm_snapshot_instr =
-          make_mapping_callback(args->aot_data->vm_snapshot_instrs, 0);
+    settings.vm_snapshot_instr =
+        make_mapping_callback(args->aot_data->vm_snapshot_instrs, 0);
 
-      settings.isolate_snapshot_data =
-          make_mapping_callback(args->aot_data->vm_isolate_data, 0);
+    settings.isolate_snapshot_data =
+        make_mapping_callback(args->aot_data->vm_isolate_data, 0);
 
-      settings.isolate_snapshot_instr =
-          make_mapping_callback(args->aot_data->vm_isolate_instrs, 0);
-    }
+    settings.isolate_snapshot_instr =
+        make_mapping_callback(args->aot_data->vm_isolate_instrs, 0);
+  }
 
-    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data = make_mapping_callback(
-          args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
-    }
+  if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data = make_mapping_callback(
+        args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
+  }
 
-    if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
-      settings.vm_snapshot_instr = make_mapping_callback(
-          args->vm_snapshot_instructions,
-          SAFE_ACCESS(args, vm_snapshot_instructions_size, 0));
-    }
+  if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+    settings.vm_snapshot_instr = make_mapping_callback(
+        args->vm_snapshot_instructions,
+        SAFE_ACCESS(args, vm_snapshot_instructions_size, 0));
+  }
 
-    if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      settings.isolate_snapshot_data = make_mapping_callback(
-          args->isolate_snapshot_data,
-          SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
-    }
+  if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+    settings.isolate_snapshot_data =
+        make_mapping_callback(args->isolate_snapshot_data,
+                              SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
+  }
 
-    if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
-      settings.isolate_snapshot_instr = make_mapping_callback(
-          args->isolate_snapshot_instructions,
-          SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
-    }
+  if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+    settings.isolate_snapshot_instr = make_mapping_callback(
+        args->isolate_snapshot_instructions,
+        SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
   }
 
 #if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
@@ -1161,7 +1351,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
   }
 
-  PopulateSnapshotMappingCallbacks(args, settings);
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    PopulateAOTSnapshotMappingCallbacks(args, settings);
+  } else {
+    PopulateJITSnapshotMappingCallbacks(args, settings);
+  }
 
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
@@ -1711,6 +1905,8 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
       return flutter::PointerData::SignalKind::kNone;
     case kFlutterPointerSignalKindScroll:
       return flutter::PointerData::SignalKind::kScroll;
+    case kFlutterPointerSignalKindScrollInertiaCancel:
+      return flutter::PointerData::SignalKind::kScrollInertiaCancel;
   }
   return flutter::PointerData::SignalKind::kNone;
 }
@@ -2590,6 +2786,36 @@ FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
                                   "Could not schedule frame.");
 }
 
+FlutterEngineResult FlutterEngineSetNextFrameCallback(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Next frame callback was null.");
+  }
+
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+
+  fml::WeakPtr<flutter::PlatformView> weak_platform_view =
+      embedder_engine->GetShell().GetPlatformView();
+
+  if (!weak_platform_view) {
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                              "Platform view unavailable.");
+  }
+
+  weak_platform_view->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
+
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2641,6 +2867,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
+  SET_PROC(SetNextFrameCallback, FlutterEngineSetNextFrameCallback);
 #undef SET_PROC
 
   return kSuccess;

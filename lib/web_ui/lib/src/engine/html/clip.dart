@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:svg' as svg;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
@@ -80,8 +78,7 @@ mixin _DomClip on PersistedContainerSurface {
 class PersistedClipRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRectEngineLayer {
-  PersistedClipRect(PersistedClipRect? oldLayer, this.rect, this.clipBehavior)
-      : super(oldLayer);
+  PersistedClipRect(PersistedClipRect? super.oldLayer, this.rect, this.clipBehavior);
   final ui.Clip? clipBehavior;
   final ui.Rect rect;
 
@@ -196,12 +193,11 @@ class PersistedClipRRect extends PersistedContainerSurface
 class PersistedPhysicalShape extends PersistedContainerSurface
     with _DomClip
     implements ui.PhysicalShapeEngineLayer {
-  PersistedPhysicalShape(PersistedPhysicalShape? oldLayer, this.path,
+  PersistedPhysicalShape(PersistedPhysicalShape? super.oldLayer, this.path,
       this.elevation, int color, int shadowColor, this.clipBehavior)
       : color = ui.Color(color),
         shadowColor = ui.Color(shadowColor),
-        pathBounds = path.getBounds(),
-        super(oldLayer);
+        pathBounds = path.getBounds();
 
   final SurfacePath path;
   final ui.Rect pathBounds;
@@ -344,15 +340,13 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// we size the inner container to cover full pathBounds instead of sizing
     /// to clipping rect bounds (which is the case for elevation == 0.0 where
     /// we shift outer/inner clip area instead to position clip-path).
-    final svg.SvgSvgElement svgClipPath = elevation == 0.0
+    final SVGSVGElement svgClipPath = elevation == 0.0
         ? pathToSvgClipPath(path,
             offsetX: -pathBounds.left,
             offsetY: -pathBounds.top,
             scaleX: 1.0 / pathBounds.width,
             scaleY: 1.0 / pathBounds.height)
         : pathToSvgClipPath(path,
-            offsetX: 0.0,
-            offsetY: 0.0,
             scaleX: 1.0 / pathBounds.right,
             scaleY: 1.0 / pathBounds.bottom);
 
@@ -360,7 +354,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// svg clip and render elements.
     _clipElement?.remove();
     _svgElement?.remove();
-    _clipElement = svgClipPath as DomElement;
+    _clipElement = svgClipPath;
     rootElement!.append(_clipElement!);
     if (elevation == 0.0) {
       setClipPath(rootElement!, createSvgClipUrl());
@@ -460,8 +454,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
 class PersistedClipPath extends PersistedContainerSurface
     implements ui.ClipPathEngineLayer {
   PersistedClipPath(
-      PersistedClipPath? oldLayer, this.clipPath, this.clipBehavior)
-      : super(oldLayer);
+      PersistedClipPath? super.oldLayer, this.clipPath, this.clipBehavior);
 
   final ui.Path clipPath;
   final ui.Clip clipBehavior;
@@ -517,8 +510,7 @@ class PersistedClipPath extends PersistedContainerSurface
 SVGSVGElement createSvgClipDef(DomElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
   final SVGSVGElement svgClipPath = pathToSvgClipPath(clipPath,
-      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom) as
-      SVGSVGElement;
+      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
   setClipPath(element, createSvgClipUrl());
   // We need to set width and height for the clipElement to cover the
   // bounds of the path since browsers such as Safari and Edge

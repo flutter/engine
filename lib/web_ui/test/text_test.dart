@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html';
+// This is testing some of the named constants.
+// ignore_for_file: use_named_constants
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -224,8 +225,8 @@ Future<void> testMain() async {
     final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 800.0));
     expect(paragraph.plainText, 'abcdef');
-    final List<Element> spans =
-        paragraph.toDomElement().querySelectorAll('flt-span').cast<Element>();
+    final List<DomElement> spans =
+        paragraph.toDomElement().querySelectorAll('flt-span').toList();
     expect(spans[0].style.fontFamily, 'Ahem, $fallback, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
     expect(spans[1].style.fontFamily, 'Ahem, $fallback, sans-serif');
@@ -291,7 +292,7 @@ Future<void> testMain() async {
   group('TextRange', () {
     test('empty ranges are correct', () {
       const TextRange range = TextRange(start: -1, end: -1);
-      expect(range, equals(const TextRange.collapsed(-1)));
+      expect(range, equals(TextRange.collapsed(-1))); // ignore: prefer_const_constructors
       expect(range, equals(TextRange.empty));
     });
     test('isValid works', () {
@@ -350,5 +351,17 @@ Future<void> testMain() async {
       expect(const TextRange(start: 0, end: 5).textInside('hello'),
           equals('hello'));
     });
+  });
+
+  test('FontWeights have the correct value', () {
+    expect(FontWeight.w100.value, 100);
+    expect(FontWeight.w200.value, 200);
+    expect(FontWeight.w300.value, 300);
+    expect(FontWeight.w400.value, 400);
+    expect(FontWeight.w500.value, 500);
+    expect(FontWeight.w600.value, 600);
+    expect(FontWeight.w700.value, 700);
+    expect(FontWeight.w800.value, 800);
+    expect(FontWeight.w900.value, 900);
   });
 }

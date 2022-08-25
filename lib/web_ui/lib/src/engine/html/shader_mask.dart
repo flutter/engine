@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -28,19 +26,19 @@ import 'surface.dart';
 class PersistedShaderMask extends PersistedContainerSurface
     implements ui.ShaderMaskEngineLayer {
   PersistedShaderMask(
-    PersistedShaderMask? oldLayer,
+    PersistedShaderMask? super.oldLayer,
     this.shader,
     this.maskRect,
     this.blendMode,
     this.filterQuality,
-  ) : super(oldLayer);
+  );
 
   DomElement? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
-  html.Element? _shaderElement;
+  DomElement? _shaderElement;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override

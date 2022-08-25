@@ -5,7 +5,6 @@
 library util;
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -524,7 +523,7 @@ int clampInt(int value, int min, int max) {
 ///
 /// This function can be overridden in tests. This could be useful, for example,
 /// to verify that warnings are printed under certain circumstances.
-void Function(String) printWarning = html.window.console.warn;
+void Function(String) printWarning = domWindow.console.warn;
 
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
@@ -558,9 +557,9 @@ bool unsafeIsNull(dynamic object) {
   return object == null;
 }
 
-/// A typed variant of [html.Window.fetch].
+/// A typed variant of [domWindow.fetch].
 Future<DomResponse> httpFetch(String url) async {
-  final Object? result = await html.window.fetch(url);
+  final Object? result = await domWindow.fetch(url);
   return result! as DomResponse;
 }
 
@@ -648,7 +647,7 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///     Input: [0, 1, 2, 3]
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
-  return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
+  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
 }
 
 /// Sets a style property on [element].
@@ -680,13 +679,13 @@ void setClipPath(DomElement element, String? value) {
 }
 
 void setThemeColor(ui.Color color) {
-  html.MetaElement? theme =
-      html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
+  DomHTMLMetaElement? theme =
+      domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
   if (theme == null) {
-    theme = html.MetaElement()
+    theme = createDomHTMLMetaElement()
       ..id = 'flutterweb-theme'
       ..name = 'theme-color';
-    html.document.head!.append(theme);
+    domDocument.head!.append(theme);
   }
   theme.content = colorToCssString(color)!;
 }
@@ -695,7 +694,7 @@ bool? _ellipseFeatureDetected;
 
 /// Draws CanvasElement ellipse with fallback.
 void drawEllipse(
-    html.CanvasRenderingContext2D context,
+    DomCanvasRenderingContext2D context,
     double centerX,
     double centerY,
     double radiusX,

@@ -78,6 +78,8 @@ class RunTestsStep implements PipelineStep {
       overridePathToCanvasKit: overridePathToCanvasKit,
     );
 
+    await _browserEnvironment.cleanup();
+
     if (io.exitCode != 0) {
       throw ToolExit('Some tests failed');
     }
@@ -164,7 +166,7 @@ Future<void> _runTestBatch({
     '--precompiled=${environment.webUiBuildDir.path}',
     '--configuration=$configurationFilePath',
     '--',
-    ...testFiles.map((FilePath f) => f.relativeToWebUi).toList(),
+    ...testFiles.map((FilePath f) => f.relativeToWebUi),
   ];
 
   if (expectFailure) {

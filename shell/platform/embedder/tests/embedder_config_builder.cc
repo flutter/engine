@@ -8,7 +8,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
+#include "vulkan/vulkan_core.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
@@ -52,13 +52,14 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   opengl_renderer_config_.present_with_info =
       [](void* context, const FlutterPresentInfo* present_info) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
-        present_info->fbo_id);
+        *present_info);
   };
   opengl_renderer_config_.fbo_with_frame_info_callback =
       [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
+  opengl_renderer_config_.populate_existing_damage = nullptr;
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
         ->GLMakeResourceCurrent();
@@ -160,7 +161,10 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
-    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
+    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
+        FlutterPresentInfo{
+            .fbo_id = 0,
+        });
   };
 #endif
 }
@@ -312,6 +316,10 @@ void EmbedderConfigBuilder::SetupVsyncCallback() {
   };
 }
 
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
+}
+
 void EmbedderConfigBuilder::SetRenderTaskRunner(
     const FlutterTaskRunnerDescription* runner) {
   if (runner == nullptr) {
@@ -366,13 +374,14 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
 }
 
 void EmbedderConfigBuilder::SetRenderTargetType(
-    EmbedderTestBackingStoreProducer::RenderTargetType type) {
+    EmbedderTestBackingStoreProducer::RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt) {
   auto& compositor = context_.GetCompositor();
   // TODO(wrightgeorge): figure out a better way of plumbing through the
   // GrDirectContext
   compositor.SetBackingStoreProducer(
       std::make_unique<EmbedderTestBackingStoreProducer>(
-          compositor.GetGrContext(), type));
+          compositor.GetGrContext(), type, software_pixfmt));
 }
 
 UniqueEngine EmbedderConfigBuilder::LaunchEngine() const {

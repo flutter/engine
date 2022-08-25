@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: public_member_api_docs
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -27,14 +26,14 @@ final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
 /// This is intentionally not memory-managing the underlying [SkCanvas]. See
 /// the docs on [SkCanvas], which explain the reason.
 class CkCanvas {
+  CkCanvas(this.skCanvas);
+
   // Cubic equation coefficients recommended by Mitchell & Netravali
   // in their paper on cubic interpolation.
   static const double _kMitchellNetravali_B = 1.0 / 3.0;
   static const double _kMitchellNetravali_C = 1.0 / 3.0;
 
   final SkCanvas skCanvas;
-
-  CkCanvas(this.skCanvas);
 
   int? get saveCount => skCanvas.getSaveCount();
 
@@ -64,6 +63,10 @@ class CkCanvas {
       toSkClipOp(clipOp),
       doAntiAlias,
     );
+  }
+
+  ui.Rect getDeviceClipBounds() {
+    return rectFromSkIRect(skCanvas.getDeviceClipBounds());
   }
 
   void drawArc(
@@ -313,13 +316,23 @@ class CkCanvas {
     skCanvas.translate(dx, dy);
   }
 
+  Float32List getLocalToDevice() {
+    final List<dynamic> list = skCanvas.getLocalToDevice();
+    final Float32List matrix4 = Float32List(16);
+    for (int r = 0; r < 4; r++) {
+      for (int c = 0; c < 4; c++) {
+        matrix4[c * 4 + r] = (list[r * 4 + c] as num).toDouble();
+      }
+    }
+    return matrix4;
+  }
+
   CkPictureSnapshot? get pictureSnapshot => null;
 }
 
 class RecordingCkCanvas extends CkCanvas {
-  RecordingCkCanvas(SkCanvas skCanvas, ui.Rect bounds)
-      : pictureSnapshot = CkPictureSnapshot(bounds),
-        super(skCanvas);
+  RecordingCkCanvas(super.skCanvas, ui.Rect bounds)
+      : pictureSnapshot = CkPictureSnapshot(bounds);
 
   @override
   final CkPictureSnapshot pictureSnapshot;
@@ -640,10 +653,10 @@ class CkRestoreToCountCommand extends CkPaintCommand {
 }
 
 class CkTranslateCommand extends CkPaintCommand {
+  CkTranslateCommand(this.dx, this.dy);
+
   final double dx;
   final double dy;
-
-  CkTranslateCommand(this.dx, this.dy);
 
   @override
   void apply(SkCanvas canvas) {
@@ -652,10 +665,10 @@ class CkTranslateCommand extends CkPaintCommand {
 }
 
 class CkScaleCommand extends CkPaintCommand {
+  CkScaleCommand(this.sx, this.sy);
+
   final double sx;
   final double sy;
-
-  CkScaleCommand(this.sx, this.sy);
 
   @override
   void apply(SkCanvas canvas) {
@@ -664,9 +677,9 @@ class CkScaleCommand extends CkPaintCommand {
 }
 
 class CkRotateCommand extends CkPaintCommand {
-  final double radians;
-
   CkRotateCommand(this.radians);
+
+  final double radians;
 
   @override
   void apply(SkCanvas canvas) {
@@ -675,9 +688,9 @@ class CkRotateCommand extends CkPaintCommand {
 }
 
 class CkTransformCommand extends CkPaintCommand {
-  final Float32List matrix4;
-
   CkTransformCommand(this.matrix4);
+
+  final Float32List matrix4;
 
   @override
   void apply(SkCanvas canvas) {
@@ -686,10 +699,10 @@ class CkTransformCommand extends CkPaintCommand {
 }
 
 class CkSkewCommand extends CkPaintCommand {
+  CkSkewCommand(this.sx, this.sy);
+
   final double sx;
   final double sy;
-
-  CkSkewCommand(this.sx, this.sy);
 
   @override
   void apply(SkCanvas canvas) {
@@ -698,11 +711,11 @@ class CkSkewCommand extends CkPaintCommand {
 }
 
 class CkClipRectCommand extends CkPaintCommand {
+  CkClipRectCommand(this.rect, this.clipOp, this.doAntiAlias);
+
   final ui.Rect rect;
   final ui.ClipOp clipOp;
   final bool doAntiAlias;
-
-  CkClipRectCommand(this.rect, this.clipOp, this.doAntiAlias);
 
   @override
   void apply(SkCanvas canvas) {
@@ -762,10 +775,10 @@ class CkDrawAtlasCommand extends CkPaintCommand {
 }
 
 class CkClipRRectCommand extends CkPaintCommand {
+  CkClipRRectCommand(this.rrect, this.doAntiAlias);
+
   final ui.RRect rrect;
   final bool doAntiAlias;
-
-  CkClipRRectCommand(this.rrect, this.doAntiAlias);
 
   @override
   void apply(SkCanvas canvas) {
@@ -778,10 +791,10 @@ class CkClipRRectCommand extends CkPaintCommand {
 }
 
 class CkClipPathCommand extends CkPaintCommand {
+  CkClipPathCommand(this.path, this.doAntiAlias);
+
   final CkPath path;
   final bool doAntiAlias;
-
-  CkClipPathCommand(this.path, this.doAntiAlias);
 
   @override
   void apply(SkCanvas canvas) {
@@ -794,10 +807,10 @@ class CkClipPathCommand extends CkPaintCommand {
 }
 
 class CkDrawColorCommand extends CkPaintCommand {
+  CkDrawColorCommand(this.color, this.blendMode);
+
   final ui.Color color;
   final ui.BlendMode blendMode;
-
-  CkDrawColorCommand(this.color, this.blendMode);
 
   @override
   void apply(SkCanvas canvas) {
@@ -809,11 +822,11 @@ class CkDrawColorCommand extends CkPaintCommand {
 }
 
 class CkDrawLineCommand extends CkPaintCommand {
+  CkDrawLineCommand(this.p1, this.p2, this.paint);
+
   final ui.Offset p1;
   final ui.Offset p2;
   final CkPaint paint;
-
-  CkDrawLineCommand(this.p1, this.p2, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -828,9 +841,9 @@ class CkDrawLineCommand extends CkPaintCommand {
 }
 
 class CkDrawPaintCommand extends CkPaintCommand {
-  final CkPaint paint;
-
   CkDrawPaintCommand(this.paint);
+
+  final CkPaint paint;
 
   @override
   void apply(SkCanvas canvas) {
@@ -839,10 +852,11 @@ class CkDrawPaintCommand extends CkPaintCommand {
 }
 
 class CkDrawVerticesCommand extends CkPaintCommand {
+  CkDrawVerticesCommand(this.vertices, this.blendMode, this.paint);
+
   final CkVertices vertices;
   final ui.BlendMode blendMode;
   final CkPaint paint;
-  CkDrawVerticesCommand(this.vertices, this.blendMode, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -855,10 +869,11 @@ class CkDrawVerticesCommand extends CkPaintCommand {
 }
 
 class CkDrawPointsCommand extends CkPaintCommand {
+  CkDrawPointsCommand(this.pointMode, this.points, this.paint);
+
   final Float32List points;
   final ui.PointMode pointMode;
   final CkPaint paint;
-  CkDrawPointsCommand(this.pointMode, this.points, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -871,10 +886,10 @@ class CkDrawPointsCommand extends CkPaintCommand {
 }
 
 class CkDrawRectCommand extends CkPaintCommand {
+  CkDrawRectCommand(this.rect, this.paint);
+
   final ui.Rect rect;
   final CkPaint paint;
-
-  CkDrawRectCommand(this.rect, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -883,10 +898,10 @@ class CkDrawRectCommand extends CkPaintCommand {
 }
 
 class CkDrawRRectCommand extends CkPaintCommand {
+  CkDrawRRectCommand(this.rrect, this.paint);
+
   final ui.RRect rrect;
   final CkPaint paint;
-
-  CkDrawRRectCommand(this.rrect, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -898,11 +913,11 @@ class CkDrawRRectCommand extends CkPaintCommand {
 }
 
 class CkDrawDRRectCommand extends CkPaintCommand {
+  CkDrawDRRectCommand(this.outer, this.inner, this.paint);
+
   final ui.RRect outer;
   final ui.RRect inner;
   final CkPaint paint;
-
-  CkDrawDRRectCommand(this.outer, this.inner, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -915,10 +930,10 @@ class CkDrawDRRectCommand extends CkPaintCommand {
 }
 
 class CkDrawOvalCommand extends CkPaintCommand {
+  CkDrawOvalCommand(this.rect, this.paint);
+
   final ui.Rect rect;
   final CkPaint paint;
-
-  CkDrawOvalCommand(this.rect, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -930,11 +945,11 @@ class CkDrawOvalCommand extends CkPaintCommand {
 }
 
 class CkDrawCircleCommand extends CkPaintCommand {
+  CkDrawCircleCommand(this.c, this.radius, this.paint);
+
   final ui.Offset c;
   final double radius;
   final CkPaint paint;
-
-  CkDrawCircleCommand(this.c, this.radius, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -948,10 +963,10 @@ class CkDrawCircleCommand extends CkPaintCommand {
 }
 
 class CkDrawPathCommand extends CkPaintCommand {
+  CkDrawPathCommand(this.path, this.paint);
+
   final CkPath path;
   final CkPaint paint;
-
-  CkDrawPathCommand(this.path, this.paint);
 
   @override
   void apply(SkCanvas canvas) {
@@ -976,12 +991,12 @@ class CkDrawShadowCommand extends CkPaintCommand {
 }
 
 class CkDrawImageCommand extends CkPaintCommand {
+  CkDrawImageCommand(CkImage ckImage, this.offset, this.paint)
+      : image = ckImage.clone();
+
   final CkImage image;
   final ui.Offset offset;
   final CkPaint paint;
-
-  CkDrawImageCommand(CkImage ckImage, this.offset, this.paint)
-      : image = ckImage.clone();
 
   @override
   void apply(SkCanvas canvas) {
@@ -1014,13 +1029,13 @@ class CkDrawImageCommand extends CkPaintCommand {
 }
 
 class CkDrawImageRectCommand extends CkPaintCommand {
+  CkDrawImageRectCommand(CkImage ckImage, this.src, this.dst, this.paint)
+      : image = ckImage.clone();
+
   final CkImage image;
   final ui.Rect src;
   final ui.Rect dst;
   final CkPaint paint;
-
-  CkDrawImageRectCommand(CkImage ckImage, this.src, this.dst, this.paint)
-      : image = ckImage.clone();
 
   @override
   void apply(SkCanvas canvas) {
@@ -1079,10 +1094,10 @@ class CkDrawImageNineCommand extends CkPaintCommand {
 }
 
 class CkDrawParagraphCommand extends CkPaintCommand {
+  CkDrawParagraphCommand(this.paragraph, this.offset);
+
   final CkParagraph paragraph;
   final ui.Offset offset;
-
-  CkDrawParagraphCommand(this.paragraph, this.offset);
 
   @override
   void apply(SkCanvas canvas) {

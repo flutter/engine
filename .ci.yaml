@@ -8,6 +8,7 @@
 enabled_branches:
   - main
   - flutter-\d+\.\d+-candidate\.\d+
+  - fuchsia_r\d+
 
 platform_properties:
   linux:
@@ -100,16 +101,24 @@ targets:
     timeout: 60
 
   - name: Linux Android Emulator Tests
-    bringup: true # Recipe issue https://github.com/flutter/flutter/issues/86427
     recipe: engine/scenarios
+    enabled_branches:
+      - main
+      - master
     properties:
       dependencies: >-
         [
-          {"dependency": "android_virtual_device", "version": "31"}
+          {"dependency": "android_virtual_device", "version": "31"},
+          {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
       upload_packages: "true"
       clobber: "true"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - testing/**
+      - shell/platform/android/**
 
   - name: Linux Benchmarks
     enabled_branches:
@@ -165,6 +174,13 @@ targets:
 
   - name: Linux Unopt
     recipe: engine/engine_unopt
+    properties:
+      add_recipes_cq: "true"
+      clobber: "true"
+    timeout: 60
+
+  - name: Linux License
+    recipe: engine/engine_license
     properties:
       add_recipes_cq: "true"
       clobber: "true"
@@ -279,6 +295,14 @@ targets:
       build_host: "true"
       jazzy_version: "0.14.1"
     timeout: 75
+
+  - name: Mac mac_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_android_aot_engine
+      environment: Staging
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2

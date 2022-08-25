@@ -10,6 +10,7 @@ A top level harness to run all unit-tests in a specific engine build.
 
 import argparse
 import glob
+import errno
 import multiprocessing
 import os
 import re
@@ -36,6 +37,14 @@ def PrintDivider(char='='):
   for _ in range(4):
     print(''.join([char for _ in range(80)]))
   print('\n')
+
+
+def IsAsan(build_dir):
+  with open(os.path.join(build_dir, 'args.gn')) as args:
+    if 'is_asan = true' in args.read():
+      return True
+
+  return False
 
 
 def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
@@ -159,7 +168,7 @@ def BuildEngineExecutableCommand(
       gtest_parallel = os.path.join(
           buildroot_dir, 'third_party', 'gtest-parallel', 'gtest-parallel'
       )
-      test_command = ['python', gtest_parallel] + test_command
+      test_command = ['python3', gtest_parallel] + test_command
 
   return test_command
 
@@ -181,13 +190,25 @@ def RunEngineExecutable(
     return
 
   unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
-  # We cannot run the unstripped binaries directly when coverage is enabled.
-  if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
-    # Some tests depend on the EGL/GLES libraries placed in the build directory.
-    env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+  env = os.environ.copy()
+  if IsLinux():
+    env['LD_LIBRARY_PATH'] = build_dir
+    env['VK_DRIVER_FILES'] = os.path.join(build_dir, 'vk_swiftshader_icd.json')
+    if os.path.exists(unstripped_exe):
+      try:
+        os.symlink(
+            os.path.join(build_dir, 'lib.unstripped', 'libvulkan.so.1'),
+            os.path.join(build_dir, 'exe.unstripped', 'libvulkan.so.1')
+        )
+      except OSError as e:
+        if e.errno == errno.EEXIST:
+          pass
+        else:
+          raise
+  elif IsMac():
+    env['DYLD_LIBRARY_PATH'] = build_dir
   else:
-    env = None
+    env['PATH'] = build_dir + ":" + env['PATH']
 
   print('Running %s in %s' % (executable_name, cwd))
 
@@ -199,8 +220,6 @@ def RunEngineExecutable(
       gtest=gtest,
   )
 
-  if not env:
-    env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
   for key, value in extra_env.items():
     env[key] = value
@@ -315,6 +334,7 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
       make_test('dart_plugin_registrant_unittests'),
       make_test('display_list_rendertests'),
       make_test('display_list_unittests'),
+      make_test('embedder_a11y_unittests'),
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
       make_test('fml_unittests', flags=[fml_unittests_filter] + repeat_flags),
@@ -420,6 +440,10 @@ def RunEngineBenchmarks(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'ui_benchmarks', filter, icu_flags)
 
+  RunEngineExecutable(
+      build_dir, 'display_list_builder_benchmarks', filter, icu_flags
+  )
+
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_benchmarks', filter, icu_flags)
 
@@ -468,8 +492,6 @@ def GatherDartTest(
     threading = 'single-threaded'
 
   tester_name = 'flutter_tester'
-  if alternative_tester:
-    tester_name = 'flutter_tester_fractional_translation'
   print(
       "Running test '%s' using '%s' (%s)" %
       (kernel_file_name, tester_name, threading)
@@ -595,7 +617,7 @@ def RunAndroidTests(android_variant='android_debug_unopt', adb_path=None):
   RunCmd([
       systrace_test, '--adb-path', adb_path, '--apk-path', scenario_apk,
       '--package-name', 'dev.flutter.scenarios', '--activity-name',
-      '.TextPlatformViewActivity'
+      '.PlatformViewsActivity'
   ])
 
 
@@ -605,25 +627,53 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   ios_out_dir = os.path.join(out_dir, ios_variant)
   EnsureIosTestsAreBuilt(ios_out_dir)
 
-  ios_unit_test_dir = os.path.join(
-      buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests'
-  )
+  new_simulator_name = 'IosUnitTestsSimulator'
 
-  # Avoid using xcpretty unless the following can be addressed:
-  # - Make sure all relevant failure output is printed on a failure.
-  # - Make sure that a failing exit code is set for CI.
-  # See https://github.com/flutter/flutter/issues/63742
-  command = [
-      'xcodebuild '
-      '-sdk iphonesimulator '
-      '-scheme IosUnitTests '
-      "-destination platform='iOS Simulator,name=iPhone 11' "
-      'test '
-      'FLUTTER_ENGINE=' + ios_variant
+  # Delete simulators with this name in case any were leaked
+  # from another test run.
+  DeleteSimulator(new_simulator_name)
+
+  create_simulator = [
+      'xcrun '
+      'simctl '
+      'create '
+      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11' % new_simulator_name
   ]
-  if test_filter != None:
-    command[0] = command[0] + " -only-testing:%s" % test_filter
-  RunCmd(command, cwd=ios_unit_test_dir, shell=True)
+  RunCmd(create_simulator, shell=True)
+
+  try:
+    ios_unit_test_dir = os.path.join(
+        buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests'
+    )
+    # Avoid using xcpretty unless the following can be addressed:
+    # - Make sure all relevant failure output is printed on a failure.
+    # - Make sure that a failing exit code is set for CI.
+    # See https://github.com/flutter/flutter/issues/63742
+    test_command = [
+        'xcodebuild '
+        '-sdk iphonesimulator '
+        '-scheme IosUnitTests '
+        "-destination name='" + new_simulator_name + "' "
+        'test '
+        'FLUTTER_ENGINE=' + ios_variant
+    ]
+    if test_filter != None:
+      test_command[0] = test_command[0] + " -only-testing:%s" % test_filter
+    RunCmd(test_command, cwd=ios_unit_test_dir, shell=True)
+  finally:
+    DeleteSimulator(new_simulator_name)
+
+
+def DeleteSimulator(simulator_name):
+  # Will delete all simulators with this name.
+  delete_simulator = [
+      'xcrun',
+      'simctl',
+      'delete',
+      simulator_name,
+  ]
+  # Let this fail if the simulator was never created.
+  RunCmd(delete_simulator, expect_failure=True)
 
 
 def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
@@ -652,7 +702,9 @@ def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
       '%s/observatory/*_test.dart' % dart_tests_dir
   )
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
-  test_packages = os.path.join(dart_tests_dir, '.packages')
+  test_packages = os.path.join(
+      dart_tests_dir, '.dart_tool', 'package_config.json'
+  )
 
   if 'release' not in build_dir:
     for dart_test_file in dart_observatory_tests:
@@ -669,11 +721,6 @@ def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
         yield GatherDartTest(
             build_dir, test_packages, dart_test_file, verbose_dart_snapshot,
             False, True
-        )
-        # Smoke test with tester variant that has no raster cache and enabled fractional translation
-        yield GatherDartTest(
-            build_dir, test_packages, dart_test_file, verbose_dart_snapshot,
-            False, True, True
         )
 
   for dart_test_file in dart_tests:
@@ -695,7 +742,8 @@ def GatherDartSmokeTest(build_dir, verbose_dart_snapshot):
       "fail_test.dart"
   )
   test_packages = os.path.join(
-      buildroot_dir, "flutter", "testing", "smoke_test_failure", ".packages"
+      buildroot_dir, "flutter", "testing", "smoke_test_failure", ".dart_tool",
+      "package_config.json"
   )
   yield GatherDartTest(
       build_dir,
@@ -731,6 +779,24 @@ def GatherFrontEndServerTests(build_dir):
         flags=opts,
         cwd=test_dir
     )
+
+
+def GatherPathOpsTests(build_dir):
+  # TODO(dnfield): https://github.com/flutter/flutter/issues/107321
+  if IsAsan(build_dir):
+    return
+
+  test_dir = os.path.join(
+      buildroot_dir, 'flutter', 'tools', 'path_ops', 'dart', 'test'
+  )
+  opts = ['--disable-dart-dev', os.path.join(test_dir, 'path_ops_test.dart')]
+  yield EngineExecutableTask(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir
+  )
 
 
 def GatherConstFinderTests(build_dir):
@@ -855,7 +921,7 @@ def RunEngineTasksInParallel(tasks):
   if len(failures) > 0:
     print("The following commands failed:")
     for task, exn in failures:
-      print("%s\n" % str(task))
+      print("%s\n%s\n" % (str(task), str(exn)))
     raise Exception()
 
 
@@ -976,7 +1042,7 @@ def main():
     ]
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in process.stdout:
-      key, _, value = line.decode('ascii').strip().partition("=")
+      key, _, value = line.decode('utf8').strip().partition("=")
       os.environ[key] = value
     process.communicate()  # Avoid pipe deadlock while waiting for termination.
 
@@ -987,14 +1053,13 @@ def main():
     )
 
   if 'dart' in types:
-    assert not IsWindows(
-    ), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     tasks = list(GatherDartSmokeTest(build_dir, args.verbose_dart_snapshot))
     tasks += list(GatherLitetestTests(build_dir))
     tasks += list(GatherGithooksTests(build_dir))
     tasks += list(GatherClangTidyTests(build_dir))
     tasks += list(GatherApiConsistencyTests(build_dir))
+    tasks += list(GatherPathOpsTests(build_dir))
     tasks += list(GatherConstFinderTests(build_dir))
     tasks += list(GatherFrontEndServerTests(build_dir))
     tasks += list(
@@ -1029,7 +1094,7 @@ def main():
   variants_to_skip = ['host_release', 'host_profile']
   if ('engine' in types or
       'font-subset' in types) and args.variant not in variants_to_skip:
-    RunCmd(['python', 'test.py'], cwd=font_subset_dir)
+    RunCmd(['python3', 'test.py'], cwd=font_subset_dir)
 
 
 if __name__ == '__main__':

@@ -156,13 +156,20 @@ void AndroidSurfaceGLSkia::GLContextSetDamageRegion(
 bool AndroidSurfaceGLSkia::GLContextPresent(const GLPresentInfo& present_info) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
-  return onscreen_surface_->SwapBuffers(present_info.damage);
+  if (present_info.presentation_time) {
+    onscreen_surface_->SetPresentationTime(*present_info.presentation_time);
+  }
+  return onscreen_surface_->SwapBuffers(present_info.frame_damage);
 }
 
-intptr_t AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
+GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   FML_DCHECK(IsValid());
   // The default window bound framebuffer on Android.
-  return 0;
+  return GLFBOInfo{
+      .fbo_id = 0,
+      .partial_repaint_enabled = onscreen_surface_->SupportsPartialRepaint(),
+      .existing_damage = onscreen_surface_->InitialDamage(),
+  };
 }
 
 // |GPUSurfaceGLDelegate|
