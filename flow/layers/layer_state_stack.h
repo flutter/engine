@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_LAYERS_LAYER_STATE_STACK_H_
 
 #include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_canvas_recorder.h"
 
 namespace flutter {
 
@@ -14,7 +15,13 @@ class LayerStateStack {
   LayerStateStack() = default;
 
   void setCanvasDelegate(SkCanvas* canvas);
-  void setBuilderDelegate(DisplayListBuilder* canvas);
+  void setBuilderDelegate(DisplayListBuilder* builder);
+  void setBuilderDelegate(sk_sp<DisplayListBuilder> builder) {
+    setBuilderDelegate(builder.get());
+  }
+  void setBuilderDelegate(DisplayListCanvasRecorder& recorder) {
+    setBuilderDelegate(recorder.builder().get());
+  }
 
   class AutoRestore {
    public:
@@ -25,23 +32,28 @@ class LayerStateStack {
     friend class LayerStateStack;
 
     LayerStateStack* stack_;
-    const size_t stack_restore_count_;
+    size_t stack_restore_count_;
   };
 
   [[nodiscard]] AutoRestore save();
-  [[nodiscard]] AutoRestore saveLayer(const SkRect* bounds);
+  [[nodiscard]] AutoRestore saveLayer(const SkRect* bounds,
+                                      bool checkerboard = false);
   [[nodiscard]] AutoRestore saveWithOpacity(const SkRect* bounds,
-                                            SkScalar opacity);
+                                            SkScalar opacity,
+                                            bool checkerboard = false);
   [[nodiscard]] AutoRestore saveWithImageFilter(
       const SkRect* bounds,
-      const std::shared_ptr<const DlImageFilter> filter);
+      const std::shared_ptr<const DlImageFilter> filter,
+      bool checkerboard = false);
   [[nodiscard]] AutoRestore saveWithColorFilter(
       const SkRect* bounds,
-      const std::shared_ptr<const DlColorFilter> filter);
+      const std::shared_ptr<const DlColorFilter> filter,
+      bool checkerboard = false);
   [[nodiscard]] AutoRestore saveWithBackdropFilter(
       const SkRect* bounds,
       const std::shared_ptr<const DlImageFilter> filter,
-      DlBlendMode blend_mode);
+      DlBlendMode blend_mode,
+      bool checkerboard = false);
 
   void translate(SkScalar tx, SkScalar ty);
   void transform(const SkM44& matrix);
@@ -71,19 +83,28 @@ class LayerStateStack {
     void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
     virtual void restore(SkCanvas* canvas,
                          DisplayListBuilder* builder) const override;
+
+   protected:
+    virtual void do_checkerboard(SkCanvas* canvas,
+                                 DisplayListBuilder* builder) const {}
   };
 
   class SaveLayerEntry : public SaveEntry {
    public:
-    SaveLayerEntry(const SkRect* bounds)
+    SaveLayerEntry(const SkRect* bounds, bool checkerboard)
         : bounds_(bounds ? *bounds : SkRect::MakeEmpty()),
-          has_bounds_(bounds != nullptr) {}
+          has_bounds_(bounds != nullptr),
+          checkerboard_(checkerboard) {}
 
     void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
    protected:
     const SkRect bounds_;
     const bool has_bounds_;
+    const bool checkerboard_;
+
+    void do_checkerboard(SkCanvas* canvas,
+                         DisplayListBuilder* builder) const override;
 
     const SkRect* save_bounds() const {
       return has_bounds_ ? &bounds_ : nullptr;
@@ -92,8 +113,8 @@ class LayerStateStack {
 
   class OpacityEntry : public SaveLayerEntry {
    public:
-    OpacityEntry(const SkRect* bounds, SkScalar opacity)
-        : SaveLayerEntry(bounds), opacity_(opacity) {}
+    OpacityEntry(const SkRect* bounds, SkScalar opacity, bool checkerboard)
+        : SaveLayerEntry(bounds, checkerboard), opacity_(opacity) {}
 
     void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
 
@@ -104,8 +125,9 @@ class LayerStateStack {
   class ImageFilterEntry : public SaveLayerEntry {
    public:
     ImageFilterEntry(const SkRect* bounds,
-                     const std::shared_ptr<const DlImageFilter> filter)
-        : SaveLayerEntry(bounds), filter_(filter) {}
+                     const std::shared_ptr<const DlImageFilter> filter,
+                     bool checkerboard)
+        : SaveLayerEntry(bounds, checkerboard), filter_(filter) {}
     ~ImageFilterEntry() override = default;
 
     void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
@@ -117,8 +139,9 @@ class LayerStateStack {
   class ColorFilterEntry : public SaveLayerEntry {
    public:
     ColorFilterEntry(const SkRect* bounds,
-                     const std::shared_ptr<const DlColorFilter> filter)
-        : SaveLayerEntry(bounds), filter_(filter) {}
+                     const std::shared_ptr<const DlColorFilter> filter,
+                     bool checkerboard)
+        : SaveLayerEntry(bounds, checkerboard), filter_(filter) {}
     ~ColorFilterEntry() override = default;
 
     void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
@@ -131,8 +154,11 @@ class LayerStateStack {
    public:
     BackdropFilterEntry(const SkRect* bounds,
                         const std::shared_ptr<const DlImageFilter> filter,
-                        DlBlendMode blend_mode)
-        : SaveLayerEntry(bounds), filter_(filter), blend_mode_(blend_mode) {}
+                        DlBlendMode blend_mode,
+                        bool checkerboard)
+        : SaveLayerEntry(bounds, checkerboard),
+          filter_(filter),
+          blend_mode_(blend_mode) {}
     ~BackdropFilterEntry() override = default;
 
     void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;

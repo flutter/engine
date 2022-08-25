@@ -191,7 +191,7 @@ sk_sp<DisplayList> LayerTree::Flatten(
   };
 
   LayerStateStack state_stack;
-  state_stack.setBuilderDelegate(recorder.builder().get());
+  state_stack.setBuilderDelegate(recorder);
 
   PaintContext paint_context = {
       // clang-format off

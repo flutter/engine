@@ -121,33 +121,33 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   //   }
   // }
 
-  // if (context.enable_leaf_layer_tracing) {
-  //   const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
-  //   auto offscreen_surface =
-  //       std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
+  if (context.enable_leaf_layer_tracing) {
+    const auto canvas_size = context.canvas->getBaseLayerSize();
+    auto offscreen_surface =
+        std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
 
-  //   const auto& ctm = context.leaf_nodes_canvas->getTotalMatrix();
+    const auto& ctm = context.canvas->getTotalMatrix();
 
-  //   const auto start_time = fml::TimePoint::Now();
-  //   {
-  //     // render display list to offscreen surface.
-  //     auto* canvas = offscreen_surface->GetCanvas();
-  //     SkAutoCanvasRestore save(canvas, true);
-  //     canvas->clear(SK_ColorTRANSPARENT);
-  //     canvas->setMatrix(ctm);
-  //     display_list()->RenderTo(canvas, context.inherited_opacity);
-  //     canvas->flush();
-  //   }
-  //   const fml::TimeDelta offscreen_render_time =
-  //       fml::TimePoint::Now() - start_time;
+    const auto start_time = fml::TimePoint::Now();
+    {
+      // render display list to offscreen surface.
+      auto* canvas = offscreen_surface->GetCanvas();
+      SkAutoCanvasRestore save(canvas, true);
+      canvas->clear(SK_ColorTRANSPARENT);
+      canvas->setMatrix(ctm);
+      display_list()->RenderTo(canvas, context.inherited_opacity);
+      canvas->flush();
+    }
+    const fml::TimeDelta offscreen_render_time =
+        fml::TimePoint::Now() - start_time;
 
-  //   const SkRect device_bounds =
-  //       RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
-  //   sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
-  //   LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,
-  //                                   raster_data, device_bounds);
-  //   context.layer_snapshot_store->Add(snapshot_data);
-  // }
+    const SkRect device_bounds =
+        RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
+    sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
+    LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,
+                                    raster_data, device_bounds);
+    context.layer_snapshot_store->Add(snapshot_data);
+  }
 
   if (context.builder) {
     // AutoCachePaint save_paint(context);

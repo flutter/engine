@@ -109,7 +109,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         } {
     canvas_state_stack_.setCanvasDelegate(&TestT::mock_canvas());
-    display_list_state_stack_.setCanvasDelegate(&display_list_recorder_);
+    display_list_state_stack_.setBuilderDelegate(display_list_recorder_);
     use_null_raster_cache();
   }
 

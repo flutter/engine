@@ -87,14 +87,18 @@ class ClipShapeLayer : public CacheableContainerLayer {
       return;
     }
 
-    // AutoCachePaint cache_paint(context);
-    // if (context.raster_cache) {
-    //   if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
-    //     return;
-    //   }
-    // }
+    if (context.raster_cache) {
+      AutoCachePaint cache_paint(context);
+      if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+        return;
+      }
+    }
 
-    auto save_layer = context.state_stack.saveLayer(&paint_bounds());
+    // saveWithOpacity optimizes the case where opacity >= 1.0
+    // to a simple saveLayer
+    auto save_layer = context.state_stack.saveWithOpacity(
+        &paint_bounds(), context.inherited_opacity,
+        context.checkerboard_offscreen_layers);
     PaintChildren(context);
   }
 

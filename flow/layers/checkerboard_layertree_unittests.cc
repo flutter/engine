@@ -303,7 +303,6 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
   const SkPaint clip_paint;
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
-  layer_paint.setAntiAlias(true);
   layer->Paint(paint_context());
   EXPECT_EQ(
       mock_canvas().draw_calls(),
@@ -342,7 +341,6 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   const SkPaint clip_paint;
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
-  layer_paint.setAntiAlias(true);
   layer->Paint(check_board_context());
   EXPECT_NE(
       mock_canvas().draw_calls(),

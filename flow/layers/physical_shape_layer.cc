@@ -90,47 +90,24 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
         SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
-  // Call drawPath without clip if possible for better performance.
-  SkPaint paint;
-  paint.setColor(color_);
-  paint.setAntiAlias(true);
-  if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
+  auto save = context.state_stack.save();
+  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+    context.state_stack.clipPath(path_, true);
+    auto saveLayer = context.state_stack.saveLayer(
+        &paint_bounds(), context.checkerboard_offscreen_layers);
+    context.canvas->drawColor(color_);
+    PaintChildren(context);
+  } else {
+    SkPaint paint;
+    paint.setColor(color_);
+    paint.setAntiAlias(true);
+
+    // Call drawPath without clip if possible for better performance.
     context.canvas->drawPath(path_, paint);
-  }
-
-  int saveCount = context.canvas->save();
-  switch (clip_behavior_) {
-    case Clip::hardEdge:
-      context.canvas->clipPath(path_, false);
-      break;
-    case Clip::antiAlias:
-      context.canvas->clipPath(path_, true);
-      break;
-    case Clip::antiAliasWithSaveLayer: {
-      TRACE_EVENT0("flutter", "Canvas::saveLayer");
-      context.canvas->clipPath(path_, true);
-      context.canvas->saveLayer(paint_bounds(), nullptr);
-    } break;
-    case Clip::none:
-      break;
-  }
-
-  if (UsesSaveLayer()) {
-    // If we want to avoid the bleeding edge artifact
-    // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
-    // using saveLayer, we have to call drawPaint instead of drawPath as
-    // anti-aliased drawPath will always have such artifacts.
-    context.canvas->drawPaint(paint);
-  }
-
-  PaintChildren(context);
-
-  context.canvas->restoreToCount(saveCount);
-
-  if (UsesSaveLayer()) {
-    if (context.checkerboard_offscreen_layers) {
-      // DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
+    if (clip_behavior_ != Clip::none) {
+      context.state_stack.clipPath(path_, clip_behavior_ == Clip::antiAlias);
     }
+    PaintChildren(context);
   }
 }
 
