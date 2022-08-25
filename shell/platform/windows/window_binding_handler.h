@@ -90,7 +90,8 @@ class WindowBindingHandler {
   // coordinates.
   virtual PointerLocation GetPrimaryPointerLocation() = 0;
 
-  virtual void AfterEngineSet() = 0;
+  // Called to set the initial state of accessibility features
+  virtual void UpdateInitialAccessibilityFeatures() = 0;
 };
 
 }  // namespace flutter

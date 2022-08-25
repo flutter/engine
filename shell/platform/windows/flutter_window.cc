@@ -282,21 +282,21 @@ PointerLocation FlutterWindow::GetPrimaryPointerLocation() {
 }
 
 void FlutterWindow::OnThemeChange() {
-  HIGHCONTRAST high_contrast = {sizeof(HIGHCONTRAST)};
+  HIGHCONTRAST high_contrast = { .cbSize = sizeof(HIGHCONTRAST) };
+  // API call is only supported on Windows 8+
   if (SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(HIGHCONTRAST),
                             &high_contrast, 0)) {
     BOOL hc_on = high_contrast.dwFlags & HCF_HIGHCONTRASTON;
     // Currently, only FlutterWindowsView should be used as delegate on Windows
-    FlutterWindowsView* view =
-        reinterpret_cast<FlutterWindowsView*>(binding_handler_delegate_);
-    FlutterWindowsEngine* engine = view->GetEngine();
-    engine->UpdateHighContrastEnabled(hc_on);
+    binding_handler_delegate_->UpdateHighContrastEnabled(hc_on);
   } else {
-    FML_LOG(ERROR) << "Failed to get status of high contrast feature";
+    FML_LOG(INFO)
+        << "Failed to get status of high contrast feature,"
+        << "support only for Windows 8 + ";
   }
 }
 
-void FlutterWindow::AfterEngineSet() {
+void FlutterWindow::UpdateInitialAccessibilityFeatures() {
   OnThemeChange();
 }
 

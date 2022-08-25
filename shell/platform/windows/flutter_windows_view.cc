@@ -56,7 +56,6 @@ void FlutterWindowsView::SetEngine(
   engine_ = std::move(engine);
 
   engine_->SetView(this);
-  binding_handler_->AfterEngineSet();
 
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(engine_->GetRegistrar());
@@ -615,6 +614,14 @@ void FlutterWindowsView::DestroyRenderSurface() {
   if (engine_ && engine_->surface_manager()) {
     engine_->surface_manager()->DestroySurface();
   }
+}
+
+void FlutterWindowsView::SendInitialAccessibilityFeatures() {
+  binding_handler_->UpdateInitialAccessibilityFeatures();
+}
+
+void FlutterWindowsView::UpdateHighContrastEnabled(bool enabled) {
+  engine_->UpdateHighContrastEnabled(enabled);
 }
 
 WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
