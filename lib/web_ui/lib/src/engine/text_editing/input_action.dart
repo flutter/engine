@@ -1,4 +1,4 @@
-// Copyright 2022 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -27,9 +27,9 @@ abstract class EngineInputAction {
       case 'TextInputAction.newline':
         return enter;
       case 'TextInputAction.search':
-      return search;
+        return search;
       case 'TextInputAction.send':
-      return send;
+        return send;
       case 'TextInputAction.emergencyCall':
       case 'TextInputAction.join':
       case 'TextInputAction.none':
