@@ -541,7 +541,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32006.
     @"textScaleFactor" : @1.0,
     @"alwaysUse24HourFormat" : @false,
-    @"nativeSpellCheckServiceDefined" : @true
   }];
 }
 
