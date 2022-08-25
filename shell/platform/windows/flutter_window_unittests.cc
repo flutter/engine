@@ -389,5 +389,16 @@ TEST(FlutterWindowTest, OnThemeChange) {
   win32window.InjectWindowMessage(WM_THEMECHANGED, 0, 0);
 }
 
+TEST(FlutterWindowTest, InitialAccessibilityFeatures) {
+  MockFlutterWindow win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  ON_CALL(win32window, GetHighContrastEnabled()).WillByDefault(Return(true));
+  EXPECT_CALL(delegate, UpdateHighContrastEnabled(true)).Times(1);
+
+  win32window.SendInitialAccessibilityFeatures();
+}
+
 }  // namespace testing
 }  // namespace flutter
