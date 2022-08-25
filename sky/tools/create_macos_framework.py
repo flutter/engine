@@ -96,9 +96,11 @@ def main():
     return 1
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
+
 def embed_codesign_configuration(config_path, content):
   with open(config_path, 'w') as f:
     f.write(content)
+
 
 def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
@@ -131,7 +133,11 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
   # Zip FlutterMacOS.framework.
   subprocess.check_call([
-      'zip', '-r', 'FlutterMacOS.framework.zip', 'FlutterMacOS.framework', 'entitlements.txt',
+      'zip',
+      '-r',
+      'FlutterMacOS.framework.zip',
+      'FlutterMacOS.framework',
+      'entitlements.txt',
       'without_entitlements.txt',
   ],
                         cwd=dst)
