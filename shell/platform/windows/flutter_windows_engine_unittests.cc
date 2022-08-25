@@ -423,18 +423,53 @@ TEST(FlutterWindowsEngine, GetExecutableName) {
 // the corresponding status flag can be retrieved from the engine.
 TEST(FlutterWindowsEngine, UpdateHighContrastFeature) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
 
+  modifier.embedder_api().Run = MOCK_ENGINE_PROC(
+      Run, ([](auto version, auto config,
+               auto args, auto user_data,
+               FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+        *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
+        return kSuccess;
+      }));
+  modifier.embedder_api().NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([](auto engine, auto type, auto data, auto size) {
+        return kSuccess;
+      }));
+  modifier.embedder_api().UpdateLocales = MOCK_ENGINE_PROC(
+      UpdateLocales,
+      ([](auto engine, const FlutterLocale** locales,
+                                size_t locales_count) {
+        return kSuccess;
+      }));
+  modifier.embedder_api().SendPlatformMessage = MOCK_ENGINE_PROC(
+      SendPlatformMessage,
+      ([](auto engine, auto message) {
+        return kSuccess;
+      }));
+
+  bool called = false;
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures, ([&called](auto engine, auto flags) {
+        called = true;
+        return kSuccess;
+      }));
+
+  engine->Run();
   engine->UpdateHighContrastEnabled(true);
   EXPECT_TRUE(
       engine->EnabledAccessibilityFeatures() &
       FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
   EXPECT_TRUE(engine->high_contrast_enabled());
+  EXPECT_TRUE(called);
 
   engine->UpdateHighContrastEnabled(false);
   EXPECT_FALSE(
       engine->EnabledAccessibilityFeatures() &
       FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
   EXPECT_FALSE(engine->high_contrast_enabled());
+
+  modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
 }
 
 }  // namespace testing

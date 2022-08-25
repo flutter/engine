@@ -6,6 +6,7 @@
 
 #include <WinUser.h>
 #include <dwmapi.h>
+
 #include <chrono>
 #include <map>
 
@@ -282,16 +283,7 @@ PointerLocation FlutterWindow::GetPrimaryPointerLocation() {
 }
 
 void FlutterWindow::OnThemeChange() {
-  HIGHCONTRAST high_contrast = {.cbSize = sizeof(HIGHCONTRAST)};
-  // API call is only supported on Windows 8+
-  if (SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(HIGHCONTRAST),
-                            &high_contrast, 0)) {
-    BOOL hc_on = high_contrast.dwFlags & HCF_HIGHCONTRASTON;
-    binding_handler_delegate_->UpdateHighContrastEnabled(hc_on);
-  } else {
-    FML_LOG(INFO) << "Failed to get status of high contrast feature,"
-                  << "support only for Windows 8 + ";
-  }
+  binding_handler_delegate_->UpdateHighContrastEnabled(GetHighContrastEnabled());
 }
 
 void FlutterWindow::SendInitialAccessibilityFeatures() {

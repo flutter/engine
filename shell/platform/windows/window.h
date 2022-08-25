@@ -207,6 +207,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Returns the current pixel per scroll tick value.
   virtual float GetScrollOffsetMultiplier();
 
+  // Check if the high contrast feature is enabled on the OS
+  virtual bool GetHighContrastEnabled();
+
  protected:
   // Win32's DefWindowProc.
   //
