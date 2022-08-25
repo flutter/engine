@@ -471,14 +471,13 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // deciding the earliest event to use as time 0.
     if (settings_.engine_start_timestamp.count()) {
       int64_t micros = Dart_TimelineGetMicros();
-      Dart_TimelineEvent(
-          "FlutterEngineMainEnter",                  // label
-          micros,                  // timestamp0
-          micros,                  // timestamp1_or_async_id
-          Dart_Timeline_Event_Instant,              // event type
-          0,                                         // argument_count
-          nullptr,                                   // argument_names
-          nullptr                                    // argument_values
+      Dart_TimelineEvent("FlutterEngineMainEnter",     // label
+                         micros,                       // timestamp0
+                         micros,                       // timestamp1_or_async_id
+                         Dart_Timeline_Event_Instant,  // event type
+                         0,                            // argument_count
+                         nullptr,                      // argument_names
+                         nullptr                       // argument_values
       );
     }
   }
