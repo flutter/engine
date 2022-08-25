@@ -465,7 +465,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  FML_CHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
+  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
   if (non_zero_origin_views_.find(view_id) == non_zero_origin_views_.end() &&
       !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
     non_zero_origin_views_.insert(view_id);
