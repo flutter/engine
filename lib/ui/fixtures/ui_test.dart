@@ -5,6 +5,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:isolate' show ReceivePort, SendPort;
+import 'dart:ffi';
 
 void main() {}
 
@@ -235,6 +237,21 @@ void frameCallback(_Image, int) {
 }
 
 @pragma('vm:entry-point')
+void platformMessagePortResponseTest() async {
+  ReceivePort receivePort = ReceivePort();
+  _callPlatformMessageResponseDartPort(receivePort.sendPort.nativePort);
+  List<dynamic> resultList = await receivePort.first;
+  int identifier = resultList[0] as int;
+  Uint8List? bytes = resultList[1] as Uint8List?;
+  ByteData result = ByteData.sublistView(bytes!);
+  if (result.lengthInBytes == 100) {
+    _finishCallResponse(true);
+  } else {
+    _finishCallResponse(false);
+  }
+}
+
+@pragma('vm:entry-point')
 void platformMessageResponseTest() {
   _callPlatformMessageResponseDart((ByteData? result) {
     if (result is UnmodifiableByteDataView &&
@@ -246,6 +263,7 @@ void platformMessageResponseTest() {
   });
 }
 
+void _callPlatformMessageResponseDartPort(int port) native 'CallPlatformMessageResponseDartPort';
 void _callPlatformMessageResponseDart(void Function(ByteData? result) callback) native 'CallPlatformMessageResponseDart';
 void _finishCallResponse(bool didPass) native 'FinishCallResponse';
 
