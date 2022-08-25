@@ -609,9 +609,7 @@ std::string FlutterWindowsEngine::GetExecutableName() const {
 
 void FlutterWindowsEngine::UpdateAccessibilityFeatures(
     FlutterAccessibilityFeature flags) {
-  if (engine_) {
-    embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
-  }
+  embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
 }
 
 void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
