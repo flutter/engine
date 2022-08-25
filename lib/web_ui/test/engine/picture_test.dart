@@ -11,8 +11,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  test('Picture constructor invokes onCreate once', () async {
-    print('!!!!! picture onCreate start');
+  test('Picture construction invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
     ui.Picture? createdPicture;
     ui.Picture.onCreate = (ui.Picture picture) {
@@ -30,7 +29,18 @@ Future<void> testMain() async {
     expect(onCreateInvokedCount, 2);
     expect(createdPicture, picture2);
     ui.Picture.onCreate = null;
-    print('!!!!! picture onCreate end');
+  });
+
+  test('approximateBytesUsed is available for onCreate', () async {
+    int pictureSize = -1;
+
+    ui.Picture.onCreate = (ui.Picture picture) =>
+      pictureSize = picture.approximateBytesUsed;
+
+    _createPicture();
+
+    expect(pictureSize >= 0, true);
+    ui.Picture.onCreate = null;
   });
 
   test('dispose() invokes onDispose once', () async {

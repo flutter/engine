@@ -41,6 +41,8 @@ class EnginePictureRecorder implements ui.PictureRecorder {
     _isRecording = false;
     _canvas!.endRecording();
     final EnginePicture result = EnginePicture(_canvas, cullRect);
+    // We invoke the handler here, not in the Picture constructor, because we want
+    // [result.approximateBytesUsed] to be available for the handler.
     ui.Picture.onCreate?.call(result);
     return result;
   }

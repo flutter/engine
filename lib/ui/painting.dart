@@ -5753,6 +5753,8 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
     _endRecording(picture);
     _canvas!._recorder = null;
     _canvas = null;
+    // We invoke the handler here, not in the Picture constructor, because we want
+    // [picture.approximateBytesUsed] to be available for the handler.
     Picture.onCreate?.call(picture);
     return picture;
   }

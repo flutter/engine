@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 
 void main() {
-  test('Picture constructor invokes onCreate once', () async {
+  test('Picture construction invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
     Picture? createdPicture;
     Picture.onCreate = (Picture picture) {
@@ -24,6 +24,18 @@ void main() {
 
     expect(onCreateInvokedCount, 2);
     expect(createdPicture, picture2);
+    Picture.onCreate = null;
+  });
+
+  test('approximateBytesUsed is available for onCreate', () async {
+    int pictureSize = -1;
+
+    Picture.onCreate = (Picture picture) =>
+      pictureSize = picture.approximateBytesUsed;
+
+    _createPicture();
+
+    expect(pictureSize >= 0, true);
     Picture.onCreate = null;
   });
 
