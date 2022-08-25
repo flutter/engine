@@ -120,7 +120,7 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     subprocess.check_call(["strip", "-x", "-S", fat_framework_binary])
 
   macos_filepath_with_entitlements = ''
-  macos_filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
+  macos_filepath_without_entitlements = 'FlutterMacOS.framework/Versions/A/FlutterMacOS'
 
   embed_codesign_configuration(
       os.path.join(dst, 'entitlements.txt'), macos_filepath_with_entitlements
