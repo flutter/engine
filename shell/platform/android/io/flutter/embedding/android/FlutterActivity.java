@@ -35,6 +35,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
+import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -208,7 +211,7 @@ import java.util.List;
 // A number of methods in this class have the same implementation as FlutterFragmentActivity. These
 // methods are duplicated for readability purposes. Be sure to replicate any change in this class in
 // FlutterFragmentActivity, too.
-public class FlutterActivity extends Activity
+public class FlutterActivity extends ComponentActivity
     implements FlutterActivityAndFragmentDelegate.Host, LifecycleOwner {
   private static final String TAG = "FlutterActivity";
 
@@ -453,9 +456,7 @@ public class FlutterActivity extends Activity
 
   @NonNull private LifecycleRegistry lifecycle;
 
-  public FlutterActivity() {
-    lifecycle = new LifecycleRegistry(this);
-  }
+  public FlutterActivity() {}
 
   /**
    * This method exists so that JVM tests can ensure that a delegate exists without putting this
@@ -495,12 +496,26 @@ public class FlutterActivity extends Activity
 
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.T) {
+      getOnBackInvokedDispatcher()
+          .registerOnBackInvokedCallback(
+              OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
+    }
+
     configureWindowForTransparency();
 
     setContentView(createFlutterView());
 
     configureStatusBarForFullscreenFlutterExperience();
   }
+
+  private final OnBackInvokedCallback onBackInvokedCallback =
+      new OnBackInvokedCallback() {
+        @Override
+        public void onBackInvoked() {
+          onBackPressed();
+        }
+      };
 
   /**
    * Switches themes for this {@code Activity} from the theme used to launch this {@code Activity}
@@ -656,6 +671,9 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStop() {
     super.onStop();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.T) {
+      getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
+    }
     if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
     }
@@ -789,6 +807,9 @@ public class FlutterActivity extends Activity
   @Override
   @NonNull
   public Lifecycle getLifecycle() {
+    if (lifecycle == null) {
+      lifecycle = new LifecycleRegistry(this);
+    }
     return lifecycle;
   }
 
