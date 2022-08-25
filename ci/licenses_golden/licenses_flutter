@@ -1100,6 +1100,7 @@ FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.cc
@@ -1139,6 +1140,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/canvaskit_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/embedded_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/embedded_views_diff.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/font_fallback_data.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/font_fallbacks.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/fonts.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/image.dart
@@ -1151,6 +1153,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_scene_builder.d
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_tree.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/mask_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/n_way_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/noto_font.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/path_metrics.dart
