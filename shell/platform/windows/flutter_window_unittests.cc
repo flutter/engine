@@ -383,8 +383,7 @@ TEST(FlutterWindowTest, OnThemeChange) {
   MockWindowBindingHandlerDelegate delegate;
   win32window.SetView(&delegate);
 
-  ON_CALL(win32window, GetHighContrastEnabled())
-      .WillByDefault(Return(true));
+  ON_CALL(win32window, GetHighContrastEnabled()).WillByDefault(Return(true));
   EXPECT_CALL(win32window, GetHighContrastEnabled()).Times(1);
   EXPECT_CALL(delegate, UpdateHighContrastEnabled(true)).Times(1);
 

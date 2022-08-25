@@ -283,7 +283,8 @@ PointerLocation FlutterWindow::GetPrimaryPointerLocation() {
 }
 
 void FlutterWindow::OnThemeChange() {
-  binding_handler_delegate_->UpdateHighContrastEnabled(GetHighContrastEnabled());
+  binding_handler_delegate_->UpdateHighContrastEnabled(
+      GetHighContrastEnabled());
 }
 
 void FlutterWindow::SendInitialAccessibilityFeatures() {
