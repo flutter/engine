@@ -12,7 +12,7 @@ namespace impeller {
 
 InlinePassContext::InlinePassContext(std::shared_ptr<Context> context,
                                      RenderTarget render_target,
-                                     unsigned int pass_texture_reads)
+                                     uint32_t pass_texture_reads)
     : context_(context),
       render_target_(render_target),
       total_pass_reads_(pass_texture_reads) {}

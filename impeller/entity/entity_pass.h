@@ -122,7 +122,7 @@ class EntityPass {
   /// the following scenarios:
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
-  unsigned int reads_from_pass_texture_ = 0;
+  uint32_t reads_from_pass_texture_ = 0;
 
   std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
 
