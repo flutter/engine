@@ -96,6 +96,9 @@ def main():
     return 1
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
+def embed_codesign_configuration(config_path, content):
+  with open(config_path, 'w') as f:
+    f.write(content)
 
 def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
@@ -113,9 +116,22 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
     subprocess.check_call(["strip", "-x", "-S", fat_framework_binary])
 
+  macos_filepath_with_entitlements = ''
+  macos_filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
+
+  embed_codesign_configuration(
+      os.path.join(dst, 'entitlements.txt'), macos_filepath_with_entitlements
+  )
+
+  embed_codesign_configuration(
+      os.path.join(dst, 'without_entitlements.txt'),
+      macos_filepath_without_entitlements
+  )
+
   # Zip FlutterMacOS.framework.
   subprocess.check_call([
-      'zip', '-r', 'FlutterMacOS.framework.zip', 'FlutterMacOS.framework'
+      'zip', '-r', 'FlutterMacOS.framework.zip', 'FlutterMacOS.framework', 'entitlements.txt',
+      'without_entitlements.txt',
   ],
                         cwd=dst)
 
