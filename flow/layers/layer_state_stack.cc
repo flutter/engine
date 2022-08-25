@@ -192,7 +192,7 @@ void LayerStateStack::ImageFilterEntry::apply(
     DisplayListBuilder* builder) const {
   if (canvas) {
     SkPaint paint;
-    paint.setImageFilter(filter_->skia_object());
+    paint.setImageFilter(filter_ ? filter_->skia_object() : nullptr);
     canvas->saveLayer(save_bounds(), &paint);
   }
   if (builder) {
@@ -207,7 +207,7 @@ void LayerStateStack::ColorFilterEntry::apply(
     DisplayListBuilder* builder) const {
   if (canvas) {
     SkPaint paint;
-    paint.setColorFilter(filter_->skia_object());
+    paint.setColorFilter(filter_ ? filter_->skia_object() : nullptr);
     canvas->saveLayer(save_bounds(), &paint);
   }
   if (builder) {
@@ -221,7 +221,8 @@ void LayerStateStack::BackdropFilterEntry::apply(
     SkCanvas* canvas,
     DisplayListBuilder* builder) const {
   if (canvas) {
-    sk_sp<SkImageFilter> backdrop_filter = filter_->skia_object();
+    sk_sp<SkImageFilter> backdrop_filter =
+        filter_ ? filter_->skia_object() : nullptr;
     if (blend_mode_ != DlBlendMode::kSrcOver) {
       SkPaint paint;
       paint.setBlendMode(ToSk(blend_mode_));
