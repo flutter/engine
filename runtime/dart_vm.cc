@@ -467,8 +467,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // Send the earliest available timestamp in the application lifecycle to
     // timeline. The difference between this timestamp and the time we render
     // the very first frame gives us a good idea about Flutter's startup time.
-    // Use a duration event so about:tracing will consider this event when
-    // deciding the earliest event to use as time 0.
+    // Use an instant event because the call to Dart_TimelineGetMicros
+    // may behave differently before and after the Dart VM is initialized.
+    // As this call is immediately after initialization of the Dart VM,
+    // we are interested in only one timestamp.
     if (settings_.engine_start_timestamp.count()) {
       int64_t micros = Dart_TimelineGetMicros();
       Dart_TimelineEvent("FlutterEngineMainEnter",     // label
