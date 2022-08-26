@@ -172,8 +172,7 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
       readable ? StorageMode::kDevicePrivate
                : StorageMode::kDeviceTransient,  // color_storage_mode
       LoadAction::kClear,                        // color_load_action
-      readable ? StoreAction::kStoreAndMultisampleResolve
-               : StoreAction::kMultisampleResolve,  // color_store_action
+      StoreAction::kStore,                       // color_store_action
       readable ? StorageMode::kDevicePrivate
                : StorageMode::kDeviceTransient,  // stencil_storage_mode
       LoadAction::kClear,                        // stencil_load_action
