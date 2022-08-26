@@ -39,7 +39,7 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
 
 void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() > Entity::BlendMode::kLastPipelineBlendMode) {
-    reads_from_pass_texture_ = true;
+    reads_from_pass_texture_ += 1;
   }
 
   elements_.emplace_back(std::move(entity));
@@ -133,7 +133,7 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
 
   if (pass->blend_mode_ > Entity::BlendMode::kLastPipelineBlendMode ||
       pass->backdrop_filter_proc_.has_value()) {
-    reads_from_pass_texture_ = true;
+    reads_from_pass_texture_ += 1;
   }
 
   auto subpass_pointer = pass.get();
@@ -141,14 +141,51 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   return subpass_pointer;
 }
 
+static RenderTarget CreateRenderTarget(ContentContext& renderer,
+                                       ISize size,
+                                       bool readable) {
+  auto context = renderer.GetContext();
+
+  if (context->SupportsOffscreenMSAA()) {
+    return RenderTarget::CreateOffscreenMSAA(
+        *context,      // context
+        size,          // size
+        "EntityPass",  // label
+        readable ? StorageMode::kDevicePrivate
+                 : StorageMode::kDeviceTransient,  // color_storage_mode
+        StorageMode::kDevicePrivate,               // color_resolve_storage_mode
+        LoadAction::kClear,                        // color_load_action
+        readable ? StoreAction::kStoreAndMultisampleResolve
+                 : StoreAction::kMultisampleResolve,  // color_store_action
+        readable ? StorageMode::kDevicePrivate
+                 : StorageMode::kDeviceTransient,  // stencil_storage_mode
+        LoadAction::kClear,                        // stencil_load_action
+        readable ? StoreAction::kStore
+                 : StoreAction::kDontCare  // stencil_store_action
+    );
+  }
+
+  return RenderTarget::CreateOffscreen(
+      *context,      // context
+      size,          // size
+      "EntityPass",  // label
+      readable ? StorageMode::kDevicePrivate
+               : StorageMode::kDeviceTransient,  // color_storage_mode
+      LoadAction::kClear,                        // color_load_action
+      StoreAction::kStore,                       // color_store_action
+      readable ? StorageMode::kDevicePrivate
+               : StorageMode::kDeviceTransient,  // stencil_storage_mode
+      LoadAction::kClear,                        // stencil_load_action
+      readable ? StoreAction::kStore
+               : StoreAction::kDontCare  // stencil_store_action
+  );
+}
+
 bool EntityPass::Render(ContentContext& renderer,
                         RenderTarget render_target) const {
-  if (reads_from_pass_texture_) {
-    auto offscreen_target = RenderTarget::CreateOffscreen(
-        *renderer.GetContext(), render_target.GetRenderTargetSize(),
-        "EntityPass",  //
-        StorageMode::kDevicePrivate, LoadAction::kClear, StoreAction::kStore,
-        StorageMode::kDevicePrivate, LoadAction::kClear, StoreAction::kStore);
+  if (reads_from_pass_texture_ > 0) {
+    auto offscreen_target =
+        CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
     if (!OnRender(renderer, offscreen_target.GetRenderTargetSize(),
                   offscreen_target, Point(), Point(), 0)) {
       return false;
@@ -240,7 +277,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       auto texture = pass_context.GetTexture();
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_.value();
-      backdrop_contents = proc(FilterInput::Make(std::move(texture)));
+      backdrop_contents =
+          proc(FilterInput::Make(std::move(texture)), subpass->xformation_);
 
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
@@ -283,18 +321,12 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     RenderTarget subpass_target;
-    if (subpass->reads_from_pass_texture_) {
-      subpass_target = RenderTarget::CreateOffscreen(
-          *renderer.GetContext(), ISize::Ceil(subpass_coverage->size),
-          "EntityPass", StorageMode::kDevicePrivate, LoadAction::kClear,
-          StoreAction::kStore, StorageMode::kDevicePrivate, LoadAction::kClear,
-          StoreAction::kStore);
+    if (subpass->reads_from_pass_texture_ > 0) {
+      subpass_target = CreateRenderTarget(
+          renderer, ISize::Ceil(subpass_coverage->size), true);
     } else {
-      subpass_target = RenderTarget::CreateOffscreen(
-          *renderer.GetContext(), ISize::Ceil(subpass_coverage->size),
-          "EntityPass", StorageMode::kDevicePrivate, LoadAction::kClear,
-          StoreAction::kStore, StorageMode::kDeviceTransient,
-          LoadAction::kClear, StoreAction::kDontCare);
+      subpass_target = CreateRenderTarget(
+          renderer, ISize::Ceil(subpass_coverage->size), false);
     }
 
     auto subpass_texture = subpass_target.GetRenderTargetTexture();
@@ -304,7 +336,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto offscreen_texture_contents =
-        subpass->delegate_->CreateContentsForSubpassTarget(subpass_texture);
+        subpass->delegate_->CreateContentsForSubpassTarget(
+            subpass_texture, subpass->xformation_);
 
     if (!offscreen_texture_contents) {
       // This is an error because the subpass delegate said the pass couldn't
@@ -329,10 +362,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity.SetContents(std::move(offscreen_texture_contents));
     element_entity.SetStencilDepth(subpass->stencil_depth_);
     element_entity.SetBlendMode(subpass->blend_mode_);
-    // Once we have filters being applied for SaveLayer, some special sauce
-    // may be needed here (or in PaintPassDelegate) to ensure the filter
-    // parameters are transformed by the `xformation_` matrix, while
-    // continuing to apply only the subpass offset to the offscreen texture.
     element_entity.SetTransformation(
         Matrix::MakeTranslation(Vector3(subpass_coverage->origin - position)));
   } else {
@@ -353,7 +382,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(context, render_target);
+  InlinePassContext pass_context(context, render_target,
+                                 reads_from_pass_texture_);
   if (!pass_context.IsValid()) {
     return false;
   }
@@ -511,10 +541,12 @@ void EntityPass::SetBlendMode(Entity::BlendMode blend_mode) {
 }
 
 void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
-  backdrop_filter_proc_ = proc;
   if (superpass_) {
-    superpass_->reads_from_pass_texture_ = true;
+    VALIDATION_LOG << "Backdrop filters cannot be set on EntityPasses that "
+                      "have already been appended to another pass.";
   }
+
+  backdrop_filter_proc_ = proc;
 }
 
 }  // namespace impeller
