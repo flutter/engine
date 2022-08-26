@@ -84,10 +84,10 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   );
 
   final SkVertexMode _mode;
-  late Float32List _positions;
-  Float32List? _textureCoordinates;
-  Uint32List? _colors;
-  Uint16List? _indices;
+  final Float32List _positions;
+  final Float32List? _textureCoordinates;
+  final Uint32List? _colors;
+  final Uint16List? _indices;
 
   @override
   SkVertices createDefault() {
@@ -113,10 +113,6 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   bool _disposed = false;
   void dispose() {
     delete();
-    _positions = Float32List(0);
-    _textureCoordinates = null;
-    _colors = null;
-    _indices = null;
     _disposed = true;
   }
 

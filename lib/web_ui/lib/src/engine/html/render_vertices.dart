@@ -45,9 +45,9 @@ class SurfaceVertices implements ui.Vertices {
   }
 
   final ui.VertexMode mode;
-  late Float32List positions;
-  Int32List? colors;
-  Uint16List? indices;
+  final Float32List positions;
+  final Int32List? colors;
+  final Uint16List? indices;
 
   static Int32List _int32ListFromColors(List<ui.Color> colors) {
     final Int32List list = Int32List(colors.length);
@@ -60,9 +60,6 @@ class SurfaceVertices implements ui.Vertices {
 
   bool _disposed = false;
   void dispose() {
-    colors = null;
-    indices = null;
-    positions = Float32List(0);
     _disposed = true;
   }
 
