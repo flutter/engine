@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
 import 'canvaskit_api.dart';
 import 'skia_object_cache.dart';
 
@@ -83,10 +84,10 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   );
 
   final SkVertexMode _mode;
-  final Float32List _positions;
-  final Float32List? _textureCoordinates;
-  final Uint32List? _colors;
-  final Uint16List? _indices;
+  late Float32List _positions;
+  Float32List? _textureCoordinates;
+  Uint32List? _colors;
+  Uint16List? _indices;
 
   @override
   SkVertices createDefault() {
@@ -107,5 +108,22 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   @override
   void delete() {
     rawSkiaObject?.delete();
+  }
+
+  bool _disposed = false;
+  void dispose() {
+    delete();
+    _positions = Float32List(0);
+    _textureCoordinates = null;
+    _colors = null;
+    _indices = null;
+    _disposed = true;
+  }
+
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Vertices.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }

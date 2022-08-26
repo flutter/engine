@@ -797,6 +797,20 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
     return result;
   }
+
+  bool _disposed = false;
+  void dispose() {
+    delete();
+    didDelete();
+    _disposed = true;
+  }
+
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Vertices.debugDisposed is only avialalbe when asserts are enabled.');
+  }
 }
 
 class CkLineMetrics implements ui.LineMetrics {
