@@ -35,6 +35,14 @@ class LayerStateStack {
     size_t stack_restore_count_;
   };
 
+  static constexpr int CAN_APPLY_OPACITY = 0x1;
+
+  struct RenderingAttributes {
+    SkScalar opacity = SK_Scalar1;
+  };
+
+  const RenderingAttributes applyOutstandingState(int can_apply_flags = 0);
+
   [[nodiscard]] AutoRestore save();
   [[nodiscard]] AutoRestore saveLayer(const SkRect* bounds,
                                       bool checkerboard = false);
@@ -67,22 +75,40 @@ class LayerStateStack {
   size_t getStackCount() { return state_stack_.size(); }
   void restoreToCount(size_t restore_count);
 
+  static void resolve(const SkRect* bounds,
+                      RenderingAttributes* attributes,
+                      SkCanvas* canvas,
+                      DisplayListBuilder* builder);
+
   class StateEntry {
    public:
     virtual ~StateEntry() = default;
 
-    virtual void apply(SkCanvas* canvas, DisplayListBuilder* builder) const = 0;
-    virtual void restore(SkCanvas* canvas, DisplayListBuilder* builder) const {}
-    virtual bool is_backdrop_filter() const { return false; }
+    virtual void apply(RenderingAttributes* attributes,
+                       SkCanvas* canvas,
+                       DisplayListBuilder* builder) const = 0;
+
+    virtual void reapply(RenderingAttributes* attributes,
+                         SkCanvas* canvas,
+                         DisplayListBuilder* builder) const {
+      apply(attributes, canvas, builder);
+    }
+
+    virtual void restore(RenderingAttributes* attributes,
+                         SkCanvas* canvas,
+                         DisplayListBuilder* builder) const {}
   };
 
   class SaveEntry : public StateEntry {
    public:
     SaveEntry() = default;
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
-    virtual void restore(SkCanvas* canvas,
-                         DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
+    void restore(RenderingAttributes* attributes,
+                 SkCanvas* canvas,
+                 DisplayListBuilder* builder) const override;
 
    protected:
     virtual void do_checkerboard(SkCanvas* canvas,
@@ -96,7 +122,9 @@ class LayerStateStack {
           has_bounds_(bounds != nullptr),
           checkerboard_(checkerboard) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    protected:
     const SkRect bounds_;
@@ -113,12 +141,23 @@ class LayerStateStack {
 
   class OpacityEntry : public SaveLayerEntry {
    public:
-    OpacityEntry(const SkRect* bounds, SkScalar opacity, bool checkerboard)
-        : SaveLayerEntry(bounds, checkerboard), opacity_(opacity) {}
+    OpacityEntry(const SkRect* bounds,
+                 SkScalar outstanding_opacity,
+                 SkScalar opacity,
+                 bool checkerboard)
+        : SaveLayerEntry(bounds, checkerboard),
+          outstanding_opacity_(outstanding_opacity),
+          opacity_(opacity) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
+    void restore(RenderingAttributes* attributes,
+                 SkCanvas* canvas,
+                 DisplayListBuilder* builder) const override;
 
    private:
+    const SkScalar outstanding_opacity_;
     const SkScalar opacity_;
   };
 
@@ -130,7 +169,9 @@ class LayerStateStack {
         : SaveLayerEntry(bounds, checkerboard), filter_(filter) {}
     ~ImageFilterEntry() override = default;
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const std::shared_ptr<const DlImageFilter> filter_;
@@ -144,7 +185,9 @@ class LayerStateStack {
         : SaveLayerEntry(bounds, checkerboard), filter_(filter) {}
     ~ColorFilterEntry() override = default;
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const std::shared_ptr<const DlColorFilter> filter_;
@@ -161,9 +204,13 @@ class LayerStateStack {
           blend_mode_(blend_mode) {}
     ~BackdropFilterEntry() override = default;
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
-    bool is_backdrop_filter() const override { return false; }
+    void reapply(RenderingAttributes* attributes,
+                 SkCanvas* canvas,
+                 DisplayListBuilder* builder) const override;
 
    private:
     const std::shared_ptr<const DlImageFilter> filter_;
@@ -176,7 +223,9 @@ class LayerStateStack {
    public:
     TranslateEntry(SkScalar tx, SkScalar ty) : tx_(tx), ty_(ty) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const SkScalar tx_;
@@ -187,7 +236,9 @@ class LayerStateStack {
    public:
     TransformMatrixEntry(const SkMatrix& matrix) : matrix_(matrix) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const SkMatrix matrix_;
@@ -197,7 +248,9 @@ class LayerStateStack {
    public:
     TransformM44Entry(const SkM44& m44) : m44_(m44) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const SkM44 m44_;
@@ -215,7 +268,9 @@ class LayerStateStack {
     ClipRectEntry(const SkRect& rect, bool is_aa)
         : ClipEntry(is_aa), rect_(rect) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const SkRect rect_;
@@ -226,7 +281,9 @@ class LayerStateStack {
     ClipRRectEntry(const SkRRect& rrect, bool is_aa)
         : ClipEntry(is_aa), rrect_(rrect) {}
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const SkRRect rrect_;
@@ -238,7 +295,9 @@ class LayerStateStack {
         : ClipEntry(is_aa), path_(path) {}
     ~ClipPathEntry() override = default;
 
-    void apply(SkCanvas* canvas, DisplayListBuilder* builder) const override;
+    void apply(RenderingAttributes* attributes,
+               SkCanvas* canvas,
+               DisplayListBuilder* builder) const override;
 
    private:
     const SkPath path_;
@@ -247,9 +306,10 @@ class LayerStateStack {
   std::vector<std::unique_ptr<StateEntry>> state_stack_;
 
   SkCanvas* canvas_ = nullptr;
-  int canvas_restore_count_;
+  int canvas_restore_count_ = 0.0;
   DisplayListBuilder* builder_ = nullptr;
-  int builder_restore_count_;
+  int builder_restore_count_ = 0.0;
+  RenderingAttributes outstanding_;
 };
 
 }  // namespace flutter
