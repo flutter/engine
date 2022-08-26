@@ -80,6 +80,27 @@ FLUTTER_ASSERT_NOT_ARC
   XCTAssertNotNil(viewController.touchRateCorrectionVSyncClient);
 }
 
+- (void)testCreateTouchRateCorrectionVSyncClientWillNotCreateNewVSyncClientWhenClientAlreadyExists {
+  id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
+  double maxFrameRate = 120;
+  [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
+
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController createTouchRateCorrectionVSyncClientIfNeeded];
+  VSyncClient* clientBefore = viewController.touchRateCorrectionVSyncClient;
+  XCTAssertNotNil(clientBefore);
+
+  [viewController createTouchRateCorrectionVSyncClientIfNeeded];
+  VSyncClient* clientAfter = viewController.touchRateCorrectionVSyncClient;
+  XCTAssertNotNil(clientAfter);
+
+  XCTAssertTrue(clientBefore == clientAfter);
+}
+
 - (void)testCreateTouchRateCorrectionVSyncClientWillNotCreateVsyncClientWhenRefreshRateIs60HZ {
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 60;
