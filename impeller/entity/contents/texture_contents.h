@@ -28,6 +28,8 @@ class TextureContents final : public Contents {
   ///         when image filters are applied.
   static std::shared_ptr<TextureContents> MakeRect(Rect destination);
 
+  void SetLabel(std::string label);
+
   void SetPath(Path path);
 
   void SetTexture(std::shared_ptr<Texture> texture);
@@ -57,6 +59,8 @@ class TextureContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
+  std::string label_;
+
   Path path_;
   bool is_rect_ = false;
 

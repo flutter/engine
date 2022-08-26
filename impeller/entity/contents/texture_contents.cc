@@ -29,6 +29,10 @@ std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
   return contents;
 }
 
+void TextureContents::SetLabel(std::string label) {
+  label_ = label;
+}
+
 void TextureContents::SetPath(Path path) {
   path_ = std::move(path);
   is_rect_ = false;
@@ -141,7 +145,10 @@ bool TextureContents::Render(const ContentContext& renderer,
   frag_info.alpha = opacity_;
 
   Command cmd;
-  cmd.label = "TextureFill";
+  cmd.label = "Texture Fill";
+  if (!label_.empty()) {
+    cmd.label += ": " + label_;
+  }
   cmd.pipeline =
       renderer.GetTexturePipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
