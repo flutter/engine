@@ -81,7 +81,7 @@ class RootIsolateToken {
 
   /// The token for the root isolate that is executing this Dart code.  If this
   /// Dart code is not executing on a root isolate [instance] will be null.
-  late final RootIsolateToken? instance = () {
+  static late final RootIsolateToken? instance = () {
     final int rootIsolateId = __getRootIsolateId();
     return rootIsolateId == 0 ? null : RootIsolateToken._(rootIsolateId);
   }();

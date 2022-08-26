@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:isolate' show ReceivePort, SendPort;
+import 'dart:isolate';
 import 'dart:ffi';
 
 void main() {}
@@ -902,7 +902,23 @@ void hooksTests() {
     expectEquals(result, true);
   });
 
+  test('root isolate token', () async {
+    if (RootIsolateToken.instance == null) {
+      throw Exception('We should have a token on a root isolate.');
+    }
+    ReceivePort receivePort = ReceivePort();
+    Isolate.spawn(_backgroundRootIsolateTestMain, receivePort.sendPort);
+    bool didPass = await receivePort.first as bool;
+    if (!didPass) {
+      throw Exception('Background isolate found a root isolate id.');
+    }
+  });
+
   _finish();
+}
+
+void _backgroundRootIsolateTestMain(SendPort port) {
+  port.send(RootIsolateToken.instance == null);
 }
 
 typedef _Callback<T> = void Function(T result);
