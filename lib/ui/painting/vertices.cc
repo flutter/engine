@@ -80,8 +80,4 @@ bool Vertices::init(Dart_Handle vertices_handle,
   return true;
 }
 
-size_t Vertices::GetAllocationSize() const {
-  return vertices_->size();
-}
-
 }  // namespace flutter
