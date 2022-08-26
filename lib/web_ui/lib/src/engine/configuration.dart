@@ -68,8 +68,8 @@ class FlutterConfiguration {
   static const bool flutterWebAutoDetect =
       bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
   
-  static const bool flutterUseSkwasm =
-      bool.fromEnvironment('FLUTTER_USE_SKWASM');
+  static const bool flutterWebUseSkwasm =
+      bool.fromEnvironment('FLUTTER_WEB_USE_SKWASM');
 
   /// Enable the Skia-based rendering backend.
   ///

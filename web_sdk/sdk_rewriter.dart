@@ -99,7 +99,7 @@ void main(List<String> arguments) {
     if (libraryName == null) {
       throw Exception('library-name must be specified if not rewriting ui');
     }
-    preprocessor = (String source) => _preprocessPartFile(source, libraryName!);
+    preprocessor = (String source) => preprocessPartFile(source, libraryName!);
     replacementPatterns = generatePartsPatterns(libraryName);
   }
   for (final String inputFilePath in results['source-file'] as Iterable<String>) {
@@ -130,7 +130,7 @@ void main(List<String> arguments) {
     processFile(
       inputFilePath, 
       outputFilePath, 
-      (String source) => _validateApiFile(inputFilePath, source, libraryName!), 
+      (String source) => validateApiFile(inputFilePath, source, libraryName!), 
       replacementPatterns
     );
   }
@@ -145,7 +145,13 @@ void processFile(String inputFilePath, String outputFilePath, String Function(St
   final File inputFile = File(inputFilePath);
   final File outputFile = File(outputFilePath)
     ..createSync(recursive: true);
-  String source = inputFile.readAsStringSync();
+  outputFile.writeAsStringSync(processSource(
+    inputFile.readAsStringSync(), 
+    preprocessor, 
+    replacementPatterns));
+}
+
+String processSource(String source, String Function(String source)? preprocessor, List<Replacer> replacementPatterns) {
   if (preprocessor != null) {
     source = preprocessor(source);
   }
@@ -155,8 +161,7 @@ void processFile(String inputFilePath, String outputFilePath, String Function(St
   for (final Replacer replacer in replacementPatterns) {
     source = replacer.perform(source);
   }
-
-  outputFile.writeAsStringSync(source);
+  return source;
 }
 
 // Enforces a particular structure in top level api files for sublibraries.
@@ -164,7 +169,7 @@ void processFile(String inputFilePath, String outputFilePath, String Function(St
 // Code in api files must only be made of the library directive, exports,
 // and code comments. Imports are disallowed. Instead, the required imports are
 // added by this script during the rewrite.
-String _validateApiFile(String apiFilePath, String apiFileCode, String libraryName) {
+String validateApiFile(String apiFilePath, String apiFileCode, String libraryName) {
   final List<String> expectedLines = <String>[
     'library $libraryName;',
   ];
@@ -203,7 +208,7 @@ String _validateApiFile(String apiFilePath, String apiFileCode, String libraryNa
   return apiFileCode;
 }
 
-String _preprocessPartFile(String source, String libraryName) {
+String preprocessPartFile(String source, String libraryName) {
   if (source.startsWith('part of $libraryName;') || source.contains('\npart of $libraryName;')) {
     // The file hasn't been migrated yet.
     // Do nothing.

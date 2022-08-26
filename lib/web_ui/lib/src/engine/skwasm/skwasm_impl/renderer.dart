@@ -9,183 +9,156 @@ import '../../fonts.dart';
 import '../../html_image_codec.dart';
 import '../../renderer.dart';
 
+// TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
-    // TODO: implement combinePaths
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner}) {
-    // TODO: implement composeImageFilters
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Path copyPath(ui.Path src) {
-    // TODO: implement copyPath
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ImageFilter createBlurImageFilter({double sigmaX = 0.0, double sigmaY = 0.0, ui.TileMode tileMode = ui.TileMode.clamp}) {
-    // TODO: implement createBlurImageFilter
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Canvas createCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) {
-    // TODO: implement createCanvas
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Gradient createConicalGradient(ui.Offset focal, double focalRadius, ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix]) {
-    // TODO: implement createConicalGradient
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    // TODO: implement createDilateImageFilter
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    // TODO: implement createErodeImageFilter
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ImageShader createImageShader(ui.Image image, ui.TileMode tmx, ui.TileMode tmy, Float64List matrix4, ui.FilterQuality? filterQuality) {
-    // TODO: implement createImageShader
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Gradient createLinearGradient(ui.Offset from, ui.Offset to, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    // TODO: implement createLinearGradient
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ImageFilter createMatrixImageFilter(Float64List matrix4, {ui.FilterQuality filterQuality = ui.FilterQuality.low}) {
-    // TODO: implement createMatrixImageFilter
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Paint createPaint() {
-    // TODO: implement createPaint
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) {
-    // TODO: implement createParagraphBuilder
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.ParagraphStyle createParagraphStyle({ui.TextAlign? textAlign, ui.TextDirection? textDirection, int? maxLines, String? fontFamily, double? fontSize, double? height, ui.TextHeightBehavior? textHeightBehavior, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.StrutStyle? strutStyle, String? ellipsis, ui.Locale? locale}) {
-    // TODO: implement createParagraphStyle
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Path createPath() {
-    // TODO: implement createPath
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.PictureRecorder createPictureRecorder() {
-    // TODO: implement createPictureRecorder
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Gradient createRadialGradient(ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    // TODO: implement createRadialGradient
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.SceneBuilder createSceneBuilder() {
-    // TODO: implement createSceneBuilder
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.StrutStyle createStrutStyle({String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? height, ui.TextLeadingDistribution? leadingDistribution, double? leading, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, bool? forceStrutHeight}) {
-    // TODO: implement createStrutStyle
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Gradient createSweepGradient(ui.Offset center, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, double startAngle = 0.0, double endAngle = math.pi * 2, Float32List? matrix4]) {
-    // TODO: implement createSweepGradient
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.TextStyle createTextStyle({ui.Color? color, ui.TextDecoration? decoration, ui.Color? decorationColor, ui.TextDecorationStyle? decorationStyle, double? decorationThickness, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.TextBaseline? textBaseline, String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? letterSpacing, double? wordSpacing, double? height, ui.TextLeadingDistribution? leadingDistribution, ui.Locale? locale, ui.Paint? background, ui.Paint? foreground, List<ui.Shadow>? shadows, List<ui.FontFeature>? fontFeatures, List<ui.FontVariation>? fontVariations}) {
-    // TODO: implement createTextStyle
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Vertices createVertices(ui.VertexMode mode, List<ui.Offset> positions, {List<ui.Offset>? textureCoordinates, List<ui.Color>? colors, List<int>? indices}) {
-    // TODO: implement createVertices
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   ui.Vertices createVerticesRaw(ui.VertexMode mode, Float32List positions, {Float32List? textureCoordinates, Int32List? colors, Uint16List? indices}) {
-    // TODO: implement createVerticesRaw
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   void decodeImageFromPixels(Uint8List pixels, int width, int height, ui.PixelFormat format, ui.ImageDecoderCallback callback, {int? rowBytes, int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
-    // TODO: implement decodeImageFromPixels
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
-  // TODO: implement fontCollection
-  FontCollection get fontCollection => throw UnimplementedError();
+  FontCollection get fontCollection => throw UnimplementedError('Not yet implemented');
 
   @override
   FutureOr<void> initialize() {
-    // TODO: implement initialize
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   Future<ui.Codec> instantiateImageCodec(Uint8List list, {int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
-    // TODO: implement instantiateImageCodec
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {WebOnlyImageCodecChunkCallback? chunkCallback}) {
-    // TODO: implement instantiateImageCodecFromUrl
-    throw UnimplementedError();
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
   void renderScene(ui.Scene scene) {
-    // TODO: implement renderScene
+    throw UnimplementedError('Not yet implemented');
   }
 
   @override
-  // TODO: implement rendererTag
-  String get rendererTag => throw UnimplementedError();
+  String get rendererTag => throw UnimplementedError('Not yet implemented');
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    // TODO: implement reset
+    throw UnimplementedError('Not yet implemented');
   }
 }
