@@ -172,11 +172,12 @@ void DlDeferredImageGPU::ImageWrapper::SnapshotDisplayList(
           return;
         }
         if (layer_tree) {
-          auto display_list =
-              layer_tree->Flatten(SkRect::MakeWH(wrapper->image_info_.width(),
-                                                 wrapper->image_info_.height()),
-                                  snapshot_delegate->GetTextureRegistry(),
-                                  snapshot_delegate->GetGrContext());
+          auto* raster_cache = &snapshot_delegate->GetRasterCache();
+          auto display_list = layer_tree->Flatten(
+              SkRect::MakeWH(wrapper->image_info_.width(),
+                             wrapper->image_info_.height()),
+              snapshot_delegate->GetTextureRegistry(),
+              snapshot_delegate->GetGrContext(), raster_cache);
           wrapper->display_list_ = std::move(display_list);
         }
         auto result = snapshot_delegate->MakeGpuImage(wrapper->display_list_,

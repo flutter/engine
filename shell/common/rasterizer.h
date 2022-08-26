@@ -216,6 +216,9 @@ class Rasterizer final : public SnapshotDelegate,
   // |SnapshotDelegate|
   GrDirectContext* GetGrContext() override;
 
+  // |SnapshotDelegate|
+  RasterCache& GetRasterCache() override;
+
   std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
   using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;

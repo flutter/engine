@@ -173,10 +173,12 @@ Dart_Handle Picture::RasterizeToImage(
        ui_task, layer_tree = std::move(layer_tree)] {
         sk_sp<SkImage> raster_image;
         if (layer_tree) {
+          auto* raster_cache = &snapshot_delegate->GetRasterCache();
           auto display_list = layer_tree->Flatten(
               SkRect::MakeWH(picture_bounds.width(), picture_bounds.height()),
               snapshot_delegate->GetTextureRegistry(),
-              snapshot_delegate->GetGrContext());
+              snapshot_delegate->GetGrContext(),
+              raster_cache);
 
           raster_image = snapshot_delegate->MakeRasterSnapshot(
               [display_list](SkCanvas* canvas) {

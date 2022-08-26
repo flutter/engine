@@ -149,6 +149,10 @@ GrDirectContext* Rasterizer::GetGrContext() {
   return surface_ ? surface_->GetContext() : nullptr;
 }
 
+RasterCache& Rasterizer::GetRasterCache() {
+  return compositor_context_->raster_cache();
+}
+
 flutter::LayerTree* Rasterizer::GetLastLayerTree() {
   return last_layer_tree_.get();
 }

@@ -45,7 +45,8 @@ class LayerTree {
   sk_sp<DisplayList> Flatten(
       const SkRect& bounds,
       std::shared_ptr<TextureRegistry> texture_registry = nullptr,
-      GrDirectContext* gr_context = nullptr);
+      GrDirectContext* gr_context = nullptr,
+      RasterCache* cache = nullptr);
 
   Layer* root_layer() const { return root_layer_.get(); }
 

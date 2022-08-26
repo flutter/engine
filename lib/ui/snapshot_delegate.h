@@ -9,6 +9,7 @@
 
 #include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/display_list.h"
+#include "flutter/flow/raster_cache.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPromiseImageTexture.h"
@@ -54,6 +55,8 @@ class SnapshotDelegate {
   virtual std::shared_ptr<TextureRegistry> GetTextureRegistry() = 0;
 
   virtual GrDirectContext* GetGrContext() = 0;
+
+  virtual RasterCache& GetRasterCache() = 0;
 
   virtual std::unique_ptr<GpuImageResult> MakeGpuImage(
       sk_sp<DisplayList> display_list,
