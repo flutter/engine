@@ -586,7 +586,7 @@ class PlatformDispatcher {
   void registerBackgroundIsolate(RootIsolateToken token) {
     if (!Platform.isIOS) {
       // Issue: https://github.com/flutter/flutter/issues/13937
-      throw UnimplementedError('Platform doesn\'t yet support platform channels on background isolates.');
+      throw UnimplementedError("Platform doesn't yet support platform channels on background isolates.");
     }
     __registerBackgroundIsolate(token._rootIsolateId);
   }
