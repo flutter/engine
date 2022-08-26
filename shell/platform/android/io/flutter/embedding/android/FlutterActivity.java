@@ -496,17 +496,29 @@ public class FlutterActivity extends ComponentActivity
 
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.T) {
-      getOnBackInvokedDispatcher()
-          .registerOnBackInvokedCallback(
-              OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
-    }
+    registerOnBackInvokedCallback();
 
     configureWindowForTransparency();
 
     setContentView(createFlutterView());
 
     configureStatusBarForFullscreenFlutterExperience();
+  }
+
+  @VisibleForTesting
+  public void registerOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getOnBackInvokedDispatcher()
+          .registerOnBackInvokedCallback(
+              OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
+    }
+  }
+
+  @VisibleForTesting
+  public void unregisterOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
+    }
   }
 
   private final OnBackInvokedCallback onBackInvokedCallback =
@@ -671,9 +683,6 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onStop() {
     super.onStop();
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.T) {
-      getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
-    }
     if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
     }
@@ -699,6 +708,7 @@ public class FlutterActivity extends ComponentActivity
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
   private void release() {
+    unregisterOnBackInvokedCallback();
     if (delegate != null) {
       delegate.release();
       delegate = null;
