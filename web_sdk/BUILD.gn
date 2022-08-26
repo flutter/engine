@@ -41,13 +41,12 @@ template("sdk_rewriter") {
   assert(defined(invoker.input_dir), "Must define 'input_dir'")
   assert(defined(invoker.output_dir), "Must define 'output_dir'")
 
-  source_dart_files = 
-    exec_script("//third_party/dart/tools/list_dart_files.py",
-                [
-                  "absolute",
-                  rebase_path(invoker.input_dir),
-                ],
-                "list lines")
+  source_dart_files = exec_script("//third_party/dart/tools/list_dart_files.py",
+                                  [
+                                    "absolute",
+                                    rebase_path(invoker.input_dir),
+                                  ],
+                                  "list lines")
 
   if (defined(invoker.exclude_patterns)) {
     filter_exclude(source_dart_files, invoker.exclude_patterns)
@@ -80,9 +79,9 @@ template("sdk_rewriter") {
     } else {
       library_name = invoker.library_name
       api_file = rebase_path(invoker.api_file)
-      args += [ 
+      args += [
         "--library-name=$library_name",
-        "--api-file=$api_file"
+        "--api-file=$api_file",
       ]
     }
 
@@ -109,7 +108,8 @@ sdk_rewriter("web_engine_library") {
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_engine/"
 
   # exclude skwasm, it will be a separate internal library
-  exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/engine/skwasm/*") ]
+  exclude_patterns =
+      [ rebase_path("//flutter/lib/web_ui/lib/src/engine/skwasm/*") ]
 }
 
 sdk_rewriter("skwasm_stub_library") {
@@ -146,11 +146,11 @@ template("_dartdevc") {
     action(target_name) {
       not_needed(invoker, [ "packages" ])
       deps = [
+        ":skwasm_impl_library",
+        ":skwasm_stub_library",
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        ":skwasm_stub_library",
-        ":skwasm_impl_library",
         "//flutter:dart_sdk",
       ]
       script = "//build/gn_run_binary.py"
@@ -177,11 +177,11 @@ template("_dartdevc") {
       forward_variables_from(invoker, "*")
 
       deps = [
+        ":skwasm_impl_library",
+        ":skwasm_stub_library",
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        ":skwasm_stub_library",
-        ":skwasm_impl_library",
         "//flutter:dart_sdk",
         "//third_party/dart/pkg:pkg_files_stamp",
         "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
@@ -208,11 +208,11 @@ template("_kernel_worker") {
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {
       deps = [
+        ":skwasm_impl_library",
+        ":skwasm_stub_library",
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        ":skwasm_stub_library",
-        ":skwasm_impl_library",
         "//flutter:dart_sdk",
       ]
       script = "//build/gn_run_binary.py"
@@ -240,11 +240,11 @@ template("_kernel_worker") {
       forward_variables_from(invoker, "*")
 
       deps = [
+        ":skwasm_impl_library",
+        ":skwasm_stub_library",
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        ":skwasm_stub_library",
-        ":skwasm_impl_library",
         "//flutter:dart_sdk",
         "//third_party/dart/pkg:pkg_files_stamp",
         "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
@@ -620,11 +620,11 @@ if (!is_fuchsia) {
       ":flutter_dartdevc_kernel_sdk_outline",
       ":flutter_dartdevc_kernel_sdk_outline_sound",
       ":flutter_dartdevc_kernel_sdk_sound",
+      ":skwasm_impl_library",
+      ":skwasm_stub_library",
       ":web_engine_library",
       ":web_ui_library",
       ":web_ui_library_sources",
-      ":skwasm_stub_library",
-      ":skwasm_impl_library",
     ]
     sources = get_target_outputs(":flutter_dartdevc_canvaskit_html_kernel_sdk")
     sources +=

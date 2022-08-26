@@ -128,9 +128,9 @@ void main(List<String> arguments) {
     replacementPatterns = generateApiFilePatterns(libraryName, extraImports);
 
     processFile(
-      inputFilePath, 
-      outputFilePath, 
-      (String source) => validateApiFile(inputFilePath, source, libraryName!), 
+      inputFilePath,
+      outputFilePath,
+      (String source) => validateApiFile(inputFilePath, source, libraryName!),
       replacementPatterns
     );
   }
@@ -146,8 +146,8 @@ void processFile(String inputFilePath, String outputFilePath, String Function(St
   final File outputFile = File(outputFilePath)
     ..createSync(recursive: true);
   outputFile.writeAsStringSync(processSource(
-    inputFile.readAsStringSync(), 
-    preprocessor, 
+    inputFile.readAsStringSync(),
+    preprocessor,
     replacementPatterns));
 }
 

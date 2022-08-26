@@ -49,8 +49,8 @@ part 'engine/file3.dart';
     final String result = processSource(
       source,
       (String source) => validateApiFile(
-        '/path/to/lib/web_ui/lib/src/engine.dart', 
-        source, 
+        '/path/to/lib/web_ui/lib/src/engine.dart',
+        source,
         'engine'),
       generateApiFilePatterns('engine', "import 'dart:extra';\n"),
     );
@@ -71,8 +71,8 @@ export 'engine/file3.dart';
       processSource(
         source,
         (String source) => validateApiFile(
-          '/path/to/lib/web_ui/lib/src/engine.dart', 
-          source, 
+          '/path/to/lib/web_ui/lib/src/engine.dart',
+          source,
           'engine'),
         generateApiFilePatterns('engine', ''),
       );

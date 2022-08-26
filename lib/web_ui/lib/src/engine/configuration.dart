@@ -67,7 +67,7 @@ class FlutterConfiguration {
   /// would set the value to true. Otherwise, it would be false.
   static const bool flutterWebAutoDetect =
       bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
-  
+
   static const bool flutterWebUseSkwasm =
       bool.fromEnvironment('FLUTTER_WEB_USE_SKWASM');
 
