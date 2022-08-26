@@ -11,23 +11,17 @@
 
 namespace impeller {
 
-class DirectionalGaussianBlurFilterContents final : public FilterContents {
+class DirectionalMorphologyFilterContents final : public FilterContents {
  public:
-  DirectionalGaussianBlurFilterContents();
+  DirectionalMorphologyFilterContents();
 
-  ~DirectionalGaussianBlurFilterContents() override;
+  ~DirectionalMorphologyFilterContents() override;
 
-  void SetSigma(Sigma sigma);
-
-  void SetSecondarySigma(Sigma sigma);
+  void SetRadius(Radius radius);
 
   void SetDirection(Vector2 direction);
 
-  void SetBlurStyle(BlurStyle blur_style);
-
-  void SetTileMode(Entity::TileMode tile_mode);
-
-  void SetSourceOverride(FilterInput::Ref alpha_mask);
+  void SetMorphType(MorphType morph_type);
 
   // |FilterContents|
   std::optional<Rect> GetFilterCoverage(
@@ -43,17 +37,12 @@ class DirectionalGaussianBlurFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform,
       const Rect& coverage) const override;
-  Sigma blur_sigma_;
-  Sigma secondary_blur_sigma_;
-  Vector2 blur_direction_;
-  BlurStyle blur_style_ = BlurStyle::kNormal;
-  Entity::TileMode tile_mode_ = Entity::TileMode::kDecal;
-  bool src_color_factor_ = false;
-  bool inner_blur_factor_ = true;
-  bool outer_blur_factor_ = true;
-  FilterInput::Ref source_override_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DirectionalGaussianBlurFilterContents);
+  Radius radius_;
+  Vector2 direction_;
+  MorphType morph_type_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DirectionalMorphologyFilterContents);
 };
 
 }  // namespace impeller
