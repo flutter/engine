@@ -49,7 +49,9 @@ template("sdk_rewriter") {
                                   "list lines")
 
   if (defined(invoker.exclude_patterns)) {
-    filter_exclude(source_dart_files, invoker.exclude_patterns)
+    filtered_files = filter_exclude(source_dart_files, invoker.exclude_patterns)
+    source_dart_files = []
+    source_dart_files = filtered_files
   }
 
   prebuilt_dart_action(target_name) {
@@ -98,7 +100,7 @@ sdk_rewriter("web_ui_library_sources") {
   output_dir = "$root_out_dir/flutter_web_sdk/lib/ui/"
 
   # exclude everything in the engine directory, it will be a separate internal library
-  exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/engine/*") ]
+  exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/*") ]
 }
 
 sdk_rewriter("web_engine_library") {
