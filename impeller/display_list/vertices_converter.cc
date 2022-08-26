@@ -95,7 +95,7 @@ static std::vector<uint16_t> fromIndices(const flutter::DlVertices* vertices) {
   return indices;
 }
 
-Vertices VerticesConverter::ToVertices(const flutter::DlVertices* vertices) {
+Vertices ToVertices(const flutter::DlVertices* vertices) {
   std::vector<uint16_t> indices = fromIndices(vertices);
   std::vector<Point> points = fromPoints(vertices);
   std::vector<Color> colors = fromColors(vertices);

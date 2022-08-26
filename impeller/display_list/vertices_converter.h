@@ -10,13 +10,7 @@
 
 namespace impeller {
 
-class VerticesConverter {
- public:
-  VerticesConverter() = default;
-
-  ~VerticesConverter() = default;
-
-  Vertices ToVertices(const flutter::DlVertices* vertices);
-};
+/// Convert DlVertices into impeller Vertices.
+Vertices ToVertices(const flutter::DlVertices* vertices);
 
 }  // namespace impeller
