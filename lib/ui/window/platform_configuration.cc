@@ -286,18 +286,18 @@ void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {
 }
 
 namespace {
-void HandlePlatformMessage(
+Dart_Handle HandlePlatformMessage(
     UIDartState* dart_state,
     const std::string& name,
     Dart_Handle data_handle,
     const fml::RefPtr<PlatformMessageResponse>& response) {
   if (Dart_IsNull(data_handle)) {
-    dart_state->HandlePlatformMessage(
+    return dart_state->HandlePlatformMessage(
         std::make_unique<PlatformMessage>(name, response));
   } else {
     tonic::DartByteData data(data_handle);
     const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
-    dart_state->HandlePlatformMessage(std::make_unique<PlatformMessage>(
+    return dart_state->HandlePlatformMessage(std::make_unique<PlatformMessage>(
         name, fml::MallocMapping::Copy(buffer, data.length_in_bytes()),
         response));
   }
@@ -320,9 +320,8 @@ Dart_Handle PlatformConfigurationNativeApi::SendPlatformMessage(
         tonic::DartPersistentValue(dart_state, callback),
         dart_state->GetTaskRunners().GetUITaskRunner(), name);
   }
-  HandlePlatformMessage(dart_state, name, data_handle, response);
 
-  return Dart_Null();
+  return HandlePlatformMessage(dart_state, name, data_handle, response);
 }
 
 Dart_Handle PlatformConfigurationNativeApi::SendPortPlatformMessage(

@@ -221,7 +221,7 @@ bool UIDartState::enable_skparagraph() const {
   return enable_skparagraph_;
 }
 
-void UIDartState::HandlePlatformMessage(
+Dart_Handle UIDartState::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   if (platform_configuration_) {
     platform_configuration_->client()->HandlePlatformMessage(
@@ -232,10 +232,12 @@ void UIDartState::HandlePlatformMessage(
     if (handler) {
       handler->HandlePlatformMessage(std::move(message));
     } else {
-      FML_DLOG(WARNING) << "Dropping background isolate platform message on "
-                        << message->channel();
+      return tonic::ToDart(
+          "No platform channel handler registered for background isolate.");
     }
   }
+
+  return Dart_Null();
 }
 
 int64_t UIDartState::GetRootIsolateId() const {

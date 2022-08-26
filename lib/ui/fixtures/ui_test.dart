@@ -914,11 +914,36 @@ void hooksTests() {
     }
   });
 
+  test('send port message without registering', () async {
+    ReceivePort receivePort = ReceivePort();
+    Isolate.spawn(_backgroundIsolateSendWithoutRegistering, receivePort.sendPort);
+    bool didError = await receivePort.first as bool;
+    if (!didError) {
+      throw Exception('Expected an error when not registering a root isolate and sending port messages.');
+    }
+  });
+
   _finish();
 }
 
 void _backgroundRootIsolateTestMain(SendPort port) {
   port.send(RootIsolateToken.instance == null);
+}
+
+void _backgroundIsolateSendWithoutRegistering(SendPort port) {
+  bool didError = false;
+  ReceivePort messagePort = ReceivePort();
+  try {
+    PlatformDispatcher.instance.sendPortPlatformMessage(
+      'foo',
+      null,
+      1,
+      messagePort.sendPort,
+    );
+  } catch (_) {
+    didError = true;
+  }
+  port.send(didError);
 }
 
 typedef _Callback<T> = void Function(T result);

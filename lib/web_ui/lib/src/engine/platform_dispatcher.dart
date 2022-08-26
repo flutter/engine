@@ -354,7 +354,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  void registerBackgroundIsolate(RootIsolateToken token) {
+  void registerBackgroundIsolate(ui.RootIsolateToken token) {
     throw Exception("Isolates aren't supported in web.");
   }
 

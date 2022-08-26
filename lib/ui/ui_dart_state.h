@@ -110,7 +110,7 @@ class UIDartState : public tonic::DartState {
 
   void SetPlatformMessageHandler(std::weak_ptr<PlatformMessageHandler> handler);
 
-  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
+  Dart_Handle HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   const TaskRunners& GetTaskRunners() const;
 
