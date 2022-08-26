@@ -56,7 +56,7 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 13a233 # xcode 13.0
+      xcode: 13f17a # xcode 13.4
   windows:
     properties:
       build_host: "false"
@@ -448,6 +448,7 @@ targets:
       build_ios: "true"
       ios_release: "true"
       jazzy_version: "0.14.1"
+      xcode: 13a233 # Xcode 13.0 for bitcode support
     timeout: 90
 
   - name: Linux ci_yaml engine roller
