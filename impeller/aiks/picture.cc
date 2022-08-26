@@ -15,13 +15,27 @@
 namespace impeller {
 
 std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
-  auto coverage = pass->GetElementsCoverage(std::nullopt);
+  auto coverage = pass_->GetElementsCoverage(std::nullopt);
   if (!coverage.has_value() || coverage->IsEmpty()) {
     return std::nullopt;
   }
+  return DoSnapshot(context, coverage.value());
+}
 
-  const auto translate = Matrix::MakeTranslation(-coverage->origin);
-  pass->IterateAllEntities([&translate](auto& entity) -> bool {
+std::shared_ptr<Image> Picture::ToImage(AiksContext& context, ISize size) {
+  if (size.IsEmpty()) {
+    return nullptr;
+  }
+  auto snapshot = DoSnapshot(context, Rect::MakeSize(size));
+  return snapshot.has_value() ? std::make_shared<Image>(snapshot->texture)
+                              : nullptr;
+}
+
+std::optional<Snapshot> Picture::DoSnapshot(AiksContext& context, Rect rect) {
+  FML_DCHECK(!rect.IsEmpty());
+
+  const auto translate = Matrix::MakeTranslation(-rect.origin);
+  pass_->IterateAllEntities([&translate](auto& entity) -> bool {
     entity.SetTransformation(translate * entity.GetTransformation());
     return true;
   });
@@ -29,8 +43,7 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
   auto target = RenderTarget::CreateOffscreen(
-      *context.GetContext(),
-      ISize(coverage->size.width, coverage->size.height));
+      *context.GetContext(), ISize(rect.size.width, rect.size.height));
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";
     return std::nullopt;
@@ -49,7 +62,7 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
 
   return impeller::Snapshot{
       .texture = std::move(texture),
-      .transform = translate.MakeTranslation(coverage->origin)};
-};
+      .transform = translate.MakeTranslation(rect.origin)};
+}
 
 }  // namespace impeller

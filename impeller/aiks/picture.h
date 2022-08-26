@@ -15,10 +15,28 @@
 
 namespace impeller {
 
-struct Picture {
-  std::unique_ptr<EntityPass> pass;
+class Picture {
+ public:
+  Picture() = default;
+
+  ~Picture() = default;
+
+  Picture(Picture& p) : pass_(std::move(p.pass_)) {}
+
+  Picture(Picture&& p) : pass_(std::move(p.pass_)) {}
 
   std::optional<Snapshot> Snapshot(AiksContext& context);
+
+  std::shared_ptr<Image> ToImage(AiksContext& context, ISize size);
+
+  void SetPass(std::unique_ptr<EntityPass> pass) { pass_ = std::move(pass); }
+
+  const std::unique_ptr<EntityPass>& GetPass() const { return pass_; }
+
+ private:
+  std::optional<impeller::Snapshot> DoSnapshot(AiksContext& context, Rect rect);
+
+  std::unique_ptr<EntityPass> pass_;
 };
 
 }  // namespace impeller

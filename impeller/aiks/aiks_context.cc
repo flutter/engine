@@ -37,8 +37,8 @@ bool AiksContext::Render(const Picture& picture, RenderTarget& render_target) {
     return false;
   }
 
-  if (picture.pass) {
-    return picture.pass->Render(*content_context_, render_target);
+  if (picture.GetPass()) {
+    return picture.GetPass()->Render(*content_context_, render_target);
   }
 
   return true;
