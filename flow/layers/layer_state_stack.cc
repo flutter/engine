@@ -19,7 +19,7 @@ void LayerStateStack::setCanvasDelegate(SkCanvas* canvas) {
     canvas_restore_count_ = canvas->getSaveCount();
     canvas_ = canvas;
     for (auto& state : state_stack_) {
-      state->apply(&outstanding_, canvas, nullptr);
+      state->reapply(&outstanding_, canvas, nullptr);
     }
   }
 }
@@ -33,7 +33,7 @@ void LayerStateStack::setBuilderDelegate(DisplayListBuilder* builder) {
     builder_restore_count_ = builder->getSaveCount();
     builder_ = builder;
     for (auto& state : state_stack_) {
-      state->apply(&outstanding_, nullptr, builder);
+      state->reapply(&outstanding_, nullptr, builder);
     }
   }
 }
