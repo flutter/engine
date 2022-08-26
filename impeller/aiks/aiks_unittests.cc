@@ -481,7 +481,7 @@ TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanSnapshotWithSpecifiedSize) {
+TEST_P(AiksTest, CanPictureConvertToImage) {
   bool first_frame = true;
   auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     if (first_frame) {
