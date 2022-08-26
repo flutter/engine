@@ -37,8 +37,6 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
       return @"timeout";
     case MTLCommandBufferErrorPageFault:
       return @"page fault";
-    case MTLCommandBufferErrorAccessRevoked:
-      return @"access revoked / blacklisted";
     case MTLCommandBufferErrorNotPermitted:
       return @"not permitted";
     case MTLCommandBufferErrorOutOfMemory:
@@ -47,8 +45,6 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
       return @"invalid resource";
     case MTLCommandBufferErrorMemoryless:
       return @"memory-less";
-    case MTLCommandBufferErrorStackOverflow:
-      return @"stack overflow";
     default:
       break;
   }
