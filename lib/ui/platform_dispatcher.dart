@@ -81,7 +81,7 @@ class RootIsolateToken {
 
   /// The token for the root isolate that is executing this Dart code.  If this
   /// Dart code is not executing on a root isolate [instance] will be null.
-  static late final RootIsolateToken? instance = () {
+  static final RootIsolateToken? instance = () {
     final int rootIsolateId = __getRootIsolateId();
     return rootIsolateId == 0 ? null : RootIsolateToken._(rootIsolateId);
   }();
@@ -583,7 +583,13 @@ class PlatformDispatcher {
   /// Registers the current isolate with the isolate identified with by the
   /// [token]. This is required if platform channels are to be used on a
   /// background isolate.
-  void registerBackgroundIsolate(RootIsolateToken token) => __registerBackgroundIsolate(token._rootIsolateId);
+  void registerBackgroundIsolate(RootIsolateToken token) {
+    if (!Platform.isIOS) {
+      // Issue: https://github.com/flutter/flutter/issues/13937
+      throw UnimplementedError('Platform doesn\'t yet support platform channels on background isolates.');
+    }
+    __registerBackgroundIsolate(token._rootIsolateId);
+  }
   @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);
 
