@@ -16,6 +16,14 @@ typedef PlatformMessageCallback = void Function(
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
+// ignore: avoid_classes_with_only_static_members
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  static RootIsolateToken? get instance {
+    throw UnsupportedError('Root isolate not identifiable on web.');
+  }
+}
+
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
 
@@ -55,9 +63,7 @@ abstract class PlatformDispatcher {
     int identifier,
     Object port);
 
-  int registerRootIsolate();
-
-  void registerBackgroundIsolate(int rootIsolateId);
+  void registerBackgroundIsolate(RootIsolateToken token);
 
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);

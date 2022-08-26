@@ -593,8 +593,7 @@ void Shell::RunEngine(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable(
           [run_configuration = std::move(run_configuration),
-           weak_engine = weak_engine_, result,
-           platform_message_handler = platform_message_handler_]() mutable {
+           weak_engine = weak_engine_, result]() mutable {
             if (!weak_engine) {
               FML_LOG(ERROR)
                   << "Could not launch engine with configuration - no engine.";

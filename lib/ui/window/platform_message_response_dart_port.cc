@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/window/platform_message_response_dart_port.h"
 
+#include <array>
 #include <utility>
 
 #include "flutter/common/task_runners.h"
@@ -51,13 +52,14 @@ void PlatformMessageResponseDartPort::Complete(
   response_data.value.as_external_typed_data.peer = copy;
   response_data.value.as_external_typed_data.callback = FreeFinalizer;
 
-  Dart_CObject* response_values[2] = {&response_identifier, &response_data};
+  std::array<Dart_CObject*, 2> response_values = {&response_identifier,
+                                                  &response_data};
 
   Dart_CObject response = {
       .type = Dart_CObject_kArray,
   };
-  response.value.as_array.length = 2;
-  response.value.as_array.values = response_values;
+  response.value.as_array.length = response_values.size();
+  response.value.as_array.values = response_values.data();
 
   bool did_send = Dart_PostCObject(send_port_, &response);
   FML_CHECK(did_send);

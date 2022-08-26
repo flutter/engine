@@ -231,6 +231,9 @@ void UIDartState::HandlePlatformMessage(
         platform_message_handler_.lock();
     if (handler) {
       handler->HandlePlatformMessage(std::move(message));
+    } else {
+      FML_DLOG(WARNING) << "Dropping background isolate platform message on "
+                        << message->channel();
     }
   }
 }
