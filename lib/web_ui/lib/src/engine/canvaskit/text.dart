@@ -812,7 +812,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     if (assertionsEnabled) {
       return _disposed;
     }
-    throw StateError('Paragraph.debugDisposed is only avialalbe when asserts are enabled.');
+    throw StateError('Paragraph.debugDisposed is only available when asserts are enabled.');
   }
 }
 
