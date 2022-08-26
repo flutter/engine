@@ -40,6 +40,9 @@ void PlatformMessageResponseDartPort::Complete(
   Dart_CObject response_data = {
       .type = Dart_CObject_kExternalTypedData,
   };
+  // TODO(https://github.com/dart-lang/sdk/issues/49827): Move to kTypedData
+  // when const values are accepted. Also consider using kExternalTypedData only
+  // when the payload is >= 1KB.
   uint8_t* copy = static_cast<uint8_t*>(malloc(data->GetSize()));
   memcpy(copy, data->GetMapping(), data->GetSize());
   response_data.value.as_external_typed_data.type = Dart_TypedData_kUint8;
