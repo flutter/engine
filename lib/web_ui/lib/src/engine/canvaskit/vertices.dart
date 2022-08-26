@@ -111,11 +111,14 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   }
 
   bool _disposed = false;
+
+  @override
   void dispose() {
     delete();
     _disposed = true;
   }
 
+  @override
   bool get debugDisposed {
     if (assertionsEnabled) {
       return _disposed;

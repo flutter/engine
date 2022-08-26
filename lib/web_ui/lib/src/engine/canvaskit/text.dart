@@ -799,12 +799,15 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   }
 
   bool _disposed = false;
+
+  @override
   void dispose() {
     delete();
     didDelete();
     _disposed = true;
   }
 
+  @override
   bool get debugDisposed {
     if (assertionsEnabled) {
       return _disposed;

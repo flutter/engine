@@ -257,12 +257,15 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   bool _disposed = false;
+
+  @override
   void dispose() {
     spans.clear();
     plainText = '';
     _disposed = true;
   }
 
+  @override
   bool get debugDisposed {
     if (assertionsEnabled) {
       return _disposed;
