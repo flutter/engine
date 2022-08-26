@@ -64,4 +64,13 @@ std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() const {
   return pass;
 }
 
+// |CommandBuffer|
+std::shared_ptr<ComputePass> CommandBufferGLES::OnCreateComputePass() const {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  // TODO(dnfield): implement compute for GLES.
+  return nullptr;
+}
+
 }  // namespace impeller

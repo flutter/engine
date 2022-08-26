@@ -51,7 +51,8 @@ class PipelineLibraryVK final
   bool IsValid() const override;
 
   // |PipelineLibrary|
-  PipelineFuture GetRenderPipeline(PipelineDescriptor descriptor) override;
+  PipelineFuture<PipelineDescriptor> GetPipeline(
+      PipelineDescriptor descriptor) override;
 
   std::unique_ptr<PipelineCreateInfoVK> CreatePipeline(
       const PipelineDescriptor& desc);
