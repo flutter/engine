@@ -506,14 +506,14 @@ public class FlutterActivity extends ComponentActivity
   }
 
   /**
-   * Registers the callback with OnBackInvokedDispatcher to capture back navigation
-   * gestures and pass them to the framework.
+   * Registers the callback with OnBackInvokedDispatcher to capture back navigation gestures and
+   * pass them to the framework.
    *
-   * This replaces the deprecated onBackPressed method override in order to support
-   * API 33's predictive back navigation feature.
+   * <p>This replaces the deprecated onBackPressed method override in order to support API 33's
+   * predictive back navigation feature.
    *
-   * The callback must be unregistered in order to prevent unpredictable behavior
-   * once outside the Flutter app.
+   * The callback must be unregistered in order to prevent unpredictable behavior once outside
+   * the Flutter app.
    */
   @VisibleForTesting
   public void registerOnBackInvokedCallback() {
@@ -527,7 +527,7 @@ public class FlutterActivity extends ComponentActivity
   /**
    * Unregisters the callback from OnBackInvokedDispatcher.
    *
-   * This should be called when the activity is no longer in use to prevent unpredictable
+   * <p>This should be called when the activity is no longer in use to prevent unpredictable
    * behavior such as being stuck and unable to press back.
    */
   @VisibleForTesting
