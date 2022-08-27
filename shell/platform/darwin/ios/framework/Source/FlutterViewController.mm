@@ -65,7 +65,12 @@ typedef struct MouseState {
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 
-/// VSyncClient for touch callback's rate correction.
+/// VSyncClient for touch events delivery frame rate correction.
+///
+/// On promotion devices(eg: iPhone13 Pro), the delivery frame rate of touch events is 60HZ
+/// but the frame rate of rendering is 120HZ, which is different and will leads junk and laggy.
+/// With this VSyncClient, we can correct the delivery frame rate of touch events to let it keep
+/// the same with frame rate of rendering.
 @property(nonatomic, retain) VSyncClient* touchRateCorrectionVSyncClient;
 
 /*
@@ -674,7 +679,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Register internal plugins.
   [self addInternalPlugins];
 
-  // Create a vsync client to correct touch rate if needed.
+  // Create a vsync client to correct delivery frame rate of touch events if needed.
   [self createTouchRateCorrectionVSyncClientIfNeeded];
 
   if (@available(iOS 13.4, *)) {
@@ -973,7 +978,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   }
 
-  // Activate or pause touch rate correction according to the touches when user is interacting.
+  // Activate or pause the correction of delivery frame rate of touch events.
   [self triggerTouchRateCorrectionIfNeeded:touches];
 
   const CGFloat scale = [UIScreen mainScreen].scale;
