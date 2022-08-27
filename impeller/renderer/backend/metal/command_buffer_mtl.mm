@@ -154,7 +154,8 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-          auto result = LogMTLCommandBufferErrorIfPresent(buffer);
+          [[maybe_unused]] auto result =
+              LogMTLCommandBufferErrorIfPresent(buffer);
           FML_DCHECK(result)
               << "Must not have errors during command buffer submission.";
           callback(ToCommitResult(buffer.status));
