@@ -1398,6 +1398,12 @@ class Paint {
     return _objects?[_kShaderIndex] as Shader?;
   }
   set shader(Shader? value) {
+    assert(() {
+      if (value is ImageShader) {
+        assert(!value.debugDisposed, 'Attempted to set a disposed shader to $this');
+      }
+      return true;
+    }());
     _ensureObjectsInitialized()[_kShaderIndex] = value;
   }
 
@@ -4031,6 +4037,7 @@ class ImageShader extends Shader {
     FilterQuality? filterQuality,
   }) :
     assert(image != null), // image is checked on the engine side
+    assert(!image.debugDisposed),
     assert(tmx != null),
     assert(tmy != null),
     assert(matrix4 != null),
@@ -4050,6 +4057,41 @@ class ImageShader extends Shader {
 
   @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>('ImageShader::initWithImage')
   external String? _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4);
+
+  bool _debugDisposed = false;
+
+  /// Whether [dispose] has been called.
+  ///
+  /// This must only be used when asserts are enabled. Otherwise, it will throw.
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _debugDisposed;
+      return true;
+    }());
+    return disposed;
+  }
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// The underlying memory allocated by this object will be retained beyond
+  /// this call if it is still needed by another object that has not been
+  /// disposed. For example, an [Picture] that has not been disposed that
+  /// refers to this [ImageShader] may keep its underlying resources alive.
+  void dispose() {
+    assert(() {
+      assert(!_debugDisposed);
+      _debugDisposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('ImageShader::dispose')
+  external void _dispose();
 }
 
 /// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
@@ -4375,6 +4417,36 @@ class Vertices extends NativeFieldWrapperClass1 {
                              Float32List? textureCoordinates,
                              Int32List? colors,
                              Uint16List? indices);
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Vertices::dispose')
+  external void _dispose();
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
+  }
 }
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -4967,6 +5039,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
   void drawImage(Image image, Offset offset, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_offsetIsValid(offset));
     assert(paint != null);
     final String? error = _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
@@ -4989,6 +5062,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// performance.
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_rectIsValid(src));
     assert(_rectIsValid(dst));
     assert(paint != null);
@@ -5039,6 +5113,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// positions.
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_rectIsValid(center));
     assert(_rectIsValid(dst));
     assert(paint != null);
@@ -5078,6 +5153,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [PictureRecorder].
   void drawPicture(Picture picture) {
     assert(picture != null); // picture is checked on the engine side
+    assert(!picture.debugDisposed);
     _drawPicture(picture);
   }
 
@@ -5106,6 +5182,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
   void drawParagraph(Paragraph paragraph, Offset offset) {
     assert(paragraph != null);
+    assert(!paragraph.debugDisposed);
     assert(_offsetIsValid(offset));
     assert(!paragraph._needsLayout);
     paragraph._paint(this, offset.dx, offset.dy);
@@ -5169,8 +5246,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     rather than unencoded lists.
   ///   * [paint], Image shaders can be used to draw images on a triangular mesh.
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-
     assert(vertices != null); // vertices is checked on the engine side
+    assert(!vertices.debugDisposed);
     assert(paint != null);
     assert(blendMode != null);
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
@@ -5318,6 +5395,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                  Rect? cullRect,
                  Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
+    assert(!atlas.debugDisposed);
     assert(transforms != null);
     assert(rects != null);
     assert(colors == null || colors.isEmpty || blendMode != null);
