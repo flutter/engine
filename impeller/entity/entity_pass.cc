@@ -403,16 +403,15 @@ bool EntityPass::OnRender(ContentContext& renderer,
     // If the pass context returns a texture, we need to draw it to the current
     // pass. We do this because it's faster and takes significantly less memory
     // than storing/loading large MSAA textures.
-    if (result.previous_pass_texture) {
+    if (result.backdrop_texture) {
       auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
       auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
+      msaa_backdrop_contents->SetStencilEnabled(false);
       msaa_backdrop_contents->SetLabel("MSAA backdrop");
       msaa_backdrop_contents->SetSourceRect(size_rect);
-      msaa_backdrop_contents->SetTexture(result.previous_pass_texture);
+      msaa_backdrop_contents->SetTexture(result.backdrop_texture);
 
       Entity msaa_backdrop_entity;
-      msaa_backdrop_entity.SetStencilDepth(element_entity.GetStencilDepth() -
-                                           stencil_depth_floor);
       msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
       if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
         return false;

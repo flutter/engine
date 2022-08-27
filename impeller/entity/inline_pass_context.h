@@ -14,7 +14,7 @@ class InlinePassContext {
  public:
   struct RenderPassResult {
     std::shared_ptr<RenderPass> pass;
-    std::shared_ptr<Texture> previous_pass_texture;
+    std::shared_ptr<Texture> backdrop_texture;
   };
 
   InlinePassContext(std::shared_ptr<Context> context,

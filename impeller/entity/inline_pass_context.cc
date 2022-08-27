@@ -97,32 +97,17 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
   RenderPassResult result;
 
   if (pass_count_ > 0 && color0.resolve_texture) {
-    result.previous_pass_texture = color0.resolve_texture;
-
-    /*
-        TextureDescriptor color0_resolve_tex_desc;
-        color0_resolve_tex_desc.format = PixelFormat::kDefaultColor;
-        color0_resolve_tex_desc.size = render_target_.GetRenderTargetSize();
-        color0_resolve_tex_desc.usage =
-            static_cast<uint64_t>(TextureUsage::kRenderTarget) |
-            static_cast<uint64_t>(TextureUsage::kShaderRead);
-
-        color0.resolve_texture =
-       context_->GetResourceAllocator()->CreateTexture(
-            StorageMode::kDevicePrivate, color0_resolve_tex_desc);
-        if (!color0.resolve_texture) {
-          VALIDATION_LOG << "Could not create color texture.";
-          return {};
-        }
-        color0.resolve_texture->SetLabel(
-            SPrintF("EntityPass Color Texture: Count=%d", pass_count_));
-            */
+    result.backdrop_texture = color0.resolve_texture;
   }
 
-  color0.load_action = LoadAction::kClear;
-  color0.store_action = color0.resolve_texture
-                            ? StoreAction::kMultisampleResolve
-                            : StoreAction::kStore;
+  if (color0.resolve_texture) {
+    color0.load_action =
+        pass_count_ > 0 ? LoadAction::kDontCare : LoadAction::kClear;
+    color0.store_action = StoreAction::kMultisampleResolve;
+  } else {
+    color0.load_action = LoadAction::kClear;
+    color0.store_action = StoreAction::kStore;
+  }
 
   // Only clear the stencil if this is the very first pass of the
   // layer.

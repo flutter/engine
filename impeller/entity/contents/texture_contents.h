@@ -46,6 +46,8 @@ class TextureContents final : public Contents {
 
   void SetOpacity(Scalar opacity);
 
+  void SetStencilEnabled(bool enabled);
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
@@ -63,6 +65,7 @@ class TextureContents final : public Contents {
 
   Path path_;
   bool is_rect_ = false;
+  bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};
