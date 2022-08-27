@@ -512,7 +512,7 @@ public class FlutterActivity extends ComponentActivity
    * <p>This replaces the deprecated onBackPressed method override in order to support API 33's
    * predictive back navigation feature.
    *
-   * The callback must be unregistered in order to prevent unpredictable behavior once outside
+   * <p>The callback must be unregistered in order to prevent unpredictable behavior once outside
    * the Flutter app.
    */
   @VisibleForTesting
