@@ -312,16 +312,19 @@ void DisplayListDispatcher::setColorSource(
       auto start_point = ToPoint(linear->start_point());
       auto end_point = ToPoint(linear->end_point());
       std::vector<Color> colors;
+      std::vector<float> stops;
       for (auto i = 0; i < linear->stop_count(); i++) {
         colors.emplace_back(ToColor(linear->colors()[i]));
+        stops.emplace_back(linear->stops()[i]);
       }
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
       paint_.color_source = [start_point, end_point, colors = std::move(colors),
-                             tile_mode, matrix]() {
+                             stops = std::move(stops), tile_mode, matrix]() {
         auto contents = std::make_shared<LinearGradientContents>();
         contents->SetEndPoints(start_point, end_point);
         contents->SetColors(std::move(colors));
+        contents->SetStops(std::move(stops));
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;

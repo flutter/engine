@@ -35,6 +35,10 @@ void LinearGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
+void LinearGradientContents::SetStops(std::vector<Scalar> stops) {
+  stops_ = std::move(stops);
+}
+
 const std::vector<Color>& LinearGradientContents::GetColors() const {
   return colors_;
 }
@@ -62,7 +66,6 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
       return false;
     }
   }
-
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
@@ -71,8 +74,29 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   FS::GradientInfo gradient_info;
   gradient_info.start_point = start_point_;
   gradient_info.end_point = end_point_;
-  gradient_info.start_color = colors_[0].Premultiply();
-  gradient_info.end_color = colors_[1].Premultiply();
+  gradient_info.last_index = colors_.size() - 1;
+  Color colors[8];
+  Scalar stops[8];
+  for (auto i = 0u; i < stops_.size(); i++) {
+    colors[i] = colors_[i].Premultiply();
+    stops[i] = stops_[i];
+  }
+  gradient_info.stops_0 = stops[0];
+  gradient_info.stops_1 = stops[1];
+  gradient_info.stops_2 = stops[2];
+  gradient_info.stops_3 = stops[3];
+  gradient_info.stops_4 = stops[4];
+  gradient_info.stops_5 = stops[5];
+  gradient_info.stops_6 = stops[6];
+  gradient_info.stops_7 = stops[7];
+  gradient_info.colors_0 = colors[0];
+  gradient_info.colors_1 = colors[1];
+  gradient_info.colors_2 = colors[2];
+  gradient_info.colors_3 = colors[3];
+  gradient_info.colors_4 = colors[4];
+  gradient_info.colors_5 = colors[5];
+  gradient_info.colors_6 = colors[6];
+  gradient_info.colors_7 = colors[7];
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
 
   Command cmd;

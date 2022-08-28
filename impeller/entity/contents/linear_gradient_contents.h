@@ -32,14 +32,19 @@ class LinearGradientContents final : public ColorSourceContents {
 
   void SetColors(std::vector<Color> colors);
 
+  void SetStops(std::vector<Scalar> stops);
+
   void SetTileMode(Entity::TileMode tile_mode);
 
   const std::vector<Color>& GetColors() const;
+
+  const std::vector<Scalar>& GetStops() const;
 
  private:
   Point start_point_;
   Point end_point_;
   std::vector<Color> colors_;
+  std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LinearGradientContents);
