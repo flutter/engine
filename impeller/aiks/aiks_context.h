@@ -13,7 +13,7 @@
 
 namespace impeller {
 
-class Picture;
+struct Picture;
 class RenderPass;
 
 class AiksContext {

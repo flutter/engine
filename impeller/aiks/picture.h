@@ -6,6 +6,7 @@
 
 #include <deque>
 #include <memory>
+#include <optional>
 
 #include "flutter/fml/macros.h"
 #include "impeller/aiks/aiks_context.h"
@@ -15,28 +16,19 @@
 
 namespace impeller {
 
-class Picture {
+struct Picture {
  public:
-  Picture() = default;
-
-  ~Picture() = default;
-
-  Picture(Picture& p) : pass_(std::move(p.pass_)) {}
-
-  Picture(Picture&& p) : pass_(std::move(p.pass_)) {}
+  std::unique_ptr<EntityPass> pass;
 
   std::optional<Snapshot> Snapshot(AiksContext& context);
 
   std::shared_ptr<Image> ToImage(AiksContext& context, ISize size);
 
-  void SetPass(std::unique_ptr<EntityPass> pass) { pass_ = std::move(pass); }
-
-  const std::unique_ptr<EntityPass>& GetPass() const { return pass_; }
-
  private:
-  std::optional<impeller::Snapshot> DoSnapshot(AiksContext& context, Rect rect);
-
-  std::unique_ptr<EntityPass> pass_;
+  std::shared_ptr<Texture> RenderToTexture(
+      AiksContext& context,
+      ISize size,
+      std::optional<const Matrix> translate = std::nullopt);
 };
 
 }  // namespace impeller

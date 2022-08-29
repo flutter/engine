@@ -236,11 +236,11 @@ void Canvas::RestoreClip() {
 }
 
 void Canvas::DrawPicture(Picture picture) {
-  if (!picture.GetPass()) {
+  if (!picture.pass) {
     return;
   }
   // Clone the base pass and account for the CTM updates.
-  auto pass = picture.GetPass()->Clone();
+  auto pass = picture.pass->Clone();
   pass->IterateAllEntities([&](auto& entity) -> bool {
     entity.IncrementStencilDepth(GetStencilDepth());
     entity.SetTransformation(GetCurrentTransformation() *
@@ -297,7 +297,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
 
 Picture Canvas::EndRecordingAsPicture() {
   Picture picture;
-  picture.SetPass(std::move(base_pass_));
+  picture.pass = std::move(base_pass_);
 
   Reset();
   Initialize();

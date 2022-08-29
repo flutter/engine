@@ -15,54 +15,61 @@
 namespace impeller {
 
 std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
-  auto coverage = pass_->GetElementsCoverage(std::nullopt);
+  auto coverage = pass->GetElementsCoverage(std::nullopt);
   if (!coverage.has_value() || coverage->IsEmpty()) {
     return std::nullopt;
   }
-  return DoSnapshot(context, coverage.value());
+
+  const auto translate = Matrix::MakeTranslation(-coverage.value().origin);
+  auto texture =
+      RenderToTexture(context, ISize(coverage.value().size), translate);
+  return impeller::Snapshot{
+      .texture = std::move(texture),
+      .transform = Matrix::MakeTranslation(coverage.value().origin)};
 }
 
 std::shared_ptr<Image> Picture::ToImage(AiksContext& context, ISize size) {
   if (size.IsEmpty()) {
     return nullptr;
   }
-  auto snapshot = DoSnapshot(context, Rect::MakeSize(size));
-  return snapshot.has_value() ? std::make_shared<Image>(snapshot->texture)
-                              : nullptr;
+  auto texture = RenderToTexture(context, size);
+  return texture ? std::make_shared<Image>(texture) : nullptr;
 }
 
-std::optional<Snapshot> Picture::DoSnapshot(AiksContext& context, Rect rect) {
-  FML_DCHECK(!rect.IsEmpty());
+std::shared_ptr<Texture> Picture::RenderToTexture(
+    AiksContext& context,
+    ISize size,
+    std::optional<const Matrix> translate) {
+  FML_DCHECK(!size.IsEmpty());
 
-  const auto translate = Matrix::MakeTranslation(-rect.origin);
-  pass_->IterateAllEntities([&translate](auto& entity) -> bool {
-    entity.SetTransformation(translate * entity.GetTransformation());
+  pass->IterateAllEntities([&translate](auto& entity) -> bool {
+    auto matrix = translate.has_value()
+                      ? translate.value() * entity.GetTransformation()
+                      : entity.GetTransformation();
+    entity.SetTransformation(matrix);
     return true;
   });
 
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
-  auto target = RenderTarget::CreateOffscreen(
-      *context.GetContext(), ISize(rect.size.width, rect.size.height));
+  auto target = RenderTarget::CreateOffscreen(*context.GetContext(), size);
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";
-    return std::nullopt;
+    return nullptr;
   }
 
   if (!context.Render(*this, target)) {
     VALIDATION_LOG << "Could not render Picture to Texture.";
-    return std::nullopt;
+    return nullptr;
   }
 
   auto texture = target.GetRenderTargetTexture();
   if (!texture) {
     VALIDATION_LOG << "RenderTarget has no target texture.";
-    return std::nullopt;
+    return nullptr;
   }
 
-  return impeller::Snapshot{
-      .texture = std::move(texture),
-      .transform = translate.MakeTranslation(rect.origin)};
+  return texture;
 }
 
 }  // namespace impeller
