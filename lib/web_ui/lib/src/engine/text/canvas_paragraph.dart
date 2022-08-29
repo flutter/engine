@@ -8,6 +8,7 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../util.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -42,7 +43,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  final String plainText;
+  late String plainText;
 
   /// The number of placeholders in this paragraph.
   final int placeholderCount;
@@ -255,6 +256,23 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    spans.clear();
+    plainText = '';
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Vertices.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }
 
