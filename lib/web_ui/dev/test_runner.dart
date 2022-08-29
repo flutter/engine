@@ -73,6 +73,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Optional. The path to a local build of CanvasKit to use in '
               'tests. If omitted, the test runner uses the default CanvasKit '
               'build.',
+      )
+      ..addFlag(
+        'wasm',
+        help: 'If set, compiles tests using dart2wasm instead of dart2js.',
       );
   }
 
@@ -85,6 +89,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get isWatchMode => boolArg('watch');
 
   bool get failEarly => boolArg('fail-early');
+
+  bool get wasm => boolArg('wasm');
 
   /// Whether to start the browser in debug mode.
   ///
@@ -123,7 +129,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      CompileTestsStep(testFiles: testFiles),
+      CompileTestsStep(testFiles: testFiles, wasm: wasm),
       RunTestsStep(
         browserName: browserName,
         testFiles: testFiles,

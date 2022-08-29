@@ -23,9 +23,10 @@ import '../utils.dart';
 ///  * test/        - compiled test code
 ///  * test_images/ - test images copied from Skis sources.
 class CompileTestsStep implements PipelineStep {
-  CompileTestsStep({this.testFiles});
+  CompileTestsStep({this.testFiles, this.wasm = false});
 
   final List<FilePath>? testFiles;
+  final bool wasm;
 
   @override
   String get description => 'compile_tests';
@@ -45,7 +46,7 @@ class CompileTestsStep implements PipelineStep {
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
-    await compileTests(testFiles ?? findAllTests());
+    await compileTests(testFiles ?? findAllTests(), wasm);
   }
 }
 
@@ -179,7 +180,7 @@ Future<void> copyCanvasKitFiles() async {
 }
 
 /// Compiles the specified unit tests.
-Future<void> compileTests(List<FilePath> testFiles) async {
+Future<void> compileTests(List<FilePath> testFiles, bool wasm) async {
   final Stopwatch stopwatch = Stopwatch()..start();
 
   // Separate HTML targets from CanvasKit targets because the two use
@@ -203,11 +204,11 @@ Future<void> compileTests(List<FilePath> testFiles) async {
 
   await Future.wait(<Future<void>>[
     if (htmlTargets.isNotEmpty)
-      _compileTestsInParallel(targets: htmlTargets),
+      _compileTestsInParallel(targets: htmlTargets, wasm: wasm),
     if (canvasKitTargets.isNotEmpty)
-      _compileTestsInParallel(targets: canvasKitTargets, forCanvasKit: true),
+      _compileTestsInParallel(targets: canvasKitTargets, forCanvasKit: true, wasm: wasm),
     if (skwasmTargets.isNotEmpty)
-      _compileTestsInParallel(targets: skwasmTargets, forSkwasm: true),
+      _compileTestsInParallel(targets: skwasmTargets, forSkwasm: true, wasm: wasm),
   ]);
 
   stopwatch.stop();
@@ -229,16 +230,22 @@ Future<void> _compileTestsInParallel({
   required List<FilePath> targets,
   bool forCanvasKit = false,
   bool forSkwasm = false,
+  bool wasm = false,
 }) async {
   final Stream<bool> results = _dart2jsPool.forEach(
     targets,
-    (FilePath file) => compileUnitTest(file, forCanvasKit: forCanvasKit, forSkwasm: forSkwasm),
+    (FilePath file) => compileUnitTest(file, forCanvasKit: forCanvasKit, forSkwasm: forSkwasm, wasm: wasm),
   );
   await for (final bool isSuccess in results) {
     if (!isSuccess) {
       throw ToolExit('Failed to compile tests.');
     }
   }
+}
+
+Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, required bool forSkwasm, required bool wasm}) async {
+  return wasm ? compileUnitTestToWasm(input, forCanvasKit: forCanvasKit, forSkwasm: forSkwasm)
+    : compileUnitTestToJS(input, forCanvasKit: forCanvasKit, forSkwasm: forSkwasm);
 }
 
 /// Compiles one unit test using `dart2js`.
@@ -258,7 +265,7 @@ Future<void> _compileTestsInParallel({
 /// directory before test are build. See [_copyFilesFromTestToBuild].
 ///
 /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
-Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, required bool forSkwasm}) async {
+Future<bool> compileUnitTestToJS(FilePath input, {required bool forCanvasKit, required bool forSkwasm}) async {
   final String targetFileName = pathlib.join(
     environment.webUiBuildDir.path,
     '${input.relativeToWebUi}.browser_test.dart.js',
@@ -302,6 +309,48 @@ Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, requir
   if (exitCode != 0) {
     io.stderr.writeln('ERROR: Failed to compile test $input. '
         'Dart2js exited with exit code $exitCode');
+    return false;
+  } else {
+    return true;
+  }
+}
+
+Future<bool> compileUnitTestToWasm(FilePath input, {required bool forCanvasKit, required bool forSkwasm}) async {
+  final String targetFileName = pathlib.join(
+    environment.webUiBuildDir.path,
+    '${input.relativeToWebUi}.browser_test.dart.wasm',
+  );
+
+  final io.Directory directoryToTarget = io.Directory(pathlib.join(
+      environment.webUiBuildDir.path,
+      pathlib.dirname(input.relativeToWebUi)));
+
+  if (!directoryToTarget.existsSync()) {
+    directoryToTarget.createSync(recursive: true);
+  }
+
+  final List<String> arguments = <String>[
+    environment.dart2wasmPath,
+
+    // We do not want to auto-select a renderer in tests. As of today, tests
+    // are designed to run in one specific mode. So instead, we specify the
+    // renderer explicitly.
+    '-DFLUTTER_WEB_AUTO_DETECT=false',
+    '-DFLUTTER_WEB_USE_SKIA=$forCanvasKit',
+    '-DFLUTTER_WEB_USE_SKWASM=$forSkwasm',
+    input.relativeToWebUi, // current path.
+    targetFileName, // target path.
+  ];
+
+  final int exitCode = await runProcess(
+    environment.dartExecutable,
+    arguments,
+    workingDirectory: environment.webUiRootDir.path,
+  );
+
+  if (exitCode != 0) {
+    io.stderr.writeln('ERROR: Failed to compile test $input. '
+        'dart2wasm exited with exit code $exitCode');
     return false;
   } else {
     return true;
