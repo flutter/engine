@@ -1422,6 +1422,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
          update_semantics_custom_action_callback,
          user_data](flutter::SemanticsNodeUpdates update,
                     flutter::CustomAccessibilityActionUpdates actions) {
+          // First, queue all node and custom action updates.
           if (update_semantics_node_callback != nullptr) {
             for (const auto& value : update) {
               const auto& node = value.second;
@@ -1485,6 +1486,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
             }
           }
 
+          // Second, mark node and action batches completed now that all
+          // updates are queued.
           if (update_semantics_node_callback != nullptr) {
             const FlutterSemanticsNode batch_end_sentinel = {
                 sizeof(FlutterSemanticsNode),
