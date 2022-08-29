@@ -20,6 +20,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/filters/linear_to_srgb_filter_contents.h"
+#include "impeller/entity/contents/filters/morphology_filter_contents.h"
 #include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
@@ -79,6 +80,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
     BlurStyle blur_style,
     Entity::TileMode tile_mode,
     FilterInput::Ref source_override,
+    Sigma secondary_sigma,
     const Matrix& effect_transform) {
   auto blur = std::make_shared<DirectionalGaussianBlurFilterContents>();
   blur->SetInputs({input});
@@ -87,6 +89,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   blur->SetBlurStyle(blur_style);
   blur->SetTileMode(tile_mode);
   blur->SetSourceOverride(source_override);
+  blur->SetSecondarySigma(secondary_sigma);
   blur->SetEffectTransform(effect_transform);
   return blur;
 }
@@ -100,10 +103,10 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const Matrix& effect_transform) {
   auto x_blur = MakeDirectionalGaussianBlur(input, sigma_x, Point(1, 0),
                                             BlurStyle::kNormal, tile_mode,
-                                            nullptr, effect_transform);
+                                            nullptr, {}, effect_transform);
   auto y_blur = MakeDirectionalGaussianBlur(FilterInput::Make(x_blur), sigma_y,
                                             Point(0, 1), blur_style, tile_mode,
-                                            input, effect_transform);
+                                            input, sigma_x, effect_transform);
   return y_blur;
 }
 
@@ -119,6 +122,31 @@ std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
   filter->SetBlurStyle(blur_style);
   filter->SetEffectTransform(effect_transform);
   return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeDirectionalMorphology(
+    FilterInput::Ref input,
+    Radius radius,
+    Vector2 direction,
+    MorphType morph_type) {
+  auto filter = std::make_shared<DirectionalMorphologyFilterContents>();
+  filter->SetInputs({input});
+  filter->SetRadius(radius);
+  filter->SetDirection(direction);
+  filter->SetMorphType(morph_type);
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
+    FilterInput::Ref input,
+    Radius radius_x,
+    Radius radius_y,
+    MorphType morph_type) {
+  auto x_morphology =
+      MakeDirectionalMorphology(input, radius_x, Point(1, 0), morph_type);
+  auto y_morphology = MakeDirectionalMorphology(
+      FilterInput::Make(x_morphology), radius_y, Point(0, 1), morph_type);
+  return y_morphology;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(

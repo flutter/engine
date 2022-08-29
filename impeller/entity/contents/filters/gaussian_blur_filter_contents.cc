@@ -32,6 +32,10 @@ void DirectionalGaussianBlurFilterContents::SetSigma(Sigma sigma) {
   blur_sigma_ = sigma;
 }
 
+void DirectionalGaussianBlurFilterContents::SetSecondarySigma(Sigma sigma) {
+  secondary_blur_sigma_ = sigma;
+}
+
 void DirectionalGaussianBlurFilterContents::SetDirection(Vector2 direction) {
   blur_direction_ = direction.Normalize();
   if (blur_direction_.IsZero()) {
@@ -111,6 +115,12 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
       transform.TransformDirection(blur_direction_ * radius);
 
   auto transformed_blur_radius_length = transformed_blur_radius.GetLength();
+
+  // If the radius length is < .5, the shader will take at most 1 sample,
+  // resulting in no blur.
+  if (transformed_blur_radius_length < .5) {
+    return input_snapshot.value();  // No blur to render.
+  }
 
   // A matrix that rotates the snapshot space such that the blur direction is
   // +X.
@@ -215,12 +225,22 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
     return pass.AddCommand(cmd);
   };
 
-  Scalar x_scale =
-      std::min(1.0, 1.0 / std::ceil(std::log2(transformed_blur_radius_length)));
-  auto out_texture =
-      renderer.MakeSubpass(ISize(pass_texture_rect.size.width * x_scale,
-                                 pass_texture_rect.size.height),
-                           callback);
+  Vector2 scale;
+  {
+    scale.x =
+        1.0 /
+        std::ceil(std::log2(std::max(2.0f, transformed_blur_radius_length)));
+
+    Scalar y_radius = std::abs(pass_transform.GetDirectionScale(Vector2(
+        0, source_override_ ? Radius{secondary_blur_sigma_}.radius : 1)));
+    scale.y = 1.0 / std::ceil(std::log2(std::max(2.0f, y_radius)));
+  }
+
+  Vector2 scaled_size = pass_texture_rect.size * scale;
+  ISize floored_size = ISize(scaled_size.x, scaled_size.y);
+
+  auto out_texture = renderer.MakeSubpass(floored_size, callback);
+
   if (!out_texture) {
     return std::nullopt;
   }
@@ -232,9 +252,10 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   return Snapshot{
       .texture = out_texture,
-      .transform = texture_rotate.Invert() *
-                   Matrix::MakeTranslation(pass_texture_rect.origin) *
-                   Matrix::MakeScale(Vector2(1 / x_scale, 1)),
+      .transform =
+          texture_rotate.Invert() *
+          Matrix::MakeTranslation(pass_texture_rect.origin) *
+          Matrix::MakeScale((1 / scale) * (scaled_size / floored_size)),
       .sampler_descriptor = sampler_desc};
 }
 
