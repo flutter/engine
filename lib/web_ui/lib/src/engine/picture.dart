@@ -33,6 +33,7 @@ class EnginePictureRecorder implements ui.PictureRecorder {
 
   @override
   EnginePicture endRecording() {
+    print('EnginePicture');
     if (!_isRecording) {
       // The mobile version returns an empty picture in this case. To match the
       // behavior we produce a blank picture too.
@@ -81,6 +82,7 @@ class EnginePicture implements ui.Picture {
     imageElement.addEventListener('error', errorListener);
     late final DomEventListener loadListener;
     loadListener = allowInterop((DomEvent event) {
+      print('before complete');
       onImageLoaded.complete(HtmlImage(
         imageElement,
         width,
@@ -89,6 +91,7 @@ class EnginePicture implements ui.Picture {
       imageElement.removeEventListener('load', loadListener);
     });
     imageElement.addEventListener('load', loadListener);
+    print('toImage returning...');
     return onImageLoaded.future;
   }
 

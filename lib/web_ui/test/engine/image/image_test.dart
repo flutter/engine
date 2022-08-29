@@ -19,39 +19,43 @@ Future<void> testMain() async {
       createdImage = image;
     };
 
-    final ui.Image image1 = await _createImage();
+print(10);
+    final Future<ui.Image> future = _createImage();
+print(20);
+    final image = await future;
+print(30);
 
-    expect(onCreateInvokedCount, 1);
-    expect(createdImage, image1);
+    // expect(onCreateInvokedCount, 1);
+    // expect(createdImage, image1);
 
-    final ui.Image image2 = await _createImage();
+    // final ui.Image image2 = await _createImage();
 
-    expect(onCreateInvokedCount, 2);
-    expect(createdImage, image2);
+    // expect(onCreateInvokedCount, 2);
+    // expect(createdImage, image2);
 
     ui.Image.onCreate = null;
   });
 
-  test('dispose() invokes onDispose once', () async {
-    int onDisposeInvokedCount = 0;
-    ui.Image? disposedImage;
-    ui.Image.onDispose = (ui.Image image) {
-      onDisposeInvokedCount++;
-      disposedImage = image;
-    };
+  // test('dispose() invokes onDispose once', () async {
+  //   int onDisposeInvokedCount = 0;
+  //   ui.Image? disposedImage;
+  //   ui.Image.onDispose = (ui.Image image) {
+  //     onDisposeInvokedCount++;
+  //     disposedImage = image;
+  //   };
 
-    final ui.Image image1 = await _createImage()..dispose();
+  //   final ui.Image image1 = await _createImage()..dispose();
 
-    expect(onDisposeInvokedCount, 1);
-    expect(disposedImage, image1);
+  //   expect(onDisposeInvokedCount, 1);
+  //   expect(disposedImage, image1);
 
-    final ui.Image image2 = await _createImage()..dispose();
+  //   final ui.Image image2 = await _createImage()..dispose();
 
-    expect(onDisposeInvokedCount, 2);
-    expect(disposedImage, image2);
+  //   expect(onDisposeInvokedCount, 2);
+  //   expect(disposedImage, image2);
 
-    ui.Image.onDispose = null;
-  });
+  //   ui.Image.onDispose = null;
+  // });
 }
 
 Future<ui.Image> _createImage() => _createPicture().toImage(10, 10);
@@ -61,5 +65,7 @@ ui.Picture _createPicture() {
   final ui.Canvas canvas = ui.Canvas(recorder);
   const ui.Rect rect = ui.Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
   canvas.clipRect(rect);
-  return recorder.endRecording();
+  final result = recorder.endRecording();
+  print('created');
+  return result;
 }

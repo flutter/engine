@@ -29,6 +29,7 @@ class CkPictureRecorder implements ui.PictureRecorder {
 
   @override
   CkPicture endRecording() {
+    print('CkPicture');
     final SkPictureRecorder? recorder = _skRecorder;
 
     if (recorder == null) {
