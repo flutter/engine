@@ -16,8 +16,8 @@ void main() {
 }
 
 Future<void> testMain() async {
-  group('Skwasm tests', () {
-    test('Skwasm renderer throws', () {
+  group('Skwasm stub tests', () {
+    test('Skwasm stub renderer throws', () {
       expect(renderer, isA<SkwasmRenderer>());
       expect(() {
         renderer.initialize();

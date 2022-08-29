@@ -67,7 +67,7 @@ List<Replacer> generatePartsPatterns(String libraryName) {
     AllReplacer(RegExp(r'\n@JS(.*)\nlibrary .+;'), ''),
     // Remove library directives.
     AllReplacer(RegExp(r'\nlibrary .+;'), ''),
-    // Remove imports/exports from all engine parts.
+    // Remove imports/exports from all part files.
     AllReplacer(RegExp(r'\nimport\s*.*'), ''),
     AllReplacer(RegExp(r'\nexport\s*.*'), ''),
   ];
