@@ -146,6 +146,7 @@ def ParseDepsFile(deps_flat_file):
         filtered_results = list(filter(lambda vuln: vuln != {}, results))
         if len(filtered_results)>0:
             print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
+            print(' '.join(filtered_results))
             return filtered_results
     return {}
 
