@@ -508,9 +508,9 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     }
   }
 }
-void DisplayListBuilder::saveLayer(const SkRect* bounds,
-                                   const DlPaint* paint,
-                                   const DlImageFilter* backdrop) {
+void DisplayListBuilder::onSaveLayer(const SkRect* bounds,
+                                     const DlPaint* paint,
+                                     const DlImageFilter* backdrop) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kSaveLayerWithPaintFlags);
@@ -897,10 +897,10 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
       : Push<DrawImageOp>(0, 1, std::move(image), point, sampling);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
-                                   const SkPoint point,
-                                   DlImageSampling sampling,
-                                   const DlPaint* paint) {
+void DisplayListBuilder::onDrawImage(const sk_sp<DlImage> image,
+                                     const SkPoint point,
+                                     DlImageSampling sampling,
+                                     const DlPaint* paint) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawImageWithPaintFlags);
@@ -919,12 +919,13 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                         render_with_attributes, constraint);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
-                                       const SkRect& src,
-                                       const SkRect& dst,
-                                       DlImageSampling sampling,
-                                       const DlPaint* paint,
-                                       SkCanvas::SrcRectConstraint constraint) {
+void DisplayListBuilder::onDrawImageRect(
+    const sk_sp<DlImage> image,
+    const SkRect& src,
+    const SkRect& dst,
+    DlImageSampling sampling,
+    const DlPaint* paint,
+    SkCanvas::SrcRectConstraint constraint) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawImageRectWithPaintFlags);
@@ -944,11 +945,11 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
       : Push<DrawImageNineOp>(0, 1, std::move(image), center, dst, filter);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
-                                       const SkIRect& center,
-                                       const SkRect& dst,
-                                       DlFilterMode filter,
-                                       const DlPaint* paint) {
+void DisplayListBuilder::onDrawImageNine(const sk_sp<DlImage> image,
+                                         const SkIRect& center,
+                                         const SkRect& dst,
+                                         DlFilterMode filter,
+                                         const DlPaint* paint) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawImageNineWithPaintFlags);
@@ -1017,15 +1018,15 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   // of the transforms and texture rectangles.
   UpdateLayerOpacityCompatibility(false);
 }
-void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
-                                   const SkRSXform xform[],
-                                   const SkRect tex[],
-                                   const DlColor colors[],
-                                   int count,
-                                   DlBlendMode mode,
-                                   DlImageSampling sampling,
-                                   const SkRect* cull_rect,
-                                   const DlPaint* paint) {
+void DisplayListBuilder::onDrawAtlas(const sk_sp<DlImage> atlas,
+                                     const SkRSXform xform[],
+                                     const SkRect tex[],
+                                     const DlColor colors[],
+                                     int count,
+                                     DlBlendMode mode,
+                                     DlImageSampling sampling,
+                                     const SkRect* cull_rect,
+                                     const DlPaint* paint) {
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawAtlasWithPaintFlags);

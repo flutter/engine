@@ -16,9 +16,6 @@ class DlSkCanvasAdapter : public virtual DlCanvas {
   DlSkCanvasAdapter(SkCanvas* delegate) : delegate_(delegate) {}
 
   void save() override;
-  void saveLayer(const SkRect* bounds,
-                 const DlPaint* paint,
-                 const DlImageFilter* backdrop = nullptr) override;
   void restore() override;
   int getSaveCount() override;
   void restoreToCount(int restore_count) override;
@@ -43,7 +40,6 @@ class DlSkCanvasAdapter : public virtual DlCanvas {
   void transformReset() override;
   void transform(const SkMatrix* matrix) override;
   void transform(const SkM44* matrix44) override;
-  using DlCanvas::transform;
 
   /// Returns the 4x4 full perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
@@ -94,33 +90,6 @@ class DlSkCanvasAdapter : public virtual DlCanvas {
   void drawVertices(const DlVertices* vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
-  using DlCanvas::drawVertices;
-  void drawImage(const sk_sp<DlImage> image,
-                 const SkPoint point,
-                 DlImageSampling sampling,
-                 const DlPaint* paint = nullptr) override;
-  void drawImageRect(
-      const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
-      DlImageSampling sampling,
-      const DlPaint* paint = nullptr,
-      SkCanvas::SrcRectConstraint constraint =
-          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
-  void drawImageNine(const sk_sp<DlImage> image,
-                     const SkIRect& center,
-                     const SkRect& dst,
-                     DlFilterMode filter,
-                     const DlPaint* paint = nullptr) override;
-  void drawAtlas(const sk_sp<DlImage> atlas,
-                 const SkRSXform xform[],
-                 const SkRect tex[],
-                 const DlColor colors[],
-                 int count,
-                 DlBlendMode mode,
-                 DlImageSampling sampling,
-                 const SkRect* cullRect,
-                 const DlPaint* paint = nullptr) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
@@ -131,6 +100,47 @@ class DlSkCanvasAdapter : public virtual DlCanvas {
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override;
+
+  // These using calls draw in the overloads in DlCanvas that implement
+  // default parameters.
+  using DlCanvas::drawAtlas;
+  using DlCanvas::drawImage;
+  using DlCanvas::drawImageNine;
+  using DlCanvas::drawImageRect;
+  using DlCanvas::drawVertices;
+  using DlCanvas::saveLayer;
+  using DlCanvas::transform;
+
+ protected:
+  // The "on" versios of these calls are used to avoid conflicts with
+  // the methods in DlCanvas that have default parametrs.
+  void onSaveLayer(const SkRect* bounds,
+                   const DlPaint* paint,
+                   const DlImageFilter* backdrop) override;
+  void onDrawImage(const sk_sp<DlImage> image,
+                   const SkPoint point,
+                   DlImageSampling sampling,
+                   const DlPaint* paint) override;
+  void onDrawImageRect(const sk_sp<DlImage> image,
+                       const SkRect& src,
+                       const SkRect& dst,
+                       DlImageSampling sampling,
+                       const DlPaint* paint,
+                       SkCanvas::SrcRectConstraint constraint) override;
+  void onDrawImageNine(const sk_sp<DlImage> image,
+                       const SkIRect& center,
+                       const SkRect& dst,
+                       DlFilterMode filter,
+                       const DlPaint* paint) override;
+  void onDrawAtlas(const sk_sp<DlImage> atlas,
+                   const SkRSXform xform[],
+                   const SkRect tex[],
+                   const DlColor colors[],
+                   int count,
+                   DlBlendMode mode,
+                   DlImageSampling sampling,
+                   const SkRect* cullRect,
+                   const DlPaint* paint) override;
 
  private:
   SkCanvas* delegate_;

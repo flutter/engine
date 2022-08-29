@@ -50,7 +50,7 @@ static SkPaint ToSk(const DlPaint& paint) {
 
 class SkOptionalPaint {
  public:
-  SkOptionalPaint(const DlPaint* paint) {
+  explicit SkOptionalPaint(const DlPaint* paint) {
     if (paint) {
       paint_ = ToSk(*paint);
       ptr_ = &paint_;
@@ -59,7 +59,7 @@ class SkOptionalPaint {
     }
   }
 
-  SkPaint* operator&() { return ptr_; }
+  SkPaint* operator()() { return ptr_; }
 
  private:
   SkPaint paint_;
@@ -70,13 +70,13 @@ void DlSkCanvasAdapter::save() {
   delegate_->save();
 }
 
-void DlSkCanvasAdapter::saveLayer(const SkRect* bounds,
-                                  const DlPaint* paint,
-                                  const DlImageFilter* backdrop) {
+void DlSkCanvasAdapter::onSaveLayer(const SkRect* bounds,
+                                    const DlPaint* paint,
+                                    const DlImageFilter* backdrop) {
   sk_sp<SkImageFilter> sk_filter = backdrop ? backdrop->skia_object() : nullptr;
   SkOptionalPaint sk_paint(paint);
   delegate_->saveLayer(
-      SkCanvas::SaveLayerRec{bounds, &sk_paint, sk_filter.get(), 0});
+      SkCanvas::SaveLayerRec{bounds, sk_paint(), sk_filter.get(), 0});
 }
 
 void DlSkCanvasAdapter::restore() {
@@ -239,53 +239,54 @@ void DlSkCanvasAdapter::drawVertices(const DlVertices* vertices,
   delegate_->drawVertices(sk_vertices, ToSk(mode), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::drawImage(const sk_sp<DlImage> image,
-                                  const SkPoint point,
-                                  DlImageSampling sampling,
-                                  const DlPaint* paint) {
+void DlSkCanvasAdapter::onDrawImage(const sk_sp<DlImage> image,
+                                    const SkPoint point,
+                                    DlImageSampling sampling,
+                                    const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
   delegate_->drawImage(sk_image.get(), point.fX, point.fY, ToSk(sampling),
-                       &sk_paint);
+                       sk_paint());
 }
 
-void DlSkCanvasAdapter::drawImageRect(const sk_sp<DlImage> image,
-                                      const SkRect& src,
-                                      const SkRect& dst,
-                                      DlImageSampling sampling,
-                                      const DlPaint* paint,
-                                      SkCanvas::SrcRectConstraint constraint) {
+void DlSkCanvasAdapter::onDrawImageRect(
+    const sk_sp<DlImage> image,
+    const SkRect& src,
+    const SkRect& dst,
+    DlImageSampling sampling,
+    const DlPaint* paint,
+    SkCanvas::SrcRectConstraint constraint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
-  delegate_->drawImageRect(sk_image.get(), src, dst, ToSk(sampling), &sk_paint,
+  delegate_->drawImageRect(sk_image.get(), src, dst, ToSk(sampling), sk_paint(),
                            constraint);
 }
 
-void DlSkCanvasAdapter::drawImageNine(const sk_sp<DlImage> image,
-                                      const SkIRect& center,
-                                      const SkRect& dst,
-                                      DlFilterMode filter,
-                                      const DlPaint* paint) {
+void DlSkCanvasAdapter::onDrawImageNine(const sk_sp<DlImage> image,
+                                        const SkIRect& center,
+                                        const SkRect& dst,
+                                        DlFilterMode filter,
+                                        const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
   delegate_->drawImageNine(sk_image.get(), center, dst, ToSk(filter),
-                           &sk_paint);
+                           sk_paint());
 }
 
-void DlSkCanvasAdapter::drawAtlas(const sk_sp<DlImage> atlas,
-                                  const SkRSXform xform[],
-                                  const SkRect tex[],
-                                  const DlColor colors[],
-                                  int count,
-                                  DlBlendMode mode,
-                                  DlImageSampling sampling,
-                                  const SkRect* cullRect,
-                                  const DlPaint* paint) {
+void DlSkCanvasAdapter::onDrawAtlas(const sk_sp<DlImage> atlas,
+                                    const SkRSXform xform[],
+                                    const SkRect tex[],
+                                    const DlColor colors[],
+                                    int count,
+                                    DlBlendMode mode,
+                                    DlImageSampling sampling,
+                                    const SkRect* cullRect,
+                                    const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = atlas->skia_image();
   const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors);
   delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors, count, ToSk(mode),
-                       ToSk(sampling), cullRect, &sk_paint);
+                       ToSk(sampling), cullRect, sk_paint());
 }
 
 void DlSkCanvasAdapter::drawDisplayList(const sk_sp<DisplayList> display_list) {

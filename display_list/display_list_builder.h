@@ -168,9 +168,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
                                       : SaveLayerOptions::kNoAttributes,
               nullptr);
   }
-  void saveLayer(const SkRect* bounds,
-                 const DlPaint* paint,
-                 const DlImageFilter* backdrop = nullptr) override;
   void restore() override;
   int getSaveCount() override { return layer_stack_.size(); }
   void restoreToCount(int restore_count) override;
@@ -198,7 +195,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void transformReset() override;
   void transform(const SkMatrix* matrix) override;
   void transform(const SkM44* matrix44) override;
-  using DlCanvas::transform;
 
   /// Returns the 4x4 full perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
@@ -277,15 +273,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void drawVertices(const DlVertices* vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
-  using DlCanvas::drawVertices;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
                  bool render_with_attributes) override;
-  void drawImage(const sk_sp<DlImage> image,
-                 const SkPoint point,
-                 DlImageSampling sampling,
-                 const DlPaint* paint = nullptr) override;
   void drawImageRect(
       const sk_sp<DlImage> image,
       const SkRect& src,
@@ -294,24 +285,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
-  void drawImageRect(
-      const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
-      DlImageSampling sampling,
-      const DlPaint* paint = nullptr,
-      SkCanvas::SrcRectConstraint constraint =
-          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
                      bool render_with_attributes) override;
-  void drawImageNine(const sk_sp<DlImage> image,
-                     const SkIRect& center,
-                     const SkRect& dst,
-                     DlFilterMode filter,
-                     const DlPaint* paint = nullptr) override;
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
@@ -326,15 +304,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
-  void drawAtlas(const sk_sp<DlImage> atlas,
-                 const SkRSXform xform[],
-                 const SkRect tex[],
-                 const DlColor colors[],
-                 int count,
-                 DlBlendMode mode,
-                 DlImageSampling sampling,
-                 const SkRect* cullRect,
-                 const DlPaint* paint = nullptr) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
                    bool render_with_attributes) override;
@@ -352,7 +321,48 @@ class DisplayListBuilder final : public virtual Dispatcher,
                   bool transparent_occluder,
                   SkScalar dpr) override;
 
+  // These using calls draw in the overloads in DlCanvas that implement
+  // default parameters.
+  using DlCanvas::drawAtlas;
+  using DlCanvas::drawImage;
+  using DlCanvas::drawImageNine;
+  using DlCanvas::drawImageRect;
+  using DlCanvas::drawVertices;
+  using DlCanvas::saveLayer;
+  using DlCanvas::transform;
+
   sk_sp<DisplayList> Build();
+
+ protected:
+  // The "on" versios of these calls are used to avoid conflicts with
+  // the methods in DlCanvas that have default parametrs.
+  void onSaveLayer(const SkRect* bounds,
+                   const DlPaint* paint,
+                   const DlImageFilter* backdrop) override;
+  void onDrawImage(const sk_sp<DlImage> image,
+                   const SkPoint point,
+                   DlImageSampling sampling,
+                   const DlPaint* paint) override;
+  void onDrawImageRect(const sk_sp<DlImage> image,
+                       const SkRect& src,
+                       const SkRect& dst,
+                       DlImageSampling sampling,
+                       const DlPaint* paint,
+                       SkCanvas::SrcRectConstraint constraint) override;
+  void onDrawImageNine(const sk_sp<DlImage> image,
+                       const SkIRect& center,
+                       const SkRect& dst,
+                       DlFilterMode filter,
+                       const DlPaint* paint) override;
+  void onDrawAtlas(const sk_sp<DlImage> atlas,
+                   const SkRSXform xform[],
+                   const SkRect tex[],
+                   const DlColor colors[],
+                   int count,
+                   DlBlendMode mode,
+                   DlImageSampling sampling,
+                   const SkRect* cullRect,
+                   const DlPaint* paint) override;
 
  private:
   void checkForDeferredSave();

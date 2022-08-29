@@ -19,9 +19,11 @@ namespace flutter {
 class DlCanvas {
  public:
   virtual void save() = 0;
-  virtual void saveLayer(const SkRect* bounds,
-                         const DlPaint* paint,
-                         const DlImageFilter* backdrop = nullptr) = 0;
+  void saveLayer(const SkRect* bounds,
+                 const DlPaint* paint,
+                 const DlImageFilter* backdrop = nullptr) {
+    onSaveLayer(bounds, paint, backdrop);
+  }
   virtual void restore() = 0;
   virtual int getSaveCount() = 0;
   virtual void restoreToCount(int restore_count) = 0;
@@ -105,32 +107,40 @@ class DlCanvas {
                     const DlPaint& paint) {
     drawVertices(vertices.get(), mode, paint);
   }
-  virtual void drawImage(const sk_sp<DlImage> image,
-                         const SkPoint point,
-                         DlImageSampling sampling,
-                         const DlPaint* paint = nullptr) = 0;
-  virtual void drawImageRect(
-      const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
-      DlImageSampling sampling,
-      const DlPaint* paint = nullptr,
-      SkCanvas::SrcRectConstraint constraint =
-          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) = 0;
-  virtual void drawImageNine(const sk_sp<DlImage> image,
-                             const SkIRect& center,
-                             const SkRect& dst,
-                             DlFilterMode filter,
-                             const DlPaint* paint = nullptr) = 0;
-  virtual void drawAtlas(const sk_sp<DlImage> atlas,
-                         const SkRSXform xform[],
-                         const SkRect tex[],
-                         const DlColor colors[],
-                         int count,
-                         DlBlendMode mode,
-                         DlImageSampling sampling,
-                         const SkRect* cullRect,
-                         const DlPaint* paint = nullptr) = 0;
+  void drawImage(const sk_sp<DlImage> image,
+                 const SkPoint point,
+                 DlImageSampling sampling,
+                 const DlPaint* paint = nullptr) {
+    onDrawImage(image, point, sampling, paint);
+  }
+  void drawImageRect(const sk_sp<DlImage> image,
+                     const SkRect& src,
+                     const SkRect& dst,
+                     DlImageSampling sampling,
+                     const DlPaint* paint = nullptr,
+                     SkCanvas::SrcRectConstraint constraint =
+                         SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) {
+    onDrawImageRect(image, src, dst, sampling, paint, constraint);
+  }
+  void drawImageNine(const sk_sp<DlImage> image,
+                     const SkIRect& center,
+                     const SkRect& dst,
+                     DlFilterMode filter,
+                     const DlPaint* paint = nullptr) {
+    onDrawImageNine(image, center, dst, filter, paint);
+  }
+  void drawAtlas(const sk_sp<DlImage> atlas,
+                 const SkRSXform xform[],
+                 const SkRect tex[],
+                 const DlColor colors[],
+                 int count,
+                 DlBlendMode mode,
+                 DlImageSampling sampling,
+                 const SkRect* cullRect = nullptr,
+                 const DlPaint* paint = nullptr) {
+    onDrawAtlas(atlas, xform, tex, colors, count, mode, sampling, cullRect,
+                paint);
+  }
   virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
@@ -141,6 +151,42 @@ class DlCanvas {
                           const SkScalar elevation,
                           bool transparent_occluder,
                           SkScalar dpr) = 0;
+
+ protected:
+  // Protected default-less versions of methods that will have default
+  // parameters in the public API above. Virtual methods with default
+  // arguments are problematic for exposing those default parameters
+  // in derived classes and our lint code that runs on some platforms
+  // even blocks it, so forwarding to a non-defaulting "onFoo" method
+  // is the best practice here. Derived classes then inherit the
+  // defaulting method naturally.
+  virtual void onSaveLayer(const SkRect* bounds,
+                           const DlPaint* paint,
+                           const DlImageFilter* backdrop) = 0;
+  virtual void onDrawImage(const sk_sp<DlImage> image,
+                           const SkPoint point,
+                           DlImageSampling sampling,
+                           const DlPaint* paint) = 0;
+  virtual void onDrawImageRect(const sk_sp<DlImage> image,
+                               const SkRect& src,
+                               const SkRect& dst,
+                               DlImageSampling sampling,
+                               const DlPaint* paint,
+                               SkCanvas::SrcRectConstraint constraint) = 0;
+  virtual void onDrawImageNine(const sk_sp<DlImage> image,
+                               const SkIRect& center,
+                               const SkRect& dst,
+                               DlFilterMode filter,
+                               const DlPaint* paint) = 0;
+  virtual void onDrawAtlas(const sk_sp<DlImage> atlas,
+                           const SkRSXform xform[],
+                           const SkRect tex[],
+                           const DlColor colors[],
+                           int count,
+                           DlBlendMode mode,
+                           DlImageSampling sampling,
+                           const SkRect* cullRect,
+                           const DlPaint* paint) = 0;
 };
 
 }  // namespace flutter
