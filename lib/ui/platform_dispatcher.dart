@@ -625,6 +625,9 @@ class PlatformDispatcher {
 
   /// Requests the Dart VM to adjusts the GC heuristics based on the requested `performance_mode`.
   ///
+  /// This operation is a no-op of web. The request to change a performance may be ignored by the
+  /// engine or not resolve in a predictable way.
+  ///
   /// See [DartPerformanceMode] for more information on individual performance modes.
   void requestDartPerformanceMode(DartPerformanceMode mode) {
     _requestDartPerformanceMode(mode.index);
