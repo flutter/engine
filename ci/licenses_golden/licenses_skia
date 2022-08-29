@@ -1,4 +1,4 @@
-Signature: aea7ca255e8ec7a7c1b6c9f22a11bd23
+Signature: 3870177517441f065426221bba4030d4
 
 UNUSED LICENSES:
 
@@ -2651,8 +2651,6 @@ FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLIntrinsicList.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOperator.cpp
-FILE: ../../../third_party/skia/src/sksl/SkSLSharedCompiler.cpp
-FILE: ../../../third_party/skia/src/sksl/SkSLSharedCompiler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLThreadContext.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCanExitWithoutReturningValue.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCheckProgramStructure.cpp
@@ -5604,6 +5602,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/render/BitmapTextRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/BitmapTextRenderStep.h
+FILE: ../../../third_party/skia/src/gpu/graphite/render/CommonDepthStencilSettings.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverBoundsRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverBoundsRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/DynamicInstancesPatchAllocator.h
@@ -5611,7 +5610,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/render/MiddleOutFanRenderStep.c
 FILE: ../../../third_party/skia/src/gpu/graphite/render/MiddleOutFanRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/SDFTextRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/SDFTextRenderStep.h
-FILE: ../../../third_party/skia/src/gpu/graphite/render/StencilAndCoverDSS.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateCurvesRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateCurvesRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateStrokesRenderStep.cpp
