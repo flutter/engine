@@ -61,8 +61,8 @@ TEST_F(MockLayerTest, SimpleParams) {
 }
 
 TEST_F(MockLayerTest, FakePlatformView) {
-  auto layer = std::make_shared<MockLayer>(SkPath(), SkPaint(),
-                                           true /* fake_has_platform_view */);
+  auto layer = std::make_shared<MockLayer>(SkPath(), SkPaint());
+  layer->set_fake_has_platform_view(true);
   EXPECT_EQ(preroll_context()->has_platform_view, false);
 
   layer->Preroll(preroll_context(), SkMatrix());
@@ -70,8 +70,8 @@ TEST_F(MockLayerTest, FakePlatformView) {
 }
 
 TEST_F(MockLayerTest, SaveLayerOnLeafNodesCanvas) {
-  auto layer = std::make_shared<MockLayer>(SkPath(), SkPaint(),
-                                           true /* fake_has_platform_view */);
+  auto layer = std::make_shared<MockLayer>(SkPath(), SkPaint());
+  layer->set_fake_has_platform_view(true);
   EXPECT_EQ(preroll_context()->has_platform_view, false);
 
   layer->Preroll(preroll_context(), SkMatrix());

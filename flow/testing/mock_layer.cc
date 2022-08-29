@@ -10,18 +10,8 @@
 namespace flutter {
 namespace testing {
 
-MockLayer::MockLayer(SkPath path,
-                     SkPaint paint,
-                     bool fake_has_platform_view,
-                     bool fake_reads_surface,
-                     bool fake_opacity_compatible,
-                     bool fake_has_texture_layer)
-    : fake_paint_path_(path), fake_paint_(paint) {
-  set_fake_has_platform_view(fake_has_platform_view);
-  set_fake_reads_surface(fake_reads_surface);
-  set_fake_opacity_compatible(fake_opacity_compatible);
-  set_fake_has_texture_layer(fake_has_texture_layer);
-}
+MockLayer::MockLayer(SkPath path, SkPaint paint)
+    : fake_paint_path_(path), fake_paint_(paint) {}
 
 bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Similar to PictureLayer, only return true for identical mock layers;

@@ -24,20 +24,17 @@ namespace testing {
 // verify the data against expected values.
 class MockLayer : public Layer {
  public:
-  explicit MockLayer(SkPath path,
-                     SkPaint paint = SkPaint(),
-                     bool fake_has_platform_view = false,
-                     bool fake_reads_surface = false,
-                     bool fake_opacity_compatible_ = false,
-                     bool fake_has_texture_layer = false);
+  explicit MockLayer(SkPath path, SkPaint paint = SkPaint());
 
   static std::shared_ptr<MockLayer> Make(SkPath path,
                                          SkPaint paint = SkPaint()) {
-    return std::make_shared<MockLayer>(path, paint, false, false, false);
+    return std::make_shared<MockLayer>(path, paint);
   }
 
   static std::shared_ptr<MockLayer> MakeOpacityCompatible(SkPath path) {
-    return std::make_shared<MockLayer>(path, SkPaint(), false, false, true);
+    auto mock_layer = std::make_shared<MockLayer>(path, SkPaint());
+    mock_layer->set_fake_opacity_compatible(true);
+    return mock_layer;
   }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
@@ -146,15 +143,8 @@ class MockCacheableLayer : public MockLayer {
  public:
   explicit MockCacheableLayer(SkPath path,
                               SkPaint paint = SkPaint(),
-                              int render_limit = 3,
-                              bool fake_has_platform_view = false,
-                              bool fake_reads_surface = false,
-                              bool fake_opacity_compatible = false)
-      : MockLayer(path,
-                  paint,
-                  fake_has_platform_view,
-                  fake_reads_surface,
-                  fake_opacity_compatible) {
+                              int render_limit = 3)
+      : MockLayer(path, paint) {
     raster_cache_item_ =
         std::make_unique<MockLayerCacheableItem>(this, render_limit);
   }
