@@ -700,7 +700,7 @@ void DisplayListBuilder::intersect(const SkRect& rect) {
     current_layer_->clip_bounds.setEmpty();
   }
 }
-SkRect DisplayListBuilder::getLocalClipBounds() {
+SkRect DisplayListBuilder::getLocalClipBounds() const {
   SkM44 inverse;
   if (current_layer_->matrix.invert(&inverse)) {
     SkRect devBounds;
@@ -1072,6 +1072,13 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar y) {
   Push<DrawTextBlobOp>(0, 1, std::move(blob), x, y);
   CheckLayerOpacityCompatibility();
+}
+void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
+                                      SkScalar x,
+                                      SkScalar y,
+                                      const DlPaint& paint) {
+  setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawTextBlobFlags);
+  drawTextBlob(blob, x, y);
 }
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const DlColor color,
