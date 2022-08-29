@@ -10,7 +10,7 @@ import 'package:litetest/litetest.dart';
 void main() {
   test('toImage succeeds', () async {
     final Image image = await _createImage();
-    expect(image.runtimeType, equals('?'));
+    expect(image.runtimeType, equals('Image'));
   });
 }
 
