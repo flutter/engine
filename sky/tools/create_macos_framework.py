@@ -34,6 +34,7 @@ def main():
   parser.add_argument('--x64-out-dir', type=str, required=True)
   parser.add_argument('--strip', action="store_true", default=False)
   parser.add_argument('--dsym', action="store_true", default=False)
+  # TODO(godofredoc): Remove after recipes v2 have landed.
   parser.add_argument('--zip', action="store_true", default=False)
 
   args = parser.parse_args()
