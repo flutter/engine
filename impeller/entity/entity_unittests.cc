@@ -8,6 +8,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -60,7 +61,8 @@ class TestPassDelegate final : public EntityPassDelegate {
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
-      std::shared_ptr<Texture> target) override {
+      std::shared_ptr<Texture> target,
+      const Matrix& transform) override {
     return nullptr;
   }
 
@@ -862,7 +864,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
     static int selected_pass_variation = 0;
-    static float blur_amount[2] = {20, 20};
+    static float blur_amount[2] = {10, 10};
     static int selected_blur_style = 0;
     static int selected_tile_mode = 3;
     static Color cover_color(1, 0, 0, 0.2);
@@ -892,7 +894,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma", blur_amount, 0, 200);
+      ImGui::SliderFloat2("Sigma", blur_amount, 0, 10);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -979,6 +981,107 @@ TEST_P(EntityTest, GaussianBlurFilter) {
         PathBuilder{}
             .AddRect(target_contents->GetCoverage(entity).value())
             .TakePath(),
+        bounds_color));
+    bounds_entity.SetTransformation(Matrix());
+
+    bounds_entity.Render(context, pass);
+
+    return true;
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, MorphologyFilter) {
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+
+  bool first_frame = true;
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowPos({10, 10});
+    }
+
+    const char* morphology_type_names[] = {"Dilate", "Erode"};
+    const FilterContents::MorphType morphology_types[] = {
+        FilterContents::MorphType::kDilate, FilterContents::MorphType::kErode};
+    static Color input_color = Color::Black();
+    // UI state.
+    static int selected_morphology_type = 0;
+    static float radius[2] = {20, 20};
+    static Color cover_color(1, 0, 0, 0.2);
+    static Color bounds_color(0, 1, 0, 0.1);
+    static float offset[2] = {500, 400};
+    static float rotation = 0;
+    static float scale[2] = {0.65, 0.65};
+    static float skew[2] = {0, 0};
+    static float path_rect[4] = {0, 0,
+                                 static_cast<float>(boston->GetSize().width),
+                                 static_cast<float>(boston->GetSize().height)};
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      ImGui::Combo("Morphology type", &selected_morphology_type,
+                   morphology_type_names,
+                   sizeof(morphology_type_names) / sizeof(char*));
+      ImGui::SliderFloat2("Radius", radius, 0, 200);
+      ImGui::SliderFloat("Input opacity", &input_color.alpha, 0, 1);
+      ImGui::ColorEdit4("Cover color", reinterpret_cast<float*>(&cover_color));
+      ImGui::ColorEdit4("Bounds color",
+                        reinterpret_cast<float*>(&bounds_color));
+      ImGui::SliderFloat2("Translation", offset, 0,
+                          pass.GetRenderTargetSize().width);
+      ImGui::SliderFloat("Rotation", &rotation, 0, kPi * 2);
+      ImGui::SliderFloat2("Scale", scale, 0, 3);
+      ImGui::SliderFloat2("Skew", skew, -3, 3);
+      ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
+    }
+    ImGui::End();
+
+    std::shared_ptr<Contents> input;
+    Size input_size;
+
+    auto input_rect =
+        Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
+    auto texture = std::make_shared<TextureContents>();
+    texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
+    texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
+    texture->SetTexture(boston);
+    texture->SetOpacity(input_color.alpha);
+
+    input = texture;
+    input_size = input_rect.size;
+
+    auto contents = FilterContents::MakeMorphology(
+        FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
+        morphology_types[selected_morphology_type]);
+
+    auto ctm = Matrix::MakeScale(GetContentScale()) *
+               Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
+               Matrix::MakeRotationZ(Radians(rotation)) *
+               Matrix::MakeScale(Vector2(scale[0], scale[1])) *
+               Matrix::MakeSkew(skew[0], skew[1]) *
+               Matrix::MakeTranslation(-Point(input_size) / 2);
+
+    Entity entity;
+    entity.SetContents(contents);
+    entity.SetTransformation(ctm);
+
+    entity.Render(context, pass);
+
+    // Renders a red "cover" rectangle that shows the original position of the
+    // unfiltered input.
+    Entity cover_entity;
+    cover_entity.SetContents(SolidColorContents::Make(
+        PathBuilder{}.AddRect(input_rect).TakePath(), cover_color));
+    cover_entity.SetTransformation(ctm);
+
+    cover_entity.Render(context, pass);
+
+    // Renders a green bounding rect of the target filter.
+    Entity bounds_entity;
+    bounds_entity.SetContents(SolidColorContents::Make(
+        PathBuilder{}.AddRect(contents->GetCoverage(entity).value()).TakePath(),
         bounds_color));
     bounds_entity.SetTransformation(Matrix());
 
@@ -1537,6 +1640,108 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
     entity.Render(context, pass);
 
     return true;
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, LinearToSrgbFilterCoverageIsCorrect) {
+  // Set up a simple color background.
+  auto fill = std::make_shared<SolidColorContents>();
+  fill->SetPath(
+      PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath());
+  fill->SetColor(Color::MintCream());
+
+  auto filter = FilterContents::MakeLinearToSrgbFilter(FilterInput::Make(fill));
+
+  Entity e;
+  e.SetTransformation(Matrix());
+
+  // Confirm that the actual filter coverage matches the expected coverage.
+  auto actual = filter->GetCoverage(e);
+  auto expected = Rect::MakeXYWH(0, 0, 300, 400);
+
+  ASSERT_TRUE(actual.has_value());
+  ASSERT_RECT_NEAR(actual.value(), expected);
+}
+
+TEST_P(EntityTest, LinearToSrgbFilter) {
+  auto image = CreateTextureForFixture("kalimba.jpg");
+  ASSERT_TRUE(image);
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    auto filtered =
+        FilterContents::MakeLinearToSrgbFilter(FilterInput::Make(image));
+
+    // Define the entity that will serve as the control image as a Gaussian blur
+    // filter with no filter at all.
+    Entity entity_left;
+    entity_left.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                                  Matrix::MakeTranslation({100, 300}) *
+                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+    auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
+                                                       Sigma{0}, Sigma{0});
+    entity_left.SetContents(unfiltered);
+
+    // Define the entity that will be filtered from linear to sRGB.
+    Entity entity_right;
+    entity_right.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                                   Matrix::MakeTranslation({500, 300}) *
+                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity_right.SetContents(filtered);
+    return entity_left.Render(context, pass) &&
+           entity_right.Render(context, pass);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, SrgbToLinearFilterCoverageIsCorrect) {
+  // Set up a simple color background.
+  auto fill = std::make_shared<SolidColorContents>();
+  fill->SetPath(
+      PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath());
+  fill->SetColor(Color::DeepPink());
+
+  auto filter = FilterContents::MakeSrgbToLinearFilter(FilterInput::Make(fill));
+
+  Entity e;
+  e.SetTransformation(Matrix());
+
+  // Confirm that the actual filter coverage matches the expected coverage.
+  auto actual = filter->GetCoverage(e);
+  auto expected = Rect::MakeXYWH(0, 0, 300, 400);
+
+  ASSERT_TRUE(actual.has_value());
+  ASSERT_RECT_NEAR(actual.value(), expected);
+}
+
+TEST_P(EntityTest, SrgbToLinearFilter) {
+  auto image = CreateTextureForFixture("embarcadero.jpg");
+  ASSERT_TRUE(image);
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    auto filtered =
+        FilterContents::MakeSrgbToLinearFilter(FilterInput::Make(image));
+
+    // Define the entity that will serve as the control image as a Gaussian blur
+    // filter with no filter at all.
+    Entity entity_left;
+    entity_left.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                                  Matrix::MakeTranslation({100, 300}) *
+                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+    auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
+                                                       Sigma{0}, Sigma{0});
+    entity_left.SetContents(unfiltered);
+
+    // Define the entity that will be filtered from sRGB to linear.
+    Entity entity_right;
+    entity_right.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                                   Matrix::MakeTranslation({500, 300}) *
+                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity_right.SetContents(filtered);
+    return entity_left.Render(context, pass) &&
+           entity_right.Render(context, pass);
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));

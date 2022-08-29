@@ -1,4 +1,4 @@
-Signature: 1b38c5821e7b2fd78bd830c6346c2ef5
+Signature: ddf19e6796e417426dd5a8327e140cc9
 
 UNUSED LICENSES:
 
@@ -11,7 +11,6 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/COPYRIGHT.musl
 TYPE: LicenseType.mit
 FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_compact_image.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libasync-default.so
@@ -215,7 +214,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libm.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libzircon.so
-FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_compact_image.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libasync-default.so
@@ -553,11 +551,14 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.lifecycle/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer.augment/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ultrasound/meta.json
@@ -619,10 +620,10 @@ FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
-FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_compact_image.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_image_pipe_swapchain.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
@@ -763,7 +764,6 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_compact_image.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libasync-default.so
@@ -967,7 +967,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libm.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libzircon.so
-FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_compact_image.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libasync-default.so
@@ -1305,11 +1304,14 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.lifecycle/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer.augment/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ultrasound/meta.json
@@ -1371,10 +1373,10 @@ FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
-FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_compact_image.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_image_pipe_swapchain.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
@@ -1412,7 +1414,6 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/LICENSE.vulkan
 TYPE: LicenseType.apache
 FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_compact_image.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libasync-default.so
@@ -1616,7 +1617,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libm.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libzircon.so
-FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_compact_image.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libasync-default.so
@@ -1954,11 +1954,14 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.lifecycle/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer.augment/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ultrasound/meta.json
@@ -2020,10 +2023,10 @@ FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
-FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_compact_image.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_image_pipe_swapchain.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
@@ -2330,6 +2333,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/keyboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/client_state.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/allocator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/flatland.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/watcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/flatland_tokens.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/wlan_common.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.ieee80211/constants.fidl
@@ -2809,7 +2813,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.product.deprecatedconfigurati
 FILE: ../../../fuchsia/sdk/linux/fidl/zx/zx_common.fidl
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/handle_close_many.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/trace.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/validate_string.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/internal/bitset.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/internal/natural_types_header.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/internal/natural_types_implementation.h
@@ -3571,6 +3574,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/ov
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/vendor_specific.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/diagnostics.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/overview.fidl
@@ -3624,10 +3628,17 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screenshot.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/media_buttons.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/registry.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/touch.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/controller.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.unknown/unknown.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/config.fidl
@@ -3657,6 +3668,14 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/include/lib/sys/inspect/tree_handler_settings.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/arm-neon.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/generic-simd.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/scalar.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/x86-avx2.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/x86-ssse3.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/utf-utils.h
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/internal/scalar.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/utf-utils.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 The Fuchsia Authors. All rights reserved.

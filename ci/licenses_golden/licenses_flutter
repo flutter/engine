@@ -521,6 +521,8 @@ FILE: ../../../flutter/impeller/display_list/display_list_playground.h
 FILE: ../../../flutter/impeller/display_list/display_list_unittests.cc
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.cc
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.h
+FILE: ../../../flutter/impeller/display_list/vertices_converter.cc
+FILE: ../../../flutter/impeller/display_list/vertices_converter.h
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image1.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image10.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image11.png
@@ -582,6 +584,12 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
+FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
@@ -644,6 +652,10 @@ FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
+FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.vert
@@ -651,6 +663,8 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
+FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
@@ -840,6 +854,8 @@ FILE: ../../../flutter/impeller/renderer/context.h
 FILE: ../../../flutter/impeller/renderer/descriptor_set_layout.h
 FILE: ../../../flutter/impeller/renderer/device_buffer.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer.h
+FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc
+FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
@@ -1092,6 +1108,7 @@ FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.cc
@@ -1131,19 +1148,20 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/canvaskit_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/embedded_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/embedded_views_diff.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/font_fallback_data.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/font_fallbacks.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/fonts.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/image.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/image_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/image_wasm_codecs.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/image_web_codecs.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/interval_tree.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_scene_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/layer_tree.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/mask_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/n_way_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/noto_font.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/path_metrics.dart
@@ -1152,6 +1170,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/picture_recorder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/platform_message.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/raster_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
@@ -1167,6 +1186,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/embedder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/fonts.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/host_node.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart
@@ -1195,6 +1215,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/render_vertices.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/scene.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/scene_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shader_mask.dart
@@ -1229,6 +1250,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/profiler.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/rrect_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/safe_browser_api.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics.dart
@@ -1682,6 +1704,7 @@ FILE: ../../../flutter/shell/platform/common/geometry.h
 FILE: ../../../flutter/shell/platform/common/geometry_unittests.cc
 FILE: ../../../flutter/shell/platform/common/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/incoming_message_dispatcher.h
+FILE: ../../../flutter/shell/platform/common/incoming_message_dispatcher_unittests.cc
 FILE: ../../../flutter/shell/platform/common/json_message_codec.cc
 FILE: ../../../flutter/shell/platform/common/json_message_codec.h
 FILE: ../../../flutter/shell/platform/common/json_message_codec_unittests.cc
@@ -1810,6 +1833,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewControllerTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewControllerTest_mrc.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewTest.mm
@@ -2119,18 +2143,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_platform_view.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_platform_view.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/child-view2/child_view2.dart
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/child-view2/meta/child-view2.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test2.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test2.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/meta/flutter-embedder-test2.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view2/meta/parent-view2.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view2/parent_view2.dart
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/base_view.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/base_view.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/embedded_view_utils.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/embedded_view_utils.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view/math.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart
