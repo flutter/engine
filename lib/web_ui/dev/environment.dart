@@ -23,6 +23,8 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory outDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
+    final io.Directory hostDebugUnoptDir =
+        io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
     final io.Directory flutterWebSdkOutDir =
         io.Directory(pathlib.join(outDir.path, 'web_debug'));
     final io.Directory dartSdkDir =
@@ -48,6 +50,7 @@ class Environment {
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
       outDir: outDir,
+      hostDebugUnoptDir: hostDebugUnoptDir,
       flutterWebSdkOutDir: flutterWebSdkOutDir,
       dartSdkDir: dartSdkDir,
     );
@@ -59,6 +62,7 @@ class Environment {
     required this.engineSrcDir,
     required this.engineToolsDir,
     required this.outDir,
+    required this.hostDebugUnoptDir,
     required this.flutterWebSdkOutDir,
     required this.dartSdkDir,
   });
@@ -79,6 +83,9 @@ class Environment {
   ///
   /// This is where you'll find the ninja output, such as the Dart SDK.
   final io.Directory outDir;
+
+  /// The output directory for the host_debug_unopt build.
+  final io.Directory hostDebugUnoptDir;
 
   /// The output directory for the build of the Flutter Web SDK (with CanvasKit bundled).
   final io.Directory flutterWebSdkOutDir;

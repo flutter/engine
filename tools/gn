@@ -249,6 +249,7 @@ def to_gn_args(args):
     gn_args['skia_canvaskit_enable_rt_shader'] = False
     gn_args['skia_canvaskit_enable_skottie'] = False
     gn_args['skia_canvaskit_enable_sksl_trace'] = False
+    gn_args['skia_enable_gpu'] = True
     gn_args['skia_use_icu'] = True
     gn_args['icu_use_data_file'] = False
     gn_args['skia_use_harfbuzz'] = True
@@ -275,8 +276,8 @@ def to_gn_args(args):
 
   if args.target_os == 'android' or args.target_os == 'ios':
     gn_args['skia_gl_standard'] = 'gles'
-  elif args.web_sdk:
-    gn_args['skia_gl_standard'] = 'webgl'
+  # elif args.web_sdk:
+  #   gn_args['skia_gl_standard'] = 'webgl'
   else:
     # We explicitly don't want to pick GL because we run GLES tests using SwiftShader.
     gn_args['skia_gl_standard'] = ''
@@ -331,7 +332,8 @@ def to_gn_args(args):
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
   else:
-    gn_args['use_ios_simulator'] = False
+    if not args.web_sdk:
+        gn_args['use_ios_simulator'] = False
 
   if args.dart_debug:
     gn_args['dart_debug'] = True
@@ -372,10 +374,6 @@ def to_gn_args(args):
 
   if args.allow_deprecated_api_calls:
     gn_args['allow_deprecated_api_calls'] = args.allow_deprecated_api_calls
-
-  if args.support_fractional_translation:
-    gn_args['support_fractional_translation'
-           ] = args.support_fractional_translation
 
   # DBC is not supported anymore.
   if args.interpreter:
@@ -426,14 +424,6 @@ def to_gn_args(args):
     gn_args['is_clang'] = True
   else:
     gn_args['is_clang'] = args.clang
-
-  if args.target_os == 'android' or args.target_os == 'ios':
-    gn_args['skia_gl_standard'] = 'gles'
-  elif args.target_os == 'wasm':
-    gn_args['skia_gl_standard'] = 'webgl'
-  else:
-    # We explicitly don't want to pick GL because we run GLES tests using SwiftShader.
-    gn_args['skia_gl_standard'] = ''
 
   if not sys.platform.startswith(('cygwin', 'win')):
     gn_args['use_clang_static_analyzer'] = args.clang_static_analyzer
@@ -503,7 +493,7 @@ def to_gn_args(args):
     gn_args['embedder_for_target'] = args.embedder_for_target
     gn_args['dart_lib_export_symbols'] = False
     gn_args['flutter_runtime_mode'] = runtime_mode
-    gn_args['full_dart_sdk'] = args.full_dart_sdk
+    gn_args['build_dart_sdk'] = args.build_dart_sdk
     gn_args['dart_version_git_info'] = not args.no_dart_version_git_info
 
     gn_args['dart_lib_export_symbols'] = False
@@ -732,7 +722,7 @@ def to_gn_args(args):
   # gen_snapshot, but the build defines otherwise make it look like the build is
   # for a host Windows build and make GN think we will be building ANGLE.
   if is_host_build(args) or (args.target_os == 'android' and
-                             get_host_os() == 'win'):
+                             get_host_os() == 'win') and not args.web_sdk:
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     # Requires RTTI. We may want to build this in debug modes, punting on that
@@ -942,6 +932,16 @@ def parse_args(args):
   )
   parser.add_argument(
       '--no-full-dart-sdk', dest='full_dart_sdk', action='store_false'
+  )
+
+  parser.add_argument(
+      '--build-dart-sdk',
+      default=True,
+      action='store_true',
+      help='Whether to build the Dart SDK (instead of downloading it).'
+  )
+  parser.add_argument(
+      '--no-build-dart-sdk', dest='build_dart_sdk', action='store_false'
   )
 
   # The reason this is its own flag and not with the rest of the "target_os" flags
