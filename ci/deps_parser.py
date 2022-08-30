@@ -52,6 +52,13 @@ def parse_deps_file(deps_file):
   # Eval the content.
   exec(deps_content, global_scope, local_scope)
 
+  vs = local_scope.get('vars', {})
+  for k, v in vs.items():
+    if k == 'mirror_metadata':
+      exec(v, global_scope, local_scope)
+      lst = local_scope.get('data', {})
+      print(lst)
+
   # Extract the deps and filter.
   deps = local_scope.get('deps', {})
   filtered_deps = []

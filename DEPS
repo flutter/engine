@@ -84,6 +84,16 @@ vars = {
 
   # Setup Git hooks by default.
   "setup_githooks": True,
+
+  'mirror_metadata': '''
+data = [
+  # Comment.
+  [
+    Var('fuchsia_git') + '/third_party/rapidjson',
+    'https://github.com/Tencent/rapidjson',
+  ],
+]
+  ''',
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
