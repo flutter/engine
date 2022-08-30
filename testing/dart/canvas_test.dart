@@ -928,6 +928,21 @@ void main() {
     expect(canvas.getLocalClipBounds(), initialLocalBounds);
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
+
+  test('RestoreToCount can work', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    expect(canvas.getSaveCount(), equals(6));
+    canvas.restoreToCount(2);
+    expect(canvas.getSaveCount(), equals(2));
+    canvas.restore();
+    expect(canvas.getSaveCount(), equals(1));
+  });
 }
 
 Matcher listEquals(ByteData expected) => (dynamic v) {

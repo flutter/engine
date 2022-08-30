@@ -117,6 +117,12 @@ int Canvas::getSaveCount() {
   }
 }
 
+void Canvas::restoreToCount(size_t count) {
+  if (display_list_recorder_) {
+    builder()->restoreToCount(count);
+  }
+}
+
 void Canvas::translate(double dx, double dy) {
   if (display_list_recorder_) {
     builder()->translate(dx, dy);

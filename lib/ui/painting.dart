@@ -4615,6 +4615,16 @@ class Canvas extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>)>('Canvas::restore', isLeaf: true)
   external void restore();
 
+  /// Pops the save stack until the count layer, if there is anything to pop.
+  /// Otherwise, does nothing.
+  ///
+  /// Use [save] and [saveLayer] to push state onto the stack.
+  ///
+  /// If the state was pushed with [saveLayer], then this call will also
+  /// cause the new layer to be composited into the previous layer.
+  @FfiNative<Void Function(Pointer<Void>, Int32)>('Canvas::restoreToCount', isLeaf: true)
+  external void restoreToCount(int count);
+
   /// Returns the number of items on the save stack, including the
   /// initial state. This means it returns 1 for a clean canvas, and
   /// that each call to [save] and [saveLayer] increments it, and that
