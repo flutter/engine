@@ -325,7 +325,8 @@ TEST_P(AiksTest, CanSaveLayerStandalone) {
 //     std::string label = "##1";
 //     label.c_str();
 //     for (int i = 0; i < 4; i++) {
-//       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
+//       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
+//       &(matrix.vec[i]),
 //                           4, NULL, NULL, "%.2f", 0);
 //       label[2]++;
 //     }

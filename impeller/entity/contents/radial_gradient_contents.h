@@ -31,7 +31,8 @@ class RadialGradientContents final : public ColorSourceContents {
 
   void SetCenterAndRadius(Point center, Scalar radius);
 
-  void SetGradientGenerator(std::shared_ptr<GradientGeneratorContents> gradient_generator);
+  void SetGradientGenerator(
+      std::shared_ptr<GradientGeneratorContents> gradient_generator);
 
   void SetTileMode(Entity::TileMode tile_mode);
 

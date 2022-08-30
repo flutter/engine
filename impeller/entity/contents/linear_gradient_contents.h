@@ -10,8 +10,8 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
-#include "impeller/entity/entity.h"
 #include "impeller/entity/contents/gradient_generator_contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
@@ -31,7 +31,8 @@ class LinearGradientContents final : public ColorSourceContents {
 
   void SetEndPoints(Point start_point, Point end_point);
 
-  void SetGradientGenerator(std::shared_ptr<GradientGeneratorContents> gradient_generator);
+  void SetGradientGenerator(
+      std::shared_ptr<GradientGeneratorContents> gradient_generator);
 
   void SetTileMode(Entity::TileMode tile_mode);
 

@@ -63,8 +63,8 @@ bool GradientGeneratorContents::Render(const ContentContext& renderer,
   {
     assert(stops_.size() == colors_.size());
     for (size_t i = 1; i < stops_.size(); i++) {
-      auto prev_stop = stops_[i-1] * scale;
-      auto prev_color = colors_[i-1].Premultiply();
+      auto prev_stop = stops_[i - 1] * scale;
+      auto prev_color = colors_[i - 1].Premultiply();
       auto stop = stops_[i] * scale;
       auto color = colors_[i].Premultiply();
       // Upper
