@@ -471,17 +471,15 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // may behave differently before and after the Dart VM is initialized.
     // As this call is immediately after initialization of the Dart VM,
     // we are interested in only one timestamp.
-    if (settings_.engine_start_timestamp.count()) {
-      int64_t micros = Dart_TimelineGetMicros();
-      Dart_TimelineEvent("FlutterEngineMainEnter",     // label
-                         micros,                       // timestamp0
-                         micros,                       // timestamp1_or_async_id
-                         Dart_Timeline_Event_Instant,  // event type
-                         0,                            // argument_count
-                         nullptr,                      // argument_names
-                         nullptr                       // argument_values
-      );
-    }
+    int64_t micros = Dart_TimelineGetMicros();
+    Dart_TimelineEvent("FlutterEngineMainEnter",     // label
+                        micros,                       // timestamp0
+                        micros,                       // timestamp1_or_async_id
+                        Dart_Timeline_Event_Instant,  // event type
+                        0,                            // argument_count
+                        nullptr,                      // argument_names
+                        nullptr                       // argument_values
+    );
   }
 
   Dart_SetFileModifiedCallback(&DartFileModifiedCallback);

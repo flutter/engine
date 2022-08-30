@@ -112,8 +112,6 @@ void FlutterMain::Init(JNIEnv* env,
 #endif  // FLUTTER_RELEASE
 
   int64_t init_time_micros = initTimeMillis * 1000;
-  settings.engine_start_timestamp =
-      std::chrono::microseconds(Dart_TimelineGetMicros() - init_time_micros);
 
   // Restore the callback cache.
   // TODO(chinmaygarde): Route all cache file access through FML and remove this
