@@ -141,21 +141,51 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   return subpass_pointer;
 }
 
+static RenderTarget CreateRenderTarget(ContentContext& renderer,
+                                       ISize size,
+                                       bool readable) {
+  auto context = renderer.GetContext();
+
+  /// All of the load/store actions are managed by `InlinePassContext` when
+  /// `RenderPasses` are created, so we just set them to `kDontCare` here.
+  /// What's important is the `StorageMode` of the textures, which cannot be
+  /// changed for the lifetime of the textures.
+
+  if (context->SupportsOffscreenMSAA()) {
+    return RenderTarget::CreateOffscreenMSAA(
+        *context,                       // context
+        size,                           // size
+        "EntityPass",                   // label
+        StorageMode::kDeviceTransient,  // color_storage_mode
+        StorageMode::kDevicePrivate,    // color_resolve_storage_mode
+        LoadAction::kDontCare,          // color_load_action
+        StoreAction::kDontCare,         // color_store_action
+        readable ? StorageMode::kDevicePrivate
+                 : StorageMode::kDeviceTransient,  // stencil_storage_mode
+        LoadAction::kDontCare,                     // stencil_load_action
+        StoreAction::kDontCare                     // stencil_store_action
+    );
+  }
+
+  return RenderTarget::CreateOffscreen(
+      *context,                     // context
+      size,                         // size
+      "EntityPass",                 // label
+      StorageMode::kDevicePrivate,  // color_storage_mode
+      LoadAction::kDontCare,        // color_load_action
+      StoreAction::kDontCare,       // color_store_action
+      readable ? StorageMode::kDevicePrivate
+               : StorageMode::kDeviceTransient,  // stencil_storage_mode
+      LoadAction::kDontCare,                     // stencil_load_action
+      StoreAction::kDontCare                     // stencil_store_action
+  );
+}
+
 bool EntityPass::Render(ContentContext& renderer,
                         RenderTarget render_target) const {
   if (reads_from_pass_texture_ > 0) {
-    auto offscreen_target = RenderTarget::CreateOffscreenMSAA(
-        *renderer.GetContext(),                    // context
-        render_target.GetRenderTargetSize(),       // size
-        "EntityPass",                              // label
-        StorageMode::kDevicePrivate,               // color_storage_mode
-        StorageMode::kDevicePrivate,               // color_resolve_storage_mode
-        LoadAction::kClear,                        // color_load_action
-        StoreAction::kStoreAndMultisampleResolve,  // color_store_action
-        StorageMode::kDevicePrivate,               // stencil_storage_mode
-        LoadAction::kClear,                        // stencil_load_action
-        StoreAction::kStore                        // stencil_store_action
-    );
+    auto offscreen_target =
+        CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
     if (!OnRender(renderer, offscreen_target.GetRenderTargetSize(),
                   offscreen_target, Point(), Point(), 0)) {
       return false;
@@ -292,31 +322,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     RenderTarget subpass_target;
     if (subpass->reads_from_pass_texture_ > 0) {
-      subpass_target = RenderTarget::CreateOffscreenMSAA(
-          *renderer.GetContext(),               // context
-          ISize::Ceil(subpass_coverage->size),  // size
-          "EntityPass",                         // label
-          StorageMode::kDevicePrivate,          // color_storage_mode
-          StorageMode::kDevicePrivate,          // color_resolve_storage_mode
-          LoadAction::kClear,                   // color_load_action
-          StoreAction::kStoreAndMultisampleResolve,  // color_store_action
-          StorageMode::kDevicePrivate,               // stencil_storage_mode
-          LoadAction::kClear,                        // stencil_load_action
-          StoreAction::kStore                        // stencil_store_action
-      );
+      subpass_target = CreateRenderTarget(
+          renderer, ISize::Ceil(subpass_coverage->size), true);
     } else {
-      subpass_target = RenderTarget::CreateOffscreenMSAA(
-          *renderer.GetContext(),               // context
-          ISize::Ceil(subpass_coverage->size),  // size
-          "EntityPass",                         // label
-          StorageMode::kDeviceTransient,        // color_storage_mode
-          StorageMode::kDevicePrivate,          // color_resolve_storage_mode
-          LoadAction::kClear,                   // color_load_action
-          StoreAction::kMultisampleResolve,     // color_store_action
-          StorageMode::kDeviceTransient,        // stencil_storage_mode
-          LoadAction::kClear,                   // stencil_load_action
-          StoreAction::kDontCare                // stencil_store_action
-      );
+      subpass_target = CreateRenderTarget(
+          renderer, ISize::Ceil(subpass_coverage->size), false);
     }
 
     auto subpass_texture = subpass_target.GetRenderTargetTexture();
@@ -380,20 +390,37 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
                          &renderer](Entity& element_entity) {
-    element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
-                                   stencil_depth_floor);
+    auto result = pass_context.GetRenderPass(pass_depth);
 
-    auto pass = pass_context.GetRenderPass(pass_depth);
-
-    if (!pass) {
+    if (!result.pass) {
       return false;
     }
 
-    if (!element_entity.ShouldRender(pass->GetRenderTargetSize())) {
+    if (!element_entity.ShouldRender(result.pass->GetRenderTargetSize())) {
       return true;  // Nothing to render.
     }
 
-    if (!element_entity.Render(renderer, *pass)) {
+    // If the pass context returns a texture, we need to draw it to the current
+    // pass. We do this because it's faster and takes significantly less memory
+    // than storing/loading large MSAA textures.
+    if (result.backdrop_texture) {
+      auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
+      auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
+      msaa_backdrop_contents->SetStencilEnabled(false);
+      msaa_backdrop_contents->SetLabel("MSAA backdrop");
+      msaa_backdrop_contents->SetSourceRect(size_rect);
+      msaa_backdrop_contents->SetTexture(result.backdrop_texture);
+
+      Entity msaa_backdrop_entity;
+      msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
+      if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
+        return false;
+      }
+    }
+
+    element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
+                                   stencil_depth_floor);
+    if (!element_entity.Render(renderer, *result.pass)) {
       return false;
     }
     return true;

@@ -28,6 +28,8 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
 
   const DlVertices* vertices() const { return vertices_.get(); }
 
+  void dispose();
+
  private:
   Vertices();
 
