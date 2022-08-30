@@ -54,11 +54,13 @@ class TextLayoutService {
 
   late final Spanometer spanometer = Spanometer(paragraph, context);
 
+  late final LayoutFragmenter layoutFragmenter = LayoutFragmenter(
+    paragraph.plainText,
+    paragraph.paragraphStyle.effectiveTextDirection,
+    paragraph.spans,
+  );
   late final List<MeasuredFragment> measuredFragments =
-      LayoutFragmenter(paragraph)
-          .fragment()
-          .map(spanometer.measureFragment)
-          .toList();
+      layoutFragmenter.fragment().map(spanometer.measureFragment).toList();
 
   /// Performs the layout on a paragraph given the [constraints].
   ///

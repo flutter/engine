@@ -160,7 +160,7 @@ void testMain() {
 
     test('trailing spaces and new lines', () {
       expect(
-        computeLineBreakFragments('foo bar  '),
+        const LineBreakFragmenter('foo bar  ').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 4, opportunity, trailingNewlines: 0, trailingSpaces: 1),
           LineBreakFragment(4, 9, endOfText, trailingNewlines: 0, trailingSpaces: 2),
@@ -168,7 +168,7 @@ void testMain() {
       );
 
       expect(
-        computeLineBreakFragments('foo  \nbar\nbaz   \n'),
+        const LineBreakFragmenter('foo  \nbar\nbaz   \n').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 6, mandatory, trailingNewlines: 1, trailingSpaces: 3),
           LineBreakFragment(6, 10, mandatory, trailingNewlines: 1, trailingSpaces: 1),
@@ -180,7 +180,7 @@ void testMain() {
 
     test('leading spaces', () {
       expect(
-        computeLineBreakFragments(' foo'),
+        const LineBreakFragmenter(' foo').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 1, opportunity, trailingNewlines: 0, trailingSpaces: 1),
           LineBreakFragment(1, 4, endOfText, trailingNewlines: 0, trailingSpaces: 0),
@@ -188,7 +188,7 @@ void testMain() {
       );
 
       expect(
-        computeLineBreakFragments('   foo'),
+        const LineBreakFragmenter('   foo').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 3, opportunity, trailingNewlines: 0, trailingSpaces: 3),
           LineBreakFragment(3, 6, endOfText, trailingNewlines: 0, trailingSpaces: 0),
@@ -196,7 +196,7 @@ void testMain() {
       );
 
       expect(
-        computeLineBreakFragments('  foo   bar'),
+        const LineBreakFragmenter('  foo   bar').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 2),
           LineBreakFragment(2, 8, opportunity, trailingNewlines: 0, trailingSpaces: 3),
@@ -205,7 +205,7 @@ void testMain() {
       );
 
       expect(
-        computeLineBreakFragments('  \n   foo'),
+        const LineBreakFragmenter('  \n   foo').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 3, mandatory, trailingNewlines: 1, trailingSpaces: 3),
           LineBreakFragment(3, 6, opportunity, trailingNewlines: 0, trailingSpaces: 3),
@@ -216,7 +216,7 @@ void testMain() {
 
     test('whitespace before the last character', () {
       expect(
-        computeLineBreakFragments('Lorem sit .'),
+        const LineBreakFragmenter('Lorem sit .').fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 6, opportunity, trailingNewlines: 0, trailingSpaces: 1),
           LineBreakFragment(6, 10, opportunity, trailingNewlines: 0, trailingSpaces: 1),
@@ -271,7 +271,7 @@ void testMain() {
       );
 
       expect(
-        LineBreakFragmenter(paragraph).fragment(),
+        LineBreakFragmenter(paragraph.plainText).fragment(),
         const <LineBreakFragment>[
           LineBreakFragment(0, 3, opportunity, trailingNewlines: 0, trailingSpaces: 2),
           LineBreakFragment(3, 10, opportunity, trailingNewlines: 0, trailingSpaces: 2),
@@ -290,7 +290,7 @@ void testMain() {
         final TestCase testCase = testCollection[t];
 
         final String text = testCase.toText();
-        final List<LineBreakFragment> fragments = computeLineBreakFragments(text);
+        final List<LineBreakFragment> fragments = LineBreakFragmenter(text).fragment();
 
         // `f` is the index in the `fragments` list.
         int f = 0;
@@ -353,7 +353,7 @@ void testMain() {
             reason: 'Failed at test case number $t:\n'
                 '$testCase\n'
                 '"$text"\n'
-                '\nExpected an extra fragment for endOfText but there wasn\'t one.',
+                "\nExpected an extra fragment for endOfText but there wasn't one.",
           );
 
           currentFragment = fragments[++f];
@@ -421,18 +421,14 @@ class Line {
 
 List<Line> split(String text) {
   return <Line>[
-    for (final LineBreakFragment fragment in computeLineBreakFragments(text))
+    for (final LineBreakFragment fragment in LineBreakFragmenter(text).fragment())
       Line.fromLineBreakFragment(text, fragment)
   ];
 }
 
 List<Line> splitParagraph(CanvasParagraph paragraph) {
   return <Line>[
-    for (final LineBreakFragment fragment in LineBreakFragmenter(paragraph).fragment())
+    for (final LineBreakFragment fragment in LineBreakFragmenter(paragraph.plainText).fragment())
       Line.fromLineBreakFragment(paragraph.toPlainText(), fragment)
   ];
-}
-
-List<LineBreakFragment> computeLineBreakFragments(String text) {
-  return LineBreakFragmenter(plain(EngineParagraphStyle(), text)).fragment();
 }

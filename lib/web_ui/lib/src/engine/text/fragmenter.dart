@@ -11,9 +11,7 @@ import 'line_breaker.dart';
 import 'text_direction.dart';
 
 abstract class TextFragmenter {
-  const TextFragmenter(this.paragraph);
-
-  final CanvasParagraph paragraph;
+  const TextFragmenter();
 
   List<TextFragment> fragment();
 }
@@ -26,7 +24,11 @@ abstract class TextFragment {
 }
 
 class LayoutFragmenter extends TextFragmenter {
-  const LayoutFragmenter(super.paragraph);
+  const LayoutFragmenter(this.paragraphText, this.textDirection, this.paragraphSpans);
+
+  final String paragraphText;
+  final ui.TextDirection textDirection;
+  final List<ParagraphSpan> paragraphSpans;
 
   @override
   List<LayoutFragment> fragment() {
@@ -34,11 +36,9 @@ class LayoutFragmenter extends TextFragmenter {
 
     int fragmentStart = 0;
 
-    final Iterator<LineBreakFragment> lineBreakFragments =
-        LineBreakFragmenter(paragraph).fragment().iterator..moveNext();
-    final Iterator<BidiFragment> bidiFragments =
-        BidiFragmenter(paragraph).fragment().iterator..moveNext();
-    final Iterator<ParagraphSpan> spans = paragraph.spans.iterator..moveNext();
+    final Iterator<LineBreakFragment> lineBreakFragments = LineBreakFragmenter(paragraphText).fragment().iterator..moveNext();
+    final Iterator<BidiFragment> bidiFragments = BidiFragmenter(paragraphText, textDirection).fragment().iterator..moveNext();
+    final Iterator<ParagraphSpan> spans = paragraphSpans.iterator..moveNext();
 
     LineBreakFragment currentLineBreakFragment = lineBreakFragments.current;
     BidiFragment currentBidiFragment = bidiFragments.current;
@@ -134,6 +134,29 @@ class LayoutFragment extends TextFragment implements LineBreakFragment, BidiFrag
   bool get isPlaceholder => span is PlaceholderSpan;
   bool get isBreak => type != LineBreakType.prohibited;
   bool get isHardBreak => type == LineBreakType.mandatory || type == LineBreakType.endOfText;
+
+  @override
+  int get hashCode => Object.hash(
+    start,
+    end,
+    type,
+    textDirection,
+    span,
+    trailingNewlines,
+    trailingSpaces,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    return other is LayoutFragment &&
+        other.start == start &&
+        other.end == end &&
+        other.type == type &&
+        other.textDirection == textDirection &&
+        other.span == span &&
+        other.trailingNewlines == trailingNewlines &&
+        other.trailingSpaces == trailingSpaces;
+  }
 
   @override
   String toString() {

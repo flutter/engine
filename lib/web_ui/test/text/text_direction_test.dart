@@ -123,13 +123,7 @@ class _Bidi {
 
 List<_Bidi> split(String text, TextDirection textDirection) {
   return <_Bidi>[
-    for (final BidiFragment bidiFragment in computeBidiFragments(text, textDirection))
+    for (final BidiFragment bidiFragment in BidiFragmenter(text, textDirection).fragment())
       _Bidi.fromBidiFragment(text, bidiFragment)
   ];
-}
-
-List<BidiFragment> computeBidiFragments(String text, TextDirection textDirection) {
-  final CanvasParagraph paragraph = plain(EngineParagraphStyle(textDirection: textDirection), text);
-  final BidiFragmenter fragmenter = BidiFragmenter(paragraph);
-  return fragmenter.fragment();
 }

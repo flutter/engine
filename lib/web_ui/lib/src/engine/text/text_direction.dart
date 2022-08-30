@@ -8,11 +8,14 @@ import 'fragmenter.dart';
 import 'unicode_range.dart';
 
 class BidiFragmenter extends TextFragmenter {
-  const BidiFragmenter(super.paragraph);
+  const BidiFragmenter(this.paragraphText, this.textDirection);
+
+  final String paragraphText;
+  final ui.TextDirection textDirection;
 
   @override
   List<BidiFragment> fragment() {
-    return _computeBidiFragments(paragraph.toPlainText(), paragraph.paragraphStyle.effectiveTextDirection);
+    return _computeBidiFragments(paragraphText, textDirection);
   }
 }
 
