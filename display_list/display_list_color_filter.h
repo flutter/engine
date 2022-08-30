@@ -249,6 +249,10 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
 
 class DlComposedColorFilter final : public DlColorFilter {
  public:
+  static const std::shared_ptr<DlColorFilter> makeComposed(
+      const DlColorFilter* outer,
+      const DlColorFilter* inner);
+
   DlComposedColorFilter(std::shared_ptr<DlColorFilter> outer,
                         std::shared_ptr<DlColorFilter> inner)
       : outer_(std::move(outer)), inner_(std::move(inner)) {}

@@ -39,7 +39,25 @@ std::shared_ptr<DlColorFilter> DlColorFilter::From(SkColorFilter* sk_filter) {
 
 std::shared_ptr<DlColorFilter> DlColorFilter::makeComposed(
     std::shared_ptr<DlColorFilter> inner) const {
+  if (!inner) {
+    return this->shared();
+  }
   return std::make_shared<DlComposedColorFilter>(this, inner.get());
+}
+
+const std::shared_ptr<DlColorFilter> DlComposedColorFilter::makeComposed(
+    const DlColorFilter* outer,
+    const DlColorFilter* inner) {
+  if (!outer) {
+    if (inner) {
+      return inner->shared();
+    }
+    return nullptr;
+  }
+  if (!inner) {
+    return outer->shared();
+  }
+  return std::make_shared<DlComposedColorFilter>(outer, inner);
 }
 
 const std::shared_ptr<DlSrgbToLinearGammaColorFilter>
