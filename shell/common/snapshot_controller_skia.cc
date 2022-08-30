@@ -52,6 +52,7 @@ sk_sp<SkImage> DrawSnapshot(
 sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
     SkISize size,
     std::function<void(SkCanvas*)> draw_callback) {
+  TRACE_EVENT0("flutter", __FUNCTION__);
   sk_sp<SkImage> result;
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());

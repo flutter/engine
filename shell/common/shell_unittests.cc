@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "include/core/SkMatrix.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
@@ -2323,38 +2322,37 @@ TEST_F(ShellTest, RasterizerScreenshot) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-// TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
-//   Settings settings = CreateSettingsForFixture();
-//   auto configuration = RunConfiguration::InferFromSettings(settings);
-//   auto task_runner = CreateNewThread();
-//   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-//                            task_runner);
-//   std::unique_ptr<Shell> shell =
-//       CreateShell(std::move(settings), std::move(task_runners));
+TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
 
-//   ASSERT_TRUE(ValidateShell(shell.get()));
-//   PlatformViewNotifyCreated(shell.get());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
 
-//   RunEngine(shell.get(), std::move(configuration));
+  RunEngine(shell.get(), std::move(configuration));
 
-//   auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
-//   PumpOneFrame(shell.get());
+  PumpOneFrame(shell.get());
 
-//   fml::TaskRunner::RunNowOrPostTask(
-//       shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
-//         SnapshotDelegate* delegate =
-//             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
-//         sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
-//             SkPicture::MakePlaceholder({0, 0, 50, 50}), SkISize::Make(50,
-//             50));
-//         EXPECT_NE(image, nullptr);
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
+        SnapshotDelegate* delegate =
+            reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
+        sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
+            MakeSizedDisplayList(50, 50), SkISize::Make(50, 50));
+        EXPECT_NE(image, nullptr);
 
-//         latch->Signal();
-//       });
-//   latch->Wait();
-//   DestroyShell(std::move(shell), std::move(task_runners));
-// }
+        latch->Signal();
+      });
+  latch->Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
 
 TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   Settings settings = CreateSettingsForFixture();
