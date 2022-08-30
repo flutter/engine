@@ -237,11 +237,14 @@ bool ComputePassMTL::EncodeCommands(
         return false;
       }
     }
-    // TODO(dnfield): use feature detection to support non-uniform threadgroup
-    // sizes.
-    [encoder dispatchThreadgroups:MTLSizeMake(32, 32, 1)
-            threadsPerThreadgroup:MTLSizeMake(32, 32, 1)];
   }
+  // TODO(dnfield): use feature detection to support non-uniform threadgroup
+  // sizes.
+  [encoder dispatchThreadgroups:MTLSizeMake(32, 32, 1)
+          threadsPerThreadgroup:MTLSizeMake(32, 32, 1)];
+
+  // TODO(dnfield): add some kind of completion handling logic for reading
+  // data back to CPU.
   return true;
 }
 

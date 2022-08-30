@@ -66,10 +66,8 @@ std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() const {
 
 // |CommandBuffer|
 std::shared_ptr<ComputePass> CommandBufferGLES::OnCreateComputePass() const {
-  if (!IsValid()) {
-    return nullptr;
-  }
-  // TODO(dnfield): implement compute for GLES.
+  // Compute passes aren't supported until GLES 3.2, at which point Vulkan is
+  // available anyway.
   return nullptr;
 }
 

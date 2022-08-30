@@ -10,9 +10,11 @@
 
 namespace impeller {
 
-bool ComputeCommand::BindResource(const ShaderUniformSlot& slot,
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const ShaderUniformSlot& slot,
                                   const ShaderMetadata& metadata,
                                   BufferView view) {
+  FML_DCHECK(stage == ShaderStage::kCompute);
   if (!view) {
     return false;
   }
@@ -21,9 +23,11 @@ bool ComputeCommand::BindResource(const ShaderUniformSlot& slot,
   return true;
 }
 
-bool ComputeCommand::BindResource(const SampledImageSlot& slot,
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const SampledImageSlot& slot,
                                   const ShaderMetadata& metadata,
                                   std::shared_ptr<const Texture> texture) {
+  FML_DCHECK(stage == ShaderStage::kCompute);
   if (!texture || !texture->IsValid()) {
     return false;
   }
@@ -36,9 +40,11 @@ bool ComputeCommand::BindResource(const SampledImageSlot& slot,
   return true;
 }
 
-bool ComputeCommand::BindResource(const SampledImageSlot& slot,
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const SampledImageSlot& slot,
                                   const ShaderMetadata& metadata,
                                   std::shared_ptr<const Sampler> sampler) {
+  FML_DCHECK(stage == ShaderStage::kCompute);
   if (!sampler || !sampler->IsValid()) {
     return false;
   }
@@ -51,12 +57,14 @@ bool ComputeCommand::BindResource(const SampledImageSlot& slot,
   return true;
 }
 
-bool ComputeCommand::BindResource(const SampledImageSlot& slot,
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const SampledImageSlot& slot,
                                   const ShaderMetadata& metadata,
                                   std::shared_ptr<const Texture> texture,
                                   std::shared_ptr<const Sampler> sampler) {
-  return BindResource(slot, metadata, texture) &&
-         BindResource(slot, metadata, sampler);
+  FML_DCHECK(stage == ShaderStage::kCompute);
+  return BindResource(stage, slot, metadata, texture) &&
+         BindResource(stage, slot, metadata, sampler);
 }
 
 }  // namespace impeller

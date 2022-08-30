@@ -52,6 +52,9 @@ std::shared_ptr<BlitPass> CommandBuffer::CreateBlitPass() const {
 }
 
 std::shared_ptr<ComputePass> CommandBuffer::CreateComputePass() const {
+  if (!IsValid()) {
+    return nullptr;
+  }
   auto pass = OnCreateComputePass();
   if (pass && pass->IsValid()) {
     pass->SetLabel("ComputePass");

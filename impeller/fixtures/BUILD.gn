@@ -18,10 +18,13 @@ impeller_shaders("shader_fixtures") {
     "instanced_draw.vert",
     "mipmaps.frag",
     "mipmaps.vert",
+    "sample.comp",
     "simple.vert",
     "test_texture.frag",
     "test_texture.vert",
   ]
+
+  gles_exclusions = [ "sample.comp" ]
 }
 
 impellerc("runtime_stages") {

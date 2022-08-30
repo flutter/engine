@@ -9,12 +9,12 @@
 #include <optional>
 #include <string>
 
-#include "compute_pipeline_descriptor.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/buffer_view.h"
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/sampler.h"
@@ -54,19 +54,23 @@ struct ComputeCommand {
   ///
   std::string label;
 
-  bool BindResource(const ShaderUniformSlot& slot,
+  bool BindResource(ShaderStage stage,
+                    const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
                     BufferView view);
 
-  bool BindResource(const SampledImageSlot& slot,
+  bool BindResource(ShaderStage stage,
+                    const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture);
 
-  bool BindResource(const SampledImageSlot& slot,
+  bool BindResource(ShaderStage stage,
+                    const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Sampler> sampler);
 
-  bool BindResource(const SampledImageSlot& slot,
+  bool BindResource(ShaderStage stage,
+                    const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
                     std::shared_ptr<const Sampler> sampler);
