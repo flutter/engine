@@ -81,7 +81,7 @@ BrowserEngine detectBrowserEngineByVendorAgent(String vendor, String agent) {
   }
 
   // Assume Blink otherwise, but issue a warning.
-  print('WARNING: failed to detect current browser engine.');
+  print('WARNING: failed to detect current browser engine. Assuming this is a Chromium-compatible browser.');
   return BrowserEngine.blink;
 }
 
