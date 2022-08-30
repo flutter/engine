@@ -40,6 +40,12 @@ void customOnErrorThrow() {
 }
 
 @pragma('vm:entry-point')
+void setLatencyPerformanceMode() {
+  PlatformDispatcher.instance.requestDartPerformanceMode(DartPerformanceMode.latency);
+  _finish();
+}
+
+@pragma('vm:entry-point')
 void validateSceneBuilderAndScene() {
   final SceneBuilder builder = SceneBuilder();
   builder.pushOffset(10, 10);
@@ -227,6 +233,21 @@ void _validatePath(Path path) native 'ValidatePath';
 void frameCallback(_Image, int) {
   print('called back');
 }
+
+@pragma('vm:entry-point')
+void platformMessageResponseTest() {
+  _callPlatformMessageResponseDart((ByteData? result) {
+    if (result is UnmodifiableByteDataView &&
+        result.lengthInBytes == 100) {
+      _finishCallResponse(true);
+    } else {
+      _finishCallResponse(false);
+    }
+  });
+}
+
+void _callPlatformMessageResponseDart(void Function(ByteData? result) callback) native 'CallPlatformMessageResponseDart';
+void _finishCallResponse(bool didPass) native 'FinishCallResponse';
 
 @pragma('vm:entry-point')
 void messageCallback(dynamic data) {}

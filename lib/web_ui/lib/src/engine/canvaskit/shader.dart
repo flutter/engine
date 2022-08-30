@@ -11,7 +11,6 @@ import '../util.dart';
 import '../validators.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
-import 'initialization.dart';
 import 'skia_object_cache.dart';
 
 abstract class CkShader extends ManagedSkiaObject<SkShader>
@@ -95,8 +94,6 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(useCanvasKit);
-
     return canvasKit.Shader.MakeLinearGradient(
       toSkPoint(from),
       toSkPoint(to),
@@ -124,8 +121,6 @@ class CkGradientRadial extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(useCanvasKit);
-
     return canvasKit.Shader.MakeRadialGradient(
       toSkPoint(center),
       radius,
@@ -156,7 +151,6 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(useCanvasKit);
     return canvasKit.Shader.MakeTwoPointConicalGradient(
       toSkPoint(focal),
       focalRadius,
@@ -223,5 +217,26 @@ class CkImageShader extends CkShader implements ui.ImageShader {
   @override
   void delete() {
     rawSkiaObject?.delete();
+  }
+
+  bool _disposed = false;
+
+  @override
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed;
+  }
+
+  @override
+  void dispose() {
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _image.dispose();
   }
 }

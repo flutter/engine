@@ -12,6 +12,7 @@
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
@@ -27,6 +28,10 @@ std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
   contents->path_ = PathBuilder{}.AddRect(destination).TakePath();
   contents->is_rect_ = true;
   return contents;
+}
+
+void TextureContents::SetLabel(std::string label) {
+  label_ = label;
 }
 
 void TextureContents::SetPath(Path path) {
@@ -46,6 +51,10 @@ void TextureContents::SetOpacity(Scalar opacity) {
   opacity_ = opacity;
 }
 
+void TextureContents::SetStencilEnabled(bool enabled) {
+  stencil_enabled_ = enabled;
+}
+
 std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
   if (opacity_ == 0) {
     return std::nullopt;
@@ -56,15 +65,20 @@ std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
 std::optional<Snapshot> TextureContents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity) const {
+  auto bounds = path_.GetBoundingBox();
+  if (!bounds.has_value()) {
+    return std::nullopt;
+  }
+
   // Passthrough textures that have simple rectangle paths and complete source
   // rects.
   if (is_rect_ && source_rect_ == Rect::MakeSize(texture_->GetSize())) {
-    auto scale =
-        Vector2(path_.GetBoundingBox()->size / Size(texture_->GetSize()));
-    return Snapshot{
-        .texture = texture_,
-        .transform = entity.GetTransformation() * Matrix::MakeScale(scale),
-        .sampler_descriptor = sampler_descriptor_};
+    auto scale = Vector2(bounds->size / Size(texture_->GetSize()));
+    return Snapshot{.texture = texture_,
+                    .transform = entity.GetTransformation() *
+                                 Matrix::MakeTranslation(bounds->origin) *
+                                 Matrix::MakeScale(scale),
+                    .sampler_descriptor = sampler_descriptor_};
   }
   return Contents::RenderToSnapshot(renderer, entity);
 }
@@ -136,9 +150,16 @@ bool TextureContents::Render(const ContentContext& renderer,
   frag_info.alpha = opacity_;
 
   Command cmd;
-  cmd.label = "TextureFill";
-  cmd.pipeline =
-      renderer.GetTexturePipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.label = "Texture Fill";
+  if (!label_.empty()) {
+    cmd.label += ": " + label_;
+  }
+
+  auto pipeline_options = OptionsFromPassAndEntity(pass, entity);
+  if (!stencil_enabled_) {
+    pipeline_options.stencil_compare = CompareFunction::kAlways;
+  }
+  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));

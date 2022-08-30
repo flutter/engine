@@ -204,6 +204,15 @@ class FlutterWindowsEngine {
   // Returns true if the semantics tree is enabled.
   bool semantics_enabled() const { return semantics_enabled_; }
 
+  // Update the high contrast feature state.
+  void UpdateHighContrastEnabled(bool enabled);
+
+  // Returns the flags for all currently enabled accessibility features
+  int EnabledAccessibilityFeatures() const;
+
+  // Returns true if the high contrast feature is enabled.
+  bool high_contrast_enabled() const { return high_contrast_enabled_; }
+
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
 
@@ -219,6 +228,12 @@ class FlutterWindowsEngine {
   void SetRootIsolateCreateCallback(const fml::closure& callback) {
     root_isolate_create_callback_ = callback;
   }
+
+  // Returns the executable name for this process or "Flutter" if unknown.
+  std::string GetExecutableName() const;
+
+  // Updates accessibility, e.g. switch to high contrast mode
+  void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -289,6 +304,8 @@ class FlutterWindowsEngine {
       std::nullopt;
 
   bool semantics_enabled_ = false;
+
+  bool high_contrast_enabled_ = false;
 
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
 
