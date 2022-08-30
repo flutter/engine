@@ -15,7 +15,9 @@
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
+#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
 #include "impeller/fixtures/sample.comp.h"
+#endif
 #include "impeller/fixtures/test_texture.frag.h"
 #include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
