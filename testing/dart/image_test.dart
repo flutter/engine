@@ -13,6 +13,47 @@ void main() {
     expect(image.runtimeType.toString(), equals('Image'));
     image.dispose();
   });
+
+  test('Image constructor invokes onCreate once', () async {
+    int onCreateInvokedCount = 0;
+    Image? createdImage;
+    Image.onCreate = (Image image) {
+      onCreateInvokedCount++;
+      createdImage = image;
+    };
+
+    final Image image1 = await _createImage();
+
+    expect(onCreateInvokedCount, 1);
+    expect(createdImage, image1);
+
+    final Image image2 = await _createImage();
+
+    expect(onCreateInvokedCount, 2);
+    expect(createdImage, image2);
+    Image.onCreate = null;
+  });
+
+  test('dispose() invokes onDispose once', () async {
+    int onDisposeInvokedCount = 0;
+    Image? disposedImage;
+    Image.onDispose = (Image image) {
+      onDisposeInvokedCount++;
+      disposedImage = image;
+    };
+
+    final Image image1 = await _createImage()..dispose();
+
+    expect(onDisposeInvokedCount, 1);
+    expect(disposedImage, image1);
+
+    final Image image2 = await _createImage()..dispose();
+
+    expect(onDisposeInvokedCount, 2);
+    expect(disposedImage, image2);
+
+    Image.onDispose = null;
+  });
 }
 
 Future<Image> _createImage() => _createPicture().toImage(10, 10);
