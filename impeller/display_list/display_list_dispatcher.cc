@@ -16,6 +16,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/nine_patch_converter.h"
+#include "impeller/display_list/vertices_converter.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -523,8 +524,7 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
 }
 
 static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
-    const flutter::DlImageFilter* filter,
-    const Vector2& effect_scale = {1, 1}) {
+    const flutter::DlImageFilter* filter) {
   if (filter == nullptr) {
     return std::nullopt;
   }
@@ -532,22 +532,49 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
-      Vector2 scaled_blur =
-          Vector2(blur->sigma_x(), blur->sigma_y()) * effect_scale;
-      auto sigma_x = Sigma(scaled_blur.x);
-      auto sigma_y = Sigma(scaled_blur.y);
+      auto sigma_x = Sigma(blur->sigma_x());
+      auto sigma_y = Sigma(blur->sigma_y());
       auto tile_mode = ToTileMode(blur->tile_mode());
 
-      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input) {
+      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input,
+                                           const Matrix& effect_transform) {
         return FilterContents::MakeGaussianBlur(
             input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
-            tile_mode);
+            tile_mode, effect_transform);
       };
 
       break;
     }
-    case flutter::DlImageFilterType::kDilate:
-    case flutter::DlImageFilterType::kErode:
+    case flutter::DlImageFilterType::kDilate: {
+      auto dilate = filter->asDilate();
+      FML_DCHECK(dilate);
+      if (dilate->radius_x() < 0 || dilate->radius_y() < 0) {
+        return std::nullopt;
+      }
+      auto radius_x = Radius(dilate->radius_x());
+      auto radius_y = Radius(dilate->radius_y());
+      return [radius_x, radius_y](FilterInput::Ref input,
+                                  const Matrix& effect_transform) {
+        return FilterContents::MakeMorphology(
+            input, radius_x, radius_y, FilterContents::MorphType::kDilate);
+      };
+      break;
+    }
+    case flutter::DlImageFilterType::kErode: {
+      auto erode = filter->asErode();
+      FML_DCHECK(erode);
+      if (erode->radius_x() < 0 || erode->radius_y() < 0) {
+        return std::nullopt;
+      }
+      auto radius_x = Radius(erode->radius_x());
+      auto radius_y = Radius(erode->radius_y());
+      return [radius_x, radius_y](FilterInput::Ref input,
+                                  const Matrix& effect_transform) {
+        return FilterContents::MakeMorphology(
+            input, radius_x, radius_y, FilterContents::MorphType::kErode);
+      };
+      break;
+    }
     case flutter::DlImageFilterType::kMatrix:
     case flutter::DlImageFilterType::kLocalMatrixFilter:
     case flutter::DlImageFilterType::kComposeFilter:
@@ -588,10 +615,7 @@ void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
                                       const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  auto scale = canvas_.GetCurrentTransformation().GetScale();
-  canvas_.SaveLayer(
-      paint, ToRect(bounds),
-      ToImageFilterProc(backdrop, Vector2::MakeXY(scale.x, scale.y)));
+  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
 }
 
 // |flutter::Dispatcher|
@@ -781,53 +805,6 @@ static Path ToPath(const SkRRect& rrect) {
   return PathBuilder{}
       .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
       .TakePath();
-}
-
-static Vertices ToVertices(const flutter::DlVertices* vertices) {
-  std::vector<Point> points;
-  std::vector<uint16_t> indices;
-  std::vector<Color> colors;
-  for (int i = 0; i < vertices->vertex_count(); i++) {
-    auto point = vertices->vertices()[i];
-    points.push_back(Point(point.x(), point.y()));
-  }
-  for (int i = 0; i < vertices->index_count(); i++) {
-    auto index = vertices->indices()[i];
-    indices.push_back(index);
-  }
-
-  auto* dl_colors = vertices->colors();
-  if (dl_colors != nullptr) {
-    auto color_length = vertices->index_count() > 0 ? vertices->index_count()
-                                                    : vertices->vertex_count();
-    for (int i = 0; i < color_length; i++) {
-      auto dl_color = dl_colors[i];
-      colors.push_back({
-          dl_color.getRedF(),
-          dl_color.getGreenF(),
-          dl_color.getBlueF(),
-          dl_color.getAlphaF(),
-      });
-    }
-  }
-  VertexMode mode;
-  switch (vertices->mode()) {
-    case flutter::DlVertexMode::kTriangles:
-      mode = VertexMode::kTriangle;
-      break;
-    case flutter::DlVertexMode::kTriangleStrip:
-      mode = VertexMode::kTriangleStrip;
-      break;
-    case flutter::DlVertexMode::kTriangleFan:
-      FML_DLOG(ERROR) << "Unimplemented vertex mode TriangleFan in "
-                      << __FUNCTION__;
-      mode = VertexMode::kTriangle;
-      break;
-  }
-
-  auto bounds = vertices->bounds();
-  return Vertices(std::move(points), std::move(indices), std::move(colors),
-                  mode, ToRect(bounds));
 }
 
 // |flutter::Dispatcher|
