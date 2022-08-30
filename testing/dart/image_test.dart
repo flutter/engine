@@ -11,10 +11,11 @@ void main() {
   test('toImage succeeds', () async {
     final Image image = await _createImage();
     expect(image.runtimeType.toString(), equals('Image'));
+    image.dispose();
   });
 }
 
-Future<Image> _createImage() async => _createPicture().toImage(10, 10);
+Future<Image> _createImage() => _createPicture().toImage(10, 10);
 
 Picture _createPicture() {
   final PictureRecorder recorder = PictureRecorder();

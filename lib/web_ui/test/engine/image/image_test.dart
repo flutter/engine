@@ -16,6 +16,7 @@ Future<void> testMain() async {
   // test('toImage succeeds', () async {
   //   final ui.Image image = await _createImage();
   //   expect(image.runtimeType.toString(), equals('HtmlImage'));
+  //   image.dispose();
   // });
 }
 
