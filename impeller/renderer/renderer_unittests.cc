@@ -742,6 +742,10 @@ TEST_P(RendererTest, CanCreateComputePass) {
   if (GetParam() == PlaygroundBackend::kOpenGLES) {
     GTEST_SKIP_("Compute is not supported on GL.");
   }
+  if (GetParam() == PlaygroundBackend::kVulkan) {
+    GTEST_SKIP_("Compute is not supported on Vulkan yet.");
+  }
+
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
