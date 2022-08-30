@@ -269,7 +269,8 @@
                     "--x64-out-dir",
                     "out/host_release",
                     "--dsym",
-                    "--strip"
+                    "--strip",
+                    "--zip"
                 ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
@@ -281,7 +282,8 @@
                     "--arm64-out-dir",
                     "out/mac_debug_arm64",
                     "--x64-out-dir",
-                    "out/host_debug"
+                    "out/host_debug",
+                    "--zip"
                 ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
@@ -293,7 +295,8 @@
                     "--arm64-out-dir",
                     "out/mac_profile_arm64",
                     "--x64-out-dir",
-                    "out/host_profile"
+                    "out/host_profile",
+                    "--zip"
                 ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
             }
