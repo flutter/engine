@@ -23,18 +23,22 @@ struct SurfaceProducerCreateInfoVK {
 class SurfaceProducerVK {
  public:
   static std::unique_ptr<SurfaceProducerVK> Create(
+      std::weak_ptr<Context> context,
       const SurfaceProducerCreateInfoVK& create_info);
 
-  explicit SurfaceProducerVK(const SurfaceProducerCreateInfoVK& create_info);
+  SurfaceProducerVK(std::weak_ptr<Context> context,
+                    const SurfaceProducerCreateInfoVK& create_info);
 
   ~SurfaceProducerVK();
 
-  std::unique_ptr<Surface> AcquireSurface(vk::CommandBuffer command_buffer);
-
- private:
-  bool SetupSyncObjects();
+  std::unique_ptr<Surface> AcquireSurface();
 
   bool Submit(vk::CommandBuffer buffer);
+
+ private:
+  std::weak_ptr<Context> context_;
+
+  bool SetupSyncObjects();
 
   bool Present(uint32_t image_index);
 

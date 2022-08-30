@@ -50,6 +50,34 @@ static bool DeviceHasUnifiedMemoryArchitecture(id<MTLDevice> device) {
   FML_UNREACHABLE();
 }
 
+static ISize DeviceMaxTextureSizeSupported(id<MTLDevice> device) {
+  // Since Apple didn't expose API for us to get the max texture size, we have
+  // to use hardcoded data from
+  // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+  // According to the feature set table, there are two supported max sizes :
+  // 16384 and 8192 for devices flutter support. The former is used on macs and
+  // latest ios devices. The latter is used on old ios devices.
+  if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
+    if ([device supportsFamily:MTLGPUFamilyApple3] ||
+        [device supportsFamily:MTLGPUFamilyMacCatalyst1] ||
+        [device supportsFamily:MTLGPUFamilyMac1]) {
+      return {16384, 16384};
+    }
+    return {8192, 8192};
+  } else {
+#if FML_OS_IOS
+    if ([device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily4_v1] ||
+        [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1]) {
+      return {16384, 16384};
+    }
+#endif
+#if FML_OS_MACOSX
+    return {16384, 16384};
+#endif
+    return {8192, 8192};
+  }
+}
+
 AllocatorMTL::AllocatorMTL(id<MTLDevice> device, std::string label)
     : device_(device), allocator_label_(std::move(label)) {
   if (!device_) {
@@ -58,6 +86,7 @@ AllocatorMTL::AllocatorMTL(id<MTLDevice> device, std::string label)
 
   supports_memoryless_targets_ = DeviceSupportsMemorylessTargets(device_);
   supports_uma_ = DeviceHasUnifiedMemoryArchitecture(device_);
+  max_texture_supported_ = DeviceMaxTextureSizeSupported(device_);
 
   is_valid_ = true;
 }
@@ -132,26 +161,25 @@ static MTLStorageMode ToMTLStorageMode(StorageMode mode,
   FML_UNREACHABLE();
 }
 
-std::shared_ptr<DeviceBuffer> AllocatorMTL::CreateBuffer(StorageMode mode,
-                                                         size_t length) {
-  const auto resource_options =
-      ToMTLResourceOptions(mode, supports_memoryless_targets_, supports_uma_);
-  const auto storage_mode =
-      ToMTLStorageMode(mode, supports_memoryless_targets_, supports_uma_);
+std::shared_ptr<DeviceBuffer> AllocatorMTL::OnCreateBuffer(
+    const DeviceBufferDescriptor& desc) {
+  const auto resource_options = ToMTLResourceOptions(
+      desc.storage_mode, supports_memoryless_targets_, supports_uma_);
+  const auto storage_mode = ToMTLStorageMode(
+      desc.storage_mode, supports_memoryless_targets_, supports_uma_);
 
-  auto buffer = [device_ newBufferWithLength:length options:resource_options];
+  auto buffer = [device_ newBufferWithLength:desc.size
+                                     options:resource_options];
   if (!buffer) {
     return nullptr;
   }
-  return std::shared_ptr<DeviceBufferMTL>(new DeviceBufferMTL(buffer,       //
-                                                              length,       //
-                                                              mode,         //
+  return std::shared_ptr<DeviceBufferMTL>(new DeviceBufferMTL(desc,         //
+                                                              buffer,       //
                                                               storage_mode  //
                                                               ));
 }
 
-std::shared_ptr<Texture> AllocatorMTL::CreateTexture(
-    StorageMode mode,
+std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
     const TextureDescriptor& desc) {
   if (!IsValid()) {
     return nullptr;
@@ -164,13 +192,17 @@ std::shared_ptr<Texture> AllocatorMTL::CreateTexture(
     return nullptr;
   }
 
-  mtl_texture_desc.storageMode =
-      ToMTLStorageMode(mode, supports_memoryless_targets_, supports_uma_);
+  mtl_texture_desc.storageMode = ToMTLStorageMode(
+      desc.storage_mode, supports_memoryless_targets_, supports_uma_);
   auto texture = [device_ newTextureWithDescriptor:mtl_texture_desc];
   if (!texture) {
     return nullptr;
   }
   return std::make_shared<TextureMTL>(desc, texture);
+}
+
+ISize AllocatorMTL::GetMaxTextureSizeSupported() const {
+  return max_texture_supported_;
 }
 
 }  // namespace impeller

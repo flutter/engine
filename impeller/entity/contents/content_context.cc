@@ -149,10 +149,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
 
-  gradient_fill_pipelines_[{}] =
-      CreateDefaultPipeline<GradientFillPipeline>(*context_);
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
+  linear_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
   sweep_gradient_fill_pipelines_[{}] =
@@ -191,12 +191,20 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
   texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
+  tiled_texture_pipelines_[{}] =
+      CreateDefaultPipeline<TiledTexturePipeline>(*context_);
   gaussian_blur_pipelines_[{}] =
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
+  morphology_filter_pipelines_[{}] =
+      CreateDefaultPipeline<MorphologyFilterPipeline>(*context_);
   color_matrix_color_filter_pipelines_[{}] =
       CreateDefaultPipeline<ColorMatrixColorFilterPipeline>(*context_);
+  linear_to_srgb_filter_pipelines_[{}] =
+      CreateDefaultPipeline<LinearToSrgbFilterPipeline>(*context_);
+  srgb_to_linear_filter_pipelines_[{}] =
+      CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
   solid_stroke_pipelines_[{}] =
       CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
@@ -239,7 +247,12 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     SubpassCallback subpass_callback) const {
   auto context = GetContext();
 
-  auto subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+  RenderTarget subpass_target;
+  if (context->SupportsOffscreenMSAA()) {
+    subpass_target = RenderTarget::CreateOffscreenMSAA(*context, texture_size);
+  } else {
+    subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+  }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
     return nullptr;
@@ -261,7 +274,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands(context->GetResourceAllocator())) {
+  if (!sub_renderpass->EncodeCommands()) {
     return nullptr;
   }
 

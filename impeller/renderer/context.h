@@ -16,8 +16,9 @@ class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 class Allocator;
+class WorkQueue;
 
-class Context {
+class Context : public std::enable_shared_from_this<Context> {
  public:
   virtual ~Context();
 
@@ -36,7 +37,11 @@ class Context {
 
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
+  virtual std::shared_ptr<WorkQueue> GetWorkQueue() const = 0;
+
   virtual bool HasThreadingRestrictions() const;
+
+  virtual bool SupportsOffscreenMSAA() const = 0;
 
  protected:
   Context();

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <iomanip>
 #include <optional>
 #include <ostream>
 #include <utility>
@@ -236,10 +237,20 @@ struct Matrix {
 
   Scalar GetMaxBasisLength() const;
 
+  constexpr Vector3 GetBasisX() const { return Vector3(m[0], m[1], m[2]); }
+
+  constexpr Vector3 GetBasisY() const { return Vector3(m[4], m[5], m[6]); }
+
+  constexpr Vector3 GetBasisZ() const { return Vector3(m[8], m[9], m[10]); }
+
   constexpr Vector3 GetScale() const {
-    return Vector3(Vector3(m[0], m[1], m[2]).Length(),
-                   Vector3(m[4], m[5], m[6]).Length(),
-                   Vector3(m[8], m[9], m[10]).Length());
+    return Vector3(GetBasisX().Length(), GetBasisY().Length(),
+                   GetBasisZ().Length());
+  }
+
+  constexpr Scalar GetDirectionScale(Vector3 direction) const {
+    return 1.0 / (this->Invert() * direction.Normalize()).Length() *
+           direction.Length();
   }
 
   constexpr bool IsAffine() const {
@@ -336,14 +347,13 @@ struct Matrix {
                                           Scalar z_far) {
     Scalar height = std::tan(fov_y.radians * 0.5);
     Scalar width = height * aspect_ratio;
-    Scalar z_diff = z_near - z_far;
 
     // clang-format off
     return {
-      1.0f / width, 0.0f,          0.0f,                              0.0f,
-      0.0f,         1.0f / height, 0.0f,                              0.0f,
-      0.0f,         0.0f,          (z_near + z_far) / z_diff,        -1.0f,
-      0.0f,         0.0f,          (2.0f * z_near * z_far) / z_diff,  0.0f
+      1.0f / width, 0.0f,           0.0f,                                 0.0f,
+      0.0f,         1.0f / height,  0.0f,                                 0.0f,
+      0.0f,         0.0f,           z_far / (z_near - z_far),            -1.0f,
+      0.0f,         0.0f,          -(z_far * z_near) / (z_far - z_near),  0.0f,
     };
     // clang-format on
   }
@@ -365,10 +375,10 @@ static_assert(sizeof(struct Matrix) == sizeof(Scalar) * 16,
 
 namespace std {
 inline std::ostream& operator<<(std::ostream& out, const impeller::Matrix& m) {
-  out << "(";
+  out << "(" << std::endl << std::fixed;
   for (size_t i = 0; i < 4u; i++) {
     for (size_t j = 0; j < 4u; j++) {
-      out << m.e[i][j] << ",";
+      out << std::setw(15) << m.e[j][i] << ",";
     }
     out << std::endl;
   }

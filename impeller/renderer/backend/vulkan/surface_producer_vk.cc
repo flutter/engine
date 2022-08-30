@@ -7,13 +7,16 @@
 #include <array>
 
 #include "fml/logging.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 
 namespace impeller {
 
 std::unique_ptr<SurfaceProducerVK> SurfaceProducerVK::Create(
+    std::weak_ptr<Context> context,
     const SurfaceProducerCreateInfoVK& create_info) {
-  auto surface_producer = std::make_unique<SurfaceProducerVK>(create_info);
+  auto surface_producer =
+      std::make_unique<SurfaceProducerVK>(context, create_info);
   if (!surface_producer->SetupSyncObjects()) {
     FML_LOG(ERROR) << "Failed to setup sync objects.";
     return nullptr;
@@ -23,13 +26,13 @@ std::unique_ptr<SurfaceProducerVK> SurfaceProducerVK::Create(
 }
 
 SurfaceProducerVK::SurfaceProducerVK(
+    std::weak_ptr<Context> context,
     const SurfaceProducerCreateInfoVK& create_info)
-    : create_info_(create_info) {}
+    : context_(context), create_info_(create_info) {}
 
 SurfaceProducerVK::~SurfaceProducerVK() = default;
 
-std::unique_ptr<Surface> SurfaceProducerVK::AcquireSurface(
-    vk::CommandBuffer command_buffer) {
+std::unique_ptr<Surface> SurfaceProducerVK::AcquireSurface() {
   auto fence_wait_res = create_info_.device.waitForFences({*in_flight_fence_},
                                                           VK_TRUE, UINT64_MAX);
   if (fence_wait_res != vk::Result::eSuccess) {
@@ -49,23 +52,30 @@ std::unique_ptr<Surface> SurfaceProducerVK::AcquireSurface(
   auto acuire_image_res = create_info_.device.acquireNextImageKHR(
       create_info_.swapchain->GetSwapchain(), UINT64_MAX,
       *image_available_semaphore_, {}, &image_index);
-  if (acuire_image_res != vk::Result::eSuccess) {
+
+  if (acuire_image_res != vk::Result::eSuccess &&
+      acuire_image_res != vk::Result::eSuboptimalKHR) {
     VALIDATION_LOG << "Failed to acquire next image: "
                    << vk::to_string(acuire_image_res);
     return nullptr;
   }
 
-  SurfaceVK::SwapCallback swap_callback = [this, image_index,
-                                           command_buffer]() {
-    if (!Submit(command_buffer)) {
-      return false;
-    }
+  if (acuire_image_res == vk::Result::eSuboptimalKHR) {
+    VALIDATION_LOG << "Suboptimal image acquired.";
+  }
+
+  SurfaceVK::SwapCallback swap_callback = [this, image_index]() {
     return Present(image_index);
   };
 
-  return SurfaceVK::WrapSwapchainImage(
-      create_info_.swapchain->GetSwapchainImage(image_index),
-      std::move(swap_callback));
+  if (auto context = context_.lock()) {
+    ContextVK* context_vk = reinterpret_cast<ContextVK*>(context.get());
+    return SurfaceVK::WrapSwapchainImage(
+        create_info_.swapchain->GetSwapchainImage(image_index), context_vk,
+        std::move(swap_callback));
+  } else {
+    return nullptr;
+  }
 }
 
 bool SurfaceProducerVK::SetupSyncObjects() {

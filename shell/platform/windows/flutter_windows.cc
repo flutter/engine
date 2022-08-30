@@ -85,6 +85,7 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
 
   // Must happen after engine is running.
   state->view->SendInitialBounds();
+  state->view->SendInitialAccessibilityFeatures();
   return state.release();
 }
 
@@ -174,6 +175,13 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
     FlutterDesktopEngineRef engine) {
   return HandleForTextureRegistrar(
       EngineFromHandle(engine)->texture_registrar());
+}
+
+void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
+                                              VoidCallback callback,
+                                              void* user_data) {
+  EngineFromHandle(engine)->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {

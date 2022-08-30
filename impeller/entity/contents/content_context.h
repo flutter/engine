@@ -40,34 +40,40 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/gradient_fill.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
+#include "impeller/entity/linear_gradient_fill.frag.h"
+#include "impeller/entity/linear_to_srgb_filter.frag.h"
+#include "impeller/entity/linear_to_srgb_filter.vert.h"
+#include "impeller/entity/morphology_filter.frag.h"
+#include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
-#include "impeller/entity/radial_gradient_fill.vert.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/solid_stroke.frag.h"
 #include "impeller/entity/solid_stroke.vert.h"
+#include "impeller/entity/srgb_to_linear_filter.frag.h"
+#include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
-#include "impeller/entity/sweep_gradient_fill.vert.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/tiled_texture_fill.frag.h"
+#include "impeller/entity/tiled_texture_fill.vert.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/vertices.vert.h"
 #include "impeller/renderer/formats.h"
 
 namespace impeller {
 
-using GradientFillPipeline =
-    PipelineT<GradientFillVertexShader, GradientFillFragmentShader>;
+using LinearGradientFillPipeline =
+    PipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
 using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
-    PipelineT<RadialGradientFillVertexShader, RadialGradientFillFragmentShader>;
+    PipelineT<GradientFillVertexShader, RadialGradientFillFragmentShader>;
 using SweepGradientFillPipeline =
-    PipelineT<SweepGradientFillVertexShader, SweepGradientFillFragmentShader>;
+    PipelineT<GradientFillVertexShader, SweepGradientFillFragmentShader>;
 using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     PipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
@@ -104,13 +110,21 @@ using BlendSoftLightPipeline =
     PipelineT<AdvancedBlendVertexShader, AdvancedBlendSoftlightFragmentShader>;
 using TexturePipeline =
     PipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using TiledTexturePipeline =
+    PipelineT<TiledTextureFillVertexShader, TiledTextureFillFragmentShader>;
 using GaussianBlurPipeline =
     PipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     PipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
+using MorphologyFilterPipeline =
+    PipelineT<MorphologyFilterVertexShader, MorphologyFilterFragmentShader>;
 using ColorMatrixColorFilterPipeline =
     PipelineT<ColorMatrixColorFilterVertexShader,
               ColorMatrixColorFilterFragmentShader>;
+using LinearToSrgbFilterPipeline =
+    PipelineT<LinearToSrgbFilterVertexShader, LinearToSrgbFilterFragmentShader>;
+using SrgbToLinearFilterPipeline =
+    PipelineT<SrgbToLinearFilterVertexShader, SrgbToLinearFilterFragmentShader>;
 using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
@@ -156,9 +170,9 @@ class ContentContext {
 
   bool IsValid() const;
 
-  std::shared_ptr<Pipeline> GetGradientFillPipeline(
+  std::shared_ptr<Pipeline> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(gradient_fill_pipelines_, opts);
+    return GetPipeline(linear_gradient_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetRadialGradientFillPipeline(
@@ -189,6 +203,11 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline> GetTiledTexturePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(tiled_texture_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline> GetGaussianBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(gaussian_blur_pipelines_, opts);
@@ -199,9 +218,24 @@ class ContentContext {
     return GetPipeline(border_mask_blur_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline> GetMorphologyFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(morphology_filter_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline> GetColorMatrixColorFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(color_matrix_color_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetLinearToSrgbFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(linear_to_srgb_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetSrgbToLinearFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(srgb_to_linear_filter_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidStrokePipeline(
@@ -326,17 +360,21 @@ class ContentContext {
   // These are mutable because while the prototypes are created eagerly, any
   // variants requested from that are lazily created and cached in the variants
   // map.
-  mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
+  mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
       color_matrix_color_filter_pipelines_;
+  mutable Variants<LinearToSrgbFilterPipeline> linear_to_srgb_filter_pipelines_;
+  mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;

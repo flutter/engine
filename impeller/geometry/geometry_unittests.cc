@@ -5,6 +5,7 @@
 #include "impeller/geometry/geometry_unittests.h"
 
 #include <limits>
+#include <sstream>
 
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/constants.h"
@@ -284,8 +285,8 @@ TEST(GeometryTest, MatrixMakePerspective) {
     auto expect = Matrix{
         3.4641, 0,       0,        0,   //
         0,      1.73205, 0,        0,   //
-        0,      0,       -1.22222, -1,  //
-        0,      0,       -2.22222, 0,   //
+        0,      0,       -1.11111, -1,  //
+        0,      0,       -1.11111, 0,   //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
@@ -295,10 +296,57 @@ TEST(GeometryTest, MatrixMakePerspective) {
     auto expect = Matrix{
         0.915244, 0,       0,   0,   //
         0,        1.83049, 0,   0,   //
-        0,        0,       -3,  -1,  //
-        0,        0,       -40, 0,   //
+        0,        0,       -2,  -1,  //
+        0,        0,       -20, 0,   //
     };
     ASSERT_MATRIX_NEAR(m, expect);
+  }
+}
+
+TEST(GeometryTest, MatrixGetBasisVectors) {
+  {
+    auto m = Matrix();
+    Vector3 x = m.GetBasisX();
+    Vector3 y = m.GetBasisY();
+    Vector3 z = m.GetBasisZ();
+    ASSERT_VECTOR3_NEAR(x, Vector3(1, 0, 0));
+    ASSERT_VECTOR3_NEAR(y, Vector3(0, 1, 0));
+    ASSERT_VECTOR3_NEAR(z, Vector3(0, 0, 1));
+  }
+
+  {
+    auto m = Matrix::MakeRotationZ(Radians{kPiOver2}) *
+             Matrix::MakeRotationX(Radians{kPiOver2}) *
+             Matrix::MakeScale(Vector3(2, 3, 4));
+    Vector3 x = m.GetBasisX();
+    Vector3 y = m.GetBasisY();
+    Vector3 z = m.GetBasisZ();
+    ASSERT_VECTOR3_NEAR(x, Vector3(0, 2, 0));
+    ASSERT_VECTOR3_NEAR(y, Vector3(0, 0, 3));
+    ASSERT_VECTOR3_NEAR(z, Vector3(4, 0, 0));
+  }
+}
+
+TEST(GeometryTest, MatrixGetDirectionScale) {
+  {
+    auto m = Matrix();
+    Scalar result = m.GetDirectionScale(Vector3{1, 0, 0});
+    ASSERT_FLOAT_EQ(result, 1);
+  }
+
+  {
+    auto m = Matrix::MakeRotationX(Degrees{10}) *
+             Matrix::MakeRotationY(Degrees{83}) *
+             Matrix::MakeRotationZ(Degrees{172});
+    Scalar result = m.GetDirectionScale(Vector3{0, 1, 0});
+    ASSERT_FLOAT_EQ(result, 1);
+  }
+
+  {
+    auto m = Matrix::MakeRotationZ(Radians{kPiOver2}) *
+             Matrix::MakeScale(Vector3(3, 4, 5));
+    Scalar result = m.GetDirectionScale(Vector3{2, 0, 0});
+    ASSERT_FLOAT_EQ(result, 8);
   }
 }
 
@@ -771,6 +819,35 @@ TEST(GeometryTest, PointAbs) {
   auto a_abs = a.Abs();
   auto expected = Point(1, 2);
   ASSERT_POINT_NEAR(a_abs, expected);
+}
+
+TEST(GeometryTest, PointAngleTo) {
+  // Negative result in the CCW (with up = -Y) direction.
+  {
+    Point a(1, 1);
+    Point b(1, -1);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+
+  // Check the other direction to ensure the result is signed correctly.
+  {
+    Point a(1, -1);
+    Point b(1, 1);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+
+  // Differences in magnitude should have no impact on the result.
+  {
+    Point a(100, -100);
+    Point b(0.01, 0.01);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
 }
 
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
@@ -1252,6 +1329,35 @@ TEST(GeometryTest, VerticesConstructorAndGetters) {
   ASSERT_EQ(vertices.GetIndices(), indices);
   ASSERT_EQ(vertices.GetColors(), colors);
   ASSERT_EQ(vertices.GetMode(), VertexMode::kTriangle);
+}
+
+TEST(GeometryTest, MatrixPrinting) {
+  std::stringstream stream;
+
+  Matrix m;
+
+  stream << m;
+
+  ASSERT_EQ(stream.str(), R"((
+       1.000000,       0.000000,       0.000000,       0.000000,
+       0.000000,       1.000000,       0.000000,       0.000000,
+       0.000000,       0.000000,       1.000000,       0.000000,
+       0.000000,       0.000000,       0.000000,       1.000000,
+))");
+
+  stream.str("");
+  stream.clear();
+
+  m = Matrix::MakeTranslation(Vector3(10, 20, 30));
+
+  stream << m;
+
+  ASSERT_EQ(stream.str(), R"((
+       1.000000,       0.000000,       0.000000,      10.000000,
+       0.000000,       1.000000,       0.000000,      20.000000,
+       0.000000,       0.000000,       1.000000,      30.000000,
+       0.000000,       0.000000,       0.000000,       1.000000,
+))");
 }
 
 }  // namespace testing

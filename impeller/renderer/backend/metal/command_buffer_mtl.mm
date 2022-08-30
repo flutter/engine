@@ -8,10 +8,9 @@
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
 
 namespace impeller {
-namespace {
 
 API_AVAILABLE(ios(14.0), macos(11.0))
-NSString* MTLCommandEncoderErrorStateToString(
+static NSString* MTLCommandEncoderErrorStateToString(
     MTLCommandEncoderErrorState state) {
   switch (state) {
     case MTLCommandEncoderErrorStateUnknown:
@@ -28,18 +27,6 @@ NSString* MTLCommandEncoderErrorStateToString(
   return @"unknown";
 }
 
-// NOLINTBEGIN(readability-identifier-naming)
-
-// TODO(dnfield): This can be removed when all bots have been sufficiently
-// upgraded for MAC_OS_VERSION_12_0.
-#if !defined(MAC_OS_VERSION_12_0) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_12_0
-constexpr int MTLCommandBufferErrorAccessRevoked = 4;
-constexpr int MTLCommandBufferErrorStackOverflow = 12;
-#endif
-
-// NOLINTEND(readability-identifier-naming)
-
 static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
   switch (code) {
     case MTLCommandBufferErrorNone:
@@ -50,8 +37,6 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
       return @"timeout";
     case MTLCommandBufferErrorPageFault:
       return @"page fault";
-    case MTLCommandBufferErrorAccessRevoked:
-      return @"access revoked / blacklisted";
     case MTLCommandBufferErrorNotPermitted:
       return @"not permitted";
     case MTLCommandBufferErrorOutOfMemory:
@@ -60,8 +45,6 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
       return @"invalid resource";
     case MTLCommandBufferErrorMemoryless:
       return @"memory-less";
-    case MTLCommandBufferErrorStackOverflow:
-      return @"stack overflow";
     default:
       break;
   }
@@ -69,13 +52,13 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
   return [NSString stringWithFormat:@"<unknown> %zu", code];
 }
 
-static void LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
+static bool LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
   if (!buffer) {
-    return;
+    return true;
   }
 
   if (buffer.status == MTLCommandBufferStatusCompleted) {
-    return;
+    return true;
   }
 
   std::stringstream stream;
@@ -123,10 +106,10 @@ static void LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
 
   stream << "<<<<<<<";
   VALIDATION_LOG << stream.str();
+  return false;
 }
-}  // namespace
 
-id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
+static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
   if (@available(iOS 14.0, macOS 11.0, *)) {
     auto desc = [[MTLCommandBufferDescriptor alloc] init];
     // Degrades CPU performance slightly but is well worth the cost for typical
@@ -137,8 +120,9 @@ id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
   return [queue commandBuffer];
 }
 
-CommandBufferMTL::CommandBufferMTL(id<MTLCommandQueue> queue)
-    : buffer_(CreateCommandBuffer(queue)) {}
+CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context> context,
+                                   id<MTLCommandQueue> queue)
+    : CommandBuffer(std::move(context)), buffer_(CreateCommandBuffer(queue)) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
@@ -166,20 +150,16 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
   return CommandBufferMTL::Status::kError;
 }
 
-bool CommandBufferMTL::SubmitCommands(CompletionCallback callback) {
-  if (!IsValid()) {
-    // Already committed or was never valid. Either way, this is caller error.
-    if (callback) {
-      callback(Status::kError);
-    }
-    return false;
-  }
-
+bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   if (callback) {
-    [buffer_ addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      LogMTLCommandBufferErrorIfPresent(buffer);
-      callback(ToCommitResult(buffer.status));
-    }];
+    [buffer_
+        addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+          [[maybe_unused]] auto result =
+              LogMTLCommandBufferErrorIfPresent(buffer);
+          FML_DCHECK(result)
+              << "Must not have errors during command buffer submission.";
+          callback(ToCommitResult(buffer.status));
+        }];
   }
 
   [buffer_ commit];
@@ -195,7 +175,7 @@ std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
   }
 
   auto pass = std::shared_ptr<RenderPassMTL>(
-      new RenderPassMTL(buffer_, std::move(target)));
+      new RenderPassMTL(context_, std::move(target), buffer_));
   if (!pass->IsValid()) {
     return nullptr;
   }

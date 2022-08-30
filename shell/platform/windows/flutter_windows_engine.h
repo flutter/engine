@@ -13,6 +13,7 @@
 #include <string_view>
 #include <vector>
 
+#include "flutter/fml/closure.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
@@ -176,6 +177,9 @@ class FlutterWindowsEngine {
   // Informs the engine that a new frame is needed to redraw the content.
   void ScheduleFrame();
 
+  // Set the callback that is called when the next frame is drawn.
+  void SetNextFrameCallback(fml::closure callback);
+
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -200,8 +204,36 @@ class FlutterWindowsEngine {
   // Returns true if the semantics tree is enabled.
   bool semantics_enabled() const { return semantics_enabled_; }
 
+  // Update the high contrast feature state.
+  void UpdateHighContrastEnabled(bool enabled);
+
+  // Returns the flags for all currently enabled accessibility features
+  int EnabledAccessibilityFeatures() const;
+
+  // Returns true if the high contrast feature is enabled.
+  bool high_contrast_enabled() const { return high_contrast_enabled_; }
+
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
+
+  // Register a root isolate create callback.
+  //
+  // The root isolate create callback is invoked at creation of the root Dart
+  // isolate in the app. This may be used to be notified that execution of the
+  // main Dart entrypoint is about to begin, and is used by test infrastructure
+  // to register a native function resolver that can register and resolve
+  // functions marked as native in the Dart code.
+  //
+  // This must be called before calling |Run|.
+  void SetRootIsolateCreateCallback(const fml::closure& callback) {
+    root_isolate_create_callback_ = callback;
+  }
+
+  // Returns the executable name for this process or "Flutter" if unknown.
+  std::string GetExecutableName() const;
+
+  // Updates accessibility, e.g. switch to high contrast mode
+  void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -273,10 +305,18 @@ class FlutterWindowsEngine {
 
   bool semantics_enabled_ = false;
 
+  bool high_contrast_enabled_ = false;
+
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;
+
+  // The root isolate creation callback.
+  fml::closure root_isolate_create_callback_;
+
+  // The on frame drawn callback.
+  fml::closure next_frame_callback_;
 };
 
 }  // namespace flutter

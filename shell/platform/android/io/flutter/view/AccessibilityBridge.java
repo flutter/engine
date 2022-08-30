@@ -9,6 +9,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -119,6 +120,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // framework generated IDs
   // and the most significant 16 bits are used for engine generated IDs.
   private static final int MIN_ENGINE_GENERATED_NODE_ID = 1 << 16;
+
+  // Font weight adjustment for bold text. FontWeight.Bold - FontWeight.Normal = w700 - w400 = 300.
+  private static final int BOLD_TEXT_WEIGHT_ADJUSTMENT = 300;
 
   /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
   private static int FIRST_RESOURCE_ID = 267386881;
@@ -257,6 +261,30 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   @Nullable private OnAccessibilityChangeListener onAccessibilityChangeListener;
 
+  // Whether the users are using assistive technologies to interact with the devices.
+  //
+  // The getter returns true when at least one of the assistive technologies is running:
+  // TalkBack, SwitchAccess, or VoiceAccess.
+  @VisibleForTesting
+  public boolean getAccessibleNavigation() {
+    return accessibleNavigation;
+  }
+
+  private boolean accessibleNavigation = false;
+
+  private void setAccessibleNavigation(boolean value) {
+    if (accessibleNavigation == value) {
+      return;
+    }
+    accessibleNavigation = value;
+    if (accessibleNavigation) {
+      accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    } else {
+      accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    }
+    sendLatestAccessibilityFlagsToFlutter();
+  }
+
   // Set to true after {@code release} has been invoked.
   private boolean isReleased = false;
 
@@ -331,6 +359,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
                 accessibilityChannel.onAndroidAccessibilityEnabled();
               } else {
+                setAccessibleNavigation(false);
                 accessibilityChannel.setAccessibilityMessageHandler(null);
                 accessibilityChannel.onAndroidAccessibilityDisabled();
               }
@@ -409,7 +438,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     this.contentResolver = contentResolver;
     this.accessibilityViewEmbedder = accessibilityViewEmbedder;
     this.platformViewsAccessibilityDelegate = platformViewsAccessibilityDelegate;
-
     // Tell Flutter whether accessibility is initially active or not. Then register a listener
     // to be notified of changes in the future.
     accessibilityStateChangeListener.onAccessibilityStateChanged(accessibilityManager.isEnabled());
@@ -425,13 +453,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
               if (isReleased) {
                 return;
               }
-              if (isTouchExplorationEnabled) {
-                accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-              } else {
+              if (!isTouchExplorationEnabled) {
+                setAccessibleNavigation(false);
                 onTouchExplorationExit();
-                accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
               }
-              sendLatestAccessibilityFlagsToFlutter();
 
               if (onAccessibilityChangeListener != null) {
                 onAccessibilityChangeListener.onAccessibilityChanged(
@@ -453,6 +478,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       animationScaleObserver.onChange(false);
       Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
       this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
+    }
+
+    // Tells Flutter whether the text should be bolded or not. If the user changes bold text
+    // setting, the configuration will change and trigger a re-build of the accesibiltyBridge.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      setBoldTextFlag();
     }
 
     platformViewsAccessibilityDelegate.attachAccessibilityBridge(this);
@@ -518,6 +549,26 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
+  @TargetApi(31)
+  @RequiresApi(31)
+  private void setBoldTextFlag() {
+    if (rootAccessibilityView == null || rootAccessibilityView.getResources() == null) {
+      return;
+    }
+    int fontWeightAdjustment =
+        rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
+    boolean shouldBold =
+        fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
+            && fontWeightAdjustment >= BOLD_TEXT_WEIGHT_ADJUSTMENT;
+
+    if (shouldBold) {
+      accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
+    } else {
+      accessibilityFeatureFlags &= AccessibilityFeature.BOLD_TEXT.value;
+    }
+    sendLatestAccessibilityFlagsToFlutter();
+  }
+
   @VisibleForTesting
   public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView, int virtualViewId) {
     return AccessibilityNodeInfo.obtain(rootView, virtualViewId);
@@ -551,6 +602,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
+    setAccessibleNavigation(true);
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
       // The node is in the engine generated range, and is provided by the accessibility view
       // embedder.
