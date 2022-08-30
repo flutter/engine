@@ -60,8 +60,8 @@ Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    renderer.fontCollection.debugRegisterTestFonts();
+    await renderer.fontCollection.ensureFontsLoaded();
   });
 
   setUp(() {
@@ -393,6 +393,10 @@ Future<void> testMain() async {
 
     rc.drawVertices(vertices as SurfaceVertices, BlendMode.srcOver, paint);
     await checkScreenshot(rc, filename, maxDiffRatePercent: 1.0);
+
+    expect(imgShader.debugDisposed, false);
+    imgShader.dispose();
+    expect(imgShader.debugDisposed, true);
   }
 
   test('Should draw triangle with texture and indices', () async {

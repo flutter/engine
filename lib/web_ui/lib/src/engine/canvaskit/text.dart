@@ -11,8 +11,8 @@ import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
-import 'initialization.dart';
 import 'painting.dart';
+import 'renderer.dart';
 import 'skia_object_cache.dart';
 import 'util.dart';
 
@@ -797,6 +797,23 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
     return result;
   }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    delete();
+    didDelete();
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Paragraph.debugDisposed is only available when asserts are enabled.');
+  }
 }
 
 class CkLineMetrics implements ui.LineMetrics {
@@ -843,7 +860,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         _styleStack = <CkTextStyle>[],
         _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
           style.skParagraphStyle,
-          skiaFontCollection.fontProvider,
+          CanvasKitRenderer.instance.fontCollection.fontProvider,
         ) {
     _styleStack.add(_style.getTextStyle());
   }
