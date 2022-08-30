@@ -138,4 +138,6 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     return pass.AddCommand(std::move(cmd));
   }
+}
+
 }  // namespace impeller
