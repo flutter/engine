@@ -35,11 +35,11 @@ group("web_sdk") {
 template("sdk_rewriter") {
   ui = defined(invoker.ui) && invoker.ui
   if (!ui) {
-    assert(defined(invoker.library_name), "Must define 'library_name'")
-    assert(defined(invoker.api_file), "Must define 'api_file'")
+    assert(defined(invoker.library_name), "Must pass 'library_name'")
+    assert(defined(invoker.api_file), "Must pass 'api_file'")
   }
-  assert(defined(invoker.input_dir), "Must define 'input_dir'")
-  assert(defined(invoker.output_dir), "Must define 'output_dir'")
+  assert(defined(invoker.input_dir), "Must pass 'input_dir'")
+  assert(defined(invoker.output_dir), "Must pass 'output_dir'")
 
   source_dart_files = exec_script("//third_party/dart/tools/list_dart_files.py",
                                   [

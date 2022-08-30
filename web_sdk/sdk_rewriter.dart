@@ -36,7 +36,7 @@ export 'dart:_engine'
 
 List<Replacer> generateApiFilePatterns(String libraryName, String extraImports) {
   return <Replacer>[
-  AllReplacer(RegExp('library\\s+$libraryName;'), '''
+    AllReplacer(RegExp('library\\s+$libraryName;'), '''
 @JS()
 library dart._$libraryName;
 
@@ -50,14 +50,16 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 $extraImports
-'''),
-  // Replace exports of engine files with "part" directives.
-  MappedReplacer(RegExp('''
+'''
+    ),
+    // Replace exports of engine files with "part" directives.
+    MappedReplacer(RegExp('''
 export\\s*'$libraryName/(.*)';
 '''), (Match match) => '''
 part '$libraryName/${match.group(1)}';
-'''),
-];
+'''
+    ),
+  ];
 }
 
 List<Replacer> generatePartsPatterns(String libraryName) {
