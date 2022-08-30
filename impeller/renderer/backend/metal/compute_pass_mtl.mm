@@ -216,6 +216,7 @@ bool ComputePassMTL::EncodeCommands(
 
     // TODO(dnfield): update the compute pipeline descriptor so that it can set
     // things like workgroup size etc.
+    // https://github.com/flutter/flutter/issues/110618
     pass_bindings.SetComputePipelineState(
         ComputePipelineMTL::Cast(*command.pipeline)
             .GetMTLComputePipelineState());
@@ -240,11 +241,10 @@ bool ComputePassMTL::EncodeCommands(
   }
   // TODO(dnfield): use feature detection to support non-uniform threadgroup
   // sizes.
+  // https://github.com/flutter/flutter/issues/110619
   [encoder dispatchThreadgroups:MTLSizeMake(32, 32, 1)
           threadsPerThreadgroup:MTLSizeMake(32, 32, 1)];
 
-  // TODO(dnfield): add some kind of completion handling logic for reading
-  // data back to CPU.
   return true;
 }
 

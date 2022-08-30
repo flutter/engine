@@ -134,6 +134,7 @@ std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {
 }
 
 std::shared_ptr<ComputePass> CommandBufferVK::OnCreateComputePass() const {
+  // TODO(dnfield): https://github.com/flutter/flutter/issues/110622
   VALIDATION_LOG << "ComputePasses unimplemented for Vulkan";
   return nullptr;
 }
