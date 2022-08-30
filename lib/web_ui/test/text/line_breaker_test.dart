@@ -384,15 +384,15 @@ void testMain() {
 class Line {
   Line(this.text, this.breakType);
 
-  final String text;
-  final LineBreakType breakType;
-
   factory Line.fromLineBreakFragment(String text, LineBreakFragment fragment) {
     return Line(
       text.substring(fragment.start, fragment.end),
       fragment.type,
     );
   }
+
+  final String text;
+  final LineBreakType breakType;
 
   @override
   int get hashCode => Object.hash(text, breakType);

@@ -95,15 +95,15 @@ Future<void> testMain() async {
 class _Bidi {
   _Bidi(this.text, this.textDirection);
 
-  final String text;
-  final TextDirection textDirection;
-
   factory _Bidi.fromBidiFragment(String text, BidiFragment bidiFragment) {
     return _Bidi(
       text.substring(bidiFragment.start, bidiFragment.end),
       bidiFragment.textDirection,
     );
   }
+
+  final String text;
+  final TextDirection textDirection;
 
   @override
   int get hashCode => Object.hash(text, textDirection);

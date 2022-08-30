@@ -236,7 +236,7 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
 
   int fragmentStart = 0;
 
-  void setBreak(LineBreakType type, int _debugRuleNumber) {
+  void setBreak(LineBreakType type, int debugRuleNumber) {
     final int fragmentEnd =
         type == LineBreakType.endOfText ? text.length : index;
     assert(fragmentEnd >= fragmentStart);

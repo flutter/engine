@@ -158,17 +158,6 @@ class _Fragment {
     this.sp = 0,
   });
 
-  final String text;
-  final LineBreakType type;
-  final TextDirection textDirection;
-  final EngineTextStyle? style;
-
-  /// The number of trailing new line characters.
-  final int nl;
-
-  /// The number of trailing spaces.
-  final int sp;
-
   factory _Fragment._fromLayoutFragment(String text, LayoutFragment layoutFragment) {
     final ParagraphSpan span = layoutFragment.span;
     return _Fragment(
@@ -180,6 +169,17 @@ class _Fragment {
       sp: layoutFragment.trailingSpaces,
     );
   }
+
+  final String text;
+  final LineBreakType type;
+  final TextDirection textDirection;
+  final EngineTextStyle? style;
+
+  /// The number of trailing new line characters.
+  final int nl;
+
+  /// The number of trailing spaces.
+  final int sp;
 
   @override
   int get hashCode => Object.hash(text, textDirection);
