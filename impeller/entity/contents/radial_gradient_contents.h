@@ -10,7 +10,6 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
-#include "impeller/entity/contents/gradient_generator_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
@@ -31,19 +30,22 @@ class RadialGradientContents final : public ColorSourceContents {
 
   void SetCenterAndRadius(Point center, Scalar radius);
 
-  void SetGradientGenerator(
-      std::shared_ptr<GradientGeneratorContents> gradient_generator);
+  void SetColors(std::vector<Color> colors);
 
-  void SetTileMode(Entity::TileMode tile_mode);
+  void SetStops(std::vector<Scalar> stops);
 
   const std::vector<Color>& GetColors() const;
+
+  const std::vector<Scalar>& GetStops() const;
+
+  void SetTileMode(Entity::TileMode tile_mode);
 
  private:
   Point center_;
   Scalar radius_;
   std::vector<Color> colors_;
+  std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
-  std::shared_ptr<GradientGeneratorContents> gradient_generator_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RadialGradientContents);
 };

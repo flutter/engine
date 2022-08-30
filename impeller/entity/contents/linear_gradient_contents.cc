@@ -9,6 +9,7 @@
 
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/gradient_generator_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
@@ -26,9 +27,20 @@ void LinearGradientContents::SetEndPoints(Point start_point, Point end_point) {
   end_point_ = end_point;
 }
 
-void LinearGradientContents::SetGradientGenerator(
-    std::shared_ptr<GradientGeneratorContents> gradient_generator) {
-  gradient_generator_ = std::move(gradient_generator);
+void LinearGradientContents::SetColors(std::vector<Color> colors) {
+  colors_ = std::move(colors);
+}
+
+void LinearGradientContents::SetStops(std::vector<Scalar> stops) {
+  stops_ = std::move(stops);
+}
+
+const std::vector<Color>& LinearGradientContents::GetColors() const {
+  return colors_;
+}
+
+const std::vector<Scalar>& LinearGradientContents::GetStops() const {
+  return stops_;
 }
 
 void LinearGradientContents::SetTileMode(Entity::TileMode tile_mode) {
@@ -39,7 +51,6 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
   using VS = LinearGradientFillPipeline::VertexShader;
-  using FS = LinearGradientFillPipeline::FragmentShader;
 
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
   {
@@ -59,40 +70,77 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
     }
   }
 
-  auto placeholder = Entity();
-  auto gradient_snapshot =
-      gradient_generator_->RenderToSnapshot(renderer, placeholder);
+  if (colors_.size() > 2) {
+    using FS = LinearGradientFillPipeline::FragmentShader;
+    auto placeholder = Entity();
+    auto gradient_generator = GradientGeneratorContents();
+    gradient_generator.SetColors(colors_);
+    gradient_generator.SetStops(stops_);
+    auto gradient_snapshot =
+        gradient_generator.RenderToSnapshot(renderer, placeholder);
+    if (gradient_snapshot == std::nullopt) {
+      return false;
+    }
 
-  VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
-  frame_info.matrix = GetInverseMatrix();
+    VS::FrameInfo frame_info;
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation();
+    frame_info.matrix = GetInverseMatrix();
 
-  FS::GradientInfo gradient_info;
-  gradient_info.start_point = start_point_;
-  gradient_info.end_point = end_point_;
-  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  gradient_info.texture_sampler_y_coord_scale =
-      gradient_snapshot->texture->GetYCoordScale();
+    FS::GradientInfo gradient_info;
+    gradient_info.start_point = start_point_;
+    gradient_info.end_point = end_point_;
+    gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
+    gradient_info.texture_sampler_y_coord_scale =
+        gradient_snapshot->texture->GetYCoordScale();
 
-  Command cmd;
-  cmd.label = "LinearGradientFill";
-  cmd.pipeline = renderer.GetLinearGradientFillPipeline(
-      OptionsFromPassAndEntity(pass, entity));
-  cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(
-      vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
-  cmd.primitive_type = PrimitiveType::kTriangle;
-  FS::BindGradientInfo(
-      cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
-  SamplerDescriptor sampler_desc;
-  sampler_desc.min_filter = MinMagFilter::kLinear;
-  sampler_desc.mag_filter = MinMagFilter::kLinear;
-  FS::BindTextureSampler(
-      cmd, gradient_snapshot->texture,
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-  return pass.AddCommand(std::move(cmd));
+    Command cmd;
+    cmd.label = "LinearGradientFill";
+    cmd.pipeline = renderer.GetLinearGradientFillPipeline(
+        OptionsFromPassAndEntity(pass, entity));
+    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.BindVertices(
+        vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+    cmd.primitive_type = PrimitiveType::kTriangle;
+    FS::BindGradientInfo(
+        cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+    SamplerDescriptor sampler_desc;
+    sampler_desc.min_filter = MinMagFilter::kLinear;
+    sampler_desc.mag_filter = MinMagFilter::kLinear;
+    FS::BindTextureSampler(
+        cmd, gradient_snapshot->texture,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
+    VS::BindFrameInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    return pass.AddCommand(std::move(cmd));
+  } else {
+    using FS = LinearGradientFillTwoColorPipeline::FragmentShader;
+    VS::FrameInfo frame_info;
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation();
+    frame_info.matrix = GetInverseMatrix();
+
+    FS::GradientInfo gradient_info;
+    gradient_info.start_point = start_point_;
+    gradient_info.end_point = end_point_;
+    gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
+    gradient_info.start_color = colors_[0].Premultiply();
+    gradient_info.end_color = colors_[1].Premultiply();
+
+    Command cmd;
+    cmd.label = "LinearGradientFillTwoColor";
+    cmd.pipeline = renderer.GetLinearGradientFillTwoColorPipeline(
+        OptionsFromPassAndEntity(pass, entity));
+    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.BindVertices(
+        vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+    cmd.primitive_type = PrimitiveType::kTriangle;
+    FS::BindGradientInfo(
+        cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+    VS::BindFrameInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    return pass.AddCommand(std::move(cmd));
+  }
 }  // namespace impeller
 
 }  // namespace impeller

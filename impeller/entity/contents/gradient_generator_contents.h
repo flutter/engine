@@ -17,6 +17,10 @@
 
 namespace impeller {
 
+/**
+ * @brief A gradient texture generator designed for arbitrary count and
+ * arbitrarily spaced gradient colors.
+ */
 class GradientGeneratorContents final : public Contents {
  public:
   GradientGeneratorContents();
@@ -42,6 +46,7 @@ class GradientGeneratorContents final : public Contents {
  private:
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
+  Scalar scale_ = 0.0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GradientGeneratorContents);
 };

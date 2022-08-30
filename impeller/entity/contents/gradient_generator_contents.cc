@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <algorithm>
-#include <iostream>
 
 #include "gradient_generator_contents.h"
 
@@ -25,6 +24,16 @@ void GradientGeneratorContents::SetColors(std::vector<Color> colors) {
 
 void GradientGeneratorContents::SetStops(std::vector<Scalar> stops) {
   stops_ = std::move(stops);
+  auto minimum_delta = 1.0;
+  for (size_t i = 1; i < stops_.size(); i++) {
+    auto value = stops_[i] - stops_[i - 1];
+    if (value < minimum_delta) {
+      minimum_delta = value;
+    }
+  }
+  // Avoid creating textures that are absurdly large due to stops that are
+  // very close together.
+  scale_ = std::min(std::ceil(1.0 / minimum_delta), 1024.0);
 }
 
 const std::vector<Color>& GradientGeneratorContents::GetColors() const {
@@ -33,16 +42,7 @@ const std::vector<Color>& GradientGeneratorContents::GetColors() const {
 
 std::optional<Rect> GradientGeneratorContents::GetCoverage(
     const Entity& entity) const {
-  auto minimum_delta = 1.0;
-  for (size_t i = 1; i < stops_.size(); i++) {
-    auto value = stops_[i] - stops_[i - 1];
-    if (value < minimum_delta) {
-      minimum_delta = value;
-    }
-  }
-  // TODO: make sure we dont generate absurd texture sizes.
-  auto scale = std::ceil(1.0 / minimum_delta);
-  return Rect::MakeLTRB(0, 0, scale, 1);
+  return Rect::MakeLTRB(0, 0, scale_, 1);
 }
 
 bool GradientGeneratorContents::Render(const ContentContext& renderer,
@@ -51,53 +51,20 @@ bool GradientGeneratorContents::Render(const ContentContext& renderer,
   using VS = GradientGeneratorPipeline::VertexShader;
 
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
-  auto minimum_delta = 1.0;
-  for (size_t i = 1; i < stops_.size(); i++) {
-    auto value = stops_[i] - stops_[i - 1];
-    if (value < minimum_delta) {
-      minimum_delta = value;
-    }
-  }
-  auto scale = std::ceil(1.0 / minimum_delta);
-
   {
-    assert(stops_.size() == colors_.size());
+    constexpr size_t indexing[6] = {0, 1, 0, 1, 0, 1};
+    constexpr size_t y[6] = {0, 0, 1, 0, 1, 1};
     for (size_t i = 1; i < stops_.size(); i++) {
-      auto prev_stop = stops_[i - 1] * scale;
+      auto prev_stop = stops_[i - 1] * scale_;
       auto prev_color = colors_[i - 1].Premultiply();
-      auto stop = stops_[i] * scale;
+      auto stop = stops_[i] * scale_;
       auto color = colors_[i].Premultiply();
-      // Upper
-      VS::PerVertexData vtx_1;
-      vtx_1.position = Point(prev_stop, 0);
-      vtx_1.color = prev_color;
-      vertices_builder.AppendVertex(vtx_1);
-
-      VS::PerVertexData vtx_2;
-      vtx_2.position = Point(stop, 0);
-      vtx_2.color = color;
-      vertices_builder.AppendVertex(vtx_2);
-
-      VS::PerVertexData vtx_3;
-      vtx_3.position = Point(prev_stop, 1);
-      vtx_3.color = prev_color;
-      vertices_builder.AppendVertex(vtx_3);
-
-      // Lower
-      VS::PerVertexData vtx_4;
-      vtx_4.position = Point(stop, 0);
-      vtx_4.color = color;
-      vertices_builder.AppendVertex(vtx_4);
-
-      VS::PerVertexData vtx_5;
-      vtx_5.position = Point(prev_stop, 1);
-      vtx_5.color = prev_color;
-      vertices_builder.AppendVertex(vtx_5);
-
-      VS::PerVertexData vtx_6;
-      vtx_6.position = Point(stop, 1);
-      vtx_6.color = color;
-      vertices_builder.AppendVertex(vtx_6);
+      for (size_t j = 0; j < 6; j++) {
+        VS::PerVertexData vtx;
+        vtx.position = Point(indexing[j] ? stop : prev_stop, y[j]);
+        vtx.color = indexing[j] ? color : prev_color;
+        vertices_builder.AppendVertex(vtx);
+      }
     }
   }
   VS::FrameInfo frame_info;

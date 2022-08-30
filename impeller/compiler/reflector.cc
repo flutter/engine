@@ -10,7 +10,6 @@
 #include <iostream>
 #include <optional>
 #include <set>
-#include <sstream>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
@@ -653,8 +652,6 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           member.vecsize == 1              //
       ) {
         // Add the type directly.
-        std::cerr << "Known Type " << maybe_known_type.value().name
-                  << std::endl;
         result.emplace_back(StructMember{
             maybe_known_type.value().name,         // type
             BaseTypeToString(member.basetype),     // basetype
@@ -672,8 +669,6 @@ std::vector<StructMember> Reflector::ReadStructMembers(
     {
       const size_t byte_length =
           (member.width * member.columns * member.vecsize) / 8u;
-      std::cerr << "Unknown Type " << GetMemberNameAtIndex(struct_type, i)
-                << std::endl;
       result.emplace_back(StructMember{
           TypeNameWithPaddingOfSize(byte_length),  // type
           BaseTypeToString(member.basetype),       // basetype
