@@ -62,7 +62,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   auto placeholder = Entity();
   auto gradient_snapshot =
       gradient_generator_->RenderToSnapshot(renderer, placeholder);
-  
+
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
