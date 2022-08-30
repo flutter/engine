@@ -46,10 +46,10 @@ sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
       render_target_size.height *= scale_factor;
     }
 
-    std::optional<impeller::Snapshot> snapshot =
-        picture.Snapshot(*context, render_target_size);
-    if (snapshot.has_value()) {
-      return impeller::DlImageImpeller::Make(snapshot.value().texture);
+    std::shared_ptr<impeller::Image> image =
+        picture.ToImage(*context, render_target_size);
+    if (image) {
+      return impeller::DlImageImpeller::Make(image->GetTexture());
     }
   }
 
