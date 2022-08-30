@@ -1540,25 +1540,28 @@ void _paragraphTests() {
     );
     domDocument.body!.append(canvas);
 
-    final SkSurface surface = canvasKit.MakeWebGLCanvasSurface(canvas);
-    final SkCanvas skCanvas = surface.getCanvas();
-    skCanvas.drawColorInt(0xFFCCCCCC, toSkBlendMode(ui.BlendMode.srcOver));
-    skCanvas.drawParagraph(paragraph, 20, 20);
-    skCanvas.drawRect(
-      Float32List.fromList(<double>[20, 20, 20 + paragraph.getMaxIntrinsicWidth(), 20 + paragraph.getHeight()]),
-      SkPaint()
-        ..setStyle(toSkPaintStyle(ui.PaintingStyle.stroke))
-        ..setStrokeWidth(1)
-        ..setColorInt(0xFF00FF00),
-    );
-    surface.flush();
+    // TODO(yjbanov): WebGL screenshot tests do not work on Firefox - https://github.com/flutter/flutter/issues/109265
+    if (!isFirefox) {
+      final SkSurface surface = canvasKit.MakeWebGLCanvasSurface(canvas);
+      final SkCanvas skCanvas = surface.getCanvas();
+      skCanvas.drawColorInt(0xFFCCCCCC, toSkBlendMode(ui.BlendMode.srcOver));
+      skCanvas.drawParagraph(paragraph, 20, 20);
+      skCanvas.drawRect(
+        Float32List.fromList(<double>[20, 20, 20 + paragraph.getMaxIntrinsicWidth(), 20 + paragraph.getHeight()]),
+        SkPaint()
+          ..setStyle(toSkPaintStyle(ui.PaintingStyle.stroke))
+          ..setStrokeWidth(1)
+          ..setColorInt(0xFF00FF00),
+      );
+      surface.flush();
 
-    await matchGoldenFile(
-      'paragraph_kitchen_sink.png',
-      region: const ui.Rect.fromLTRB(0, 0, 400, 160),
-      maxDiffRatePercent: 0.0,
-      write: true,
-    );
+      await matchGoldenFile(
+        'paragraph_kitchen_sink.png',
+        region: const ui.Rect.fromLTRB(0, 0, 400, 160),
+        maxDiffRatePercent: 0.0,
+        write: true,
+      );
+    }
 
     void expectAlmost(double actual, double expected) {
       expect(actual, within<double>(distance: actual / 100, from: expected));
