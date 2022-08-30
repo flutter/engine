@@ -23,7 +23,7 @@ void testMain() {
     expect(image.runtimeType.toString(), equals('CkImage'));
     image.dispose();
   // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox || isSafari);
+  }, skip: isFirefox);
 }
 
 Future<ui.Image> _createImage() => _createPicture().toImage(10, 10);
