@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <algorithm>
-#include <iostream>
-
 #include "linear_gradient_contents.h"
 
 #include "flutter/fml/logging.h"

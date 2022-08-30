@@ -463,29 +463,34 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-// TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
-//   Canvas canvas;
-//   Paint paint;
-//   paint.color_source = []() {
-//     auto contents = std::make_shared<LinearGradientContents>();
-//     contents->SetEndPoints({0, 0}, {100, 100});
-//     std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-//                                  Color{0.1294, 0.5882, 0.9529, 1.0}};
-//     contents->SetColors(std::move(colors));
-//     contents->SetTileMode(Entity::TileMode::kRepeat);
-//     return contents;
-//   };
-//   canvas.Save();
-//   canvas.Translate({100, 100, 0});
-//   canvas.DrawRect({0, 0, 200, 200}, paint);
-//   canvas.Restore();
+TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
+  Canvas canvas;
+  Paint paint;
+  paint.color_source = []() {
+    auto contents = std::make_shared<LinearGradientContents>();
+    contents->SetEndPoints({0, 0}, {100, 100});
+    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
+    std::vector<Scalar> stops = {
+        0.0,
+        1.0,
+    };
+    contents->SetColors(std::move(colors));
+    contents->SetStops(std::move(stops));
+    contents->SetTileMode(Entity::TileMode::kRepeat);
+    return contents;
+  };
+  canvas.Save();
+  canvas.Translate({100, 100, 0});
+  canvas.DrawRect({0, 0, 200, 200}, paint);
+  canvas.Restore();
 
-//   canvas.Save();
-//   canvas.Translate({100, 400, 0});
-//   canvas.DrawCircle({100, 100}, 100, paint);
-//   canvas.Restore();
-//   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-// }
+  canvas.Save();
+  canvas.Translate({100, 400, 0});
+  canvas.DrawCircle({100, 100}, 100, paint);
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
 
 TEST_P(AiksTest, BlendModeShouldCoverWholeScreen) {
   Canvas canvas;
@@ -768,8 +773,10 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
-                                 "NotoColorEmoji.ttf"));
+  ASSERT_TRUE(RenderTextInCanvas(
+      GetContext(), canvas,
+      "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
+      "NotoColorEmoji.ttf"));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
