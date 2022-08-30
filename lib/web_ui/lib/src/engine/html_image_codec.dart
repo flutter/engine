@@ -141,9 +141,7 @@ class SingleFrameInfo implements ui.FrameInfo {
 
 class HtmlImage implements ui.Image {
   HtmlImage(this.imgElement, this.width, this.height) {
-    print('before oncreate');
     ui.Image.onCreate?.call(this);
-    print('after oncreate');
   }
 
   final DomHTMLImageElement imgElement;
