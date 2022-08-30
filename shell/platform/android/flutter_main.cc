@@ -111,8 +111,6 @@ void FlutterMain::Init(JNIEnv* env,
   settings.enable_timeline_event_handler = settings.trace_systrace;
 #endif  // FLUTTER_RELEASE
 
-  int64_t init_time_micros = initTimeMillis * 1000;
-
   // Restore the callback cache.
   // TODO(chinmaygarde): Route all cache file access through FML and remove this
   // setter.
