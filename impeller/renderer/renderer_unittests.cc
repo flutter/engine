@@ -737,6 +737,7 @@ TEST_P(RendererTest, TheImpeller) {
   OpenPlaygroundHere(callback);
 }
 
+#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
 TEST_P(RendererTest, CanCreateComputePass) {
   if (GetParam() == PlaygroundBackend::kOpenGLES) {
     GTEST_SKIP_("Compute is not supported on GL.");
@@ -775,6 +776,7 @@ TEST_P(RendererTest, CanCreateComputePass) {
   ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
   ASSERT_TRUE(pass->EncodeCommands());
 }
+#endif
 
 }  // namespace testing
 }  // namespace impeller
