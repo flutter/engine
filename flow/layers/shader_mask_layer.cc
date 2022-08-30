@@ -7,12 +7,12 @@
 
 namespace flutter {
 
-ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> shader,
+ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> color_source,
                                  const SkRect& mask_rect,
                                  DlBlendMode blend_mode)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
-      shader_(std::move(shader)),
+      color_source_(std::move(color_source)),
       mask_rect_(mask_rect),
       blend_mode_(blend_mode) {}
 
@@ -21,8 +21,8 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto* prev = static_cast<const ShaderMaskLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     FML_DCHECK(prev);
-    if (shader_ != prev->shader_ || mask_rect_ != prev->mask_rect_ ||
-        blend_mode_ != prev->blend_mode_) {
+    if (color_source_ != prev->color_source_ ||
+        mask_rect_ != prev->mask_rect_ || blend_mode_ != prev->blend_mode_) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
@@ -63,8 +63,8 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
 
     DlPaint dl_paint;
     dl_paint.setBlendMode(blend_mode_);
-    if (shader_) {
-      dl_paint.setColorSource(shader_.get());
+    if (color_source_) {
+      dl_paint.setColorSource(color_source_.get());
     }
     context.leaf_nodes_builder->translate(mask_rect_.left(), mask_rect_.top());
     context.leaf_nodes_builder->drawRect(shader_rect, dl_paint);
@@ -75,8 +75,8 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
     PaintChildren(context);
     SkPaint paint;
     paint.setBlendMode(ToSk(blend_mode_));
-    if (shader_) {
-      paint.setShader(shader_->skia_object());
+    if (color_source_) {
+      paint.setShader(color_source_->skia_object());
     }
     context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
     context.leaf_nodes_canvas->drawRect(shader_rect, paint);

@@ -378,8 +378,7 @@ TEST_F(ShaderMaskLayerTest, OpacityInheritance) {
         expected_builder.saveLayer(&child_path.getBounds(), &sl_paint);
         {
           /* child layer paint */ {
-            expected_builder.drawPath(child_path,
-                                      DlPaint().setColor(0xFF000000));
+            expected_builder.drawPath(child_path, DlPaint());
           }
           expected_builder.translate(mask_rect.fLeft, mask_rect.fTop);
           expected_builder.drawRect(
