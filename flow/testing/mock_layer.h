@@ -66,34 +66,40 @@ class MockLayer : public Layer {
 
   bool fake_has_texture_layer() { return mock_flags_ & kFakeHasTextureLayer; }
 
-  void set_parent_has_platform_view(bool flag) {
+  MockLayer& set_parent_has_platform_view(bool flag) {
     flag ? (mock_flags_ |= kParentHasPlatformView)
          : (mock_flags_ &= ~(kParentHasPlatformView));
+    return *this;
   }
 
-  void set_parent_has_texture_layer(bool flag) {
+  MockLayer& set_parent_has_texture_layer(bool flag) {
     flag ? (mock_flags_ |= kParentHasTextureLayer)
          : (mock_flags_ &= ~(kParentHasTextureLayer));
+    return *this;
   }
 
-  void set_fake_has_platform_view(bool flag) {
+  MockLayer& set_fake_has_platform_view(bool flag) {
     flag ? (mock_flags_ |= kFakeHasPlatformView)
          : (mock_flags_ &= ~(kFakeHasPlatformView));
+    return *this;
   }
 
-  void set_fake_reads_surface(bool flag) {
+  MockLayer& set_fake_reads_surface(bool flag) {
     flag ? (mock_flags_ |= kFakeReadsSurface)
          : (mock_flags_ &= ~(kFakeReadsSurface));
+    return *this;
   }
 
-  void set_fake_opacity_compatible(bool flag) {
+  MockLayer& set_fake_opacity_compatible(bool flag) {
     flag ? (mock_flags_ |= kFakeOpacityCompatible)
          : (mock_flags_ &= ~(kFakeOpacityCompatible));
+    return *this;
   }
 
-  void set_fake_has_texture_layer(bool flag) {
+  MockLayer& set_fake_has_texture_layer(bool flag) {
     flag ? (mock_flags_ |= kFakeHasTextureLayer)
          : (mock_flags_ &= ~(kFakeHasTextureLayer));
+    return *this;
   }
 
  private:
