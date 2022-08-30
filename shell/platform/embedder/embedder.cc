@@ -627,9 +627,10 @@ InferSoftwarePlatformViewCreationCallback(
 
   return fml::MakeCopyable(
       [software_dispatch_table, platform_dispatch_table,
-       external_view_embedder =
-           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+       external_view_embedder = std::move(external_view_embedder),
+       config](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
+            config->software,
             shell,                             // delegate
             shell.GetTaskRunners(),            // task runners
             software_dispatch_table,           // software dispatch table

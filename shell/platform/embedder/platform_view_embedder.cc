@@ -7,6 +7,7 @@
 namespace flutter {
 
 PlatformViewEmbedder::PlatformViewEmbedder(
+    const FlutterSoftwareRendererConfig& render_config,
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
@@ -15,7 +16,8 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     : PlatformView(delegate, std::move(task_runners)),
       external_view_embedder_(external_view_embedder),
       embedder_surface_(
-          std::make_unique<EmbedderSurfaceSoftware>(software_dispatch_table,
+          std::make_unique<EmbedderSurfaceSoftware>(render_config,
+                                                    software_dispatch_table,
                                                     external_view_embedder_)),
       platform_dispatch_table_(platform_dispatch_table) {}
 

@@ -21,6 +21,7 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   };
 
   EmbedderSurfaceSoftware(
+      const FlutterSoftwareRendererConfig& render_config,
       SoftwareDispatchTable software_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
@@ -31,6 +32,7 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   SoftwareDispatchTable software_dispatch_table_;
   sk_sp<SkSurface> sk_surface_;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
+  const FlutterSoftwareRendererConfig& render_config_;
 
   // |EmbedderSurface|
   bool IsValid() const override;

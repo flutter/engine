@@ -763,6 +763,36 @@ typedef struct {
 
 } FlutterVulkanRendererConfig;
 
+typedef enum {
+  kSoftUnknown_SkColorType,    //!< uninitialized
+  kSoftAlpha_8_SkColorType,    //!< pixel with alpha in 8-bit byte
+  kSoftRGB_565_SkColorType,    //!< pixel with 5 bits red, 6 bits green, 5 bits
+                               //!< blue, in 16-bit word
+  kSoftARGB_4444_SkColorType,  //!< pixel with 4 bits for alpha, red, green,
+                               //!< blue; in 16-bit word
+  kSoftRGBA_8888_SkColorType,  //!< pixel with 8 bits for red, green, blue,
+                               //!< alpha; in 32-bit word
+  kSoftRGB_888x_SkColorType,   //!< pixel with 8 bits each for red, green, blue;
+                               //!< in 32-bit word
+  kSoftBGRA_8888_SkColorType,  //!< pixel with 8 bits for blue, green, red,
+                               //!< alpha; in 32-bit word
+  kSoftRGBA_1010102_SkColorType,  //!< 10 bits for red, green, blue; 2 bits for
+                                  //!< alpha; in 32-bit word
+  kSoftBGRA_1010102_SkColorType,  //!< 10 bits for blue, green, red; 2 bits for
+                                  //!< alpha; in 32-bit word
+  kSoftRGB_101010x_SkColorType,   //!< pixel with 10 bits each for red, green,
+                                  //!< blue; in 32-bit word
+  kSoftBGR_101010x_SkColorType,   //!< pixel with 10 bits each for blue, green,
+                                  //!< red; in 32-bit word
+  kSoftGray_8_SkColorType,        //!< pixel with grayscale level in 8-bit byte
+  kSoftRGBA_F16Norm_SkColorType,  //!< pixel with half floats in [0,1] for red,
+                                  //!< green, blue, alpha;
+                                  //   in 64-bit word
+  kSoftRGBA_F16_SkColorType,  //!< pixel with half floats for red, green, blue,
+                              //!< alpha;
+                              //   in 64-bit word
+} FlutterSoftwareColorType;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
@@ -771,6 +801,7 @@ typedef struct {
   /// format. The buffer is owned by the Flutter engine and must be copied in
   /// this callback if needed.
   SoftwareSurfacePresentCallback surface_present_callback;
+  FlutterSoftwareColorType color_type;
 } FlutterSoftwareRendererConfig;
 
 typedef struct {

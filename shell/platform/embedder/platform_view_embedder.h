@@ -53,6 +53,7 @@ class PlatformViewEmbedder final : public PlatformView {
 
   // Create a platform view that sets up a software rasterizer.
   PlatformViewEmbedder(
+      const FlutterSoftwareRendererConfig& render_config,
       PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
