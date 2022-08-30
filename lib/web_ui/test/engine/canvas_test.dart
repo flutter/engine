@@ -276,5 +276,20 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(canvas.getLocalClipBounds(), initialLocalBounds);
       expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
     });
+
+    test('RestoreToCount can work', () async {
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      expect(canvas.getSaveCount(), 6);
+      canvas.restoreToCount(2);
+      expect(canvas.getSaveCount(), 2);
+      canvas.restore();
+      expect(canvas.getSaveCount(), 1);
+    });
   });
 }

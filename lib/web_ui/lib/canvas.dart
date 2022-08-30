@@ -95,6 +95,7 @@ abstract class Canvas {
   void saveLayer(Rect? bounds, Paint paint);
   void restore();
   int getSaveCount();
+  void restoreToCount(int count);
   void translate(double dx, double dy);
   void scale(double sx, [double? sy]);
   void rotate(double radians);
