@@ -24,7 +24,9 @@ impeller_shaders("shader_fixtures") {
     "test_texture.vert",
   ]
 
-  gles_exclusions = [ "sample.comp" ]
+  if (impeller_enable_opengles) {
+    gles_exclusions = [ "sample.comp" ]
+  }
 }
 
 impellerc("runtime_stages") {

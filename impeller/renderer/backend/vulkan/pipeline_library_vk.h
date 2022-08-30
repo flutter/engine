@@ -54,6 +54,10 @@ class PipelineLibraryVK final
   PipelineFuture<PipelineDescriptor> GetPipeline(
       PipelineDescriptor descriptor) override;
 
+  // |PipelineLibrary|
+  PipelineFuture<ComputePipelineDescriptor> GetPipeline(
+      ComputePipelineDescriptor descriptor) override;
+
   std::unique_ptr<PipelineCreateInfoVK> CreatePipeline(
       const PipelineDescriptor& desc);
 

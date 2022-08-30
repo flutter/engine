@@ -87,6 +87,18 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
   return future;
 }
 
+// |PipelineLibrary|
+PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
+    ComputePipelineDescriptor descriptor) {
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
+  auto future =
+      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
+  // TODO(dnfield): implement compute for GLES.
+  promise->set_value(nullptr);
+  return future;
+}
+
 static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
     vk::Format format,
     SampleCount sample_count) {
