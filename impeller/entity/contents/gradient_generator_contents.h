@@ -9,8 +9,7 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "impeller/entity/contents/color_source_contents.h"
-#include "impeller/entity/contents/gradient_generator_contents.h"
+#include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
@@ -18,33 +17,33 @@
 
 namespace impeller {
 
-class RadialGradientContents final : public ColorSourceContents {
+class GradientGeneratorContents final : public Contents {
  public:
-  RadialGradientContents();
+  GradientGeneratorContents();
 
-  ~RadialGradientContents() override;
+  ~GradientGeneratorContents() override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
 
-  void SetCenterAndRadius(Point center, Scalar radius);
+  // |Contents|
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
-  void SetGradientGenerator(std::shared_ptr<GradientGeneratorContents> gradient_generator);
+  void SetColors(std::vector<Color> colors);
 
-  void SetTileMode(Entity::TileMode tile_mode);
+  void SetStops(std::vector<Scalar> stops);
 
   const std::vector<Color>& GetColors() const;
 
- private:
-  Point center_;
-  Scalar radius_;
-  std::vector<Color> colors_;
-  Entity::TileMode tile_mode_;
-  std::shared_ptr<GradientGeneratorContents> gradient_generator_;
+  const std::vector<Scalar>& GetStops() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RadialGradientContents);
+ private:
+  std::vector<Color> colors_;
+  std::vector<Scalar> stops_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(GradientGeneratorContents);
 };
 
 }  // namespace impeller

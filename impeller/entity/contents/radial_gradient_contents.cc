@@ -8,6 +8,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
@@ -21,14 +22,9 @@ void RadialGradientContents::SetCenterAndRadius(Point center, Scalar radius) {
   radius_ = radius;
 }
 
-void RadialGradientContents::SetColors(std::vector<Color> colors) {
-  colors_ = std::move(colors);
-  if (colors_.empty()) {
-    colors_.push_back(Color::Black());
-    colors_.push_back(Color::Black());
-  } else if (colors_.size() < 2u) {
-    colors_.push_back(colors_.back());
-  }
+void RadialGradientContents::SetGradientGenerator(
+    std::shared_ptr<GradientGeneratorContents> gradient_generator) {
+  gradient_generator_ = std::move(gradient_generator);
 }
 
 void RadialGradientContents::SetTileMode(Entity::TileMode tile_mode) {
@@ -63,6 +59,10 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
     }
   }
 
+  auto placeholder = Entity();
+  auto gradient_snapshot =
+      gradient_generator_->RenderToSnapshot(renderer, placeholder);
+
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
@@ -71,8 +71,8 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
   FS::GradientInfo gradient_info;
   gradient_info.center = center_;
   gradient_info.radius = radius_;
-  gradient_info.center_color = colors_[0].Premultiply();
-  gradient_info.edge_color = colors_[1].Premultiply();
+  gradient_info.texture_sampler_y_coord_scale =
+      gradient_snapshot->texture->GetYCoordScale();
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
 
   Command cmd;
@@ -85,6 +85,12 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
   cmd.primitive_type = PrimitiveType::kTriangle;
   FS::BindGradientInfo(
       cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  SamplerDescriptor sampler_desc;
+  sampler_desc.min_filter = MinMagFilter::kLinear;
+  sampler_desc.mag_filter = MinMagFilter::kLinear;
+  FS::BindTextureSampler(
+      cmd, gradient_snapshot->texture,
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
   return pass.AddCommand(std::move(cmd));
 }

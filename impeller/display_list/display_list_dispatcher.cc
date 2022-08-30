@@ -18,6 +18,7 @@
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/gradient_generator_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
@@ -321,10 +322,13 @@ void DisplayListDispatcher::setColorSource(
       auto matrix = ToMatrix(linear->matrix());
       paint_.color_source = [start_point, end_point, colors = std::move(colors),
                              stops = std::move(stops), tile_mode, matrix]() {
+        auto gradient_generator = std::make_shared<GradientGeneratorContents>();
+        gradient_generator->SetColors(std::move(colors));
+        gradient_generator->SetStops(std::move(stops));
+
         auto contents = std::make_shared<LinearGradientContents>();
         contents->SetEndPoints(start_point, end_point);
-        contents->SetColors(std::move(colors));
-        contents->SetStops(std::move(stops));
+        contents->SetGradientGenerator(std::move(gradient_generator));
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;
@@ -338,16 +342,21 @@ void DisplayListDispatcher::setColorSource(
       auto center = ToPoint(radialGradient->center());
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
+      std::vector<float> stops;
       for (auto i = 0; i < radialGradient->stop_count(); i++) {
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
+        stops.emplace_back(radialGradient->stops()[i]);
       }
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
       paint_.color_source = [center, radius, colors = std::move(colors),
-                             tile_mode, matrix]() {
+                             stops = std::move(stops), tile_mode, matrix]() {
+        auto gradient_generator = std::make_shared<GradientGeneratorContents>();
+        gradient_generator->SetColors(std::move(colors));
+        gradient_generator->SetStops(std::move(stops));
         auto contents = std::make_shared<RadialGradientContents>();
         contents->SetCenterAndRadius(center, radius);
-        contents->SetColors(std::move(colors));
+        contents->SetGradientGenerator(std::move(gradient_generator));
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;

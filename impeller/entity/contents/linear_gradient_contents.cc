@@ -2,12 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
+#include <iostream>
+
 #include "linear_gradient_contents.h"
 
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
@@ -21,26 +26,13 @@ void LinearGradientContents::SetEndPoints(Point start_point, Point end_point) {
   end_point_ = end_point;
 }
 
-void LinearGradientContents::SetColors(std::vector<Color> colors) {
-  colors_ = std::move(colors);
-  if (colors_.empty()) {
-    colors_.push_back(Color::Black());
-    colors_.push_back(Color::Black());
-  } else if (colors_.size() < 2u) {
-    colors_.push_back(colors_.back());
-  }
+void LinearGradientContents::SetGradientGenerator(
+    std::shared_ptr<GradientGeneratorContents> gradient_generator) {
+  gradient_generator_ = std::move(gradient_generator);
 }
 
 void LinearGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
-}
-
-void LinearGradientContents::SetStops(std::vector<Scalar> stops) {
-  stops_ = std::move(stops);
-}
-
-const std::vector<Color>& LinearGradientContents::GetColors() const {
-  return colors_;
 }
 
 bool LinearGradientContents::Render(const ContentContext& renderer,
@@ -66,6 +58,11 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
       return false;
     }
   }
+
+  auto placeholder = Entity();
+  auto gradient_snapshot =
+      gradient_generator_->RenderToSnapshot(renderer, placeholder);
+  
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
@@ -74,30 +71,9 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   FS::GradientInfo gradient_info;
   gradient_info.start_point = start_point_;
   gradient_info.end_point = end_point_;
-  gradient_info.last_index = colors_.size() - 1;
-  Color colors[8];
-  Scalar stops[8];
-  for (auto i = 0u; i < stops_.size(); i++) {
-    colors[i] = colors_[i].Premultiply();
-    stops[i] = stops_[i];
-  }
-  gradient_info.stops_0 = stops[0];
-  gradient_info.stops_1 = stops[1];
-  gradient_info.stops_2 = stops[2];
-  gradient_info.stops_3 = stops[3];
-  gradient_info.stops_4 = stops[4];
-  gradient_info.stops_5 = stops[5];
-  gradient_info.stops_6 = stops[6];
-  gradient_info.stops_7 = stops[7];
-  gradient_info.colors_0 = colors[0];
-  gradient_info.colors_1 = colors[1];
-  gradient_info.colors_2 = colors[2];
-  gradient_info.colors_3 = colors[3];
-  gradient_info.colors_4 = colors[4];
-  gradient_info.colors_5 = colors[5];
-  gradient_info.colors_6 = colors[6];
-  gradient_info.colors_7 = colors[7];
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  gradient_info.texture_sampler_y_coord_scale =
+      gradient_snapshot->texture->GetYCoordScale();
 
   Command cmd;
   cmd.label = "LinearGradientFill";
@@ -109,8 +85,14 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   cmd.primitive_type = PrimitiveType::kTriangle;
   FS::BindGradientInfo(
       cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  SamplerDescriptor sampler_desc;
+  sampler_desc.min_filter = MinMagFilter::kLinear;
+  sampler_desc.mag_filter = MinMagFilter::kLinear;
+  FS::BindTextureSampler(
+      cmd, gradient_snapshot->texture,
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
   return pass.AddCommand(std::move(cmd));
-}
+}  // namespace impeller
 
 }  // namespace impeller

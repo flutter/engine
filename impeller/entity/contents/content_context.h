@@ -41,6 +41,8 @@
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
+#include "impeller/entity/gradient_generator.frag.h"
+#include "impeller/entity/gradient_generator.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
@@ -64,6 +66,8 @@
 
 namespace impeller {
 
+using GradientGeneratorPipeline =
+    PipelineT<GradientGeneratorVertexShader, GradientGeneratorFragmentShader>;
 using LinearGradientFillPipeline =
     PipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
 using SolidFillPipeline =
@@ -165,6 +169,11 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  std::shared_ptr<Pipeline> GetGradientGeneratorPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(gradient_generator_pipelines_, opts);
+  }
 
   std::shared_ptr<Pipeline> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -352,6 +361,7 @@ class ContentContext {
   // variants requested from that are lazily created and cached in the variants
   // map.
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<GradientGeneratorPipeline> gradient_generator_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;

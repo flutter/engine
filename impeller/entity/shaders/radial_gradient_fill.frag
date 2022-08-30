@@ -4,12 +4,13 @@
 
 #include <impeller/texture.glsl>
 
+uniform sampler2D texture_sampler;
+
 uniform GradientInfo {
   vec2 center;
   float radius;
-  vec4 center_color;
-  vec4 edge_color;
   float tile_mode;
+  float texture_sampler_y_coord_scale;
 } gradient_info;
 
 in vec2 v_position;
@@ -25,5 +26,5 @@ void main() {
   }
 
   t = IPFloatTile(t, gradient_info.tile_mode);
-  frag_color = mix(gradient_info.center_color, gradient_info.edge_color, t);
+  frag_color = IPSample(texture_sampler, vec2(t, 0.5), gradient_info.texture_sampler_y_coord_scale);
 }
