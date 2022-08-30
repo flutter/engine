@@ -186,12 +186,6 @@ class FlutterPlatformViewsController {
   // responder. Returns -1 if no such platform view is found.
   long FindFirstResponderPlatformViewId();
 
-  // Pushes backdrop filter mutation to the mutator stack of each visited platform view.
-  void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter);
-
-  // Pushes the view id of a visted platform view to the list of visied platform views.
-  void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
-
  private:
   static const size_t kMaxLayerAllocations = 2;
 
@@ -299,9 +293,6 @@ class FlutterPlatformViewsController {
   // The last ID in this vector belond to the that is composited on top of all others.
   std::vector<int64_t> composition_order_;
 
-  // A vector of visited platform view IDs.
-  std::vector<int64_t> visited_platform_views_;
-
   // The latest composition order that was presented in Present().
   std::vector<int64_t> active_composition_order_;
 
@@ -316,6 +307,14 @@ class FlutterPlatformViewsController {
 
   // WeakPtrFactory must be the last member.
   std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
+
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  // A set to keep track of embedded views that does not have (0, 0) origin.
+  // An insertion triggers a warning message about non-zero origin logged on the debug console.
+  // See https://github.com/flutter/flutter/issues/109700 for details.
+  std::unordered_set<int64_t> non_zero_origin_views_;
+#endif
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 

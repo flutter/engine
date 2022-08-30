@@ -93,6 +93,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::UpdateSemantics, 1)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings, 1)         \
   V(PlatformConfigurationNativeApi::SetIsolateDebugName, 1)           \
+  V(PlatformConfigurationNativeApi::RequestDartPerformanceMode, 1)    \
   V(PlatformConfigurationNativeApi::GetPersistentIsolateData, 0)      \
   V(PlatformConfigurationNativeApi::ComputePlatformResolvedLocale, 1) \
   V(PlatformConfigurationNativeApi::SendPlatformMessage, 3)           \
@@ -186,6 +187,7 @@ typedef CanvasPath Path;
   V(ImageFilter, initColorFilter, 2)                   \
   V(ImageFilter, initComposeFilter, 3)                 \
   V(ImageFilter, initMatrix, 3)                        \
+  V(ImageShader, dispose, 1)                           \
   V(ImageShader, initWithImage, 6)                     \
   V(ImmutableBuffer, dispose, 1)                       \
   V(ImmutableBuffer, length, 1)                        \
@@ -197,6 +199,7 @@ typedef CanvasPath Path;
   V(Paragraph, alphabeticBaseline, 1)                  \
   V(Paragraph, computeLineMetrics, 1)                  \
   V(Paragraph, didExceedMaxLines, 1)                   \
+  V(Paragraph, dispose, 1)                             \
   V(Paragraph, getLineBoundary, 2)                     \
   V(Paragraph, getPositionForOffset, 3)                \
   V(Paragraph, getRectsForPlaceholders, 1)             \
@@ -280,7 +283,8 @@ typedef CanvasPath Path;
   V(SemanticsUpdateBuilder, build, 2)                  \
   V(SemanticsUpdateBuilder, updateCustomAction, 5)     \
   V(SemanticsUpdateBuilder, updateNode, 36)            \
-  V(SemanticsUpdate, dispose, 1)
+  V(SemanticsUpdate, dispose, 1)                       \
+  V(Vertices, dispose, 1)
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
   g_function_dispatchers.insert(std::make_pair( \
