@@ -72,6 +72,11 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
     }
   }
 
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
+  frame_info.matrix = GetInverseMatrix();
+
   if (colors_.size() > 2) {
     using FS = SweepGradientFillPipeline::FragmentShader;
     auto placeholder = Entity();
@@ -83,11 +88,6 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
     if (gradient_snapshot == std::nullopt) {
       return false;
     }
-
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
-    frame_info.matrix = GetInverseMatrix();
 
     FS::GradientInfo gradient_info;
     gradient_info.center = center_;
@@ -119,11 +119,6 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
 
   } else {
     using FS = SweepGradientFillTwoColorPipeline::FragmentShader;
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
-    frame_info.matrix = GetInverseMatrix();
-
     FS::GradientInfo gradient_info;
     gradient_info.center = center_;
     gradient_info.bias = bias_;
@@ -134,7 +129,7 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
 
     Command cmd;
     cmd.label = "SweepGradientFillTwoColor";
-    cmd.pipeline = renderer.GetSweepGradientFillPipeline(
+    cmd.pipeline = renderer.GetSweepGradientFillTwoColorPipeline(
         OptionsFromPassAndEntity(pass, entity));
     cmd.stencil_reference = entity.GetStencilDepth();
     cmd.BindVertices(

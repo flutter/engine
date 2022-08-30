@@ -67,6 +67,11 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
     }
   }
 
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
+  frame_info.matrix = GetInverseMatrix();
+
   if (colors_.size() > 2) {
     using FS = LinearGradientFillPipeline::FragmentShader;
     auto placeholder = Entity();
@@ -78,11 +83,6 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
     if (gradient_snapshot == std::nullopt) {
       return false;
     }
-
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
-    frame_info.matrix = GetInverseMatrix();
 
     FS::GradientInfo gradient_info;
     gradient_info.start_point = start_point_;
@@ -112,11 +112,6 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
     return pass.AddCommand(std::move(cmd));
   } else {
     using FS = LinearGradientFillTwoColorPipeline::FragmentShader;
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
-    frame_info.matrix = GetInverseMatrix();
-
     FS::GradientInfo gradient_info;
     gradient_info.start_point = start_point_;
     gradient_info.end_point = end_point_;
