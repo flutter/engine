@@ -186,14 +186,6 @@ struct Vector4 {
     return Vector4(x - v.x, y - v.y, z - v.z, w - v.w);
   }
 
-  constexpr Vector4 operator/(Scalar a) {
-    return Vector4(x / a, y / a, z / a, w / a);
-  }
-
-  constexpr Vector4 operator*(Scalar a) {
-    return Vector4(x * a, y * a, z * a, w * a);
-  }
-
   std::string ToString() const;
 };
 

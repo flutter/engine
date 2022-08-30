@@ -142,5 +142,3 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
     return pass.AddCommand(std::move(cmd));
   }
 }  // namespace impeller
-
-}  // namespace impeller

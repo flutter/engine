@@ -7,9 +7,9 @@
 #include "impeller/compiler/reflector.h"
 
 #include <atomic>
-#include <iostream>
 #include <optional>
 #include <set>
+#include <sstream>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
