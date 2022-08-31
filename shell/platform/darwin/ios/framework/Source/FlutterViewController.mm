@@ -69,7 +69,7 @@ typedef struct MouseState {
 ///
 /// On promotion devices(eg: iPhone13 Pro), the delivery frame rate of touch events is 60HZ
 /// but the frame rate of rendering is 120HZ, which is different and will leads junk and laggy.
-/// With this VSyncClient, we can correct the delivery frame rate of touch events to let it keep
+/// With this VSyncClient, it can correct the delivery frame rate of touch events to let it keep
 /// the same with frame rate of rendering.
 @property(nonatomic, retain) VSyncClient* touchRateCorrectionVSyncClient;
 
@@ -1138,7 +1138,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (displayRefreshRate < 60.0 + epsilon) {  // displayRefreshRate <= 60.0
 
     // If current device's max frame rate is not larger than 60HZ, the delivery rate of touch events
-    // is the same with render vsync rate. So we don't need to create
+    // is the same with render vsync rate. So it is unnecessary to create
     // _touchRateCorrectionVSyncClient to correct touch callback's rate.
     return;
   }
@@ -1161,7 +1161,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   // As long as there is a touch's phase is UITouchPhaseBegan or UITouchPhaseMoved,
-  // we should activate the correction. Otherwise we will pause the correction.
+  // activate the correction. Otherwise pause the correction.
   BOOL isUserInteracting = NO;
   for (UITouch* touch in touches) {
     if (touch.phase == UITouchPhaseBegan || touch.phase == UITouchPhaseMoved) {
