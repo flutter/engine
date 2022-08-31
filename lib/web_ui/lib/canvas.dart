@@ -124,7 +124,7 @@ abstract class Canvas {
   );
 }
 
-typedef PictureEventCallback = void Function(Picture);
+typedef PictureEventCallback = void Function(Picture picture);
 
 abstract class Picture {
   static PictureEventCallback? onCreate;
