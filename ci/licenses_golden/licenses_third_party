@@ -26787,6 +26787,8 @@ FILE: ../../../third_party/zlib/patches/0006-fix-check_match.patch
 FILE: ../../../third_party/zlib/patches/0007-zero-init-deflate-window.patch
 FILE: ../../../third_party/zlib/patches/0008-minizip-zip-unzip-tools.patch
 FILE: ../../../third_party/zlib/patches/0009-infcover-oob.patch
+FILE: ../../../third_party/zlib/patches/0008-minizip-zip-unzip-tools.patch
+FILE: ../../../third_party/zlib/patches/0009-infcover-oob.patch
 FILE: ../../../third_party/zlib/trees.h
 ----------------------------------------------------------------------------------------------------
 version 1.2.12, March 27th, 2022
@@ -27123,12 +27125,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/google/zip.cc + ../../../LICENSE
+ORIGIN: ../../../third_party/zlib/google/redact.h + ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/zlib/google/zip.cc
-FILE: ../../../third_party/zlib/google/zip_reader.cc
+FILE: ../../../third_party/zlib/google/redact.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2012 The Chromium Authors. All rights reserved.
+Copyright (c) 2022 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are

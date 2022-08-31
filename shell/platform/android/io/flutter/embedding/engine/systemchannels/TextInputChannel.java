@@ -16,6 +16,7 @@ import io.flutter.plugin.editing.TextEditingDelta;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.json.JSONArray;
@@ -317,6 +318,14 @@ public class TextInputChannel {
         "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.previous"));
   }
 
+  /** Instructs flutter to commit content back to the text channel */
+  public void commitContent(int inputClientId, Map<String, Object> content) {
+    Log.v(TAG, "Sending 'commitContent' message.");
+    channel.invokeMethod(
+        "TextInputClient.performAction",
+        Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
+  }
+
   /** Instructs Flutter to execute an "unspecified" action. */
   public void unspecifiedAction(int inputClientId) {
     Log.v(TAG, "Sending 'unspecified' message.");
@@ -454,6 +463,19 @@ public class TextInputChannel {
         }
       }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
+
+      // Build list of content commit mime types from the passed in JSON list
+      List<String> contentList = new ArrayList<String>();
+      JSONArray contentCommitMimeTypes =
+          json.isNull("contentCommitMimeTypes")
+              ? null
+              : json.getJSONArray("contentCommitMimeTypes");
+      if (contentCommitMimeTypes != null) {
+        for (int i = 0; i < contentCommitMimeTypes.length(); i++) {
+          contentList.add(contentCommitMimeTypes.optString(i));
+        }
+      }
+
       return new Configuration(
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
@@ -465,6 +487,7 @@ public class TextInputChannel {
           inputAction,
           json.isNull("actionLabel") ? null : json.getString("actionLabel"),
           json.isNull("autofill") ? null : Autofill.fromJson(json.getJSONObject("autofill")),
+          contentList.toArray(new String[contentList.size()]),
           fields);
     }
 
@@ -622,6 +645,7 @@ public class TextInputChannel {
     @Nullable public final Integer inputAction;
     @Nullable public final String actionLabel;
     @Nullable public final Autofill autofill;
+    @Nullable public final String[] contentCommitMimeTypes;
     @Nullable public final Configuration[] fields;
 
     public Configuration(
@@ -635,6 +659,7 @@ public class TextInputChannel {
         @Nullable Integer inputAction,
         @Nullable String actionLabel,
         @Nullable Autofill autofill,
+        @Nullable String[] contentCommitMimeTypes,
         @Nullable Configuration[] fields) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
@@ -646,6 +671,7 @@ public class TextInputChannel {
       this.inputAction = inputAction;
       this.actionLabel = actionLabel;
       this.autofill = autofill;
+      this.contentCommitMimeTypes = contentCommitMimeTypes;
       this.fields = fields;
     }
   }
