@@ -5682,7 +5682,7 @@ class Canvas extends NativeFieldWrapperClass1 {
 }
 
 /// Signature for [Picture] lifecycle events.
-typedef PictureEventCallback = void Function(Picture);
+typedef PictureEventCallback = void Function(Picture picture);
 
 /// An object representing a sequence of recorded graphical operations.
 ///
