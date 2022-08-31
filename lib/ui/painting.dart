@@ -1626,7 +1626,7 @@ enum PixelFormat {
 
 
 /// Signature for [Image] lifecycle events.
-typedef ImageEventCallback = void Function(Image);
+typedef ImageEventCallback = void Function(Image image);
 
 /// Opaque handle to raw decoded image data (pixels).
 ///
