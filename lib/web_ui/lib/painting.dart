@@ -333,7 +333,7 @@ abstract class Gradient extends Shader {
     matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
-typedef ImageEventCallback = void Function(Image);
+typedef ImageEventCallback = void Function(Image image);
 
 abstract class Image {
   static ImageEventCallback? onCreate;
