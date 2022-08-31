@@ -767,7 +767,7 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/blit_command_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.h
-FILE: ../../../flutter/impeller/renderer/backend/metal/
+FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pipeline_mtl.h
