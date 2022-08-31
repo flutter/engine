@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_COMMON_SNAPSHOT_CONTROLLER_SKIA_H_
 #define FLUTTER_SHELL_COMMON_SNAPSHOT_CONTROLLER_SKIA_H_
 
-#include "shell/common/snapshot_controller.h"
+#include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {

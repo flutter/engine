@@ -7,13 +7,8 @@
 #include "display_list/display_list_image.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/trace_event.h"
-#include "shell/common/snapshot_controller.h"
-#include "third_party/skia/include/core/SkImageEncoder.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkSerialProcs.h"
+#include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
-#include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
 

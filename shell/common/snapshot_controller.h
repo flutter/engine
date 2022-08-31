@@ -8,9 +8,9 @@
 #include "flutter/common/settings.h"
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/flow/surface.h"
-#include "fml/synchronization/sync_switch.h"
-#include "lib/ui/snapshot_delegate.h"
-#include "shell/common/snapshot_surface_producer.h"
+#include "flutter/fml/synchronization/sync_switch.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
+#include "flutter/shell/common/snapshot_surface_producer.h"
 
 namespace flutter {
 
