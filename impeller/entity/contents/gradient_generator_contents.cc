@@ -51,7 +51,7 @@ std::shared_ptr<Texture> CreateGradientTexture(
   // for each sample. In the event that some colors do not get a dedicated slot,
   // due to hitting the artifically capped texture size of 1024
   // - these results are currently incorrect.
-  u_int32_t width = std::round(scale);
+  uint32_t width = std::round(scale);
   impeller::TextureDescriptor texture_descriptor;
   texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;

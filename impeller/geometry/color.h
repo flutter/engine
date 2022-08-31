@@ -80,11 +80,11 @@ struct Color {
    *
    * @return constexpr std::array<u_int8, 4>
    */
-  constexpr std::array<u_int8_t, 4> ToR8G8B8A8() const {
-    u_int8_t r = std::round(red * 255);
-    u_int8_t g = std::round(green * 255);
-    u_int8_t b = std::round(blue * 255);
-    u_int8_t a = std::round(alpha * 255);
+  constexpr std::array<uint8_t, 4> ToR8G8B8A8() const {
+    uint8_t r = std::round(red * 255);
+    uint8_t g = std::round(green * 255);
+    uint8_t b = std::round(blue * 255);
+    uint8_t a = std::round(alpha * 255);
     return {r, g, b, a};
   }
 
