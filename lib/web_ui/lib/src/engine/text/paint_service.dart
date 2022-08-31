@@ -28,21 +28,19 @@ class TextPaintService {
     }
 
     for (final ParagraphLine line in lines) {
-      if (line.boxes.isEmpty) {
+      final List<MeasuredFragment> fragments = line.fragments;
+      if (fragments.isEmpty) {
         continue;
       }
 
-      final RangeBox lastBox = line.boxes.last;
+      final int lengthExcludingTrailingSpaces = fragments.length - line.trailingSpaceBoxCount;
 
-      for (final RangeBox box in line.boxes) {
-        final bool isTrailingSpaceBox =
-            box == lastBox && box is SpanBox && box.isSpaceOnly;
-
-        // Don't paint background for the trailing space in the line.
-        if (!isTrailingSpaceBox) {
-          _paintBackground(canvas, offset, line, box);
-        }
-        _paintText(canvas, offset, line, box);
+      for (int i = 0; i < lengthExcludingTrailingSpaces; i++) {
+        _paintBackground(canvas, offset, line, fragments[i]);
+        _paintText(canvas, offset, line, fragments[i]);
+      }
+      for (int i = lengthExcludingTrailingSpaces; i < fragments.length; i++) {
+        _paintText(canvas, offset, line, fragments[i]);
       }
     }
   }
@@ -51,15 +49,14 @@ class TextPaintService {
     BitmapCanvas canvas,
     ui.Offset offset,
     ParagraphLine line,
-    RangeBox box,
+    MeasuredFragment fragment,
   ) {
-    if (box is SpanBox) {
-      final FlatTextSpan span = box.span;
-
+    final ParagraphSpan span = fragment.span;
+    if (span is FlatTextSpan) {
       // Paint the background of the box, if the span has a background.
       final SurfacePaint? background = span.style.background as SurfacePaint?;
       if (background != null) {
-        final ui.Rect rect = box.toTextBox(line, forPainting: true).toRect().shift(offset);
+        final ui.Rect rect = fragment.toTextBox(line, forPainting: true).toRect().shift(offset);
         canvas.drawRect(rect, background.paintData);
       }
     }
@@ -69,22 +66,21 @@ class TextPaintService {
     BitmapCanvas canvas,
     ui.Offset offset,
     ParagraphLine line,
-    RangeBox box,
+    MeasuredFragment fragment,
   ) {
     // There's no text to paint in placeholder spans.
-    if (box is SpanBox) {
-      final FlatTextSpan span = box.span;
-
+    final ParagraphSpan span = fragment.span;
+    if (span is FlatTextSpan) {
       _applySpanStyleToCanvas(span, canvas);
-      final double x = offset.dx + line.left + box.left;
+      final double x = offset.dx + line.left + fragment.left;
       final double y = offset.dy + line.baseline;
 
       // Don't paint the text for space-only boxes. This is just an
       // optimization, it doesn't have any effect on the output.
-      if (!box.isSpaceOnly) {
+      if (!fragment.isSpaceOnly) {
         final String text = paragraph.toPlainText().substring(
-              box.start.index,
-              box.end.indexWithoutTrailingNewlines,
+              fragment.start,
+              fragment.end - fragment.trailingNewlines,
             );
         final double? letterSpacing = span.style.letterSpacing;
         if (letterSpacing == null || letterSpacing == 0.0) {
@@ -105,10 +101,12 @@ class TextPaintService {
         }
       }
 
+      // TODO(mdebbar): Do we need this now that we have an EllipsisFragment?
+
       // Paint the ellipsis using the same span styles.
       final String? ellipsis = line.ellipsis;
-      if (ellipsis != null && box == line.boxes.last) {
-        final double x = offset.dx + line.left + box.right;
+      if (ellipsis != null && fragment == line.fragments.last) {
+        final double x = offset.dx + line.left + fragment.right;
         canvas.drawText(ellipsis, x, y, style: span.style.foreground?.style);
       }
 

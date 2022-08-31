@@ -119,7 +119,7 @@ class ParagraphLine {
     required this.endIndex,
     required this.trailingNewlines,
     required this.widthWithTrailingSpaces,
-    required this.boxes,
+    required this.fragments,
     required this.spaceBoxCount,
     required this.trailingSpaceBoxCount,
     this.displayText,
@@ -169,9 +169,8 @@ class ParagraphLine {
   /// spaces so [widthWithTrailingSpaces] is more suitable.
   final double widthWithTrailingSpaces;
 
-  /// The list of boxes representing the entire line, possibly across multiple
-  /// spans.
-  final List<RangeBox> boxes;
+  /// The fragments that make up this line.
+  final List<MeasuredFragment> fragments;
 
   /// The number of boxes that are space-only.
   final int spaceBoxCount;
@@ -213,7 +212,7 @@ class ParagraphLine {
         endIndex,
         trailingNewlines,
         widthWithTrailingSpaces,
-        boxes,
+        fragments,
         spaceBoxCount,
         trailingSpaceBoxCount,
         displayText,
@@ -234,7 +233,7 @@ class ParagraphLine {
         other.endIndex == endIndex &&
         other.trailingNewlines == trailingNewlines &&
         other.widthWithTrailingSpaces == widthWithTrailingSpaces &&
-        other.boxes == boxes &&
+        other.fragments == fragments &&
         other.spaceBoxCount == spaceBoxCount &&
         other.trailingSpaceBoxCount == trailingSpaceBoxCount &&
         other.displayText == displayText;

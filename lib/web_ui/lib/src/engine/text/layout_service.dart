@@ -96,7 +96,8 @@ class TextLayoutService {
     LineBuilder currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
-    outerLoop: for (final MeasuredFragment fragment in measuredFragments) {
+    outerLoop:
+    for (final MeasuredFragment fragment in measuredFragments) {
       currentLine.addFragment(fragment);
 
       while (currentLine.isOverflowing) {
@@ -128,6 +129,7 @@ class TextLayoutService {
     final int? maxLines = paragraph.paragraphStyle.maxLines;
     if (maxLines != null && lines.length > maxLines) {
       didExceedMaxLines = true;
+      // TODO(mdebbar): Should we remove these lines before or after calculating min/max intrinsic width?
       lines.removeRange(maxLines, lines.length);
     }
 
@@ -177,7 +179,7 @@ class TextLayoutService {
         // Don't apply justification to the last line.
         final bool shouldJustifyLine =
             shouldJustifyParagraph && line != lastLine;
-        _positionLineBoxes(line, withJustification: shouldJustifyLine);
+        _positionLineFragments(line, withJustification: shouldJustifyLine);
       }
     }
 
@@ -218,40 +220,46 @@ class TextLayoutService {
   ui.TextDirection get _paragraphDirection =>
       paragraph.paragraphStyle.effectiveTextDirection;
 
-  /// Positions the boxes in the given [line] and takes into account their
+  /// Positions the fragments in the given [line] and takes into account their
   /// directions, the paragraph's direction, and alignment justification.
-  void _positionLineBoxes(
+  void _positionLineFragments(
     ParagraphLine line, {
     required bool withJustification,
   }) {
-    final List<RangeBox> boxes = line.boxes;
-    final double justifyPerSpaceBox =
-        withJustification ? _calculateJustifyPerSpaceBox(line) : 0.0;
+    final List<MeasuredFragment> fragments = line.fragments;
+    final double justifyPerSpaceFragment =
+        withJustification ? _calculateJustifyPerSpaceFragment(line) : 0.0;
+
+    final int lengthExcludingTrailingSpaces = fragments.length - line.trailingSpaceBoxCount;
 
     int i = 0;
     double cumulativeWidth = 0.0;
-    while (i < boxes.length) {
-      final RangeBox box = boxes[i];
-      if (box.boxDirection == _paragraphDirection) {
-        // The box is in the same direction as the paragraph.
-        box.startOffset = cumulativeWidth;
-        box.lineWidth = line.width;
-        if (box is SpanBox && box.isSpaceOnly && !box.isTrailingSpace) {
-          box._width += justifyPerSpaceBox;
+    while (i < lengthExcludingTrailingSpaces) {
+      final MeasuredFragment fragment = fragments[i];
+      if (fragment.textDirection == _paragraphDirection) {
+        // The fragment is in the same direction as the paragraph.
+        fragment.position(startOffset: cumulativeWidth, lineWidth: line.width);
+
+        // Space-only fragments expand in width to justify the line.
+        if (fragment.isSpaceOnly) {
+          final FragmentMetrics justifiedMetrics = fragment.metrics.copyWith(
+            widthIncludingTrailingSpaces: fragment.metrics.widthIncludingTrailingSpaces + justifyPerSpaceFragment,
+          );
+          fragments[i] = fragment.copyWith(metrics: justifiedMetrics);
         }
 
-        cumulativeWidth += box.width;
+        cumulativeWidth += fragment.metrics.widthIncludingTrailingSpaces;
         i++;
         continue;
       }
 
-      // At this point, we found a box that has the opposite direction to the
-      // paragraph. This could be a sequence of one or more boxes.
+      // At this point, we found a fragment that has the opposite direction to
+      // the paragraph. This could be a sequence of one or more fragments.
       //
-      // These boxes should flow in the opposite direction. So we need to
+      // These fragments should flow in the opposite direction. So we need to
       // position them in reverse order.
       //
-      // If the last box in the sequence is a space-only box (contains only
+      // If the last fragment in the sequence is space-only (contains only
       // whitespace characters), it should be excluded from the sequence.
       //
       // Example: an LTR paragraph with the contents:
@@ -275,19 +283,19 @@ class TextLayoutService {
       // direction (LTR).
 
       final int first = i;
-      int lastNonSpaceBox = first;
+      int lastNonSpaceFragment = first;
       i++;
-      while (i < boxes.length && boxes[i].boxDirection != _paragraphDirection) {
-        final RangeBox box = boxes[i];
-        if (box is SpanBox && box.isSpaceOnly) {
+      while (i < lengthExcludingTrailingSpaces && fragments[i].textDirection != _paragraphDirection) {
+        final MeasuredFragment fragment = fragments[i];
+        if (fragment.isSpaceOnly) {
           // Do nothing.
         } else {
-          lastNonSpaceBox = i;
+          lastNonSpaceFragment = i;
         }
         i++;
       }
-      final int last = lastNonSpaceBox;
-      i = lastNonSpaceBox + 1;
+      final int last = lastNonSpaceFragment;
+      i = lastNonSpaceFragment + 1;
 
       // The range (first:last) is the entire sequence of boxes that have the
       // opposite direction to the paragraph.
@@ -296,9 +304,17 @@ class TextLayoutService {
         first,
         last,
         startOffset: cumulativeWidth,
-        justifyPerSpaceBox: justifyPerSpaceBox,
+        justifyPerSpaceFragment: justifyPerSpaceFragment,
       );
       cumulativeWidth += sequenceWidth;
+    }
+
+    // Now let's do the trailing space-only fragments.
+    for (int i = lengthExcludingTrailingSpaces; i < fragments.length; i++) {
+      final MeasuredFragment fragment = fragments[i];
+      fragment.position(startOffset: cumulativeWidth, lineWidth: line.width);
+      cumulativeWidth += fragment.metrics.widthIncludingTrailingSpaces;
+      i++;
     }
   }
 
@@ -316,21 +332,24 @@ class TextLayoutService {
     int first,
     int last, {
     required double startOffset,
-    required double justifyPerSpaceBox,
+    required double justifyPerSpaceFragment,
   }) {
-    final List<RangeBox> boxes = line.boxes;
+    final List<MeasuredFragment> fragments = line.fragments;
     double cumulativeWidth = 0.0;
     for (int i = last; i >= first; i--) {
-      // Update the visual position of each box.
-      final RangeBox box = boxes[i];
-      assert(box.boxDirection != _paragraphDirection);
-      box.startOffset = startOffset + cumulativeWidth;
-      box.lineWidth = line.width;
-      if (box is SpanBox && box.isSpaceOnly && !box.isTrailingSpace) {
-        box._width += justifyPerSpaceBox;
+      // Update the visual position of each fragment.
+      final MeasuredFragment fragment = fragments[i];
+      assert(fragment.textDirection != _paragraphDirection);
+
+      fragment.position(startOffset: cumulativeWidth, lineWidth: line.width);
+      if (fragment.isSpaceOnly) {
+        final FragmentMetrics justifiedMetrics = fragment.metrics.copyWith(
+          widthIncludingTrailingSpaces: fragment.metrics.widthIncludingTrailingSpaces + justifyPerSpaceFragment,
+        );
+        fragments[i] = fragment.copyWith(metrics: justifiedMetrics);
       }
 
-      cumulativeWidth += box.width;
+      cumulativeWidth += fragment.metrics.widthIncludingTrailingSpaces;
     }
     return cumulativeWidth;
   }
@@ -338,12 +357,12 @@ class TextLayoutService {
   /// Calculates for the given [line], the amount of extra width that needs to be
   /// added to each space box in order to align the line with the rest of the
   /// paragraph.
-  double _calculateJustifyPerSpaceBox(ParagraphLine line) {
+  double _calculateJustifyPerSpaceFragment(ParagraphLine line) {
     final double justifyTotal = width - line.width;
 
-    final int spaceBoxesToJustify = line.nonTrailingSpaceBoxCount;
-    if (spaceBoxesToJustify > 0) {
-      return justifyTotal / spaceBoxesToJustify;
+    final int fragmentsToJustify = line.nonTrailingSpaceBoxCount;
+    if (fragmentsToJustify > 0) {
+      return justifyTotal / fragmentsToJustify;
     }
 
     return 0.0;
@@ -352,9 +371,9 @@ class TextLayoutService {
   List<ui.TextBox> getBoxesForPlaceholders() {
     final List<ui.TextBox> boxes = <ui.TextBox>[];
     for (final ParagraphLine line in lines) {
-      for (final RangeBox box in line.boxes) {
-        if (box is PlaceholderBox) {
-          boxes.add(box.toTextBox(line, forPainting: false));
+      for (final MeasuredFragment fragment in line.fragments) {
+        if (fragment.isPlaceholder) {
+          boxes.add(fragment.toTextBox(line, forPainting: false));
         }
       }
     }
@@ -382,9 +401,9 @@ class TextLayoutService {
 
     for (final ParagraphLine line in lines) {
       if (line.overlapsWith(start, end)) {
-        for (final RangeBox box in line.boxes) {
-          if (box is SpanBox && box.overlapsWith(start, end)) {
-            boxes.add(box.intersect(line, start, end, forPainting: false));
+        for (final MeasuredFragment fragment in line.fragments) {
+          if (!fragment.isPlaceholder && fragment.overlapsWith(start, end)) {
+            boxes.add(fragment.intersect(line, start, end, forPainting: false));
           }
         }
       }
@@ -414,9 +433,9 @@ class TextLayoutService {
     }
 
     final double dx = offset.dx - line.left;
-    for (final RangeBox box in line.boxes) {
-      if (box.left <= dx && dx <= box.right) {
-        return box.getPositionForX(dx);
+    for (final MeasuredFragment fragment in line.fragments) {
+      if (fragment.left <= dx && dx <= fragment.right) {
+        return fragment.getPositionForX(dx);
       }
     }
     // Is this ever reachable?
@@ -928,8 +947,6 @@ class LineBuilder {
       : _fragmentsForNextLine!.first.start;
   }
 
-  final List<RangeBox> _boxes = <RangeBox>[];
-
   final double maxWidth;
   final CanvasParagraph paragraph;
   final Spanometer spanometer;
@@ -1269,13 +1286,13 @@ class LineBuilder {
       baseline: accumulatedHeight + ascent,
       ascent: ascent,
       descent: descent,
-      boxes: <RangeBox>[], // TODO(mdebbar): _boxes,
+      fragments: _fragments,
       spaceBoxCount: _spaceBoxCount,
-      trailingSpaceBoxCount: _trailingSpaceBoxCount,
+      trailingSpaceBoxCount: _trailingSpaceFragmentCount,
     );
   }
 
-  int _trailingSpaceBoxCount = 0;
+  int _trailingSpaceFragmentCount = 0;
 
   void _processTrailingSpaces() {
 
@@ -1284,17 +1301,14 @@ class LineBuilder {
     // Else, flip dir of the space-only trailing fragments, and potentially
     // split the fragment that contains text & trailing spaces.
 
-    _trailingSpaceBoxCount = 0;
-    for (int i = _boxes.length - 1; i >= 0; i--) {
-      final RangeBox box = _boxes[i];
-      final bool isSpaceBox = box is SpanBox && box.isSpaceOnly;
-      if (!isSpaceBox) {
-        // We traversed all trailing space boxes.
+    _trailingSpaceFragmentCount = 0;
+    for (int i = _fragments.length - 1; i >= 0; i--) {
+      final MeasuredFragment fragment = _fragments[i];
+      if (!fragment.isSpaceOnly) {
+        // We traversed all trailing space fragments.
         break;
       }
-
-      box._isTrailingSpace = true;
-      _trailingSpaceBoxCount++;
+      _trailingSpaceFragmentCount++;
     }
   }
 
@@ -1494,7 +1508,7 @@ class Spanometer {
 }
 
 class MeasuredFragment {
-  const MeasuredFragment(this._layoutFragment, this.metrics);
+  MeasuredFragment(this._layoutFragment, this.metrics);
 
   final LayoutFragment _layoutFragment;
   final FragmentMetrics metrics;
@@ -1520,6 +1534,38 @@ class MeasuredFragment {
   bool get isBreak => _layoutFragment.isBreak;
   bool get isHardBreak => _layoutFragment.isHardBreak;
   bool get isPlaceholder => _layoutFragment.isPlaceholder;
+  EngineTextStyle get style => _layoutFragment.style;
+
+
+  // START Positioning info:
+
+  /// The distance from the beginning of the line to the beginning of the fragment.
+  late final double startOffset;
+
+  /// The distance from the beginning of the line to the end of the fragment.
+  double get endOffset => startOffset + metrics.widthIncludingTrailingSpaces;
+
+  /// The distance from the left edge of the line to the left edge of the fragment.
+  double get left => textDirection == ui.TextDirection.ltr
+      ? startOffset
+      : lineWidth - endOffset;
+
+  /// The distance from the left edge of the line to the right edge of the fragment.
+  double get right => textDirection == ui.TextDirection.ltr
+      ? endOffset
+      : lineWidth - startOffset;
+
+  /// The width of the line that contains this fragment.
+  late final double lineWidth;
+
+  /// Set the position of this fragment relative to the line that contains it.
+  void position({ required double startOffset, required double lineWidth}) {
+    this.startOffset = startOffset;
+    this.lineWidth = lineWidth;
+  }
+
+  // END Positioning info.
+
 
   MeasuredFragment copyWith({
     LayoutFragment? layoutFragment,
@@ -1572,6 +1618,45 @@ class MeasuredFragment {
         trailingSpaces: secondTrailingSpaces,
       ),
     ];
+  }
+
+  /// Whether this fragment's range overlaps with the range from [start] to [end].
+  bool overlapsWith(int start, int end) {
+    return start < this.end && this.start < end;
+  }
+
+  /// Returns a [ui.TextBox] representing this fragment in the given [line].
+  ///
+  /// The coordinates of the resulting [ui.TextBox] are relative to the
+  /// paragraph, not to the line.
+  ///
+  /// The [forPainting] parameter specifies whether the text box is wanted for
+  /// painting purposes or not. The difference is observed in the handling of
+  /// trailing spaces. Trailing spaces aren't painted on the screen, but their
+  /// dimensions are still useful for other cases like highlighting selection.
+  ui.TextBox toTextBox(ParagraphLine line, {required bool forPainting}) {
+    // TODO(mdebbar): Implement this for placeholders and regular fragments.
+    return const ui.TextBox.fromLTRBD(0, 0, 0, 0, ui.TextDirection.ltr);
+  }
+
+  /// Performs the intersection of this fragment with the range given by [start] and
+  /// [end] indices, and returns a [ui.TextBox] representing that intersection.
+  ///
+  /// The coordinates of the resulting [ui.TextBox] are relative to the
+  /// paragraph, not to the line.
+  ui.TextBox intersect(ParagraphLine line, int start, int end, {required bool forPainting}) {
+    // TODO(mdebbar): Implement this for non-placeholder fragments.
+    return const ui.TextBox.fromLTRBD(0, 0, 0, 0, ui.TextDirection.ltr);
+  }
+
+  /// Returns the text position within this box's range that's closest to the
+  /// given [x] offset.
+  ///
+  /// The [x] offset is expected to be relative to the left edge of the line,
+  /// just like the coordinates of this box.
+  ui.TextPosition getPositionForX(double x) {
+    // TODO(mdebbar): Implement this for placeholders & regular fragments.
+    return const ui.TextPosition(offset: 0);
   }
 }
 

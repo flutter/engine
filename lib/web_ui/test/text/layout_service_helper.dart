@@ -10,7 +10,6 @@ TestLine l(
   String? displayText,
   int? startIndex,
   int? endIndex, {
-  int?  endIndexWithoutNewlines,
   bool? hardBreak,
   double? height,
   double? width,
@@ -22,7 +21,6 @@ TestLine l(
     displayText: displayText,
     startIndex: startIndex,
     endIndex: endIndex,
-    endIndexWithoutNewlines: endIndexWithoutNewlines,
     hardBreak: hardBreak,
     height: height,
     width: width,
@@ -74,14 +72,6 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
             'line #$i had a different `endIndex` value: "${line.endIndex}" vs. "${expectedLine.endIndex}"',
       );
     }
-    if (expectedLine.endIndexWithoutNewlines != null) {
-      expect(
-        line.endIndexWithoutNewlines,
-        expectedLine.endIndexWithoutNewlines,
-        reason:
-            'line #$i had a different `endIndexWithoutNewlines` value: "${line.endIndexWithoutNewlines}" vs. "${expectedLine.endIndexWithoutNewlines}"',
-      );
-    }
     if (expectedLine.hardBreak != null) {
       expect(
         line.hardBreak,
@@ -130,7 +120,6 @@ class TestLine {
     this.displayText,
     this.startIndex,
     this.endIndex,
-    this.endIndexWithoutNewlines,
     this.hardBreak,
     this.height,
     this.width,
@@ -142,7 +131,6 @@ class TestLine {
   final String? displayText;
   final int? startIndex;
   final int? endIndex;
-  final int? endIndexWithoutNewlines;
   final bool? hardBreak;
   final double? height;
   final double? width;

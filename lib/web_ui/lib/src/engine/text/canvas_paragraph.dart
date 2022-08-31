@@ -173,29 +173,29 @@ class CanvasParagraph implements ui.Paragraph {
     DomHTMLElement? lastSpanElement;
     for (int i = 0; i < lines.length; i++) {
       final ParagraphLine line = lines[i];
-      final List<RangeBox> boxes = line.boxes;
+      final List<MeasuredFragment> fragments = line.fragments;
       final StringBuffer buffer = StringBuffer();
 
       int j = 0;
-      while (j < boxes.length) {
-        final RangeBox box = boxes[j++];
+      while (j < fragments.length) {
+        final MeasuredFragment fragment = fragments[j++];
 
-        if (box is SpanBox) {
+        if (fragment.isPlaceholder) {
+          lastSpanElement = null;
+        } else {
           lastSpanElement = domDocument.createElement('flt-span') as
               DomHTMLElement;
           applyTextStyleToElement(
             element: lastSpanElement,
-            style: box.span.style,
+            style: fragment.style,
             isSpan: true,
           );
-          _positionSpanElement(lastSpanElement, line, box);
-          lastSpanElement.appendText(box.toText());
+          _positionSpanElement(lastSpanElement, line, fragment);
+
+          final String fragmentText = _getFragmentText(fragment);
+          lastSpanElement.appendText(fragmentText);
           rootElement.append(lastSpanElement);
-          buffer.write(box.toText());
-        } else if (box is PlaceholderBox) {
-          lastSpanElement = null;
-        } else {
-          throw UnimplementedError('Unknown box type: ${box.runtimeType}');
+          buffer.write(fragmentText);
         }
       }
 
@@ -206,6 +206,10 @@ class CanvasParagraph implements ui.Paragraph {
     }
 
     return rootElement;
+  }
+
+  String _getFragmentText(MeasuredFragment fragment) {
+    return plainText.substring(fragment.start, fragment.end - fragment.trailingNewlines);
   }
 
   @override
@@ -276,8 +280,8 @@ class CanvasParagraph implements ui.Paragraph {
   }
 }
 
-void _positionSpanElement(DomElement element, ParagraphLine line, RangeBox box) {
-  final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
+void _positionSpanElement(DomElement element, ParagraphLine line, MeasuredFragment fragment) {
+  final ui.Rect boxRect = fragment.toTextBox(line, forPainting: true).toRect();
   element.style
     ..position = 'absolute'
     ..top = '${boxRect.top}px'

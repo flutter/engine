@@ -8,6 +8,7 @@ import 'package:ui/ui.dart' as ui;
 
 import 'canvas_paragraph.dart';
 import 'line_breaker.dart';
+import 'paragraph.dart';
 import 'text_direction.dart';
 
 abstract class TextFragmenter {
@@ -134,6 +135,7 @@ class LayoutFragment extends TextFragment implements LineBreakFragment, BidiFrag
   bool get isPlaceholder => span is PlaceholderSpan;
   bool get isBreak => type != LineBreakType.prohibited;
   bool get isHardBreak => type == LineBreakType.mandatory || type == LineBreakType.endOfText;
+  EngineTextStyle get style => span.style;
 
   @override
   int get hashCode => Object.hash(

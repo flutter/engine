@@ -383,6 +383,10 @@ Future<void> testMain() async {
         builder.addText('DD');
       });
 
+      String getTextForFragment(MeasuredFragment fragment) {
+        return paragraph.plainText.substring(fragment.start, fragment.end);
+      }
+
       // The layout algorithm will keep appending segments to the line builder
       // until it reaches: "AAA B_". At that point, it'll try to add the "C" but
       // realizes there isn't enough width in the line. Since the line already
@@ -399,28 +403,28 @@ Future<void> testMain() async {
       final ParagraphLine secondLine = paragraph.lines[1];
 
       // There should be no "B" in the first line's boxes.
-      expect(firstLine.boxes, hasLength(2));
+      expect(firstLine.fragments, hasLength(2));
 
-      expect((firstLine.boxes[0] as SpanBox).toText(), 'AAA');
-      expect((firstLine.boxes[0] as SpanBox).left, 0.0);
+      expect(getTextForFragment(firstLine.fragments[0]), 'AAA');
+      expect(firstLine.fragments[0].left, 0.0);
 
-      expect((firstLine.boxes[1] as SpanBox).toText(), ' ');
-      expect((firstLine.boxes[1] as SpanBox).left, 30.0);
+      expect(getTextForFragment(firstLine.fragments[1]), ' ');
+      expect(firstLine.fragments[1].left, 30.0);
 
       // Make sure the second line isn't missing any boxes.
-      expect(secondLine.boxes, hasLength(4));
+      expect(secondLine.fragments, hasLength(4));
 
-      expect((secondLine.boxes[0] as SpanBox).toText(), 'B');
-      expect((secondLine.boxes[0] as SpanBox).left, 0.0);
+      expect(getTextForFragment(secondLine.fragments[0]), 'B');
+      expect(secondLine.fragments[0].left, 0.0);
 
-      expect((secondLine.boxes[1] as SpanBox).toText(), '_C');
-      expect((secondLine.boxes[1] as SpanBox).left, 10.0);
+      expect(getTextForFragment(secondLine.fragments[1]), '_C');
+      expect(secondLine.fragments[1].left, 10.0);
 
-      expect((secondLine.boxes[2] as SpanBox).toText(), ' ');
-      expect((secondLine.boxes[2] as SpanBox).left, 30.0);
+      expect(getTextForFragment(secondLine.fragments[2]), ' ');
+      expect(secondLine.fragments[2].left, 30.0);
 
-      expect((secondLine.boxes[3] as SpanBox).toText(), 'DD');
-      expect((secondLine.boxes[3] as SpanBox).left, 40.0);
+      expect(getTextForFragment(secondLine.fragments[3]), 'DD');
+      expect(secondLine.fragments[3].left, 40.0);
     });
   });
 
