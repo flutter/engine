@@ -22,6 +22,7 @@ tests = [
   "http_disallow_http_connections_test.dart",
   "image_descriptor_test.dart",
   "image_dispose_test.dart",
+  "image_events_test.dart",
   "image_filter_test.dart",
   "image_resize_test.dart",
   "image_shader_test.dart",
