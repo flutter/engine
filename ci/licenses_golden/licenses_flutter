@@ -866,6 +866,8 @@ FILE: ../../../flutter/impeller/renderer/context.h
 FILE: ../../../flutter/impeller/renderer/descriptor_set_layout.h
 FILE: ../../../flutter/impeller/renderer/device_buffer.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer.h
+FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc
+FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
@@ -2155,7 +2157,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/framework_shim.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/libraries.json
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc

@@ -33,6 +33,8 @@ impeller_component("renderer") {
     "descriptor_set_layout.h",
     "device_buffer.cc",
     "device_buffer.h",
+    "device_buffer_descriptor.cc",
+    "device_buffer_descriptor.h",
     "formats.cc",
     "formats.h",
     "host_buffer.cc",
