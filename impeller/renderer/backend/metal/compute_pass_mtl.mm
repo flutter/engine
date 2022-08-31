@@ -8,6 +8,7 @@
 #include <memory>
 #include <variant>
 
+#include "flutter/fml/backtrace.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
@@ -81,13 +82,13 @@ bool ComputePassMTL::OnEncodeCommands(const Context& context) const {
 ///             There should be no change to rendering if this caching was
 ///             absent.
 ///
-struct PassBindingsCache {
-  explicit PassBindingsCache(id<MTLComputeCommandEncoder> encoder)
+struct ComputePassBindingsCache {
+  explicit ComputePassBindingsCache(id<MTLComputeCommandEncoder> encoder)
       : encoder_(encoder) {}
 
-  PassBindingsCache(const PassBindingsCache&) = delete;
+  ComputePassBindingsCache(const ComputePassBindingsCache&) = delete;
 
-  PassBindingsCache(PassBindingsCache&&) = delete;
+  ComputePassBindingsCache(ComputePassBindingsCache&&) = delete;
 
   void SetComputePipelineState(id<MTLComputePipelineState> pipeline) {
     if (pipeline == pipeline_) {
@@ -155,7 +156,7 @@ struct PassBindingsCache {
   SamplerMap samplers_;
 };
 
-static bool Bind(PassBindingsCache& pass,
+static bool Bind(ComputePassBindingsCache& pass,
                  Allocator& allocator,
                  size_t bind_index,
                  const BufferView& view) {
@@ -178,7 +179,7 @@ static bool Bind(PassBindingsCache& pass,
   return true;
 }
 
-static bool Bind(PassBindingsCache& pass,
+static bool Bind(ComputePassBindingsCache& pass,
                  size_t bind_index,
                  const Texture& texture) {
   if (!texture.IsValid()) {
@@ -189,7 +190,7 @@ static bool Bind(PassBindingsCache& pass,
   return true;
 }
 
-static bool Bind(PassBindingsCache& pass,
+static bool Bind(ComputePassBindingsCache& pass,
                  size_t bind_index,
                  const Sampler& sampler) {
   if (!sampler.IsValid()) {
@@ -203,7 +204,7 @@ static bool Bind(PassBindingsCache& pass,
 bool ComputePassMTL::EncodeCommands(
     const std::shared_ptr<Allocator>& allocator,
     id<MTLComputeCommandEncoder> encoder) const {
-  PassBindingsCache pass_bindings(encoder);
+  ComputePassBindingsCache pass_bindings(encoder);
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
   for (const auto& command : commands_) {
