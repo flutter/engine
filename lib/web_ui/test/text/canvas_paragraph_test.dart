@@ -787,7 +787,7 @@ Future<void> testMain() async {
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
-    canvas.drawParagraph(paragraph, ui.Offset.zero, ui.Paint());
+    canvas.drawParagraph(paragraph, ui.Offset.zero);
     final ui.Picture picture = recorder.endRecording();
 
     paragraph.dispose();
