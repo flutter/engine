@@ -1,4 +1,4 @@
-Signature: 4141b0f6481b80a2ed106e0f93b9a5e2
+Signature: 8caabddc6689846a0b26caf4dd4db11d
 
 UNUSED LICENSES:
 
@@ -2593,6 +2593,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/DrawWriter.h
 FILE: ../../../third_party/skia/src/gpu/graphite/GpuWorkSubmission.h
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphicsPipeline.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphicsPipeline.h
+FILE: ../../../third_party/skia/src/gpu/graphite/GraphicsPipelineDesc.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphicsPipelineDesc.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Image_Graphite.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Image_Graphite.h
@@ -2642,6 +2643,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTexture.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTexture.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTypesPriv.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlUtils.h
+FILE: ../../../third_party/skia/src/gpu/graphite/render/StencilAndFillPathRenderer.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/render/TextRenderer.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
@@ -3002,6 +3005,8 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkGpu.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkImage.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkImage.h
+FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkInterface.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkInterface.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMemory.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMemory.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkRenderPass.cpp
@@ -3014,8 +3019,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkTextureRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkTextureRenderTarget.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkUtil.h
-FILE: ../../../third_party/skia/src/gpu/vk/VulkanInterface.cpp
-FILE: ../../../third_party/skia/src/gpu/vk/VulkanInterface.h
 FILE: ../../../third_party/skia/src/image/SkImage_Gpu.h
 FILE: ../../../third_party/skia/src/image/SkImage_Lazy.cpp
 FILE: ../../../third_party/skia/src/opts/SkBlitMask_opts.h
@@ -4097,6 +4100,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.h
+FILE: ../../../third_party/skia/src/sksl/SkSLInliner.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLInliner.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMemoryPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLPool.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLPool.h
@@ -5572,9 +5577,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/QueueManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/QueueManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/RecorderPriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/RecordingPriv.h
-FILE: ../../../third_party/skia/src/gpu/graphite/Renderer.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/RendererProvider.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/RendererProvider.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Resource.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Resource.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ResourceCache.cpp
@@ -5630,6 +5632,7 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsSameExpressionTree.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsTrivialExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLNoOpErrorReporter.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.h
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLAddConstToVarModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateEmptyStatements.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinFunctions.cpp
 FILE: ../../../third_party/skia/src/text/StrikeForGPU.cpp
