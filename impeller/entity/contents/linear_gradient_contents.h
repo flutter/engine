@@ -14,6 +14,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "flutter/impeller/renderer/texture.h"
 
 namespace impeller {
 

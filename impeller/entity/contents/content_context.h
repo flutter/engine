@@ -41,16 +41,12 @@
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
-#include "impeller/entity/gradient_generator.frag.h"
-#include "impeller/entity/gradient_generator.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
-#include "impeller/entity/linear_gradient_fill_two_color.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
-#include "impeller/entity/radial_gradient_fill_two_color.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
 #include "impeller/entity/solid_fill.frag.h"
@@ -60,7 +56,6 @@
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
 #include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
-#include "impeller/entity/sweep_gradient_fill_two_color.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
@@ -71,25 +66,14 @@
 
 namespace impeller {
 
-using GradientGeneratorPipeline =
-    PipelineT<GradientGeneratorVertexShader, GradientGeneratorFragmentShader>;
 using LinearGradientFillPipeline =
     PipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
-using LinearGradientFillTwoColorPipeline =
-    PipelineT<GradientFillVertexShader,
-              LinearGradientFillTwoColorFragmentShader>;
 using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
     PipelineT<GradientFillVertexShader, RadialGradientFillFragmentShader>;
-using RadialGradientFillTwoColorPipeline =
-    PipelineT<GradientFillVertexShader,
-              RadialGradientFillTwoColorFragmentShader>;
 using SweepGradientFillPipeline =
     PipelineT<GradientFillVertexShader, SweepGradientFillFragmentShader>;
-using SweepGradientFillTwoColorPipeline =
-    PipelineT<GradientFillVertexShader,
-              SweepGradientFillTwoColorFragmentShader>;
 using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     PipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
@@ -186,11 +170,6 @@ class ContentContext {
 
   bool IsValid() const;
 
-  std::shared_ptr<Pipeline> GetGradientGeneratorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gradient_generator_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
@@ -204,21 +183,6 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetSweepGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(sweep_gradient_fill_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline> GetLinearGradientFillTwoColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(linear_gradient_fill_two_color_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline> GetRadialGradientFillTwoColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(radial_gradient_fill_two_color_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline> GetSweepGradientFillTwoColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(sweep_gradient_fill_two_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetRRectBlurPipeline(
@@ -398,16 +362,9 @@ class ContentContext {
   // variants requested from that are lazily created and cached in the variants
   // map.
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
-  mutable Variants<GradientGeneratorPipeline> gradient_generator_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
-  mutable Variants<LinearGradientFillTwoColorPipeline>
-      linear_gradient_fill_two_color_pipelines_;
-  mutable Variants<RadialGradientFillTwoColorPipeline>
-      radial_gradient_fill_two_color_pipelines_;
-  mutable Variants<SweepGradientFillTwoColorPipeline>
-      sweep_gradient_fill_two_color_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;

@@ -60,6 +60,34 @@ struct Color {
     return {red / alpha, green / alpha, blue / alpha, alpha};
   }
 
+  /**
+   * @brief Return a color that is linearly interpolated between colors a
+   * and b, according to the value of t.
+   *
+   * @param a The lower color.
+   * @param b The upper color.
+   * @param t A value between 0.0 and 1.0, inclusive.
+   * @return constexpr Color
+   */
+  constexpr static Color lerp(Color a, Color b, Scalar t) {
+    Scalar tt = 1.0 - t;
+    return {a.red * tt + b.red * t, a.green * tt + b.green * t,
+            a.blue * tt + b.blue * t, a.alpha * tt + b.alpha * t};
+  }
+
+  /**
+   * @brief Convert to R8G8B8A8 representation.
+   *
+   * @return constexpr std::array<u_int8, 4>
+   */
+  constexpr std::array<u_int8_t, 4> ToR8G8B8A8() const {
+    u_int8_t r = std::round(red * 255);
+    u_int8_t g = std::round(green * 255);
+    u_int8_t b = std::round(blue * 255);
+    u_int8_t a = std::round(alpha * 255);
+    return {r, g, b, a};
+  }
+
   static constexpr Color White() { return {1.0, 1.0, 1.0, 1.0}; }
 
   static constexpr Color Black() { return {0.0, 0.0, 0.0, 1.0}; }

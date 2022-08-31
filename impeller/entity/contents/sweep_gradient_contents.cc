@@ -53,6 +53,7 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
   using VS = SweepGradientFillPipeline::VertexShader;
+  using FS = SweepGradientFillPipeline::FragmentShader;
 
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
   {
@@ -72,75 +73,43 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
     }
   }
 
+  auto gradient_texture =
+      CreateGradientTexture(colors_, stops_, renderer.GetContext());
+  if (gradient_texture == nullptr) {
+    return false;
+  }
+
+  FS::GradientInfo gradient_info;
+  gradient_info.center = center_;
+  gradient_info.bias = bias_;
+  gradient_info.scale = scale_;
+  gradient_info.texture_sampler_y_coord_scale =
+      gradient_texture->GetYCoordScale();
+  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
+
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
   frame_info.matrix = GetInverseMatrix();
 
-  if (colors_.size() > 2) {
-    using FS = SweepGradientFillPipeline::FragmentShader;
-    auto placeholder = Entity();
-    auto gradient_generator = GradientGeneratorContents();
-    gradient_generator.SetColors(colors_);
-    gradient_generator.SetStops(stops_);
-    auto gradient_snapshot =
-        gradient_generator.RenderToSnapshot(renderer, placeholder);
-    if (gradient_snapshot == std::nullopt) {
-      return false;
-    }
-
-    FS::GradientInfo gradient_info;
-    gradient_info.center = center_;
-    gradient_info.bias = bias_;
-    gradient_info.scale = scale_;
-    gradient_info.texture_sampler_y_coord_scale =
-        gradient_snapshot->texture->GetYCoordScale();
-    gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-
-    Command cmd;
-    cmd.label = "SweepGradientFill";
-    cmd.pipeline = renderer.GetSweepGradientFillPipeline(
-        OptionsFromPassAndEntity(pass, entity));
-    cmd.stencil_reference = entity.GetStencilDepth();
-    cmd.BindVertices(
-        vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
-    cmd.primitive_type = PrimitiveType::kTriangle;
-    FS::BindGradientInfo(
-        cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-    SamplerDescriptor sampler_desc;
-    sampler_desc.min_filter = MinMagFilter::kLinear;
-    sampler_desc.mag_filter = MinMagFilter::kLinear;
-    FS::BindTextureSampler(
-        cmd, gradient_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
-    return pass.AddCommand(std::move(cmd));
-
-  } else {
-    using FS = SweepGradientFillTwoColorPipeline::FragmentShader;
-    FS::GradientInfo gradient_info;
-    gradient_info.center = center_;
-    gradient_info.bias = bias_;
-    gradient_info.scale = scale_;
-    gradient_info.start_color = colors_[0].Premultiply();
-    gradient_info.end_color = colors_[1].Premultiply();
-    gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-
-    Command cmd;
-    cmd.label = "SweepGradientFillTwoColor";
-    cmd.pipeline = renderer.GetSweepGradientFillTwoColorPipeline(
-        OptionsFromPassAndEntity(pass, entity));
-    cmd.stencil_reference = entity.GetStencilDepth();
-    cmd.BindVertices(
-        vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
-    cmd.primitive_type = PrimitiveType::kTriangle;
-    FS::BindGradientInfo(
-        cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-    return pass.AddCommand(std::move(cmd));
-  }
+  Command cmd;
+  cmd.label = "SweepGradientFill";
+  cmd.pipeline = renderer.GetSweepGradientFillPipeline(
+      OptionsFromPassAndEntity(pass, entity));
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(
+      vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+  cmd.primitive_type = PrimitiveType::kTriangle;
+  FS::BindGradientInfo(
+      cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  SamplerDescriptor sampler_desc;
+  sampler_desc.min_filter = MinMagFilter::kLinear;
+  sampler_desc.mag_filter = MinMagFilter::kLinear;
+  FS::BindTextureSampler(
+      cmd, gradient_texture,
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller
