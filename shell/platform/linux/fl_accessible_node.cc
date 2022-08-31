@@ -190,8 +190,14 @@ static const gchar* fl_accessible_node_get_name(AtkObject* accessible) {
 
 // Implements AtkObject::get_parent.
 static AtkObject* fl_accessible_node_get_parent(AtkObject* accessible) {
-  FlAccessibleNode* self = FL_ACCESSIBLE_NODE(accessible);
-  return self->parent;
+  FlAccessibleNodePrivate* priv = FL_ACCESSIBLE_NODE_GET_PRIVATE(accessible);
+  return priv->parent;
+}
+
+// Implements AtkObject::get_index_in_parent.
+static gint fl_accessible_node_get_index_in_parent(AtkObject* accessible) {
+  FlAccessibleNodePrivate* priv = FL_ACCESSIBLE_NODE_GET_PRIVATE(accessible);
+  return priv->index;
 }
 
 // Implements AtkObject::get_n_children.
