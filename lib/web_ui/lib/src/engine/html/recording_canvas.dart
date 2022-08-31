@@ -245,7 +245,7 @@ class RecordingCanvas {
   }
 
   void restoreToCount(int count) {
-    while (count < _saveCount) {
+    while (count < _saveCount && _saveCount > 1) {
       restore();
     }
   }
