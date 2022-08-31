@@ -601,6 +601,8 @@ extension DomCanvasElementExtension on DomCanvasElement {
 
   DomCanvasRenderingContext2D get context2D =>
       getContext('2d')! as DomCanvasRenderingContext2D;
+
+    
 }
 
 @JS()
@@ -669,6 +671,14 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
       num startAngle, num endAngle, bool? antiClockwise);
   external void strokeText(String text, num x, num y);
   external set globalAlpha(num? value);
+}
+
+@JS()
+@staticInterop
+class DomCanvasRenderingContextWebGl {}
+
+extension DomCanvasRenderingContextWebGlExtension on DomCanvasRenderingContextWebGl {
+  external bool isContextLost();
 }
 
 @JS()
