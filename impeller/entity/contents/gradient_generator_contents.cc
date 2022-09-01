@@ -39,6 +39,7 @@ std::shared_ptr<Texture> CreateGradientTexture(
     }
     // Avoid creating textures that are absurdly large due to stops that are
     // very close together.
+    // TODO: this should use platform specific
     scale = std::min(std::ceil(1.0 / minimum_delta), 1024.0);
   }
 
@@ -78,10 +79,11 @@ std::shared_ptr<Texture> CreateGradientTexture(
     AppendColor(previous_color, &color_stop_channels);
 
     for (auto i = 1u; i < width - 1; i++) {
-      // We're almost exactly equal to the next stop.
       auto scaled_i = i / scale;
       Color next_color = colors[previous_color_index + 1];
       auto next_stop = stops[previous_color_index + 1];
+
+      // We're almost exactly equal to the next stop.
       if (ScalarNearlyEqual(scaled_i, next_stop)) {
         AppendColor(next_color, &color_stop_channels);
 
@@ -99,25 +101,18 @@ std::shared_ptr<Texture> CreateGradientTexture(
         // we have scaled our texture such that not every stop gets their own
         // index. For now I am simply ignoring the inbetween colors. Currently
         // this requires a gradient with either an absurd number of textures
-        size_t j = 2;
-        while (scaled_i > next_stop) {
-          next_stop = stops[j];
-          j++;
-        }
-        next_color = colors[previous_color_index + j];
-        auto t = (scaled_i - previous_stop) / (next_stop - previous_stop);
-        auto mixed_color = Color::lerp(previous_color, next_color, t);
-        AppendColor(mixed_color, &color_stop_channels);
+        AppendColor(next_color, &color_stop_channels);
 
         previous_color = next_color;
         previous_stop = next_stop;
-        previous_color_index += j;
+        previous_color_index += 1;
       }
     }
     // The last index is always equal to the last color, exactly.
     AppendColor(colors.back(), &color_stop_channels);
   }
 
+  FML_DCHECK(color_stop_channels.size() == width * 4);
   auto mapping = std::make_shared<fml::DataMapping>(color_stop_channels);
   if (!texture->SetContents(mapping)) {
     FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
