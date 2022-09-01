@@ -907,6 +907,48 @@ TEST(GeometryTest, ColorPremultiply) {
   }
 }
 
+TEST(GeometryTest, ColorR8G8B8A8) {
+  {
+    Color a(1.0, 0.5, 0.2, 0.5);
+    std::array<uint8_t, 4> expected = {255, 128, 51, 128};
+    ASSERT_ARRAY_4_NEAR(a.ToR8G8B8A8(), expected);
+  }
+
+  {
+    Color a(0.0, 0.0, 0.0, 0.0);
+    std::array<uint8_t, 4> expected = {0, 0, 0, 0};
+    ASSERT_ARRAY_4_NEAR(a.ToR8G8B8A8(), expected);
+  }
+
+  {
+    Color a(1.0, 1.0, 1.0, 1.0);
+    std::array<uint8_t, 4> expected = {255, 255, 255, 255};
+    ASSERT_ARRAY_4_NEAR(a.ToR8G8B8A8(), expected);
+  }
+}
+
+TEST(GeometryTest, ColorLerp) {
+  {
+    Color a(0.0, 0.0, 0.0, 0.0);
+    Color b(1.0, 1.0, 1.0, 1.0);
+
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.5, 0.5, 0.5, 0.5));
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.2, 0.2, 0.2, 0.2));
+  }
+
+  {
+    Color a(0.2, 0.4, 1.0, 0.5);
+    Color b(0.4, 1.0, 0.2, 0.3);
+
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.3, 0.7, 0.6, 0.4));
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+  }
+}
+
 TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
   {
     auto deg = Degrees{90.0};
