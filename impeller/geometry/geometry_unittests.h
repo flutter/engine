@@ -111,8 +111,9 @@ inline ::testing::AssertionResult Array4Near(std::array<uint8_t, 4> a,
                : ::testing::AssertionFailure() << "Arrays are not equal.";
 }
 
-inline ::testing::AssertionResult ColorBufferNear(std::vector<uint8_t> a,
-                                                  std::vector<impeller::Color> b) {
+inline ::testing::AssertionResult ColorBufferNear(
+    std::vector<uint8_t> a,
+    std::vector<impeller::Color> b) {
   if (a.size() != b.size() * 4) {
     return ::testing::AssertionFailure()
            << "Color buffer length does not match";

@@ -1440,11 +1440,8 @@ TEST(GeometryTest, Gradient) {
     auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
 
     std::vector<Color> lerped_colors = {
-      Color::Red(),
-      Color::Blue(),
-      Color::lerp(Color::Blue(), Color::Green(), 0.5),
-      Color::Green()
-    };
+        Color::Red(), Color::Blue(),
+        Color::lerp(Color::Blue(), Color::Green(), 0.5), Color::Green()};
     ASSERT_COLOR_BUFFER_NEAR(gradient, lerped_colors);
     ASSERT_EQ(texture_size, 4u);
   }
