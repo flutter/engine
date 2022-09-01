@@ -382,7 +382,7 @@ void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
         static_cast<int32_t>(
             flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsMixedCheck
                 ? ax::mojom::CheckedState::kMixed
-                : flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked
+            : flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked
                 ? ax::mojom::CheckedState::kTrue
                 : ax::mojom::CheckedState::kFalse));
   }
