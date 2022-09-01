@@ -276,7 +276,9 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(canvas.getLocalClipBounds(), initialLocalBounds);
       expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
     });
+  });
 
+  group('RestoreToCount function tests', () {
     test('RestoreToCount can work', () async {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
@@ -292,31 +294,30 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(canvas.getSaveCount(), 1);
     });
 
-  test('RestoreToCount count less than 1, the stack should be reset', () async {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
-    canvas.save();
-    canvas.save();
-    canvas.save();
-    canvas.save();
-    canvas.save();
-    expect(canvas.getSaveCount(), equals(6));
-    canvas.restoreToCount(0);
-    expect(canvas.getSaveCount(), equals(1));
-  });
+    test('RestoreToCount count less than 1, the stack should be reset', () async {
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      expect(canvas.getSaveCount(), equals(6));
+      canvas.restoreToCount(0);
+      expect(canvas.getSaveCount(), equals(1));
+    });
 
-  test('RestoreToCount count greater than current [getSaveCount]', () async {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
-    canvas.save();
-    canvas.save();
-    canvas.save();
-    canvas.save();
-    canvas.save();
-    expect(canvas.getSaveCount(), equals(6));
-    canvas.restoreToCount(canvas.getSaveCount() + 1);
-    expect(canvas.getSaveCount(), equals(6));
-  });
-
+    test('RestoreToCount count greater than current [getSaveCount]', () async {
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final ui.Canvas canvas = ui.Canvas(recorder);
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      canvas.save();
+      expect(canvas.getSaveCount(), equals(6));
+      canvas.restoreToCount(canvas.getSaveCount() + 1);
+      expect(canvas.getSaveCount(), equals(6));
+    });
   });
 }
