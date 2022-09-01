@@ -494,7 +494,7 @@ public class FlutterActivity extends ComponentActivity
     delegate.onAttach(this);
     delegate.onRestoreInstanceState(savedInstanceState);
 
-    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
     registerOnBackInvokedCallback();
 
@@ -664,7 +664,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onStart() {
     super.onStart();
-    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_START);
+    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_START);
     if (stillAttachedForEvent("onStart")) {
       delegate.onStart();
     }
@@ -673,7 +673,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onResume() {
     super.onResume();
-    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
     if (stillAttachedForEvent("onResume")) {
       delegate.onResume();
     }
@@ -693,7 +693,7 @@ public class FlutterActivity extends ComponentActivity
     if (stillAttachedForEvent("onPause")) {
       delegate.onPause();
     }
-    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
+    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
 
   @Override
@@ -702,7 +702,7 @@ public class FlutterActivity extends ComponentActivity
     if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
     }
-    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
 
   @Override
@@ -755,7 +755,7 @@ public class FlutterActivity extends ComponentActivity
       delegate.onDetach();
     }
     release();
-    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
   @Override
@@ -838,6 +838,10 @@ public class FlutterActivity extends ComponentActivity
       lifecycle = new LifecycleRegistry(this);
     }
     return lifecycle;
+  }
+
+  private LifecycleRegistry getLifecycleRegistry() {
+    return (LifecycleRegistry) lifecycle;
   }
 
   /**
