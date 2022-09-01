@@ -9,6 +9,7 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/constants.h"
+#include "impeller/geometry/gradient.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -1400,6 +1401,53 @@ TEST(GeometryTest, MatrixPrinting) {
        0.000000,       0.000000,       1.000000,      30.000000,
        0.000000,       0.000000,       0.000000,       1.000000,
 ))");
+}
+
+TEST(GeometryTest, Gradient) {
+  {
+    // Simple 2 color gradient produces color buffer containing exactly those
+    // values.
+    std::vector<Color> colors = {Color::Red(), Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
+    ASSERT_EQ(texture_size, 2u);
+  }
+
+  {
+    // Simple N color gradient produces color buffer containing exactly those
+    // values.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
+                                 Color::White()};
+    std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
+    ASSERT_EQ(texture_size, 4u);
+  }
+
+  {
+    // Gradient with color stops will lerp and scale buffer.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
+    std::vector<Scalar> stops = {0.0, 0.25, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    std::vector<Color> lerped_colors = {
+      Color::Red(),
+      Color::Blue(),
+      Color::lerp(Color::Blue(), Color::Green(), 0.5),
+      Color::Green()
+    };
+    ASSERT_COLOR_BUFFER_NEAR(gradient, lerped_colors);
+    ASSERT_EQ(texture_size, 4u);
+  }
 }
 
 }  // namespace testing
