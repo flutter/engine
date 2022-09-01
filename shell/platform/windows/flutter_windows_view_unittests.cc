@@ -665,16 +665,10 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
-  root_node = bridge
-                  ->GetFlutterPlatformNodeDelegateFromID(
-                      AccessibilityBridge::kRootNodeId)
-                  .lock();
+
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
   EXPECT_EQ(root_node->GetData().GetCheckedState(),
             ax::mojom::CheckedState::kFalse);
-
-  // Get the IAccessible for the root node.
-  native_view = root_node->GetNativeViewAccessible();
 
   // Look up against the node itself (not one of its children)
   varchild = {};
@@ -685,6 +679,27 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   native_state = {};
   ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
   EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_CHECKED);
+
+  // Now check mixed state
+  root.flags = static_cast<FlutterSemanticsFlag>(
+      FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
+      FlutterSemanticsFlag::kFlutterSemanticsFlagIsMixedCheck);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->CommitUpdates();
+
+  EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
+  EXPECT_EQ(root_node->GetData().GetCheckedState(),
+            ax::mojom::CheckedState::kMixed);
+
+  // Look up against the node itself (not one of its children)
+  varchild = {};
+  varchild.vt = VT_I4;
+
+  // Verify the checkbox is checked.
+  varchild.lVal = CHILDID_SELF;
+  native_state = {};
+  ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
+  EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_MIXED);
 }
 
 }  // namespace testing
