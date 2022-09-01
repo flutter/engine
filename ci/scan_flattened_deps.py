@@ -27,7 +27,7 @@ CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 HELP_STR = "To find complete information on this vulnerability, navigate to "
 # TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
-DEPS_UPSTREAM_MAP = os.path.join(CHECKOUT_ROOT, '3pdeps.json')
+DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
 
 failed_deps = [] # deps which fail to be be cloned or git-merge based
 old_deps = [] # deps which have not been updated in more than 1 year
@@ -154,7 +154,7 @@ def getCommonAncestorCommit(dep):
     """
     Given an input of a mirrored dep,
     compare to the mapping of deps to their upstream
-    in DEPS_UPSTREAM_MAP and find a common ancestor
+    in DEPS and find a common ancestor
     commit SHA value.
 
     This is done by first cloning the mirrored dep,
@@ -165,53 +165,66 @@ def getCommonAncestorCommit(dep):
     """
     # dep[0] contains the mirror repo
     # dep[1] contains the mirror's pinned SHA
-    # data[dep_name] is the origin repo
+    # upstream is the origin repo
     dep_name = dep[0].split('/')[-1].split('.')[0]
-    with open(DEPS_UPSTREAM_MAP,'r', encoding='utf-8') as f:
-        data = json.load(f)
-        if dep_name in data:
-          try:
-            # clone dependency from mirror
-            os.chdir('./clone-test')
-            print(f'attempting: git clone --quiet {dep[0]}')
-            os.system(f'git clone {dep[0]} --quiet {dep_name}')
-            os.chdir(f'./{dep_name}')
+    with open(DEPS,'r', encoding='utf-8') as f:
+      local_scope = {}
+      global_scope = {'Var': lambda x: x} # dummy lambda
+      # Read the content.
+      with open(DEPS, 'r') as f:
+          deps_content = f.read()
 
-            # check how old pinned commit is
-            dep_roll_date = subprocess.check_output(f'git show -s --format=%ct {dep[1]}', shell=True).decode()
-            print("dep roll date is " + dep_roll_date)
-            years = (time.time() - int(dep_roll_date)) / 31556952
-            if years >= 1:
-              print(f'Old dep found: {dep[0]} is from {dep_roll_date}')
-              old_deps.append(dep[0])
+      # Eval the content.
+      exec(deps_content, global_scope, local_scope)
 
-            # create branch that will track the upstream dep
-            print('attempting to add upstream remote from: ' + data[dep_name])
-            os.system(f'git remote add upstream {data[dep_name]}')
-            os.system(f'git fetch --quiet upstream')
+      # Extract the deps and filter.
+      deps = local_scope.get('vars')
 
-            # get name of default branch for upstream
-            default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
-            print("default_branch found: " + default_branch)
+      if(dep_name in deps):
+        try:
+          # get the upstream URL from the mapping in DEPS file
+          upstream = deps.get(dep_name)
+          # clone dependency from mirror
+          os.chdir('./clone-test')
+          print(f'attempting: git clone --quiet {dep[0]}')
+          os.system(f'git clone {dep[0]} --quiet {dep_name}')
+          os.chdir(f'./{dep_name}')
 
-            # make upstream branch track the upstream dep
-            os.system(f'git checkout -b upstream --track upstream/{default_branch}')
+          # check how old pinned commit is
+          dep_roll_date = subprocess.check_output(f'git show -s --format=%ct {dep[1]}', shell=True).decode()
+          print("dep roll date is " + dep_roll_date)
+          years = (time.time() - int(dep_roll_date)) / 31556952 # number converts to years TODO - replace with more elegant than raw number
+          if years >= 1:
+            print(f'Old dep found: {dep[0]} is from {dep_roll_date}')
+            old_deps.append(dep[0])
 
-            # get the most recent commit from defaul branch of upstream
-            commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
-            commit = commit.decode().strip()
-            print("commit found: " + commit)
-            print(f'git merge-base {commit} {dep[1]}')
+          # create branch that will track the upstream dep
+          print('attempting to add upstream remote from: ' + upstream)
+          os.system(f'git remote add upstream {upstream}')
+          os.system(f'git fetch --quiet upstream')
 
-            # perform merge-base on most recent default branch commit and pinned mirror commit
-            ancestorCommit = subprocess.check_output(f'git merge-base {commit} {dep[1]}', shell=True)
-            ancestorCommit = ancestorCommit.decode().strip()
-            print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
-            return ancestorCommit
-          except:
-            print("exception occurred")
-        else:
-          print("did not find dep: " + dep_name)
+          # get name of default branch for upstream
+          default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
+          print("default_branch found: " + default_branch)
+
+          # make upstream branch track the upstream dep
+          os.system(f'git checkout -b upstream --track upstream/{default_branch}')
+
+          # get the most recent commit from defaul branch of upstream
+          commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
+          commit = commit.decode().strip()
+          print("commit found: " + commit)
+          print(f'git merge-base {commit} {dep[1]}')
+
+          # perform merge-base on most recent default branch commit and pinned mirror commit
+          ancestorCommit = subprocess.check_output(f'git merge-base {commit} {dep[1]}', shell=True)
+          ancestorCommit = ancestorCommit.decode().strip()
+          print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
+          return ancestorCommit
+        except:
+          print("exception occurred")
+      else:
+        print("did not find dep: " + dep_name)
 
 def WriteSarif(responses, manifest_file):
     """
