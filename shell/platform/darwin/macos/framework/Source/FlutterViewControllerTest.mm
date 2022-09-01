@@ -242,6 +242,16 @@ TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
   return true;
 }
 
+- (bool)testFlutterViewIsConfigured {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewControllerMock loadView];
+  id renderer = [engineMock renderer];
+  // TODO check that render.flutterView is not nil
+}
+
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled {
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));

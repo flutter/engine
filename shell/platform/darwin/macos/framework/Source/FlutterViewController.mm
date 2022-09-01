@@ -340,7 +340,6 @@ static void CommonInit(FlutterViewController* controller) {
     }
     _engine = engine;
     CommonInit(self);
-    [engine setViewController:self];
   }
 
   return self;
