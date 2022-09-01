@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <array>
 #include <cstdlib>
 #include <ostream>
