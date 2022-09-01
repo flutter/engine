@@ -494,7 +494,7 @@ public class FlutterActivity extends ComponentActivity
     delegate.onAttach(this);
     delegate.onRestoreInstanceState(savedInstanceState);
 
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
     registerOnBackInvokedCallback();
 
@@ -664,7 +664,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onStart() {
     super.onStart();
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
+    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_START);
     if (stillAttachedForEvent("onStart")) {
       delegate.onStart();
     }
@@ -673,7 +673,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onResume() {
     super.onResume();
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
     if (stillAttachedForEvent("onResume")) {
       delegate.onResume();
     }
@@ -693,7 +693,7 @@ public class FlutterActivity extends ComponentActivity
     if (stillAttachedForEvent("onPause")) {
       delegate.onPause();
     }
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
+    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
 
   @Override
@@ -702,7 +702,7 @@ public class FlutterActivity extends ComponentActivity
     if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
     }
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
 
   @Override
@@ -755,7 +755,7 @@ public class FlutterActivity extends ComponentActivity
       delegate.onDetach();
     }
     release();
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+    getLifecycle().handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
   @Override
