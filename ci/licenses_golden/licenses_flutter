@@ -680,6 +680,8 @@ FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
+FILE: ../../../flutter/impeller/geometry/gradient.cc
+FILE: ../../../flutter/impeller/geometry/gradient.h
 FILE: ../../../flutter/impeller/geometry/matrix.cc
 FILE: ../../../flutter/impeller/geometry/matrix.h
 FILE: ../../../flutter/impeller/geometry/matrix_decomposition.cc
