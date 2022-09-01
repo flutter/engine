@@ -16,7 +16,7 @@ static void AppendColor(const Color& color, std::vector<uint8_t>* colors) {
   colors->push_back(converted[3]);
 }
 
-std::vector<u_int8_t> CreateGradientBuffer(const std::vector<Color>& colors,
+std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
                                            const std::vector<Scalar>& stops,
                                            uint32_t* out_texture_size) {
   uint32_t texture_size;
