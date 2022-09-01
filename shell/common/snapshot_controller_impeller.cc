@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/snapshot_controller_impeller.h"
+
 #include <algorithm>
 
 #include "flutter/flow/surface.h"
@@ -15,6 +16,21 @@
 namespace flutter {
 
 sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
+    sk_sp<DisplayList> display_list,
+    SkISize size) {
+  sk_sp<DlImage> result;
+  GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&] {
+            // Do nothing.
+          })
+          .SetIfFalse(
+              [&] { result = DoMakeRasterSnapshot(display_list, size); }));
+
+  return result;
+}
+
+sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize size) {
   impeller::DisplayListDispatcher dispatcher;

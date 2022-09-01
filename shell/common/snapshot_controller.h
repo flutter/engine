@@ -32,7 +32,7 @@ class SnapshotController {
   virtual ~SnapshotController() = default;
 
   virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                            SkISize picture_size) = 0;
+                                            SkISize size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;
 
@@ -42,6 +42,8 @@ class SnapshotController {
 
  private:
   const Delegate& delegate_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(SnapshotController);
 };
 
 }  // namespace flutter

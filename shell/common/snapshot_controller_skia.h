@@ -16,14 +16,16 @@ class SnapshotControllerSkia : public SnapshotController {
       : SnapshotController(delegate) {}
 
   sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                    SkISize picture_size) override;
+                                    SkISize size) override;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
 
  private:
   sk_sp<DlImage> DoMakeRasterSnapshot(
-      SkISize picture_size,
+      SkISize size,
       std::function<void(SkCanvas*)> draw_callback);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(SnapshotControllerSkia);
 };
 
 }  // namespace flutter
