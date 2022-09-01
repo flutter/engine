@@ -118,7 +118,7 @@ int Canvas::getSaveCount() {
 }
 
 void Canvas::restoreToCount(int count) {
-  if (display_list_recorder_ && (count < getSaveCount())) {
+  if (display_list_recorder_ && count < getSaveCount()) {
     builder()->restoreToCount(count);
   }
 }
