@@ -37,7 +37,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
-import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -211,7 +210,7 @@ import java.util.List;
 // A number of methods in this class have the same implementation as FlutterFragmentActivity. These
 // methods are duplicated for readability purposes. Be sure to replicate any change in this class in
 // FlutterFragmentActivity, too.
-public class FlutterActivity extends ComponentActivity
+public class FlutterActivity extends Activity
     implements FlutterActivityAndFragmentDelegate.Host, LifecycleOwner {
   private static final String TAG = "FlutterActivity";
 
@@ -456,7 +455,9 @@ public class FlutterActivity extends ComponentActivity
 
   @NonNull private LifecycleRegistry lifecycle;
 
-  public FlutterActivity() {}
+  public FlutterActivity() {
+    lifecycle = new LifecycleRegistry(this);
+  }
 
   /**
    * This method exists so that JVM tests can ensure that a delegate exists without putting this
@@ -494,7 +495,7 @@ public class FlutterActivity extends ComponentActivity
     delegate.onAttach(this);
     delegate.onRestoreInstanceState(savedInstanceState);
 
-    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
     registerOnBackInvokedCallback();
 
@@ -664,7 +665,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onStart() {
     super.onStart();
-    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_START);
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
     if (stillAttachedForEvent("onStart")) {
       delegate.onStart();
     }
@@ -673,7 +674,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   protected void onResume() {
     super.onResume();
-    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
     if (stillAttachedForEvent("onResume")) {
       delegate.onResume();
     }
@@ -693,7 +694,7 @@ public class FlutterActivity extends ComponentActivity
     if (stillAttachedForEvent("onPause")) {
       delegate.onPause();
     }
-    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
 
   @Override
@@ -702,7 +703,7 @@ public class FlutterActivity extends ComponentActivity
     if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
     }
-    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
 
   @Override
@@ -755,7 +756,7 @@ public class FlutterActivity extends ComponentActivity
       delegate.onDetach();
     }
     release();
-    getLifecycleRegistry().handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
   @Override
@@ -834,14 +835,7 @@ public class FlutterActivity extends ComponentActivity
   @Override
   @NonNull
   public Lifecycle getLifecycle() {
-    if (lifecycle == null) {
-      lifecycle = new LifecycleRegistry(this);
-    }
     return lifecycle;
-  }
-
-  private LifecycleRegistry getLifecycleRegistry() {
-    return (LifecycleRegistry) lifecycle;
   }
 
   /**
