@@ -103,6 +103,21 @@ public class FlutterActivityTest {
     verify(activity, times(1)).registerOnBackInvokedCallback();
   }
 
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itUnregistersOnBackInvokedCallbackOnRelease() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.release();
+
+    verify(activity, times(1)).unregisterOnBackInvokedCallback();
+  }
+
   @Test
   public void itCreatesDefaultIntentWithExpectedDefaults() {
     Intent intent = FlutterActivity.createDefaultIntent(ctx);

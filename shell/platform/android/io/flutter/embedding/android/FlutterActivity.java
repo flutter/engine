@@ -723,7 +723,8 @@ public class FlutterActivity extends ComponentActivity
    *
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
-  private void release() {
+  @VisibleForTesting
+  public void release() {
     unregisterOnBackInvokedCallback();
     if (delegate != null) {
       delegate.release();
