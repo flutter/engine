@@ -101,6 +101,7 @@ std::shared_ptr<Texture> CreateGradientTexture(
         // we have scaled our texture such that not every stop gets their own
         // index. For now I am simply ignoring the inbetween colors. Currently
         // this requires a gradient with either an absurd number of textures
+        // or very small stops.
         AppendColor(next_color, &color_stop_channels);
 
         previous_color = next_color;
