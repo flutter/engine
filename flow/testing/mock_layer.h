@@ -24,16 +24,17 @@ namespace testing {
 // verify the data against expected values.
 class MockLayer : public Layer {
  public:
-  explicit MockLayer(SkPath path, SkPaint paint = SkPaint());
+  explicit MockLayer(SkPath path, SkPaint paint = SkPaint(), int mock_flag = 0);
 
   static std::shared_ptr<MockLayer> Make(SkPath path,
-                                         SkPaint paint = SkPaint()) {
-    return std::make_shared<MockLayer>(path, paint);
+                                         SkPaint paint = SkPaint(),
+                                         int mock_flag = 0) {
+    return std::make_shared<MockLayer>(path, paint, mock_flag);
   }
 
   static std::shared_ptr<MockLayer> MakeOpacityCompatible(SkPath path) {
-    auto mock_layer = std::make_shared<MockLayer>(path, SkPaint());
-    mock_layer->set_fake_opacity_compatible(true);
+    auto mock_layer = std::make_shared<MockLayer>(
+        path, SkPaint(), MockLayer::kFakeOpacityCompatible);
     return mock_layer;
   }
 
@@ -66,48 +67,35 @@ class MockLayer : public Layer {
 
   bool fake_has_texture_layer() { return mock_flags_ & kFakeHasTextureLayer; }
 
-  MockLayer& set_parent_has_platform_view(bool flag) {
+  void set_parent_has_platform_view(bool flag) {
     flag ? (mock_flags_ |= kParentHasPlatformView)
          : (mock_flags_ &= ~(kParentHasPlatformView));
-    return *this;
   }
 
-  MockLayer& set_parent_has_texture_layer(bool flag) {
+  void set_parent_has_texture_layer(bool flag) {
     flag ? (mock_flags_ |= kParentHasTextureLayer)
          : (mock_flags_ &= ~(kParentHasTextureLayer));
-    return *this;
   }
 
-  MockLayer& set_fake_has_platform_view(bool flag) {
+  void set_fake_has_platform_view(bool flag) {
     flag ? (mock_flags_ |= kFakeHasPlatformView)
          : (mock_flags_ &= ~(kFakeHasPlatformView));
-    return *this;
   }
 
-  MockLayer& set_fake_reads_surface(bool flag) {
+  void set_fake_reads_surface(bool flag) {
     flag ? (mock_flags_ |= kFakeReadsSurface)
          : (mock_flags_ &= ~(kFakeReadsSurface));
-    return *this;
   }
 
-  MockLayer& set_fake_opacity_compatible(bool flag) {
+  void set_fake_opacity_compatible(bool flag) {
     flag ? (mock_flags_ |= kFakeOpacityCompatible)
          : (mock_flags_ &= ~(kFakeOpacityCompatible));
-    return *this;
   }
 
-  MockLayer& set_fake_has_texture_layer(bool flag) {
+  void set_fake_has_texture_layer(bool flag) {
     flag ? (mock_flags_ |= kFakeHasTextureLayer)
          : (mock_flags_ &= ~(kFakeHasTextureLayer));
-    return *this;
   }
-
- private:
-  MutatorsStack parent_mutators_;
-  SkMatrix parent_matrix_;
-  SkRect parent_cull_rect_ = SkRect::MakeEmpty();
-  SkPath fake_paint_path_;
-  SkPaint fake_paint_;
 
   static constexpr int kParentHasPlatformView = 1 << 0;
   static constexpr int kParentHasTextureLayer = 1 << 1;
@@ -115,6 +103,13 @@ class MockLayer : public Layer {
   static constexpr int kFakeReadsSurface = 1 << 3;
   static constexpr int kFakeOpacityCompatible = 1 << 4;
   static constexpr int kFakeHasTextureLayer = 1 << 5;
+
+ private:
+  MutatorsStack parent_mutators_;
+  SkMatrix parent_matrix_;
+  SkRect parent_cull_rect_ = SkRect::MakeEmpty();
+  SkPath fake_paint_path_;
+  SkPaint fake_paint_;
 
   int mock_flags_ = 0;
 

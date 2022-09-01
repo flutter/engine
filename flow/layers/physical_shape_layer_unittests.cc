@@ -382,8 +382,8 @@ TEST_F(PhysicalShapeLayerTest, Readback) {
   const Clip save_layer = Clip::antiAliasWithSaveLayer;
 
   std::shared_ptr<MockLayer> nochild;
-  auto reader = std::make_shared<MockLayer>(path, paint);
-  reader->set_fake_reads_surface(true);
+  auto reader =
+      std::make_shared<MockLayer>(path, paint, MockLayer::kFakeReadsSurface);
   auto nonreader = std::make_shared<MockLayer>(path, paint);
 
   // No children, no prior readback -> no readback after
