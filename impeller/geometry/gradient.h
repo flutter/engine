@@ -21,7 +21,7 @@ namespace impeller {
  * @param stops
  * @return std::vector<u_int8_t>
  */
-std::vector<u_int8_t> CreateGradientBuffer(const std::vector<Color>& colors,
+std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
                                            const std::vector<Scalar>& stops,
                                            uint32_t* out_texture_size);
 
