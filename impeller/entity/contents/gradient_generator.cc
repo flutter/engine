@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-#include "gradient_generator_contents.h"
+#include "gradient_generator.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/impeller/renderer/context.h"

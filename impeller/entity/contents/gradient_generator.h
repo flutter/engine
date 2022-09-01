@@ -20,7 +20,7 @@ class Context;
 
 /**
  * @brief Create a host visible texture that contains the gradient defined
- * by the provided stops.
+ * by the provided colors and stops.
  */
 std::shared_ptr<Texture> CreateGradientTexture(
     const std::vector<Color>& colors,
