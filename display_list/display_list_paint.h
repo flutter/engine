@@ -104,6 +104,10 @@ class DlPaint {
     color_.argb = alpha << 24 | (color_.argb & 0x00FFFFFF);
     return *this;
   }
+  DlPaint& setOpacity(SkScalar opacity) {
+    setAlpha(SkScalarRoundToInt(opacity * 0xff));
+    return *this;
+  }
 
   DlBlendMode getBlendMode() const {
     return static_cast<DlBlendMode>(blendMode_);

@@ -79,7 +79,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
   void Paint(PaintContext& context) const override {
     FML_DCHECK(needs_painting(context));
 
-    auto save = context.state_stack.save();
+    auto restore = context.state_stack.save();
     OnStackClipShape(context.state_stack);
 
     if (!UsesSaveLayer()) {
@@ -88,17 +88,20 @@ class ClipShapeLayer : public CacheableContainerLayer {
     }
 
     if (context.raster_cache) {
+      auto restore_apply = context.state_stack.applyState(
+          &paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+
       AutoCachePaint cache_paint(context);
-      if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+      if (layer_raster_cache_item_->Draw(context,
+                                         context.state_stack.sk_paint())) {
         return;
       }
     }
 
     // saveWithOpacity optimizes the case where opacity >= 1.0
     // to a simple saveLayer
-    auto save_layer = context.state_stack.saveWithOpacity(
-        &paint_bounds(), context.inherited_opacity,
-        context.checkerboard_offscreen_layers);
+    auto save_layer = context.state_stack.saveLayer(
+        &child_paint_bounds(), checkerboard_bounds(context));
     PaintChildren(context);
   }
 

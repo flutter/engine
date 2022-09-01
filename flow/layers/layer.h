@@ -292,6 +292,10 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
+  const SkRect* checkerboard_bounds(PaintContext context) const {
+    return context.checkerboard_offscreen_layers ? &paint_bounds_ : nullptr;
+  }
+
   // Determines if the layer has any content.
   bool is_empty() const { return paint_bounds_.isEmpty(); }
 

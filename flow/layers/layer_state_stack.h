@@ -35,33 +35,92 @@ class LayerStateStack {
     size_t stack_restore_count_;
   };
 
-  static constexpr int CAN_APPLY_OPACITY = 0x1;
+  static constexpr int CALLER_CAN_APPLY_OPACITY = 0x1;
 
   struct RenderingAttributes {
+    SkRect content_bounds;
     SkScalar opacity = SK_Scalar1;
   };
 
-  const RenderingAttributes applyOutstandingState(int can_apply_flags = 0);
+  // Apply the outstanding state via saveLayer if necessary,
+  // respecting the flags representing which potentially
+  // outstanding attributes the calling layer can apply
+  // themselves.
+  //
+  // A saveLayer may or may not be sent to the delegates depending
+  // on the outstanding state and the flags supplied by the caller.
+  //
+  // An AutoRestore instance will always be returned even if there
+  // was no saveLayer applied.
+  [[nodiscard]] AutoRestore applyState(const SkRect& bounds,
+                                       int can_apply_flags = 0);
 
+  // Return a pointer to an SkPaint instance representing the
+  // currently outstanding rendering attributes, or a nullptr
+  // if there are no outstanding attributes for the caller to
+  // apply during rendering operations.
+  const SkPaint* sk_paint();
+
+  // Return a pointer to an DlPaint instance representing the
+  // currently outstanding rendering attributes, or a nullptr
+  // if there are no outstanding attributes for the caller to
+  // apply during rendering operations.
+  const DlPaint* dl_paint();
+
+  // Saves the current state of the state stack until the next
+  // matching restore call.
   [[nodiscard]] AutoRestore save();
+
+  // Saves the state stack and immediately executes a saveLayer
+  // with all accumulated state onto the canvas or builder to
+  // be applied at the next matching restore. A saveLayer is
+  // always executed by this method even if there are no
+  // outstanding attributes.
   [[nodiscard]] AutoRestore saveLayer(const SkRect* bounds,
-                                      bool checkerboard = false);
-  [[nodiscard]] AutoRestore saveWithOpacity(const SkRect* bounds,
-                                            SkScalar opacity,
-                                            bool checkerboard = false);
+                                      const SkRect* checker_bounds = nullptr);
+
+  // Records the opacity for application at the next call to
+  // saveLayer or applyState. A saveLayer may be executed at
+  // this time if the opacity cannot be batched with other
+  // outstanding attributes.
+  [[nodiscard]] AutoRestore saveWithOpacity(
+      const SkRect* bounds,
+      SkScalar opacity,
+      const SkRect* checker_bounds = nullptr);
+
+  // Records the image filter for application at the next call to
+  // saveLayer or applyState. A saveLayer may be executed at
+  // this time if the image filter cannot be batched with other
+  // outstanding attributes.
+  // (Currently only opacity is recorded for batching)
   [[nodiscard]] AutoRestore saveWithImageFilter(
       const SkRect* bounds,
       const std::shared_ptr<const DlImageFilter> filter,
-      bool checkerboard = false);
+      const SkRect* checker_bounds = nullptr);
+
+  // Records the color filter for application at the next call to
+  // saveLayer or applyState. A saveLayer may be executed at
+  // this time if the color filter cannot be batched with other
+  // outstanding attributes.
+  // (Currently only opacity is recorded for batching)
   [[nodiscard]] AutoRestore saveWithColorFilter(
       const SkRect* bounds,
       const std::shared_ptr<const DlColorFilter> filter,
-      bool checkerboard = false);
+      const SkRect* checker_bounds = nullptr);
+
+  // Saves the state stack and immediately executes a saveLayer
+  // with the indicated backdrop filter and any outstanding
+  // state attributes. Since the backdrop filter only applies
+  // to the pixels alrady on the screen when this call is made,
+  // the backdrop filter will only be applied to the canvas or
+  // builder installed at the time that this call is made, and
+  // subsequent canvas or builder objects that are made delegates
+  // will only see a saveLayer with the indicated blend_mode.
   [[nodiscard]] AutoRestore saveWithBackdropFilter(
       const SkRect* bounds,
       const std::shared_ptr<const DlImageFilter> filter,
       DlBlendMode blend_mode,
-      bool checkerboard = false);
+      const SkRect* checker_bounds = nullptr);
 
   void translate(SkScalar tx, SkScalar ty);
   void transform(const SkM44& matrix);
@@ -75,10 +134,16 @@ class LayerStateStack {
   size_t getStackCount() { return state_stack_.size(); }
   void restoreToCount(size_t restore_count);
 
-  static void resolve(const SkRect* bounds,
-                      RenderingAttributes* attributes,
-                      SkCanvas* canvas,
-                      DisplayListBuilder* builder);
+  void pushAttributes();
+
+  void resolve(const SkRect& bounds);
+
+  static std::optional<SkRect> OptionalBounds(const SkRect* bounds) {
+    return bounds ? std::make_optional<SkRect>(*bounds) : std::nullopt;
+  }
+  static const SkRect* BoundsPtr(const std::optional<SkRect>& bounds) {
+    return bounds.has_value() ? &bounds.value() : nullptr;
+  }
 
   class StateEntry {
    public:
@@ -99,6 +164,18 @@ class LayerStateStack {
                          DisplayListBuilder* builder) const {}
   };
 
+  class AttributesEntry : public StateEntry {
+   public:
+    AttributesEntry(RenderingAttributes attributes) : attributes_(attributes) {}
+
+    void restore(RenderingAttributes* attributes,
+                 SkCanvas* canvas,
+                 DisplayListBuilder* builder) const override;
+
+   private:
+    const RenderingAttributes attributes_;
+  };
+
   class SaveEntry : public StateEntry {
    public:
     SaveEntry() = default;
@@ -117,25 +194,25 @@ class LayerStateStack {
 
   class SaveLayerEntry : public SaveEntry {
    public:
-    SaveLayerEntry(const SkRect* bounds, bool checkerboard)
-        : bounds_(bounds ? *bounds : SkRect::MakeEmpty()),
-          has_bounds_(bounds != nullptr),
-          checkerboard_(checkerboard) {}
+    SaveLayerEntry(const SkRect* bounds, const SkRect* checker_bounds)
+        : bounds_(OptionalBounds(bounds)),
+          checkerboard_(OptionalBounds(checker_bounds)) {}
 
     void apply(RenderingAttributes* attributes,
                SkCanvas* canvas,
                DisplayListBuilder* builder) const override;
 
    protected:
-    const SkRect bounds_;
-    const bool has_bounds_;
-    const bool checkerboard_;
+    const std::optional<SkRect> bounds_;
+    const std::optional<SkRect> checkerboard_;
 
     void do_checkerboard(SkCanvas* canvas,
                          DisplayListBuilder* builder) const override;
 
-    const SkRect* save_bounds() const {
-      return has_bounds_ ? &bounds_ : nullptr;
+    const SkRect* save_bounds() const { return BoundsPtr(bounds_); }
+
+    const SkRect* checkerboard_bounds() const {
+      return BoundsPtr(checkerboard_);
     }
   };
 
@@ -144,17 +221,14 @@ class LayerStateStack {
     OpacityEntry(const SkRect* bounds,
                  SkScalar outstanding_opacity,
                  SkScalar opacity,
-                 bool checkerboard)
-        : SaveLayerEntry(bounds, checkerboard),
+                 const SkRect* checker_bounds)
+        : SaveLayerEntry(bounds, checker_bounds),
           outstanding_opacity_(outstanding_opacity),
           opacity_(opacity) {}
 
     void apply(RenderingAttributes* attributes,
                SkCanvas* canvas,
                DisplayListBuilder* builder) const override;
-    void restore(RenderingAttributes* attributes,
-                 SkCanvas* canvas,
-                 DisplayListBuilder* builder) const override;
 
    private:
     const SkScalar outstanding_opacity_;
@@ -165,8 +239,8 @@ class LayerStateStack {
    public:
     ImageFilterEntry(const SkRect* bounds,
                      const std::shared_ptr<const DlImageFilter> filter,
-                     bool checkerboard)
-        : SaveLayerEntry(bounds, checkerboard), filter_(filter) {}
+                     const SkRect* checker_bounds)
+        : SaveLayerEntry(bounds, checker_bounds), filter_(filter) {}
     ~ImageFilterEntry() override = default;
 
     void apply(RenderingAttributes* attributes,
@@ -181,8 +255,8 @@ class LayerStateStack {
    public:
     ColorFilterEntry(const SkRect* bounds,
                      const std::shared_ptr<const DlColorFilter> filter,
-                     bool checkerboard)
-        : SaveLayerEntry(bounds, checkerboard), filter_(filter) {}
+                     const SkRect* checker_bounds)
+        : SaveLayerEntry(bounds, checker_bounds), filter_(filter) {}
     ~ColorFilterEntry() override = default;
 
     void apply(RenderingAttributes* attributes,
@@ -198,8 +272,8 @@ class LayerStateStack {
     BackdropFilterEntry(const SkRect* bounds,
                         const std::shared_ptr<const DlImageFilter> filter,
                         DlBlendMode blend_mode,
-                        bool checkerboard)
-        : SaveLayerEntry(bounds, checkerboard),
+                        const SkRect* checker_bounds)
+        : SaveLayerEntry(bounds, checker_bounds),
           filter_(filter),
           blend_mode_(blend_mode) {}
     ~BackdropFilterEntry() override = default;
@@ -310,6 +384,9 @@ class LayerStateStack {
   DisplayListBuilder* builder_ = nullptr;
   int builder_restore_count_ = 0.0;
   RenderingAttributes outstanding_;
+
+  SkPaint temp_sk_paint_;
+  DlPaint temp_dl_paint_;
 };
 
 }  // namespace flutter
