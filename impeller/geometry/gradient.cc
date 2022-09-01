@@ -17,8 +17,8 @@ static void AppendColor(const Color& color, std::vector<uint8_t>* colors) {
 }
 
 std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
-                                           const std::vector<Scalar>& stops,
-                                           uint32_t* out_texture_size) {
+                                          const std::vector<Scalar>& stops,
+                                          uint32_t* out_texture_size) {
   uint32_t texture_size;
   // TODO(jonahwilliams): we should add a display list flag to check if the
   // stops were provided or not, then we can skip this step.
