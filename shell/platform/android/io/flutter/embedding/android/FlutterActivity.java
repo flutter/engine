@@ -538,13 +538,15 @@ public class FlutterActivity extends Activity
     }
   }
 
-  private final OnBackInvokedCallback onBackInvokedCallback = Build.VERSION.SDK_INT >= 33 ?
-      new OnBackInvokedCallback() {
-        @Override
-        public void onBackInvoked() {
-          onBackPressed();
-        }
-      } : null;
+  private final OnBackInvokedCallback onBackInvokedCallback =
+      Build.VERSION.SDK_INT >= 33
+          ? new OnBackInvokedCallback() {
+            @Override
+            public void onBackInvoked() {
+              onBackPressed();
+            }
+          }
+          : null;
 
   /**
    * Switches themes for this {@code Activity} from the theme used to launch this {@code Activity}
