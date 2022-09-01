@@ -159,6 +159,27 @@ Future<void> testMain() async {
       editingStrategy!.disable();
     });
 
+    test('Knows how to create non-default text actions', () {
+      final InputConfiguration config = InputConfiguration(
+        inputAction: 'TextInputAction.send'
+      );
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final DomElement input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
+      if (operatingSystem == OperatingSystem.iOs || operatingSystem == OperatingSystem.android){
+        expect(input.getAttribute('enterkeyhint'), 'send');
+      } else {
+        expect(input.getAttribute('enterkeyhint'), null);
+      }
+
+      editingStrategy!.disable();
+    });
+
     test('Knows to turn autocorrect off', () {
       final InputConfiguration config = InputConfiguration(
         autocorrect: false,
@@ -342,9 +363,7 @@ Future<void> testMain() async {
         keyCode: _kReturnKeyCode,
       );
       expect(lastInputAction, 'TextInputAction.done');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('Triggers input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
@@ -666,9 +685,7 @@ Future<void> testMain() async {
       // DOM element still keeps the focus.
       expect(defaultTextEditingRoot.activeElement,
           textEditing!.strategy.domElement);
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('focus and disconnection with delaying blur in iOS', () async {
       final MethodCall setClient = MethodCall(
@@ -767,9 +784,7 @@ Future<void> testMain() async {
       spy.messages.clear();
       // Input element is removed from DOM.
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('finishAutofillContext removes form from DOM', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -825,9 +840,7 @@ Future<void> testMain() async {
       // Form element is removed from DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
       expect(formsOnTheDom, hasLength(0));
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('finishAutofillContext with save submits forms', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -880,9 +893,7 @@ Future<void> testMain() async {
 
       // `submit` action is called on form.
       await expectLater(await submittedForm.future, isTrue);
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('forms submits for focused input', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -941,9 +952,7 @@ Future<void> testMain() async {
       // Form element is removed from DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), hasLength(0));
       expect(formsOnTheDom, hasLength(0));
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('setClient, setEditingState, show, setClient', () {
       final MethodCall setClient = MethodCall(
@@ -1388,7 +1397,6 @@ Future<void> testMain() async {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
-          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(textEditing!.strategy.domElement!.classList.contains('transparentTextEditing'),
             isTrue);
@@ -1914,9 +1922,7 @@ Future<void> testMain() async {
         spy.messages[0].methodArguments,
         <dynamic>[clientId, 'TextInputAction.next'],
       );
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('sends input action in multi-line mode', () {
       showKeyboard(
@@ -1997,7 +2003,6 @@ Future<void> testMain() async {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
-          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(firstElement.classList.contains('transparentTextEditing'), isTrue);
       } else {
