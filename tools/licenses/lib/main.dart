@@ -30,8 +30,7 @@ abstract class _RepositoryEntry implements Comparable<_RepositoryEntry> {
   String get libraryName;
 
   @override
-  int compareTo(_RepositoryEntry other) =>
-      toString().compareTo(other.toString());
+  int compareTo(_RepositoryEntry other) => toString().compareTo(other.toString());
 
   @override
   String toString() => io.fullName;
@@ -49,27 +48,16 @@ abstract class _RepositoryFile extends _RepositoryEntry {
 }
 
 abstract class _RepositoryLicensedFile extends _RepositoryFile {
-  _RepositoryLicensedFile(_RepositoryDirectory parent, fs.File io)
-      : super(parent, io);
+  _RepositoryLicensedFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   // file names that we are confident won't be included in the final build product
-  static final RegExp _readmeNamePattern =
-      RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = RegExp(
-      r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg|Brewfile)$',
-      caseSensitive: false);
-  static final RegExp _docsPattern = RegExp(
-      r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$',
-      caseSensitive: false);
-  static final RegExp _devPattern = RegExp(
-      r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|swift\.swiftformat|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$',
-      caseSensitive: false);
-  static final RegExp _testsPattern = RegExp(
-      r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$',
-      caseSensitive: false);
+  static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
+  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg|Brewfile)$', caseSensitive: false);
+  static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|swift\.swiftformat|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$', caseSensitive: false);
+  static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
   // The ICU library has sample code that will never get linked.
-  static final RegExp _icuSamplesPattern =
-      RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
+  static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
 
   bool get isIncludedInBuildProducts {
     return !io.name.contains(_readmeNamePattern) &&
@@ -85,13 +73,11 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
 }
 
 class _RepositorySourceFile extends _RepositoryLicensedFile {
-  _RepositorySourceFile(_RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io);
+  _RepositorySourceFile(_RepositoryDirectory parent, fs.TextFile io) : super(parent, io);
 
   fs.TextFile get ioTextFile => super.io as fs.TextFile;
 
-  static final RegExp _hashBangPattern = RegExp(
-      r'^#! *(?:/bin/sh|/bin/bash|/usr/bin/env +(?:python[23]?|bash))\b');
+  static final RegExp _hashBangPattern = RegExp(r'^#! *(?:/bin/sh|/bin/bash|/usr/bin/env +(?:python[23]?|bash))\b');
 
   @override
   bool get isShellScript {
@@ -129,8 +115,7 @@ class _RepositorySourceFile extends _RepositoryLicensedFile {
 }
 
 class _RepositoryBinaryFile extends _RepositoryLicensedFile {
-  _RepositoryBinaryFile(_RepositoryDirectory parent, fs.File io)
-      : super(parent, io);
+  _RepositoryBinaryFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   List<License>? _licenses;
 
@@ -152,8 +137,7 @@ class _RepositoryBinaryFile extends _RepositoryLicensedFile {
 // LICENSES
 
 abstract class _RepositoryLicenseFile extends _RepositoryFile {
-  _RepositoryLicenseFile(_RepositoryDirectory parent, fs.File io)
-      : super(parent, io);
+  _RepositoryLicenseFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   List<License>? licensesFor(String name);
   License? licenseOfType(LicenseType type);
@@ -163,9 +147,8 @@ abstract class _RepositoryLicenseFile extends _RepositoryFile {
 }
 
 abstract class _RepositorySingleLicenseFile extends _RepositoryLicenseFile {
-  _RepositorySingleLicenseFile(
-      _RepositoryDirectory parent, fs.TextFile io, this.license)
-      : super(parent, io);
+  _RepositorySingleLicenseFile(_RepositoryDirectory parent, fs.TextFile io, this.license)
+    : super(parent, io);
 
   final License license;
 
@@ -189,19 +172,12 @@ abstract class _RepositorySingleLicenseFile extends _RepositoryLicenseFile {
   License get defaultLicense => license;
 
   @override
-  Iterable<License> get licenses sync* {
-    yield license;
-  }
+  Iterable<License> get licenses sync* { yield license; }
 }
 
 class _RepositoryGeneralSingleLicenseFile extends _RepositorySingleLicenseFile {
-  _RepositoryGeneralSingleLicenseFile(
-      _RepositoryDirectory parent, fs.TextFile io)
-      : super(
-            parent,
-            io,
-            License.fromBodyAndName(io.readString(), io.name,
-                origin: io.fullName));
+  _RepositoryGeneralSingleLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
+    : super(parent, io, License.fromBodyAndName(io.readString(), io.name, origin: io.fullName));
 
   @override
   License? licenseOfType(LicenseType type) {
@@ -214,7 +190,7 @@ class _RepositoryGeneralSingleLicenseFile extends _RepositorySingleLicenseFile {
 
 class _RepositoryApache4DNoticeFile extends _RepositorySingleLicenseFile {
   _RepositoryApache4DNoticeFile(_RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io, _parseLicense(io));
+    : super(parent, io, _parseLicense(io));
 
   @override
   License? licenseOfType(LicenseType type) => null;
@@ -234,8 +210,7 @@ class _RepositoryApache4DNoticeFile extends _RepositorySingleLicenseFile {
   static License _parseLicense(fs.TextFile io) {
     final Match match = _pattern.allMatches(io.readString()).single;
     assert(match.groupCount == 2);
-    return License.unique(match.group(2)!, LicenseType.apacheNotice,
-        origin: io.fullName);
+    return License.unique(match.group(2)!, LicenseType.apacheNotice, origin: io.fullName);
   }
 }
 
@@ -265,9 +240,8 @@ class _RepositoryLicenseRedirectFile extends _RepositorySingleLicenseFile {
 }
 
 class _RepositoryLicenseFileWithLeader extends _RepositorySingleLicenseFile {
-  _RepositoryLicenseFileWithLeader(
-      _RepositoryDirectory parent, fs.TextFile io, RegExp leader)
-      : super(parent, io, _parseLicense(io, leader));
+  _RepositoryLicenseFileWithLeader(_RepositoryDirectory parent, fs.TextFile io, RegExp leader)
+    : super(parent, io, _parseLicense(io, leader));
 
   @override
   License? licenseOfType(LicenseType type) => null;
@@ -288,20 +262,21 @@ class _RepositoryReadmeIjgFile extends _RepositorySingleLicenseFile {
       : super(parent, io, _parseLicense(io));
 
   static final RegExp _pattern = RegExp(
-      r'Permission is hereby granted to use, copy, modify, and distribute this\n'
-      r'software \(or portions thereof\) for any purpose, without fee, subject to these\n'
-      r'conditions:\n'
-      r'\(1\) If any part of the source code for this software is distributed, then this\n'
-      r'README file must be included, with this copyright and no-warranty notice\n'
-      r'unaltered; and any additions, deletions, or changes to the original files\n'
-      r'must be clearly indicated in accompanying documentation\.\n'
-      r'\(2\) If only executable code is distributed, then the accompanying\n'
-      r'documentation must state that "this software is based in part on the work of\n'
-      r'the Independent JPEG Group"\.\n'
-      r'\(3\) Permission for use of this software is granted only if the user accepts\n'
-      r'full responsibility for any undesirable consequences; the authors accept\n'
-      r'NO LIABILITY for damages of any kind\.\n',
-      caseSensitive: false);
+    r'Permission is hereby granted to use, copy, modify, and distribute this\n'
+    r'software \(or portions thereof\) for any purpose, without fee, subject to these\n'
+    r'conditions:\n'
+    r'\(1\) If any part of the source code for this software is distributed, then this\n'
+    r'README file must be included, with this copyright and no-warranty notice\n'
+    r'unaltered; and any additions, deletions, or changes to the original files\n'
+    r'must be clearly indicated in accompanying documentation\.\n'
+    r'\(2\) If only executable code is distributed, then the accompanying\n'
+    r'documentation must state that "this software is based in part on the work of\n'
+    r'the Independent JPEG Group"\.\n'
+    r'\(3\) Permission for use of this software is granted only if the user accepts\n'
+    r'full responsibility for any undesirable consequences; the authors accept\n'
+    r'NO LIABILITY for damages of any kind\.\n',
+    caseSensitive: false
+  );
 
   static License _parseLicense(fs.TextFile io) {
     final String body = io.readString();
