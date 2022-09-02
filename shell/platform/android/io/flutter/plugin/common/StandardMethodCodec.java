@@ -5,6 +5,7 @@
 package io.flutter.plugin.common;
 
 import androidx.annotation.NonNull;
+import io.flutter.Log;
 import io.flutter.plugin.common.StandardMessageCodec.ExposedByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
