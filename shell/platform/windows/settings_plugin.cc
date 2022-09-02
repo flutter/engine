@@ -34,9 +34,18 @@ SettingsPlugin::SettingsPlugin(BinaryMessenger* messenger,
           messenger,
           kChannelName,
           &JsonMessageCodec::GetInstance())),
-      task_runner_(task_runner) {}
+      task_runner_(task_runner) {
+  RegOpenKeyEx(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
+               RRF_RT_REG_DWORD, KEY_NOTIFY, &preferred_brightness_reg_hkey_);
+  RegOpenKeyEx(HKEY_CURRENT_USER, kGetTextScaleFactorRegKey, RRF_RT_REG_DWORD,
+               KEY_NOTIFY, &text_scale_factor_reg_hkey_);
+}
 
-SettingsPlugin::~SettingsPlugin() = default;
+SettingsPlugin::~SettingsPlugin() {
+  StopWatching();
+  RegCloseKey(preferred_brightness_reg_hkey_);
+  RegCloseKey(text_scale_factor_reg_hkey_);
+}
 
 void SettingsPlugin::SendSettings() {
   rapidjson::Document settings(rapidjson::kObjectType);
