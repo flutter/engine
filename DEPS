@@ -18,11 +18,11 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '97f1748bbfc066887776f3bbe459c0c519f1012e',
+  'skia_revision': 'c4ff255c27a4984f59cad12a767dce28065bd401',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-  'canvaskit_cipd_instance': '8wh6J7ZXGCgo1vvCQIqkmskYQZfjhcXQG1YCKFNrzRUC',
+  'canvaskit_cipd_instance': 'yrsfF-vTvu4jzBBm1o6tDl70dky-l4G29Dnj75UvRDgC',
 
   # Do not download the Emscripten SDK by default.
   # This prevents us from downloading the Emscripten toolchain for builds
@@ -664,7 +664,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'VCkCQ9VaBkOXaOnQUIom8kCXQ0S2wRmj3lVP2v_dpwMC'
+        'version': '26bxlTdq8fmtxrkvchsS1TMNl07Sq9u3YFeTh5LI8BsC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
