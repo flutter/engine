@@ -144,9 +144,8 @@ class MockCacheableLayer : public MockLayer {
  public:
   explicit MockCacheableLayer(SkPath path,
                               SkPaint paint = SkPaint(),
-                              int render_limit = 3,
-                              int mock_flag = 0)
-      : MockLayer(path, paint, mock_flag) {
+                              int render_limit = 3)
+      : MockLayer(path, paint) {
     raster_cache_item_ =
         std::make_unique<MockLayerCacheableItem>(this, render_limit);
   }
