@@ -38,7 +38,8 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     // very close together.
     // TODO(jonahwilliams): this should use a platform specific max texture
     // size.
-    texture_size = std::min((uint32_t)std::ceil(1.0 / minimum_delta), 1024u);
+    texture_size =
+        std::min((uint32_t)std::round(1.0 / minimum_delta) + 1, 1024u);
   }
 
   *out_texture_size = texture_size;
