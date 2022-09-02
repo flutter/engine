@@ -94,11 +94,7 @@ TEST_F(MockLayerTest, OpacityInheritance) {
 }
 
 TEST_F(MockLayerTest, FlagGetSet) {
-  const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path2 = SkPath().addRect(8.0f, 2.0f, 16.5f, 14.5f);
-  const SkPaint child_paint1(SkColors::kGray);
-  const SkPaint child_paint2(SkColors::kGreen);
-  auto mock_layer = std::make_shared<MockLayer>(child_path1, child_paint1);
+  auto mock_layer = std::make_shared<MockLayer>(SkPath());
 
   EXPECT_EQ(mock_layer->parent_has_platform_view(), false);
   mock_layer->set_parent_has_platform_view(true);
