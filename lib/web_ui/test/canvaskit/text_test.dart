@@ -4,6 +4,7 @@
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
@@ -64,6 +65,26 @@ void testMain() {
       // The direction for this span is LTR even though the paragraph is RTL
       // because the directionality of the 'h' is LTR.
       expect(boxes.single.direction, equals(ui.TextDirection.ltr));
+    });
+
+    test('Renders tab as space instead of tofu', () async {
+      Future<ui.Image> drawText(String text) {
+        const ui.Rect bounds = ui.Rect.fromLTRB(0, 0, 100, 100);
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(bounds);
+        final CkParagraph paragraph = makeSimpleText(text);
+
+        canvas.drawParagraph(paragraph, ui.Offset.zero);
+        final ui.Picture picture = recorder.endRecording();
+        return picture.toImage(100, 100);
+      }
+
+      final ui.Image tabImage = await drawText('> <');
+      final ui.Image spaceImage = await drawText('> <');
+      final ui.Image tofuImage = await drawText('>\b<');
+
+      expect(await matchImage(tabImage, spaceImage), isTrue);
+      expect(await matchImage(tabImage, tofuImage), isFalse);
     });
   });
 }
