@@ -93,5 +93,33 @@ TEST_F(MockLayerTest, OpacityInheritance) {
   EXPECT_TRUE(context->subtree_can_inherit_opacity);
 }
 
+TEST_F(MockLayerTest, FlagGetSet) {
+  auto mock_layer = std::make_shared<MockLayer>(SkPath());
+
+  EXPECT_EQ(mock_layer->parent_has_platform_view(), false);
+  mock_layer->set_parent_has_platform_view(true);
+  EXPECT_EQ(mock_layer->parent_has_platform_view(), true);
+
+  EXPECT_EQ(mock_layer->parent_has_texture_layer(), false);
+  mock_layer->set_parent_has_texture_layer(true);
+  EXPECT_EQ(mock_layer->parent_has_texture_layer(), true);
+
+  EXPECT_EQ(mock_layer->fake_has_platform_view(), false);
+  mock_layer->set_fake_has_platform_view(true);
+  EXPECT_EQ(mock_layer->fake_has_platform_view(), true);
+
+  EXPECT_EQ(mock_layer->fake_reads_surface(), false);
+  mock_layer->set_fake_reads_surface(true);
+  EXPECT_EQ(mock_layer->fake_reads_surface(), true);
+
+  EXPECT_EQ(mock_layer->fake_opacity_compatible(), false);
+  mock_layer->set_fake_opacity_compatible(true);
+  EXPECT_EQ(mock_layer->fake_opacity_compatible(), true);
+
+  EXPECT_EQ(mock_layer->fake_has_texture_layer(), false);
+  mock_layer->set_fake_has_texture_layer(true);
+  EXPECT_EQ(mock_layer->fake_has_texture_layer(), true);
+}
+
 }  // namespace testing
 }  // namespace flutter
