@@ -319,7 +319,7 @@ class SemanticsFlag {
   static const int _kIsLinkIndex = 1 << 22;
   static const int _kIsSliderIndex = 1 << 23;
   static const int _kIsKeyboardKeyIndex = 1 << 24;
-  static const int _kIsMixedCheckIndex = 1 << 25;
+  static const int _kIsCheckStateMixedIndex = 1 << 25;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart, or tests will fail. Also,
   // please update the Flag enum in
@@ -355,7 +355,7 @@ class SemanticsFlag {
   ///
   /// Should be false when the checkbox is either checked or unchecked.
   ///
-  static const SemanticsFlag isMixedCheck = SemanticsFlag._(_kIsMixedCheckIndex);
+  static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex);
 
 
   /// Whether a semantics node is selected.
@@ -587,7 +587,7 @@ class SemanticsFlag {
     _kIsLinkIndex: isLink,
     _kIsSliderIndex: isSlider,
     _kIsKeyboardKeyIndex: isKeyboardKey,
-    _kIsMixedCheckIndex: isMixedCheck,
+    _kIsCheckStateMixedIndex: isCheckStateMixed,
   };
 
   @override
@@ -643,8 +643,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isSlider';
       case _kIsKeyboardKeyIndex:
         return 'SemanticsFlag.isKeyboardKey';
-      case _kIsMixedCheckIndex:
-        return 'SemanticsFlag.isMixedCheck';
+      case _kIsCheckStateMixedIndex:
+        return 'SemanticsFlag.isCheckStateMixed';
     }
     assert(false, 'Unhandled index: $index (0x${index.toRadixString(8).padLeft(4, "0")})');
     return '';

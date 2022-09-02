@@ -695,7 +695,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   // Now check mixed state
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
-      FlutterSemanticsFlag::kFlutterSemanticsFlagIsMixedCheck);
+      FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
 

@@ -228,7 +228,7 @@ typedef enum {
   /// Whether the semantics node represents a keyboard key.
   kFlutterSemanticsFlagIsKeyboardKey = 1 << 24,
   /// Whether the semantics node represents a tristate checkbox in mixed state.
-  kFlutterSemanticsFlagIsMixedCheck = 1 << 25,
+  kFlutterSemanticsFlagIsCheckStateMixed = 1 << 25,
 } FlutterSemanticsFlag;
 
 typedef enum {
