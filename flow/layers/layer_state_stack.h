@@ -230,8 +230,7 @@ class LayerStateStack {
     OpacityEntry(const SkRect* bounds,
                  SkScalar opacity,
                  const SkRect* checker_bounds)
-        : SaveLayerEntry(bounds, checker_bounds),
-          opacity_(opacity) {}
+        : SaveLayerEntry(bounds, checker_bounds), opacity_(opacity) {}
 
     void apply(RenderingAttributes* attributes,
                SkCanvas* canvas,

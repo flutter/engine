@@ -49,10 +49,10 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
 
   if (context.raster_cache) {
     auto restore = context.state_stack.applyState(
-        paint_bounds(),
-        LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+        paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
-    if (layer_raster_cache_item_->Draw(context, context.state_stack.sk_paint())) {
+    if (layer_raster_cache_item_->Draw(context,
+                                       context.state_stack.sk_paint())) {
       return;
     }
   }
