@@ -355,15 +355,14 @@ TEST_F(ShaderMaskLayerTest, OpacityInheritance) {
 
   // ShaderMaskLayers can always support opacity despite incompatible children
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   shader_mask_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(shader_mask_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 

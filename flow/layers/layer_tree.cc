@@ -143,7 +143,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
-      .inherited_opacity             = SK_Scalar1,
       .builder                       = builder
       // clang-format on
   };

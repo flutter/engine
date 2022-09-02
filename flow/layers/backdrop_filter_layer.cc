@@ -47,7 +47,7 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
   PrerollChildren(context, matrix, &child_paint_bounds);
   child_paint_bounds.join(context->cull_rect);
   set_paint_bounds(child_paint_bounds);
-  context->subtree_can_inherit_opacity = true;
+  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
 }
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {

@@ -460,53 +460,48 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   auto container1 = std::make_shared<ContainerLayer>();
   container1->Add(mock1);
 
-  // ContainerLayer will not pass through compatibility on its own
-  // Subclasses must explicitly enable this in their own Preroll
+  // Single opacity compatible child makes container compatible
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   container1->Preroll(context, SkMatrix::I());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
   container1->Add(mock2);
 
-  // ContainerLayer will pass through compatibility from multiple
-  // non-overlapping compatible children if the caller enables it
-  context->subtree_can_inherit_opacity = true;
+  // Multiple non-overlapping opacity compatible children are compatible
   container1->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
   auto mock3 = MockLayer::MakeOpacityCompatible(path3);
   container1->Add(mock3);
 
-  // ContainerLayer will not pass through compatibility from multiple
-  // overlapping children even if they are individually compatible
-  // and the caller requests it
-  context->subtree_can_inherit_opacity = true;
+  // Multiple overlapping individually opacity compatible children result
+  // in a non-compatible layer
   container1->Preroll(context, SkMatrix::I());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags, 0);
 
   auto container2 = std::make_shared<ContainerLayer>();
   container2->Add(mock1);
   container2->Add(mock2);
 
-  // Double check first two children are compatible and non-overlapping
-  // if the caller requests it
-  context->subtree_can_inherit_opacity = true;
+  // Start again with 2 non-overlapping individually opacity compatible
+  // children.
   container2->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path4 = SkPath().addRect({60, 60, 70, 70});
   auto mock4 = MockLayer::Make(path4);
   container2->Add(mock4);
 
-  // The third child is non-overlapping, but not compatible so the
-  // TransformLayer should end up incompatible
-  context->subtree_can_inherit_opacity = true;
+  // Add a third child which is not opacity compatible even though it is
+  // also non-overlapping which will result in an incompatible container.
   container2->Preroll(context, SkMatrix::I());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags, 0);
 }
 TEST_F(ContainerLayerTest, CollectionCacheableLayer) {
   SkPath child_path;

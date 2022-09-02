@@ -103,7 +103,7 @@ AutoRestore LayerStateStack::saveWithOpacity(const SkRect* bounds,
   if (opacity < SK_Scalar1) {
     pushAttributes();
     state_stack_.emplace_back(std::make_unique<OpacityEntry>(
-        bounds, outstanding_.opacity, opacity, checker_bounds));
+        bounds, opacity, checker_bounds));
   } else {
     state_stack_.emplace_back(
         std::make_unique<SaveLayerEntry>(bounds, checker_bounds));

@@ -179,7 +179,6 @@ TEST_F(OpacityLayerTest, ShouldNotCacheChildren) {
   opacityLayer->Add(mockLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
 
   use_mock_raster_cache();
 
@@ -194,7 +193,8 @@ TEST_F(OpacityLayerTest, ShouldNotCacheChildren) {
 
   opacityLayer->Preroll(preroll_context(), SkMatrix::I());
 
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacityLayer->children_can_accept_opacity());
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
@@ -466,9 +466,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceCompatibleChild) {
   opacityLayer->Add(mockLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacityLayer->children_can_accept_opacity());
 }
 
@@ -479,9 +479,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceIncompatibleChild) {
   opacityLayer->Add(mockLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_FALSE(opacityLayer->children_can_accept_opacity());
 }
 
@@ -494,9 +494,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughContainer) {
   opacityLayer->Add(containerLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   // By default a container layer will not pass opacity through to
   // its children - specific subclasses will have to enable this
   // pass through by setting the flag to true themselves before
@@ -513,9 +513,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
   opacityLayer->Add(transformLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacityLayer->children_can_accept_opacity());
 }
 
@@ -529,9 +529,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughImageFilter) {
   opacityLayer->Add(filterLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacityLayer->children_can_accept_opacity());
 }
 
@@ -546,9 +546,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithCompatibleChild) {
   opacityLayer1->Add(opacityLayer2);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer1->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacityLayer1->children_can_accept_opacity());
   EXPECT_TRUE(opacityLayer2->children_can_accept_opacity());
 
@@ -597,9 +597,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithIncompatibleChild) {
   opacityLayer1->Add(opacityLayer2);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacityLayer1->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacityLayer1->children_can_accept_opacity());
   EXPECT_FALSE(opacityLayer2->children_can_accept_opacity());
 

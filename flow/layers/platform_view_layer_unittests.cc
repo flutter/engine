@@ -91,9 +91,8 @@ TEST_F(PlatformViewLayerTest, OpacityInheritance) {
       std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->rendering_state_flags, 0);
 }
 
 }  // namespace testing

@@ -219,8 +219,10 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
     EXPECT_EQ(context.has_platform_view, false);
     EXPECT_EQ(context.has_texture_layer, false);
 
-    EXPECT_EQ(context.subtree_can_inherit_opacity, false);
+    EXPECT_EQ(context.rendering_state_flags, 0);
     EXPECT_EQ(context.raster_cached_entries, nullptr);
+
+    EXPECT_EQ(context.display_list_enabled, false);
   };
 
   // These 4 initializers are required because they are handled by reference
@@ -239,8 +241,9 @@ TEST_F(LayerTreeTest, PaintContextInitialization) {
   FixedRefreshRateStopwatch mock_ui_time;
   std::shared_ptr<TextureRegistry> mock_registry;
 
-  auto expect_defaults = [&mock_raster_time, &mock_ui_time,
+  auto expect_defaults = [&state_stack, &mock_raster_time, &mock_ui_time,
                           &mock_registry](const PaintContext& context) {
+    EXPECT_EQ(&context.state_stack, &state_stack);
     EXPECT_EQ(context.canvas, nullptr);
     EXPECT_EQ(context.gr_context, nullptr);
     EXPECT_EQ(context.view_embedder, nullptr);
@@ -254,7 +257,6 @@ TEST_F(LayerTreeTest, PaintContextInitialization) {
     EXPECT_EQ(context.enable_leaf_layer_tracing, false);
     EXPECT_EQ(context.layer_snapshot_store, nullptr);
 
-    EXPECT_EQ(context.inherited_opacity, SK_Scalar1);
     EXPECT_EQ(context.builder, nullptr);
   };
 

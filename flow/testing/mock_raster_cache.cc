@@ -136,7 +136,6 @@ PaintContextHolder GetSamplePaintContextHolder(
           .raster_cache                  = raster_cache,
           .checkerboard_offscreen_layers = false,
           .frame_device_pixel_ratio      = 1.0f,
-          .inherited_opacity             = SK_Scalar1,
     },
                                // clang-format on
                                srgb};

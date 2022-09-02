@@ -98,8 +98,8 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   AutoCache cache =
       AutoCache(display_list_raster_cache_item_.get(), context, matrix);
-  if (disp_list->can_apply_group_opacity()) {
-    context->subtree_can_inherit_opacity = true;
+  if (disp_list->can_apply_group_opacity() && !context->display_list_enabled) {
+    context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
   }
   set_paint_bounds(bounds_);
 }
@@ -112,14 +112,21 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   auto save = context.state_stack.save();
   context.state_stack.translate(offset_.x(), offset_.y());
 
-  // if (context.raster_cache && display_list_raster_cache_item_) {
-  //   AutoCachePaint cache_paint(context);
-  //   if (display_list_raster_cache_item_->Draw(context,
-  //                                             cache_paint.sk_paint())) {
-  //     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-  //     return;
-  //   }
-  // }
+  if (context.raster_cache && display_list_raster_cache_item_) {
+    if (display_list_raster_cache_item_->Draw(context,
+                                              context.state_stack.sk_paint())) {
+      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+      return;
+    }
+  }
+
+  auto restore = context.state_stack.applyState(
+      paint_bounds(),
+      display_list()->can_apply_group_opacity() && !context.builder
+          ? LayerStateStack::CALLER_CAN_APPLY_OPACITY
+          : 0);
+
+  SkScalar opacity = context.state_stack.outstanding_opacity();
 
   if (context.enable_leaf_layer_tracing) {
     const auto canvas_size = context.canvas->getBaseLayerSize();
@@ -135,7 +142,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       SkAutoCanvasRestore save(canvas, true);
       canvas->clear(SK_ColorTRANSPARENT);
       canvas->setMatrix(ctm);
-      display_list()->RenderTo(canvas, context.inherited_opacity);
+      display_list()->RenderTo(canvas, opacity);
       canvas->flush();
     }
     const fml::TimeDelta offscreen_render_time =
@@ -150,16 +157,9 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   }
 
   if (context.builder) {
-    // AutoCachePaint save_paint(context);
-    // int restore_count = context.leaf_nodes_builder->getSaveCount();
-    // if (save_paint.dl_paint() != nullptr) {
-    //   context.leaf_nodes_builder->saveLayer(&paint_bounds(),
-    //                                         save_paint.dl_paint());
-    // }
     context.builder->drawDisplayList(display_list_.skia_object());
-    // context.leaf_nodes_builder->restoreToCount(restore_count);
   } else {
-    display_list()->RenderTo(context.canvas, context.inherited_opacity);
+    display_list()->RenderTo(context.canvas, opacity);
   }
 }
 

@@ -94,7 +94,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.state_stack.clipPath(path_, true);
     auto saveLayer = context.state_stack.saveLayer(
-        &paint_bounds(), context.checkerboard_offscreen_layers);
+        &paint_bounds(), checkerboard_bounds(context));
     context.canvas->drawColor(color_);
     PaintChildren(context);
   } else {

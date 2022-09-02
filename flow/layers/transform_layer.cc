@@ -56,10 +56,6 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     context->cull_rect = kGiantRect;
   }
 
-  // Collect inheritance information on our children in Preroll so that
-  // we can pass it along by default.
-  context->subtree_can_inherit_opacity = true;
-
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, child_matrix, &child_paint_bounds);
 

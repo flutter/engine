@@ -56,10 +56,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     OnMutatorsStackPushClipShape(context->mutators_stack);
 
-    // Collect inheritance information on our children in Preroll so that
-    // we can pass it along by default.
-    context->subtree_can_inherit_opacity = true;
-
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
     if (child_paint_bounds.intersect(clip_shape_bounds())) {
@@ -69,7 +65,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
     // If we use a SaveLayer then we can accept opacity on behalf
     // of our children and apply it in the saveLayer.
     if (uses_save_layer) {
-      context->subtree_can_inherit_opacity = true;
+      context->rendering_state_flags =
+          LayerStateStack::CALLER_CAN_APPLY_OPACITY;
     }
 
     context->mutators_stack.Pop();
@@ -89,9 +86,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     if (context.raster_cache) {
       auto restore_apply = context.state_stack.applyState(
-          &paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+          paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
-      AutoCachePaint cache_paint(context);
       if (layer_raster_cache_item_->Draw(context,
                                          context.state_stack.sk_paint())) {
         return;

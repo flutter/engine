@@ -36,6 +36,7 @@ class LayerStateStack {
   };
 
   static constexpr int CALLER_CAN_APPLY_OPACITY = 0x1;
+  static constexpr int CALLER_CAN_APPLY_ANYTHING = 0x1;
 
   struct RenderingAttributes {
     SkRect content_bounds;
@@ -55,6 +56,8 @@ class LayerStateStack {
   [[nodiscard]] AutoRestore applyState(const SkRect& bounds,
                                        int can_apply_flags = 0);
 
+  SkScalar outstanding_opacity() { return outstanding_.opacity; }
+
   // Return a pointer to an SkPaint instance representing the
   // currently outstanding rendering attributes, or a nullptr
   // if there are no outstanding attributes for the caller to
@@ -66,6 +69,8 @@ class LayerStateStack {
   // if there are no outstanding attributes for the caller to
   // apply during rendering operations.
   const DlPaint* dl_paint();
+
+  bool needs_painting() { return outstanding_.opacity > 0; }
 
   // Saves the current state of the state stack until the next
   // matching restore call.
@@ -168,6 +173,10 @@ class LayerStateStack {
    public:
     AttributesEntry(RenderingAttributes attributes) : attributes_(attributes) {}
 
+    virtual void apply(RenderingAttributes* attributes,
+                       SkCanvas* canvas,
+                       DisplayListBuilder* builder) const override {}
+
     void restore(RenderingAttributes* attributes,
                  SkCanvas* canvas,
                  DisplayListBuilder* builder) const override;
@@ -219,11 +228,9 @@ class LayerStateStack {
   class OpacityEntry : public SaveLayerEntry {
    public:
     OpacityEntry(const SkRect* bounds,
-                 SkScalar outstanding_opacity,
                  SkScalar opacity,
                  const SkRect* checker_bounds)
         : SaveLayerEntry(bounds, checker_bounds),
-          outstanding_opacity_(outstanding_opacity),
           opacity_(opacity) {}
 
     void apply(RenderingAttributes* attributes,
@@ -231,7 +238,6 @@ class LayerStateStack {
                DisplayListBuilder* builder) const override;
 
    private:
-    const SkScalar outstanding_opacity_;
     const SkScalar opacity_;
   };
 

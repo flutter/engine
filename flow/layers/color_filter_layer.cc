@@ -39,9 +39,10 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
+
   // We always use a saveLayer (or a cached rendering), so we
   // can always apply opacity in those cases.
-  context->subtree_can_inherit_opacity = true;
+  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {

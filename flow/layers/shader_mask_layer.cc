@@ -40,23 +40,25 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, matrix);
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
-  context->subtree_can_inherit_opacity = true;
+  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  AutoCachePaint cache_paint(context);
-
   if (context.raster_cache) {
-    if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+    auto restore = context.state_stack.applyState(
+        paint_bounds(),
+        LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+
+    if (layer_raster_cache_item_->Draw(context, context.state_stack.sk_paint())) {
       return;
     }
   }
   auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
 
-  auto save = context.state_stack.saveLayer(&paint_bounds());
+  auto restore = context.state_stack.saveLayer(&paint_bounds());
   PaintChildren(context);
 
   if (context.builder) {
