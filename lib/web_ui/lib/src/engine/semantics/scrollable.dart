@@ -79,6 +79,13 @@ class Scrollable extends RoleManager {
 
   @override
   void update() {
+      // We neutralize the scroll position after all children have been
+      // updated. Otherwise the browser does not yet have the sizes of the
+      // child nodes and resets the scrollTop value back to zero.
+      semanticsObject.owner.addOneTimePostUpdateCallback(() {
+        _neutralizeDomScrollPosition();
+      });
+
     if (_scrollListener == null) {
       // We need to set touch-action:none explicitly here, despite the fact
       // that we already have it on the <body> tag because overflow:scroll
@@ -91,13 +98,6 @@ class Scrollable extends RoleManager {
       // to prevent browser scrolling.
       semanticsObject.element.style.touchAction = 'none';
       _gestureModeDidChange();
-
-      // We neutralize the scroll position after all children have been
-      // updated. Otherwise the browser does not yet have the sizes of the
-      // child nodes and resets the scrollTop value back to zero.
-      semanticsObject.owner.addOneTimePostUpdateCallback(() {
-        _neutralizeDomScrollPosition();
-      });
 
       // Memoize the tear-off because Dart does not guarantee that two
       // tear-offs of a method on the same instance will produce the same
