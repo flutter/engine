@@ -19,7 +19,7 @@ public class LogTest {
 
   @Test
   public void canGetStacktraceString() {
-    RuntimeException exception = new RuntimeException("foo");
+    Exception exception = new Exception();
     String str = Log.getStackTraceString(exception);
 
     StringWriter stringWriter = new StringWriter();
