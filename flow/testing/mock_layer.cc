@@ -10,8 +10,8 @@
 namespace flutter {
 namespace testing {
 
-MockLayer::MockLayer(SkPath path, SkPaint paint, int mock_flags)
-    : fake_paint_path_(path), fake_paint_(paint), mock_flags_(mock_flags) {}
+MockLayer::MockLayer(SkPath path, SkPaint paint)
+    : fake_paint_path_(path), fake_paint_(paint) {}
 
 bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Similar to PictureLayer, only return true for identical mock layers;

@@ -125,8 +125,8 @@ TEST_F(ContainerLayerTest, Multiple) {
   SkPaint child_paint2(SkColors::kGreen);
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
-  auto mock_layer1 = std::make_shared<MockLayer>(
-      child_path1, child_paint1, MockLayer::kFakeHasPlatformView);
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
+  mock_layer1->set_fake_has_platform_view(true);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
@@ -201,6 +201,7 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
+  mock_layer1->set_fake_has_platform_view(false);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
