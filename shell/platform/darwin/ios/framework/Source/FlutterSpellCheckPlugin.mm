@@ -147,9 +147,8 @@ static NSString* const kInitiateSpellCheck = @"SpellCheck.initiateSpellCheck";
 - (NSDictionary<NSString*, NSObject*>*)toDictionary {
   NSMutableDictionary* result = [[[NSMutableDictionary alloc] initWithCapacity:3] autorelease];
   result[@"startIndex"] = @(_misspelledRange.location);
-  // The end index represents the next index after the last character of a misspelled word to match the
-  // behavior of Dart's TextRange:
-  // https://api.flutter.dev/flutter/dart-ui/TextRange/end.html
+  // The end index represents the next index after the last character of a misspelled word to match
+  // the behavior of Dart's TextRange: https://api.flutter.dev/flutter/dart-ui/TextRange/end.html
   result[@"endIndex"] = @(_misspelledRange.location + _misspelledRange.length);
   result[@"suggestions"] = _suggestions;
   return result;
