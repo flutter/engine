@@ -644,7 +644,7 @@ class SemanticsFlag {
       case _kIsKeyboardKeyIndex:
         return 'SemanticsFlag.isKeyboardKey';
       case _kIsMixedCheckIndex:
-        return 'SemanticsFlag.isMixedChck';
+        return 'SemanticsFlag.isMixedCheck';
     }
     assert(false, 'Unhandled index: $index (0x${index.toRadixString(8).padLeft(4, "0")})');
     return '';
