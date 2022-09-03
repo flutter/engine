@@ -292,7 +292,7 @@ def to_gn_args(args):
   # matches the bit-width of the target architecture.
   #if sys.platform.startswith(('cygwin', 'win')) and args.target_os != 'win':
   #  gn_args['host_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
-  gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
+  #gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
 
   # macOS host builds (whether x64 or arm64) must currently be built under
   # Rosetta on Apple Silicon Macs.
