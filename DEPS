@@ -102,7 +102,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/godofredoc/buildroot.git' + '@' + '011756d976592615378a7f65a504fe886171a3cb',
+  'src': 'https://github.com/godofredoc/buildroot.git' + '@' + 'b555e5fe750b4ff570896e863edc6d52a0c97d71',
 
    # Fuchsia compatibility
    #
