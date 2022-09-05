@@ -389,9 +389,10 @@ TEST(MockWindow, WindowOnRestoredFromMinimized) {
   EXPECT_CALL(window, OnRestoredFromMinimized()).Times(1);
   window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
 
-  // Notify only when type of resizing changes.
+  // Notify only when resizing type changes from minimized.
   EXPECT_CALL(window, OnRestoredFromMinimized()).Times(0);
-  window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
+  window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(2, 2));
+  window.InjectWindowMessage(WM_SIZE, SIZE_MAXIMIZED, MAKEWPARAM(3, 3));
 }
 
 }  // namespace testing
