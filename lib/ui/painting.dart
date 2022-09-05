@@ -1398,6 +1398,13 @@ class Paint {
     return _objects?[_kShaderIndex] as Shader?;
   }
   set shader(Shader? value) {
+    assert(() {
+      assert(
+        value == null || !value.debugDisposed,
+        'Attempted to set a disposed shader to $this',
+      );
+      return true;
+    }());
     _ensureObjectsInitialized()[_kShaderIndex] = value;
   }
 
@@ -2561,6 +2568,10 @@ class Path extends NativeFieldWrapperClass1 {
   /// crosses the horizontal line that intersects the center of the
   /// rectangle and with positive angles going clockwise around the
   /// oval.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc.png)
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc_ccw.png)
   void addArc(Rect oval, double startAngle, double sweepAngle) {
     assert(_rectIsValid(oval));
     _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
@@ -3672,6 +3683,37 @@ class Shader extends NativeFieldWrapperClass1 {
   /// or extended directly.
   @pragma('vm:entry-point')
   Shader._();
+
+  bool _debugDisposed = false;
+
+  /// Whether [dispose] has been called.
+  ///
+  /// This must only be used when asserts are enabled. Otherwise, it will throw.
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _debugDisposed;
+      return true;
+    }());
+    return disposed;
+  }
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// The underlying memory allocated by this object will be retained beyond
+  /// this call if it is still needed by another object that has not been
+  /// disposed. For example, a [Picture] that has not been disposed that
+  /// refers to an [ImageShader] may keep its underlying resources alive.
+  ///
+  /// Classes that override this method must call `super.dispose()`.
+  void dispose() {
+    assert(() {
+      assert(!_debugDisposed);
+      _debugDisposed = true;
+      return true;
+    }());
+  }
 }
 
 /// Defines what happens at the edge of a gradient or the sampling of a source image
@@ -4031,6 +4073,7 @@ class ImageShader extends Shader {
     FilterQuality? filterQuality,
   }) :
     assert(image != null), // image is checked on the engine side
+    assert(!image.debugDisposed),
     assert(tmx != null),
     assert(tmy != null),
     assert(matrix4 != null),
@@ -4045,20 +4088,29 @@ class ImageShader extends Shader {
     }
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    _dispose();
+  }
+
   @FfiNative<Void Function(Handle)>('ImageShader::Create')
   external void _constructor();
 
   @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>('ImageShader::initWithImage')
   external String? _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4);
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('ImageShader::dispose')
+  external void _dispose();
 }
 
-/// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
+/// An instance of [FragmentProgram] creates [Shader] objects (as used by
+/// [Paint.shader]).
 ///
 /// This API is in beta and does not yet work on web.
 /// See https://github.com/flutter/flutter/projects/207 for roadmap.
-///
-/// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/main/lib/spirv/README.md)
-///
 class FragmentProgram extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   FragmentProgram._fromAsset(String assetKey) {
@@ -4134,6 +4186,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 
   @FfiNative<Handle Function(Pointer<Void>, Handle)>('FragmentProgram::initFromAsset')
   external String _initFromAsset(String assetKey);
+
+  /// Returns a fresh instance of [FragmentShader].
+  FragmentShader fragmentShader() => FragmentShader._(this);
 
   /// Constructs a [Shader] object suitable for use by [Paint.shader] with
   /// the given uniforms.
@@ -4215,6 +4270,69 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 
   @FfiNative<Handle Function(Pointer<Void>, Handle, Handle, Handle)>('FragmentProgram::shader')
   external Handle _shader(_FragmentShader shader, Float32List floatUniforms, List<ImageShader> samplerUniforms);
+}
+
+/// A [Shader] generated from a [FragmentProgram].
+///
+/// Instances of this class can be obtained from the
+/// [FragmentProgram.fragmentShader] method. The float uniforms list is
+/// initialized to the size expected by the shader and is zero-filled. Uniforms
+/// of float type can then be set by calling [setFloat]. Sampler uniforms are
+/// set by calling [setSampler].
+///
+/// A [FragmentShader] can be re-used, and this is an efficient way to avoid
+/// allocating and re-initializing the uniform buffer and samplers. However,
+/// if two [FragmentShader] objects with different float uniforms or samplers
+/// are required to exist simultaneously, they must be obtained from two
+/// different calls to [FragmentProgram.fragmentShader].
+class FragmentShader extends Shader {
+  FragmentShader._(FragmentProgram program) : super._() {
+    _floats = _constructor(
+      program,
+      program._uniformFloatCount,
+      program._samplerCount,
+    );
+  }
+
+  static final Float32List _kEmptyFloat32List = Float32List(0);
+
+  late Float32List _floats;
+
+  /// Sets the float uniform at [index] to [value].
+  void setFloat(int index, double value) {
+    assert(!debugDisposed, 'Tried to accesss uniforms on a disposed Shader: $this');
+    _floats[index] = value;
+  }
+
+  /// Sets the sampler uniform at [index] to [sampler].
+  ///
+  /// All the sampler uniforms that a shader expects must be provided or the
+  /// results will be undefined.
+  void setSampler(int index, ImageShader sampler) {
+    assert(!debugDisposed, 'Tried to access uniforms on a disposed Shader: $this');
+    _setSampler(index, sampler);
+  }
+
+  /// Releases the native resources held by the [FragmentShader].
+  ///
+  /// After this method is called, calling methods on the shader, or attaching
+  /// it to a [Paint] object will fail with an exception. Calling [dispose]
+  /// twice will also result in an exception being thrown.
+  @override
+  void dispose() {
+    super.dispose();
+    _floats = _kEmptyFloat32List;
+    _dispose();
+  }
+
+  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
+  external Float32List _constructor(FragmentProgram program, int floatUniforms, int samplerUniforms);
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetSampler')
+  external void _setSampler(int index, ImageShader sampler);
+
+  @FfiNative<Void Function(Pointer<Void>)>('ReusableFragmentShader::Dispose')
+  external void _dispose();
 }
 
 @pragma('vm:entry-point')
@@ -4375,6 +4493,36 @@ class Vertices extends NativeFieldWrapperClass1 {
                              Float32List? textureCoordinates,
                              Int32List? colors,
                              Uint16List? indices);
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Vertices::dispose')
+  external void _dispose();
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
+  }
 }
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -4614,6 +4762,18 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// cause the new layer to be composited into the previous layer.
   @FfiNative<Void Function(Pointer<Void>)>('Canvas::restore', isLeaf: true)
   external void restore();
+
+  /// Restores the save stack to a previous level as might be obtained from [getSaveCount].
+  /// If [count] is less than 1, the stack is restored to its initial state.
+  /// If [count] is greater than the current [getSaveCount] then nothing happens.
+  ///
+  /// Use [save] and [saveLayer] to push state onto the stack.
+  ///
+  /// If any of the state stack levels restored by this call were pushed with
+  /// [saveLayer], then this call will also cause those layers to be composited
+  /// into their previous layers.
+  @FfiNative<Void Function(Pointer<Void>, Int32)>('Canvas::restoreToCount', isLeaf: true)
+  external void restoreToCount(int count);
 
   /// Returns the number of items on the save stack, including the
   /// initial state. This means it returns 1 for a clean canvas, and
@@ -4930,6 +5090,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// closed back to the center, forming a circle sector. Otherwise, the arc is
   /// not closed, forming a circle segment.
   ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_draw_arc.png)
+  ///
   /// This method is optimized for drawing arcs and should be faster than [Path.arcTo].
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
     assert(_rectIsValid(rect));
@@ -4967,6 +5129,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
   void drawImage(Image image, Offset offset, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_offsetIsValid(offset));
     assert(paint != null);
     final String? error = _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
@@ -4989,6 +5152,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// performance.
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_rectIsValid(src));
     assert(_rectIsValid(dst));
     assert(paint != null);
@@ -5039,6 +5203,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// positions.
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_rectIsValid(center));
     assert(_rectIsValid(dst));
     assert(paint != null);
@@ -5078,6 +5243,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [PictureRecorder].
   void drawPicture(Picture picture) {
     assert(picture != null); // picture is checked on the engine side
+    assert(!picture.debugDisposed);
     _drawPicture(picture);
   }
 
@@ -5106,6 +5272,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
   void drawParagraph(Paragraph paragraph, Offset offset) {
     assert(paragraph != null);
+    assert(!paragraph.debugDisposed);
     assert(_offsetIsValid(offset));
     assert(!paragraph._needsLayout);
     paragraph._paint(this, offset.dx, offset.dy);
@@ -5169,8 +5336,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     rather than unencoded lists.
   ///   * [paint], Image shaders can be used to draw images on a triangular mesh.
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-
     assert(vertices != null); // vertices is checked on the engine side
+    assert(!vertices.debugDisposed);
     assert(paint != null);
     assert(blendMode != null);
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
@@ -5318,6 +5485,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                  Rect? cullRect,
                  Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
+    assert(!atlas.debugDisposed);
     assert(transforms != null);
     assert(rects != null);
     assert(colors == null || colors.isEmpty || blendMode != null);

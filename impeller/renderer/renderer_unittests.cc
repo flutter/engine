@@ -15,6 +15,9 @@
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
+#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
+#include "impeller/fixtures/sample.comp.h"
+#endif
 #include "impeller/fixtures/test_texture.frag.h"
 #include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
@@ -51,7 +54,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -117,7 +120,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(pipeline);
 
   struct Cube {
@@ -215,7 +218,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -288,7 +291,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(pipeline_desc).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -322,15 +325,16 @@ TEST_P(RendererTest, CanRenderToTexture) {
     ASSERT_NE(pipeline_desc->GetColorAttachmentDescriptor(0u), nullptr);
     texture_descriptor.format =
         pipeline_desc->GetColorAttachmentDescriptor(0u)->format;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
     texture_descriptor.size = {400, 400};
     texture_descriptor.mip_count = 1u;
     texture_descriptor.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
 
-    color0.texture = context->GetResourceAllocator()->CreateTexture(
-        StorageMode::kHostVisible, texture_descriptor);
+    color0.texture =
+        context->GetResourceAllocator()->CreateTexture(texture_descriptor);
 
-    ASSERT_TRUE(color0);
+    ASSERT_TRUE(color0.IsValid());
 
     color0.texture->SetLabel("r2t_target");
 
@@ -338,12 +342,13 @@ TEST_P(RendererTest, CanRenderToTexture) {
     stencil0.load_action = LoadAction::kClear;
     stencil0.store_action = StoreAction::kDontCare;
     TextureDescriptor stencil_texture_desc;
+    stencil_texture_desc.storage_mode = StorageMode::kDeviceTransient;
     stencil_texture_desc.size = texture_descriptor.size;
     stencil_texture_desc.format = PixelFormat::kS8UInt;
     stencil_texture_desc.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
-    stencil0.texture = context->GetResourceAllocator()->CreateTexture(
-        StorageMode::kDeviceTransient, stencil_texture_desc);
+    stencil0.texture =
+        context->GetResourceAllocator()->CreateTexture(stencil_texture_desc);
 
     RenderTarget r2t_desc;
     r2t_desc.SetColorAttachment(color0, 0u);
@@ -408,10 +413,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   auto pipeline =
       GetContext()
           ->GetPipelineLibrary()
-          ->GetRenderPipeline(
-              PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
-                  *GetContext())
-                  ->SetSampleCount(SampleCount::kCount4))
+          ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
+                            *GetContext())
+                            ->SetSampleCount(SampleCount::kCount4))
           .get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
@@ -454,18 +458,18 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   TextureDescriptor texture_desc;
+  texture_desc.storage_mode = StorageMode::kHostVisible;
   texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_desc.size = {800, 600};
   texture_desc.mip_count = 1u;
   texture_desc.usage =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
       static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
-  auto texture = context->GetResourceAllocator()->CreateTexture(
-      StorageMode::kHostVisible, texture_desc);
+  auto texture = context->GetResourceAllocator()->CreateTexture(texture_desc);
   ASSERT_TRUE(texture);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
@@ -564,7 +568,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto boston = CreateTextureForFixture("boston.jpg", true);
@@ -684,9 +688,8 @@ TEST_P(RendererTest, TheImpeller) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  auto pipeline = context->GetPipelineLibrary()
-                      ->GetRenderPipeline(pipeline_descriptor)
-                      .get();
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   auto blue_noise = CreateTextureForFixture("blue_noise.png");
@@ -735,6 +738,51 @@ TEST_P(RendererTest, TheImpeller) {
   };
   OpenPlaygroundHere(callback);
 }
+
+#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
+TEST_P(RendererTest, CanCreateComputePass) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("Compute is not supported on GL.");
+  }
+  if (GetParam() == PlaygroundBackend::kVulkan) {
+    GTEST_SKIP_("Compute is not supported on Vulkan yet.");
+  }
+
+  using CS = SampleComputeShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
+  auto pipeline_desc =
+      SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_desc.has_value());
+  auto compute_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
+  ASSERT_TRUE(compute_pipeline);
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto pass = cmd_buffer->CreateComputePass();
+  ASSERT_TRUE(pass && pass->IsValid());
+
+  ComputeCommand cmd;
+  cmd.label = "Compute";
+  cmd.pipeline = compute_pipeline;
+
+  std::vector<CS::Input0> input_0;
+  std::vector<CS::Input1> input_1;
+  input_0.push_back(CS::Input0{Vector4(2.0, 3.0, 4.0, 5.0)});
+  input_1.push_back(CS::Input1{Vector4(6.0, 7.0, 8.0, 9.0)});
+
+  std::vector<CS::Output> output(5);
+  CS::BindInput0(cmd,
+                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
+  CS::BindInput1(cmd,
+                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
+  CS::BindOutput(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(output));
+
+  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->EncodeCommands());
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller

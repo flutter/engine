@@ -1,4 +1,4 @@
-Signature: eae701caa9f0488bb7cfc6cd080e32f0
+Signature: 6f4e4b16fb125da2c12e742cfd7a15be
 
 UNUSED LICENSES:
 
@@ -10735,6 +10735,8 @@ FILE: ../../../third_party/dart/runtime/bin/thread_absl.cc
 FILE: ../../../third_party/dart/runtime/bin/thread_absl.h
 FILE: ../../../third_party/dart/runtime/platform/mach_o.h
 FILE: ../../../third_party/dart/runtime/platform/pe.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.h
 FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.h
 FILE: ../../../third_party/dart/runtime/vm/instructions.cc
@@ -11066,6 +11068,7 @@ FILE: ../../../third_party/dart/runtime/bin/analyze_snapshot.cc
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.mm
 FILE: ../../../third_party/dart/runtime/bin/secure_socket_utils_test.cc
+FILE: ../../../third_party/dart/runtime/bin/socket_base_posix.cc
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_fuchsia.cc

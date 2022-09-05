@@ -63,7 +63,7 @@ void AccessibilityBridge::CommitUpdates() {
 
   for (size_t i = results.size(); i > 0; i--) {
     for (SemanticsNode node : results[i - 1]) {
-      ConvertFluterUpdate(node, update);
+      ConvertFlutterUpdate(node, update);
     }
   }
 
@@ -191,8 +191,8 @@ void AccessibilityBridge::GetSubTreeList(SemanticsNode target,
   }
 }
 
-void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node,
-                                              ui::AXTreeUpdate& tree_update) {
+void AccessibilityBridge::ConvertFlutterUpdate(const SemanticsNode& node,
+                                               ui::AXTreeUpdate& tree_update) {
   ui::AXNodeData node_data;
   node_data.id = node.id;
   SetRoleFromFlutterUpdate(node_data, node);
@@ -375,7 +375,8 @@ void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
   node_data.AddIntAttribute(ax::mojom::IntAttribute::kTextSelStart, sel_start);
   node_data.AddIntAttribute(ax::mojom::IntAttribute::kTextSelEnd, sel_end);
 
-  if (node_data.role == ax::mojom::Role::kRadioButton) {
+  if (node_data.role == ax::mojom::Role::kRadioButton ||
+      node_data.role == ax::mojom::Role::kCheckBox) {
     node_data.AddIntAttribute(
         ax::mojom::IntAttribute::kCheckedState,
         static_cast<int32_t>(

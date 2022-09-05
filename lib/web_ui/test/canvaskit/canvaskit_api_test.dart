@@ -1339,6 +1339,18 @@ void _canvasTests() {
     );
   });
 
+  test('Paragraph dispose', () {
+    final CkParagraphBuilder builder = CkParagraphBuilder(
+      CkParagraphStyle(),
+    );
+    builder.addText('Hello');
+    final CkParagraph paragraph = builder.build();
+
+    paragraph.delete();
+    paragraph.dispose();
+    expect(paragraph.debugDisposed, true);
+  });
+
   test('toImage.toByteData', () async {
     // Pretend that FinalizationRegistry is supported, so we can run this
     // test in older browsers (the test will use a TestCollector instead of
@@ -1490,7 +1502,7 @@ void _paragraphTests() {
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
     final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.Make(
       paragraphStyle,
-      skiaFontCollection.skFontMgr,
+      CanvasKitRenderer.instance.fontCollection.skFontMgr,
     );
 
     builder.addText('Hello');
@@ -1587,7 +1599,7 @@ void _paragraphTests() {
     final SkParagraphBuilder builder =
         canvasKit.ParagraphBuilder.MakeFromFontProvider(
       paragraphStyle,
-      skiaFontCollection.fontProvider,
+      CanvasKitRenderer.instance.fontCollection.fontProvider,
     );
     builder.addText('hello');
 

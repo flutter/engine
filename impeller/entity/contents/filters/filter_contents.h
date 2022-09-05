@@ -16,8 +16,6 @@
 
 namespace impeller {
 
-class Pipeline;
-
 class FilterContents : public Contents {
  public:
   enum class BlurStyle {
@@ -36,6 +34,8 @@ class FilterContents : public Contents {
     float array[20];
   };
 
+  enum class MorphType { kDilate, kErode };
+
   static std::shared_ptr<FilterContents> MakeBlend(
       Entity::BlendMode blend_mode,
       FilterInput::Vector inputs,
@@ -47,20 +47,35 @@ class FilterContents : public Contents {
       Vector2 direction,
       BlurStyle blur_style = BlurStyle::kNormal,
       Entity::TileMode tile_mode = Entity::TileMode::kDecal,
-      FilterInput::Ref alpha_mask = nullptr);
+      FilterInput::Ref alpha_mask = nullptr,
+      Sigma secondary_sigma = {},
+      const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeGaussianBlur(
       FilterInput::Ref input,
       Sigma sigma_x,
       Sigma sigma_y,
       BlurStyle blur_style = BlurStyle::kNormal,
-      Entity::TileMode tile_mode = Entity::TileMode::kDecal);
+      Entity::TileMode tile_mode = Entity::TileMode::kDecal,
+      const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeBorderMaskBlur(
       FilterInput::Ref input,
       Sigma sigma_x,
       Sigma sigma_y,
-      BlurStyle blur_style = BlurStyle::kNormal);
+      BlurStyle blur_style = BlurStyle::kNormal,
+      const Matrix& effect_transform = Matrix());
+
+  static std::shared_ptr<FilterContents> MakeDirectionalMorphology(
+      FilterInput::Ref input,
+      Radius radius,
+      Vector2 direction,
+      MorphType morph_type);
+
+  static std::shared_ptr<FilterContents> MakeMorphology(FilterInput::Ref input,
+                                                        Radius radius_x,
+                                                        Radius radius_y,
+                                                        MorphType morph_type);
 
   static std::shared_ptr<FilterContents> MakeColorMatrix(
       FilterInput::Ref input,
@@ -86,6 +101,10 @@ class FilterContents : public Contents {
   /// @brief  Screen space bounds to use for cropping the filter output.
   void SetCoverageCrop(std::optional<Rect> coverage_crop);
 
+  /// @brief  Sets the transform which gets appended to the effect of this
+  ///         filter. Note that this is in addition to the entity's transform.
+  void SetEffectTransform(Matrix effect_transform);
+
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
@@ -105,19 +124,22 @@ class FilterContents : public Contents {
  private:
   virtual std::optional<Rect> GetFilterCoverage(
       const FilterInput::Vector& inputs,
-      const Entity& entity) const;
+      const Entity& entity,
+      const Matrix& effect_transform) const;
 
   /// @brief  Converts zero or more filter inputs into a new texture.
   virtual std::optional<Snapshot> RenderFilter(
       const FilterInput::Vector& inputs,
       const ContentContext& renderer,
       const Entity& entity,
+      const Matrix& effect_transform,
       const Rect& coverage) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 
   FilterInput::Vector inputs_;
   std::optional<Rect> coverage_crop_;
+  Matrix effect_transform_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FilterContents);
 };
