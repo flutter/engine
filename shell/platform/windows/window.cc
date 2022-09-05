@@ -605,7 +605,7 @@ void Window::HandleResize(UINT width, UINT height) {
   // The engine's window doesn't receive SIZE_MINIMIZED and SIZE_RESTORED
   // because the template's window doesn't transfer the changes of the
   // visibility on WM_SIZE.
-  // 
+  //
   // Therefore use the window's size to consider the visibility.
   bool next_minimized = (width <= 0) && (height <= 0);
   if (current_minimized_ != next_minimized) {
