@@ -53,8 +53,24 @@ struct RasterCacheUtil {
     SkRect device_rect;
     ctm.mapRect(&device_rect, rect);
     SkIRect bounds;
-    device_rect.roundOut(&bounds);
+    // Rather than roundOut, we first subtract the fractional portion of fLeft
+    // and fTop from fRight and fBottom. This ensures that we are more likely to
+    // round up to the nearest physical pixel in each direction instead of potentially
+    // two physical pixels in each direction.
+    auto fractionalLeft = bounds.fLeft - SkScalarFloorToInt(bounds.fLeft);
+    auto fractionalTop = bounds.fTop - SkScalarFloorToInt(bounds.fTop);
+    auto adjustedBottom = SkScalarCeilToInt(bounds.fBottom - fractionalTop);
+    auto adjustedRight = SkScalarCeilToInt(bounds.fRight - fractionalLeft);
+    bounds.setLTRB(SkScalarFloorToInt(bounds.fLeft),
+                   SkScalarFloorToInt(bounds.fTop), adjustedRight,
+                   adjustedBottom);
     return bounds;
+  }
+
+  static SkRect GetRawDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+    SkRect device_rect;
+    ctm.mapRect(&device_rect, rect);
+    return device_rect;
   }
 };
 

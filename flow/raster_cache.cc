@@ -32,9 +32,11 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
+  SkRect raw_bounds = RasterCacheUtil::GetRawDeviceBounds(
+      logical_rect_, canvas.getTotalMatrix());
+#ifndef NDEBUG
   SkIRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-#ifndef NDEBUG
   // The image dimensions should always be larger than the device bounds and
   // smaller than the device bounds plus one pixel, at the same time, we must
   // introduce epsilon to solve the round-off error. The value of epsilon is
@@ -47,8 +49,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 #endif
   canvas.resetMatrix();
   flow_.Step();
-  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
-                   paint);
+  canvas.drawImage(image_, raw_bounds.fLeft, raw_bounds.fRight,
+                   SkSamplingOptions(), paint);
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -67,6 +69,8 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkIRect cache_rect =
       RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
+  SkRect raw_cache_rect =
+      RasterCacheUtil::GetRawDeviceBounds(context.logical_rect, context.matrix);
   const SkImageInfo image_info =
       SkImageInfo::MakeN32Premul(cache_rect.width(), cache_rect.height(),
                                  sk_ref_sp(context.dst_color_space));
@@ -82,7 +86,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->translate(-cache_rect.left(), -cache_rect.top());
+  canvas->translate(-raw_cache_rect.left(), -raw_cache_rect.top());
   canvas->concat(context.matrix);
   draw_function(canvas);
 
