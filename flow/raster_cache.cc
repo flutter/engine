@@ -32,7 +32,7 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
-  SkRect bounds =
+  SkIRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
 #ifndef NDEBUG
   // The image dimensions should always be larger than the device bounds and
@@ -47,23 +47,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 #endif
   canvas.resetMatrix();
   flow_.Step();
-
-  bool exceeds_bounds = bounds.fLeft + image_->dimensions().width() >
-                            SkScalarCeilToScalar(bounds.fRight) ||
-                        bounds.fTop + image_->dimensions().height() >
-                            SkScalarCeilToScalar(bounds.fBottom);
-
-  // Make sure raster cache doesn't bleed to physical pixels outside of
-  // original bounds. https://github.com/flutter/flutter/issues/110002
-  if (exceeds_bounds) {
-    canvas.save();
-    canvas.clipRect(SkRect::Make(bounds.roundOut()));
-  }
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
                    paint);
-  if (exceeds_bounds) {
-    canvas.restore();
-  }
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -80,14 +65,11 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  SkRect dest_rect =
+  SkIRect cache_rect =
       RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-  // we always round out here so that the texture is integer sized.
-  int width = SkScalarCeilToInt(dest_rect.width());
-  int height = SkScalarCeilToInt(dest_rect.height());
-
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      width, height, sk_ref_sp(context.dst_color_space));
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(cache_rect.width(), cache_rect.height(),
+                                 sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
@@ -100,7 +82,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->translate(-dest_rect.left(), -dest_rect.top());
+  canvas->translate(-cache_rect.left(), -cache_rect.top());
   canvas->concat(context.matrix);
   draw_function(canvas);
 

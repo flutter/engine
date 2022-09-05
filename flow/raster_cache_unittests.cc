@@ -402,56 +402,7 @@ TEST(RasterCache, ComputeDeviceRectBasedOnFractionalTranslation) {
   SkRect logical_rect = SkRect::MakeLTRB(0, 0, 300.2, 300.3);
   SkMatrix ctm = SkMatrix::MakeAll(2.0, 0, 0, 0, 2.0, 0, 0, 0, 1);
   auto result = RasterCacheUtil::GetDeviceBounds(logical_rect, ctm);
-  ASSERT_EQ(result, SkRect::MakeLTRB(0.0, 0.0, 600.4, 600.6));
-}
-
-// Construct a cache result whose device target rectangle rounds out to be one
-// pixel wider than the cached image.  Verify that it can be drawn without
-// triggering any assertions.
-TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
-  size_t threshold = 1;
-  flutter::RasterCache cache(threshold);
-
-  SkRect logical_rect = SkRect::MakeLTRB(28, 0, 354.56731, 310.288);
-  DisplayListBuilder builder(logical_rect);
-  builder.setColor(SK_ColorRED);
-  builder.drawRect(logical_rect);
-  sk_sp<DisplayList> display_list = builder.Build();
-
-  SkMatrix ctm = SkMatrix::MakeAll(1.3312, 0, 233, 0, 1.3312, 206, 0, 0, 1);
-  SkPaint paint;
-
-  SkCanvas canvas(100, 100, nullptr);
-  canvas.setMatrix(ctm);
-
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  MutatorsStack mutators_stack;
-  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      &cache, &raster_time, &ui_time, &mutators_stack);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(&cache, &raster_time, &ui_time);
-  auto& preroll_context = preroll_context_holder.preroll_context;
-  auto& paint_context = paint_context_holder.paint_context;
-
-  cache.BeginFrame();
-  DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
-                                               true, false);
-
-  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, ctm));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &canvas, &paint));
-
-  cache.EndFrame();
-  cache.BeginFrame();
-
-  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, ctm));
-  ASSERT_TRUE(display_list_item.Draw(paint_context, &canvas, &paint));
-
-  canvas.translate(248, 0);
-  ASSERT_TRUE(cache.Draw(display_list_item.GetId().value(), canvas, &paint));
-  ASSERT_TRUE(display_list_item.Draw(paint_context, &canvas, &paint));
+  ASSERT_EQ(result, SkIRect::MakeLTRB(0, 0, 601, 601));
 }
 
 TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
@@ -785,68 +736,6 @@ TEST_F(RasterCacheTest, RasterCacheKeyID_LayerChildrenIds) {
   ASSERT_EQ(expected_ids[0], mock_layer->caching_key_id());
   ASSERT_EQ(expected_ids[1], display_list_layer->caching_key_id());
   ASSERT_EQ(ids, expected_ids);
-}
-
-TEST_F(RasterCacheTest, RasterCacheBleedingNoClipNeeded) {
-  SkImageInfo info =
-      SkImageInfo::MakeN32(40, 40, SkAlphaType::kOpaque_SkAlphaType);
-
-  auto image = SkImage::MakeRasterData(
-      info, SkData::MakeUninitialized(40 * 40 * 4), 40 * 4);
-  auto canvas = MockCanvas();
-  canvas.setMatrix(SkMatrix::Scale(2, 2));
-  // Drawing cached image does not exceeds physical pixels of the original
-  // bounds and does not need to be clipped.
-  auto cache_result =
-      RasterCacheResult(image, SkRect::MakeXYWH(100.3, 100.3, 20, 20), "");
-  auto paint = SkPaint();
-  cache_result.draw(canvas, &paint);
-
-  EXPECT_EQ(canvas.draw_calls(),
-            std::vector({
-                MockCanvas::DrawCall{
-                    0, MockCanvas::SetMatrixData{SkM44::Scale(2, 2)}},
-                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
-                MockCanvas::DrawCall{
-                    1, MockCanvas::DrawImageData{image, 200.6, 200.6,
-                                                 SkSamplingOptions(), paint}},
-                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
-            }));
-}
-
-TEST_F(RasterCacheTest, RasterCacheBleedingClipNeeded) {
-  SkImageInfo info =
-      SkImageInfo::MakeN32(40, 40, SkAlphaType::kOpaque_SkAlphaType);
-
-  auto image = SkImage::MakeRasterData(
-      info, SkData::MakeUninitialized(40 * 40 * 4), 40 * 4);
-  auto canvas = MockCanvas();
-  canvas.setMatrix(SkMatrix::Scale(2, 2));
-
-  auto cache_result =
-      RasterCacheResult(image, SkRect::MakeXYWH(100.3, 100.3, 19.6, 19.6), "");
-  auto paint = SkPaint();
-  cache_result.draw(canvas, &paint);
-
-  EXPECT_EQ(
-      canvas.draw_calls(),
-      std::vector({
-          MockCanvas::DrawCall{0,
-                               MockCanvas::SetMatrixData{SkM44::Scale(2, 2)}},
-          MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-          MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
-          MockCanvas::DrawCall{1, MockCanvas::SaveData{2}},
-          MockCanvas::DrawCall{
-              2, MockCanvas::ClipRectData{SkRect::MakeLTRB(200, 200, 240, 240),
-                                          SkClipOp::kIntersect,
-                                          MockCanvas::kHard_ClipEdgeStyle}},
-          MockCanvas::DrawCall{
-              2, MockCanvas::DrawImageData{image, 200.6, 200.6,
-                                           SkSamplingOptions(), paint}},
-          MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-          MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
-      }));
 }
 
 }  // namespace testing

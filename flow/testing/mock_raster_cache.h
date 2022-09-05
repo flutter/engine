@@ -29,7 +29,7 @@ namespace testing {
  */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
-  explicit MockRasterCacheResult(SkRect device_rect);
+  explicit MockRasterCacheResult(SkIRect device_rect);
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override{};
 
@@ -43,7 +43,7 @@ class MockRasterCacheResult : public RasterCacheResult {
   }
 
  private:
-  SkRect device_rect_;
+  SkIRect device_rect_;
 };
 
 static std::vector<RasterCacheItem*> raster_cache_items_;

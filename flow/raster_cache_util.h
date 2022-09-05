@@ -49,10 +49,12 @@ struct RasterCacheUtil {
     return true;
   }
 
-  static SkRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+  static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
     SkRect device_rect;
     ctm.mapRect(&device_rect, rect);
-    return device_rect;
+    SkIRect bounds;
+    device_rect.roundOut(&bounds);
+    return bounds;
   }
 };
 

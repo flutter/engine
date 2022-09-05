@@ -1840,7 +1840,7 @@ static rapidjson::Value SerializeLayerSnapshot(
   result.AddMember("duration_micros", snapshot.GetDuration().ToMicroseconds(),
                    allocator);
 
-  const SkRect bounds = snapshot.GetBounds();
+  const SkIRect bounds = snapshot.GetBounds();
   result.AddMember("top", bounds.top(), allocator);
   result.AddMember("left", bounds.left(), allocator);
   result.AddMember("width", bounds.width(), allocator);

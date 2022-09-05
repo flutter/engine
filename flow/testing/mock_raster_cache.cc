@@ -16,7 +16,7 @@
 namespace flutter {
 namespace testing {
 
-MockRasterCacheResult::MockRasterCacheResult(SkRect device_rect)
+MockRasterCacheResult::MockRasterCacheResult(SkIRect device_rect)
     : RasterCacheResult(nullptr, SkRect::MakeEmpty(), "RasterCacheFlow::test"),
       device_rect_(device_rect) {}
 
@@ -40,7 +40,7 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   UpdateCacheEntry(
       RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
       r_context, [&](SkCanvas* canvas) {
-        SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+        SkIRect cache_rect = RasterCacheUtil::GetDeviceBounds(
             r_context.logical_rect, r_context.matrix);
         return std::make_unique<MockRasterCacheResult>(cache_rect);
       });
@@ -78,7 +78,7 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   UpdateCacheEntry(RasterCacheKeyID(display_list->unique_id(),
                                     RasterCacheKeyType::kDisplayList),
                    r_context, [&](SkCanvas* canvas) {
-                     SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+                     SkIRect cache_rect = RasterCacheUtil::GetDeviceBounds(
                          r_context.logical_rect, r_context.matrix);
                      return std::make_unique<MockRasterCacheResult>(cache_rect);
                    });
