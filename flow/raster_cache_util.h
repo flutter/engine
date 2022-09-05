@@ -55,8 +55,8 @@ struct RasterCacheUtil {
     SkIRect bounds;
     // Rather than roundOut, we first subtract the fractional portion of fLeft
     // and fTop from fRight and fBottom. This ensures that we are more likely to
-    // round up to the nearest physical pixel in each direction instead of potentially
-    // two physical pixels in each direction.
+    // round up to the nearest physical pixel in each direction instead o
+    // potentially two physical pixels in each direction.
     auto fractionalLeft = bounds.fLeft - SkScalarFloorToInt(bounds.fLeft);
     auto fractionalTop = bounds.fTop - SkScalarFloorToInt(bounds.fTop);
     auto adjustedBottom = SkScalarCeilToInt(bounds.fBottom - fractionalTop);
