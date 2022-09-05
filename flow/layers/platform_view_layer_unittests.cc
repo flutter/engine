@@ -92,7 +92,7 @@ TEST_F(PlatformViewLayerTest, OpacityInheritance) {
 
   PrerollContext* context = preroll_context();
   layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
 }  // namespace testing

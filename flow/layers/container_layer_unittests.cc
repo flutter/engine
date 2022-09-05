@@ -463,7 +463,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   // Single opacity compatible child makes container compatible
   PrerollContext* context = preroll_context();
   container1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
@@ -472,7 +472,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
 
   // Multiple non-overlapping opacity compatible children are compatible
   container1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
@@ -482,7 +482,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   // Multiple overlapping individually opacity compatible children result
   // in a non-compatible layer
   container1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   auto container2 = std::make_shared<ContainerLayer>();
   container2->Add(mock1);
@@ -491,7 +491,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   // Start again with 2 non-overlapping individually opacity compatible
   // children.
   container2->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path4 = SkPath().addRect({60, 60, 70, 70});
@@ -501,7 +501,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   // Add a third child which is not opacity compatible even though it is
   // also non-overlapping which will result in an incompatible container.
   container2->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 }
 TEST_F(ContainerLayerTest, CollectionCacheableLayer) {
   SkPath child_path;

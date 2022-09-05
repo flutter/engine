@@ -55,7 +55,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
-  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
 
   if (!filter_) {
     set_paint_bounds(child_bounds);

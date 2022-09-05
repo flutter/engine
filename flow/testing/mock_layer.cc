@@ -52,7 +52,7 @@ void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     context->surface_needs_readback = true;
   }
   if (fake_opacity_compatible_) {
-    context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+    context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
   }
 }
 

@@ -279,7 +279,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
   // ClipRectLayer will pass through compatibility from a compatible child
   PrerollContext* context = preroll_context();
   clip_r_rect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
@@ -289,7 +289,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
   // ClipRectLayer will pass through compatibility from multiple
   // non-overlapping compatible children
   clip_r_rect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
@@ -299,7 +299,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
   // ClipRectLayer will not pass through compatibility from multiple
   // overlapping children even if they are individually compatible
   clip_r_rect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   {
     // ClipRectLayer(aa with saveLayer) will always be compatible
@@ -310,13 +310,13 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
 
     // Double check first two children are compatible and non-overlapping
     clip_r_rect_saveLayer->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->rendering_state_flags,
+    EXPECT_EQ(context->renderable_state_flags,
               LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
     // Now add the overlapping child and test again, should still be compatible
     clip_r_rect_saveLayer->Add(mock3);
     clip_r_rect_saveLayer->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->rendering_state_flags,
+    EXPECT_EQ(context->renderable_state_flags,
               LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   }
 
@@ -333,7 +333,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
 
     // Double check first two children are compatible and non-overlapping
     clip_r_rect_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->rendering_state_flags,
+    EXPECT_EQ(context->renderable_state_flags,
               LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
     clip_r_rect_bad_child->Add(mock4);
@@ -341,7 +341,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
     // The third child is non-overlapping, but not compatible so the
     // TransformLayer should end up incompatible
     clip_r_rect_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->rendering_state_flags, 0);
+    EXPECT_EQ(context->renderable_state_flags, 0);
   }
 
   {
@@ -353,13 +353,13 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
 
     // Double check first two children are compatible and non-overlapping
     clip_r_rect_saveLayer_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->rendering_state_flags,
+    EXPECT_EQ(context->renderable_state_flags,
               LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
     // Now add the incompatible child and test again, should still be compatible
     clip_r_rect_saveLayer_bad_child->Add(mock4);
     clip_r_rect_saveLayer_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->rendering_state_flags,
+    EXPECT_EQ(context->renderable_state_flags,
               LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   }
 }
@@ -380,7 +380,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritancePainting) {
   // non-overlapping compatible children
   PrerollContext* context = preroll_context();
   clip_rect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
@@ -444,7 +444,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritanceSaveLayerPainting) {
   // non-overlapping compatible children
   PrerollContext* context = preroll_context();
   clip_r_rect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;

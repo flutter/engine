@@ -130,7 +130,7 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
   PrerollContext* context = preroll_context();
   context->texture_registry->RegisterTexture(mock_texture);
   layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   // MockTexture has no actual textur to render into the

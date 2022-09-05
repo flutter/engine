@@ -140,7 +140,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
-  int children_rendering_state_flags =
+  int children_renderable_state_flags =
       LayerStateStack::CALLER_CAN_APPLY_ANYTHING;
 
   for (auto& layer : layers_) {
@@ -152,16 +152,16 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
     // Initialize the "inherit opacity" flag to false and allow the layer to
     // override the answer during its |Preroll|
-    context->rendering_state_flags = 0;
+    context->renderable_state_flags = 0;
 
     layer->Preroll(context, child_matrix);
 
-    children_rendering_state_flags &= context->rendering_state_flags;
+    children_renderable_state_flags &= context->renderable_state_flags;
     if (safe_intersection_test(child_paint_bounds, layer->paint_bounds())) {
       // This will allow inheritance by a linear sequence of non-overlapping
       // children, but will fail with a grid or other arbitrary 2D layout.
       // See https://github.com/flutter/flutter/issues/93899
-      children_rendering_state_flags = 0;
+      children_renderable_state_flags = 0;
     }
     child_paint_bounds->join(layer->paint_bounds());
 
@@ -173,9 +173,9 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   context->has_platform_view = child_has_platform_view;
   context->has_texture_layer = child_has_texture_layer;
-  context->rendering_state_flags = children_rendering_state_flags;
+  context->renderable_state_flags = children_renderable_state_flags;
   set_subtree_has_platform_view(child_has_platform_view);
-  set_children_rendering_state_flags(children_rendering_state_flags);
+  set_children_rendering_state_flags(children_renderable_state_flags);
   child_paint_bounds_ = *child_paint_bounds;
 }
 

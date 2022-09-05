@@ -72,7 +72,11 @@ struct PrerollContext {
   // prescence of a texture layer during Preroll.
   bool has_texture_layer = false;
 
-  int rendering_state_flags = 0;
+  // The list of flags that describe which rendering state attributes
+  // (such as opacity, ColorFilter, ImageFilter) a given layer can
+  // render itself without requiring the parent to perform a protective
+  // saveLayer with those attributes.
+  int renderable_state_flags = 0;
 
   std::vector<RasterCacheItem*>* raster_cached_entries;
 
@@ -118,6 +122,18 @@ struct PaintContext {
 // subquently used on the Rasterizer thread.
 class Layer {
  public:
+  // The state attribute flags that represent which attributes a
+  // layer can render if it plans to use a saveLayer call in its
+  // |Paint| method.
+  static constexpr int SAVE_LAYER_RENDER_FLAGS =
+      LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+
+  // The state attribute flags that represent which attributes a
+  // layer can render if it will be rendering its content/children
+  // from a cached representation.
+  static constexpr int RASTER_CACHE_RENDER_FLAGS =
+      LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+
   Layer();
   virtual ~Layer();
 

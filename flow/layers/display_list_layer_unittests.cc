@@ -110,7 +110,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
 
   auto context = preroll_context();
   display_list_layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
@@ -168,7 +168,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
 
   auto context = preroll_context();
   display_list_layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);
@@ -231,7 +231,7 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
 
   auto context = preroll_context();
   display_list_layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   // Pump the DisplayListLayer until it is ready to cache its DL
   display_list_layer->Preroll(preroll_context(), SkMatrix());

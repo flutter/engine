@@ -53,13 +53,13 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   ContainerLayer::Preroll(context, child_matrix);
   // We store the inheritance ability of our children for |Paint|
-  set_children_can_accept_opacity((context->rendering_state_flags &
+  set_children_can_accept_opacity((context->renderable_state_flags &
                                    LayerStateStack::CALLER_CAN_APPLY_OPACITY) !=
                                   0);
 
   // Now we let our parent layers know that we, too, can inherit opacity
   // regardless of what our children are capable of
-  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
 

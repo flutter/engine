@@ -219,7 +219,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
     EXPECT_EQ(context.has_platform_view, false);
     EXPECT_EQ(context.has_texture_layer, false);
 
-    EXPECT_EQ(context.rendering_state_flags, 0);
+    EXPECT_EQ(context.renderable_state_flags, 0);
     EXPECT_EQ(context.raster_cached_entries, nullptr);
 
     EXPECT_EQ(context.display_list_enabled, false);

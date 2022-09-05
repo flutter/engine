@@ -40,7 +40,7 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, matrix);
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
-  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {

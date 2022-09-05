@@ -65,8 +65,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     // If we use a SaveLayer then we can accept opacity on behalf
     // of our children and apply it in the saveLayer.
     if (uses_save_layer) {
-      context->rendering_state_flags =
-          LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+      context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
     }
 
     context->mutators_stack.Pop();

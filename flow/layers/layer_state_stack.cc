@@ -10,7 +10,7 @@ namespace flutter {
 using AutoRestore = LayerStateStack::AutoRestore;
 using RenderingAttributes = LayerStateStack::RenderingAttributes;
 
-void LayerStateStack::setCanvasDelegate(SkCanvas* canvas) {
+void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
   if (canvas_) {
     canvas_->restoreToCount(canvas_restore_count_);
     canvas_ = nullptr;
@@ -18,13 +18,15 @@ void LayerStateStack::setCanvasDelegate(SkCanvas* canvas) {
   if (canvas) {
     canvas_restore_count_ = canvas->getSaveCount();
     canvas_ = canvas;
+    RenderingAttributes attributes;
     for (auto& state : state_stack_) {
-      state->reapply(&outstanding_, canvas, nullptr);
+      state->reapply(&attributes, canvas, nullptr);
     }
+    FML_DCHECK(attributes == outstanding_);
   }
 }
 
-void LayerStateStack::setBuilderDelegate(DisplayListBuilder* builder) {
+void LayerStateStack::set_builder_delegate(DisplayListBuilder* builder) {
   if (builder_) {
     builder_->restoreToCount(builder_restore_count_);
     builder_ = nullptr;
@@ -32,9 +34,11 @@ void LayerStateStack::setBuilderDelegate(DisplayListBuilder* builder) {
   if (builder) {
     builder_restore_count_ = builder->getSaveCount();
     builder_ = builder;
+    RenderingAttributes attributes;
     for (auto& state : state_stack_) {
-      state->reapply(&outstanding_, nullptr, builder);
+      state->reapply(&attributes, nullptr, builder);
     }
+    FML_DCHECK(attributes == outstanding_);
   }
 }
 
@@ -73,7 +77,7 @@ const SkPaint* LayerStateStack::sk_paint() {
 }
 
 const DlPaint* LayerStateStack::dl_paint() {
-  if (outstanding_.opacity < SK_Scalar1) {
+  if (needsResolve(outstanding_, 0)) {
     temp_dl_paint_.setOpacity(outstanding_.opacity);
     return &temp_dl_paint_;
   }
@@ -87,61 +91,53 @@ AutoRestore LayerStateStack::save() {
   return ret;
 }
 
-AutoRestore LayerStateStack::saveLayer(const SkRect* bounds,
-                                       const SkRect* checker_bounds) {
+AutoRestore LayerStateStack::saveLayer(const SkRect* bounds) {
   auto ret = LayerStateStack::AutoRestore(this);
   state_stack_.emplace_back(
-      std::make_unique<SaveLayerEntry>(bounds, checker_bounds));
+      std::make_unique<SaveLayerEntry>(bounds));
   state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   return ret;
 }
 
-AutoRestore LayerStateStack::saveWithOpacity(const SkRect* bounds,
-                                             SkScalar opacity,
-                                             const SkRect* checker_bounds) {
+AutoRestore LayerStateStack::pushOpacity(const SkRect* bounds,
+                                         SkScalar opacity) {
   auto ret = AutoRestore(this);
   if (opacity < SK_Scalar1) {
     pushAttributes();
     state_stack_.emplace_back(
-        std::make_unique<OpacityEntry>(bounds, opacity, checker_bounds));
-  } else {
-    state_stack_.emplace_back(
-        std::make_unique<SaveLayerEntry>(bounds, checker_bounds));
+        std::make_unique<OpacityEntry>(bounds, opacity));
+    state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   }
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   return ret;
 }
 
-AutoRestore LayerStateStack::saveWithImageFilter(
+AutoRestore LayerStateStack::pushImageFilter(
     const SkRect* bounds,
-    const std::shared_ptr<const DlImageFilter> filter,
-    const SkRect* checker_bounds) {
+    const std::shared_ptr<const DlImageFilter> filter) {
   auto ret = LayerStateStack::AutoRestore(this);
   state_stack_.emplace_back(
-      std::make_unique<ImageFilterEntry>(bounds, filter, checker_bounds));
+      std::make_unique<ImageFilterEntry>(bounds, filter));
   state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   return ret;
 }
 
-AutoRestore LayerStateStack::saveWithColorFilter(
+AutoRestore LayerStateStack::pushColorFilter(
     const SkRect* bounds,
-    const std::shared_ptr<const DlColorFilter> filter,
-    const SkRect* checker_bounds) {
+    const std::shared_ptr<const DlColorFilter> filter) {
   auto ret = LayerStateStack::AutoRestore(this);
   state_stack_.emplace_back(
-      std::make_unique<ColorFilterEntry>(bounds, filter, checker_bounds));
+      std::make_unique<ColorFilterEntry>(bounds, filter));
   state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   return ret;
 }
 
-AutoRestore LayerStateStack::saveWithBackdropFilter(
+AutoRestore LayerStateStack::pushBackdropFilter(
     const SkRect* bounds,
     const std::shared_ptr<const DlImageFilter> filter,
-    DlBlendMode blend_mode,
-    const SkRect* checker_bounds) {
+    DlBlendMode blend_mode) {
   auto ret = LayerStateStack::AutoRestore(this);
   state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
-      bounds, filter, blend_mode, checker_bounds));
+      bounds, filter, blend_mode));
   state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   return ret;
 }
@@ -231,13 +227,12 @@ void LayerStateStack::SaveLayerEntry::apply(RenderingAttributes* attributes,
 void LayerStateStack::SaveLayerEntry::do_checkerboard(
     SkCanvas* canvas,
     DisplayListBuilder* builder) const {
-  const SkRect* bounds = checkerboard_bounds();
-  if (bounds) {
+  if (do_checkerboard_ && bounds_.has_value()) {
     if (canvas) {
-      SkDrawCheckerboard(canvas, *bounds);
+      SkDrawCheckerboard(canvas, bounds_.value());
     }
     if (builder) {
-      DlDrawCheckerboard(builder, *bounds);
+      DlDrawCheckerboard(builder, bounds_.value());
     }
   }
 }

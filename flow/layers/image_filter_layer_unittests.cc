@@ -446,18 +446,16 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   image_filter_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
-  context->rendering_state_flags = 0;
   image_filter_layer->Preroll(preroll_context(), initial_transform);
   // ImageFilterLayers can always inherit opacity whether or not their
   // children are compatible.
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(image_filter_layer);
-  context->rendering_state_flags = 0;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 

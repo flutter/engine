@@ -243,7 +243,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   // TransformLayer will pass through compatibility from a compatible child
   PrerollContext* context = preroll_context();
   transform1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
@@ -253,7 +253,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   // TransformLayer will pass through compatibility from multiple
   // non-overlapping compatible children
   transform1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
@@ -263,7 +263,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   // TransformLayer will not pass through compatibility from multiple
   // overlapping children even if they are individually compatible
   transform1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   auto transform2 = std::make_shared<TransformLayer>(SkMatrix::Scale(2, 2));
   transform2->Add(mock1);
@@ -271,7 +271,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
 
   // Double check first two children are compatible and non-overlapping
   transform2->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path4 = SkPath().addRect({60, 60, 70, 70});
@@ -281,7 +281,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   // The third child is non-overlapping, but not compatible so the
   // TransformLayer should end up incompatible
   transform2->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
 TEST_F(TransformLayerTest, OpacityInheritancePainting) {
@@ -298,7 +298,7 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
   // non-overlapping compatible children
   PrerollContext* context = preroll_context();
   transform_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;

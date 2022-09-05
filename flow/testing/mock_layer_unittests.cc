@@ -84,11 +84,11 @@ TEST_F(MockLayerTest, OpacityInheritance) {
 
   auto mock1 = std::make_shared<MockLayer>(path1);
   mock1->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags, 0);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   auto mock2 = MockLayer::MakeOpacityCompatible(path1);
   mock2->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->rendering_state_flags,
+  EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 }
 

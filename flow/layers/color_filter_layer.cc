@@ -42,7 +42,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
 
   // We always use a saveLayer (or a cached rendering), so we
   // can always apply opacity in those cases.
-  context->rendering_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
