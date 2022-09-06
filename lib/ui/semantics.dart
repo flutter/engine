@@ -357,8 +357,7 @@ class SemanticsFlag {
   /// For example, a [Checkbox] with [Checkbox.tristate] set to true
   /// can have checked,  unchecked, or mixed state.
   ///
-  /// Should be false when the checkbox is either checked or unchecked.
-  ///
+  /// Must be false when the checkbox is either checked or unchecked.
   static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex);
 
 

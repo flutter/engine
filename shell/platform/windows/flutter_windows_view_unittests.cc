@@ -651,7 +651,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     IAccessible* native_view = root_node->GetNativeViewAccessible();
     ASSERT_TRUE(native_view != nullptr);
 
-    // Look up against the node itself (not one of its children)
+    // Look up against the node itself (not one of its children).
     VARIANT varchild = {};
     varchild.vt = VT_I4;
 
@@ -662,7 +662,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_CHECKED);
   }
 
-  // Test unchecked too
+  // Test unchecked too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -681,7 +681,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     IAccessible* native_view = root_node->GetNativeViewAccessible();
     ASSERT_TRUE(native_view != nullptr);
 
-    // Look up against the node itself (not one of its children)
+    // Look up against the node itself (not one of its children).
     VARIANT varchild = {};
     varchild.vt = VT_I4;
 
@@ -692,7 +692,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_CHECKED);
   }
 
-  // Now check mixed state
+  // Now check mixed state.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed);
@@ -712,7 +712,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     IAccessible* native_view = root_node->GetNativeViewAccessible();
     ASSERT_TRUE(native_view != nullptr);
 
-    // Look up against the node itself (not one of its children)
+    // Look up against the node itself (not one of its children).
     VARIANT varchild = {};
     varchild.vt = VT_I4;
 
