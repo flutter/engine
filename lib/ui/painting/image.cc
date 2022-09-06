@@ -21,7 +21,6 @@ typedef CanvasImage Image;
 static const tonic::DartWrapperInfo kDartWrapperInfo_ui_Image = {
     "ui",
     "_Image",
-    sizeof(Image),
 };
 const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
     kDartWrapperInfo_ui_Image;
