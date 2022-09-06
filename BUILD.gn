@@ -67,10 +67,10 @@ group("flutter") {
 
   # Compile the engine (not needed for the Web SDK).
   public_deps = [
+    ":dart_sdk",
     ":unittests",
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
-    ":dart_sdk",
     "//flutter/web_sdk",
   ]
 
