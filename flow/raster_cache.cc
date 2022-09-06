@@ -34,6 +34,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 
   SkRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+  SkIRect rounded_bounds = RasterCacheUtil::GetRoundedOutDeviceBounds(
+      logical_rect_, canvas.getTotalMatrix());
 #ifndef NDEBUG
   // The image dimensions should always be larger than the device bounds and
   // smaller than the device bounds plus one pixel, at the same time, we must
@@ -59,8 +61,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
     canvas.save();
     canvas.clipRect(SkRect::Make(bounds.roundOut()));
   }
-  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
-                   paint);
+  canvas.drawImage(image_, rounded_bounds.fLeft, rounded_bounds.fTop,
+                   SkSamplingOptions(), paint);
   if (exceeds_bounds) {
     canvas.restore();
   }
@@ -82,8 +84,6 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkIRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
       context.logical_rect, context.matrix);
-  ;
-
   const SkImageInfo image_info =
       SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
                                  sk_ref_sp(context.dst_color_space));
