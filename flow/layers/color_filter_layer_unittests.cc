@@ -90,7 +90,7 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -132,7 +132,7 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_bounds);
@@ -186,7 +186,7 @@ TEST_F(ColorFilterLayerTest, Nested) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_bounds);
@@ -410,8 +410,8 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
       std::make_shared<DlMatrixColorFilter>(matrix));
   color_filter_layer->Add(mock_layer);
 
-  PrerollContext* context = preroll_context();
-  color_filter_layer->Preroll(preroll_context(), initial_transform);
+  PrerollContext* context = display_list_preroll_context();
+  color_filter_layer->Preroll(context, initial_transform);
   // ColorFilterLayer can always inherit opacity whether or not their
   // children are compatible.
   EXPECT_EQ(context->renderable_state_flags,

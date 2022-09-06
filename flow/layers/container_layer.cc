@@ -189,7 +189,7 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   // Apply any outstanding state that the children cannot individually
   // and collectively handle.
   auto restore = context.state_stack.applyState(
-      paint_bounds(), children_rendering_state_flags());
+      child_paint_bounds(), children_rendering_state_flags());
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.

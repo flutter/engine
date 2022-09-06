@@ -71,7 +71,6 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
       .ui_time                       = mock_stopwatch,
       .texture_registry              = nullptr,
       .raster_cache                  = nullptr,
-      .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = 1.0f,
       // clang-format on
   };

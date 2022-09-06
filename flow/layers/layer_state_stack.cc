@@ -138,17 +138,21 @@ void MutatorContext::applyOpacity(const SkRect& bounds, SkScalar opacity) {
 void MutatorContext::applyImageFilter(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter> filter) {
-  layer_state_stack_->push_attributes();
-  layer_state_stack_->maybe_save_layer(bounds, filter);
-  layer_state_stack_->push_image_filter(filter);
+  if (filter) {
+    layer_state_stack_->push_attributes();
+    layer_state_stack_->maybe_save_layer(bounds, filter);
+    layer_state_stack_->push_image_filter(filter);
+  }
 }
 
 void MutatorContext::applyColorFilter(
     const SkRect& bounds,
     const std::shared_ptr<const DlColorFilter> filter) {
-  layer_state_stack_->push_attributes();
-  layer_state_stack_->maybe_save_layer(bounds, filter);
-  layer_state_stack_->push_color_filter(filter);
+  if (filter) {
+    layer_state_stack_->push_attributes();
+    layer_state_stack_->maybe_save_layer(bounds, filter);
+    layer_state_stack_->push_color_filter(filter);
+  }
 }
 
 void MutatorContext::applyBackdropFilter(
@@ -159,11 +163,17 @@ void MutatorContext::applyBackdropFilter(
 }
 
 void MutatorContext::translate(SkScalar tx, SkScalar ty) {
-  layer_state_stack_->push_translate(tx, ty);
+  if (!(tx == 0 || ty == 0)) {
+    layer_state_stack_->push_translate(tx, ty);
+  }
 }
 
 void MutatorContext::transform(const SkMatrix& matrix) {
-  layer_state_stack_->push_transform(matrix);
+  if (matrix.isTranslate()) {
+    translate(matrix.getTranslateX(), matrix.getTranslateY());
+  } else if (!matrix.isIdentity()) {
+    layer_state_stack_->push_transform(matrix);
+  }
 }
 
 void MutatorContext::transform(const SkM44& m44) {
@@ -278,7 +288,7 @@ void LayerStateStack::maybe_save_layer(const SkRect& bounds, int apply_flags) {
 }
 
 void LayerStateStack::maybe_save_layer(const SkRect& bounds, SkScalar opacity) {
-  if (outstanding_.color_filter) {
+  if (outstanding_.image_filter) {
     save_layer(bounds);
   }
 }
@@ -286,7 +296,9 @@ void LayerStateStack::maybe_save_layer(const SkRect& bounds, SkScalar opacity) {
 void LayerStateStack::maybe_save_layer(
     const SkRect& bounds,
     const std::shared_ptr<const DlColorFilter> filter) {
-  if (outstanding_.color_filter || outstanding_.image_filter) {
+  if (outstanding_.color_filter || outstanding_.image_filter ||
+      (outstanding_.opacity < SK_Scalar1 &&
+       !filter->can_commute_with_alpha())) {
     // TBD: compose the 2 color filters together.
     save_layer(bounds);
   }
@@ -295,8 +307,7 @@ void LayerStateStack::maybe_save_layer(
 void LayerStateStack::maybe_save_layer(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter> filter) {
-  if (outstanding_.image_filter || outstanding_.color_filter ||
-      outstanding_.opacity < SK_Scalar1) {
+  if (outstanding_.image_filter) {
     // TBD: compose the 2 image filters together.
     save_layer(bounds);
   }

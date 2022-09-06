@@ -53,14 +53,14 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
 
-  // We always paint with a saveLayer (or a cached rendering),
-  // so we can always apply opacity in any of those cases.
-  context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
-
   if (!filter_) {
     set_paint_bounds(child_bounds);
     return;
   }
+
+  // We always paint with a saveLayer (or a cached rendering),
+  // so we can always apply opacity in any of those cases.
+  context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
 
   const SkIRect filter_in_bounds = child_bounds.roundOut();
   SkIRect filter_out_bounds;

@@ -375,7 +375,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritancePainting) {
 
   // ClipRectLayer will pass through compatibility from multiple
   // non-overlapping compatible children
-  PrerollContext* context = preroll_context();
+  PrerollContext* context = display_list_preroll_context();
   clip_rect_layer->Preroll(context, SkMatrix::I());
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
@@ -429,7 +429,7 @@ TEST_F(ClipRRectLayerTest, OpacityInheritanceSaveLayerPainting) {
 
   // ClipRectLayer will pass through compatibility from multiple
   // non-overlapping compatible children
-  PrerollContext* context = preroll_context();
+  PrerollContext* context = display_list_preroll_context();
   clip_r_rect_layer->Preroll(context, SkMatrix::I());
   EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 

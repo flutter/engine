@@ -100,7 +100,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckerBoard) {
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_bounds)}));
 
-  layer->Paint(check_board_context());
+  layer->Paint(checkerboard_context());
 
   EXPECT_NE(
       mock_canvas().draw_calls(),
@@ -183,7 +183,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckerBoard) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_path)}));
 
-  layer->Paint(check_board_context());
+  layer->Paint(checkerboard_context());
   EXPECT_NE(
       mock_canvas().draw_calls(),
       std::vector(
@@ -265,7 +265,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckerBoard) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_rrect)}));
 
-  layer->Paint(check_board_context());
+  layer->Paint(checkerboard_context());
   EXPECT_NE(
       mock_canvas().draw_calls(),
       std::vector(
@@ -341,7 +341,7 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckerBoard) {
   const SkPaint clip_paint;
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
-  layer->Paint(check_board_context());
+  layer->Paint(checkerboard_context());
   EXPECT_NE(
       mock_canvas().draw_calls(),
       std::vector(

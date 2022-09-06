@@ -105,7 +105,6 @@ PrerollContextHolder GetSamplePrerollContextHolder(
           .raster_time                   = *raster_time,
           .ui_time                       = *ui_time,
           .texture_registry              = nullptr,
-          .checkerboard_offscreen_layers = false,
           .frame_device_pixel_ratio      = 1.0f,
           .has_platform_view             = false,
           .has_texture_layer             = false,
@@ -134,7 +133,6 @@ PaintContextHolder GetSamplePaintContextHolder(
           .ui_time                       = *ui_time,
           .texture_registry              = nullptr,
           .raster_cache                  = raster_cache,
-          .checkerboard_offscreen_layers = false,
           .frame_device_pixel_ratio      = 1.0f,
     },
                                // clang-format on

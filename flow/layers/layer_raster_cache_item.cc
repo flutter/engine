@@ -114,7 +114,6 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
           .ui_time                       = paint_context.ui_time,
           .texture_registry              = paint_context.texture_registry,
           .raster_cache                  = paint_context.raster_cache,
-          .checkerboard_offscreen_layers = paint_context.checkerboard_offscreen_layers,
           .frame_device_pixel_ratio      = paint_context.frame_device_pixel_ratio,
       // clang-format on
   };

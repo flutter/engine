@@ -354,10 +354,9 @@ TEST_F(ShaderMaskLayerTest, OpacityInheritance) {
   shader_mask_layer->Add(mock_layer);
 
   // ShaderMaskLayers can always support opacity despite incompatible children
-  PrerollContext* context = preroll_context();
+  PrerollContext* context = display_list_preroll_context();
   shader_mask_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+  EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);

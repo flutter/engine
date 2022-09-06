@@ -58,10 +58,10 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .raster_cached_entries         = &cacheable_items_,
+            .display_list_enabled          = false,
             // clang-format on
         },
         paint_context_{
@@ -74,11 +74,28 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
         display_list_recorder_(kDlBounds),
+        display_list_preroll_context_{
+            // clang-format off
+            .raster_cache                  = nullptr,
+            .gr_context                    = nullptr,
+            .view_embedder                 = nullptr,
+            .mutators_stack                = mutators_stack_,
+            .dst_color_space               = TestT::mock_color_space(),
+            .cull_rect                     = kGiantRect,
+            .surface_needs_readback        = false,
+            .raster_time                   = raster_time_,
+            .ui_time                       = ui_time_,
+            .texture_registry              = texture_registry_,
+            .frame_device_pixel_ratio      = 1.0f,
+            .has_platform_view             = false,
+            .raster_cached_entries         = &cacheable_items_,
+            .display_list_enabled          = true,
+            // clang-format on
+        },
         display_list_paint_context_{
             // clang-format off
             .state_stack                   = display_list_state_stack_,
@@ -89,14 +106,13 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .builder                       = display_list_recorder_.builder().get(),
             // clang-format on
         },
-        check_board_context_{
+        checkerboard_context_{
             // clang-format off
-            .state_stack                   = canvas_state_stack_,
+            .state_stack                   = checkerboard_state_stack_,
             .canvas                        = &TestT::mock_canvas(),
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
@@ -104,12 +120,13 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .checkerboard_offscreen_layers = true,
             .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {
     canvas_state_stack_.set_canvas_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_builder_delegate(display_list_recorder_);
+    checkerboard_state_stack_.set_canvas_delegate(&TestT::mock_canvas());
+    checkerboard_state_stack_.set_checkerboard_save_layers(true);
     use_null_raster_cache();
   }
 
@@ -170,10 +187,13 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   RasterCache* raster_cache() { return raster_cache_.get(); }
   PrerollContext* preroll_context() { return &preroll_context_; }
   PaintContext& paint_context() { return paint_context_; }
+  PrerollContext* display_list_preroll_context() {
+    return &display_list_preroll_context_;
+  }
   PaintContext& display_list_paint_context() {
     return display_list_paint_context_;
   }
-  PaintContext& check_board_context() { return check_board_context_; }
+  PaintContext& checkerboard_context() { return checkerboard_context_; }
   LayerSnapshotStore& layer_snapshot_store() { return snapshot_store_; }
 
   sk_sp<DisplayList> display_list() {
@@ -217,8 +237,10 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   DisplayListCanvasRecorder display_list_recorder_;
   sk_sp<DisplayList> display_list_;
   LayerStateStack display_list_state_stack_;
+  PrerollContext display_list_preroll_context_;
   PaintContext display_list_paint_context_;
-  PaintContext check_board_context_;
+  LayerStateStack checkerboard_state_stack_;
+  PaintContext checkerboard_context_;
   LayerSnapshotStore snapshot_store_;
 
   std::vector<RasterCacheItem*> cacheable_items_;

@@ -62,7 +62,6 @@ struct PrerollContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
-  const bool checkerboard_offscreen_layers;
   const float frame_device_pixel_ratio = 1.0f;
 
   // These allow us to track properties like elevation, opacity, and the
@@ -107,7 +106,6 @@ struct PaintContext {
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
   const RasterCache* raster_cache;
-  const bool checkerboard_offscreen_layers;
   const float frame_device_pixel_ratio = 1.0f;
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
@@ -218,10 +216,6 @@ class Layer {
   // that we saw in the overall Preroll operation.
   void set_paint_bounds(const SkRect& paint_bounds) {
     paint_bounds_ = paint_bounds;
-  }
-
-  const SkRect* checkerboard_bounds(PaintContext context) const {
-    return context.checkerboard_offscreen_layers ? &paint_bounds_ : nullptr;
   }
 
   // Determines if the layer has any content.

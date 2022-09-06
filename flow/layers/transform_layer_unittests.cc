@@ -296,7 +296,7 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
 
   // TransformLayer will pass through compatibility from multiple
   // non-overlapping compatible children
-  PrerollContext* context = preroll_context();
+  PrerollContext* context = display_list_preroll_context();
   transform_layer->Preroll(context, SkMatrix::I());
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
@@ -308,6 +308,7 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
+  DlPaint mock_paint = DlPaint().setAlpha(opacity_alpha);
   DisplayListBuilder expected_builder;
   /* opacity_layer paint */ {
     expected_builder.save();
@@ -315,26 +316,16 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
       expected_builder.translate(offset.fX, offset.fY);
       /* transform_layer paint */ {
         expected_builder.save();
-        expected_builder.transform(transform);
-        /* child layer1 paint */ {
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&path1.getBounds(), true);
-          {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(path1);
+        {
+          expected_builder.transform(transform);
+          /* child layer1 paint */ {
+            expected_builder.drawPath(path1, mock_paint);
+          }
+          /* child layer2 paint */ {
+            expected_builder.drawPath(path2, mock_paint);
           }
           expected_builder.restore();
         }
-        /* child layer2 paint */ {
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&path2.getBounds(), true);
-          {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(path2);
-          }
-          expected_builder.restore();
-        }
-        expected_builder.restore();
       }
     }
     expected_builder.restore();

@@ -98,7 +98,7 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   AutoCache cache =
       AutoCache(display_list_raster_cache_item_.get(), context, matrix);
-  if (disp_list->can_apply_group_opacity() && !context->display_list_enabled) {
+  if (disp_list->can_apply_group_opacity()) {
     context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
   }
   set_paint_bounds(bounds_);
@@ -120,12 +120,6 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       return;
     }
   }
-
-  auto restore = context.state_stack.applyState(
-      paint_bounds(),
-      display_list()->can_apply_group_opacity() && !context.builder
-          ? LayerStateStack::CALLER_CAN_APPLY_OPACITY
-          : 0);
 
   SkScalar opacity = context.state_stack.outstanding_opacity();
 
@@ -158,7 +152,9 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   }
 
   if (context.builder) {
-    context.builder->drawDisplayList(display_list_.skia_object());
+    auto display_list = display_list_.skia_object();
+    auto restore = context.state_stack.applyState(display_list->bounds(), 0);
+    context.builder->drawDisplayList(display_list);
   } else {
     display_list()->RenderTo(context.canvas, opacity);
   }

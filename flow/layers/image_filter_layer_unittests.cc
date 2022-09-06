@@ -69,11 +69,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
                 MockCanvas::DrawCall{
-                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                 nullptr, 1}},
-                MockCanvas::DrawCall{
-                    1, MockCanvas::DrawPathData{child_path, child_paint}},
-                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
+                    0, MockCanvas::DrawPathData{child_path, child_paint}},
             }));
 }
 
@@ -91,7 +87,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   const SkRect child_rounded_bounds =
       SkRect::MakeLTRB(5.0f, 6.0f, 21.0f, 22.0f);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_rounded_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -131,7 +127,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
 
   const SkRect filter_bounds = SkRect::MakeLTRB(10.0f, 12.0f, 42.0f, 44.0f);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), filter_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -176,7 +172,7 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   children_bounds.join(child_path2.getBounds());
   SkRect children_rounded_bounds = SkRect::Make(children_bounds.roundOut());
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_rounded_bounds);
@@ -237,7 +233,7 @@ TEST_F(ImageFilterLayerTest, Nested) {
   const SkRect mock_layer2_rounded_bounds =
       SkRect::Make(child_path2.getBounds().roundOut());
 
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_rounded_bounds);
@@ -445,8 +441,8 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   auto image_filter_layer = std::make_shared<ImageFilterLayer>(dl_image_filter);
   image_filter_layer->Add(mock_layer);
 
-  PrerollContext* context = preroll_context();
-  image_filter_layer->Preroll(preroll_context(), initial_transform);
+  PrerollContext* context = display_list_preroll_context();
+  image_filter_layer->Preroll(context, initial_transform);
   // ImageFilterLayers can always inherit opacity whether or not their
   // children are compatible.
   EXPECT_EQ(context->renderable_state_flags,
@@ -481,7 +477,7 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   }
 
   opacity_layer->Paint(display_list_paint_context());
-  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 using ImageFilterLayerDiffTest = DiffContextTest;

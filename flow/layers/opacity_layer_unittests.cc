@@ -236,11 +236,7 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
                    MockCanvas::DrawCall{
                        1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
                    MockCanvas::DrawCall{
-                       1, MockCanvas::SaveLayerData{opacity_bounds,
-                                                    opacity_paint, nullptr, 2}},
-                   MockCanvas::DrawCall{
-                       2, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                       1, MockCanvas::DrawPathData{child_path, child_paint}},
                    MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
@@ -300,7 +296,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   auto layer = std::make_shared<OpacityLayer>(alpha_half, layer_offset);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(display_list_preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_path.getBounds());
@@ -395,11 +391,10 @@ TEST_F(OpacityLayerTest, Nested) {
   opacity1_paint.setAlphaf(alpha1 * (1.0 / SK_AlphaOPAQUE));
   SkPaint opacity2_paint;
   opacity2_paint.setAlphaf(alpha2 * (1.0 / SK_AlphaOPAQUE));
-  SkRect opacity1_bounds, opacity2_bounds;
-  expected_layer1_bounds.makeOffset(-layer1_offset.fX, -layer1_offset.fY)
-      .roundOut(&opacity1_bounds);
-  expected_layer2_bounds.makeOffset(-layer2_offset.fX, -layer2_offset.fY)
-      .roundOut(&opacity2_bounds);
+  SkRect opacity1_bounds =
+      expected_layer1_bounds.makeOffset(-layer1_offset.fX, -layer1_offset.fY);
+  SkRect opacity2_bounds =
+      expected_layer2_bounds.makeOffset(-layer2_offset.fX, -layer2_offset.fY);
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
        MockCanvas::DrawCall{
@@ -497,11 +492,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughContainer) {
   opacityLayer->Preroll(context, SkMatrix::I());
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
-  // By default a container layer will not pass opacity through to
-  // its children - specific subclasses will have to enable this
-  // pass through by setting the flag to true themselves before
-  // calling their super method ContainerLayer::Preroll().
-  EXPECT_FALSE(opacityLayer->children_can_accept_opacity());
+  EXPECT_TRUE(opacityLayer->children_can_accept_opacity());
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
@@ -545,7 +536,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithCompatibleChild) {
   opacityLayer2->Add(mockLayer);
   opacityLayer1->Add(opacityLayer2);
 
-  PrerollContext* context = preroll_context();
+  PrerollContext* context = display_list_preroll_context();
   opacityLayer1->Preroll(context, SkMatrix::I());
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
@@ -557,6 +548,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithCompatibleChild) {
   inheritedOpacity *= 64 * 1.0 / SK_AlphaOPAQUE;
   saveLayerPaint.setAlphaf(inheritedOpacity);
 
+  DlPaint mock_paint = DlPaint().setAlpha(saveLayerPaint.getAlpha());
   DisplayListBuilder expected_builder;
   /* opacityLayer1::Paint */ {
     expected_builder.save();
@@ -567,13 +559,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithCompatibleChild) {
         {
           expected_builder.translate(offset2.fX, offset2.fY);
           /* mockLayer::Paint */ {
-            expected_builder.setColor(saveLayerPaint.getAlpha() << 24);
-            expected_builder.saveLayer(&mockPath.getBounds(), true);
-            {
-              expected_builder.setColor(0xFF000000);
-              expected_builder.drawPath(mockPath);
-            }
-            expected_builder.restore();
+            expected_builder.drawPath(mockPath, mock_paint);
           }
         }
         expected_builder.restore();
@@ -596,7 +582,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithIncompatibleChild) {
   opacityLayer2->Add(mockLayer);
   opacityLayer1->Add(opacityLayer2);
 
-  PrerollContext* context = preroll_context();
+  PrerollContext* context = display_list_preroll_context();
   opacityLayer1->Preroll(context, SkMatrix::I());
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);

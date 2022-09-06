@@ -292,7 +292,7 @@ TEST_F(BackdropFilterLayerTest, OpacityInheritance) {
   parent->Add(layer);
   clip->Add(parent);
 
-  clip->Preroll(preroll_context(), SkMatrix::I());
+  clip->Preroll(display_list_preroll_context(), SkMatrix::I());
 
   clip->Paint(display_list_paint_context());
 
