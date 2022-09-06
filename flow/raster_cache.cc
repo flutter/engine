@@ -25,8 +25,12 @@ namespace flutter {
 
 RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
                                      const SkRect& logical_rect,
+                                     const SkPoint& texture_edge,
                                      const char* type)
-    : image_(std::move(image)), logical_rect_(logical_rect), flow_(type) {}
+    : image_(std::move(image)),
+      logical_rect_(logical_rect),
+      texture_edge_(texture_edge),
+      flow_(type) {}
 
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
@@ -84,6 +88,15 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkIRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
       context.logical_rect, context.matrix);
+  SkRect raw_dest_rect =
+      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
+
+  // Rounding out the destination rect to size for a texture produces a small
+  // offset from the top corner of the logical rect to the top corner of the
+  // texture. Track this value so that cached layer children can be offset
+  // appropriately.
+  SkPoint texture_edge = SkPoint::Make(raw_dest_rect.fLeft - dest_rect.fLeft,
+                                       raw_dest_rect.fTop - dest_rect.fTop);
   const SkImageInfo image_info =
       SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
                                  sk_ref_sp(context.dst_color_space));
@@ -107,8 +120,9 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     draw_checkerboard(canvas, context.logical_rect);
   }
 
-  return std::make_unique<RasterCacheResult>(
-      surface->makeImageSnapshot(), context.logical_rect, context.flow_type);
+  return std::make_unique<RasterCacheResult>(surface->makeImageSnapshot(),
+                                             context.logical_rect, texture_edge,
+                                             context.flow_type);
 }
 
 bool RasterCache::UpdateCacheEntry(
