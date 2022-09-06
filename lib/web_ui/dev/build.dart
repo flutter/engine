@@ -21,11 +21,6 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       help: 'Run the build in watch mode so it rebuilds whenever a change is '
           'made. Disabled by default.',
     );
-    argParser.addFlag(
-      'build-canvaskit',
-      help: 'Build CanvasKit locally instead of getting it from CIPD. Disabled '
-          'by default.',
-    );
   }
 
   @override
@@ -43,10 +38,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
       GnPipelineStep(),
-      if (buildCanvaskit) 
-        NinjaPipelineStep(target: environment.flutterWebSdkOutDir),
-      if (!buildCanvaskit)
-        NinjaPipelineStep(target: environment.hostDebugUnoptDir),
+      NinjaPipelineStep(target: environment.hostDebugUnoptDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
     await buildPipeline.run();
@@ -81,10 +73,12 @@ class GnPipelineStep extends ProcessStep {
   @override
   Future<ProcessManager> createProcess() {
     print('Running gn...');
-    final List<String> gnArgs = <String>['--web'];
-    if (Platform.isMacOS) {
-      gnArgs.add('--xcode-symlinks');
-    }
+    final List<String> gnArgs = <String>[];
+    gnArgs.addAll(<String>[
+      '--unopt',
+      if (Platform.isMacOS) '--xcode-symlinks',
+      '--full-dart-sdk',
+    ]);
     return startProcess(
       path.join(environment.flutterDirectory.path, 'tools', 'gn'),
       gnArgs,

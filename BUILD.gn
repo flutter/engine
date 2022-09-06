@@ -66,18 +66,13 @@ group("flutter") {
   testonly = true
 
   # Compile the engine (not needed for the Web SDK).
-  if (!flutter_web_sdk) {
-    public_deps = [
-      ":unittests",
-      "//flutter/shell/platform/embedder:flutter_engine",
-      "//flutter/sky",
-    ]
-  } else {
-    public_deps = [
-      ":dart_sdk",
-      "//flutter/web_sdk",
-    ]
-  }
+  public_deps = [
+    ":unittests",
+    "//flutter/shell/platform/embedder:flutter_engine",
+    "//flutter/sky",
+    ":dart_sdk",
+    "//flutter/web_sdk",
+  ]
 
   # Ensure the example for a sample embedder compiles.
   if (build_embedder_examples) {
@@ -92,7 +87,7 @@ group("flutter") {
   }
 
   # If enabled, compile the SDK / snapshot.
-  if (!is_fuchsia && !flutter_web_sdk) {
+  if (!is_fuchsia) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
     if (build_engine_artifacts) {
