@@ -206,8 +206,8 @@ class LayerStateStack {
     std::shared_ptr<const DlImageFilter> image_filter;
     bool pushed = false;
 
-    SkPaint* fill(SkPaint& paint);
-    DlPaint* fill(DlPaint& paint);
+    SkPaint* fill(SkPaint& paint, DlBlendMode mode = DlBlendMode::kSrcOver);
+    DlPaint* fill(DlPaint& paint, DlBlendMode mode = DlBlendMode::kSrcOver);
 
     bool operator==(const RenderingAttributes& other) {
       return opacity == other.opacity &&
@@ -269,8 +269,12 @@ class LayerStateStack {
 
   class SaveLayerEntry : public SaveEntry {
    public:
-    SaveLayerEntry(const SkRect& bounds, bool checkerboard)
-        : bounds_(bounds), do_checkerboard_(checkerboard) {}
+    SaveLayerEntry(const SkRect& bounds,
+                   DlBlendMode blend_mode,
+                   bool checkerboard)
+        : bounds_(bounds),
+          blend_mode_(blend_mode),
+          do_checkerboard_(checkerboard) {}
 
     void apply(RenderingAttributes* attributes,
                SkCanvas* canvas,
@@ -278,6 +282,7 @@ class LayerStateStack {
 
    protected:
     const SkRect bounds_;
+    const DlBlendMode blend_mode_;
     const bool do_checkerboard_;
 
     void do_checkerboard(SkCanvas* canvas,
@@ -330,9 +335,7 @@ class LayerStateStack {
                         const std::shared_ptr<const DlImageFilter> filter,
                         DlBlendMode blend_mode,
                         bool checkerboard)
-        : SaveLayerEntry(bounds, checkerboard),
-          filter_(filter),
-          blend_mode_(blend_mode) {}
+        : SaveLayerEntry(bounds, blend_mode, checkerboard), filter_(filter) {}
     ~BackdropFilterEntry() override = default;
 
     void apply(RenderingAttributes* attributes,
@@ -345,7 +348,6 @@ class LayerStateStack {
 
    private:
     const std::shared_ptr<const DlImageFilter> filter_;
-    const DlBlendMode blend_mode_;
     friend class LayerStateStack;
   };
 

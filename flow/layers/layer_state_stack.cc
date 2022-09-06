@@ -67,7 +67,8 @@ AutoRestore LayerStateStack::applyState(const SkRect& bounds,
   return ret;
 }
 
-SkPaint* LayerStateStack::RenderingAttributes::fill(SkPaint& paint) {
+SkPaint* LayerStateStack::RenderingAttributes::fill(SkPaint& paint,
+                                                    DlBlendMode mode) {
   SkPaint* ret = nullptr;
   if (opacity < SK_Scalar1) {
     paint.setAlphaf(std::max(opacity, 0.0f));
@@ -87,10 +88,15 @@ SkPaint* LayerStateStack::RenderingAttributes::fill(SkPaint& paint) {
   } else {
     paint.setImageFilter(nullptr);
   }
+  paint.setBlendMode(ToSk(mode));
+  if (mode != DlBlendMode::kSrcOver) {
+    ret = &paint;
+  }
   return ret;
 }
 
-DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint) {
+DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint,
+                                                    DlBlendMode mode) {
   DlPaint* ret = nullptr;
   if (opacity < SK_Scalar1) {
     paint.setOpacity(std::max(opacity, 0.0f));
@@ -104,6 +110,10 @@ DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint) {
   }
   paint.setImageFilter(image_filter);
   if (image_filter) {
+    ret = &paint;
+  }
+  paint.setBlendMode(mode);
+  if (mode != DlBlendMode::kSrcOver) {
     ret = &paint;
   }
   return ret;
@@ -263,8 +273,8 @@ bool LayerStateStack::needs_save_layer(int flags) const {
 }
 
 void LayerStateStack::save_layer(const SkRect& bounds) {
-  state_stack_.emplace_back(
-      std::make_unique<SaveLayerEntry>(bounds, do_checkerboard_));
+  state_stack_.emplace_back(std::make_unique<SaveLayerEntry>(
+      bounds, DlBlendMode::kSrcOver, do_checkerboard_));
   apply_last_entry();
   outstanding_ = {};
 }
@@ -335,11 +345,11 @@ void LayerStateStack::SaveLayerEntry::apply(RenderingAttributes* attributes,
                                             DisplayListBuilder* builder) const {
   if (canvas) {
     SkPaint paint;
-    canvas->saveLayer(bounds_, attributes->fill(paint));
+    canvas->saveLayer(bounds_, attributes->fill(paint, blend_mode_));
   }
   if (builder) {
     DlPaint paint;
-    builder->saveLayer(&bounds_, attributes->fill(paint));
+    builder->saveLayer(&bounds_, attributes->fill(paint, blend_mode_));
   }
 }
 
@@ -384,21 +394,13 @@ void LayerStateStack::BackdropFilterEntry::apply(
     sk_sp<SkImageFilter> backdrop_filter =
         filter_ ? filter_->skia_object() : nullptr;
     SkPaint paint;
-    SkPaint* pPaint = attributes->fill(paint);
-    if (blend_mode_ != DlBlendMode::kSrcOver) {
-      paint.setBlendMode(ToSk(blend_mode_));
-      pPaint = &paint;
-    }
+    SkPaint* pPaint = attributes->fill(paint, blend_mode_);
     canvas->saveLayer(
         SkCanvas::SaveLayerRec{&bounds_, pPaint, backdrop_filter.get(), 0});
   }
   if (builder) {
     DlPaint paint;
-    DlPaint* pPaint = attributes->fill(paint);
-    if (blend_mode_ != DlBlendMode::kSrcOver) {
-      paint.setBlendMode(blend_mode_);
-      pPaint = &paint;
-    }
+    DlPaint* pPaint = attributes->fill(paint, blend_mode_);
     builder->saveLayer(&bounds_, pPaint, filter_.get());
   }
 }
