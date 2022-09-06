@@ -353,7 +353,7 @@ class SemanticsFlag {
   ///
   /// If this is true, the check box this semantics node represents
   /// is in a mixed state.
-  /// 
+  ///
   /// For example, a [Checkbox] with [Checkbox.tristate] set to true
   /// can have checked,  unchecked, or mixed state.
   ///
