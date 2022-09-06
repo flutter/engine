@@ -80,14 +80,13 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  SkRect dest_rect =
-      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-  // we always round out here so that the texture is integer sized.
-  int width = SkScalarCeilToInt(dest_rect.width());
-  int height = SkScalarCeilToInt(dest_rect.height());
+  SkIRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
+      context.logical_rect, context.matrix);
+  ;
 
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      width, height, sk_ref_sp(context.dst_color_space));
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
+                                 sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
