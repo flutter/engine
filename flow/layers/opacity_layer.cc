@@ -80,11 +80,22 @@ void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  auto save = context.state_stack.save();
-  context.state_stack.translate(offset_.fX, offset_.fY);
+  // Skia may clip the content with saveLayerBounds (although it's not a
+  // guaranteed clip). So we have to provide a big enough saveLayerBounds. To do
+  // so, we first remove the offset from paint bounds since it's already in the
+  // matrix. Then we round out the bounds.
+  //
+  // Note that the following lines are only accessible when the raster cache is
+  // not available (e.g., when we're using the software backend in golden
+  // tests).
+  SkRect saveLayerBounds;
+  paint_bounds()
+      .makeOffset(-offset_.fX, -offset_.fY)
+      .roundOut(&saveLayerBounds);
 
-  auto restore = context.state_stack.saveWithOpacity(
-      &paint_bounds(), opacity(), checkerboard_bounds(context));
+  auto mutator = context.state_stack.save();
+  mutator.translate(offset_.fX, offset_.fY);
+  mutator.applyOpacity(saveLayerBounds, opacity());
 
   PaintChildren(context);
 }

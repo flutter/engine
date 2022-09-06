@@ -94,8 +94,9 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   //   }
   // }
 
-  auto save =
-      context.state_stack.saveWithImageFilter(&child_paint_bounds(), filter_);
+  auto mutator = context.state_stack.save();
+  mutator.applyImageFilter(child_paint_bounds(), filter_);
+
   PaintChildren(context);
 }
 

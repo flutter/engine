@@ -75,8 +75,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
   void Paint(PaintContext& context) const override {
     FML_DCHECK(needs_painting(context));
 
-    auto restore = context.state_stack.save();
-    OnStackClipShape(context.state_stack);
+    auto mutator = context.state_stack.save();
+    OnStackClipShape(mutator);
 
     if (!UsesSaveLayer()) {
       PaintChildren(context);
@@ -87,16 +87,16 @@ class ClipShapeLayer : public CacheableContainerLayer {
       auto restore_apply = context.state_stack.applyState(
           paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
+      SkPaint paint;
       if (layer_raster_cache_item_->Draw(context,
-                                         context.state_stack.sk_paint())) {
+                                         context.state_stack.fill(paint))) {
         return;
       }
     }
 
     // saveWithOpacity optimizes the case where opacity >= 1.0
     // to a simple saveLayer
-    auto save_layer = context.state_stack.saveLayer(
-        &child_paint_bounds(), checkerboard_bounds(context));
+    mutator.saveLayer(child_paint_bounds());
     PaintChildren(context);
   }
 
@@ -107,7 +107,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
  protected:
   virtual const SkRect& clip_shape_bounds() const = 0;
   virtual void OnMutatorsStackPushClipShape(MutatorsStack& mutators_stack) = 0;
-  virtual void OnStackClipShape(LayerStateStack& stack) const = 0;
+  virtual void OnStackClipShape(
+      LayerStateStack::MutatorContext& mutator) const = 0;
   virtual ~ClipShapeLayer() = default;
 
   const ClipShape& clip_shape() const { return clip_shape_; }

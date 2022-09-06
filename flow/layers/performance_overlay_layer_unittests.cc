@@ -59,7 +59,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   ASSERT_TRUE(surface != nullptr);
 
   LayerStateStack state_stack;
-  state_stack.setCanvasDelegate(surface->getCanvas());
+  state_stack.set_canvas_delegate(surface->getCanvas());
 
   flutter::PaintContext paintContext = {
       // clang-format off

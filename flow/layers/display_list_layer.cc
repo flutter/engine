@@ -109,12 +109,13 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   FML_DCHECK(display_list_.skia_object());
   FML_DCHECK(needs_painting(context));
 
-  auto save = context.state_stack.save();
-  context.state_stack.translate(offset_.x(), offset_.y());
+  auto mutator = context.state_stack.save();
+  mutator.translate(offset_.x(), offset_.y());
 
   if (context.raster_cache && display_list_raster_cache_item_) {
-    if (display_list_raster_cache_item_->Draw(context,
-                                              context.state_stack.sk_paint())) {
+    SkPaint paint;
+    if (display_list_raster_cache_item_->Draw(
+            context, context.state_stack.fill(paint))) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
     }

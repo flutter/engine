@@ -54,8 +54,9 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  auto save = context.state_stack.saveWithBackdropFilter(&paint_bounds(),
-                                                         filter_, blend_mode_);
+  auto mutator = context.state_stack.save();
+  mutator.applyBackdropFilter(paint_bounds(), filter_, blend_mode_);
+
   PaintChildren(context);
 }
 

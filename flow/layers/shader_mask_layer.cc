@@ -51,14 +51,17 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
     auto restore = context.state_stack.applyState(
         paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
+    SkPaint paint;
     if (layer_raster_cache_item_->Draw(context,
-                                       context.state_stack.sk_paint())) {
+                                       context.state_stack.fill(paint))) {
       return;
     }
   }
   auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
 
-  auto restore = context.state_stack.saveLayer(&paint_bounds());
+  auto mutator = context.state_stack.save();
+  mutator.saveLayer(paint_bounds());
+
   PaintChildren(context);
 
   if (context.builder) {

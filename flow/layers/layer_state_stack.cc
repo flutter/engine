@@ -8,7 +8,7 @@
 namespace flutter {
 
 using AutoRestore = LayerStateStack::AutoRestore;
-using RenderingAttributes = LayerStateStack::RenderingAttributes;
+using MutatorContext = LayerStateStack::MutatorContext;
 
 void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
   if (canvas_) {
@@ -18,11 +18,7 @@ void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
   if (canvas) {
     canvas_restore_count_ = canvas->getSaveCount();
     canvas_ = canvas;
-    RenderingAttributes attributes;
-    for (auto& state : state_stack_) {
-      state->reapply(&attributes, canvas, nullptr);
-    }
-    FML_DCHECK(attributes == outstanding_);
+    reapply_all(canvas, nullptr);
   }
 }
 
@@ -34,153 +30,274 @@ void LayerStateStack::set_builder_delegate(DisplayListBuilder* builder) {
   if (builder) {
     builder_restore_count_ = builder->getSaveCount();
     builder_ = builder;
-    RenderingAttributes attributes;
-    for (auto& state : state_stack_) {
-      state->reapply(&attributes, nullptr, builder);
-    }
-    FML_DCHECK(attributes == outstanding_);
+    reapply_all(nullptr, builder);
   }
+}
+
+void LayerStateStack::reapply_all(SkCanvas* canvas,
+                                  DisplayListBuilder* builder) {
+  // We use a local RenderingAttributes instance so that it can track the
+  // necessary state changes independently as they occur in the stack.
+  // Reusing |outstanding_| would wreak havoc on the current state of
+  // the stack. When we are finished, though, the local attributes
+  // contents should match the current outstanding_ values;
+  RenderingAttributes attributes;
+  for (auto& state : state_stack_) {
+    state->reapply(&attributes, canvas, builder);
+  }
+  FML_DCHECK(attributes == outstanding_);
 }
 
 AutoRestore::AutoRestore(LayerStateStack* stack)
-    : stack_(stack), stack_restore_count_(stack->getStackCount()) {}
+    : layer_state_stack_(stack),
+      stack_restore_count_(stack->stack_count()),
+      attributes_pushed_(stack->outstanding_.pushed) {}
 
 AutoRestore::~AutoRestore() {
-  stack_->restoreToCount(stack_restore_count_);
-}
-
-static bool needsResolve(RenderingAttributes& outstanding, int flags) {
-  if (outstanding.opacity < SK_Scalar1 &&
-      (flags & LayerStateStack::CALLER_CAN_APPLY_OPACITY)) {
-    return true;
-  }
-  // Check IF and CF eventually...
-  return false;
+  layer_state_stack_->restore_to_count(stack_restore_count_);
+  layer_state_stack_->outstanding_.pushed = attributes_pushed_;
 }
 
 AutoRestore LayerStateStack::applyState(const SkRect& bounds,
                                         int can_apply_flags) {
-  auto ret = LayerStateStack::AutoRestore(this);
-  if (needsResolve(outstanding_, can_apply_flags)) {
-    resolve(bounds);
+  auto ret = AutoRestore(this);
+  if (needs_save_layer(can_apply_flags)) {
+    save_layer(bounds);
   }
   return ret;
 }
 
-const SkPaint* LayerStateStack::sk_paint() {
-  if (needsResolve(outstanding_, 0)) {
-    temp_sk_paint_.setAlphaf(outstanding_.opacity);
-    // set IF and CF eventually...
-    return &temp_sk_paint_;
+SkPaint* LayerStateStack::RenderingAttributes::fill(SkPaint& paint) {
+  SkPaint* ret = nullptr;
+  if (opacity < SK_Scalar1) {
+    paint.setAlphaf(std::max(opacity, 0.0f));
+    ret = &paint;
+  } else {
+    paint.setAlphaf(SK_Scalar1);
   }
-  return nullptr;
+  if (color_filter) {
+    paint.setColorFilter(color_filter->skia_object());
+    ret = &paint;
+  } else {
+    paint.setColorFilter(nullptr);
+  }
+  if (image_filter) {
+    paint.setImageFilter(image_filter->skia_object());
+    ret = &paint;
+  } else {
+    paint.setImageFilter(nullptr);
+  }
+  return ret;
 }
 
-const DlPaint* LayerStateStack::dl_paint() {
-  if (needsResolve(outstanding_, 0)) {
-    temp_dl_paint_.setOpacity(outstanding_.opacity);
-    return &temp_dl_paint_;
+DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint) {
+  DlPaint* ret = nullptr;
+  if (opacity < SK_Scalar1) {
+    paint.setOpacity(std::max(opacity, 0.0f));
+    ret = &paint;
+  } else {
+    paint.setOpacity(SK_Scalar1);
   }
-  return nullptr;
+  paint.setColorFilter(color_filter);
+  if (color_filter) {
+    ret = &paint;
+  }
+  paint.setImageFilter(image_filter);
+  if (image_filter) {
+    ret = &paint;
+  }
+  return ret;
 }
 
-AutoRestore LayerStateStack::save() {
-  auto ret = LayerStateStack::AutoRestore(this);
+MutatorContext LayerStateStack::save() {
+  auto ret = MutatorContext(this);
   state_stack_.emplace_back(std::make_unique<SaveEntry>());
   state_stack_.back()->apply(&outstanding_, canvas_, builder_);
   return ret;
 }
 
-AutoRestore LayerStateStack::saveLayer(const SkRect* bounds) {
-  auto ret = LayerStateStack::AutoRestore(this);
-  state_stack_.emplace_back(
-      std::make_unique<SaveLayerEntry>(bounds));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
-  return ret;
+void MutatorContext::saveLayer(const SkRect& bounds) {
+  layer_state_stack_->save_layer(bounds);
 }
 
-AutoRestore LayerStateStack::pushOpacity(const SkRect* bounds,
-                                         SkScalar opacity) {
-  auto ret = AutoRestore(this);
+void MutatorContext::applyOpacity(const SkRect& bounds, SkScalar opacity) {
   if (opacity < SK_Scalar1) {
-    pushAttributes();
-    state_stack_.emplace_back(
-        std::make_unique<OpacityEntry>(bounds, opacity));
-    state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+    layer_state_stack_->push_attributes();
+    layer_state_stack_->maybe_save_layer(bounds, opacity);
+    layer_state_stack_->push_opacity(opacity);
   }
-  return ret;
 }
 
-AutoRestore LayerStateStack::pushImageFilter(
-    const SkRect* bounds,
+void MutatorContext::applyImageFilter(
+    const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter> filter) {
-  auto ret = LayerStateStack::AutoRestore(this);
-  state_stack_.emplace_back(
-      std::make_unique<ImageFilterEntry>(bounds, filter));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
-  return ret;
+  layer_state_stack_->push_attributes();
+  layer_state_stack_->maybe_save_layer(bounds, filter);
+  layer_state_stack_->push_image_filter(filter);
 }
 
-AutoRestore LayerStateStack::pushColorFilter(
-    const SkRect* bounds,
+void MutatorContext::applyColorFilter(
+    const SkRect& bounds,
     const std::shared_ptr<const DlColorFilter> filter) {
-  auto ret = LayerStateStack::AutoRestore(this);
-  state_stack_.emplace_back(
-      std::make_unique<ColorFilterEntry>(bounds, filter));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
-  return ret;
+  layer_state_stack_->push_attributes();
+  layer_state_stack_->maybe_save_layer(bounds, filter);
+  layer_state_stack_->push_color_filter(filter);
 }
 
-AutoRestore LayerStateStack::pushBackdropFilter(
-    const SkRect* bounds,
+void MutatorContext::applyBackdropFilter(
+    const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter> filter,
     DlBlendMode blend_mode) {
-  auto ret = LayerStateStack::AutoRestore(this);
-  state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
-      bounds, filter, blend_mode));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
-  return ret;
+  layer_state_stack_->push_backdrop(bounds, filter, blend_mode);
 }
 
-void LayerStateStack::translate(SkScalar tx, SkScalar ty) {
-  state_stack_.emplace_back(std::make_unique<TranslateEntry>(tx, ty));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+void MutatorContext::translate(SkScalar tx, SkScalar ty) {
+  layer_state_stack_->push_translate(tx, ty);
 }
 
-void LayerStateStack::transform(const SkMatrix& matrix) {
-  state_stack_.emplace_back(std::make_unique<TransformMatrixEntry>(matrix));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+void MutatorContext::transform(const SkMatrix& matrix) {
+  layer_state_stack_->push_transform(matrix);
 }
 
-void LayerStateStack::transform(const SkM44& matrix) {
-  state_stack_.emplace_back(std::make_unique<TransformM44Entry>(matrix));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+void MutatorContext::transform(const SkM44& m44) {
+  layer_state_stack_->push_transform(m44);
 }
 
-void LayerStateStack::clipRect(const SkRect& rect, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipRectEntry>(rect, is_aa));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+void MutatorContext::clipRect(const SkRect& rect, bool is_aa) {
+  layer_state_stack_->push_clip_rect(rect, is_aa);
 }
 
-void LayerStateStack::clipRRect(const SkRRect& rrect, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipRRectEntry>(rrect, is_aa));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+void MutatorContext::clipRRect(const SkRRect& rrect, bool is_aa) {
+  layer_state_stack_->push_clip_rrect(rrect, is_aa);
 }
 
-void LayerStateStack::clipPath(const SkPath& path, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipPathEntry>(path, is_aa));
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+void MutatorContext::clipPath(const SkPath& path, bool is_aa) {
+  layer_state_stack_->push_clip_path(path, is_aa);
 }
 
-void LayerStateStack::restoreToCount(size_t restore_count) {
+void LayerStateStack::restore_to_count(size_t restore_count) {
   while (state_stack_.size() > restore_count) {
     state_stack_.back()->restore(&outstanding_, canvas_, builder_);
     state_stack_.pop_back();
   }
 }
 
-void LayerStateStack::pushAttributes() {
-  state_stack_.emplace_back(std::make_unique<AttributesEntry>(outstanding_));
+void LayerStateStack::push_attributes() {
+  if (!outstanding_.pushed) {
+    state_stack_.emplace_back(std::make_unique<AttributesEntry>(outstanding_));
+    outstanding_.pushed = true;
+  }
+}
+
+void LayerStateStack::push_opacity(SkScalar opacity) {
+  state_stack_.emplace_back(std::make_unique<OpacityEntry>(opacity));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_color_filter(
+    const std::shared_ptr<const DlColorFilter> filter) {
+  state_stack_.emplace_back(std::make_unique<ColorFilterEntry>(filter));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_image_filter(
+    const std::shared_ptr<const DlImageFilter> filter) {
+  state_stack_.emplace_back(std::make_unique<ImageFilterEntry>(filter));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_backdrop(
+    const SkRect& bounds,
+    const std::shared_ptr<const DlImageFilter> filter,
+    DlBlendMode blend_mode) {
+  state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
+      bounds, filter, blend_mode, do_checkerboard_));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_translate(SkScalar tx, SkScalar ty) {
+  state_stack_.emplace_back(std::make_unique<TranslateEntry>(tx, ty));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_transform(const SkM44& m44) {
+  state_stack_.emplace_back(std::make_unique<TransformM44Entry>(m44));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_transform(const SkMatrix& matrix) {
+  state_stack_.emplace_back(std::make_unique<TransformMatrixEntry>(matrix));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_clip_rect(const SkRect& rect, bool is_aa) {
+  state_stack_.emplace_back(std::make_unique<ClipRectEntry>(rect, is_aa));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_clip_rrect(const SkRRect& rrect, bool is_aa) {
+  state_stack_.emplace_back(std::make_unique<ClipRRectEntry>(rrect, is_aa));
+  apply_last_entry();
+}
+
+void LayerStateStack::push_clip_path(const SkPath& path, bool is_aa) {
+  state_stack_.emplace_back(std::make_unique<ClipPathEntry>(path, is_aa));
+  apply_last_entry();
+}
+
+bool LayerStateStack::needs_save_layer(int flags) const {
+  if (outstanding_.opacity < SK_Scalar1 &&
+      (flags & LayerStateStack::CALLER_CAN_APPLY_OPACITY) == 0) {
+    return true;
+  }
+  if (outstanding_.image_filter &&
+      (flags & LayerStateStack::CALLER_CAN_APPLY_IMAGE_FILTER) == 0) {
+    return true;
+  }
+  if (outstanding_.color_filter &&
+      (flags & LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER) == 0) {
+    return true;
+  }
+  // Check IF and CF eventually...
+  return false;
+}
+
+void LayerStateStack::save_layer(const SkRect& bounds) {
+  state_stack_.emplace_back(
+      std::make_unique<SaveLayerEntry>(bounds, do_checkerboard_));
+  apply_last_entry();
+  outstanding_ = {};
+}
+
+void LayerStateStack::maybe_save_layer(const SkRect& bounds, int apply_flags) {
+  if (needs_save_layer(apply_flags)) {
+    save_layer(bounds);
+  }
+}
+
+void LayerStateStack::maybe_save_layer(const SkRect& bounds, SkScalar opacity) {
+  if (outstanding_.color_filter) {
+    save_layer(bounds);
+  }
+}
+
+void LayerStateStack::maybe_save_layer(
+    const SkRect& bounds,
+    const std::shared_ptr<const DlColorFilter> filter) {
+  if (outstanding_.color_filter || outstanding_.image_filter) {
+    // TBD: compose the 2 color filters together.
+    save_layer(bounds);
+  }
+}
+
+void LayerStateStack::maybe_save_layer(
+    const SkRect& bounds,
+    const std::shared_ptr<const DlImageFilter> filter) {
+  if (outstanding_.image_filter || outstanding_.color_filter ||
+      outstanding_.opacity < SK_Scalar1) {
+    // TBD: compose the 2 image filters together.
+    save_layer(bounds);
+  }
 }
 
 void LayerStateStack::AttributesEntry::restore(
@@ -217,22 +334,24 @@ void LayerStateStack::SaveLayerEntry::apply(RenderingAttributes* attributes,
                                             SkCanvas* canvas,
                                             DisplayListBuilder* builder) const {
   if (canvas) {
-    canvas->saveLayer(save_bounds(), nullptr);
+    SkPaint paint;
+    canvas->saveLayer(bounds_, attributes->fill(paint));
   }
   if (builder) {
-    builder->saveLayer(save_bounds(), nullptr);
+    DlPaint paint;
+    builder->saveLayer(&bounds_, attributes->fill(paint));
   }
 }
 
 void LayerStateStack::SaveLayerEntry::do_checkerboard(
     SkCanvas* canvas,
     DisplayListBuilder* builder) const {
-  if (do_checkerboard_ && bounds_.has_value()) {
+  if (do_checkerboard_) {
     if (canvas) {
-      SkDrawCheckerboard(canvas, bounds_.value());
+      SkDrawCheckerboard(canvas, bounds_);
     }
     if (builder) {
-      DlDrawCheckerboard(builder, bounds_.value());
+      DlDrawCheckerboard(builder, bounds_);
     }
   }
 }
@@ -243,58 +362,18 @@ void LayerStateStack::OpacityEntry::apply(RenderingAttributes* attributes,
   attributes->opacity *= opacity_;
 }
 
-void LayerStateStack::resolve(const SkRect& bounds) {
-  if (!canvas_ && !builder_) {
-    return;
-  }
-  SkScalar opacity = outstanding_.opacity;
-  if (opacity >= SK_Scalar1) {
-    return;
-  }
-  pushAttributes();
-  if (canvas_) {
-    SkPaint paint;
-    paint.setAlphaf(opacity);
-    canvas_->saveLayer(bounds, sk_paint());
-  }
-  if (builder_) {
-    DlPaint paint;
-    paint.setOpacity(opacity);
-    builder_->saveLayer(&bounds, dl_paint());
-  }
-  outstanding_ = {};
-}
-
 void LayerStateStack::ImageFilterEntry::apply(
     RenderingAttributes* attributes,
     SkCanvas* canvas,
     DisplayListBuilder* builder) const {
-  if (canvas) {
-    SkPaint paint;
-    paint.setImageFilter(filter_ ? filter_->skia_object() : nullptr);
-    canvas->saveLayer(save_bounds(), &paint);
-  }
-  if (builder) {
-    DlPaint paint;
-    paint.setImageFilter(filter_);
-    builder->saveLayer(save_bounds(), &paint);
-  }
+  attributes->image_filter = filter_;
 }
 
 void LayerStateStack::ColorFilterEntry::apply(
     RenderingAttributes* attributes,
     SkCanvas* canvas,
     DisplayListBuilder* builder) const {
-  if (canvas) {
-    SkPaint paint;
-    paint.setColorFilter(filter_ ? filter_->skia_object() : nullptr);
-    canvas->saveLayer(save_bounds(), &paint);
-  }
-  if (builder) {
-    DlPaint paint;
-    paint.setColorFilter(filter_);
-    builder->saveLayer(save_bounds(), &paint);
-  }
+  attributes->color_filter = filter_;
 }
 
 void LayerStateStack::BackdropFilterEntry::apply(
@@ -305,14 +384,22 @@ void LayerStateStack::BackdropFilterEntry::apply(
     sk_sp<SkImageFilter> backdrop_filter =
         filter_ ? filter_->skia_object() : nullptr;
     SkPaint paint;
-    paint.setBlendMode(ToSk(blend_mode_));
-    canvas->saveLayer(SkCanvas::SaveLayerRec{save_bounds(), &paint,
-                                             backdrop_filter.get(), 0});
+    SkPaint* pPaint = attributes->fill(paint);
+    if (blend_mode_ != DlBlendMode::kSrcOver) {
+      paint.setBlendMode(ToSk(blend_mode_));
+      pPaint = &paint;
+    }
+    canvas->saveLayer(
+        SkCanvas::SaveLayerRec{&bounds_, pPaint, backdrop_filter.get(), 0});
   }
   if (builder) {
     DlPaint paint;
-    paint.setBlendMode(blend_mode_);
-    builder->saveLayer(save_bounds(), &paint, filter_.get());
+    DlPaint* pPaint = attributes->fill(paint);
+    if (blend_mode_ != DlBlendMode::kSrcOver) {
+      paint.setBlendMode(blend_mode_);
+      pPaint = &paint;
+    }
+    builder->saveLayer(&bounds_, pPaint, filter_.get());
   }
 }
 
@@ -327,16 +414,7 @@ void LayerStateStack::BackdropFilterEntry::reapply(
   // perfect if the BlendMode is not associative as we will be
   // compositing multiple parts of the content in batches.
   // Luckily the most common SrcOver is associative.
-  if (canvas) {
-    SkPaint paint;
-    paint.setBlendMode(ToSk(blend_mode_));
-    canvas->saveLayer(save_bounds(), &paint);
-  }
-  if (builder) {
-    DlPaint paint;
-    paint.setBlendMode(blend_mode_);
-    builder->saveLayer(save_bounds(), &paint);
-  }
+  SaveLayerEntry::apply(attributes, canvas, builder);
 }
 
 void LayerStateStack::TranslateEntry::apply(RenderingAttributes* attributes,

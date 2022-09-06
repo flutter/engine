@@ -112,10 +112,11 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
   DisplayListBuilder* builder = frame.display_list_builder();
   LayerStateStack state_stack;
+  state_stack.set_checkerboard_save_layers(checkerboard_offscreen_layers_);
   if (builder) {
-    state_stack.setBuilderDelegate(builder);
+    state_stack.set_builder_delegate(builder);
   } else {
-    state_stack.setCanvasDelegate(frame.canvas());
+    state_stack.set_canvas_delegate(frame.canvas());
   }
 
   // clear the previous snapshots.
@@ -190,7 +191,8 @@ sk_sp<DisplayList> LayerTree::Flatten(
   };
 
   LayerStateStack state_stack;
-  state_stack.setBuilderDelegate(recorder);
+  state_stack.set_checkerboard_save_layers(false);
+  state_stack.set_builder_delegate(recorder);
 
   PaintContext paint_context = {
       // clang-format off

@@ -70,8 +70,8 @@ void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  auto save = context.state_stack.save();
-  context.state_stack.transform(transform_);
+  auto mutator = context.state_stack.save();
+  mutator.transform(transform_);
 
   PaintChildren(context);
 }

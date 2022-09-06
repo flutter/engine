@@ -73,7 +73,8 @@ TEST_F(ClipRectLayerTest, PaintingCulledLayerDies) {
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_bounds)}));
 
-  paint_context().state_stack.clipRect(distant_bounds, false);
+  auto mutator = paint_context().state_stack.save();
+  mutator.clipRect(distant_bounds, false);
   EXPECT_FALSE(mock_layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->needs_painting(paint_context()));
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),

@@ -126,7 +126,9 @@ class Layer {
   // layer can render if it plans to use a saveLayer call in its
   // |Paint| method.
   static constexpr int SAVE_LAYER_RENDER_FLAGS =
-      LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+      LayerStateStack::CALLER_CAN_APPLY_OPACITY |
+      LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER |
+      LayerStateStack::CALLER_CAN_APPLY_IMAGE_FILTER;
 
   // The state attribute flags that represent which attributes a
   // layer can render if it will be rendering its content/children

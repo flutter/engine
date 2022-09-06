@@ -62,8 +62,9 @@ void TextureLayer::Paint(PaintContext& context) const {
     return;
   }
 
+  SkPaint paint;
   texture->Paint(*context.canvas, paint_bounds(), freeze_, context.gr_context,
-                 ToSk(sampling_), context.state_stack.sk_paint());
+                 ToSk(sampling_), context.state_stack.fill(paint));
 }
 
 }  // namespace flutter

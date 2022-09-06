@@ -108,8 +108,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {
-    canvas_state_stack_.setCanvasDelegate(&TestT::mock_canvas());
-    display_list_state_stack_.setBuilderDelegate(display_list_recorder_);
+    canvas_state_stack_.set_canvas_delegate(&TestT::mock_canvas());
+    display_list_state_stack_.set_builder_delegate(display_list_recorder_);
     use_null_raster_cache();
   }
 

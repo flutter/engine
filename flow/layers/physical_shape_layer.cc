@@ -73,6 +73,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     paint_bounds.join(child_paint_bounds);
   }
 
+  context->renderable_state_flags =
+      UsesSaveLayer() ? SAVE_LAYER_RENDER_FLAGS : 0;
   set_paint_bounds(paint_bounds);
 }
 
@@ -90,11 +92,10 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
         SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
-  auto save = context.state_stack.save();
+  auto mutator = context.state_stack.save();
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
-    context.state_stack.clipPath(path_, true);
-    auto saveLayer = context.state_stack.saveLayer(
-        &paint_bounds(), checkerboard_bounds(context));
+    mutator.clipPath(path_, true);
+    mutator.saveLayer(paint_bounds());
     context.canvas->drawColor(color_);
     PaintChildren(context);
   } else {
@@ -105,7 +106,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
     // Call drawPath without clip if possible for better performance.
     context.canvas->drawPath(path_, paint);
     if (clip_behavior_ != Clip::none) {
-      context.state_stack.clipPath(path_, clip_behavior_ == Clip::antiAlias);
+      mutator.clipPath(path_, clip_behavior_ == Clip::antiAlias);
     }
     PaintChildren(context);
   }

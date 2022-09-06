@@ -61,7 +61,9 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
 
   // AutoCachePaint cache_paint(context);
   // cache_paint.setColorFilter(filter_.get());
-  auto save = context.state_stack.saveWithColorFilter(&paint_bounds(), filter_);
+  auto mutator = context.state_stack.save();
+  mutator.applyColorFilter(paint_bounds(), filter_);
+
   PaintChildren(context);
 }
 
