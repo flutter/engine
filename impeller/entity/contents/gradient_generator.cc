@@ -4,14 +4,14 @@
 
 #include <algorithm>
 
-#include "gradient_generator.h"
+#include "impeller/renderer/gradient_generator.h"
 
 #include "flutter/fml/logging.h"
-#include "flutter/impeller/renderer/context.h"
-#include "flutter/impeller/renderer/texture.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/geometry/gradient.h"
+#include "impeller/renderer/context.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/texture.h"
 
 namespace impeller {
 

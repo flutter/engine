@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-#include "gradient.h"
+#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
