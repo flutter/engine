@@ -1,4 +1,4 @@
-Signature: b211c59707f78eea9c03e2ddca54b6a5
+Signature: ceba30abe3612584a06f73411495bcc1
 
 UNUSED LICENSES:
 
@@ -1354,6 +1354,8 @@ FILE: ../../../third_party/skia/src/svg/BUILD.bazel
 FILE: ../../../third_party/skia/src/text/BUILD.bazel
 FILE: ../../../third_party/skia/src/text/gpu/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/BUILD.bazel
+FILE: ../../../third_party/skia/src/utils/mac/BUILD.bazel
+FILE: ../../../third_party/skia/src/utils/win/BUILD.bazel
 FILE: ../../../third_party/skia/src/xml/BUILD.bazel
 FILE: ../../../third_party/skia/src/xps/BUILD.bazel
 FILE: ../../../third_party/skia/toolchain/BUILD.bazel
@@ -2542,6 +2544,7 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
 FILE: ../../../third_party/skia/src/gpu/KeyBuilder.h
 FILE: ../../../third_party/skia/src/gpu/ResourceKey.cpp
 FILE: ../../../third_party/skia/src/gpu/ShaderErrorHandler.cpp
+FILE: ../../../third_party/skia/src/gpu/SkRenderEngineAbortf.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrDstProxyView.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrEagerVertexAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrMeshDrawTarget.cpp
@@ -3611,14 +3614,14 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/ops/StrokeRectOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/StrokeRectOp.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrAtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrAtlasManager.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkAMDMemoryAllocator.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkAMDMemoryAllocator.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkCommandPool.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkCommandPool.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkImageLayout.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkSamplerYcbcrConversion.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkSamplerYcbcrConversion.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkTypesPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/VulkanAMDMemoryAllocator.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/VulkanAMDMemoryAllocator.h
 FILE: ../../../third_party/skia/src/image/SkImage_GpuBase.cpp
 FILE: ../../../third_party/skia/src/image/SkImage_GpuBase.h
 FILE: ../../../third_party/skia/src/image/SkImage_GpuYUVA.cpp
@@ -3923,8 +3926,6 @@ FILE: ../../../third_party/skia/src/utils/SkPolyUtils.h
 FILE: ../../../third_party/skia/src/utils/SkShadowTessellator.cpp
 FILE: ../../../third_party/skia/src/utils/SkShadowTessellator.h
 FILE: ../../../third_party/skia/src/utils/SkShadowUtils.cpp
-FILE: ../../../third_party/skia/src/utils/SkThreadUtils_pthread.cpp
-FILE: ../../../third_party/skia/src/utils/SkThreadUtils_win.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2017 Google Inc.
 
@@ -4097,6 +4098,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.h
+FILE: ../../../third_party/skia/src/sksl/SkSLInliner.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLInliner.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMemoryPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLPool.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLPool.h
@@ -5581,6 +5584,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/ResourceCache.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/ResourceCache.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Sampler.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Sampler.h
+FILE: ../../../third_party/skia/src/gpu/graphite/SpecialImage_Graphite.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/SynchronizeToCpuTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/SynchronizeToCpuTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureProxyView.h
@@ -5630,6 +5634,7 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsSameExpressionTree.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsTrivialExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLNoOpErrorReporter.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.h
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLAddConstToVarModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateEmptyStatements.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinFunctions.cpp
 FILE: ../../../third_party/skia/src/text/StrikeForGPU.cpp
@@ -7153,6 +7158,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h
+FILE: ../../../third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanTypes.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.h

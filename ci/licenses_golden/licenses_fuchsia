@@ -1,4 +1,4 @@
-Signature: 27b6d9ff20cbe2cbdf48ea47f768c0dd
+Signature: 11b0a72ed10e9281c4a3d1225c62a130
 
 UNUSED LICENSES:
 
@@ -3236,7 +3236,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/internal_callabl
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/txn_header.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/visitor.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/internal.c
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/txn_header.c
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/event_sender.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/member_connector.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/service_connector.h
@@ -3636,6 +3635,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/media_buttons.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/registry.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/text.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/touch.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/overview.fidl
