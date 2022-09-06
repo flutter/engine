@@ -1579,6 +1579,35 @@ TEST_P(EntityTest, ColorMatrixFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(EntityTest, ColorMatrixFilterOnlyShowGreen) {
+  auto image = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(image);
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // Set the color matrix filter.
+    FilterContents::ColorMatrix matrix = {
+        0, 0, 0, 0, 0,  //
+        1, 0, 0, 0, 0,  //
+        0, 0, 0, 0, 0,  //
+        0, 0, 0, 1, 0,  //
+    };
+
+    auto filter =
+        FilterContents::MakeColorMatrix(FilterInput::Make(image), matrix);
+
+    // Define the entity with the color matrix filter.
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({200, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetContents(filter);
+    return entity.Render(context, pass);
+  };
+
+  // Should output the boston image with a green filter.
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(EntityTest, ColorMatrixFilterEditable) {
   auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
   ASSERT_TRUE(bay_bridge);
