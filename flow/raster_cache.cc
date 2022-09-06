@@ -49,23 +49,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   canvas.resetMatrix();
   flow_.Step();
 
-  bool exceeds_bounds = rounded_bounds.fLeft + image_->dimensions().width() >
-                            SkScalarCeilToScalar(rounded_bounds.fRight) ||
-                        rounded_bounds.fTop + image_->dimensions().height() >
-                            SkScalarCeilToScalar(rounded_bounds.fBottom);
-
-  // Make sure raster cache doesn't bleed to physical pixels outside of
-  // original bounds. https://github.com/flutter/flutter/issues/110002
-  if (exceeds_bounds) {
-    canvas.save();
-    canvas.clipRect(SkRect::Make(rounded_bounds));
-  }
-
   canvas.drawImage(image_, rounded_bounds.fLeft, rounded_bounds.fTop,
                    SkSamplingOptions(), paint);
-  if (exceeds_bounds) {
-    canvas.restore();
-  }
 }
 
 RasterCache::RasterCache(size_t access_threshold,

@@ -809,13 +809,13 @@ TEST_F(RasterCacheTest, RasterCacheBleedingNoClipNeeded) {
                 MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
                 MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::DrawImageData{image, 200.6, 200.6,
+                    1, MockCanvas::DrawImageData{image, 200, 200,
                                                  SkSamplingOptions(), paint}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
 }
 
-TEST_F(RasterCacheTest, RasterCacheBleedingClipNeeded) {
+TEST_F(RasterCacheTest, RasterCacheBleedingClipStillNotNeeded) {
   SkImageInfo info =
       SkImageInfo::MakeN32(40, 40, SkAlphaType::kOpaque_SkAlphaType);
 
@@ -829,24 +829,17 @@ TEST_F(RasterCacheTest, RasterCacheBleedingClipNeeded) {
   auto paint = SkPaint();
   cache_result.draw(canvas, &paint);
 
-  EXPECT_EQ(
-      canvas.draw_calls(),
-      std::vector({
-          MockCanvas::DrawCall{0,
-                               MockCanvas::SetMatrixData{SkM44::Scale(2, 2)}},
-          MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-          MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
-          MockCanvas::DrawCall{1, MockCanvas::SaveData{2}},
-          MockCanvas::DrawCall{
-              2, MockCanvas::ClipRectData{SkRect::MakeLTRB(200, 200, 240, 240),
-                                          SkClipOp::kIntersect,
-                                          MockCanvas::kHard_ClipEdgeStyle}},
-          MockCanvas::DrawCall{
-              2, MockCanvas::DrawImageData{image, 200.6, 200.6,
-                                           SkSamplingOptions(), paint}},
-          MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-          MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
-      }));
+  EXPECT_EQ(canvas.draw_calls(),
+            std::vector({
+                MockCanvas::DrawCall{
+                    0, MockCanvas::SetMatrixData{SkM44::Scale(2, 2)}},
+                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
+                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawImageData{image, 200, 200,
+                                                 SkSamplingOptions(), paint}},
+                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
+            }));
 }
 
 }  // namespace testing
