@@ -31,7 +31,6 @@ class RasterCacheResult {
  public:
   RasterCacheResult(sk_sp<SkImage> image,
                     const SkRect& logical_rect,
-                    const SkPoint& texture_edge,
                     const char* type);
 
   virtual ~RasterCacheResult() = default;
@@ -49,8 +48,6 @@ class RasterCacheResult {
  private:
   sk_sp<SkImage> image_;
   SkRect logical_rect_;
-  // TBD: what to do with this. Find example where texture still jumps
-  SkPoint texture_edge_;
   fml::tracing::TraceFlow flow_;
 };
 

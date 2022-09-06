@@ -25,19 +25,13 @@ namespace flutter {
 
 RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
                                      const SkRect& logical_rect,
-                                     const SkPoint& texture_edge,
                                      const char* type)
-    : image_(std::move(image)),
-      logical_rect_(logical_rect),
-      texture_edge_(texture_edge),
-      flow_(type) {}
+    : image_(std::move(image)), logical_rect_(logical_rect), flow_(type) {}
 
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
-  SkRect bounds =
-      RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
   SkIRect rounded_bounds = RasterCacheUtil::GetRoundedOutDeviceBounds(
       logical_rect_, canvas.getTotalMatrix());
 #ifndef NDEBUG
@@ -46,25 +40,27 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   // introduce epsilon to solve the round-off error. The value of epsilon is
   // 1/512, which represents half of an AA sample.
   float epsilon = 1 / 512.0;
-  FML_DCHECK(image_->dimensions().width() - bounds.width() > -epsilon &&
-             image_->dimensions().height() - bounds.height() > -epsilon &&
-             image_->dimensions().width() - bounds.width() < 1 + epsilon &&
-             image_->dimensions().height() - bounds.height() < 1 + epsilon);
+  FML_DCHECK(
+      image_->dimensions().width() - rounded_bounds.width() > -epsilon &&
+      image_->dimensions().height() - rounded_bounds.height() > -epsilon &&
+      image_->dimensions().width() - rounded_bounds.width() < 1 + epsilon &&
+      image_->dimensions().height() - rounded_bounds.height() < 1 + epsilon);
 #endif
   canvas.resetMatrix();
   flow_.Step();
 
-  bool exceeds_bounds = bounds.fLeft + image_->dimensions().width() >
-                            SkScalarCeilToScalar(bounds.fRight) ||
-                        bounds.fTop + image_->dimensions().height() >
-                            SkScalarCeilToScalar(bounds.fBottom);
+  bool exceeds_bounds = rounded_bounds.fLeft + image_->dimensions().width() >
+                            SkScalarCeilToScalar(rounded_bounds.fRight) ||
+                        rounded_bounds.fTop + image_->dimensions().height() >
+                            SkScalarCeilToScalar(rounded_bounds.fBottom);
 
   // Make sure raster cache doesn't bleed to physical pixels outside of
   // original bounds. https://github.com/flutter/flutter/issues/110002
   if (exceeds_bounds) {
     canvas.save();
-    canvas.clipRect(SkRect::Make(bounds.roundOut()));
+    canvas.clipRect(SkRect::Make(rounded_bounds));
   }
+
   canvas.drawImage(image_, rounded_bounds.fLeft, rounded_bounds.fTop,
                    SkSamplingOptions(), paint);
   if (exceeds_bounds) {
@@ -88,15 +84,6 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkIRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
       context.logical_rect, context.matrix);
-  SkRect raw_dest_rect =
-      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-
-  // Rounding out the destination rect to size for a texture produces a small
-  // offset from the top corner of the logical rect to the top corner of the
-  // texture. Track this value so that cached layer children can be offset
-  // appropriately.
-  SkPoint texture_edge = SkPoint::Make(raw_dest_rect.fLeft - dest_rect.fLeft,
-                                       raw_dest_rect.fTop - dest_rect.fTop);
   const SkImageInfo image_info =
       SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
                                  sk_ref_sp(context.dst_color_space));
@@ -120,9 +107,8 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     draw_checkerboard(canvas, context.logical_rect);
   }
 
-  return std::make_unique<RasterCacheResult>(surface->makeImageSnapshot(),
-                                             context.logical_rect, texture_edge,
-                                             context.flow_type);
+  return std::make_unique<RasterCacheResult>(
+      surface->makeImageSnapshot(), context.logical_rect, context.flow_type);
 }
 
 bool RasterCache::UpdateCacheEntry(

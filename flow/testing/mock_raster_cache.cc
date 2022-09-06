@@ -17,10 +17,7 @@ namespace flutter {
 namespace testing {
 
 MockRasterCacheResult::MockRasterCacheResult(SkRect device_rect)
-    : RasterCacheResult(nullptr,
-                        SkRect::MakeEmpty(),
-                        SkPoint::Make(0, 0),
-                        "RasterCacheFlow::test"),
+    : RasterCacheResult(nullptr, SkRect::MakeEmpty(), "RasterCacheFlow::test"),
       device_rect_(device_rect) {}
 
 void MockRasterCache::AddMockLayer(int width, int height) {
