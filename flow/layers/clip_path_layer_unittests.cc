@@ -312,14 +312,12 @@ TEST_F(ClipPathLayerTest, OpacityInheritance) {
 
     // Double check first two children are compatible and non-overlapping
     clip_path_saveLayer->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->renderable_state_flags,
-              LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
     // Now add the overlapping child and test again, should still be compatible
     clip_path_saveLayer->Add(mock3);
     clip_path_saveLayer->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->renderable_state_flags,
-              LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
   }
 
   // An incompatible, but non-overlapping child for the following tests
@@ -355,14 +353,12 @@ TEST_F(ClipPathLayerTest, OpacityInheritance) {
 
     // Double check first two children are compatible and non-overlapping
     clip_path_saveLayer_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->renderable_state_flags,
-              LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
     // Now add the incompatible child and test again, should still be compatible
     clip_path_saveLayer_bad_child->Add(mock4);
     clip_path_saveLayer_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_EQ(context->renderable_state_flags,
-              LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
   }
 }
 
@@ -387,6 +383,7 @@ TEST_F(ClipPathLayerTest, OpacityInheritancePainting) {
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
+  DlPaint mock_paint = DlPaint().setAlpha(opacity_alpha);
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(clip_path_layer);
@@ -402,22 +399,10 @@ TEST_F(ClipPathLayerTest, OpacityInheritancePainting) {
         expected_builder.save();
         expected_builder.clipPath(layer_clip, SkClipOp::kIntersect, true);
         /* child layer1 paint */ {
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&path1.getBounds(), true);
-          {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(path1);
-          }
-          expected_builder.restore();
+          expected_builder.drawPath(path1, mock_paint);
         }
         /* child layer2 paint */ {
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&path2.getBounds(), true);
-          {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(path2);
-          }
-          expected_builder.restore();
+          expected_builder.drawPath(path2, mock_paint);
         }
         expected_builder.restore();
       }
@@ -426,7 +411,7 @@ TEST_F(ClipPathLayerTest, OpacityInheritancePainting) {
   }
 
   opacity_layer->Paint(display_list_paint_context());
-  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
@@ -444,14 +429,15 @@ TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
   clip_path_layer->Add(mock1);
   clip_path_layer->Add(mock2);
 
-  // ClipRectLayer will pass through compatibility from multiple
-  // non-overlapping compatible children
+  // ClipRectLayer will implement compatibility itself for multiple
+  // overlapping compatible children
   PrerollContext* context = preroll_context();
   clip_path_layer->Preroll(context, SkMatrix::I());
-  EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+  EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
   int opacity_alpha = 0x7F;
+  DlPaint save_layer_paint = DlPaint().setAlpha(opacity_alpha);
+  DlPaint mock_paint = DlPaint();
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(clip_path_layer);
@@ -466,14 +452,12 @@ TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
       /* ClipRectLayer::Paint() */ {
         expected_builder.save();
         expected_builder.clipPath(layer_clip, SkClipOp::kIntersect, true);
-        expected_builder.setColor(opacity_alpha << 24);
-        expected_builder.saveLayer(&children_bounds, true);
+        expected_builder.saveLayer(&children_bounds, &save_layer_paint);
         /* child layer1 paint */ {
-          expected_builder.setColor(0xFF000000);
-          expected_builder.drawPath(path1);
+          expected_builder.drawPath(path1, mock_paint);
         }
         /* child layer2 paint */ {  //
-          expected_builder.drawPath(path2);
+          expected_builder.drawPath(path2, mock_paint);
         }
         expected_builder.restore();
       }
@@ -482,7 +466,7 @@ TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
   }
 
   opacity_layer->Paint(display_list_paint_context());
-  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ClipPathLayerTest, LayerCached) {

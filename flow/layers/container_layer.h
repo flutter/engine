@@ -33,6 +33,9 @@ class ContainerLayer : public Layer {
   const ContainerLayer* as_container_layer() const override { return this; }
 
   const SkRect& child_paint_bounds() const { return child_paint_bounds_; }
+  void set_child_paint_bounds(const SkRect& bounds) {
+    child_paint_bounds_ = bounds;
+  }
 
   int children_rendering_state_flags() const {
     return children_rendering_state_flags_;

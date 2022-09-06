@@ -49,13 +49,10 @@ void LayerStateStack::reapply_all(SkCanvas* canvas,
 }
 
 AutoRestore::AutoRestore(LayerStateStack* stack)
-    : layer_state_stack_(stack),
-      stack_restore_count_(stack->stack_count()),
-      attributes_pushed_(stack->outstanding_.pushed) {}
+    : layer_state_stack_(stack), stack_restore_count_(stack->stack_count()) {}
 
 AutoRestore::~AutoRestore() {
   layer_state_stack_->restore_to_count(stack_restore_count_);
-  layer_state_stack_->outstanding_.pushed = attributes_pushed_;
 }
 
 AutoRestore LayerStateStack::applyState(const SkRect& bounds,
@@ -193,10 +190,7 @@ void LayerStateStack::restore_to_count(size_t restore_count) {
 }
 
 void LayerStateStack::push_attributes() {
-  if (!outstanding_.pushed) {
-    state_stack_.emplace_back(std::make_unique<AttributesEntry>(outstanding_));
-    outstanding_.pushed = true;
-  }
+  state_stack_.emplace_back(std::make_unique<AttributesEntry>(outstanding_));
 }
 
 void LayerStateStack::push_opacity(SkScalar opacity) {
@@ -268,7 +262,6 @@ bool LayerStateStack::needs_save_layer(int flags) const {
       (flags & LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER) == 0) {
     return true;
   }
-  // Check IF and CF eventually...
   return false;
 }
 
@@ -276,7 +269,6 @@ void LayerStateStack::save_layer(const SkRect& bounds) {
   state_stack_.emplace_back(std::make_unique<SaveLayerEntry>(
       bounds, DlBlendMode::kSrcOver, do_checkerboard_));
   apply_last_entry();
-  outstanding_ = {};
 }
 
 void LayerStateStack::maybe_save_layer(const SkRect& bounds, int apply_flags) {
@@ -351,6 +343,7 @@ void LayerStateStack::SaveLayerEntry::apply(RenderingAttributes* attributes,
     DlPaint paint;
     builder->saveLayer(&bounds_, attributes->fill(paint, blend_mode_));
   }
+  *attributes = {};
 }
 
 void LayerStateStack::SaveLayerEntry::do_checkerboard(
@@ -403,6 +396,7 @@ void LayerStateStack::BackdropFilterEntry::apply(
     DlPaint* pPaint = attributes->fill(paint, blend_mode_);
     builder->saveLayer(&bounds_, pPaint, filter_.get());
   }
+  *attributes = {};
 }
 
 void LayerStateStack::BackdropFilterEntry::reapply(

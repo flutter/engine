@@ -43,7 +43,6 @@ class LayerStateStack {
     friend class LayerStateStack;
 
     const size_t stack_restore_count_;
-    const bool attributes_pushed_;
   };
 
   static constexpr int CALLER_CAN_APPLY_OPACITY = 0x1;
@@ -204,7 +203,6 @@ class LayerStateStack {
     SkScalar opacity = SK_Scalar1;
     std::shared_ptr<const DlColorFilter> color_filter;
     std::shared_ptr<const DlImageFilter> image_filter;
-    bool pushed = false;
 
     SkPaint* fill(SkPaint& paint, DlBlendMode mode = DlBlendMode::kSrcOver);
     DlPaint* fill(DlPaint& paint, DlBlendMode mode = DlBlendMode::kSrcOver);

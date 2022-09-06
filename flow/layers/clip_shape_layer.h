@@ -96,7 +96,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     // saveWithOpacity optimizes the case where opacity >= 1.0
     // to a simple saveLayer
-    mutator.saveLayer(child_paint_bounds());
+    mutator.saveLayer(paint_bounds());
     PaintChildren(context);
   }
 

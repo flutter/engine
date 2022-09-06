@@ -74,14 +74,9 @@ TEST_F(ColorFilterLayerTest, EmptyFilter) {
   SkPaint filter_paint;
   filter_paint.setColorFilter(nullptr);
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                    nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({MockCanvas::DrawCall{
+                0, MockCanvas::DrawPathData{child_path, child_paint}}}));
 }
 
 TEST_F(ColorFilterLayerTest, SimpleFilter) {

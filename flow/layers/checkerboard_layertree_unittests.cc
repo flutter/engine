@@ -18,7 +18,7 @@ namespace testing {
 using CheckerBoardLayerTest = LayerTest;
 
 #ifndef NDEBUG
-TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerNotCheckBoard) {
+TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerNotCheckerBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect cull_bounds = SkRect::MakeXYWH(0.0, 0.0, 2.0, 4.0);
   const SkRect child_bounds = SkRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
@@ -68,7 +68,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
+TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckerBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect cull_bounds = SkRect::MakeXYWH(0.0, 0.0, 2.0, 4.0);
   const SkRect child_bounds = SkRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
@@ -118,7 +118,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerNotCheckBoard) {
+TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerNotCheckerBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
@@ -159,7 +159,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
+TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckerBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
@@ -200,7 +200,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerNotCheckBoard) {
+TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerNotCheckerBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
@@ -241,7 +241,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
+TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckerBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
@@ -282,7 +282,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
+TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckerBoard) {
   constexpr float initial_elevation = 20.0f;
   SkPath layer_path;
   layer_path.addRect(0, 0, 8, 8).close();
@@ -320,7 +320,7 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
-TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
+TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckerBoard) {
   constexpr float initial_elevation = 20.0f;
   SkPath layer_path;
   layer_path.addRect(0, 0, 8, 8).close();

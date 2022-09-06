@@ -59,10 +59,12 @@ void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void MockLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
-  auto restore = context.state_stack.applyState(
-      fake_paint_path_.getBounds(),
-      fake_opacity_compatible_ ? LayerStateStack::CALLER_CAN_APPLY_OPACITY : 0);
-  context.canvas->drawPath(fake_paint_path_, fake_paint_);
+  SkPaint paint = fake_paint_;
+  if (fake_opacity_compatible_) {
+    paint.setAlphaf(paint.getAlphaf() *
+                    context.state_stack.outstanding_opacity());
+  }
+  context.canvas->drawPath(fake_paint_path_, paint);
 }
 
 void MockCacheableContainerLayer::Preroll(PrerollContext* context,
