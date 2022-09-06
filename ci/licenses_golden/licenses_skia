@@ -1,4 +1,4 @@
-Signature: 950373efe7f0d4e6b509a3bc73faa1fd
+Signature: ceba30abe3612584a06f73411495bcc1
 
 UNUSED LICENSES:
 
@@ -1354,6 +1354,8 @@ FILE: ../../../third_party/skia/src/svg/BUILD.bazel
 FILE: ../../../third_party/skia/src/text/BUILD.bazel
 FILE: ../../../third_party/skia/src/text/gpu/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/BUILD.bazel
+FILE: ../../../third_party/skia/src/utils/mac/BUILD.bazel
+FILE: ../../../third_party/skia/src/utils/win/BUILD.bazel
 FILE: ../../../third_party/skia/src/xml/BUILD.bazel
 FILE: ../../../third_party/skia/src/xps/BUILD.bazel
 FILE: ../../../third_party/skia/toolchain/BUILD.bazel
@@ -3924,8 +3926,6 @@ FILE: ../../../third_party/skia/src/utils/SkPolyUtils.h
 FILE: ../../../third_party/skia/src/utils/SkShadowTessellator.cpp
 FILE: ../../../third_party/skia/src/utils/SkShadowTessellator.h
 FILE: ../../../third_party/skia/src/utils/SkShadowUtils.cpp
-FILE: ../../../third_party/skia/src/utils/SkThreadUtils_pthread.cpp
-FILE: ../../../third_party/skia/src/utils/SkThreadUtils_win.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2017 Google Inc.
 
