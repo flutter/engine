@@ -81,6 +81,14 @@ void Picture::dispose() {
   ClearDartWrapper();
 }
 
+size_t Picture::GetAllocationSize() const {
+  if (auto display_list = display_list_.skia_object()) {
+    return display_list->bytes() + sizeof(Picture);
+  } else {
+    return sizeof(Picture);
+  }
+}
+
 Dart_Handle Picture::RasterizeToImage(sk_sp<DisplayList> display_list,
                                       uint32_t width,
                                       uint32_t height,
