@@ -135,7 +135,6 @@ TEST_P(AiksTest, CanRenderTiledTexture) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -324,7 +323,6 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -578,7 +576,6 @@ TEST_P(AiksTest, CanRenderRadialGradient) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -704,7 +701,6 @@ TEST_P(AiksTest, CanRenderSweepGradient) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
