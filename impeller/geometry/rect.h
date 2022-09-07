@@ -194,14 +194,6 @@ struct TRect {
     return intersection;
   }
 
-  inline constexpr std::optional<TRect<T>> Intersection(
-      const std::optional<TRect>& o) const {
-    if (!o.has_value()) {
-      return std::nullopt;
-    }
-    return Intersection(o.value());
-  }
-
   constexpr bool IntersectsWithRect(const TRect& o) const {
     return Intersection(o).has_value();
   }
