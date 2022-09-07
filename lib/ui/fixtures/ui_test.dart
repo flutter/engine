@@ -926,10 +926,15 @@ void hooksTests() {
   _finish();
 }
 
+/// Sends `true` on [port] if the isolate executing the function is not a root
+/// isolate.
 void _backgroundRootIsolateTestMain(SendPort port) {
   port.send(RootIsolateToken.instance == null);
 }
 
+/// Sends `true` on [port] if [PlatformDispatcher.sendPortPlatformMessage]
+/// throws an exception without calling
+/// [PlatformDispatcher.registerBackgroundIsolate].
 void _backgroundIsolateSendWithoutRegistering(SendPort port) {
   bool didError = false;
   ReceivePort messagePort = ReceivePort();

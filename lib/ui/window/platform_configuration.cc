@@ -311,7 +311,9 @@ Dart_Handle PlatformConfigurationNativeApi::SendPlatformMessage(
   UIDartState* dart_state = UIDartState::Current();
 
   if (!dart_state->platform_configuration()) {
-    return tonic::ToDart("SendPlatformMessage only works on the root isolate.");
+    return tonic::ToDart(
+        "SendPlatformMessage only works on the root isolate, see "
+        "SendPortPlatformMessage.");
   }
 
   fml::RefPtr<PlatformMessageResponse> response;
@@ -437,11 +439,12 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
     int64_t isolate_id) {
   UIDartState* dart_state = UIDartState::Current();
   FML_DCHECK(dart_state && !dart_state->IsRootIsolate());
-  auto weak_platform_message_handler =
+  auto platform_message_handler =
       (*static_cast<std::shared_ptr<PlatformMessageHandlerStorage>*>(
-           Dart_CurrentIsolateGroupData()))
-          ->GetPlatformMessageHandler(isolate_id);
-  FML_DCHECK(weak_platform_message_handler.lock());
+          Dart_CurrentIsolateGroupData()));
+  FML_DCHECK(platform_message_handler);
+  auto weak_platform_message_handler =
+      platform_message_handler->GetPlatformMessageHandler(isolate_id);
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 

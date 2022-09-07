@@ -558,10 +558,11 @@ class PlatformDispatcher {
   /// Sends a message to a platform-specific plugin via a [SendPort].
   ///
   /// This operates similarly to [sendPlatformMessage] but is used when sending
-  /// messages from background isolates. [port] allows Flutter to know which
-  /// isolate to send the result to.  [name] is the name of the channel
-  /// communication will happen on.  [data] is the payload of the message.
-  /// [identifier] is a unique integer assigned to the message.
+  /// messages from background isolates. The [port] parameter allows Flutter to
+  /// know which isolate to send the result to. The [name] parameter is the name
+  /// of the channel communication will happen on. The [data] parameter is the
+  /// payload of the message. The [identifier] parameter is a unique integer
+  /// assigned to the message.
   void sendPortPlatformMessage(
     String name,
     ByteData? data,
