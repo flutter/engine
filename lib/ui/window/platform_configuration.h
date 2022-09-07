@@ -515,7 +515,7 @@ class PlatformConfigurationNativeApi {
   ///
   static int RequestDartPerformanceMode(int mode);
 
-  static int64_t GetRootIsolateId();
+  static int64_t GetRootIsolateToken();
 
   static void RegisterBackgroundIsolate(int64_t isolate_id);
 };

@@ -75,19 +75,19 @@ ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
 
 /// A token that represents a root isolate.
 class RootIsolateToken {
-  RootIsolateToken._(this._rootIsolateId);
+  RootIsolateToken._(this._token);
 
-  final int _rootIsolateId;
+  final int _token;
 
   /// The token for the root isolate that is executing this Dart code.  If this
   /// Dart code is not executing on a root isolate [instance] will be null.
   static final RootIsolateToken? instance = () {
-    final int rootIsolateId = __getRootIsolateId();
-    return rootIsolateId == 0 ? null : RootIsolateToken._(rootIsolateId);
+    final int token = __getRootIsolateToken();
+    return token == 0 ? null : RootIsolateToken._(token);
   }();
 
-  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateId')
-  external static int __getRootIsolateId();
+  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateToken')
+  external static int __getRootIsolateToken();
 }
 
 /// Platform event dispatcher singleton.
@@ -589,7 +589,7 @@ class PlatformDispatcher {
       // Issue: https://github.com/flutter/flutter/issues/13937
       throw UnimplementedError("Platform doesn't yet support platform channels on background isolates.");
     }
-    __registerBackgroundIsolate(token._rootIsolateId);
+    __registerBackgroundIsolate(token._token);
   }
   @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);

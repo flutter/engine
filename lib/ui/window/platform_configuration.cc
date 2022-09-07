@@ -429,10 +429,10 @@ std::string PlatformConfigurationNativeApi::DefaultRouteName() {
       ->DefaultRouteName();
 }
 
-int64_t PlatformConfigurationNativeApi::GetRootIsolateId() {
+int64_t PlatformConfigurationNativeApi::GetRootIsolateToken() {
   UIDartState* dart_state = UIDartState::Current();
   FML_DCHECK(dart_state);
-  return dart_state->GetRootIsolateId();
+  return dart_state->GetRootIsolateToken();
 }
 
 void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(

@@ -240,7 +240,7 @@ Dart_Handle UIDartState::HandlePlatformMessage(
   return Dart_Null();
 }
 
-int64_t UIDartState::GetRootIsolateId() const {
+int64_t UIDartState::GetRootIsolateToken() const {
   return IsRootIsolate() ? reinterpret_cast<int64_t>(this) : 0;
 }
 

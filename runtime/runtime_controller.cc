@@ -390,7 +390,7 @@ bool RuntimeController::LaunchRootIsolate(
 
   // Enable platform channels for background isolates.
   strong_root_isolate->GetIsolateGroupData().SetPlatformMessageHandler(
-      strong_root_isolate->GetRootIsolateId(),
+      strong_root_isolate->GetRootIsolateToken(),
       client_.GetPlatformMessageHandler());
 
   // The root isolate ivar is weak.

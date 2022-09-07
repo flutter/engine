@@ -100,7 +100,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::ComputePlatformResolvedLocale, 1) \
   V(PlatformConfigurationNativeApi::SendPlatformMessage, 3)           \
   V(PlatformConfigurationNativeApi::RespondToPlatformMessage, 2)      \
-  V(PlatformConfigurationNativeApi::GetRootIsolateId, 0)              \
+  V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
   V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
