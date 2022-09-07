@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 from deps_parser import VarImpl
-    
+
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
@@ -48,12 +48,11 @@ class TestDepsParserMethods(unittest.TestCase):
 
     def test_each_dep_has_upstream_url(self):
         # for each DEP in the deps file, check for an associated upstream URL in deps file
-
         for dep in self.deps:
             dep_repo = dep.split('@')[0]
             dep_name = dep_repo.split('/')[-1].split('.')[0]
-            if dep_name != "vulkan-deps":
-                # vulkan-deps is a collections of upstream deps, doesn't have one upstream URL
+            if dep_name != "vulkan-deps" and dep_name != "khronos":
+                # vulkan-deps and khronos do not have one upstream URL
                 # all other deps should have an associated upstream URL for vuln scanning purposes
                 self.assertTrue(dep_name in self.upstream_urls, msg = dep_name + " not found in upstream URL list")
 
