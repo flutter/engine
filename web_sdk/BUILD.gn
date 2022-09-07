@@ -21,6 +21,8 @@ web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
 
 group("web_sdk") {
   deps = [
+    ":copy_canvaskit",
+    ":copy_canvaskit_profiling",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk_sound",
     ":flutter_dartdevc_canvaskit_kernel_sdk",
@@ -29,8 +31,6 @@ group("web_sdk") {
     ":flutter_dartdevc_kernel_sdk_outline",
     ":flutter_dartdevc_kernel_sdk_outline_sound",
     ":flutter_dartdevc_kernel_sdk_sound",
-    ":copy_canvaskit",
-    ":copy_canvaskit_profiling",
   ]
 }
 
@@ -638,7 +638,9 @@ copy("copy_canvaskit") {
     "$canvaskit_out_dir/canvaskit.wasm",
   ]
 
-  outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/profiling/{{source_file_part}}" ]
+  outputs = [
+    "$root_out_dir/flutter_web_sdk/canvaskit/profiling/{{source_file_part}}",
+  ]
 }
 
 # Archives Flutter Web SDK
