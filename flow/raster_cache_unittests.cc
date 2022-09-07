@@ -159,11 +159,11 @@ TEST(RasterCache, SetCheckboardCacheImages) {
   };
 
   cache.SetCheckboardCacheImages(false);
-  cache.Rasterize(r_context, dummy_draw_function, draw_checkerboard);
+  cache.Rasterize(r_context, true, dummy_draw_function, draw_checkerboard);
   ASSERT_FALSE(did_draw_checkerboard);
 
   cache.SetCheckboardCacheImages(true);
-  cache.Rasterize(r_context, dummy_draw_function, draw_checkerboard);
+  cache.Rasterize(r_context, true, dummy_draw_function, draw_checkerboard);
   ASSERT_TRUE(did_draw_checkerboard);
 }
 
@@ -797,8 +797,8 @@ TEST_F(RasterCacheTest, RasterCacheBleedingNoClipNeeded) {
   canvas.setMatrix(SkMatrix::Scale(2, 2));
   // Drawing cached image does not exceeds physical pixels of the original
   // bounds and does not need to be clipped.
-  auto cache_result =
-      RasterCacheResult(image, SkRect::MakeXYWH(100.3, 100.3, 20, 20), "");
+  auto cache_result = RasterCacheResult(
+      image, SkRect::MakeXYWH(100.3, 100.3, 20, 20), true, "");
   auto paint = SkPaint();
   cache_result.draw(canvas, &paint);
 
@@ -824,8 +824,8 @@ TEST_F(RasterCacheTest, RasterCacheBleedingClipStillNotNeeded) {
   auto canvas = MockCanvas();
   canvas.setMatrix(SkMatrix::Scale(2, 2));
 
-  auto cache_result =
-      RasterCacheResult(image, SkRect::MakeXYWH(100.3, 100.3, 19.6, 19.6), "");
+  auto cache_result = RasterCacheResult(
+      image, SkRect::MakeXYWH(100.3, 100.3, 19.6, 19.6), true, "");
   auto paint = SkPaint();
   cache_result.draw(canvas, &paint);
 

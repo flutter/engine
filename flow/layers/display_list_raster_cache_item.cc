@@ -162,7 +162,7 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       // clang-format on
   };
   return context.raster_cache->UpdateCacheEntry(
-      GetId().value(), r_context,
+      GetId().value(), true, r_context,
       [display_list = display_list_](SkCanvas* canvas) {
         display_list->RenderTo(canvas);
       });

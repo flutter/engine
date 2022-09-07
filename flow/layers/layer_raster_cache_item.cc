@@ -156,7 +156,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
           // clang-format on
       };
       return context.raster_cache->UpdateCacheEntry(
-          GetId().value(), r_context,
+          GetId().value(), false, r_context,
           [ctx = context, cache_state = cache_state_,
            layer = layer_](SkCanvas* canvas) {
             Rasterize(cache_state, layer, ctx, canvas);

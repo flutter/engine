@@ -31,6 +31,7 @@ class RasterCacheResult {
  public:
   RasterCacheResult(sk_sp<SkImage> image,
                     const SkRect& logical_rect,
+                    bool align_image,
                     const char* type);
 
   virtual ~RasterCacheResult() = default;
@@ -48,6 +49,7 @@ class RasterCacheResult {
  private:
   sk_sp<SkImage> image_;
   SkRect logical_rect_;
+  bool align_image_;
   fml::tracing::TraceFlow flow_;
 };
 
@@ -124,6 +126,7 @@ class RasterCache {
 
   std::unique_ptr<RasterCacheResult> Rasterize(
       const RasterCache::Context& context,
+      bool align_image,
       const std::function<void(SkCanvas*)>& draw_function,
       const std::function<void(SkCanvas*, const SkRect& rect)>&
           draw_checkerboard) const;
@@ -233,6 +236,7 @@ class RasterCache {
 
   bool UpdateCacheEntry(
       const RasterCacheKeyID& id,
+      bool align_image,
       const Context& raster_cache_context,
       const std::function<void(SkCanvas*)>& render_function) const;
 
