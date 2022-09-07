@@ -432,7 +432,7 @@ TEST(RefCountedTest, NonNullAssignmentToNonNull) {
     RefPtr<MyClass> r2(MakeRefCounted<MyClass>(nullptr, &was_destroyed2));
     // Move assignment (to non-null ref pointer).
     r2 = std::move(r1);
-    EXPECT_TRUE(r1.get() == nullptr);
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(bugprone-use-after-move)
     EXPECT_FALSE(r2.get() == nullptr);
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
