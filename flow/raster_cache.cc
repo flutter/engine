@@ -49,28 +49,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   canvas.resetMatrix();
   flow_.Step();
 
-  if (align_image_) {
-    canvas.drawImage(image_, rounded_bounds.fLeft, rounded_bounds.fTop,
-                     SkSamplingOptions(), paint);
-  } else {
-    bool exceeds_bounds = raw_bounds.fLeft + image_->dimensions().width() >
-                              SkScalarCeilToScalar(raw_bounds.fRight) ||
-                          raw_bounds.fTop + image_->dimensions().height() >
-                              SkScalarCeilToScalar(raw_bounds.fBottom);
-
-    // Make sure raster cache doesn't bleed to physical pixels outside of
-    // original bounds. https://github.com/flutter/flutter/issues/110002
-    if (exceeds_bounds) {
-      canvas.save();
-      canvas.clipRect(SkRect::Make(raw_bounds.roundOut()));
-    }
-    canvas.drawImage(image_, raw_bounds.fLeft, raw_bounds.fTop,
-                     SkSamplingOptions(), paint);
-
-    if (exceeds_bounds) {
-      canvas.restore();
-    }
-  }
+  canvas.drawImage(image_, rounded_bounds.fLeft, rounded_bounds.fTop,
+                   SkSamplingOptions(), paint);
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -88,28 +68,11 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  SkScalar left_offset;
-  SkScalar top_offset;
-  SkImageInfo image_info;
-  if (align_image) {
-    SkIRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
-        context.logical_rect, context.matrix);
-    image_info =
-        SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
-                                   sk_ref_sp(context.dst_color_space));
-    left_offset = dest_rect.fLeft;
-    top_offset = dest_rect.fTop;
-  } else {
-    SkRect dest_rect =
-        RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-    image_info =
-        SkImageInfo::MakeN32Premul(SkScalarCeilToInt(dest_rect.width()),
-                                   SkScalarCeilToInt(dest_rect.height()),
-                                   sk_ref_sp(context.dst_color_space));
-    left_offset = dest_rect.fLeft;
-    top_offset = dest_rect.fTop;
-  }
-
+  SkIRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
+      context.logical_rect, context.matrix);
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
+                                 sk_ref_sp(context.dst_color_space));
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
                                context.gr_context, SkBudgeted::kYes, image_info)
@@ -121,8 +84,16 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->translate(-left_offset, -top_offset);
-  canvas->concat(context.matrix);
+  canvas->translate(-dest_rect.fLeft, -dest_rect.fTop);
+
+  if (!align_image) {
+    SkMatrix integral_ctm =
+        RasterCacheUtil::GetIntegralTransCTM(context.matrix);
+    canvas->concat(integral_ctm);
+  } else {
+    canvas->concat(context.matrix);
+  }
+
   draw_function(canvas);
 
   if (checkerboard_images_) {
