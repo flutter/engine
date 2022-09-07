@@ -65,7 +65,7 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
       canvas.clipRect(SkRect::Make(raw_bounds.roundOut()));
     }
     canvas.drawImage(image_, raw_bounds.fLeft, raw_bounds.fTop,
-                     SkSamplingOptions(SkFilterMode::kNearest), paint);
+                     SkSamplingOptions(), paint);
 
     if (exceeds_bounds) {
       canvas.restore();
