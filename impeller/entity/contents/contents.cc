@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/contents.h"
 #include <optional>
 
+#include "fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
@@ -67,7 +68,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
 bool Contents::ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const {
   if (!stencil_coverage.has_value()) {
-    return true;
+    return false;
   }
   if (Entity::BlendModeShouldCoverWholeScreen(entity.GetBlendMode())) {
     return true;
@@ -75,7 +76,7 @@ bool Contents::ShouldRender(const Entity& entity,
 
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
-    return true;
+    return false;
   }
   return stencil_coverage->IntersectsWithRect(coverage.value());
 }
