@@ -1167,6 +1167,10 @@ FLUTTER_ASSERT_ARC
   // yOffset = 200.
   NSArray* yOffsetMatrix = @[ @1, @0, @0, @0, @0, @1, @0, @0, @0, @0, @1, @0, @0, @200, @0, @1 ];
   NSArray* zeroMatrix = @[ @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0 ];
+  NSArray* affineMatrix = @[
+    @(0.0), @(3.0), @(0.0), @(0.0), @(-3.0), @(0.0), @(0.0), @(0.0), @(0.0), @(0.0), @(3.0), @(0.0),
+    @(-6.0), @(3.0), @(9.0), @(1.0)
+  ];
 
   // Invalid since we don't have the transform or the rect.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
@@ -1200,6 +1204,12 @@ FLUTTER_ASSERT_ARC
   // Invalid marked rect is invalid.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  // Use an relatively complex 3d affine transform
+  [inputView setEditableTransform:affineMatrix];
+  [inputView setMarkedRect:testRect];
+  XCTAssertTrue(
+      CGRectEqualToRect(CGRectMake(-306, 3, 300, 300), [inputView firstRectForRange:range]));
 }
 
 - (void)testFirstRectForRangeReturnsCorrectSelectionRect {

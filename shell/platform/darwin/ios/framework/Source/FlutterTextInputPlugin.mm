@@ -1511,11 +1511,90 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _cachedFirstRect = kInvalidFirstRect;
 }
 
+- (BOOL)transformPoint:(CGPoint)point
+              isAffine:(BOOL)isAffine
+                  minX:(CGFloat&)minX
+                  maxX:(CGFloat&)maxX
+                  minY:(CGFloat&)minY
+                  maxY:(CGFloat&)maxY {
+  CGFloat x =
+      _editableTransform.m11 * point.x + _editableTransform.m21 * point.y + _editableTransform.m41;
+  CGFloat y =
+      _editableTransform.m12 * point.x + _editableTransform.m22 * point.y + _editableTransform.m42;
+  if (!isAffine) {
+    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
+                      _editableTransform.m44;
+    if (w == 0.0) {
+      return NO;
+    }
+    x /= w;
+    y /= w;
+  }
+  minX = MIN(minX, x);
+  maxX = MAX(maxX, x);
+  minY = MIN(minY, y);
+  maxY = MAX(maxY, y);
+  return YES;
+}
+
+// Returns the bounding CGRect of the transformed incomingRect, in the view's
+// coordinates.
+- (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect {
+  CGFloat minX = CGFLOAT_MAX;
+  CGFloat minY = CGFLOAT_MAX;
+  CGFloat maxX = -CGFLOAT_MAX;
+  CGFloat maxY = -CGFLOAT_MAX;
+
+  const bool isAffine = _editableTransform.m14 == 0.0 && _editableTransform.m24 == 0.0 &&
+                        _editableTransform.m44 == 1.0;
+  bool isValid = [self transformPoint:incomingRect.origin
+                             isAffine:isAffine
+                                 minX:minX
+                                 maxX:maxX
+                                 minY:minY
+                                 maxY:maxY];
+  if (!isValid) {
+    return kInvalidFirstRect;
+  }
+
+  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x,
+                                             incomingRect.origin.y + incomingRect.size.height)
+                        isAffine:isAffine
+                            minX:minX
+                            maxX:maxX
+                            minY:minY
+                            maxY:maxY];
+  if (!isValid) {
+    return kInvalidFirstRect;
+  }
+  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                                             incomingRect.origin.y)
+                        isAffine:isAffine
+                            minX:minX
+                            maxX:maxX
+                            minY:minY
+                            maxY:maxY];
+  if (!isValid) {
+    return kInvalidFirstRect;
+  }
+  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                                             incomingRect.origin.y + incomingRect.size.height)
+                        isAffine:isAffine
+                            minX:minX
+                            maxX:maxX
+                            minY:minY
+                            maxY:maxY];
+  if (!isValid) {
+    return kInvalidFirstRect;
+  }
+
+  return CGRectMake(minX, minY, maxX - minX, maxY - minY);
+}
+
 // The following methods are required to support force-touch cursor positioning
 // and to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
-
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
@@ -1524,22 +1603,20 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
-    // The candidates view can't be shown if _editableTransform is not affine,
-    // or markedRect is invalid.
-    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect) ||
-        !CATransform3DIsAffine(_editableTransform)) {
+    // The candidates view can't be shown if the framework has not sent the
+    // first caret rect.
+    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect)) {
       return kInvalidFirstRect;
     }
 
     if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
       // If the width returned is too small, that means the framework sent us
       // the caret rect instead of the marked text rect. Expand it to 0.1 so
-      // the IME candidates view show up.
-      double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
+      // the IME candidates view would show up.
+      const double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
       CGRect rect = _markedRect;
       rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
-      _cachedFirstRect =
-          CGRectApplyAffineTransform(rect, CATransform3DGetAffineTransform(_editableTransform));
+      _cachedFirstRect = [self localRectFromFrameworkTransform:rect];
     }
 
     return _cachedFirstRect;
