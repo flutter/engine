@@ -439,6 +439,7 @@ bool EntityPass::OnRender(
         }
       } break;
       case Contents::StencilCoverage::Type::kRestore: {
+        FML_DCHECK(!stencil_stack.empty());
         stencil_stack.pop_back();
 
         if (!stencil_stack.back().has_value()) {
