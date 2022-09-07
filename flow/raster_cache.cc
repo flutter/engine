@@ -35,9 +35,10 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   SkIRect rounded_bounds = RasterCacheUtil::GetRoundedOutDeviceBounds(
       logical_rect_, canvas.getTotalMatrix());
 #ifndef NDEBUG
-  FML_DCHECK(
-      std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
-      std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
+  FML_DCHECK(std::abs(rounded_bounds.size().width() -
+                      image_->dimensions().width()) <= 1 &&
+             std::abs(rounded_bounds.size().height() -
+                      image_->dimensions().height()) <= 1);
 #endif
   canvas.resetMatrix();
   flow_.Step();
