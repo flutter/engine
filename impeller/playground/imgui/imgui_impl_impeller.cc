@@ -24,6 +24,7 @@
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/range.h"
 #include "impeller/renderer/render_pass.h"
@@ -36,7 +37,7 @@
 struct ImGui_ImplImpeller_Data {
   std::shared_ptr<impeller::Context> context;
   std::shared_ptr<impeller::Texture> font_texture;
-  std::shared_ptr<impeller::Pipeline> pipeline;
+  std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
   std::shared_ptr<const impeller::Sampler> sampler;
 };
 
@@ -92,7 +93,6 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    desc->SetSampleCount(impeller::SampleCount::kCount4);
     auto stencil = desc->GetFrontStencilAttachmentDescriptor();
     if (stencil.has_value()) {
       stencil->stencil_compare = impeller::CompareFunction::kAlways;
@@ -101,7 +101,7 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     }
 
     bd->pipeline =
-        context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
 
     bd->sampler = context->GetSamplerLibrary()->GetSampler({});

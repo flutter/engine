@@ -1018,6 +1018,7 @@ TEST_P(EntityTest, MorphologyFilter) {
     static float path_rect[4] = {0, 0,
                                  static_cast<float>(boston->GetSize().width),
                                  static_cast<float>(boston->GetSize().height)};
+    static float effect_transform_scale = 1;
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
@@ -1035,6 +1036,8 @@ TEST_P(EntityTest, MorphologyFilter) {
       ImGui::SliderFloat2("Scale", scale, 0, 3);
       ImGui::SliderFloat2("Skew", skew, -3, 3);
       ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
+      ImGui::SliderFloat("Effect transform scale", &effect_transform_scale, 0,
+                         3);
     }
     ImGui::End();
 
@@ -1052,9 +1055,12 @@ TEST_P(EntityTest, MorphologyFilter) {
     input = texture;
     input_size = input_rect.size;
 
+    auto effect_transform = Matrix::MakeScale(
+        Vector2{effect_transform_scale, effect_transform_scale});
+
     auto contents = FilterContents::MakeMorphology(
         FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
-        morphology_types[selected_morphology_type]);
+        morphology_types[selected_morphology_type], effect_transform);
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
                Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
@@ -1550,35 +1556,6 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   ASSERT_RECT_NEAR(actual.value(), expected);
 }
 
-TEST_P(EntityTest, ColorMatrixFilter) {
-  auto image = CreateTextureForFixture("boston.jpg");
-  ASSERT_TRUE(image);
-
-  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    // Set the color matrix filter.
-    FilterContents::ColorMatrix matrix = {
-        1, 0, 0, 0, 0,  //
-        0, 3, 0, 0, 0,  //
-        0, 0, 1, 0, 0,  //
-        0, 0, 0, 1, 0,  //
-    };
-
-    auto filter =
-        FilterContents::MakeColorMatrix(FilterInput::Make(image), matrix);
-
-    // Define the entity with the color matrix filter.
-    Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
-    entity.SetContents(filter);
-    return entity.Render(context, pass);
-  };
-
-  // Should output the boston image with a green filter.
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
 TEST_P(EntityTest, ColorMatrixFilterEditable) {
   auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
   ASSERT_TRUE(bay_bridge);
@@ -1607,7 +1584,6 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
     ImGui::Begin("Color Matrix", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
       std::string label = "##1";
-      label.c_str();
       for (int i = 0; i < 20; i += 5) {
         ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
                             &(color_matrix.array[i]), 5, nullptr, nullptr,

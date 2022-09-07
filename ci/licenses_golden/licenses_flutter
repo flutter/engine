@@ -590,6 +590,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_conten
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
@@ -678,6 +680,8 @@ FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
+FILE: ../../../flutter/impeller/geometry/gradient.cc
+FILE: ../../../flutter/impeller/geometry/gradient.h
 FILE: ../../../flutter/impeller/geometry/matrix.cc
 FILE: ../../../flutter/impeller/geometry/matrix.h
 FILE: ../../../flutter/impeller/geometry/matrix_decomposition.cc
@@ -768,6 +772,10 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pipeline_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pipeline_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/context_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/context_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h
@@ -849,6 +857,14 @@ FILE: ../../../flutter/impeller/renderer/command.cc
 FILE: ../../../flutter/impeller/renderer/command.h
 FILE: ../../../flutter/impeller/renderer/command_buffer.cc
 FILE: ../../../flutter/impeller/renderer/command_buffer.h
+FILE: ../../../flutter/impeller/renderer/compute_command.cc
+FILE: ../../../flutter/impeller/renderer/compute_command.h
+FILE: ../../../flutter/impeller/renderer/compute_pass.cc
+FILE: ../../../flutter/impeller/renderer/compute_pass.h
+FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.cc
+FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.h
+FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc
+FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h
 FILE: ../../../flutter/impeller/renderer/context.cc
 FILE: ../../../flutter/impeller/renderer/context.h
 FILE: ../../../flutter/impeller/renderer/descriptor_set_layout.h
@@ -1058,7 +1074,6 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
-FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
 FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
@@ -1271,6 +1286,10 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/canvas_paragraph.dart
@@ -1288,6 +1307,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_breaker.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/autofill_hint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/composition_aware_mixin.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_action.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_capitalization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
@@ -1405,6 +1425,12 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
+FILE: ../../../flutter/shell/common/snapshot_controller.cc
+FILE: ../../../flutter/shell/common/snapshot_controller.h
+FILE: ../../../flutter/shell/common/snapshot_controller_impeller.cc
+FILE: ../../../flutter/shell/common/snapshot_controller_impeller.h
+FILE: ../../../flutter/shell/common/snapshot_controller_skia.cc
+FILE: ../../../flutter/shell/common/snapshot_controller_skia.h
 FILE: ../../../flutter/shell/common/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
@@ -2145,7 +2171,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/framework_shim.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/libraries.json
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc
