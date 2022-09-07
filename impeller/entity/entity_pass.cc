@@ -371,6 +371,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
   return EntityPass::EntityResult::Success(element_entity);
 }
 
+struct StencilLayer {
+  std::optional<Rect> coverage;
+  size_t stencil_depth;
+};
+
 bool EntityPass::OnRender(
     ContentContext& renderer,
     ISize root_pass_size,
@@ -389,8 +394,9 @@ bool EntityPass::OnRender(
     return false;
   }
 
-  std::vector<std::optional<Rect>> stencil_stack = {
-      Rect::MakeSize(render_target.GetRenderTargetSize())};
+  std::vector<StencilLayer> stencil_stack = {StencilLayer{
+      .coverage = Rect::MakeSize(render_target.GetRenderTargetSize()),
+      .stencil_depth = stencil_depth_floor}};
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
                          &renderer, &stencil_stack](Entity& element_entity) {
@@ -419,30 +425,40 @@ bool EntityPass::OnRender(
       }
     }
 
-    if (!element_entity.ShouldRender(stencil_stack.back())) {
+    if (!element_entity.ShouldRender(stencil_stack.back().coverage)) {
       return true;  // Nothing to render.
     }
 
     auto stencil_coverage =
-        element_entity.GetStencilCoverage(stencil_stack.back());
+        element_entity.GetStencilCoverage(stencil_stack.back().coverage);
 
     switch (stencil_coverage.type) {
       case Contents::StencilCoverage::Type::kNone:
         break;
       case Contents::StencilCoverage::Type::kAppend: {
-        auto op = stencil_stack.back();
-        stencil_stack.push_back(stencil_coverage.coverage);
+        auto op = stencil_stack.back().coverage;
+        stencil_stack.push_back(StencilLayer{
+            .coverage = stencil_coverage.coverage,
+            .stencil_depth = element_entity.GetStencilDepth() + 1});
 
         if (!op.has_value()) {
-          // Running this append op won't impact the stencil, so skip it.
+          // Running this append op won't impact the stencil because the whole
+          // screen is already being clipped, so skip it.
           return true;
         }
       } break;
       case Contents::StencilCoverage::Type::kRestore: {
-        FML_DCHECK(!stencil_stack.empty());
+        if (stencil_stack.back().stencil_depth <=
+            element_entity.GetStencilDepth()) {
+          // Drop stencil restores that will do nothing.
+          return true;
+        }
+
+        FML_DCHECK(stencil_stack.size() > 1);
+
         stencil_stack.pop_back();
 
-        if (!stencil_stack.back().has_value()) {
+        if (!stencil_stack.back().coverage.has_value()) {
           // Running this restore op won't make anything renderable, so skip it.
           return true;
         }
