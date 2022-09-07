@@ -77,6 +77,7 @@ ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
 class RootIsolateToken {
   RootIsolateToken._(this._token);
 
+  /// An enumeration representing the root isolate (0 if not a root isolate).
   final int _token;
 
   /// The token for the root isolate that is executing this Dart code.  If this
