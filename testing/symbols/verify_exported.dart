@@ -32,7 +32,8 @@ void main(List<String> arguments) {
   if (p.isRelative(outPath)) {
     /// If path is relative then create a full path starting from the engine checkout
     /// repository.
-    outPath = p.join(p.dirname(Platform.script.toFilePath()), '..', '..', '..', outPath);
+    final String engineCheckoutPath = Platform.environment['ENGINE_CHECKOUT_PATH']!;
+    outPath = p.join(engineCheckoutPath, outPath);
   }
   final String buildToolsPath = arguments.length == 1
       ? p.join(p.dirname(outPath), 'buildtools')
