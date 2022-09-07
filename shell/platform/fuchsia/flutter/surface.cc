@@ -37,7 +37,7 @@ std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) {
         return true;
       },
-      /*frame_size=*/SkISize::Make(800, 600));
+      size);
 }
 
 // |flutter::Surface|
