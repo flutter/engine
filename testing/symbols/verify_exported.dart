@@ -34,7 +34,9 @@ void main(List<String> arguments) {
     /// repository.
     outPath = p.join(p.dirname(Platform.script.toFilePath()), '..', '..', '..', outPath);
   }
-  final String buildToolsPath = arguments.length == 1 ? p.join(p.dirname(outPath), 'buildtools') : arguments[1];
+  final String buildToolsPath = arguments.length == 1
+      ? p.join(p.dirname(outPath), 'buildtools')
+      : arguments[1];
 
   String platform;
   if (Platform.isLinux) {
@@ -50,14 +52,15 @@ void main(List<String> arguments) {
     exit(1);
   }
 
-  final Iterable<String> releaseBuilds = Directory(outPath)
-      .listSync()
+  final Iterable<String> releaseBuilds = Directory(outPath).listSync()
       .whereType<Directory>()
       .map<String>((FileSystemEntity dir) => p.basename(dir.path))
       .where((String s) => s.contains('_release'));
 
-  final Iterable<String> iosReleaseBuilds = releaseBuilds.where((String s) => s.startsWith('ios_'));
-  final Iterable<String> androidReleaseBuilds = releaseBuilds.where((String s) => s.startsWith('android_'));
+  final Iterable<String> iosReleaseBuilds = releaseBuilds
+      .where((String s) => s.startsWith('ios_'));
+  final Iterable<String> androidReleaseBuilds = releaseBuilds
+      .where((String s) => s.startsWith('android_'));
 
   int failures = 0;
   failures += _checkIos(outPath, nmPath, iosReleaseBuilds);
@@ -116,7 +119,8 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
     }
     final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout as String);
     final Map<String, String> entryMap = <String, String>{
-      for (final NmEntry entry in entries) entry.name: entry.type,
+      for (final NmEntry entry in entries)
+	entry.name: entry.type,
     };
     final Map<String, String> expectedSymbols = <String, String>{
       'JNI_OnLoad': 'T',
