@@ -178,7 +178,7 @@ def getCommonAncestorCommit(dep):
       exec(deps_content, global_scope, local_scope)
 
       # Extract the deps and filter.
-      deps = local_scope.get('vars')
+      deps = local_scope.get('vars').get('upstream_urls')
 
       if(dep_name in deps):
         try:
