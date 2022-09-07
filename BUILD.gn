@@ -71,9 +71,8 @@ group("dart_sdk") {
 group("flutter") {
   testonly = true
 
-  # Compile the engine (not needed for the Web SDK).
+  # Compile the engine.
   public_deps = [
-    ":dart_sdk",
     ":unittests",
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
