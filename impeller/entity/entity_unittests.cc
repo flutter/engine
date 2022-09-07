@@ -1434,6 +1434,8 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::CornflowerBlue());
     ASSERT_FALSE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_FALSE(
+        fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 
   // With path.
@@ -1443,6 +1445,8 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     fill->SetPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
     ASSERT_TRUE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_FALSE(
+        fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 
   // With paint cover.
@@ -1451,10 +1455,14 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     fill->SetColor(Color::CornflowerBlue());
     fill->SetCover(true);
     ASSERT_TRUE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_TRUE(
+        fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 }
 
 TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
+  // For clip ops, `ShouldRender` should always return true.
+
   // Clip.
   {
     auto clip = std::make_shared<ClipContents>();
@@ -1462,6 +1470,8 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
     clip->SetPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
     ASSERT_TRUE(clip->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_TRUE(
+        clip->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 
   // Clip restore.
@@ -1469,6 +1479,8 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
     auto restore = std::make_shared<ClipRestoreContents>();
     ASSERT_TRUE(
         restore->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_TRUE(
+        restore->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 }
 
