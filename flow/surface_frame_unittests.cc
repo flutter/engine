@@ -30,8 +30,7 @@ TEST(FlowTest, SurfaceFrameDoesNotHaveEmptyCanvas) {
       /*frame_size=*/SkISize::Make(800, 600),
       /*context_result=*/nullptr, /*display_list_fallback=*/true);
 
-  EXPECT_EQ(frame.SkiaCanvas()->getLocalClipBounds().width(), 800);
-  EXPECT_EQ(frame.SkiaCanvas()->getLocalClipBounds().height(), 600);
+  EXPECT_FALSE(frame.SkiaCanvas()->getLocalClipBounds().isEmpty());
   EXPECT_FALSE(
       frame.SkiaCanvas()->quickReject(SkRect::MakeLTRB(10, 10, 50, 50)));
 }
