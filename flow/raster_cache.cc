@@ -35,16 +35,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   SkIRect rounded_bounds = RasterCacheUtil::GetRoundedOutDeviceBounds(
       logical_rect_, canvas.getTotalMatrix());
 #ifndef NDEBUG
-  // The image dimensions should always be larger than the device bounds and
-  // smaller than the device bounds plus one pixel, at the same time, we must
-  // introduce epsilon to solve the round-off error. The value of epsilon is
-  // 1/512, which represents half of an AA sample.
-  float epsilon = 1 / 512.0;
-  FML_DCHECK(
-      image_->dimensions().width() - rounded_bounds.width() > -epsilon &&
-      image_->dimensions().height() - rounded_bounds.height() > -epsilon &&
-      image_->dimensions().width() - rounded_bounds.width() < 1 + epsilon &&
-      image_->dimensions().height() - rounded_bounds.height() < 1 + epsilon);
+  FML_DCHECK(image_->dimensions().width() == rounded_bounds.width() &&
+             image_->dimensions().height() == rounded_bounds.height());
 #endif
   canvas.resetMatrix();
   flow_.Step();
