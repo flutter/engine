@@ -850,7 +850,7 @@ static char markerKey;
   return YES;
 }
 
-// Returns the bounding CGRect of the transformed incomingRect, in the view's
+// Returns the bounding CGRect of the transformed incomingRect, in screen
 // coordinates.
 - (CGRect)screenRectFromFrameworkTransform:(CGRect)incomingRect {
   CGFloat minX = CGFLOAT_MAX;
