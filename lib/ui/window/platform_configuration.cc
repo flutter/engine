@@ -436,7 +436,7 @@ int64_t PlatformConfigurationNativeApi::GetRootIsolateToken() {
 }
 
 void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
-    int64_t isolate_id) {
+    int64_t root_isolate_token) {
   UIDartState* dart_state = UIDartState::Current();
   FML_DCHECK(dart_state && !dart_state->IsRootIsolate());
   auto platform_message_handler =
@@ -444,7 +444,7 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
           Dart_CurrentIsolateGroupData()));
   FML_DCHECK(platform_message_handler);
   auto weak_platform_message_handler =
-      platform_message_handler->GetPlatformMessageHandler(isolate_id);
+      platform_message_handler->GetPlatformMessageHandler(root_isolate_token);
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 

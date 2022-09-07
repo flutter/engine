@@ -58,12 +58,12 @@ class DartIsolateGroupData : public PlatformMessageHandlerStorage {
 
   // |PlatformMessageHandlerStorage|
   void SetPlatformMessageHandler(
-      int64_t root_isolate_id,
+      int64_t root_isolate_token,
       std::weak_ptr<PlatformMessageHandler> handler) override;
 
   // |PlatformMessageHandlerStorage|
   std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
-      int64_t root_isolate_id) const override;
+      int64_t root_isolate_token) const override;
 
  private:
   const Settings settings_;

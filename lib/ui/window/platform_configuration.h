@@ -450,11 +450,11 @@ class PlatformMessageHandlerStorage {
  public:
   virtual ~PlatformMessageHandlerStorage() = default;
   virtual void SetPlatformMessageHandler(
-      int64_t root_isolate_id,
+      int64_t root_isolate_token,
       std::weak_ptr<PlatformMessageHandler> handler) = 0;
 
   virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
-      int64_t root_isolate_id) const = 0;
+      int64_t root_isolate_token) const = 0;
 };
 
 //----------------------------------------------------------------------------
@@ -517,7 +517,7 @@ class PlatformConfigurationNativeApi {
 
   static int64_t GetRootIsolateToken();
 
-  static void RegisterBackgroundIsolate(int64_t isolate_id);
+  static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 };
 
 }  // namespace flutter
