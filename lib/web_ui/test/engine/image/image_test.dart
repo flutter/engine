@@ -17,7 +17,7 @@ Future<void> testMain() async {
     expect(image.runtimeType.toString(), equals('HtmlImage'));
     image.dispose();
   // TODO(polina-c): unskip the test when bug is fixed:
-  // https://github.com/flutter/engine/pull/35791
+  // https://github.com/flutter/flutter/issues/110599
   }, skip: true);
 
   test('Image constructor invokes onCreate once', () async {
@@ -40,7 +40,7 @@ Future<void> testMain() async {
 
     ui.Image.onCreate = null;
   // TODO(polina-c): unskip the test when bug is fixed:
-  // https://github.com/flutter/engine/pull/35791
+  // https://github.com/flutter/flutter/issues/110599
   }, skip: true);
 
   test('dispose() invokes onDispose once', () async {
@@ -63,7 +63,7 @@ Future<void> testMain() async {
 
     ui.Image.onDispose = null;
   // TODO(polina-c): unskip the test when bug is fixed:
-  // https://github.com/flutter/engine/pull/35791
+  // https://github.com/flutter/flutter/issues/110599
   }, skip: true);
 }
 

@@ -1666,14 +1666,14 @@ class Image {
   @pragma('vm:entry-point')
   final _Image _image;
 
-  /// A callback that is invoked to report an object creation.
+  /// A callback that is invoked to report an image creation.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
   static ImageEventCallback? onCreate;
 
-  /// A callback that is invoked to report the object disposal.
+  /// A callback that is invoked to report the image disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onDispose] directly because [MemoryAllocations]
@@ -5700,14 +5700,14 @@ class Picture extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   Picture._();
 
-  /// A callback that is invoked to report an object creation.
+  /// A callback that is invoked to report a picture creation.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onCreate] directly because [MemoryAllocations]
   /// allows multiple callbacks.
   static PictureEventCallback? onCreate;
 
-  /// A callback that is invoked to report the object disposal.
+  /// A callback that is invoked to report the picture disposal.
   ///
   /// It's preferred to use [MemoryAllocations] in flutter/foundation.dart
   /// than to use [onDispose] directly because [MemoryAllocations]

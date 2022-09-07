@@ -240,11 +240,11 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   @override
   void dispose() {
-    ui.Image.onDispose?.call(this);
     assert(
       !_disposed,
       'Cannot dispose an image that has already been disposed.',
     );
+    ui.Image.onDispose?.call(this);
     _disposed = true;
     box.unref(this);
   }
