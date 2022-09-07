@@ -32,12 +32,7 @@ void main(List<String> arguments) {
   if (p.isRelative(outPath)) {
     /// If path is relative then create a full path starting from the engine checkout
     /// repository.
-    if (!Platform.environment.containsKey('ENGINE_CHECKOUT_PATH')) {
-      print('ENGINE_CHECKOUT_PATH env variable is mandatory when using relative destination path');
-      exit(1);
-    }
-    final String engineCheckoutPath = Platform.environment['ENGINE_CHECKOUT_PATH']!;
-    outPath = p.join(engineCheckoutPath, outPath);
+    outPath = p.join(p.dirname(Platform.script.toFilePath()), '..', '..', '..', outPath);
   }
   final String buildToolsPath = arguments.length == 1
       ? p.join(p.dirname(outPath), 'buildtools')
@@ -125,7 +120,7 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
     final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout as String);
     final Map<String, String> entryMap = <String, String>{
       for (final NmEntry entry in entries)
-        entry.name: entry.type,
+	entry.name: entry.type,
     };
     final Map<String, String> expectedSymbols = <String, String>{
       'JNI_OnLoad': 'T',
