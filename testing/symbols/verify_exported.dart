@@ -120,7 +120,7 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
     final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout as String);
     final Map<String, String> entryMap = <String, String>{
       for (final NmEntry entry in entries)
-	entry.name: entry.type,
+        entry.name: entry.type,
     };
     final Map<String, String> expectedSymbols = <String, String>{
       'JNI_OnLoad': 'T',
