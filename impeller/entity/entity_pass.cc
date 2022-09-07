@@ -389,8 +389,11 @@ bool EntityPass::OnRender(
     return false;
   }
 
+  std::vector<std::optional<Rect>> stencil_stack = {
+      Rect::MakeSize(render_target.GetRenderTargetSize())};
+
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
-                         &renderer](Entity& element_entity) {
+                         &renderer, &stencil_stack](Entity& element_entity) {
     auto result = pass_context.GetRenderPass(pass_depth);
 
     if (!result.pass) {
@@ -416,8 +419,33 @@ bool EntityPass::OnRender(
       }
     }
 
-    if (!element_entity.ShouldRender(result.pass->GetRenderTargetSize())) {
+    if (!element_entity.ShouldRender(stencil_stack.back())) {
       return true;  // Nothing to render.
+    }
+
+    auto stencil_coverage =
+        element_entity.GetStencilCoverage(stencil_stack.back());
+
+    switch (stencil_coverage.type) {
+      case Contents::StencilCoverage::Type::kNone:
+        break;
+      case Contents::StencilCoverage::Type::kAppend: {
+        auto op = stencil_stack.back();
+        stencil_stack.push_back(stencil_coverage.coverage);
+
+        if (!op.has_value()) {
+          // Running this append op won't impact the stencil, so skip it.
+          return true;
+        }
+      } break;
+      case Contents::StencilCoverage::Type::kRestore: {
+        stencil_stack.pop_back();
+
+        if (!stencil_stack.back().has_value()) {
+          // Running this restore op won't make anything renderable, so skip it.
+          return true;
+        }
+      } break;
     }
 
     element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
