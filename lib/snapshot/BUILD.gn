@@ -290,3 +290,16 @@ compile_platform("strong_platform") {
 group("kernel_platform_files") {
   public_deps = [ ":strong_platform" ]
 }
+
+if (is_win) {
+  zip_bundle("archive_win_gen_snapshot") {
+    deps = [ "//third_party/dart/runtime/bin:gen_snapshot" ]
+    output = "$target_platform_name-$target_cpu-$flutter_runtime_mode/windows-x64.zip"
+    files = [
+      {
+        source = "$root_out_dir/gen_snapshot.exe"
+        destination = "gen_snapshot.exe"
+      },
+    ]
+  }
+}
