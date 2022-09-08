@@ -60,7 +60,7 @@ def main():
         os.path.join(dst, 'gen_snapshot_armv7')
     )
   if args.zip:
-    zip_archive(args.dst)
+    zip_archive(dst)
 
 
 def zip_archive(dst):
