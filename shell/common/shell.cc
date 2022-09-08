@@ -84,11 +84,6 @@ void PerformInitializationTasks(Settings& settings) {
 
   static std::once_flag gShellSettingsInitialization = {};
   std::call_once(gShellSettingsInitialization, [&settings] {
-    if (settings.engine_start_timestamp.count() == 0) {
-      settings.engine_start_timestamp =
-          std::chrono::microseconds(Dart_TimelineGetMicros());
-    }
-
     tonic::SetLogHandler(
         [](const char* message) { FML_LOG(ERROR) << message; });
 
@@ -609,6 +604,7 @@ void Shell::RunEngine(
             if (run_result == flutter::Engine::RunStatus::Failure) {
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
+
             result(run_result);
           }));
 }
