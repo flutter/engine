@@ -230,20 +230,24 @@ def getCommonAncestorCommit(dep):
 
 def WriteSarif(responses, manifest_file):
     """
-    Creates a full Sarif report based on the OSV API response which
+    Creates a full SARIF report based on the OSV API response which
     may contain several vulnerabilities
 
     Combines a rule with a result in order to construct the report
+
+    If an empty vulnerability response is passed to this method
+    do not produce any SARIF report
     """
-    data = sarif_log
-    print("before WriteSarif: " + str(responses))
-    for response in responses:
-        for vuln in response['vulns']:
-            newRule = CreateRuleEntry(vuln)
-            data['runs'][0]['tool']['driver']['rules'].append(newRule)
-            data['runs'][0]['results'].append(CreateResultEntry(vuln))
-    with open(manifest_file, 'w') as out:
-        json.dump(data, out)
+    if responses != {}:
+      data = sarif_log
+      for response in responses:
+          for vuln in response['vulns']:
+              newRule = CreateRuleEntry(vuln)
+              data['runs'][0]['tool']['driver']['rules'].append(newRule)
+              data['runs'][0]['results'].append(CreateResultEntry(vuln))
+      with open(manifest_file, 'w') as out:
+          json.dump(data, out)
+
 
 def CreateRuleEntry(vuln: Dict[str, Any]):
     """
