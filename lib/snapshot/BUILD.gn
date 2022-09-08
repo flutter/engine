@@ -4,6 +4,7 @@
 
 import("//build/compiled_action.gni")
 import("//build/fuchsia/sdk.gni")
+import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//flutter/sky/tools/macos_snapshots.gni")
