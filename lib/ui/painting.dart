@@ -1624,7 +1624,6 @@ enum PixelFormat {
   bgra8888,
 }
 
-
 /// Signature for [Image] lifecycle events.
 typedef ImageEventCallback = void Function(Image image);
 
