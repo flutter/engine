@@ -73,9 +73,8 @@ class StubFlutterWindowsApi {
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
 
   // Called for FlutterDesktopViewGetGraphicsAdapter.
-  virtual bool ViewGetGraphicsAdapter(IDXGIAdapter** adapter) {
-    *adapter = reinterpret_cast<IDXGIAdapter*>(2);
-    return true;
+  virtual IDXGIAdapter* ViewGetGraphicsAdapter() {
+    return reinterpret_cast<IDXGIAdapter*>(2);
   }
 
   // Called for FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate.

@@ -17,9 +17,8 @@ namespace {
 class TestWindowsApi : public testing::StubFlutterWindowsApi {
   HWND ViewGetHWND() override { return reinterpret_cast<HWND>(7); }
 
-  bool ViewGetGraphicsAdapter(IDXGIAdapter** adapter) override {
-    *adapter = reinterpret_cast<IDXGIAdapter*>(8);
-    return true;
+  IDXGIAdapter* ViewGetGraphicsAdapter() override {
+    return reinterpret_cast<IDXGIAdapter*>(8);
   }
 };
 
@@ -39,8 +38,7 @@ TEST(FlutterViewTest, GraphicsAdapterAccessPassesThrough) {
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
   FlutterView view(reinterpret_cast<FlutterDesktopViewRef>(2));
 
-  IDXGIAdapter* adapter;
-  EXPECT_TRUE(view.GetGraphicsAdapter(&adapter));
+  IDXGIAdapter* adapter = view.GetGraphicsAdapter();
   EXPECT_EQ(adapter, reinterpret_cast<IDXGIAdapter*>(8));
 }
 

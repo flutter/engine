@@ -263,9 +263,8 @@ TEST_F(WindowsTest, GetGraphicsAdapter) {
   auto view = FlutterDesktopViewControllerGetView(controller.get());
 
   Microsoft::WRL::ComPtr<IDXGIAdapter> dxgi_adapter;
-  ASSERT_TRUE(
-      FlutterDesktopViewGetGraphicsAdapter(view, dxgi_adapter.GetAddressOf()));
-  ASSERT_NE(dxgi_adapter.Get(), nullptr);
+  dxgi_adapter = FlutterDesktopViewGetGraphicsAdapter(view);
+  ASSERT_NE(dxgi_adapter, nullptr);
   DXGI_ADAPTER_DESC desc{};
   ASSERT_TRUE(SUCCEEDED(dxgi_adapter->GetDesc(&desc)));
 }

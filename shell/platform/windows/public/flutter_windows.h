@@ -202,10 +202,9 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 
-// Attempts to return the DXGI adapter used for rendering.
-FLUTTER_EXPORT bool FlutterDesktopViewGetGraphicsAdapter(
-    FlutterDesktopViewRef view,
-    IDXGIAdapter** adapter);
+// Returns the DXGI adapter used for rendering or nullptr in case of error.
+FLUTTER_EXPORT IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(
+    FlutterDesktopViewRef view);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h
