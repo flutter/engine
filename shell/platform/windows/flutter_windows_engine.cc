@@ -561,7 +561,7 @@ bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
   struct Captures {
     fml::closure callback;
   };
-  auto captures = std::make_unique<Captures>();
+  auto captures = new Captures();
   captures->callback = std::move(callback);
   if (embedder_api_.PostRenderThreadTask(
           engine_,
@@ -570,10 +570,10 @@ bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
             captures->callback();
             delete captures;
           },
-          captures.get()) == kSuccess) {
-    captures.release();
+          captures) == kSuccess) {
     return true;
   }
+  delete captures;
   return false;
 }
 
