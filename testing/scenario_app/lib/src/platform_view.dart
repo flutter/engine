@@ -1148,7 +1148,7 @@ void addPlatformView(
       // message encoding fragile to changes before this point. Do not add new
       // variable-length values such as strings before this point.
       // TODO(stuartmorgan): Fix this to use the actual encoding logic,
-      // including alignment.
+      // including alignment: https://github.com/flutter/flutter/issues/111188
       valueFloat64,
       ..._to64(width),
       valueString,
