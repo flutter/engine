@@ -288,12 +288,6 @@ def to_gn_args(args):
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
-  # No cross-compilation on Windows (for now). Use host toolchain that
-  # matches the bit-width of the target architecture.
-  if sys.platform.startswith(('cygwin', 'win')) and args.target_os != 'win':
-    gn_args['host_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
-    gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
-
   # macOS host builds (whether x64 or arm64) must currently be built under
   # Rosetta on Apple Silicon Macs.
   # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
