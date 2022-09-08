@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_TEXTURE_REGISTRAR_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_TEXTURE_REGISTRAR_H_
 
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -28,8 +29,8 @@ class FlutterWindowsTextureRegistrar {
   int64_t RegisterTexture(const FlutterDesktopTextureInfo* texture_info);
 
   // Attempts to unregister the texture identified by |texture_id|.
-  // Returns true if the texture was successfully unregistered.
-  bool UnregisterTexture(int64_t texture_id);
+  void UnregisterTexture(int64_t texture_id,
+                         std::function<void()> callback = nullptr);
 
   // Notifies the engine about a new frame being available.
   // Returns true on success.

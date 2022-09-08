@@ -557,6 +557,27 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
+bool FlutterWindowsEngine::PostRasterThreadTask(
+    std::function<void()> callback) {
+  struct Captures {
+    std::function<void()> callback;
+  };
+  auto captures = std::make_unique<Captures>();
+  captures->callback = callback;
+  if (embedder_api_.PostRenderThreadTask(
+          engine_,
+          [](void* opaque) {
+            auto captures = reinterpret_cast<Captures*>(opaque);
+            captures->callback();
+            delete captures;
+          },
+          captures.get()) == kSuccess) {
+    captures.release();
+    return true;
+  }
+  return false;
+}
+
 bool FlutterWindowsEngine::DispatchSemanticsAction(
     uint64_t target,
     FlutterSemanticsAction action,
