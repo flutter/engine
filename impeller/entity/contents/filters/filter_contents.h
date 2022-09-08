@@ -15,6 +15,15 @@
 #include "impeller/renderer/formats.h"
 
 namespace impeller {
+using ImageFilterProc = std::function<std::shared_ptr<FilterContents>(
+    FilterInput::Ref,
+    const Matrix& effect_transform)>;
+using ColorFilterProc =
+    std::function<std::shared_ptr<FilterContents>(FilterInput::Ref)>;
+using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
+    FilterInput::Ref,
+    bool is_solid_color,
+    const Matrix& effect_transform)>;
 
 class FilterContents : public Contents {
  public:
@@ -89,6 +98,12 @@ class FilterContents : public Contents {
 
   static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
       FilterInput::Ref input);
+
+  static std::shared_ptr<FilterContents> MakeComposeImageFilter(
+      FilterInput::Ref input,
+      ImageFilterProc outer_proc,
+      ImageFilterProc inner_proc,
+      const Matrix& effect_transform);
 
   FilterContents();
 

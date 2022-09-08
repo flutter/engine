@@ -523,7 +523,7 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   }
 }
 
-static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
+static std::optional<ImageFilterProc> ToImageFilterProc(
     const flutter::DlImageFilter* filter) {
   if (filter == nullptr) {
     return std::nullopt;
@@ -577,9 +577,29 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       };
       break;
     }
+    case flutter::DlImageFilterType::kComposeFilter: {
+      auto compose = filter->asCompose();
+      FML_DCHECK(compose);
+      auto outer = compose->outer();
+      auto inner = compose->inner();
+      auto outer_proc = ToImageFilterProc(outer.get());
+      auto inner_proc = ToImageFilterProc(inner.get());
+      if (!outer_proc.has_value()) {
+        return inner_proc;
+      }
+      if (!inner_proc.has_value()) {
+        return outer_proc;
+      }
+      return [outer_proc, inner_proc](FilterInput::Ref input,
+                                      const Matrix& effect_transform) {
+        FML_DCHECK(outer_proc.has_value() && inner_proc.has_value());
+        return FilterContents::MakeComposeImageFilter(
+            input, outer_proc.value(), inner_proc.value(), effect_transform);
+      };
+      break;
+    }
     case flutter::DlImageFilterType::kMatrix:
     case flutter::DlImageFilterType::kLocalMatrixFilter:
-    case flutter::DlImageFilterType::kComposeFilter:
     case flutter::DlImageFilterType::kColorFilter:
     case flutter::DlImageFilterType::kUnknown:
       return std::nullopt;

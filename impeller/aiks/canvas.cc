@@ -316,7 +316,7 @@ size_t Canvas::GetStencilDepth() const {
 
 void Canvas::SaveLayer(Paint paint,
                        std::optional<Rect> bounds,
-                       std::optional<Paint::ImageFilterProc> backdrop_filter) {
+                       std::optional<ImageFilterProc> backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
