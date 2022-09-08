@@ -110,7 +110,6 @@ class SingleViewPresentation extends Presentation {
       PlatformView view,
       AccessibilityEventsDelegate accessibilityEventsDelegate,
       int viewId,
-      Object createParams,
       OnFocusChangeListener focusChangeListener) {
     super(new ImmContext(outerContext), display);
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;
