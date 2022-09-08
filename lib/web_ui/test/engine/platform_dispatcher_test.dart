@@ -16,6 +16,10 @@ void main() {
 }
 
 void testMain() {
+  test("root isolate not null",() {
+    expect(ui.RootIsolateToken.instance, isNotNull);
+  });
+
   group('PlatformDispatcher', () {
     test('high contrast in accessibilityFeatures has the correct value', () {
       final MockHighContrastSupport mockHighContrast =

@@ -19,9 +19,10 @@ typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 // ignore: avoid_classes_with_only_static_members
 /// A token that represents a root isolate.
 class RootIsolateToken {
-  static RootIsolateToken? get instance {
-    throw UnsupportedError('Root isolate not identifiable on web.');
-  }
+  RootIsolateToken._();
+  // There is only a root isolate on web.
+  static final RootIsolateToken _instance = RootIsolateToken._();
+  static RootIsolateToken? get instance => _instance;
 }
 
 abstract class PlatformDispatcher {
