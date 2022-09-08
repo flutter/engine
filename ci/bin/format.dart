@@ -277,7 +277,7 @@ abstract class FormatChecker {
   @protected
   ProcessPoolProgressReporter namedReport(String name) {
     return (int total, int completed, int inProgress, int pending, int failed) {
-      final String percent = 
+      final String percent =
           total == 0 ? '100' : ((100 * completed) ~/ total).toString().padLeft(3);
       final String completedStr = completed.toString().padLeft(3);
       final String totalStr = total.toString().padRight(3);
@@ -360,7 +360,7 @@ class ClangFormatChecker extends FormatChecker {
   }
 
   Future<String> _getClangFormatVersion() async {
-    final ProcessRunnerResult result = 
+    final ProcessRunnerResult result =
         await _processRunner.runProcess(<String>[clangFormat.path, '--version']);
     return result.stdout.trim();
   }
