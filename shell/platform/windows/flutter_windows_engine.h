@@ -36,6 +36,7 @@
 namespace flutter {
 
 class FlutterWindowsView;
+class WindowSurface;
 
 // Update the thread priority for the Windows engine.
 static void WindowsPlatformThreadPrioritySetter(
@@ -247,6 +248,8 @@ class FlutterWindowsEngine {
   // Updates accessibility, e.g. switch to high contrast mode
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
+  WindowSurface* surface() const { return surface_.get(); }
+
  protected:
   // Creates an accessibility bridge with the provided parameters.
   //
@@ -296,6 +299,9 @@ class FlutterWindowsEngine {
 
   // The plugin registrar handle given to API clients.
   std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar_;
+
+  // The window surface for the associated view, if any.
+  std::unique_ptr<WindowSurface> surface_;
 
   // The texture registrar.
   std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;

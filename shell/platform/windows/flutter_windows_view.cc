@@ -95,25 +95,6 @@ std::unique_ptr<TextInputPlugin> FlutterWindowsView::CreateTextInputPlugin(
   return std::make_unique<TextInputPlugin>(messenger, this);
 }
 
-uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
-  // Called on an engine-controlled (non-platform) thread.
-  std::unique_lock<std::mutex> lock(resize_mutex_);
-
-  if (resize_status_ != ResizeState::kResizeStarted) {
-    return kWindowFrameBufferID;
-  }
-
-  if (resize_target_width_ == width && resize_target_height_ == height) {
-    // Platform thread is blocked for the entire duration until the
-    // resize_status_ is set to kDone.
-    engine_->surface_manager()->ResizeSurface(GetRenderTarget(), width, height);
-    engine_->surface_manager()->MakeCurrent();
-    resize_status_ = ResizeState::kFrameGenerated;
-  }
-
-  return kWindowFrameBufferID;
-}
-
 void FlutterWindowsView::ForceRedraw() {
   if (resize_status_ == ResizeState::kDone) {
     // Request new frame.
@@ -564,24 +545,28 @@ void FlutterWindowsView::SendPointerEventWithData(
   }
 }
 
-bool FlutterWindowsView::MakeCurrent() {
-  return engine_->surface_manager()->MakeCurrent();
+void FlutterWindowsView::OnAcquireFrame(unsigned int width, unsigned int height) {
+  // Called on an engine-controlled (non-platform) thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (resize_status_ != ResizeState::kResizeStarted) {
+    return;
+  }
+
+  if (resize_target_width_ == width && resize_target_height_ == height) {
+    // Platform thread is blocked for the entire duration until the
+    // resize_status_ is set to kDone.
+    engine_->surface()->OnResize(width, height);
+    resize_status_ = ResizeState::kFrameGenerated;
+  }
 }
 
-bool FlutterWindowsView::MakeResourceCurrent() {
-  return engine_->surface_manager()->MakeResourceCurrent();
-}
-
-bool FlutterWindowsView::ClearContext() {
-  return engine_->surface_manager()->ClearContext();
-}
-
-bool FlutterWindowsView::SwapBuffers() {
+bool FlutterWindowsView::OnPresentFramePre() {
   // Called on an engine-controlled (non-platform) thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
   switch (resize_status_) {
-    // SwapBuffer requests during resize are ignored until the frame with the
+    // Present requests during resize are ignored until the frame with the
     // right dimensions has been generated. This is marked with
     // kFrameGenerated resize status.
     case ResizeState::kResizeStarted:
@@ -591,23 +576,31 @@ bool FlutterWindowsView::SwapBuffers() {
       bool swap_buffers_result;
       // For visible windows swap the buffers while resize handler is waiting.
       // For invisible windows unblock the handler first and then swap buffers.
-      // SwapBuffers waits for vsync and there's no point doing that for
+      // Present waits for vsync and there's no point doing that for
       // invisible windows.
       if (visible) {
-        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
+        // Maintain the lock until Present finishes.
+        raster_thread_resize_mutex_lock_ = std::move(lock);
+        return true;
       }
       resize_status_ = ResizeState::kDone;
       lock.unlock();
       resize_cv_.notify_all();
       binding_handler_->OnWindowResized();
-      if (!visible) {
-        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
-      }
-      return swap_buffers_result;
+      return true;
     }
     case ResizeState::kDone:
     default:
-      return engine_->surface_manager()->SwapBuffers();
+      return true;
+  }
+}
+
+void FlutterWindowsView::OnPresentFramePost() {
+  if (raster_thread_resize_mutex_lock_) {
+    resize_status_ = ResizeState::kDone;
+    raster_thread_resize_mutex_lock_.unlock();
+    resize_cv_.notify_all();
+    binding_handler_->OnWindowResized();
   }
 }
 
@@ -619,18 +612,20 @@ bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
-  if (engine_ && engine_->surface_manager()) {
+  if (engine_ && engine_->surface()) {
     PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-    engine_->surface_manager()->CreateSurface(GetRenderTarget(), bounds.width,
-                                              bounds.height);
+    engine_->surface()->SetWindowSurfaceHook(this);
+    engine_->surface()->Init(GetPlatformWindow(), bounds.width,
+                                                bounds.height);
     resize_target_width_ = bounds.width;
     resize_target_height_ = bounds.height;
   }
 }
 
 void FlutterWindowsView::DestroyRenderSurface() {
-  if (engine_ && engine_->surface_manager()) {
-    engine_->surface_manager()->DestroySurface();
+  if (engine_ && engine_->surface()) {
+    engine_->surface()->Destroy();
+    engine_->surface()->SetWindowSurfaceHook(nullptr);
   }
 }
 

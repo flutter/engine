@@ -26,16 +26,15 @@
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/window_surface.h"
 
 namespace flutter {
-
-// ID for the window frame buffer.
-inline constexpr uint32_t kWindowFrameBufferID = 0;
 
 // An OS-windowing neutral abstration for flutter
 // view that works with win32 hwnds and Windows::UI::Composition visuals.
 class FlutterWindowsView : public WindowBindingHandlerDelegate,
-                           public TextInputPluginDelegate {
+                           public TextInputPluginDelegate,
+                           WindowSurfaceHook {
  public:
   // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
@@ -69,12 +68,14 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Tells the engine to generate a new frame
   void ForceRedraw();
 
-  // Callbacks for clearing context, settings context and swapping buffers,
-  // these are typically called on an engine-controlled (non-platform) thread.
-  bool ClearContext();
-  bool MakeCurrent();
-  bool MakeResourceCurrent();
-  bool SwapBuffers();
+  // |WindowSurfaceHook|
+  void OnAcquireFrame(unsigned int width, unsigned int height) override;
+
+  // |WindowSurfaceHook|
+  bool OnPresentFramePre() override;
+
+  // |WindowSurfaceHook|
+  void OnPresentFramePost() override;
 
   // Callback for presenting a software bitmap.
   bool PresentSoftwareBitmap(const void* allocation,
@@ -390,6 +391,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Resize events are synchronized using this mutex and the corresponding
   // condition variable.
   std::mutex resize_mutex_;
+  std::unique_lock<std::mutex> raster_thread_resize_mutex_lock_;
   std::condition_variable resize_cv_;
 
   // Indicates the state of a window resize event. Platform thread will be
