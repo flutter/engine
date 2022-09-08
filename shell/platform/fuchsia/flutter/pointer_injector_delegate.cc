@@ -129,7 +129,7 @@ bool PointerInjectorDelegate::HandlePlatformMessage(
     }
 
     auto timestamp = args.FindMember("timestamp");
-    if (!timestamp->value.IsInt()) {
+    if (!timestamp->value.IsInt() && !timestamp->value.IsUint64()) {
       FML_LOG(ERROR) << "Argument 'timestamp' is not a int";
       return false;
     }
@@ -303,6 +303,12 @@ void PointerInjectorDelegate::PointerInjectorEndpoint::RegisterInjector(
   (*registry_)->Register(std::move(config), device_.NewRequest(), [] {});
 
   registered_ = true;
+}
+
+void PointerInjectorDelegate::PointerInjectorEndpoint::Reset() {
+  injection_in_flight_ = false;
+  registered_ = false;
+  injector_events_ = {};
 }
 
 }  // namespace flutter_runner

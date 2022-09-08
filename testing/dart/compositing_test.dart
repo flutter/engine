@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data' show Float64List, ByteData;
+import 'dart:typed_data' show ByteData, Float64List;
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
@@ -34,6 +34,28 @@ void main() {
     expect(data.buffer.asUint8List()[1], 0x34);
     expect(data.buffer.asUint8List()[2], 0x56);
     expect(data.buffer.asUint8List()[3], 0xFF);
+  });
+
+  test('Scene.toImageSync succeeds with texture layer', () async {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(10, 10);
+    builder.addTexture(0, width: 10, height: 10);
+
+    final Scene scene = builder.build();
+    final Image image = scene.toImageSync(10, 10);
+    scene.dispose();
+
+    expect(image.width, 10);
+    expect(image.height, 10);
+
+    final ByteData? data = await image.toByteData();
+
+    expect(data, isNotNull);
+    expect(data!.lengthInBytes, 10 * 10 * 4);
+    expect(data.buffer.asUint8List()[0], 0);
+    expect(data.buffer.asUint8List()[1], 0);
+    expect(data.buffer.asUint8List()[2], 0);
+    expect(data.buffer.asUint8List()[3], 0);
   });
 
   test('addPicture with disposed picture does not crash', () {
@@ -372,7 +394,7 @@ void main() {
     testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushShaderMask(
         Gradient.radial(
-          const Offset(0, 0),
+          Offset.zero,
           10,
           const <Color>[Color.fromARGB(0, 0, 0, 0), Color.fromARGB(0, 255, 255, 255)],
         ),
@@ -382,6 +404,7 @@ void main() {
       );
     });
     testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+      // ignore: deprecated_member_use
       return builder.pushPhysicalShape(path: Path(), color: const Color.fromARGB(0, 0, 0, 0), oldLayer: oldLayer as PhysicalShapeEngineLayer?, elevation: 0.0);
     });
     testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {

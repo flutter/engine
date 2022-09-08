@@ -81,7 +81,9 @@ int _checkIos(String outPath, String nmPath, Iterable<String> builds) {
     final Iterable<NmEntry> unexpectedEntries = NmEntry.parse(nmResult.stdout as String).where((NmEntry entry) {
       return !(((entry.type == '(__DATA,__common)' || entry.type == '(__DATA,__const)') && entry.name.startsWith('_Flutter'))
           || (entry.type == '(__DATA,__objc_data)'
-              && (entry.name.startsWith(r'_OBJC_METACLASS_$_Flutter') || entry.name.startsWith(r'_OBJC_CLASS_$_Flutter'))));
+              && (entry.name.startsWith(r'_OBJC_METACLASS_$_Flutter') || entry.name.startsWith(r'_OBJC_CLASS_$_Flutter')))
+          // TODO(107887): This should not be neccesary after bitcode support is removed from the engine.
+          || (entry.type == '(__TEXT,__text)' && entry.name == '___gxx_personality_v0'));
     });
     if (unexpectedEntries.isNotEmpty) {
       print('ERROR: $libFlutter exports unexpected symbols:');
@@ -221,7 +223,7 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
     final Map<String, String> badSymbols = <String, String>{};
     for (final String key in entryMap.keys) {
       if (entryMap[key] != expectedSymbols[key]) {
-        badSymbols[key] = entryMap[key];
+        badSymbols[key] = entryMap[key]!;
       }
     }
     if (badSymbols.isNotEmpty) {

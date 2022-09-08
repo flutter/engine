@@ -3,6 +3,13 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+// Examples can assume:
+// // (for the example in Color)
+// // ignore_for_file: use_full_hex_values_for_flutter_colors
+// late ui.Image _image;
+// dynamic _cacheImage(dynamic _, [dynamic __]) { }
+// dynamic _drawImage(dynamic _, [dynamic __]) { }
+
 // Some methods in this file assert that their arguments are not null. These
 // asserts are just to improve the error messages; they should only cover
 // arguments that are either dereferenced _in Dart_, before being passed to the
@@ -14,14 +21,6 @@ part of dart.ui;
 //
 // Painting APIs will also warn about arguments representing NaN coordinates,
 // which can not be rendered by Skia.
-
-// Update this list when changing the list of supported codecs.
-/// {@template dart.ui.imageFormats}
-/// JPEG, PNG, GIF, Animated GIF, WebP, Animated WebP, BMP, and WBMP. Additional
-/// formats may be supported by the underlying platform. Flutter will
-/// attempt to call platform API to decode unrecognized formats, and if the
-/// platform API supports decoding the image Flutter will be able to render it.
-/// {@endtemplate}
 
 bool _rectIsValid(Rect rect) {
   assert(rect != null, 'Rect argument was null.');
@@ -68,10 +67,10 @@ Color _scaleAlpha(Color a, double factor) {
 /// Here are some ways it could be constructed:
 ///
 /// ```dart
-/// Color c = const Color(0xFF42A5F5);
-/// Color c = const Color.fromARGB(0xFF, 0x42, 0xA5, 0xF5);
-/// Color c = const Color.fromARGB(255, 66, 165, 245);
-/// Color c = const Color.fromRGBO(66, 165, 245, 1.0);
+/// Color c1 = const Color(0xFF42A5F5);
+/// Color c2 = const Color.fromARGB(0xFF, 0x42, 0xA5, 0xF5);
+/// Color c3 = const Color.fromARGB(255, 66, 165, 245);
+/// Color c4 = const Color.fromRGBO(66, 165, 245, 1.0);
 /// ```
 ///
 /// If you are having a problem with `Color` wherein it seems your color is just
@@ -217,8 +216,9 @@ class Color {
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
   static double _linearizeColorComponent(double component) {
-    if (component <= 0.03928)
+    if (component <= 0.03928) {
       return component / 12.92;
+    }
     return math.pow((component + 0.055) / 1.055, 2.4) as double;
   }
 
@@ -325,10 +325,12 @@ class Color {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is Color
         && other.value == value;
   }
@@ -1088,6 +1090,14 @@ enum Clip {
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
 /// to use for that operation.
 class Paint {
+  /// Constructs an empty [Paint] object with all fields initialized to
+  /// their defaults.
+  Paint() {
+    if (enableDithering) {
+      _dither = true;
+    }
+  }
+
   // Paint objects are encoded in two buffers:
   //
   // * _data is binary data in four-byte fields, each of which is either a
@@ -1140,21 +1150,13 @@ class Paint {
   List<Object?>? _objects;
 
   List<Object?> _ensureObjectsInitialized() {
-    return _objects ??= List<Object?>.filled(_kObjectCount, null, growable: false);
+    return _objects ??= List<Object?>.filled(_kObjectCount, null);
   }
 
   static const int _kShaderIndex = 0;
   static const int _kColorFilterIndex = 1;
   static const int _kImageFilterIndex = 2;
   static const int _kObjectCount = 3; // Must be one larger than the largest index.
-
-  /// Constructs an empty [Paint] object with all fields initialized to
-  /// their defaults.
-  Paint() {
-    if (enableDithering) {
-      _dither = true;
-    }
-  }
 
   /// Whether to apply anti-aliasing to lines and images drawn on the
   /// canvas.
@@ -1396,6 +1398,13 @@ class Paint {
     return _objects?[_kShaderIndex] as Shader?;
   }
   set shader(Shader? value) {
+    assert(() {
+      assert(
+        value == null || !value.debugDisposed,
+        'Attempted to set a disposed shader to $this',
+      );
+      return true;
+    }());
     _ensureObjectsInitialized()[_kShaderIndex] = value;
   }
 
@@ -1426,15 +1435,11 @@ class Paint {
   /// [ImageFilter.blur]:
   ///
   /// ```dart
-  /// import 'dart:ui' as ui;
-  ///
-  /// ui.Image image;
-  ///
   /// void paint(Canvas canvas, Size size) {
   ///   canvas.drawImage(
-  ///     image,
-  ///     Offset.zero,
-  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: .5, sigmaY: .5),
+  ///     _image,
+  ///     ui.Offset.zero,
+  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
   ///   );
   /// }
   /// ```
@@ -1498,7 +1503,7 @@ class Paint {
 
   @override
   String toString() {
-    if (const bool.fromEnvironment('dart.vm.product', defaultValue: false)) {
+    if (const bool.fromEnvironment('dart.vm.product')) {
       return super.toString();
     }
     final StringBuffer result = StringBuffer();
@@ -1506,15 +1511,18 @@ class Paint {
     result.write('Paint(');
     if (style == PaintingStyle.stroke) {
       result.write('$style');
-      if (strokeWidth != 0.0)
+      if (strokeWidth != 0.0) {
         result.write(' ${strokeWidth.toStringAsFixed(1)}');
-      else
+      } else {
         result.write(' hairline');
-      if (strokeCap != StrokeCap.butt)
+      }
+      if (strokeCap != StrokeCap.butt) {
         result.write(' $strokeCap');
+      }
       if (strokeJoin == StrokeJoin.miter) {
-        if (strokeMiterLimit != _kStrokeMiterLimitDefault)
+        if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
           result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+        }
       } else {
         result.write(' $strokeJoin');
       }
@@ -1552,10 +1560,12 @@ class Paint {
       result.write('${semicolon}imageFilter: $imageFilter');
       semicolon = '; ';
     }
-    if (invertColors)
+    if (invertColors) {
       result.write('${semicolon}invert: $invertColors');
-    if (_dither)
+    }
+    if (_dither) {
       result.write('${semicolon}dither: $_dither');
+    }
     result.write(')');
     return result.toString();
   }
@@ -1746,6 +1756,8 @@ class Image {
   ///
   /// ```dart
   /// import 'dart:async';
+  /// import 'dart:typed_data';
+  /// import 'dart:ui';
   ///
   /// Future<Image> _loadImage(int width, int height) {
   ///   final Completer<Image> completer = Completer<Image>();
@@ -1783,7 +1795,7 @@ class Image {
   /// }
   ///
   /// class MyImageHolder {
-  ///   MyImageLoader(this.image);
+  ///   MyImageHolder(this.image);
   ///
   ///   final Image image;
   ///
@@ -1873,7 +1885,7 @@ class _Image extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>)>('Image::dispose')
   external void _dispose();
 
-  Set<Image> _handles = <Image>{};
+  final Set<Image> _handles = <Image>{};
 
   @override
   String toString() => '[$width\u00D7$height]';
@@ -1898,8 +1910,8 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// ```dart
 /// /// BAD
-/// Future<void> nextFrameRoutine(Codec codec) async {
-///   final FrameInfo frameInfo = await codec.getNextFrame();
+/// Future<void> nextFrameRoutine(ui.Codec codec) async {
+///   final ui.FrameInfo frameInfo = await codec.getNextFrame();
 ///   _cacheImage(frameInfo);
 ///   // ERROR - _cacheImage is now responsible for disposing the image, and
 ///   // the image may not be available any more for this drawing routine.
@@ -1914,8 +1926,8 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// ```dart
 /// /// GOOD
-/// Future<void> nextFrameRoutine(Codec codec) async {
-///   final FrameInfo frameInfo = await codec.getNextFrame();
+/// Future<void> nextFrameRoutine(ui.Codec codec) async {
+///   final ui.FrameInfo frameInfo = await codec.getNextFrame();
 ///   _cacheImage(frameInfo.image.clone(), frameInfo.duration);
 ///   _drawImage(frameInfo.image.clone(), frameInfo.duration);
 ///   // This method is done with its handle, and has passed handles to its
@@ -2029,7 +2041,14 @@ class Codec extends NativeFieldWrapperClass1 {
 ///
 /// The `list` parameter is the binary image data (e.g a PNG or GIF binary data).
 /// The data can be for either static or animated images. The following image
-/// formats are supported: {@macro dart.ui.imageFormats}
+/// formats are supported:
+// Update this list when changing the list of supported codecs.
+/// {@template dart.ui.imageFormats}
+/// JPEG, PNG, GIF, Animated GIF, WebP, Animated WebP, BMP, and WBMP. Additional
+/// formats may be supported by the underlying platform. Flutter will
+/// attempt to call platform API to decode unrecognized formats, and if the
+/// platform API supports decoding the image Flutter will be able to render it.
+/// {@endtemplate}
 ///
 /// The `targetWidth` and `targetHeight` arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
@@ -2338,9 +2357,6 @@ class Path extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   Path() { _constructor(); }
 
-  @FfiNative<Void Function(Handle)>('Path::Create')
-  external void _constructor();
-
   /// Avoids creating a new native backing for the path for methods that will
   /// create it later, such as [Path.from], [shift] and [transform].
   Path._();
@@ -2354,6 +2370,9 @@ class Path extends NativeFieldWrapperClass1 {
     source._clone(clonedPath);
     return clonedPath;
   }
+
+  @FfiNative<Void Function(Handle)>('Path::Create')
+  external void _constructor();
 
   @FfiNative<Void Function(Pointer<Void>, Handle)>('Path::clone')
   external void _clone(Path outPath);
@@ -2549,6 +2568,10 @@ class Path extends NativeFieldWrapperClass1 {
   /// crosses the horizontal line that intersects the center of the
   /// rectangle and with positive angles going clockwise around the
   /// oval.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc.png)
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc_ccw.png)
   void addArc(Rect oval, double startAngle, double sweepAngle) {
     assert(_rectIsValid(oval));
     _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
@@ -2836,7 +2859,7 @@ class PathMetricIterator implements Iterator<PathMetric> {
   PathMetricIterator._(this._pathMeasure) : assert(_pathMeasure != null);
 
   PathMetric? _pathMetric;
-  _PathMeasure _pathMeasure;
+  final _PathMeasure _pathMeasure;
 
   @override
   PathMetric get current {
@@ -2883,6 +2906,10 @@ class PathMetric {
       contourIndex = _measure.currentContourIndex;
 
   /// Return the total length of the current contour.
+  ///
+  /// The length may be calculated from an approximation of the geometry
+  /// originally added. For this reason, it is not recommended to rely on
+  /// this property for mathematically correct lengths of common shapes.
   final double length;
 
   /// Whether the contour is closed.
@@ -3113,18 +3140,16 @@ class ColorFilter implements ImageFilter {
   /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
-  /// ```text
-  /// | R' |   | a00 a01 a02 a03 a04 |   | R |
-  /// | G' |   | a10 a11 a22 a33 a44 |   | G |
-  /// | B' | = | a20 a21 a22 a33 a44 | * | B |
-  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
-  /// | 1  |   |  0   0   0   0   1  |   | 1 |
-  /// ```
+  ///     | R' |   | a00 a01 a02 a03 a04 |   | R |
+  ///     | G' |   | a10 a11 a22 a33 a44 |   | G |
+  ///     | B' | = | a20 a21 a22 a33 a44 | * | B |
+  ///     | A' |   | a30 a31 a22 a33 a44 |   | A |
+  ///     | 1  |   |  0   0   0   0   1  |   | 1 |
   ///
   /// The matrix is in row-major order and the translation column is specified
   /// in unnormalized, 0...255, space. For example, the identity matrix is:
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter identity = ColorFilter.matrix(<double>[
   ///   1, 0, 0, 0, 0,
   ///   0, 1, 0, 0, 0,
@@ -3137,7 +3162,7 @@ class ColorFilter implements ImageFilter {
   ///
   /// An inversion color matrix:
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter invert = ColorFilter.matrix(<double>[
   ///   -1,  0,  0, 0, 255,
   ///    0, -1,  0, 0, 255,
@@ -3148,7 +3173,7 @@ class ColorFilter implements ImageFilter {
   ///
   /// A sepia-toned color matrix (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent)):
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter sepia = ColorFilter.matrix(<double>[
   ///   0.393, 0.769, 0.189, 0, 0,
   ///   0.349, 0.686, 0.168, 0, 0,
@@ -3159,7 +3184,7 @@ class ColorFilter implements ImageFilter {
   ///
   /// A greyscale color filter (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent)):
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter greyscale = ColorFilter.matrix(<double>[
   ///   0.2126, 0.7152, 0.0722, 0, 0,
   ///   0.2126, 0.7152, 0.0722, 0, 0,
@@ -3228,8 +3253,9 @@ class ColorFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is ColorFilter
         && other._type == _type
         && _listEquals<double>(other._matrix, _matrix)
@@ -3268,7 +3294,7 @@ class ColorFilter implements ImageFilter {
       case _kTypeSrgbToLinearGamma:
         return 'ColorFilter.srgbToLinearGamma()';
       default:
-        return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
+        return "Unknown ColorFilter type. This is an error. If you're seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.";
     }
   }
 }
@@ -3370,8 +3396,9 @@ abstract class ImageFilter {
                      { FilterQuality filterQuality = FilterQuality.low }) {
     assert(matrix4 != null);
     assert(filterQuality != null);
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     return _MatrixImageFilter(data: Float64List.fromList(matrix4), filterQuality: filterQuality);
   }
 
@@ -3413,8 +3440,9 @@ class _MatrixImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _MatrixImageFilter
         && other.filterQuality == filterQuality
         && _listEquals<double>(other.data, data);
@@ -3453,8 +3481,9 @@ class _GaussianBlurImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _GaussianBlurImageFilter
         && other.sigmaX == sigmaX
         && other.sigmaY == sigmaY
@@ -3483,8 +3512,9 @@ class _DilateImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _DilateImageFilter
         && other.radiusX == radiusX
         && other.radiusY == radiusY;
@@ -3512,15 +3542,16 @@ class _ErodeImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _ErodeImageFilter
         && other.radiusX == radiusX
         && other.radiusY == radiusY;
   }
 
   @override
-  int get hashCode => hashValues(radiusX, radiusY);
+  int get hashCode => Object.hash(radiusX, radiusY);
 }
 
 class _ComposeImageFilter implements ImageFilter {
@@ -3542,8 +3573,9 @@ class _ComposeImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _ComposeImageFilter
         && other.innerFilter == innerFilter
         && other.outerFilter == outerFilter;
@@ -3559,41 +3591,31 @@ class _ComposeImageFilter implements ImageFilter {
 /// ImageFilter, because we want ImageFilter to be efficiently comparable, so that
 /// widgets can check for ImageFilter equality to avoid repainting.
 class _ImageFilter extends NativeFieldWrapperClass1 {
-  @FfiNative<Void Function(Handle)>('ImageFilter::Create')
-  external void _constructor();
-
   /// Creates an image filter that applies a Gaussian blur.
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
   }
-
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Int32)>('ImageFilter::initBlur', isLeaf: true)
-  external void _initBlur(double sigmaX, double sigmaY, int tileMode);
 
   /// Creates an image filter that dilates each input pixel's channel values
   /// to the max value within the given radii along the x and y axes.
   _ImageFilter.dilate(_DilateImageFilter filter)
     : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     _initDilate(filter.radiusX, filter.radiusY);
   }
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initDilate', isLeaf: true)
-  external void _initDilate(double radiusX, double radiusY);
 
   /// Create a filter that erodes each input pixel's channel values
   /// to the minimum channel value within the given radii along the x and y axes.
   _ImageFilter.erode(_ErodeImageFilter filter)
     : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     _initErode(filter.radiusX, filter.radiusY);
   }
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initErode', isLeaf: true)
-  external void _initErode(double radiusX, double radiusY);
 
   /// Creates an image filter that applies a matrix transformation.
   ///
@@ -3601,37 +3623,50 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// when used with [BackdropFilter] would magnify the background image.
   _ImageFilter.matrix(_MatrixImageFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
-    if (filter.data.length != 16)
+      creator = filter {
+    if (filter.data.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _constructor();
     _initMatrix(filter.data, filter.filterQuality.index);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Int32)>('ImageFilter::initMatrix')
-  external void _initMatrix(Float64List matrix4, int filterQuality);
-
   /// Converts a color filter to an image filter.
   _ImageFilter.fromColorFilter(ColorFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
-    _initColorFilter(nativeFilter!);
+    _initColorFilter(nativeFilter);
   }
-
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>('ImageFilter::initColorFilter')
-  external void _initColorFilter(_ColorFilter? colorFilter);
 
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
     : assert(filter != null),
-      creator = filter { // ignore: prefer_initializing_formals
+      creator = filter {
     _constructor();
     final _ImageFilter nativeFilterInner = filter.innerFilter._toNativeImageFilter();
     final _ImageFilter nativeFilterOuter = filter.outerFilter._toNativeImageFilter();
     _initComposed(nativeFilterOuter, nativeFilterInner);
   }
+
+  @FfiNative<Void Function(Handle)>('ImageFilter::Create')
+  external void _constructor();
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Int32)>('ImageFilter::initBlur', isLeaf: true)
+  external void _initBlur(double sigmaX, double sigmaY, int tileMode);
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initDilate', isLeaf: true)
+  external void _initDilate(double radiusX, double radiusY);
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initErode', isLeaf: true)
+  external void _initErode(double radiusX, double radiusY);
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Int32)>('ImageFilter::initMatrix')
+  external void _initMatrix(Float64List matrix4, int filterQuality);
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>('ImageFilter::initColorFilter')
+  external void _initColorFilter(_ColorFilter? colorFilter);
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Pointer<Void>)>('ImageFilter::initComposeFilter')
   external void _initComposed(_ImageFilter outerFilter, _ImageFilter innerFilter);
@@ -3648,6 +3683,37 @@ class Shader extends NativeFieldWrapperClass1 {
   /// or extended directly.
   @pragma('vm:entry-point')
   Shader._();
+
+  bool _debugDisposed = false;
+
+  /// Whether [dispose] has been called.
+  ///
+  /// This must only be used when asserts are enabled. Otherwise, it will throw.
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _debugDisposed;
+      return true;
+    }());
+    return disposed;
+  }
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// The underlying memory allocated by this object will be retained beyond
+  /// this call if it is still needed by another object that has not been
+  /// disposed. For example, a [Picture] that has not been disposed that
+  /// refers to an [ImageShader] may keep its underlying resources alive.
+  ///
+  /// Classes that override this method must call `super.dispose()`.
+  void dispose() {
+    assert(() {
+      assert(!_debugDisposed);
+      _debugDisposed = true;
+      return true;
+    }());
+  }
 }
 
 /// Defines what happens at the edge of a gradient or the sampling of a source image
@@ -3743,8 +3809,9 @@ enum TileMode {
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
-  for (int i = 0; i < colorCount; ++i)
+  for (int i = 0; i < colorCount; ++i) {
     result[i] = colors[i].value;
+  }
   return result;
 }
 
@@ -3784,9 +3851,6 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 ///  * [Gradient](https://api.flutter.dev/flutter/painting/Gradient-class.html), the class in the [painting] library.
 ///
 class Gradient extends Shader {
-  @FfiNative<Void Function(Handle)>('Gradient::Create')
-  external void _constructor();
-
   /// Creates a linear gradient from `from` to `to`.
   ///
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
@@ -3829,9 +3893,6 @@ class Gradient extends Shader {
     _constructor();
     _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
-
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>('Gradient::initLinear')
-  external void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
 
   /// Creates a radial gradient centered at `center` that ends at `radius`
   /// distance from the center.
@@ -3893,30 +3954,6 @@ class Gradient extends Shader {
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>('Gradient::initRadial')
-  external void _initRadial(
-      double centerX,
-      double centerY,
-      double radius,
-      Int32List colors,
-      Float32List? colorStops,
-      int tileMode,
-      Float64List? matrix4);
-
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32, Handle)>(
-      'Gradient::initTwoPointConical')
-  external void _initConical(
-      double startX,
-      double startY,
-      double startRadius,
-      double endX,
-      double endY,
-      double endRadius,
-      Int32List colors,
-      Float32List? colorStops,
-      int tileMode,
-      Float64List? matrix4);
-
   /// Creates a sweep gradient centered at `center` that starts at `startAngle`
   /// and ends at `endAngle`.
   ///
@@ -3967,6 +4004,36 @@ class Gradient extends Shader {
     _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
   }
 
+  @FfiNative<Void Function(Handle)>('Gradient::Create')
+  external void _constructor();
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>('Gradient::initLinear')
+  external void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>('Gradient::initRadial')
+  external void _initRadial(
+      double centerX,
+      double centerY,
+      double radius,
+      Int32List colors,
+      Float32List? colorStops,
+      int tileMode,
+      Float64List? matrix4);
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32, Handle)>(
+      'Gradient::initTwoPointConical')
+  external void _initConical(
+      double startX,
+      double startY,
+      double startRadius,
+      double endX,
+      double endY,
+      double endRadius,
+      Int32List colors,
+      Float32List? colorStops,
+      int tileMode,
+      Float64List? matrix4);
+
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Handle, Handle, Int32, Double, Double, Handle)>('Gradient::initSweep')
   external void _initSweep(
       double centerX,
@@ -3981,11 +4048,13 @@ class Gradient extends Shader {
   static void _validateColorStops(
       List<Color> colors, List<double>? colorStops) {
     if (colorStops == null) {
-      if (colors.length != 2)
+      if (colors.length != 2) {
         throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
+      }
     } else {
-      if (colors.length != colorStops.length)
+      if (colors.length != colorStops.length) {
         throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
+      }
     }
   }
 }
@@ -4004,12 +4073,14 @@ class ImageShader extends Shader {
     FilterQuality? filterQuality,
   }) :
     assert(image != null), // image is checked on the engine side
+    assert(!image.debugDisposed),
     assert(tmx != null),
     assert(tmy != null),
     assert(matrix4 != null),
     super._() {
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _constructor();
     final String? error = _initWithImage(image._image, tmx.index, tmy.index, filterQuality?.index ?? -1, matrix4);
     if (error != null) {
@@ -4017,21 +4088,39 @@ class ImageShader extends Shader {
     }
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    _dispose();
+  }
+
   @FfiNative<Void Function(Handle)>('ImageShader::Create')
   external void _constructor();
 
   @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>('ImageShader::initWithImage')
   external String? _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4);
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('ImageShader::dispose')
+  external void _dispose();
 }
 
-/// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
+/// An instance of [FragmentProgram] creates [Shader] objects (as used by
+/// [Paint.shader]).
 ///
 /// This API is in beta and does not yet work on web.
 /// See https://github.com/flutter/flutter/projects/207 for roadmap.
-///
-/// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/main/lib/spirv/README.md)
-///
 class FragmentProgram extends NativeFieldWrapperClass1 {
+  @pragma('vm:entry-point')
+  FragmentProgram._fromAsset(String assetKey) {
+    _constructor();
+    final String result = _initFromAsset(assetKey);
+    if (result.isNotEmpty) {
+      throw result; // ignore: only_throw_errors
+    }
+  }
+
   // TODO(zra): Document custom shaders on the website and add a link to it
   // here. https://github.com/flutter/flutter/issues/107929.
   /// Creates a fragment program from the asset with key [assetKey].
@@ -4039,34 +4128,30 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// The asset must be a file produced as the output of the `impellerc`
   /// compiler. The constructed object should then be reused via the [shader]
   /// method to create [Shader] objects that can be used by [Shader.paint].
-  static FragmentProgram fromAsset(String assetKey) {
-    FragmentProgram? program = _shaderRegistry[assetKey]?.target;
-    if (program == null) {
-      program = FragmentProgram._fromAsset(assetKey);
-      _shaderRegistry[assetKey] = WeakReference<FragmentProgram>(program);
+  static Future<FragmentProgram> fromAsset(String assetKey) {
+    // The flutter tool converts all asset keys with spaces into URI
+    // encoded paths (replacing ' ' with '%20', for example). We perform
+    // the same encoding here so that users can load assets with the same
+    // key they have written in the pubspec.
+    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
+    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    if (program != null) {
+      return Future<FragmentProgram>.value(program);
     }
-
-    return program;
+    return Future<FragmentProgram>.microtask(() {
+      final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
+      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      return program;
+    });
   }
 
-  static Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
+  // This is a cache of shaders that have been loaded by
+  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
+  // so that the case where an in-use program is requested again can be fast,
+  // but programs that are no longer referenced are not retained because of the
+  // cache.
+  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
       <String, WeakReference<FragmentProgram>>{};
-
-  FragmentProgram._() {
-    assert(
-      false,
-      'FragmentProgram should only be initialized via "fromAsset".',
-    );
-  }
-
-  @pragma('vm:entry-point')
-  FragmentProgram._fromAsset(String assetKey) {
-    _constructor();
-    final String result = _initFromAsset(assetKey);
-    if (result.isNotEmpty) {
-      throw result;
-    }
-  }
 
   static void _reinitializeShader(String assetKey) {
     // If a shader for the assent isn't already registered, then there's no
@@ -4084,9 +4169,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
       return;
     }
 
-    final result = program._initFromAsset(assetKey);
+    final String result = program._initFromAsset(assetKey);
     if (result.isNotEmpty) {
-      throw result;
+      throw result; // ignore: only_throw_errors
     }
   }
 
@@ -4101,6 +4186,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 
   @FfiNative<Handle Function(Pointer<Void>, Handle)>('FragmentProgram::initFromAsset')
   external String _initFromAsset(String assetKey);
+
+  /// Returns a fresh instance of [FragmentShader].
+  FragmentShader fragmentShader() => FragmentShader._(this);
 
   /// Constructs a [Shader] object suitable for use by [Paint.shader] with
   /// the given uniforms.
@@ -4117,7 +4205,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   ///
   /// Consider the following snippit of GLSL code.
   ///
-  /// ```
+  /// ```glsl
   /// layout (location = 0) uniform float a;
   /// layout (location = 1) uniform vec2 b;
   /// layout (location = 2) uniform vec3 c;
@@ -4141,7 +4229,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   ///
   /// Consider the following snippit of GLSL code.
   ///
-  /// ```
+  /// ```glsl
   /// layout (location = 0) uniform sampler2D a;
   /// layout (location = 1) uniform sampler2D b;
   /// ```
@@ -4155,9 +4243,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     Float32List? floatUniforms,
     List<ImageShader>? samplerUniforms,
   }) {
-    if (floatUniforms == null) {
-      floatUniforms = Float32List(_uniformFloatCount);
-    }
+    floatUniforms ??= Float32List(_uniformFloatCount);
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
         'floatUniforms size: ${floatUniforms.length} must match given shader '
@@ -4186,6 +4272,69 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   external Handle _shader(_FragmentShader shader, Float32List floatUniforms, List<ImageShader> samplerUniforms);
 }
 
+/// A [Shader] generated from a [FragmentProgram].
+///
+/// Instances of this class can be obtained from the
+/// [FragmentProgram.fragmentShader] method. The float uniforms list is
+/// initialized to the size expected by the shader and is zero-filled. Uniforms
+/// of float type can then be set by calling [setFloat]. Sampler uniforms are
+/// set by calling [setSampler].
+///
+/// A [FragmentShader] can be re-used, and this is an efficient way to avoid
+/// allocating and re-initializing the uniform buffer and samplers. However,
+/// if two [FragmentShader] objects with different float uniforms or samplers
+/// are required to exist simultaneously, they must be obtained from two
+/// different calls to [FragmentProgram.fragmentShader].
+class FragmentShader extends Shader {
+  FragmentShader._(FragmentProgram program) : super._() {
+    _floats = _constructor(
+      program,
+      program._uniformFloatCount,
+      program._samplerCount,
+    );
+  }
+
+  static final Float32List _kEmptyFloat32List = Float32List(0);
+
+  late Float32List _floats;
+
+  /// Sets the float uniform at [index] to [value].
+  void setFloat(int index, double value) {
+    assert(!debugDisposed, 'Tried to accesss uniforms on a disposed Shader: $this');
+    _floats[index] = value;
+  }
+
+  /// Sets the sampler uniform at [index] to [sampler].
+  ///
+  /// All the sampler uniforms that a shader expects must be provided or the
+  /// results will be undefined.
+  void setSampler(int index, ImageShader sampler) {
+    assert(!debugDisposed, 'Tried to access uniforms on a disposed Shader: $this');
+    _setSampler(index, sampler);
+  }
+
+  /// Releases the native resources held by the [FragmentShader].
+  ///
+  /// After this method is called, calling methods on the shader, or attaching
+  /// it to a [Paint] object will fail with an exception. Calling [dispose]
+  /// twice will also result in an exception being thrown.
+  @override
+  void dispose() {
+    super.dispose();
+    _floats = _kEmptyFloat32List;
+    _dispose();
+  }
+
+  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
+  external Float32List _constructor(FragmentProgram program, int floatUniforms, int samplerUniforms);
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetSampler')
+  external void _setSampler(int index, ImageShader sampler);
+
+  @FfiNative<Void Function(Pointer<Void>)>('ReusableFragmentShader::Dispose')
+  external void _dispose();
+}
+
 @pragma('vm:entry-point')
 class _FragmentShader extends Shader {
   /// This class is created by the engine and should not be instantiated
@@ -4204,10 +4353,12 @@ class _FragmentShader extends Shader {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _FragmentShader
         && other._builder == _builder
         && _listEquals<double>(other._floatUniforms, _floatUniforms)
@@ -4259,12 +4410,15 @@ class Vertices extends NativeFieldWrapperClass1 {
     List<int>? indices,
   }) : assert(mode != null),
        assert(positions != null) {
-    if (textureCoordinates != null && textureCoordinates.length != positions.length)
+    if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length != positions.length)
+    }
+    if (colors != null && colors.length != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
-    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
+    }
+    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError('"indices" values must be valid indices in the positions list.');
+    }
 
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
@@ -4277,12 +4431,13 @@ class Vertices extends NativeFieldWrapperClass1 {
       ? Uint16List.fromList(indices)
       : null;
 
-    if (!_init(this, mode.index, encodedPositions, encodedTextureCoordinates, encodedColors, encodedIndices))
+    if (!_init(this, mode.index, encodedPositions, encodedTextureCoordinates, encodedColors, encodedIndices)) {
       throw ArgumentError('Invalid configuration for vertices.');
+    }
   }
 
   /// Creates a set of vertex data for use with [Canvas.drawVertices], directly
-  /// using the encoding methods of [new Vertices].
+  /// using the encoding methods of [Vertices.new].
   /// Note that this constructor uses raw typed data lists,
   /// so it runs faster than the [Vertices()] constructor
   /// because it doesn't require any conversion from Dart lists.
@@ -4316,15 +4471,19 @@ class Vertices extends NativeFieldWrapperClass1 {
     Uint16List? indices,
   }) : assert(mode != null),
        assert(positions != null) {
-    if (textureCoordinates != null && textureCoordinates.length != positions.length)
+    if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length * 2 != positions.length)
+    }
+    if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
-    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
+    }
+    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError('"indices" values must be valid indices in the positions list.');
+    }
 
-    if (!_init(this, mode.index, positions, textureCoordinates, colors, indices))
+    if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
+    }
   }
 
   @FfiNative<Bool Function(Handle, Int32, Handle, Handle, Handle, Handle)>('Vertices::init')
@@ -4334,6 +4493,36 @@ class Vertices extends NativeFieldWrapperClass1 {
                              Float32List? textureCoordinates,
                              Int32List? colors,
                              Uint16List? indices);
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Vertices::dispose')
+  external void _dispose();
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
+  }
 }
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -4411,8 +4600,9 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// given recorder.
   @pragma('vm:entry-point')
   Canvas(PictureRecorder recorder, [ Rect? cullRect ]) : assert(recorder != null) {
-    if (recorder.isRecording)
+    if (recorder.isRecording) {
       throw ArgumentError('"recorder" must not already be associated with another Canvas.');
+    }
     _recorder = recorder;
     _recorder!._canvas = this;
     cullRect ??= Rect.largest;
@@ -4573,6 +4763,18 @@ class Canvas extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>)>('Canvas::restore', isLeaf: true)
   external void restore();
 
+  /// Restores the save stack to a previous level as might be obtained from [getSaveCount].
+  /// If [count] is less than 1, the stack is restored to its initial state.
+  /// If [count] is greater than the current [getSaveCount] then nothing happens.
+  ///
+  /// Use [save] and [saveLayer] to push state onto the stack.
+  ///
+  /// If any of the state stack levels restored by this call were pushed with
+  /// [saveLayer], then this call will also cause those layers to be composited
+  /// into their previous layers.
+  @FfiNative<Void Function(Pointer<Void>, Int32)>('Canvas::restoreToCount', isLeaf: true)
+  external void restoreToCount(int count);
+
   /// Returns the number of items on the save stack, including the
   /// initial state. This means it returns 1 for a clean canvas, and
   /// that each call to [save] and [saveLayer] increments it, and that
@@ -4613,8 +4815,9 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// specified as a list of values in column-major order.
   void transform(Float64List matrix4) {
     assert(matrix4 != null);
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _transform(matrix4);
   }
 
@@ -4719,12 +4922,15 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// following two clip method calls:
   ///
   /// ```dart
-  ///    clipPath(Path()
-  ///      ..addRect(const Rect.fromLTRB(10, 10, 20, 20))
-  ///      ..addRect(const Rect.fromLTRB(80, 80, 100, 100)));
-  ///    clipPath(Path()
-  ///      ..addRect(const Rect.fromLTRB(80, 10, 100, 20))
-  ///      ..addRect(const Rect.fromLTRB(10, 80, 20, 100)));
+  /// void draw(Canvas canvas) {
+  ///   canvas.clipPath(Path()
+  ///     ..addRect(const Rect.fromLTRB(10, 10, 20, 20))
+  ///     ..addRect(const Rect.fromLTRB(80, 80, 100, 100)));
+  ///   canvas.clipPath(Path()
+  ///     ..addRect(const Rect.fromLTRB(80, 10, 100, 20))
+  ///     ..addRect(const Rect.fromLTRB(10, 80, 20, 100)));
+  ///   // ...
+  /// }
   /// ```
   ///
   /// After executing both of those calls there is no area left in which to draw
@@ -4884,6 +5090,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// closed back to the center, forming a circle sector. Otherwise, the arc is
   /// not closed, forming a circle segment.
   ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_draw_arc.png)
+  ///
   /// This method is optimized for drawing arcs and should be faster than [Path.arcTo].
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
     assert(_rectIsValid(rect));
@@ -4921,6 +5129,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
   void drawImage(Image image, Offset offset, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_offsetIsValid(offset));
     assert(paint != null);
     final String? error = _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
@@ -4943,6 +5152,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// performance.
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_rectIsValid(src));
     assert(_rectIsValid(dst));
     assert(paint != null);
@@ -4993,6 +5203,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// positions.
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
     assert(image != null); // image is checked on the engine side
+    assert(!image.debugDisposed);
     assert(_rectIsValid(center));
     assert(_rectIsValid(dst));
     assert(paint != null);
@@ -5032,6 +5243,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [PictureRecorder].
   void drawPicture(Picture picture) {
     assert(picture != null); // picture is checked on the engine side
+    assert(!picture.debugDisposed);
     _drawPicture(picture);
   }
 
@@ -5045,8 +5257,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// first.
   ///
   /// To align the text, set the `textAlign` on the [ParagraphStyle] object
-  /// passed to the [new ParagraphBuilder] constructor. For more details see
-  /// [TextAlign] and the discussion at [new ParagraphStyle].
+  /// passed to the [ParagraphBuilder.new] constructor. For more details see
+  /// [TextAlign] and the discussion at [ParagraphStyle.new].
   ///
   /// If the text is left aligned or justified, the left margin will be at the
   /// position specified by the `offset` argument's [Offset.dx] coordinate.
@@ -5060,6 +5272,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
   void drawParagraph(Paragraph paragraph, Offset offset) {
     assert(paragraph != null);
+    assert(!paragraph.debugDisposed);
     assert(_offsetIsValid(offset));
     assert(!paragraph._needsLayout);
     paragraph._paint(this, offset.dx, offset.dy);
@@ -5093,8 +5306,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    if (points.length % 2 != 0)
+    if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
+    }
     _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
 
@@ -5117,13 +5331,13 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// All parameters must not be null.
   ///
   /// See also:
-  ///   * [new Vertices], which creates a set of vertices to draw on the canvas.
+  ///   * [Vertices.new], which creates a set of vertices to draw on the canvas.
   ///   * [Vertices.raw], which creates the vertices using typed data lists
   ///     rather than unencoded lists.
   ///   * [paint], Image shaders can be used to draw images on a triangular mesh.
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-
     assert(vertices != null); // vertices is checked on the engine side
+    assert(!vertices.debugDisposed);
     assert(paint != null);
     assert(blendMode != null);
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
@@ -5172,12 +5386,14 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5194,8 +5410,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///           anchorX: 5.0,
   ///           anchorY: 5.0,
   ///           // Location at which to draw the center of the sprite
-  ///           translateX: sprite.centerX,
-  ///           translateY: sprite.centerY,
+  ///           translateX: sprite.center.dx,
+  ///           translateY: sprite.center.dy,
   ///         ),
   ///     ], <Rect>[
   ///       for (Sprite sprite in allSprites)
@@ -5203,7 +5419,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     ], null, null, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5211,14 +5427,16 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center, this.alpha, this.rotation);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   ///   int alpha;
   ///   double rotation;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5235,8 +5453,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///           anchorX: 5.0,
   ///           anchorY: 5.0,
   ///           // Location at which to draw the center of the sprite
-  ///           translateX: sprite.centerX,
-  ///           translateY: sprite.centerY,
+  ///           translateX: sprite.center.dx,
+  ///           translateY: sprite.center.dy,
   ///         ),
   ///     ], <Rect>[
   ///       for (Sprite sprite in allSprites)
@@ -5247,7 +5465,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     ], BlendMode.srcIn, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5267,16 +5485,19 @@ class Canvas extends NativeFieldWrapperClass1 {
                  Rect? cullRect,
                  Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
+    assert(!atlas.debugDisposed);
     assert(transforms != null);
     assert(rects != null);
     assert(colors == null || colors.isEmpty || blendMode != null);
     assert(paint != null);
 
     final int rectCount = rects.length;
-    if (transforms.length != rectCount)
+    if (transforms.length != rectCount) {
       throw ArgumentError('"transforms" and "rects" lengths must match.');
-    if (colors != null && colors.isNotEmpty && colors.length != rectCount)
+    }
+    if (colors != null && colors.isNotEmpty && colors.length != rectCount) {
       throw ArgumentError('If non-null, "colors" length must match that of "transforms" and "rects".');
+    }
 
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);
@@ -5342,12 +5563,14 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5361,7 +5584,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     Float32List rectList = Float32List(allSprites.length * 4);
   ///     Float32List transformList = Float32List(allSprites.length * 4);
   ///     for (int i = 0; i < allSprites.length; i++) {
-  ///       final double rectX = sprite.spriteIndex * 10.0;
+  ///       Sprite sprite = allSprites[i];
+  ///       final double rectX = sprite.index * 10.0;
   ///       rectList[i * 4 + 0] = rectX;
   ///       rectList[i * 4 + 1] = 0.0;
   ///       rectList[i * 4 + 2] = rectX + 10.0;
@@ -5373,14 +5597,14 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///       // the necessary values or do the same math directly.
   ///       transformList[i * 4 + 0] = 1.0;
   ///       transformList[i * 4 + 1] = 0.0;
-  ///       transformList[i * 4 + 2] = sprite.centerX - 5.0;
-  ///       transformList[i * 4 + 3] = sprite.centerY - 5.0;
+  ///       transformList[i * 4 + 2] = sprite.center.dx - 5.0;
+  ///       transformList[i * 4 + 3] = sprite.center.dy - 5.0;
   ///     }
   ///     Paint paint = Paint();
-  ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
+  ///     canvas.drawRawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5388,14 +5612,16 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center, this.alpha, this.rotation);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   ///   int alpha;
   ///   double rotation;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5410,7 +5636,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     Float32List transformList = Float32List(allSprites.length * 4);
   ///     Int32List colorList = Int32List(allSprites.length);
   ///     for (int i = 0; i < allSprites.length; i++) {
-  ///       final double rectX = sprite.spriteIndex * 10.0;
+  ///       Sprite sprite = allSprites[i];
+  ///       final double rectX = sprite.index * 10.0;
   ///       rectList[i * 4 + 0] = rectX;
   ///       rectList[i * 4 + 1] = 0.0;
   ///       rectList[i * 4 + 2] = rectX + 10.0;
@@ -5428,8 +5655,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///         anchorX: 5.0,
   ///         anchorY: 5.0,
   ///         // Location at which to draw the center of the sprite
-  ///         translateX: sprite.centerX,
-  ///         translateY: sprite.centerY,
+  ///         translateX: sprite.center.dx,
+  ///         translateY: sprite.center.dy,
   ///       );
   ///       transformList[i * 4 + 0] = transform.scos;
   ///       transformList[i * 4 + 1] = transform.ssin;
@@ -5443,10 +5670,10 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///       colorList[i] = sprite.alpha << 24;
   ///     }
   ///     Paint paint = Paint();
-  ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, colorList, BlendMode.srcIn, null, paint);
+  ///     canvas.drawRawAtlas(spriteAtlas, transformList, rectList, colorList, BlendMode.srcIn, null, paint);
   ///   }
   ///
-  ///   ...
+  ///   // ...
   /// }
   /// ```
   ///
@@ -5468,12 +5695,15 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
 
     final int rectCount = rects.length;
-    if (rstTransforms.length != rectCount)
+    if (rstTransforms.length != rectCount) {
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
-    if (rectCount % 4 != 0)
+    }
+    if (rectCount % 4 != 0) {
       throw ArgumentError('"rstTransforms" and "rects" lengths must be a multiple of four.');
-    if (colors != null && colors.length * 4 != rectCount)
+    }
+    if (colors != null && colors.length * 4 != rectCount) {
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+    }
     final int qualityIndex = paint.filterQuality.index;
 
     final String? error = _drawAtlas(
@@ -5538,8 +5768,9 @@ class Picture extends NativeFieldWrapperClass1 {
   /// `height` (bottom) bounds. Content outside these bounds is clipped.
   Future<Image> toImage(int width, int height) {
     assert(!_disposed);
-    if (width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
+    }
     return _futurize(
       (_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
         if (image == null) {
@@ -5652,8 +5883,9 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
   Picture endRecording() {
-    if (_canvas == null)
+    if (_canvas == null) {
       throw StateError('PictureRecorder did not start recording.');
+    }
     final Picture picture = Picture._();
     _endRecording(picture);
     _canvas!._recorder = null;
@@ -5661,7 +5893,7 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
     return picture;
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle)>('PictureRecorder::endRecording')
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('PictureRecorder::endRecording')
   external void _endRecording(Picture outPicture);
 
   Canvas? _canvas;
@@ -5801,25 +6033,30 @@ class Shadow {
   /// {@macro dart.ui.shadow.lerp}
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
     assert(t != null);
-    if (a == null && b == null)
+    if (a == null && b == null) {
       return null;
+    }
     a ??= <Shadow>[];
     b ??= <Shadow>[];
     final List<Shadow> result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
-    for (int i = 0; i < commonLength; i += 1)
+    for (int i = 0; i < commonLength; i += 1) {
       result.add(Shadow.lerp(a[i], b[i], t)!);
-    for (int i = commonLength; i < a.length; i += 1)
+    }
+    for (int i = commonLength; i < a.length; i += 1) {
       result.add(a[i].scale(1.0 - t));
-    for (int i = commonLength; i < b.length; i += 1)
+    }
+    for (int i = commonLength; i < b.length; i += 1) {
       result.add(b[i].scale(t));
+    }
     return result;
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     return other is Shadow
         && other.color == color
         && other.offset == offset
@@ -5833,8 +6070,9 @@ class Shadow {
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow
   // bytes for each shadow.
   static ByteData _encodeShadows(List<Shadow>? shadows) {
-    if (shadows == null)
+    if (shadows == null) {
       return ByteData(0);
+    }
 
     final int byteCount = shadows.length * _kBytesPerShadow;
     final ByteData shadowsData = ByteData(byteCount);
@@ -5890,9 +6128,14 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
   ///
   /// Throws an [Exception] if the asset does not exist.
   static Future<ImmutableBuffer> fromAsset(String assetKey) {
+    // The flutter tool converts all asset keys with spaces into URI
+    // encoded paths (replacing ' ' with '%20', for example). We perform
+    // the same encoding here so that users can load assets with the same
+    // key they have written in the pubspec.
+    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
     final ImmutableBuffer instance = ImmutableBuffer._(0);
     return _futurize((_Callback<int> callback) {
-      return instance._initFromAsset(assetKey, callback);
+      return instance._initFromAsset(encodedKey, callback);
     }).then((int length) => instance.._length = length);
   }
 
@@ -5951,17 +6194,6 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
 class ImageDescriptor extends NativeFieldWrapperClass1 {
   ImageDescriptor._();
 
-  /// Creates an image descriptor from encoded data in a supported format.
-  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) {
-    final ImageDescriptor descriptor = ImageDescriptor._();
-    return _futurize((_Callback<void> callback) {
-      return descriptor._initEncoded(buffer, callback);
-    }).then((_) => descriptor);
-  }
-
-  @FfiNative<Handle Function(Handle, Pointer<Void>, Handle)>('ImageDescriptor::initEncoded')
-  external String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback);
-
   /// Creates an image descriptor from raw image pixels.
   ///
   /// The `pixels` parameter is the pixel data. They are packed in bytes in the
@@ -5985,6 +6217,17 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
     _bytesPerPixel = 4;
     _initRaw(this, buffer, width, height, rowBytes ?? -1, pixelFormat.index);
   }
+
+  /// Creates an image descriptor from encoded data in a supported format.
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    return _futurize((_Callback<void> callback) {
+      return descriptor._initEncoded(buffer, callback);
+    }).then((_) => descriptor);
+  }
+
+  @FfiNative<Handle Function(Handle, Pointer<Void>, Handle)>('ImageDescriptor::initEncoded')
+  external String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback);
 
   @FfiNative<Void Function(Handle, Handle, Int32, Int32, Int32, Int32)>('ImageDescriptor::initRaw')
   external static void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat);
@@ -6075,30 +6318,33 @@ typedef _Callback<T> = void Function(T result);
 /// failure.
 typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
 
-/// Converts a method that receives a value-returning callback to a method that
-/// returns a Future.
-///
-/// Return a [String] to cause an [Exception] to be synchronously thrown with
-/// that string as a message.
-///
-/// If the callback is called with null, the future completes with an error.
-///
-/// Example usage:
-///
-/// ```dart
-/// typedef IntCallback = void Function(int result);
-///
-/// String _doSomethingAndCallback(IntCallback callback) {
-///   Timer(Duration(seconds: 1), () { callback(1); });
-/// }
-///
-/// Future<int> doSomething() {
-///   return _futurize(_doSomethingAndCallback);
-/// }
-/// ```
-// Note: this function is not directly tested so that it remains private, instead an exact
-// copy of it has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change
-// this function, then you  must update the test.
+// Converts a method that receives a value-returning callback to a method that
+// returns a Future.
+//
+// Return a [String] to cause an [Exception] to be synchronously thrown with
+// that string as a message.
+//
+// If the callback is called with null, the future completes with an error.
+//
+// Example usage:
+//
+// ```dart
+// typedef IntCallback = void Function(int result);
+//
+// String? _doSomethingAndCallback(IntCallback callback) {
+//   Timer(const Duration(seconds: 1), () { callback(1); });
+// }
+//
+// Future<int> doSomething() {
+//   return _futurize(_doSomethingAndCallback);
+// }
+// ```
+//
+// This function is private and so not directly tested. Instead, an exact copy of it
+// has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change this
+// function, then you must update the test.
+//
+// TODO(ianh): We should either automate the code duplication or just make it public.
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
   // If the callback synchronously throws an error, then synchronously
@@ -6117,8 +6363,9 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
     }
   });
   sync = false;
-  if (error != null)
+  if (error != null) {
     throw Exception(error);
+  }
   return completer.future;
 }
 

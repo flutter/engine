@@ -49,7 +49,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   Dart_Handle getLineBoundary(unsigned offset);
   tonic::Float64List computeLineMetrics();
 
-  size_t GetAllocationSize() const override;
+  void dispose();
 
  private:
   std::unique_ptr<txt::Paragraph> m_paragraph;

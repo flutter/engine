@@ -38,6 +38,7 @@ class Scene extends NativeFieldWrapperClass1 {
   external String? _toImageSync(int width, int height, _Image outImage);
 
   /// Creates a raster image representation of the current state of the scene.
+  ///
   /// This is a slow operation that is performed on a background thread.
   ///
   /// Callers must dispose the [Image] when they are done with it. If the result
@@ -126,7 +127,7 @@ abstract class _EngineLayerWrapper implements EngineLayer {
 /// a custom implementation of this class.
 /// {@endtemplate}
 class TransformEngineLayer extends _EngineLayerWrapper {
-  TransformEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  TransformEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to an offset engine layer.
@@ -135,7 +136,7 @@ class TransformEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class OffsetEngineLayer extends _EngineLayerWrapper {
-  OffsetEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  OffsetEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a clip rect engine layer.
@@ -144,7 +145,7 @@ class OffsetEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ClipRectEngineLayer extends _EngineLayerWrapper {
-  ClipRectEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  ClipRectEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a clip rounded rect engine layer.
@@ -153,7 +154,7 @@ class ClipRectEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ClipRRectEngineLayer extends _EngineLayerWrapper {
-  ClipRRectEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  ClipRRectEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a clip path engine layer.
@@ -162,7 +163,7 @@ class ClipRRectEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ClipPathEngineLayer extends _EngineLayerWrapper {
-  ClipPathEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  ClipPathEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to an opacity engine layer.
@@ -171,7 +172,7 @@ class ClipPathEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class OpacityEngineLayer extends _EngineLayerWrapper {
-  OpacityEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  OpacityEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a color filter engine layer.
@@ -180,7 +181,7 @@ class OpacityEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ColorFilterEngineLayer extends _EngineLayerWrapper {
-  ColorFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  ColorFilterEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to an image filter engine layer.
@@ -189,7 +190,7 @@ class ColorFilterEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ImageFilterEngineLayer extends _EngineLayerWrapper {
-  ImageFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  ImageFilterEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a backdrop filter engine layer.
@@ -198,7 +199,7 @@ class ImageFilterEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class BackdropFilterEngineLayer extends _EngineLayerWrapper {
-  BackdropFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  BackdropFilterEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a shader mask engine layer.
@@ -207,7 +208,7 @@ class BackdropFilterEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ShaderMaskEngineLayer extends _EngineLayerWrapper {
-  ShaderMaskEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  ShaderMaskEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// An opaque handle to a physical shape engine layer.
@@ -216,7 +217,7 @@ class ShaderMaskEngineLayer extends _EngineLayerWrapper {
 ///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
-  PhysicalShapeEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+  PhysicalShapeEngineLayer._(super.nativeLayer) : super._();
 }
 
 /// Builds a [Scene] containing the given visuals.
@@ -240,7 +241,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   //
   // The key is the layer used. The value is the description of what the layer
   // is used for, e.g. "pushOpacity" or "addRetained".
-  Map<EngineLayer, String> _usedLayers = <EngineLayer, String>{};
+  final Map<EngineLayer, String> _usedLayers = <EngineLayer, String>{};
 
   // In debug mode checks that the `layer` is only used once in a given scene.
   bool _debugCheckUsedOnce(EngineLayer layer, String usage) {
@@ -625,6 +626,10 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
+  @Deprecated(
+    'Use a clip and canvas operations directly (See RenderPhysicalModel). '
+    'This feature was deprecated after v3.1.0-0.0.pre.',
+  )
   PhysicalShapeEngineLayer pushPhysicalShape({
     required Path path,
     required double elevation,

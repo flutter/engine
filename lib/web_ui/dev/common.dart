@@ -11,7 +11,6 @@ import 'browser_lock.dart';
 import 'chrome.dart';
 import 'edge.dart';
 import 'firefox.dart';
-import 'safari_ios.dart';
 import 'safari_macos.dart';
 
 /// The port number for debugging.
@@ -37,7 +36,7 @@ abstract class PlatformBinding {
     if (io.Platform.isWindows) {
       return WindowsPlatformBinding();
     }
-    throw '${io.Platform.operatingSystem} is not supported';
+    throw UnsupportedError('${io.Platform.operatingSystem} is not supported');
   }
 
   String getChromeBuild(ChromeLock chromeLock);
@@ -231,14 +230,12 @@ const String kChrome = 'chrome';
 const String kEdge = 'edge';
 const String kFirefox = 'firefox';
 const String kSafari = 'safari';
-const String kSafariIos = 'ios-safari';
 
 const List<String> kAllBrowserNames = <String>[
   kChrome,
   kEdge,
   kFirefox,
   kSafari,
-  kSafariIos,
 ];
 
 /// Creates an environment for a browser.
@@ -254,8 +251,6 @@ BrowserEnvironment getBrowserEnvironment(String browserName) {
       return FirefoxEnvironment();
     case kSafari:
       return SafariMacOsEnvironment();
-    case kSafariIos:
-      return SafariIosEnvironment();
   }
   throw UnsupportedError('Browser $browserName is not supported.');
 }

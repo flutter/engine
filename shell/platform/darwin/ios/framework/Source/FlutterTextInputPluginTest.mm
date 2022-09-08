@@ -68,6 +68,7 @@ FLUTTER_ASSERT_ARC
 - (UIView*)hostView;
 - (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr;
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
+- (void)startLiveTextInput;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -165,6 +166,17 @@ FLUTTER_ASSERT_ARC
 }
 
 #pragma mark - Tests
+
+- (void)testInvokeStartLiveTextInput {
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.startLiveTextInput" arguments:nil];
+  FlutterTextInputPlugin* mockPlugin = OCMPartialMock(textInputPlugin);
+  [mockPlugin handleMethodCall:methodCall
+                        result:^(id _Nullable result){
+                        }];
+  OCMVerify([mockPlugin startLiveTextInput]);
+}
+
 - (void)testNoDanglingEnginePointer {
   __weak FlutterTextInputPlugin* weakFlutterTextInputPlugin;
   FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
@@ -404,6 +416,41 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 30)];
   NSString* substring = [inputView textInRange:range];
   XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
+}
+
+- (void)testDeletingBackward {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳ดี "];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+
+  // Thai vowel is removed.
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳ด");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰");
+  [inputView deleteBackward];
+
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text ");
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"");
 }
 
 - (void)testPastingNonTextDisallowed {
@@ -1090,6 +1137,7 @@ FLUTTER_ASSERT_ARC
       @"composingExtent" : @3
     }];
     OCMVerify([mockInputView setInputDelegate:[OCMArg isNotNil]]);
+    [inputView removeFromSuperview];
   }
 }
 

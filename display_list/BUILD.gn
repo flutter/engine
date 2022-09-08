@@ -16,6 +16,8 @@ source_set("display_list") {
     "display_list_blend_mode.h",
     "display_list_builder.cc",
     "display_list_builder.h",
+    "display_list_builder_multiplexer.cc",
+    "display_list_builder_multiplexer.h",
     "display_list_canvas_dispatcher.cc",
     "display_list_canvas_dispatcher.h",
     "display_list_canvas_recorder.cc",
@@ -153,6 +155,20 @@ if (enable_unittests) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
+  }
+
+  executable("display_list_builder_benchmarks") {
+    testonly = true
+
+    sources = [ "display_list_builder_benchmarks.cc" ]
+
+    deps = [
+      ":display_list",
+      ":display_list_fixtures",
+      ":display_list_testing",
+      "//flutter/benchmarking",
+      "//flutter/testing:testing_lib",
+    ]
   }
 }
 

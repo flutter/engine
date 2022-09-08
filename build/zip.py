@@ -6,15 +6,22 @@
 
 import argparse
 import json
-import zipfile
 import os
 import stat
 import sys
+import zipfile
 
 
 def _zip_dir(path, zip_file, prefix):
   path = path.rstrip('/\\')
-  for root, _, files in os.walk(path):
+  for root, directories, files in os.walk(path):
+    for directory in directories:
+      if os.path.islink(os.path.join(root, directory)):
+        add_symlink(
+            zip_file,
+            os.path.join(root, directory),
+            os.path.join(root.replace(path, prefix), directory),
+        )
     for file in files:
       if os.path.islink(os.path.join(root, file)):
         add_symlink(
@@ -43,7 +50,7 @@ def add_symlink(zip_file, source, target):
       | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH
   )
   zip_info.external_attr = unix_st_mode << 16
-  zip_file.writestr(zip_info, source)
+  zip_file.writestr(zip_info, os.readlink(source))
 
 
 def main(args):

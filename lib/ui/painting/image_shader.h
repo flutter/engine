@@ -35,10 +35,12 @@ class ImageShader : public Shader {
   int width();
   int height();
 
+  void dispose();
+
  private:
   ImageShader();
 
-  flutter::SkiaGPUObject<SkImage> sk_image_;
+  sk_sp<const DlImage> image_;
   bool sampling_is_locked_;
 
   flutter::SkiaGPUObject<DlImageColorSource> cached_shader_;

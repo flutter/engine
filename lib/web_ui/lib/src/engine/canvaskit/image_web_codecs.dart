@@ -42,6 +42,14 @@ void debugRestoreWebDecoderExpireDuration() {
 
 /// Image decoder backed by the browser's `ImageDecoder`.
 class CkBrowserImageDecoder implements ui.Codec {
+  CkBrowserImageDecoder._({
+    required this.contentType,
+    required this.targetWidth,
+    required this.targetHeight,
+    required this.data,
+    required this.debugSource,
+  });
+
   static Future<CkBrowserImageDecoder> create({
     required Uint8List data,
     required String debugSource,
@@ -55,7 +63,7 @@ class CkBrowserImageDecoder implements ui.Codec {
     if (contentType == null) {
       final String fileHeader;
       if (data.isNotEmpty) {
-        fileHeader = '[' + bytesToHexString(data.sublist(0, math.min(10, data.length))) + ']';
+        fileHeader = '[${bytesToHexString(data.sublist(0, math.min(10, data.length)))}]';
       } else {
         fileHeader = 'empty';
       }
@@ -78,14 +86,6 @@ class CkBrowserImageDecoder implements ui.Codec {
     await decoder._getOrCreateWebDecoder();
     return decoder;
   }
-
-  CkBrowserImageDecoder._({
-    required this.contentType,
-    required this.targetWidth,
-    required this.targetHeight,
-    required this.data,
-    required this.debugSource,
-  });
 
   final String contentType;
   final int? targetWidth;
@@ -205,13 +205,13 @@ class CkBrowserImageDecoder implements ui.Codec {
       if (domInstanceOfString(error, 'DOMException')) {
         if ((error as DomException).name == DomException.notSupported) {
           throw ImageCodecException(
-            'Image file format ($contentType) is not supported by this browser\'s ImageDecoder API.\n'
+            "Image file format ($contentType) is not supported by this browser's ImageDecoder API.\n"
             'Image source: $debugSource',
           );
         }
       }
       throw ImageCodecException(
-        'Failed to decode image using the browser\'s ImageDecoder API.\n'
+        "Failed to decode image using the browser's ImageDecoder API.\n"
         'Image source: $debugSource\n'
         'Original browser error: $error'
       );
@@ -246,7 +246,7 @@ class CkBrowserImageDecoder implements ui.Codec {
 
     if (skImage == null) {
       throw ImageCodecException(
-        'Failed to create image from pixel data decoded using the browser\'s ImageDecoder.',
+        "Failed to create image from pixel data decoded using the browser's ImageDecoder.",
       );
     }
 

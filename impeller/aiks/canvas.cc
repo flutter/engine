@@ -5,10 +5,13 @@
 #include "impeller/aiks/canvas.h"
 
 #include <algorithm>
+#include <optional>
 
 #include "flutter/fml/logging.h"
 #include "impeller/aiks/paint_pass_delegate.h"
+#include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
@@ -41,13 +44,17 @@ void Canvas::Save() {
   Save(false);
 }
 
-void Canvas::Save(bool create_subpass, Entity::BlendMode blend_mode) {
+void Canvas::Save(
+    bool create_subpass,
+    Entity::BlendMode blend_mode,
+    std::optional<EntityPass::BackdropFilterProc> backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.stencil_depth = xformation_stack_.back().stencil_depth;
   if (create_subpass) {
     entry.is_subpass = true;
     auto subpass = std::make_unique<EntityPass>();
+    subpass->SetBackdropFilter(backdrop_filter);
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransformation(xformation_stack_.back().xformation);
@@ -78,6 +85,10 @@ bool Canvas::Restore() {
 
 void Canvas::Concat(const Matrix& xformation) {
   xformation_stack_.back().xformation = GetCurrentTransformation() * xformation;
+}
+
+void Canvas::PreConcat(const Matrix& xformation) {
+  xformation_stack_.back().xformation = xformation * GetCurrentTransformation();
 }
 
 void Canvas::ResetTransform() {
@@ -145,8 +156,49 @@ void Canvas::DrawPaint(Paint paint) {
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
+bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
+                                     Scalar corner_radius,
+                                     Paint& paint) {
+  if (!paint.mask_blur_descriptor.has_value() ||
+      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal ||
+      paint.style != Paint::Style::kFill) {
+    return false;
+  }
+
+  // For symmetrically mask blurred solid RRects, absorb the mask blur and use
+  // a faster SDF approximation.
+
+  auto contents = std::make_shared<RRectShadowContents>();
+  contents->SetColor(paint.color);
+  contents->SetSigma(paint.mask_blur_descriptor->sigma);
+  contents->SetRRect(rect, corner_radius);
+
+  paint.mask_blur_descriptor = std::nullopt;
+
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(std::move(contents)));
+
+  GetCurrentPass().AddEntity(std::move(entity));
+
+  return true;
+}
+
 void Canvas::DrawRect(Rect rect, Paint paint) {
+  if (AttemptDrawBlurredRRect(rect, 0, paint)) {
+    return;
+  }
   DrawPath(PathBuilder{}.AddRect(rect).TakePath(), std::move(paint));
+}
+
+void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
+  if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
+    return;
+  }
+  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
+           std::move(paint));
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
@@ -163,7 +215,6 @@ void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(std::move(contents));
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetAddsToCoverage(false);
 
   GetCurrentPass().AddEntity(std::move(entity));
 
@@ -178,12 +229,9 @@ void Canvas::RestoreClip() {
   // takes up the full render target.
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetAddsToCoverage(false);
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
-
-void Canvas::DrawShadow(Path path, Color color, Scalar elevation) {}
 
 void Canvas::DrawPicture(Picture picture) {
   if (!picture.pass) {
@@ -230,8 +278,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
     return;
   }
 
-  auto contents = std::make_shared<TextureContents>();
-  contents->SetPath(PathBuilder{}.AddRect(dest).TakePath());
+  auto contents = TextureContents::MakeRect(dest);
   contents->SetTexture(image->GetTexture());
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));
@@ -268,12 +315,11 @@ size_t Canvas::GetStencilDepth() const {
 void Canvas::SaveLayer(Paint paint,
                        std::optional<Rect> bounds,
                        std::optional<Paint::ImageFilterProc> backdrop_filter) {
-  Save(true, paint.blend_mode);
+  Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
   new_layer_pass.SetDelegate(
       std::make_unique<PaintPassDelegate>(paint, bounds));
-  new_layer_pass.SetBackdropFilter(backdrop_filter);
 
   if (bounds.has_value() && !backdrop_filter.has_value()) {
     // Render target switches due to a save layer can be elided. In such cases
@@ -317,6 +363,42 @@ void Canvas::DrawVertices(Vertices vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(contents), true));
+
+  GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
+                       std::vector<Matrix> transforms,
+                       std::vector<Rect> texture_coordinates,
+                       std::vector<Color> colors,
+                       Entity::BlendMode blend_mode,
+                       SamplerDescriptor sampler,
+                       std::optional<Rect> cull_rect,
+                       Paint paint) {
+  if (!atlas) {
+    return;
+  }
+  auto size = atlas->GetSize();
+
+  if (size.IsEmpty()) {
+    return;
+  }
+
+  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
+  contents->SetColors(std::move(colors));
+  contents->SetTransforms(std::move(transforms));
+  contents->SetTextureCoordinates(std::move(texture_coordinates));
+  contents->SetTexture(atlas->GetTexture());
+  contents->SetSamplerDescriptor(std::move(sampler));
+  contents->SetBlendMode(blend_mode);
+  contents->SetCullRect(cull_rect);
+  contents->SetAlpha(paint.color.alpha);
+
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(contents, false));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert' show utf8, LineSplitter;
+import 'dart:convert' show LineSplitter, utf8;
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
@@ -276,7 +276,7 @@ Future<void> runFlutter(
   if (exitCode != 0) {
     throw ToolExit(
       'ERROR: Failed to run $executable with '
-      'arguments ${arguments.toString()}. Exited with exit code $exitCode',
+      'arguments $arguments. Exited with exit code $exitCode',
       exitCode: exitCode,
     );
   }

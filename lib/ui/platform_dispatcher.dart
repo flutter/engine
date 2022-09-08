@@ -69,6 +69,28 @@ const double _kUnsetGestureSetting = -1.0;
 // See embedder.cc::kFlutterKeyDataChannel for more information.
 const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
+@pragma('vm:entry-point')
+ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
+    byteData == null ? null : UnmodifiableByteDataView(byteData);
+
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  RootIsolateToken._(this._token);
+
+  /// An enumeration representing the root isolate (0 if not a root isolate).
+  final int _token;
+
+  /// The token for the root isolate that is executing this Dart code.  If this
+  /// Dart code is not executing on a root isolate [instance] will be null.
+  static final RootIsolateToken? instance = () {
+    final int token = __getRootIsolateToken();
+    return token == 0 ? null : RootIsolateToken._(token);
+  }();
+
+  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateToken')
+  external static int __getRootIsolateToken();
+}
+
 /// Platform event dispatcher singleton.
 ///
 /// The most basic interface to the host operating system's interface.
@@ -141,10 +163,10 @@ class PlatformDispatcher {
   ///
   /// If any of their configurations change, [onMetricsChanged] will be called.
   Iterable<FlutterView> get views => _views.values;
-  Map<Object, FlutterView> _views = <Object, FlutterView>{};
+  final Map<Object, FlutterView> _views = <Object, FlutterView>{};
 
   // A map of opaque platform view identifiers to view configurations.
-  Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
+  final Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -523,15 +545,55 @@ class PlatformDispatcher {
   void sendPlatformMessage(String name, ByteData? data, PlatformMessageResponseCallback? callback) {
     final String? error =
         _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
-    if (error != null)
+    if (error != null) {
       throw Exception(error);
+    }
   }
 
-  String? _sendPlatformMessage(String name,PlatformMessageResponseCallback? callback, ByteData? data) =>
+  String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data) =>
       __sendPlatformMessage(name, callback, data);
 
   @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
+
+  /// Sends a message to a platform-specific plugin via a [SendPort].
+  ///
+  /// This operates similarly to [sendPlatformMessage] but is used when sending
+  /// messages from background isolates. The [port] parameter allows Flutter to
+  /// know which isolate to send the result to. The [name] parameter is the name
+  /// of the channel communication will happen on. The [data] parameter is the
+  /// payload of the message. The [identifier] parameter is a unique integer
+  /// assigned to the message.
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    SendPort port) {
+    final String? error =
+        _sendPortPlatformMessage(name, identifier, port.nativePort, data);
+    if (error != null) {
+      throw Exception(error);
+    }
+  }
+
+  String? _sendPortPlatformMessage(String name, int identifier, int port, ByteData? data) =>
+      __sendPortPlatformMessage(name, identifier, port, data);
+
+  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
+  external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
+
+  /// Registers the current isolate with the isolate identified with by the
+  /// [token]. This is required if platform channels are to be used on a
+  /// background isolate.
+  void registerBackgroundIsolate(RootIsolateToken token) {
+    if (!Platform.isIOS) {
+      // Issue: https://github.com/flutter/flutter/issues/13937
+      throw UnimplementedError("Platform doesn't yet support platform channels on background isolates.");
+    }
+    __registerBackgroundIsolate(token._token);
+  }
+  @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
+  external static void __registerBackgroundIsolate(int rootIsolateId);
 
   /// Called whenever this platform dispatcher receives a message from a
   /// platform-specific plugin.
@@ -621,6 +683,19 @@ class PlatformDispatcher {
 
   @FfiNative<Void Function(Handle)>('PlatformConfigurationNativeApi::SetIsolateDebugName')
   external static void _setIsolateDebugName(String name);
+
+  /// Requests the Dart VM to adjusts the GC heuristics based on the requested `performance_mode`.
+  ///
+  /// This operation is a no-op of web. The request to change a performance may be ignored by the
+  /// engine or not resolve in a predictable way.
+  ///
+  /// See [DartPerformanceMode] for more information on individual performance modes.
+  void requestDartPerformanceMode(DartPerformanceMode mode) {
+    _requestDartPerformanceMode(mode.index);
+  }
+
+  @FfiNative<Int Function(Int)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
+  external static int _requestDartPerformanceMode(int mode);
 
   /// The embedder can specify data that the isolate can request synchronously
   /// on launch. This accessor fetches that data.
@@ -823,8 +898,9 @@ class PlatformDispatcher {
   void _updateLifecycleState(String state) {
     // We do not update the state if the state has already been used to initialize
     // the lifecycleState.
-    if (!_initialLifecycleStateAccessed)
+    if (!_initialLifecycleStateAccessed) {
       _initialLifecycleState = state;
+    }
   }
 
   /// The setting indicating whether time should always be shown in the 24-hour
@@ -1452,8 +1528,6 @@ class FrameTiming {
     ]);
   }
 
-  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
-
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
   /// List [timestamps] must have the same number of elements as
@@ -1461,8 +1535,9 @@ class FrameTiming {
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [PlatformDispatcher.onReportTimings].
-  FrameTiming._(this._data)
-      : assert(_data.length == _dataLength);
+  FrameTiming._(this._data) : assert(_data.length == _dataLength);
+
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
@@ -1703,10 +1778,12 @@ class DisplayFeature {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is DisplayFeature
         && bounds == other.bounds
         && type == other.type
@@ -2026,8 +2103,9 @@ class Locale {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     if (other is! Locale) {
       return false;
     }
@@ -2070,10 +2148,35 @@ class Locale {
 
   String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null && scriptCode!.isNotEmpty)
+    if (scriptCode != null && scriptCode!.isNotEmpty) {
       out.write('$separator$scriptCode');
-    if (_countryCode != null && _countryCode!.isNotEmpty)
+    }
+    if (_countryCode != null && _countryCode!.isNotEmpty) {
       out.write('$separator$countryCode');
+    }
     return out.toString();
   }
+}
+
+/// Various performance modes for tuning the Dart VM's GC performance.
+///
+/// For the editor of this enum, please keep the order in sync with `Dart_PerformanceMode`
+/// in [dart_api.h](https://github.com/dart-lang/sdk/blob/main/runtime/include/dart_api.h#L1302).
+enum DartPerformanceMode {
+  /// This is the default mode that the Dart VM is in.
+  balanced,
+
+  /// Optimize for low latency, at the expense of throughput and memory overhead
+  /// by performing work in smaller batches (requiring more overhead) or by
+  /// delaying work (requiring more memory). An embedder should not remain in
+  /// this mode indefinitely.
+  latency,
+
+  /// Optimize for high throughput, at the expense of latency and memory overhead
+  /// by performing work in larger batches with more intervening growth.
+  throughput,
+
+  /// Optimize for low memory, at the expensive of throughput and latency by more
+  /// frequently performing work.
+  memory,
 }

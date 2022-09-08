@@ -12,7 +12,7 @@
 
 namespace flutter {
 
-class WindowWin32;
+class Window;
 class WindowBindingHandlerDelegate;
 
 class DirectManipulationEventHandler;
@@ -21,7 +21,8 @@ class DirectManipulationEventHandler;
 // DirectManipulation and WindowBindingHandlerDelegate.
 class DirectManipulationOwner {
  public:
-  explicit DirectManipulationOwner(WindowWin32* window);
+  explicit DirectManipulationOwner(Window* window);
+  virtual ~DirectManipulationOwner() = default;
   // Initialize a DirectManipulation viewport with specified width and height.
   // These should match the width and height of the application window.
   int Init(unsigned int width, unsigned int height);
@@ -34,7 +35,7 @@ class DirectManipulationOwner {
       WindowBindingHandlerDelegate* binding_handler_delegate);
   // Called when DM_POINTERHITTEST occurs with an acceptable pointer type. Will
   // start DirectManipulation for that interaction.
-  void SetContact(UINT contactId);
+  virtual void SetContact(UINT contactId);
   // Called to get updates from DirectManipulation. Should be called frequently
   // to provide smooth updates.
   void Update();
@@ -46,7 +47,7 @@ class DirectManipulationOwner {
 
  private:
   // The window gesture input is occuring on.
-  WindowWin32* window_;
+  Window* window_;
   // Cookie needed to register child event handler with viewport.
   DWORD viewportHandlerCookie_;
   // Object needed for operation of the DirectManipulation API.
@@ -57,6 +58,8 @@ class DirectManipulationOwner {
   Microsoft::WRL::ComPtr<IDirectManipulationViewport> viewport_;
   // Child needed for operation of the DirectManipulation API.
   fml::RefPtr<DirectManipulationEventHandler> handler_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DirectManipulationOwner);
 };
 
 // Implements DirectManipulation event handling interfaces, receives calls from

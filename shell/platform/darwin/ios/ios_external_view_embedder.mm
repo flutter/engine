@@ -65,7 +65,13 @@ std::vector<SkCanvas*> IOSExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+std::vector<DisplayListBuilder*> IOSExternalViewEmbedder::GetCurrentBuilders() {
+  FML_CHECK(platform_views_controller_);
+  return platform_views_controller_->GetCurrentBuilders();
+}
+
+// |ExternalViewEmbedder|
+EmbedderPaintContext IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
   FML_CHECK(platform_views_controller_);
   return platform_views_controller_->CompositeEmbeddedView(view_id);
@@ -90,6 +96,17 @@ void IOSExternalViewEmbedder::EndFrame(bool should_resubmit_frame,
 // |ExternalViewEmbedder|
 bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
+}
+
+// |ExternalViewEmbedder|
+void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter) {
+  platform_views_controller_->PushFilterToVisitedPlatformViews(filter);
+}
+
+// |ExternalViewEmbedder|
+void IOSExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
+  platform_views_controller_->PushVisitedPlatformView(view_id);
 }
 
 }  // namespace flutter

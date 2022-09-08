@@ -62,6 +62,28 @@ class Entity {
     kLastAdvancedBlendMode = kLuminosity,
   };
 
+  /// An enum to define how to repeat, fold, or omit colors outside of the
+  /// typically defined range of the source of the colors (such as the
+  /// bounds of an image or the defining geometry of a gradient).
+  enum class TileMode {
+    /// Replicate the edge color if the shader draws outside of its original
+    /// bounds.
+    kClamp,
+
+    /// Repeat the shader's image horizontally and vertically (or both along and
+    /// perpendicular to a gradient's geometry).
+    kRepeat,
+
+    /// Repeat the shader's image horizontally and vertically, seamlessly
+    /// alternating mirrored images.
+    kMirror,
+
+    /// Render the shader's image pixels only within its original bounds. If the
+    /// shader draws outside of its original bounds, transparent black is drawn
+    /// instead.
+    kDecal,
+  };
+
   enum class ClipOperation {
     kDifference,
     kIntersect,
@@ -75,13 +97,12 @@ class Entity {
 
   void SetTransformation(const Matrix& transformation);
 
-  void SetAddsToCoverage(bool adds);
-
-  bool AddsToCoverage() const;
-
   std::optional<Rect> GetCoverage() const;
 
-  bool ShouldRender(const ISize& target_size) const;
+  Contents::StencilCoverage GetStencilCoverage(
+      const std::optional<Rect>& current_stencil_coverage) const;
+
+  bool ShouldRender(const std::optional<Rect>& stencil_coverage) const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 
@@ -99,12 +120,13 @@ class Entity {
 
   bool Render(const ContentContext& renderer, RenderPass& parent_pass) const;
 
+  static bool BlendModeShouldCoverWholeScreen(BlendMode blend_mode);
+
  private:
   Matrix transformation_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   uint32_t stencil_depth_ = 0u;
-  bool adds_to_coverage_ = true;
 };
 
 }  // namespace impeller

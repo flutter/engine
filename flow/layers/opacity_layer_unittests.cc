@@ -438,8 +438,8 @@ TEST_F(OpacityLayerTest, Readback) {
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // OpacityLayer blocks child with readback
-  auto mock_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
+  auto mock_layer = std::make_shared<MockLayer>(SkPath(), SkPaint());
+  mock_layer->set_fake_reads_surface(true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
@@ -523,7 +523,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughImageFilter) {
   auto opacityLayer =
       std::make_shared<OpacityLayer>(128, SkPoint::Make(20, 20));
   auto filterLayer = std::make_shared<ImageFilterLayer>(
-      SkImageFilters::Blur(5.0, 5.0, nullptr));
+      std::make_shared<DlBlurImageFilter>(5.0, 5.0, DlTileMode::kClamp));
   auto mockLayer = MockLayer::MakeOpacityCompatible(SkPath());
   filterLayer->Add(mockLayer);
   opacityLayer->Add(filterLayer);

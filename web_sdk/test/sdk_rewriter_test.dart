@@ -33,9 +33,10 @@ import 'dart:developer' as developer;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:extra';
+
 
 
 // Comment 2
@@ -45,11 +46,13 @@ part 'engine/file2.dart';
 part 'engine/file3.dart';
 ''';
 
-    final String result = rewriteFile(
+    final String result = processSource(
       source,
-      filePath: '/path/to/lib/web_ui/lib/src/engine.dart',
-      isUi: false,
-      isEngine: true,
+      (String source) => validateApiFile(
+        '/path/to/lib/web_ui/lib/src/engine.dart',
+        source,
+        'engine'),
+      generateApiFilePatterns('engine', "import 'dart:extra';\n"),
     );
     expect(result, expected);
   });
@@ -65,11 +68,13 @@ export 'engine/file3.dart';
 
     Object? caught;
     try {
-      rewriteFile(
+      processSource(
         source,
-        filePath: '/path/to/lib/web_ui/lib/src/engine.dart',
-        isUi: false,
-        isEngine: true,
+        (String source) => validateApiFile(
+          '/path/to/lib/web_ui/lib/src/engine.dart',
+          source,
+          'engine'),
+        generateApiFilePatterns('engine', ''),
       );
     } catch(error) {
       caught = error;
@@ -79,7 +84,7 @@ export 'engine/file3.dart';
       '$caught',
       'Exception: on line 3: unexpected code in /path/to/lib/web_ui/lib/src/engine.dart. '
       'This file may only contain comments and exports. Found:\n'
-      'import \'dart:something\';',
+      "import 'dart:something';",
     );
   });
 
@@ -113,11 +118,10 @@ void printSomething() {
 }
 ''';
 
-    final String result = rewriteFile(
+    final String result = processSource(
       source,
-      filePath: '/path/to/lib/web_ui/lib/src/engine/my_file.dart',
-      isUi: false,
-      isEngine: true,
+      (String source) => preprocessPartFile(source, 'engine'),
+      generatePartsPatterns('engine'),
     );
     expect(result, expected);
   });
@@ -139,11 +143,10 @@ void printSomething() {
 }
 ''';
 
-    final String result = rewriteFile(
+    final String result = processSource(
       source,
-      filePath: '/path/to/lib/web_ui/lib/src/engine/my_file.dart',
-      isUi: false,
-      isEngine: true,
+      (String source) => preprocessPartFile(source, 'engine'),
+      generatePartsPatterns('engine'),
     );
     expect(result, expected);
   });

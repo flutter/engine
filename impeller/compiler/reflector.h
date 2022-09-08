@@ -118,10 +118,12 @@ class Reflector {
       const spirv_cross::TypeID& type_id) const;
 
   std::vector<BindPrototype> ReflectBindPrototypes(
-      const spirv_cross::ShaderResources& resources) const;
+      const spirv_cross::ShaderResources& resources,
+      spv::ExecutionModel execution_model) const;
 
   nlohmann::json::array_t EmitBindPrototypes(
-      const spirv_cross::ShaderResources& resources) const;
+      const spirv_cross::ShaderResources& resources,
+      spv::ExecutionModel execution_model) const;
 
   std::optional<StructDefinition> ReflectPerVertexStructDefinition(
       const spirv_cross::SmallVector<spirv_cross::Resource>& stage_inputs)
@@ -137,6 +139,8 @@ class Reflector {
 
   std::vector<StructMember> ReadStructMembers(
       const spirv_cross::TypeID& type_id) const;
+
+  uint32_t GetArrayElements(const spirv_cross::SPIRType& type) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Reflector);
 };

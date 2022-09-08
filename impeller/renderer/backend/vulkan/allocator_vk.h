@@ -6,7 +6,10 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/allocator.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+
+#include <memory>
 
 namespace impeller {
 
@@ -19,9 +22,11 @@ class AllocatorVK final : public Allocator {
   friend class ContextVK;
 
   VmaAllocator allocator_ = {};
+  ContextVK& context_;
   bool is_valid_ = false;
 
-  AllocatorVK(uint32_t vulkan_api_version,
+  AllocatorVK(ContextVK& context,
+              uint32_t vulkan_api_version,
               const vk::PhysicalDevice& physical_device,
               const vk::Device& logical_device,
               const vk::Instance& instance,
@@ -32,13 +37,15 @@ class AllocatorVK final : public Allocator {
   bool IsValid() const;
 
   // |Allocator|
-  std::shared_ptr<DeviceBuffer> CreateBuffer(StorageMode mode,
-                                             size_t length) override;
+  std::shared_ptr<DeviceBuffer> OnCreateBuffer(
+      const DeviceBufferDescriptor& desc) override;
 
   // |Allocator|
-  std::shared_ptr<Texture> CreateTexture(
-      StorageMode mode,
+  std::shared_ptr<Texture> OnCreateTexture(
       const TextureDescriptor& desc) override;
+
+  // |Allocator|
+  ISize GetMaxTextureSizeSupported() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
 };

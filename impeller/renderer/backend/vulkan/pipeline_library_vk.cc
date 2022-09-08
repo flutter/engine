@@ -4,10 +4,13 @@
 
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 
+#include <optional>
+
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
 
 namespace impeller {
@@ -48,7 +51,7 @@ bool PipelineLibraryVK::IsValid() const {
 }
 
 // |PipelineLibrary|
-PipelineFuture PipelineLibraryVK::GetRenderPipeline(
+PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor) {
   Lock lock(pipelines_mutex_);
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
@@ -56,11 +59,13 @@ PipelineFuture PipelineLibraryVK::GetRenderPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline>>(nullptr);
+    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
+        nullptr);
   }
 
-  auto promise = std::make_shared<std::promise<std::shared_ptr<Pipeline>>>();
-  auto future = PipelineFuture{promise->get_future()};
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
+  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
   pipelines_[descriptor] = future;
 
   auto weak_this = weak_from_this();
@@ -73,10 +78,24 @@ PipelineFuture PipelineLibraryVK::GetRenderPipeline(
                         "could be created.";
       return;
     }
-    promise->set_value(
-        PipelineLibraryVK::Cast(thiz.get())->CreatePipeline(descriptor));
+    auto pipeline_create_info =
+        PipelineLibraryVK::Cast(thiz.get())->CreatePipeline(descriptor);
+    promise->set_value(std::make_shared<PipelineVK>(
+        weak_this, descriptor, std::move(pipeline_create_info)));
   });
 
+  return future;
+}
+
+// |PipelineLibrary|
+PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
+    ComputePipelineDescriptor descriptor) {
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
+  auto future =
+      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
+  // TODO(dnfield): implement compute for GLES.
+  promise->set_value(nullptr);
   return future;
 }
 
@@ -104,22 +123,90 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   return desc;
 }
 
-std::shared_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
-    const PipelineDescriptor& desc) const {
+//----------------------------------------------------------------------------
+/// Render Pass
+/// We are NOT going to use the same render pass with the framebuffer (later)
+/// and the graphics pipeline (here). Instead, we are going to ensure that the
+/// sub-passes are compatible. To see the compatibility rules, see the Vulkan
+/// spec:
+/// https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/chap8.html#renderpass-compatibility
+/// TODO(106378): Add a format specifier to the ColorAttachmentDescriptor,
+///               StencilAttachmentDescriptor, and, DepthAttachmentDescriptor.
+///               Right now, these are placeholders.
+///
+std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
+    const PipelineDescriptor& desc) {
+  std::vector<vk::AttachmentDescription> render_pass_attachments;
+  const auto sample_count = desc.GetSampleCount();
+  // Set the color attachment.
+  render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+      vk::Format::eR8G8B8A8Unorm, sample_count));
+
+  std::vector<vk::AttachmentReference> color_attachment_references;
+  std::vector<vk::AttachmentReference> resolve_attachment_references;
+  std::optional<vk::AttachmentReference> depth_stencil_attachment_reference;
+
+  // TODO (kaushikiska): consider changing the image layout to
+  // eColorAttachmentOptimal.
+  color_attachment_references.push_back(vk::AttachmentReference(
+      render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
+
+  // Set the resolve attachment if MSAA is enabled.
+  if (sample_count != SampleCount::kCount1) {
+    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1));
+    resolve_attachment_references.push_back(vk::AttachmentReference(
+        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
+  }
+
+  if (desc.HasStencilAttachmentDescriptors()) {
+    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+        vk::Format::eS8Uint, sample_count));
+    depth_stencil_attachment_reference = vk::AttachmentReference(
+        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
+  }
+
+  vk::SubpassDescription subpass_info;
+  subpass_info.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+  subpass_info.setColorAttachments(color_attachment_references);
+  if (sample_count != SampleCount::kCount1) {
+    subpass_info.setResolveAttachments(resolve_attachment_references);
+  }
+  if (depth_stencil_attachment_reference.has_value()) {
+    subpass_info.setPDepthStencilAttachment(
+        &depth_stencil_attachment_reference.value());
+  }
+
+  vk::RenderPassCreateInfo render_pass_info;
+  render_pass_info.setSubpasses(subpass_info);
+  render_pass_info.setAttachments(render_pass_attachments);
+  auto render_pass = device_.createRenderPassUnique(render_pass_info);
+  if (render_pass.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create render pass for pipeline "
+                   << desc.GetLabel() << ": "
+                   << vk::to_string(render_pass.result);
+    return std::nullopt;
+  }
+
+  return std::move(render_pass.value);
+}
+
+std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
+    const PipelineDescriptor& desc) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   vk::GraphicsPipelineCreateInfo pipeline_info;
 
   //----------------------------------------------------------------------------
   /// Dynamic States
   ///
-  vk::PipelineDynamicStateCreateInfo dynamic_state_info;
+  vk::PipelineDynamicStateCreateInfo dynamic_create_state_info;
   std::vector<vk::DynamicState> dynamic_states = {
       vk::DynamicState::eViewport,
       vk::DynamicState::eScissor,
       vk::DynamicState::eStencilReference,
   };
-  dynamic_state_info.setDynamicStates(dynamic_states);
-  pipeline_info.setPDynamicState(&dynamic_state_info);
+  dynamic_create_state_info.setDynamicStates(dynamic_states);
+  pipeline_info.setPDynamicState(&dynamic_create_state_info);
 
   //----------------------------------------------------------------------------
   /// Viewport State
@@ -160,7 +247,12 @@ std::shared_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   rasterization_state.setFrontFace(vk::FrontFace::eClockwise);
   rasterization_state.setCullMode(vk::CullModeFlagBits::eNone);
   rasterization_state.setPolygonMode(vk::PolygonMode::eFill);
-  rasterization_state.setLineWidth(1.0f);
+  // requires GPU extensions to change.
+  {
+    rasterization_state.setLineWidth(1.0f);
+    rasterization_state.setDepthClampEnable(false);
+  }
+  rasterization_state.setRasterizerDiscardEnable(false);
   pipeline_info.setPRasterizationState(&rasterization_state);
 
   //----------------------------------------------------------------------------
@@ -195,67 +287,67 @@ std::shared_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   blend_state.setAttachments(attachment_blend_state);
   pipeline_info.setPColorBlendState(&blend_state);
 
-  //----------------------------------------------------------------------------
-  /// Render Pass
-  /// We are NOT going to use the same render pass with the framebuffer (later)
-  /// and the graphics pipeline (here). Instead, we are going to ensure that the
-  /// sub-passes are compatible. To see the compatibility rules, see the Vulkan
-  /// spec:
-  /// https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/chap8.html#renderpass-compatibility
-  /// TODO(106378): Add a format specifier to the ColorAttachmentDescriptor,
-  ///               StencilAttachmentDescriptor, and, DepthAttachmentDescriptor.
-  ///               Right now, these are placeholders.
-  ///
-  std::vector<vk::AttachmentReference> color_attachment_references;
-  std::vector<vk::AttachmentReference> resolve_attachment_references;
-  std::optional<vk::AttachmentReference> depth_stencil_attachment_reference;
-  std::vector<vk::AttachmentDescription> render_pass_attachments;
-  const auto sample_count = desc.GetSampleCount();
-  // Set the color attachment.
-  render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-      vk::Format::eR8G8B8A8Unorm, sample_count));
-  color_attachment_references.push_back(vk::AttachmentReference(
-      render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
-  // Set the resolve attachment if MSAA is enabled.
-  if (sample_count != SampleCount::kCount1) {
-    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1));
-    resolve_attachment_references.push_back(vk::AttachmentReference(
-        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
-  }
-  if (desc.HasStencilAttachmentDescriptors()) {
-    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eS8Uint, sample_count));
-    depth_stencil_attachment_reference = vk::AttachmentReference(
-        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
-  }
-  vk::SubpassDescription subpass_info;
-  subpass_info.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-  subpass_info.setColorAttachments(color_attachment_references);
-  subpass_info.setResolveAttachments(resolve_attachment_references);
-  if (depth_stencil_attachment_reference.has_value()) {
-    subpass_info.setPDepthStencilAttachment(
-        &depth_stencil_attachment_reference.value());
-  }
-  vk::RenderPassCreateInfo render_pass_info;
-  render_pass_info.setSubpasses(subpass_info);
-  render_pass_info.setAttachments(render_pass_attachments);
-  auto render_pass = device_.createRenderPassUnique(render_pass_info);
-  if (render_pass.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create render pass for pipeline "
-                   << desc.GetLabel() << ": "
-                   << vk::to_string(render_pass.result);
+  auto render_pass = CreateRenderPass(desc);
+  if (render_pass.has_value()) {
+    pipeline_info.setBasePipelineHandle(VK_NULL_HANDLE);
+    pipeline_info.setSubpass(0);
+    pipeline_info.setRenderPass((*render_pass).get());
+  } else {
     return nullptr;
   }
-  pipeline_info.setRenderPass(render_pass.value.get());
+
+  // only 1 stream of data is supported for now.
+  vk::VertexInputBindingDescription binding_description = {};
+  binding_description.setBinding(0);
+  binding_description.setInputRate(vk::VertexInputRate::eVertex);
+
+  std::vector<vk::VertexInputAttributeDescription> attr_descs;
+  uint32_t stride = 0;
+  const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
+  for (const ShaderStageIOSlot& stage_in : stage_inputs) {
+    vk::VertexInputAttributeDescription attr_desc;
+    attr_desc.setBinding(stage_in.binding);
+    attr_desc.setLocation(stage_in.location);
+    attr_desc.setFormat(vk::Format::eR8G8B8A8Unorm);
+    attr_desc.setOffset(stride);
+    attr_descs.push_back(attr_desc);
+    stride += stage_in.bit_width * stage_in.vec_size;
+  }
+
+  binding_description.setStride(stride);
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state;
+  vertex_input_state.setVertexAttributeDescriptions(attr_descs);
+  vertex_input_state.setVertexBindingDescriptionCount(1);
+  vertex_input_state.setPVertexBindingDescriptions(&binding_description);
+
+  pipeline_info.setPVertexInputState(&vertex_input_state);
 
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
-  std::vector<vk::DescriptorSetLayout> descriptor_set_layouts;
-  // TODO(106377): Wire this up from the C++ generated headers.
+  std::vector<vk::DescriptorSetLayoutBinding> bindings = {};
+
+  for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
+    auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
+    bindings.push_back(vk_desc_layout);
+  }
+
+  vk::DescriptorSetLayoutCreateInfo descriptor_set_create;
+  descriptor_set_create.setBindings(bindings);
+
+  auto descriptor_set_create_res =
+      device_.createDescriptorSetLayoutUnique(descriptor_set_create);
+  if (descriptor_set_create_res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "unable to create uniform descriptors";
+    return nullptr;
+  }
+
+  vk::UniqueDescriptorSetLayout descriptor_set_layout =
+      std::move(descriptor_set_create_res.value);
+
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
-  pipeline_layout_info.setSetLayouts(descriptor_set_layouts);
+  pipeline_layout_info.setSetLayouts(descriptor_set_layout.get());
   auto pipeline_layout =
       device_.createPipelineLayoutUnique(pipeline_layout_info);
   if (pipeline_layout.result != vk::Result::eSuccess) {
@@ -266,11 +358,13 @@ std::shared_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   }
   pipeline_info.setLayout(pipeline_layout.value.get());
 
-  // TODO(WIP)
-
-  // pipeline_info.setPVertexInputState(&vertex_input_state);
-  // pipeline_info.setPDepthStencilState(&depth_stencil_state_);
-  // pipeline_info.setLayout(pipeline_layout);
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state;
+  depth_stencil_state.setDepthTestEnable(true);
+  depth_stencil_state.setDepthWriteEnable(true);
+  depth_stencil_state.setDepthCompareOp(vk::CompareOp::eLess);
+  depth_stencil_state.setDepthBoundsTestEnable(false);
+  depth_stencil_state.setStencilTestEnable(false);
+  pipeline_info.setPDepthStencilState(&depth_stencil_state);
 
   // See the note in the header about why this is a reader lock.
   ReaderLock lock(cache_mutex_);
@@ -280,7 +374,9 @@ std::shared_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
     return nullptr;
   }
-  FML_UNREACHABLE();
+
+  return std::make_unique<PipelineCreateInfoVK>(std::move(pipeline.value),
+                                                std::move(render_pass.value()));
 }
 
 }  // namespace impeller
