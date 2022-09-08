@@ -824,85 +824,47 @@ static char markerKey;
   return @[];
 }
 
-- (BOOL)transformPoint:(CGPoint)point
-              isAffine:(BOOL)isAffine
-                  minX:(CGFloat&)minX
-                  maxX:(CGFloat&)maxX
-                  minY:(CGFloat&)minY
-                  maxY:(CGFloat&)maxY {
-  CGFloat x =
-      _editableTransform.m11 * point.x + _editableTransform.m21 * point.y + _editableTransform.m41;
-  CGFloat y =
-      _editableTransform.m12 * point.x + _editableTransform.m22 * point.y + _editableTransform.m42;
-  if (!isAffine) {
-    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
-                      _editableTransform.m44;
-    if (w == 0.0) {
-      return NO;
-    }
-    x /= w;
-    y /= w;
-  }
-  minX = MIN(minX, x);
-  maxX = MAX(maxX, x);
-  minY = MIN(minY, y);
-  maxY = MAX(maxY, y);
-  return YES;
-}
-
 // Returns the bounding CGRect of the transformed incomingRect, in screen
 // coordinates.
 - (CGRect)screenRectFromFrameworkTransform:(CGRect)incomingRect {
-  CGFloat minX = CGFLOAT_MAX;
-  CGFloat minY = CGFLOAT_MAX;
-  CGFloat maxX = -CGFLOAT_MAX;
-  CGFloat maxY = -CGFLOAT_MAX;
+  CGPoint points[] = {
+      incomingRect.origin,
+      CGPointMake(incomingRect.origin.x, incomingRect.origin.y + incomingRect.size.height),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width, incomingRect.origin.y),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                  incomingRect.origin.y + incomingRect.size.height)};
 
-  const bool isAffine = _editableTransform.m14 == 0.0 && _editableTransform.m24 == 0.0 &&
-                        _editableTransform.m44 == 1.0;
-  bool isValid = [self transformPoint:incomingRect.origin
-                             isAffine:isAffine
-                                 minX:minX
-                                 maxX:maxX
-                                 minY:minY
-                                 maxY:maxY];
-  if (!isValid) {
-    return CGRectZero;
+  CGPoint origin = CGPointMake(CGFLOAT_MAX, CGFLOAT_MAX);
+  CGPoint farthest = CGPointMake(-CGFLOAT_MAX, -CGFLOAT_MAX);
+
+  for (int i = 0; i < 4; i++) {
+    const CGPoint point = points[i];
+
+    CGFloat x = _editableTransform.m11 * point.x + _editableTransform.m21 * point.y +
+                _editableTransform.m41;
+    CGFloat y = _editableTransform.m12 * point.x + _editableTransform.m22 * point.y +
+                _editableTransform.m42;
+
+    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
+                      _editableTransform.m44;
+
+    if (w == 0.0) {
+      return CGRectZero;
+    } else if (w != 1.0) {
+      x /= w;
+      y /= w;
+    }
+
+    origin.x = MIN(origin.x, x);
+    origin.y = MIN(origin.y, y);
+    farthest.x = MAX(farthest.x, x);
+    farthest.y = MAX(farthest.y, y);
   }
 
-  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x,
-                                             incomingRect.origin.y + incomingRect.size.height)
-                        isAffine:isAffine
-                            minX:minX
-                            maxX:maxX
-                            minY:minY
-                            maxY:maxY];
-  if (!isValid) {
-    return CGRectZero;
-  }
-  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x + incomingRect.size.width,
-                                             incomingRect.origin.y)
-                        isAffine:isAffine
-                            minX:minX
-                            maxX:maxX
-                            minY:minY
-                            maxY:maxY];
-  if (!isValid) {
-    return CGRectZero;
-  }
-  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x + incomingRect.size.width,
-                                             incomingRect.origin.y + incomingRect.size.height)
-                        isAffine:isAffine
-                            minX:minX
-                            maxX:maxX
-                            minY:minY
-                            maxY:maxY];
-  if (!isValid) {
-    return CGRectZero;
-  }
   const NSView* fromView = self.flutterViewController.flutterView;
-  const CGRect rectInWindow = [fromView convertRect:CGRectMake(minX, minY, maxX - minX, maxY - minY)
-                                             toView:nil];
+  const CGRect rectInWindow = [fromView
+      convertRect:CGRectMake(origin.x, origin.y, farthest.x - origin.x, farthest.y - origin.y)
+           toView:nil];
   NSWindow* window = fromView.window;
   return window ? [window convertRectToScreen:rectInWindow] : rectInWindow;
 }

@@ -1511,84 +1511,43 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _cachedFirstRect = kInvalidFirstRect;
 }
 
-- (BOOL)transformPoint:(CGPoint)point
-              isAffine:(BOOL)isAffine
-                  minX:(CGFloat&)minX
-                  maxX:(CGFloat&)maxX
-                  minY:(CGFloat&)minY
-                  maxY:(CGFloat&)maxY {
-  CGFloat x =
-      _editableTransform.m11 * point.x + _editableTransform.m21 * point.y + _editableTransform.m41;
-  CGFloat y =
-      _editableTransform.m12 * point.x + _editableTransform.m22 * point.y + _editableTransform.m42;
-  if (!isAffine) {
-    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
-                      _editableTransform.m44;
-    if (w == 0.0) {
-      return NO;
-    }
-    x /= w;
-    y /= w;
-  }
-  minX = MIN(minX, x);
-  maxX = MAX(maxX, x);
-  minY = MIN(minY, y);
-  maxY = MAX(maxY, y);
-  return YES;
-}
-
 // Returns the bounding CGRect of the transformed incomingRect, in the view's
 // coordinates.
 - (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect {
-  CGFloat minX = CGFLOAT_MAX;
-  CGFloat minY = CGFLOAT_MAX;
-  CGFloat maxX = -CGFLOAT_MAX;
-  CGFloat maxY = -CGFLOAT_MAX;
+  CGPoint points[] = {
+      incomingRect.origin,
+      CGPointMake(incomingRect.origin.x, incomingRect.origin.y + incomingRect.size.height),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width, incomingRect.origin.y),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                  incomingRect.origin.y + incomingRect.size.height)};
 
-  const bool isAffine = _editableTransform.m14 == 0.0 && _editableTransform.m24 == 0.0 &&
-                        _editableTransform.m44 == 1.0;
-  bool isValid = [self transformPoint:incomingRect.origin
-                             isAffine:isAffine
-                                 minX:minX
-                                 maxX:maxX
-                                 minY:minY
-                                 maxY:maxY];
-  if (!isValid) {
-    return kInvalidFirstRect;
-  }
+  CGPoint origin = CGPointMake(CGFLOAT_MAX, CGFLOAT_MAX);
+  CGPoint farthest = CGPointMake(-CGFLOAT_MAX, -CGFLOAT_MAX);
 
-  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x,
-                                             incomingRect.origin.y + incomingRect.size.height)
-                        isAffine:isAffine
-                            minX:minX
-                            maxX:maxX
-                            minY:minY
-                            maxY:maxY];
-  if (!isValid) {
-    return kInvalidFirstRect;
-  }
-  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x + incomingRect.size.width,
-                                             incomingRect.origin.y)
-                        isAffine:isAffine
-                            minX:minX
-                            maxX:maxX
-                            minY:minY
-                            maxY:maxY];
-  if (!isValid) {
-    return kInvalidFirstRect;
-  }
-  isValid = [self transformPoint:CGPointMake(incomingRect.origin.x + incomingRect.size.width,
-                                             incomingRect.origin.y + incomingRect.size.height)
-                        isAffine:isAffine
-                            minX:minX
-                            maxX:maxX
-                            minY:minY
-                            maxY:maxY];
-  if (!isValid) {
-    return kInvalidFirstRect;
-  }
+  for (int i = 0; i < 4; i++) {
+    const CGPoint point = points[i];
 
-  return CGRectMake(minX, minY, maxX - minX, maxY - minY);
+    CGFloat x = _editableTransform.m11 * point.x + _editableTransform.m21 * point.y +
+                _editableTransform.m41;
+    CGFloat y = _editableTransform.m12 * point.x + _editableTransform.m22 * point.y +
+                _editableTransform.m42;
+
+    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
+                      _editableTransform.m44;
+
+    if (w == 0.0) {
+      return kInvalidFirstRect;
+    } else if (w != 1.0) {
+      x /= w;
+      y /= w;
+    }
+
+    origin.x = MIN(origin.x, x);
+    origin.y = MIN(origin.y, y);
+    farthest.x = MAX(farthest.x, x);
+    farthest.y = MAX(farthest.y, y);
+  }
+  return CGRectMake(origin.x, origin.y, farthest.x - origin.x, farthest.y - origin.y);
 }
 
 // The following methods are required to support force-touch cursor positioning
@@ -1611,11 +1570,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
     if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
       // If the width returned is too small, that means the framework sent us
-      // the caret rect instead of the marked text rect. Expand it to 0.1 so
+      // the caret rect instead of the marked text rect. Expand it to 0.2 so
       // the IME candidates view would show up.
-      const double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
       CGRect rect = _markedRect;
-      rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
+      if (CGRectIsEmpty(rect)) {
+        rect = CGRectInset(rect, -0.1, 0);
+      }
       _cachedFirstRect = [self localRectFromFrameworkTransform:rect];
     }
 
