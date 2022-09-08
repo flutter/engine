@@ -305,5 +305,17 @@ TEST(FlutterWindowsTextureRegistrarTest, PopulateInvalidTexture) {
   EXPECT_FALSE(result);
 }
 
+TEST(FlutterWindowsTextureRegistrarTest,
+     UnregisterTextureWithEngineDownInvokesCallback) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  std::unique_ptr<MockGlFunctions> gl = std::make_unique<MockGlFunctions>();
+
+  FlutterWindowsTextureRegistrar registrar(engine.get(), gl->gl_procs());
+
+  fml::AutoResetWaitableEvent latch;
+  registrar.UnregisterTexture(1234, [&]() { latch.Signal(); });
+  latch.Wait();
+}
+
 }  // namespace testing
 }  // namespace flutter

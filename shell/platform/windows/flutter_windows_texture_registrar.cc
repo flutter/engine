@@ -84,19 +84,22 @@ void FlutterWindowsTextureRegistrar::UnregisterTexture(
     engine->UnregisterExternalTexture(texture_id);
   });
 
-  engine_->PostRasterThreadTask(
-      [this, texture_id, callback = std::move(callback)]() {
-        {
-          std::lock_guard<std::mutex> lock(map_mutex_);
-          auto it = textures_.find(texture_id);
-          if (it != textures_.end()) {
-            textures_.erase(it);
-          }
-        }
-        if (callback) {
-          callback();
-        }
-      });
+  bool posted = engine_->PostRasterThreadTask([this, texture_id, callback]() {
+    {
+      std::lock_guard<std::mutex> lock(map_mutex_);
+      auto it = textures_.find(texture_id);
+      if (it != textures_.end()) {
+        textures_.erase(it);
+      }
+    }
+    if (callback) {
+      callback();
+    }
+  });
+
+  if (!posted && callback) {
+    callback();
+  }
 }
 
 bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(
