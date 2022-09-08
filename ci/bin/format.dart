@@ -810,8 +810,7 @@ class PythonFormatChecker extends FormatChecker {
 
     final List<String> cmd = <String>[
       yapfBin.path,
-      '--style',
-      _yapfStyle.path,
+      '--style', _yapfStyle.path,
       if (!fixing) '--diff',
       if (fixing) '--in-place',
     ];
@@ -850,8 +849,7 @@ class PythonFormatChecker extends FormatChecker {
 
 @immutable
 class _GrepResult {
-  const _GrepResult(this.file,
-      [this.hits = const <String>[], this.lineNumbers = const <int>[]]);
+  const _GrepResult(this.file, [this.hits = const <String>[], this.lineNumbers = const <int>[]]);
   bool get isEmpty => hits.isEmpty && lineNumbers.isEmpty;
   final File file;
   final List<String> hits;
@@ -966,9 +964,7 @@ class WhitespaceFormatChecker extends FormatChecker {
         found.add(result);
       }
       pending--;
-      inProgress = pending < Platform.numberOfProcessors
-          ? pending
-          : Platform.numberOfProcessors;
+      inProgress = pending < Platform.numberOfProcessors ? pending : Platform.numberOfProcessors;
       reporter(total, completed, inProgress, pending, failed);
     }
     reportDone();
