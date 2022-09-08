@@ -418,12 +418,11 @@ class ClangFormatChecker extends FormatChecker {
             completedJob.command.last,
             '-'
           ],
-              stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
-              failOk: true),
+              stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw)),
         );
       } else {
         final String formatterCommand = completedJob.command.join(' ');
-        error('Formatter command \'$formatterCommand\' failed with exit code '
+        error("Formatter command '$formatterCommand' failed with exit code "
             '${completedJob.result.exitCode}. Command output follows:\n\n'
             '${completedJob.result.output}');
       }
@@ -591,7 +590,7 @@ class JavaFormatChecker extends FormatChecker {
         );
       } else {
         final String formatterCommand = completedJob.command.join(' ');
-        error('Formatter command \'$formatterCommand\' failed with exit code '
+        error("Formatter command '$formatterCommand' failed with exit code "
             '${completedJob.result.exitCode}. Command output follows:\n\n'
             '${completedJob.result.output}');
       }
@@ -689,14 +688,13 @@ class GnFormatChecker extends FormatChecker {
       'format',
       if (!fixing) '--stdin',
     ];
-    final List<WorkerJob> jobs = [];
+    final List<WorkerJob> jobs = <WorkerJob>[];
     for (final String file in filesToCheck) {
       if (!fixing) {
         final WorkerJob job = WorkerJob(
           cmd,
           stdinRaw: codeUnitsAsStream(
               File(path.join(repoDir.absolute.path, file)).readAsBytesSync()),
-          failOk: true,
           name: <String>[...cmd, file].join(' '),
         );
         jobs.add(job);
@@ -726,12 +724,11 @@ class GnFormatChecker extends FormatChecker {
               '-'
             ],
             stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
-            failOk: true,
           ),
         );
       } else {
         final String formatterCommand = completedJob.command.join(' ');
-        error('Formatter command \'$formatterCommand\' failed with exit code '
+        error("Formatter command '$formatterCommand' failed with exit code "
             '${completedJob.result.exitCode}. Command output follows:\n\n'
             '${completedJob.result.output}');
       }
