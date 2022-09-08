@@ -148,6 +148,8 @@ def ParseDepsFile(deps_flat_file):
             print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
             print(' '.join(filtered_results))
             return filtered_results
+        else:
+          print("Found no vulnerabilities")
     return {}
 
 def getCommonAncestorCommit(dep):
