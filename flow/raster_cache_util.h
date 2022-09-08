@@ -67,7 +67,11 @@ struct RasterCacheUtil {
    * @brief Snap the translation components of the matrix to integers.
    *
    * The snapping will only happen if the matrix only has scale and translation
-   * transformations.
+   * transformations. This is used, along with GetRoundedOutDeviceBounds, to
+   * ensure that the textures drawn by the raster cache are exactly aligned to
+   * physical pixels. Any layers that participate in raster caching must align
+   * themselves to physical pixels even when not cached to prevent a change in
+   * apparent location if caching is later applied.
    *
    * @param ctm the current transformation matrix.
    * @return SkMatrix the snapped transformation matrix.
