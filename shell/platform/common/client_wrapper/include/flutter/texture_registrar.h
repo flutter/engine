@@ -96,11 +96,15 @@ class TextureRegistrar {
   virtual bool MarkTextureFrameAvailable(int64_t texture_id) = 0;
 
   // Asynchronously unregisters an existing texture object.
+  // Upon completion, the optional |callback| gets invoked.
   virtual void UnregisterTexture(int64_t texture_id,
                                  std::function<void()> callback) = 0;
 
   // Unregisters an existing texture object.
-  [[deprecated]] virtual bool UnregisterTexture(int64_t texture_id) = 0;
+  [[deprecated(
+      "Use UnregisterTexture(texture_id, optional_callback) "
+      "instead.")]] virtual bool
+  UnregisterTexture(int64_t texture_id) = 0;
 };
 
 }  // namespace flutter
