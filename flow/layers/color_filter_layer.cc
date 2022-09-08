@@ -27,7 +27,7 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
-  if (context->HasRasterCache()) {
+  if (context->has_raster_cache()) {
     context->SetTransform(
         RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
   }

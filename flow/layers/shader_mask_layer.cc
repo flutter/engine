@@ -26,7 +26,7 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
-  if (context->HasRasterCache()) {
+  if (context->has_raster_cache()) {
     context->SetTransform(
         RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
   }

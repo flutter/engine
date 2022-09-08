@@ -33,7 +33,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
         context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
       }
     }
-    if (UsesSaveLayer() && context->HasRasterCache()) {
+    if (UsesSaveLayer() && context->has_raster_cache()) {
       context->SetTransform(
           RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
     }

@@ -28,7 +28,7 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
   context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
-  if (context->HasRasterCache()) {
+  if (context->has_raster_cache()) {
     context->SetTransform(
         RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
   }

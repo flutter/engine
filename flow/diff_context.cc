@@ -50,10 +50,6 @@ void DiffContext::SetTransform(const SkMatrix& transform) {
   state_.transform = transform;
 }
 
-bool DiffContext::HasRasterCache() const {
-  return has_raster_cache_;
-}
-
 void DiffContext::PushFilterBoundsAdjustment(FilterBoundsAdjustment filter) {
   FML_DCHECK(state_.has_filter_bounds_adjustment == false);
   state_.has_filter_bounds_adjustment = true;
