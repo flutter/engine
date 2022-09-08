@@ -160,9 +160,7 @@ class DiffContext {
   // Whether or not a raster cache is being used. If so, we must snap
   // all transformations to physical pixels if the layer may be raster
   // cached.
-  bool has_raster_cache() const {
-    return has_raster_cache_;
-  }
+  bool has_raster_cache() const { return has_raster_cache_; }
 
   class Statistics {
    public:
