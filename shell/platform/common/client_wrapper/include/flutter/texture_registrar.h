@@ -101,10 +101,8 @@ class TextureRegistrar {
                                  std::function<void()> callback) = 0;
 
   // Unregisters an existing texture object.
-  [[deprecated(
-      "Use UnregisterTexture(texture_id, optional_callback) "
-      "instead.")]] virtual bool
-  UnregisterTexture(int64_t texture_id) = 0;
+  // DEPRECATED: Use UnregisterTexture(texture_id, optional_callback) instead.
+  virtual bool UnregisterTexture(int64_t texture_id) = 0;
 };
 
 }  // namespace flutter

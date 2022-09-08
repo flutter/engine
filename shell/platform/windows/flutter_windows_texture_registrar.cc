@@ -77,9 +77,8 @@ int64_t FlutterWindowsTextureRegistrar::EmplaceTexture(
   return texture_id;
 }
 
-void FlutterWindowsTextureRegistrar::UnregisterTexture(
-    int64_t texture_id,
-    std::function<void()> callback) {
+void FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id,
+                                                       fml::closure callback) {
   engine_->task_runner()->RunNowOrPostTask([engine = engine_, texture_id]() {
     engine->UnregisterExternalTexture(texture_id);
   });

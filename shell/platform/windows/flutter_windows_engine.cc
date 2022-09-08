@@ -557,13 +557,12 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
-bool FlutterWindowsEngine::PostRasterThreadTask(
-    std::function<void()> callback) {
+bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
   struct Captures {
-    std::function<void()> callback;
+    fml::closure callback;
   };
   auto captures = std::make_unique<Captures>();
-  captures->callback = callback;
+  captures->callback = std::move(callback);
   if (embedder_api_.PostRenderThreadTask(
           engine_,
           [](void* opaque) {

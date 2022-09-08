@@ -206,7 +206,7 @@ void TextureRegistrarImpl::UnregisterTexture(int64_t texture_id,
   struct Captures {
     std::function<void()> callback;
   };
-  auto captures = std::make_unique<Captures>();
+  auto captures = new Captures();
   captures->callback = callback;
   FlutterDesktopTextureRegistrarUnregisterExternalTexture(
       texture_registrar_ref_, texture_id,
@@ -215,7 +215,7 @@ void TextureRegistrarImpl::UnregisterTexture(int64_t texture_id,
         captures->callback();
         delete captures;
       },
-      captures.release());
+      captures);
 }
 
 bool TextureRegistrarImpl::UnregisterTexture(int64_t texture_id) {
