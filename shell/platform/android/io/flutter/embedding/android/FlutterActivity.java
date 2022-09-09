@@ -541,6 +541,7 @@ public class FlutterActivity extends Activity
   private final OnBackInvokedCallback onBackInvokedCallback =
       Build.VERSION.SDK_INT >= 33
           ? new OnBackInvokedCallback() {
+            @SuppressWarnings("Override")
             @Override
             public void onBackInvoked() {
               onBackPressed();
