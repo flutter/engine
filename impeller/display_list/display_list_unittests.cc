@@ -583,5 +583,22 @@ TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawComposeImageFilter) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  flutter::DisplayListBuilder builder;
+  auto dilate = std::make_shared<flutter::DlDilateImageFilter>(10.0, 10.0);
+  auto erode = std::make_shared<flutter::DlErodeImageFilter>(10.0, 10.0);
+  auto open = std::make_shared<flutter::DlComposeImageFilter>(dilate, erode);
+  auto close = std::make_shared<flutter::DlComposeImageFilter>(erode, dilate);
+  builder.setImageFilter(open.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  builder.translate(0, 700);
+  builder.setImageFilter(close.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
