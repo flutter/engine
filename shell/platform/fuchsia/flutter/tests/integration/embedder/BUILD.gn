@@ -17,11 +17,7 @@ executable("flutter-embedder-test-bin") {
 
   output_name = "flutter-embedder-test"
 
-  sources = [
-    "color.cc",
-    "color.h",
-    "flutter-embedder-test.cc",
-  ]
+  sources = [ "flutter-embedder-test.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
   libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
@@ -42,6 +38,9 @@ executable("flutter-embedder-test-bin") {
     "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
     "$fuchsia_sdk_root/pkg:zx",
     "//flutter/fml",
+    "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:check_view",
+    "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:color",
+    "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:screenshot",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",
   ]
