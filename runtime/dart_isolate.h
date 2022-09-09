@@ -385,10 +385,6 @@ class DartIsolate : public UIDartState {
                             const std::string error_message,
                             bool transient);
 
-  DartIsolateGroupData& GetIsolateGroupData();
-
-  const DartIsolateGroupData& GetIsolateGroupData() const;
-
  private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
@@ -447,6 +443,10 @@ class DartIsolate : public UIDartState {
   [[nodiscard]] bool MarkIsolateRunnable();
 
   void OnShutdownCallback();
+
+  DartIsolateGroupData& GetIsolateGroupData();
+
+  const DartIsolateGroupData& GetIsolateGroupData() const;
 
   // |Dart_IsolateGroupCreateCallback|
   static Dart_Isolate DartIsolateGroupCreateCallback(

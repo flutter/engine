@@ -23,7 +23,6 @@
 namespace flutter {
 class FontCollection;
 class PlatformMessage;
-class PlatformMessageHandler;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -444,20 +443,6 @@ class PlatformConfiguration final {
 };
 
 //----------------------------------------------------------------------------
-/// An inteface that the result of `Dart_CurrentIsolateGroupData` should
-/// implement for registering background isolates to work.
-class PlatformMessageHandlerStorage {
- public:
-  virtual ~PlatformMessageHandlerStorage() = default;
-  virtual void SetPlatformMessageHandler(
-      int64_t root_isolate_token,
-      std::weak_ptr<PlatformMessageHandler> handler) = 0;
-
-  virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
-      int64_t root_isolate_token) const = 0;
-};
-
-//----------------------------------------------------------------------------
 // API exposed as FFI calls in Dart.
 //
 // These are probably not supposed to be called directly, and should instead
@@ -490,11 +475,6 @@ class PlatformConfigurationNativeApi {
                                          Dart_Handle callback,
                                          Dart_Handle data_handle);
 
-  static Dart_Handle SendPortPlatformMessage(const std::string& name,
-                                             Dart_Handle identifier,
-                                             Dart_Handle send_port,
-                                             Dart_Handle data_handle);
-
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
 
@@ -514,10 +494,6 @@ class PlatformConfigurationNativeApi {
   ///                              mode does.
   ///
   static int RequestDartPerformanceMode(int mode);
-
-  static int64_t GetRootIsolateToken();
-
-  static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 };
 
 }  // namespace flutter

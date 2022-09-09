@@ -7,11 +7,9 @@
 
 #include <memory>
 
-#include "flutter/fml/mapping.h"
+#include "flutter/lib/ui/window/platform_message.h"
 
 namespace flutter {
-
-class PlatformMessage;
 
 /// An interface over the ability to handle PlatformMessages that are being sent
 /// from Flutter to the host platform.
