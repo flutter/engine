@@ -176,16 +176,6 @@ std::shared_ptr<FilterContents> FilterContents::MakeSrgbToLinearFilter(
   return filter;
 }
 
-std::shared_ptr<FilterContents> FilterContents::MakeComposeImageFilter(
-    FilterInput::Ref input,
-    ImageFilterProc outer_proc,
-    ImageFilterProc inner_proc,
-    const Matrix& effect_transform) {
-  auto contents = inner_proc(input, effect_transform);
-  contents = outer_proc(FilterInput::Make(contents), effect_transform);
-  return contents;
-}
-
 FilterContents::FilterContents() = default;
 
 FilterContents::~FilterContents() = default;

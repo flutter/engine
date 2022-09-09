@@ -19,6 +19,15 @@
 namespace impeller {
 
 struct Paint {
+  using ImageFilterProc = std::function<std::shared_ptr<FilterContents>(
+      FilterInput::Ref,
+      const Matrix& effect_transform)>;
+  using ColorFilterProc =
+      std::function<std::shared_ptr<FilterContents>(FilterInput::Ref)>;
+  using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
+      FilterInput::Ref,
+      bool is_solid_color,
+      const Matrix& effect_transform)>;
   using ColorSourceProc = std::function<std::shared_ptr<ColorSourceContents>()>;
 
   enum class Style {

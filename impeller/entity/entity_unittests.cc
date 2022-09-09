@@ -995,13 +995,6 @@ TEST_P(EntityTest, MorphologyFilter) {
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(boston);
 
-  enum class MorphType {
-    kDilate,
-    kErode,
-    kOpen,
-    kClose,
-  };
-
   bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     if (first_frame) {
@@ -1009,10 +1002,9 @@ TEST_P(EntityTest, MorphologyFilter) {
       ImGui::SetNextWindowPos({10, 10});
     }
 
-    const char* morphology_type_names[] = {"Dilate", "Erode", "Open", "Close"};
-
-    const MorphType morphology_types[] = {MorphType::kDilate, MorphType::kErode,
-                                          MorphType::kOpen, MorphType::kClose};
+    const char* morphology_type_names[] = {"Dilate", "Erode"};
+    const FilterContents::MorphType morphology_types[] = {
+        FilterContents::MorphType::kDilate, FilterContents::MorphType::kErode};
     static Color input_color = Color::Black();
     // UI state.
     static int selected_morphology_type = 0;
@@ -1066,37 +1058,9 @@ TEST_P(EntityTest, MorphologyFilter) {
     auto effect_transform = Matrix::MakeScale(
         Vector2{effect_transform_scale, effect_transform_scale});
 
-    ImageFilterProc dilate_proc = [](FilterInput::Ref input,
-                                     const Matrix& effect_transform) {
-      return FilterContents::MakeMorphology(
-          input, Radius{radius[0]}, Radius{radius[1]},
-          FilterContents::MorphType::kDilate, effect_transform);
-    };
-    ImageFilterProc erode_proc = [](FilterInput::Ref input,
-                                    const Matrix& effect_transform) {
-      return FilterContents::MakeMorphology(
-          input, Radius{radius[0]}, Radius{radius[1]},
-          FilterContents::MorphType::kErode, effect_transform);
-    };
-    std::shared_ptr<FilterContents> contents;
-    switch (morphology_types[selected_morphology_type]) {
-      case MorphType::kDilate:
-        contents = dilate_proc(FilterInput::Make(input), effect_transform);
-        break;
-      case MorphType::kErode:
-        contents = erode_proc(FilterInput::Make(input), effect_transform);
-        break;
-      case MorphType::kOpen:
-        contents = FilterContents::MakeComposeImageFilter(
-            FilterInput::Make(input), dilate_proc, erode_proc,
-            effect_transform);
-        break;
-      case MorphType::kClose:
-        contents = FilterContents::MakeComposeImageFilter(
-            FilterInput::Make(input), erode_proc, dilate_proc,
-            effect_transform);
-        break;
-    }
+    auto contents = FilterContents::MakeMorphology(
+        FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
+        morphology_types[selected_morphology_type], effect_transform);
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
                Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
