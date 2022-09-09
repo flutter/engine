@@ -678,12 +678,12 @@ class BitmapCanvas extends EngineCanvas {
       imgElement = _reuseOrCreateImage(htmlImage);
     }
     imgElement.style.mixBlendMode = blendModeToCssMixBlendMode(blendMode) ?? '';
-    if (_preserveImageData) {
+    if (_preserveImageData && imgElement is DomHTMLImageElement) {
       // If we're preserving image data, we have to actually draw the image
       // element onto the canvas.
       // TODO(jacksongardner): Make this actually work with color filters.
       setUpPaint(paint, null);
-      _canvasPool.drawImage(imgElement as DomHTMLImageElement, p);
+      _canvasPool.drawImage(imgElement, p);
       tearDownPaint();
     } else {
       if (_canvasPool.isClipped) {
