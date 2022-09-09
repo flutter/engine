@@ -28,10 +28,30 @@ import 'semantics.dart';
 /// viewport "scrollTop" may take positive values.
 class Scrollable extends RoleManager {
   Scrollable(SemanticsObject semanticsObject)
-      : super(Role.scrollable, semanticsObject);
+      : super(Role.scrollable, semanticsObject) {
+        _scrollOverflowElement.style
+        ..position = 'absolute'
+        ..transformOrigin = '0 0 0'
+        // Ignore pointer events since this is a dummy element.
+        ..pointerEvents = 'none';
+        semanticsObject.element.append(_scrollOverflowElement);
+      }
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;
+
+  /// Dummy element used as a workaround for issue
+  ///
+  /// When the assistive technology gets to the last element of the scrollable
+  /// list, the browser thinks we don't have any more content, so overrides
+  /// the value of "scrollTop"/"scrollLeft" with zero. As a result,
+  /// the user can't scroll back up/left.
+  ///
+  /// As a workaround, we add this dom element
+  /// and set its size to [canonicalNeutralScrollPosition] so the browser believes
+  /// that we still have some more content, and doesn't override scrollTop/scrollLetf
+  /// with zero.
+  final DomElement _scrollOverflowElement = createDomElement('flt-semantics-scroll-overflow');
 
   /// Listens to HTML "scroll" gestures detected by the browser.
   ///
@@ -137,9 +157,22 @@ class Scrollable extends RoleManager {
   void _neutralizeDomScrollPosition() {
     // This value is arbitrary.
     const int canonicalNeutralScrollPosition = 10;
-
     final DomElement element = semanticsObject.element;
+    final ui.Rect? rect = semanticsObject.rect;
+    if (rect == null) {
+      print('Warning! the rect attribute of semanticsObject is null');
+      return;
+    }
     if (semanticsObject.isVerticalScrollContainer) {
+      // Place the _scrollOverflowElement at the end of the content and
+      // make sure that when we neutralize the scrolling position,
+      // it doesn't scroll into the visible area.
+      final int height = rect.height.ceil() + canonicalNeutralScrollPosition;
+      _scrollOverflowElement.style
+        ..transform = 'translate(0px,${height}px)'
+        ..width = '${rect.width.round()}px'
+        ..height = '${canonicalNeutralScrollPosition}px';
+
       element.scrollTop = canonicalNeutralScrollPosition;
       // Read back because the effective value depends on the amount of content.
       _effectiveNeutralScrollPosition = element.scrollTop;
@@ -148,6 +181,15 @@ class Scrollable extends RoleManager {
             _effectiveNeutralScrollPosition.toDouble()
         ..horizontalContainerAdjustment = 0.0;
     } else {
+      // Place the _scrollOverflowElement at the end of the content and
+      // make sure that when we neutralize the scrolling position,
+      // it doesn't scroll into the visible area.
+      final int width = rect.width.ceil() + canonicalNeutralScrollPosition;
+      _scrollOverflowElement.style
+        ..transform = 'translate(${width}px,0px)'
+        ..width = '${canonicalNeutralScrollPosition}px'
+        ..height = '${rect.height.round()}px';
+
       element.scrollLeft = canonicalNeutralScrollPosition;
       // Read back because the effective value depends on the amount of content.
       _effectiveNeutralScrollPosition = element.scrollLeft;
