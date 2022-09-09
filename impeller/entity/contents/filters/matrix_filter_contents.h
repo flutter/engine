@@ -17,6 +17,9 @@ class MatrixFilterContents final : public FilterContents {
 
   void SetMatrix(Matrix matrix);
 
+  // |FilterContents|
+  Matrix GetLocalTransform(const Matrix& parent_transform) const override;
+
  private:
   // |FilterContents|
   std::optional<Snapshot> RenderFilter(
@@ -25,12 +28,6 @@ class MatrixFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform,
       const Rect& coverage) const override;
-
-  // |FilterContents|
-  std::optional<Rect> GetFilterCoverage(
-      const FilterInput::Vector& inputs,
-      const Entity& entity,
-      const Matrix& effect_transform) const override;
 
   Matrix matrix_;
 

@@ -124,7 +124,7 @@ class FilterContents : public Contents {
   std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
                                            const Entity& entity) const override;
 
-  virtual Matrix GetLocalTransform() const;
+  virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
 

@@ -294,12 +294,12 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
                       effect_transform_, coverage.value());
 }
 
-Matrix FilterContents::GetLocalTransform() const {
+Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
   return Matrix();
 }
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
-  return parent_transform * GetLocalTransform();
+  return parent_transform * GetLocalTransform(parent_transform);
 }
 
 }  // namespace impeller
