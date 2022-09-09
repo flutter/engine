@@ -337,9 +337,8 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Shell> shell;
-  auto platform_task_runner = task_runners.GetPlatformTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
-      platform_task_runner,
+      task_runners.GetPlatformTaskRunner(),
       fml::MakeCopyable(
           [&latch,                                                        //
            &shell,                                                        //

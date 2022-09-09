@@ -82,7 +82,8 @@ TEST_F(ShellTest, SceneBuilderBuildAndSceneDisposeReleasesLayerStack) {
   AddNativeCallback("ValidateSceneHasNoLayers",
                     CREATE_NATIVE_ENTRY(validate_scene_has_no_layers));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -141,7 +142,8 @@ TEST_F(ShellTest, EngineLayerDisposeReleasesReference) {
   AddNativeCallback("ValidateEngineLayerDispose",
                     CREATE_NATIVE_ENTRY(validate_engine_layer_dispose));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);

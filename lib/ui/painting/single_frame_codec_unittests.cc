@@ -41,7 +41,8 @@ TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
   AddNativeCallback("ValidateCodec", CREATE_NATIVE_ENTRY(validate_codec));
   AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
-  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);

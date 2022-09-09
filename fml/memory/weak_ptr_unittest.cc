@@ -146,9 +146,7 @@ TEST(WeakPtrTest, UpcastMoveConstruction) {
   WeakPtrFactory<Derived> factory(&data);
   WeakPtr<Derived> ptr = factory.GetWeakPtr();
   WeakPtr<Base> ptr2(std::move(ptr));
-  // The clang linter flags the method called on the moved-from reference, but
-  // this is testing the move implementation, so it is marked NOLINT.
-  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
+  EXPECT_EQ(nullptr, ptr.get());
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -170,9 +168,7 @@ TEST(WeakPtrTest, UpcastMoveAssignment) {
   WeakPtr<Base> ptr2;
   EXPECT_EQ(nullptr, ptr2.get());
   ptr2 = std::move(ptr);
-  // The clang linter flags the method called on the moved-from reference, but
-  // this is testing the move implementation, so it is marked NOLINT.
-  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
+  EXPECT_EQ(nullptr, ptr.get());
   EXPECT_EQ(&data, ptr2.get());
 }
 

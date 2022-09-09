@@ -1,8 +1,7 @@
 # Prefix check with "-" to ignore.
-Checks: "bugprone-use-after-move,\
+Checks: "google-*,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
-google-*,\
 modernize-use-default-member-init,\
 readability-identifier-naming,\
 -google-objc-global-variable-declaration,\
@@ -17,8 +16,7 @@ readability-identifier-naming,\
 # Add checks when all warnings are fixed
 # to prevent new warnings being introduced.
 # https://github.com/flutter/flutter/issues/93279
-WarningsAsErrors: "bugprone-use-after-move,\
-clang-analyzer-*,\
+WarningsAsErrors: "clang-analyzer-*,\
 readability-identifier-naming,\
 clang-diagnostic-*,\
 google-objc-*,\
