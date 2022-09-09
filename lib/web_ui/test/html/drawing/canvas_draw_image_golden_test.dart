@@ -52,7 +52,6 @@ Future<void> testMain() async {
     scratchCanvas.restore();
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(400, 300);
-    final ByteData? data = await image.toByteData(format: ImageByteFormat.png);
 
     final RecordingCanvas rc = RecordingCanvas(bounds);
     rc.save();

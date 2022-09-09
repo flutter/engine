@@ -681,6 +681,7 @@ class BitmapCanvas extends EngineCanvas {
     if (_preserveImageData) {
       // If we're preserving image data, we have to actually draw the image
       // element onto the canvas.
+      // TODO(jacksongardner): Make this actually work with color filters.
       setUpPaint(paint, null);
       _canvasPool.drawImage(imgElement as DomHTMLImageElement, p);
       tearDownPaint();
