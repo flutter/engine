@@ -32,6 +32,10 @@ void main(List<String> arguments) {
   if (p.isRelative(outPath)) {
     /// If path is relative then create a full path starting from the engine checkout
     /// repository.
+    if (!Platform.environment.containsKey('ENGINE_CHECKOUT_PATH')) {
+      print('ENGINE_CHECKOUT_PATH env variable is mandatory when using relative destination path');
+      exit(1);
+    }
     final String engineCheckoutPath = Platform.environment['ENGINE_CHECKOUT_PATH']!;
     outPath = p.join(engineCheckoutPath, outPath);
   }
