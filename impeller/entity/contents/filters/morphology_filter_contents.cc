@@ -8,6 +8,7 @@
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/geometry/point.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -161,24 +162,21 @@ std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
       transform.TransformDirection(direction_ * radius_.radius).Abs();
 
   auto origin = coverage->origin;
-  auto width = coverage->size.width;
-  auto height = coverage->size.height;
+  auto size = Vector2(coverage->size);
   switch (morph_type_) {
     case FilterContents::MorphType::kDilate:
       origin -= transformed_vector;
-      width += transformed_vector.x * 2;
-      height += transformed_vector.y * 2;
+      size += transformed_vector * 2;
       break;
     case FilterContents::MorphType::kErode:
       origin += transformed_vector;
-      width -= transformed_vector.x * 2;
-      height -= transformed_vector.y * 2;
+      size -= transformed_vector * 2;
       break;
   }
-  if (width < 0 || height < 0) {
+  if (size.x < 0 || size.y < 0) {
     return Rect::MakeSize(Size(0, 0));
   }
-  return Rect(origin, Size(width, height));
+  return Rect(origin, Size(size.x, size.y));
 }
 
 }  // namespace impeller
