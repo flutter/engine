@@ -557,8 +557,11 @@ class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
   List<License>? _targetLicense;
 
   void _warmCache() {
-    if (parent != null) {
-      _targetLicense ??= <License>[parent!.nearestLicenseWithName(_target)];
+    if (parent != null && _targetLicense == null) {
+      final License? license = parent!.nearestLicenseWithName(_target);
+      if (license != null) {
+        _targetLicense = <License>[license];
+      }
     }
   }
 
@@ -1207,7 +1210,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   }
 
   @override
-  License nearestLicenseWithName(String? name, {String? authors}) {
+  License? nearestLicenseWithName(String? name, {String? authors}) {
     License? result = _nearestAncestorLicenseWithName(name, authors: authors);
     if (result == null) {
       for (final _RepositoryDirectory directory in _subdirectories) {
@@ -1229,7 +1232,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
       // else
       //   print('ended up finding a $name for "${result.authors}" instead');
     }
-    return result!;
+    return result;
   }
 
   bool _canGoUp(String? authors) {
@@ -1618,7 +1621,7 @@ class _RepositoryFreetypeSrcGZipDirectory extends _RepositoryDirectory {
 
   @override
   List<License>? nearestLicensesFor(String name) {
-    final License zlib = nearestLicenseWithName('zlib.h');
+    final License? zlib = nearestLicenseWithName('zlib.h');
     assert(zlib != null);
     if (zlib != null) {
       return <License>[zlib];
@@ -1629,7 +1632,7 @@ class _RepositoryFreetypeSrcGZipDirectory extends _RepositoryDirectory {
   @override
   License? nearestLicenseOfType(LicenseType type) {
     if (type == LicenseType.zlib) {
-      final License result = nearestLicenseWithName('zlib.h');
+      final License? result = nearestLicenseWithName('zlib.h');
       assert(result != null);
       return result;
     }
@@ -1663,7 +1666,7 @@ class _RepositoryFreetypeDirectory extends _RepositoryDirectory {
   List<License>? nearestLicensesFor(String name) {
     final List<License>? result = super.nearestLicensesFor(name);
     if (result == null) {
-      final License license = nearestLicenseWithName('LICENSE.TXT');
+      final License? license = nearestLicenseWithName('LICENSE.TXT');
       assert(license != null);
       if (license != null) {
         return <License>[license];
@@ -1675,7 +1678,7 @@ class _RepositoryFreetypeDirectory extends _RepositoryDirectory {
   @override
   License? nearestLicenseOfType(LicenseType type) {
     if (type == LicenseType.freetype) {
-      final License result = nearestLicenseWithName('FTL.TXT');
+      final License? result = nearestLicenseWithName('FTL.TXT');
       assert(result != null);
       return result;
     }

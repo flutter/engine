@@ -118,7 +118,7 @@ LicenseType convertBodyToType(String body) {
 abstract class LicenseSource {
   List<License>? nearestLicensesFor(String name);
   License? nearestLicenseOfType(LicenseType type);
-  License nearestLicenseWithName(String name, { String? authors });
+  License? nearestLicenseWithName(String name, { String? authors });
 }
 
 abstract class License implements Comparable<License> {
@@ -871,7 +871,7 @@ Iterable<_LicenseMatch> _tryReferenceByFilename(String body, LicenseFileReferenc
       final String copyright = match.group(pattern.copyrightIndex!)!;
       final String? authors = pattern.authorIndex != null ? match.group(pattern.authorIndex!) : null;
       final String filename = match.group(pattern.fileIndex!)!;
-      final License template = parentDirectory.nearestLicenseWithName(filename, authors: authors);
+      final License? template = parentDirectory.nearestLicenseWithName(filename, authors: authors);
       if (template == null) {
         throw 'failed to find template $filename in $parentDirectory (authors=$authors)';
       }
@@ -886,7 +886,7 @@ Iterable<_LicenseMatch> _tryReferenceByFilename(String body, LicenseFileReferenc
       if (filename == 'modp_b64.c') {
         filename = 'modp_b64.cc';
       } // it was renamed but other files reference the old name
-      final License template = parentDirectory.nearestLicenseWithName(filename!, authors: authors);
+      final License? template = parentDirectory.nearestLicenseWithName(filename!, authors: authors);
       if (template == null) {
         throw
           'failed to find accompanying "$filename" in $parentDirectory\n'
