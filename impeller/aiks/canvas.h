@@ -54,6 +54,8 @@ class Canvas {
 
   void Concat(const Matrix& xformation);
 
+  void PreConcat(const Matrix& xformation);
+
   void Translate(const Vector3& offset);
 
   void Scale(const Vector2& scale);
@@ -89,8 +91,6 @@ class Canvas {
       Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawShadow(Path path, Color color, Scalar elevation);
-
   void DrawPicture(Picture picture);
 
   void DrawTextFrame(TextFrame text_frame, Point position, Paint paint);
@@ -124,7 +124,9 @@ class Canvas {
   size_t GetStencilDepth() const;
 
   void Save(bool create_subpass,
-            Entity::BlendMode = Entity::BlendMode::kSourceOver);
+            Entity::BlendMode = Entity::BlendMode::kSourceOver,
+            std::optional<EntityPass::BackdropFilterProc> backdrop_filter =
+                std::nullopt);
 
   void RestoreClip();
 

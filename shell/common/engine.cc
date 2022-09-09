@@ -439,7 +439,7 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+void Engine::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree) {
     return;
   }
@@ -538,6 +538,11 @@ const std::vector<std::string>& Engine::GetLastEntrypointArgs() const {
 // |RuntimeDelegate|
 void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return delegate_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
+std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
+    const {
+  return delegate_.GetPlatformMessageHandler();
 }
 
 void Engine::LoadDartDeferredLibrary(

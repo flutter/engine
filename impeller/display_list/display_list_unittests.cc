@@ -16,6 +16,7 @@
 #include "impeller/display_list/display_list_playground.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "include/core/SkRRect.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -488,6 +489,95 @@ TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
     paint.setStrokeCap(cap);
     builder.drawLine({50, 50}, {50, 50}, paint);
     builder.drawPath(path, paint);
+    builder.translate(0, 150);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawShadow) {
+  flutter::DisplayListBuilder builder;
+  std::array<SkPath, 3> paths = {
+      SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+      SkPath{}.addRRect(
+          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
+      SkPath{}.addCircle(100, 50, 50),
+  };
+  builder.setColor(flutter::DlColor::kWhite());
+  builder.drawPaint();
+  builder.setColor(flutter::DlColor::kCyan());
+  builder.translate(100, 100);
+  for (size_t x = 0; x < paths.size(); x++) {
+    builder.save();
+    for (size_t y = 0; y < 5; y++) {
+      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 5, false,
+                         1);
+      builder.drawPath(paths[x]);
+      builder.translate(0, 200);
+    }
+    builder.restore();
+    builder.translate(300, 0);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Draw a hexagon using triangle fan
+TEST_P(DisplayListTest, CanConvertTriangleFanToTriangles) {
+  constexpr Scalar hexagon_radius = 125;
+  auto hex_start = Point(200.0, -hexagon_radius + 200.0);
+  auto center_to_flat = 1.73 / 2 * hexagon_radius;
+
+  // clang-format off
+  std::vector<SkPoint> vertices = {
+    SkPoint::Make(hex_start.x, hex_start.y),
+    SkPoint::Make(hex_start.x + center_to_flat, hex_start.y + 0.5 * hexagon_radius),
+    SkPoint::Make(hex_start.x + center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    SkPoint::Make(hex_start.x + center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    SkPoint::Make(hex_start.x, hex_start.y + 2 * hexagon_radius),
+    SkPoint::Make(hex_start.x, hex_start.y + 2 * hexagon_radius),
+    SkPoint::Make(hex_start.x - center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    SkPoint::Make(hex_start.x - center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    SkPoint::Make(hex_start.x - center_to_flat, hex_start.y + 0.5 * hexagon_radius)
+  };
+  // clang-format on
+  auto paint = flutter::DlPaint().setColor(flutter::DlColor::kDarkGrey());
+  auto dl_vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangleFan, vertices.size(), vertices.data(),
+      nullptr, nullptr);
+  flutter::DisplayListBuilder builder;
+  builder.drawVertices(dl_vertices, flutter::DlBlendMode::kSrcOver, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeCap> caps = {
+      flutter::DlStrokeCap::kButt,
+      flutter::DlStrokeCap::kRound,
+      flutter::DlStrokeCap::kSquare,
+  };
+  flutter::DlPaint paint =                              //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kWhite())         //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeWidth(0);
+  flutter::DlPaint outline_paint =                      //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kYellow())        //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeCap(flutter::DlStrokeCap::kSquare)  //
+          .setStrokeWidth(1);
+  SkPath path = SkPath().addPoly({{150, 50}, {160, 50}}, false);
+  for (auto cap : caps) {
+    paint.setStrokeCap(cap);
+    builder.drawLine({50, 50}, {60, 50}, paint);
+    builder.drawRect({45, 45, 65, 55}, outline_paint);
+    builder.drawLine({100, 50}, {100, 50}, paint);
+    if (cap != flutter::DlStrokeCap::kButt) {
+      builder.drawRect({95, 45, 105, 55}, outline_paint);
+    }
+    builder.drawPath(path, paint);
+    builder.drawRect(path.getBounds().makeOutset(5, 5), outline_paint);
     builder.translate(0, 150);
   }
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));

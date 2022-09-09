@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_color_source.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -182,6 +183,12 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
         FML_DCHECK(sweep);
         void* pod = Push<SetPodColorSourceOp>(sweep->size(), 0);
         new (pod) DlSweepGradientColorSource(sweep);
+        break;
+      }
+      case DlColorSourceType::kRuntimeEffect: {
+        const DlRuntimeEffectColorSource* effect = source->asRuntimeEffect();
+        FML_DCHECK(effect);
+        Push<SetRuntimeEffectColorSourceOp>(0, 0, effect);
         break;
       }
       case DlColorSourceType::kUnknown:
@@ -469,7 +476,7 @@ void DisplayListBuilder::restore() {
 }
 void DisplayListBuilder::restoreToCount(int restore_count) {
   FML_DCHECK(restore_count <= getSaveCount());
-  while (restore_count < getSaveCount()) {
+  while (restore_count < getSaveCount() && getSaveCount() > 1) {
     restore();
   }
 }
@@ -1034,9 +1041,9 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
                                      bool render_with_attributes) {
   matrix  //
-      ? Push<DrawSkPictureMatrixOp>(0, 1, std::move(picture), *matrix,
+      ? Push<DrawSkPictureMatrixOp>(0, 1, picture, *matrix,
                                     render_with_attributes)
-      : Push<DrawSkPictureOp>(0, 1, std::move(picture), render_with_attributes);
+      : Push<DrawSkPictureOp>(0, 1, picture, render_with_attributes);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawPicture| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawPicture| call itself
@@ -1049,7 +1056,7 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  Push<DrawDisplayListOp>(0, 1, std::move(display_list));
+  Push<DrawDisplayListOp>(0, 1, display_list);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawDisplayList| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawDisplayList| call itself

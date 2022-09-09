@@ -18,6 +18,7 @@
 #include "flutter/shell/platform/windows/keyboard_manager.h"
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager.h"
+#include "flutter/shell/platform/windows/windows_proc_table.h"
 #include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
@@ -28,7 +29,8 @@ namespace flutter {
 class Window : public KeyboardManager::WindowDelegate {
  public:
   Window();
-  Window(std::unique_ptr<TextInputManager> text_input_manager);
+  Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
+         std::unique_ptr<TextInputManager> text_input_manager);
   virtual ~Window();
 
   // Initializes as a child window with size using |width| and |height| and
@@ -205,6 +207,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Returns the current pixel per scroll tick value.
   virtual float GetScrollOffsetMultiplier();
 
+  // Check if the high contrast feature is enabled on the OS
+  virtual bool GetHighContrastEnabled();
+
  protected:
   // Win32's DefWindowProc.
   //
@@ -221,6 +226,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Handles running DirectManipulation on the window to receive trackpad
   // gestures.
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
+
+  // Called when a theme change message is issued
+  virtual void OnThemeChange() = 0;
 
  private:
   // Release OS resources associated with window.
@@ -265,6 +273,10 @@ class Window : public KeyboardManager::WindowDelegate {
   // Keeps track of the last mouse coordinates by a WM_MOUSEMOVE message.
   double mouse_x_ = 0;
   double mouse_y_ = 0;
+
+  // Abstracts Windows APIs that may not be available on all supported versions
+  // of Windows.
+  std::unique_ptr<WindowsProcTable> windows_proc_table_;
 
   // Manages IME state.
   std::unique_ptr<TextInputManager> text_input_manager_;

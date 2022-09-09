@@ -13,8 +13,11 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPromiseImageTexture.h"
 #include "third_party/skia/include/gpu/GrContextThreadSafeProxy.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
+
+class DlImage;
 
 class SnapshotDelegate {
  public:
@@ -52,15 +55,13 @@ class SnapshotDelegate {
   ///
   virtual std::shared_ptr<TextureRegistry> GetTextureRegistry() = 0;
 
+  virtual GrDirectContext* GetGrContext() = 0;
+
   virtual std::unique_ptr<GpuImageResult> MakeGpuImage(
       sk_sp<DisplayList> display_list,
       const SkImageInfo& image_info) = 0;
 
-  virtual sk_sp<SkImage> MakeRasterSnapshot(
-      std::function<void(SkCanvas*)> draw_callback,
-      SkISize picture_size) = 0;
-
-  virtual sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+  virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
                                             SkISize picture_size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;

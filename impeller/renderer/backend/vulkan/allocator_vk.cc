@@ -60,8 +60,7 @@ bool AllocatorVK::IsValid() const {
 }
 
 // |Allocator|
-std::shared_ptr<Texture> AllocatorVK::CreateTexture(
-    StorageMode mode,
+std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
   auto image_create_info = vk::ImageCreateInfo{};
   image_create_info.imageType = vk::ImageType::e2D;
@@ -116,8 +115,8 @@ std::shared_ptr<Texture> AllocatorVK::CreateTexture(
 }
 
 // |Allocator|
-std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
-                                                        size_t length) {
+std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
+    const DeviceBufferDescriptor& desc) {
   // TODO (kaushikiska): consider optimizing  the usage flags based on
   // StorageMode.
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
@@ -125,7 +124,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
           .setUsage(vk::BufferUsageFlagBits::eStorageBuffer |
                     vk::BufferUsageFlagBits::eTransferSrc |
                     vk::BufferUsageFlagBits::eTransferDst)
-          .setSize(length)
+          .setSize(desc.size)
           .setSharingMode(vk::SharingMode::eExclusive));
 
   VmaAllocationCreateInfo allocCreateInfo = {};
@@ -149,8 +148,15 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
   auto device_allocation = std::make_unique<DeviceBufferAllocationVK>(
       allocator_, buffer, buffer_allocation, buffer_allocation_info);
 
-  return std::make_shared<DeviceBufferVK>(length, mode, context_,
+  return std::make_shared<DeviceBufferVK>(desc, context_,
                                           std::move(device_allocation));
 }
 
+// |Allocator|
+ISize AllocatorVK::GetMaxTextureSizeSupported() const {
+  // TODO(magicianA): Get correct max texture size for Vulkan.
+  // 4096 is the required limit, see below:
+  // https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#limits-minmax
+  return {4096, 4096};
+}
 }  // namespace impeller

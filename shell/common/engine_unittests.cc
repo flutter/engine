@@ -36,6 +36,8 @@ class MockDelegate : public Engine::Delegate {
                    const std::vector<std::string>&));
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
   MOCK_METHOD0(GetCurrentTimePoint, fml::TimePoint());
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     const std::shared_ptr<PlatformMessageHandler>&());
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -48,7 +50,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD0(DefaultRouteName, std::string());
   MOCK_METHOD1(ScheduleFrame, void(bool));
-  MOCK_METHOD1(Render, void(std::unique_ptr<flutter::LayerTree>));
+  MOCK_METHOD1(Render, void(std::shared_ptr<flutter::LayerTree>));
   MOCK_METHOD2(UpdateSemantics,
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(std::unique_ptr<PlatformMessage>));
@@ -61,6 +63,8 @@ class MockRuntimeDelegate : public RuntimeDelegate {
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     std::weak_ptr<PlatformMessageHandler>());
 };
 
 class MockRuntimeController : public RuntimeController {

@@ -23,6 +23,7 @@
 namespace flutter {
 class FontCollection;
 class PlatformMessage;
+class PlatformMessageHandler;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -443,6 +444,20 @@ class PlatformConfiguration final {
 };
 
 //----------------------------------------------------------------------------
+/// An inteface that the result of `Dart_CurrentIsolateGroupData` should
+/// implement for registering background isolates to work.
+class PlatformMessageHandlerStorage {
+ public:
+  virtual ~PlatformMessageHandlerStorage() = default;
+  virtual void SetPlatformMessageHandler(
+      int64_t root_isolate_token,
+      std::weak_ptr<PlatformMessageHandler> handler) = 0;
+
+  virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
+      int64_t root_isolate_token) const = 0;
+};
+
+//----------------------------------------------------------------------------
 // API exposed as FFI calls in Dart.
 //
 // These are probably not supposed to be called directly, and should instead
@@ -475,8 +490,34 @@ class PlatformConfigurationNativeApi {
                                          Dart_Handle callback,
                                          Dart_Handle data_handle);
 
+  static Dart_Handle SendPortPlatformMessage(const std::string& name,
+                                             Dart_Handle identifier,
+                                             Dart_Handle send_port,
+                                             Dart_Handle data_handle);
+
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Requests the Dart VM to adjusts the GC heuristics based on
+  ///             the requested `performance_mode`. Returns the old performance
+  ///             mode.
+  ///
+  ///             Requesting a performance mode doesn't guarantee any
+  ///             performance characteristics. This is best effort, and should
+  ///             be used after careful consideration of the various GC
+  ///             trade-offs.
+  ///
+  /// @param[in]  performance_mode The requested performance mode. Please refer
+  ///                              to documentation of `Dart_PerformanceMode`
+  ///                              for more details about what each performance
+  ///                              mode does.
+  ///
+  static int RequestDartPerformanceMode(int mode);
+
+  static int64_t GetRootIsolateToken();
+
+  static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 };
 
 }  // namespace flutter

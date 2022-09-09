@@ -177,6 +177,9 @@ class FlutterWindowsEngine {
   // Informs the engine that a new frame is needed to redraw the content.
   void ScheduleFrame();
 
+  // Set the callback that is called when the next frame is drawn.
+  void SetNextFrameCallback(fml::closure callback);
+
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -186,6 +189,9 @@ class FlutterWindowsEngine {
   // Notifies the engine about a new frame being available for the
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
+  // Posts the given callback onto the raster thread.
+  bool PostRasterThreadTask(fml::closure callback);
 
   // Invoke on the embedder's vsync callback to schedule a frame.
   void OnVsync(intptr_t baton);
@@ -200,6 +206,15 @@ class FlutterWindowsEngine {
 
   // Returns true if the semantics tree is enabled.
   bool semantics_enabled() const { return semantics_enabled_; }
+
+  // Update the high contrast feature state.
+  void UpdateHighContrastEnabled(bool enabled);
+
+  // Returns the flags for all currently enabled accessibility features
+  int EnabledAccessibilityFeatures() const;
+
+  // Returns true if the high contrast feature is enabled.
+  bool high_contrast_enabled() const { return high_contrast_enabled_; }
 
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
@@ -216,6 +231,12 @@ class FlutterWindowsEngine {
   void SetRootIsolateCreateCallback(const fml::closure& callback) {
     root_isolate_create_callback_ = callback;
   }
+
+  // Returns the executable name for this process or "Flutter" if unknown.
+  std::string GetExecutableName() const;
+
+  // Updates accessibility, e.g. switch to high contrast mode
+  void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -287,6 +308,8 @@ class FlutterWindowsEngine {
 
   bool semantics_enabled_ = false;
 
+  bool high_contrast_enabled_ = false;
+
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
@@ -294,6 +317,9 @@ class FlutterWindowsEngine {
 
   // The root isolate creation callback.
   fml::closure root_isolate_create_callback_;
+
+  // The on frame drawn callback.
+  fml::closure next_frame_callback_;
 };
 
 }  // namespace flutter

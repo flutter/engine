@@ -22,13 +22,6 @@ Paragraph::Paragraph(std::unique_ptr<txt::Paragraph> paragraph)
 
 Paragraph::~Paragraph() = default;
 
-size_t Paragraph::GetAllocationSize() const {
-  // We don't have an accurate accounting of the paragraph's memory consumption,
-  // so return a fixed size to indicate that its impact is more than the size
-  // of the Paragraph class.
-  return 2000;
-}
-
 double Paragraph::width() {
   return m_paragraph->GetMaxWidth();
 }
@@ -66,6 +59,11 @@ void Paragraph::layout(double width) {
 }
 
 void Paragraph::paint(Canvas* canvas, double x, double y) {
+  if (!m_paragraph || !canvas) {
+    // disposed.
+    return;
+  }
+
   SkCanvas* sk_canvas = canvas->canvas();
   if (!sk_canvas) {
     return;
@@ -166,6 +164,11 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   }
 
   return result;
+}
+
+void Paragraph::dispose() {
+  m_paragraph.reset();
+  ClearDartWrapper();
 }
 
 }  // namespace flutter

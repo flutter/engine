@@ -10,6 +10,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
+#include "flutter/display_list/display_list_image.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
@@ -24,8 +25,10 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
+#include "flutter/shell/common/snapshot_controller.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -44,7 +47,8 @@ namespace flutter {
 /// state necessary to render frames to the render surface.
 ///
 class Rasterizer final : public SnapshotDelegate,
-                         public Stopwatch::RefreshRateUpdater {
+                         public Stopwatch::RefreshRateUpdater,
+                         public SnapshotController::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Used to forward events from the rasterizer to interested
@@ -97,6 +101,8 @@ class Rasterizer final : public SnapshotDelegate,
     /// is critical that GPU operations are not processed.
     virtual std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
         const = 0;
+
+    virtual const Settings& GetSettings() const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -213,6 +219,8 @@ class Rasterizer final : public SnapshotDelegate,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   // |SnapshotDelegate|
+  GrDirectContext* GetGrContext() override;
+
   std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
   using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;
@@ -467,12 +475,7 @@ class Rasterizer final : public SnapshotDelegate,
       const SkImageInfo& image_info) override;
 
   // |SnapshotDelegate|
-  sk_sp<SkImage> MakeRasterSnapshot(
-      std::function<void(SkCanvas*)> draw_callback,
-      SkISize picture_size) override;
-
-  // |SnapshotDelegate|
-  sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+  sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
                                     SkISize picture_size) override;
 
   // |SnapshotDelegate|
@@ -484,19 +487,32 @@ class Rasterizer final : public SnapshotDelegate,
   /// See: `DisplayManager::GetMainDisplayRefreshRate`.
   fml::Milliseconds GetFrameBudget() const override;
 
+  // |SnapshotController::Delegate|
+  const std::unique_ptr<Surface>& GetSurface() const override {
+    return surface_;
+  }
+
+  // |SnapshotController::Delegate|
+  const std::unique_ptr<SnapshotSurfaceProducer>& GetSnapshotSurfaceProducer()
+      const override {
+    return snapshot_surface_producer_;
+  }
+
+  // |SnapshotController::Delegate|
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+      const override {
+    return delegate_.GetIsGpuDisabledSyncSwitch();
+  }
+
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
       flutter::LayerTree* tree,
       flutter::CompositorContext& compositor_context,
       GrDirectContext* surface_context,
       bool compressed);
 
-  sk_sp<SkImage> DoMakeRasterSnapshot(
-      SkISize size,
-      std::function<void(SkCanvas*)> draw_callback);
-
   RasterStatus DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::unique_ptr<flutter::LayerTree> layer_tree);
+      std::shared_ptr<flutter::LayerTree> layer_tree);
 
   RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree& layer_tree);
@@ -515,17 +531,18 @@ class Rasterizer final : public SnapshotDelegate,
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
+  std::shared_ptr<flutter::LayerTree> last_layer_tree_;
   // Set when we need attempt to rasterize the layer tree again. This layer_tree
   // has not successfully rasterized. This can happen due to the change in the
   // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  std::shared_ptr<flutter::LayerTree> resubmitted_layer_tree_;
   std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
+  std::unique_ptr<SnapshotController> snapshot_controller_;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;

@@ -11,6 +11,7 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_image.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -28,6 +29,13 @@ class DlDeferredImageGPU final : public DlImage {
       fml::RefPtr<fml::TaskRunner> raster_task_runner,
       fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
+  static sk_sp<DlDeferredImageGPU> MakeFromLayerTree(
+      const SkImageInfo& image_info,
+      std::shared_ptr<LayerTree> layer_tree,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::RefPtr<fml::TaskRunner> raster_task_runner,
+      fml::RefPtr<SkiaUnrefQueue> unref_queue);
+
   // |DlImage|
   ~DlDeferredImageGPU() override;
 
@@ -40,6 +48,9 @@ class DlDeferredImageGPU final : public DlImage {
 
   // |DlImage|
   std::shared_ptr<impeller::Texture> impeller_texture() const override;
+
+  // |DlImage|
+  bool isOpaque() const override;
 
   // |DlImage|
   bool isTextureBacked() const override;
@@ -66,6 +77,13 @@ class DlDeferredImageGPU final : public DlImage {
     static std::shared_ptr<ImageWrapper> Make(
         const SkImageInfo& image_info,
         sk_sp<DisplayList> display_list,
+        fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+        fml::RefPtr<fml::TaskRunner> raster_task_runner,
+        fml::RefPtr<SkiaUnrefQueue> unref_queue);
+
+    static std::shared_ptr<ImageWrapper> MakeFromLayerTree(
+        const SkImageInfo& image_info,
+        std::shared_ptr<LayerTree> layer_tree,
         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner,
         fml::RefPtr<SkiaUnrefQueue> unref_queue);
@@ -100,7 +118,11 @@ class DlDeferredImageGPU final : public DlImage {
                  fml::RefPtr<fml::TaskRunner> raster_task_runner,
                  fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
-    void SnapshotDisplayList();
+    // If a layer tree is provided, it will be flattened during the raster
+    // thread task spwaned by this method. After being flattened into a display
+    // list, the image wrapper will be updated to hold this display list and the
+    // layer tree can be dropped.
+    void SnapshotDisplayList(std::shared_ptr<LayerTree> layer_tree = nullptr);
 
     // |ContextListener|
     void OnGrContextCreated() override;

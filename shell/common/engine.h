@@ -288,6 +288,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///             This method is primarily provided to allow tests to control
     ///             Any methods that rely on advancing the clock.
     virtual fml::TimePoint GetCurrentTimePoint() = 0;
+
+    //----------------------------------------------------------------------------
+    /// @brief Returns the delegate object that handles PlatformMessage's from
+    ///        Flutter to the host platform (and its responses).
+    virtual const std::shared_ptr<PlatformMessageHandler>&
+    GetPlatformMessageHandler() const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -879,7 +885,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree) override;
+  void Render(std::shared_ptr<flutter::LayerTree> layer_tree) override;
 
   // |RuntimeDelegate|
   void UpdateSemantics(SemanticsNodeUpdates update,
@@ -901,6 +907,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  // |RuntimeDelegate|
+  std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const override;
 
   void SetNeedsReportTimings(bool value) override;
 

@@ -14,12 +14,14 @@
 
 namespace impeller {
 
-static ShaderStage ToShaderStage(Blob::ShaderType type) {
+static ShaderStage ToShaderStage(BlobShaderType type) {
   switch (type) {
-    case Blob::ShaderType::kVertex:
+    case BlobShaderType::kVertex:
       return ShaderStage::kVertex;
-    case Blob::ShaderType::kFragment:
+    case BlobShaderType::kFragment:
       return ShaderStage::kFragment;
+    case BlobShaderType::kCompute:
+      return ShaderStage::kCompute;
   }
   FML_UNREACHABLE();
 }

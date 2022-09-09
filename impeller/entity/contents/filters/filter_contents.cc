@@ -19,6 +19,9 @@
 #include "impeller/entity/contents/filters/color_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/filters/linear_to_srgb_filter_contents.h"
+#include "impeller/entity/contents/filters/morphology_filter_contents.h"
+#include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
@@ -76,7 +79,9 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
     Vector2 direction,
     BlurStyle blur_style,
     Entity::TileMode tile_mode,
-    FilterInput::Ref source_override) {
+    FilterInput::Ref source_override,
+    Sigma secondary_sigma,
+    const Matrix& effect_transform) {
   auto blur = std::make_shared<DirectionalGaussianBlurFilterContents>();
   blur->SetInputs({input});
   blur->SetSigma(sigma);
@@ -84,6 +89,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   blur->SetBlurStyle(blur_style);
   blur->SetTileMode(tile_mode);
   blur->SetSourceOverride(source_override);
+  blur->SetSecondarySigma(secondary_sigma);
+  blur->SetEffectTransform(effect_transform);
   return blur;
 }
 
@@ -92,12 +99,14 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     Sigma sigma_x,
     Sigma sigma_y,
     BlurStyle blur_style,
-    Entity::TileMode tile_mode) {
+    Entity::TileMode tile_mode,
+    const Matrix& effect_transform) {
   auto x_blur = MakeDirectionalGaussianBlur(input, sigma_x, Point(1, 0),
-                                            BlurStyle::kNormal, tile_mode);
-  auto y_blur =
-      MakeDirectionalGaussianBlur(FilterInput::Make(x_blur), sigma_y,
-                                  Point(0, 1), blur_style, tile_mode, input);
+                                            BlurStyle::kNormal, tile_mode,
+                                            nullptr, {}, effect_transform);
+  auto y_blur = MakeDirectionalGaussianBlur(FilterInput::Make(x_blur), sigma_y,
+                                            Point(0, 1), blur_style, tile_mode,
+                                            input, sigma_x, effect_transform);
   return y_blur;
 }
 
@@ -105,12 +114,43 @@ std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
     FilterInput::Ref input,
     Sigma sigma_x,
     Sigma sigma_y,
-    BlurStyle blur_style) {
+    BlurStyle blur_style,
+    const Matrix& effect_transform) {
   auto filter = std::make_shared<BorderMaskBlurFilterContents>();
   filter->SetInputs({input});
   filter->SetSigma(sigma_x, sigma_y);
   filter->SetBlurStyle(blur_style);
+  filter->SetEffectTransform(effect_transform);
   return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeDirectionalMorphology(
+    FilterInput::Ref input,
+    Radius radius,
+    Vector2 direction,
+    MorphType morph_type,
+    const Matrix& effect_transform) {
+  auto filter = std::make_shared<DirectionalMorphologyFilterContents>();
+  filter->SetInputs({input});
+  filter->SetRadius(radius);
+  filter->SetDirection(direction);
+  filter->SetMorphType(morph_type);
+  filter->SetEffectTransform(effect_transform);
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
+    FilterInput::Ref input,
+    Radius radius_x,
+    Radius radius_y,
+    MorphType morph_type,
+    const Matrix& effect_transform) {
+  auto x_morphology = MakeDirectionalMorphology(input, radius_x, Point(1, 0),
+                                                morph_type, effect_transform);
+  auto y_morphology =
+      MakeDirectionalMorphology(FilterInput::Make(x_morphology), radius_y,
+                                Point(0, 1), morph_type, effect_transform);
+  return y_morphology;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(
@@ -119,6 +159,20 @@ std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(
   auto filter = std::make_shared<ColorMatrixFilterContents>();
   filter->SetInputs({input});
   filter->SetMatrix(matrix);
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeLinearToSrgbFilter(
+    FilterInput::Ref input) {
+  auto filter = std::make_shared<LinearToSrgbFilterContents>();
+  filter->SetInputs({input});
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeSrgbToLinearFilter(
+    FilterInput::Ref input) {
+  auto filter = std::make_shared<SrgbToLinearFilterContents>();
+  filter->SetInputs({input});
   return filter;
 }
 
@@ -132,6 +186,10 @@ void FilterContents::SetInputs(FilterInput::Vector inputs) {
 
 void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
   coverage_crop_ = coverage_crop;
+}
+
+void FilterContents::SetEffectTransform(Matrix effect_transform) {
+  effect_transform_ = effect_transform.Basis();
 }
 
 bool FilterContents::Render(const ContentContext& renderer,
@@ -152,21 +210,22 @@ bool FilterContents::Render(const ContentContext& renderer,
 
   // Draw the result texture, respecting the transform and clip stack.
 
-  auto contents = std::make_shared<TextureContents>();
-  contents->SetPath(
-      PathBuilder{}.AddRect(filter_coverage.value()).GetCurrentPath());
+  auto texture_rect = Rect::MakeSize(snapshot.texture->GetSize());
+  auto contents = TextureContents::MakeRect(texture_rect);
   contents->SetTexture(snapshot.texture);
-  contents->SetSourceRect(Rect::MakeSize(snapshot.texture->GetSize()));
+  contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
+  contents->SetSourceRect(texture_rect);
 
   Entity e;
   e.SetBlendMode(entity.GetBlendMode());
   e.SetStencilDepth(entity.GetStencilDepth());
+  e.SetTransformation(snapshot.transform);
   return contents->Render(renderer, e, pass);
 }
 
 std::optional<Rect> FilterContents::GetLocalCoverage(
     const Entity& local_entity) const {
-  auto coverage = GetFilterCoverage(inputs_, local_entity);
+  auto coverage = GetFilterCoverage(inputs_, local_entity, effect_transform_);
   if (coverage_crop_.has_value() && coverage.has_value()) {
     coverage = coverage->Intersection(coverage_crop_.value());
   }
@@ -184,7 +243,8 @@ std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
 
 std::optional<Rect> FilterContents::GetFilterCoverage(
     const FilterInput::Vector& inputs,
-    const Entity& entity) const {
+    const Entity& entity,
+    const Matrix& effect_transform) const {
   // The default coverage of FilterContents is just the union of its inputs'
   // coverage. FilterContents implementations may choose to adjust this
   // coverage depending on the use case.
@@ -220,20 +280,8 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
     return std::nullopt;
   }
 
-  // Render the filter into a new texture.
-  auto texture = renderer.MakeSubpass(
-      ISize(coverage->size),
-      [=](const ContentContext& renderer, RenderPass& pass) -> bool {
-        return RenderFilter(inputs_, renderer, entity_with_local_transform,
-                            pass, coverage.value());
-      });
-
-  if (!texture) {
-    return std::nullopt;
-  }
-
-  return Snapshot{.texture = texture,
-                  .transform = Matrix::MakeTranslation(coverage->origin)};
+  return RenderFilter(inputs_, renderer, entity_with_local_transform,
+                      effect_transform_, coverage.value());
 }
 
 Matrix FilterContents::GetLocalTransform() const {

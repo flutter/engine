@@ -222,7 +222,29 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
-static flutter::Shell::CreateCallback<flutter::PlatformView>
+#ifdef SHELL_ENABLE_GL
+// Auxiliary function used to translate rectangles of type SkIRect to
+// FlutterRect.
+static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
+  FlutterRect flutter_rect = {static_cast<double>(sk_rect.fLeft),
+                              static_cast<double>(sk_rect.fTop),
+                              static_cast<double>(sk_rect.fRight),
+                              static_cast<double>(sk_rect.fBottom)};
+  return flutter_rect;
+}
+
+// Auxiliary function used to translate rectangles of type FlutterRect to
+// SkIRect.
+static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+#endif
+
+static inline flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -241,15 +263,45 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](uint32_t fbo_id) -> bool {
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
-      FlutterPresentInfo present_info = {};
-      present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = fbo_id;
+      // Format the frame and buffer damages accordingly. Note that, since the
+      // current compute damage algorithm only returns one rectangle for damage
+      // we are assuming the number of rectangles provided in frame and buffer
+      // damage are always 1. Once the function that computes damage implements
+      // support for multiple damage rectangles, GLPresentInfo should also
+      // contain the number of damage rectangles.
+      const size_t num_rects = 1;
+
+      std::array<FlutterRect, num_rects> frame_damage_rect = {
+          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
+      std::array<FlutterRect, num_rects> buffer_damage_rect = {
+          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+
+      FlutterDamage frame_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = frame_damage_rect.size(),
+          .damage = frame_damage_rect.data(),
+      };
+      FlutterDamage buffer_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = buffer_damage_rect.size(),
+          .damage = buffer_damage_rect.data(),
+      };
+
+      // Construct the present information concerning the frame being rendered.
+      FlutterPresentInfo present_info = {
+          .struct_size = sizeof(FlutterPresentInfo),
+          .fbo_id = gl_present_info.fbo_id,
+          .frame_damage = frame_damage,
+          .buffer_damage = buffer_damage,
+      };
+
       return present_with_info(user_data, &present_info);
     }
   };
@@ -267,6 +319,50 @@ InferOpenGLPlatformViewCreationCallback(
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
       return fbo_with_frame_info_callback(user_data, &frame_info);
     }
+  };
+
+  auto gl_populate_existing_damage =
+      [populate_existing_damage = config->open_gl.populate_existing_damage,
+       user_data](intptr_t id) -> flutter::GLFBOInfo {
+    // If no populate_existing_damage was provided, disable partial
+    // repaint.
+    if (!populate_existing_damage) {
+      return flutter::GLFBOInfo{
+          .fbo_id = static_cast<uint32_t>(id),
+          .partial_repaint_enabled = false,
+          .existing_damage = SkIRect::MakeEmpty(),
+      };
+    }
+
+    // Given the FBO's ID, get its existing damage.
+    FlutterDamage existing_damage;
+    populate_existing_damage(user_data, id, &existing_damage);
+
+    bool partial_repaint_enabled = true;
+    SkIRect existing_damage_rect;
+
+    // Verify that at least one damage rectangle was provided.
+    if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
+    } else if (existing_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
+      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
+                       "Repainting the whole frame.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
+    } else {
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+    }
+
+    // Pass the information about this FBO to the rendering backend.
+    return flutter::GLFBOInfo{
+        .fbo_id = static_cast<uint32_t>(id),
+        .partial_repaint_enabled = partial_repaint_enabled,
+        .existing_damage = existing_damage_rect,
+    };
   };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
@@ -326,6 +422,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
+      gl_populate_existing_damage,         // gl_populate_existing_damage
   };
 
   return fml::MakeCopyable(
@@ -1297,88 +1394,110 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.log_tag = SAFE_ACCESS(args, log_tag, nullptr);
   }
 
-  flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
-      update_semantics_nodes_callback = nullptr;
+  FlutterUpdateSemanticsNodeCallback update_semantics_node_callback = nullptr;
   if (SAFE_ACCESS(args, update_semantics_node_callback, nullptr) != nullptr) {
-    update_semantics_nodes_callback =
-        [ptr = args->update_semantics_node_callback,
-         user_data](flutter::SemanticsNodeUpdates update) {
-          for (const auto& value : update) {
-            const auto& node = value.second;
-            SkMatrix transform = node.transform.asM33();
-            FlutterTransformation flutter_transform{
-                transform.get(SkMatrix::kMScaleX),
-                transform.get(SkMatrix::kMSkewX),
-                transform.get(SkMatrix::kMTransX),
-                transform.get(SkMatrix::kMSkewY),
-                transform.get(SkMatrix::kMScaleY),
-                transform.get(SkMatrix::kMTransY),
-                transform.get(SkMatrix::kMPersp0),
-                transform.get(SkMatrix::kMPersp1),
-                transform.get(SkMatrix::kMPersp2)};
-            const FlutterSemanticsNode embedder_node{
-                sizeof(FlutterSemanticsNode),
-                node.id,
-                static_cast<FlutterSemanticsFlag>(node.flags),
-                static_cast<FlutterSemanticsAction>(node.actions),
-                node.textSelectionBase,
-                node.textSelectionExtent,
-                node.scrollChildren,
-                node.scrollIndex,
-                node.scrollPosition,
-                node.scrollExtentMax,
-                node.scrollExtentMin,
-                node.elevation,
-                node.thickness,
-                node.label.c_str(),
-                node.hint.c_str(),
-                node.value.c_str(),
-                node.increasedValue.c_str(),
-                node.decreasedValue.c_str(),
-                static_cast<FlutterTextDirection>(node.textDirection),
-                FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
-                            node.rect.fBottom},
-                flutter_transform,
-                node.childrenInTraversalOrder.size(),
-                node.childrenInTraversalOrder.data(),
-                node.childrenInHitTestOrder.data(),
-                node.customAccessibilityActions.size(),
-                node.customAccessibilityActions.data(),
-                node.platformViewId,
-            };
-            ptr(&embedder_node, user_data);
-          }
-          const FlutterSemanticsNode batch_end_sentinel = {
-              sizeof(FlutterSemanticsNode),
-              kFlutterSemanticsNodeIdBatchEnd,
-          };
-          ptr(&batch_end_sentinel, user_data);
-        };
+    update_semantics_node_callback = args->update_semantics_node_callback;
   }
 
-  flutter::PlatformViewEmbedder::UpdateSemanticsCustomActionsCallback
-      update_semantics_custom_actions_callback = nullptr;
+  FlutterUpdateSemanticsCustomActionCallback
+      update_semantics_custom_action_callback = nullptr;
   if (SAFE_ACCESS(args, update_semantics_custom_action_callback, nullptr) !=
       nullptr) {
-    update_semantics_custom_actions_callback =
-        [ptr = args->update_semantics_custom_action_callback,
-         user_data](flutter::CustomAccessibilityActionUpdates actions) {
-          for (const auto& value : actions) {
-            const auto& action = value.second;
-            const FlutterSemanticsCustomAction embedder_action = {
-                sizeof(FlutterSemanticsCustomAction),
-                action.id,
-                static_cast<FlutterSemanticsAction>(action.overrideId),
-                action.label.c_str(),
-                action.hint.c_str(),
-            };
-            ptr(&embedder_action, user_data);
+    update_semantics_custom_action_callback =
+        args->update_semantics_custom_action_callback;
+  }
+
+  flutter::PlatformViewEmbedder::UpdateSemanticsCallback
+      update_semantics_callback = nullptr;
+  if (update_semantics_node_callback != nullptr ||
+      update_semantics_custom_action_callback != nullptr) {
+    update_semantics_callback =
+        [update_semantics_node_callback,
+         update_semantics_custom_action_callback,
+         user_data](flutter::SemanticsNodeUpdates update,
+                    flutter::CustomAccessibilityActionUpdates actions) {
+          // First, queue all node and custom action updates.
+          if (update_semantics_node_callback != nullptr) {
+            for (const auto& value : update) {
+              const auto& node = value.second;
+              SkMatrix transform = node.transform.asM33();
+              FlutterTransformation flutter_transform{
+                  transform.get(SkMatrix::kMScaleX),
+                  transform.get(SkMatrix::kMSkewX),
+                  transform.get(SkMatrix::kMTransX),
+                  transform.get(SkMatrix::kMSkewY),
+                  transform.get(SkMatrix::kMScaleY),
+                  transform.get(SkMatrix::kMTransY),
+                  transform.get(SkMatrix::kMPersp0),
+                  transform.get(SkMatrix::kMPersp1),
+                  transform.get(SkMatrix::kMPersp2)};
+              const FlutterSemanticsNode embedder_node{
+                  sizeof(FlutterSemanticsNode),
+                  node.id,
+                  static_cast<FlutterSemanticsFlag>(node.flags),
+                  static_cast<FlutterSemanticsAction>(node.actions),
+                  node.textSelectionBase,
+                  node.textSelectionExtent,
+                  node.scrollChildren,
+                  node.scrollIndex,
+                  node.scrollPosition,
+                  node.scrollExtentMax,
+                  node.scrollExtentMin,
+                  node.elevation,
+                  node.thickness,
+                  node.label.c_str(),
+                  node.hint.c_str(),
+                  node.value.c_str(),
+                  node.increasedValue.c_str(),
+                  node.decreasedValue.c_str(),
+                  static_cast<FlutterTextDirection>(node.textDirection),
+                  FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
+                              node.rect.fBottom},
+                  flutter_transform,
+                  node.childrenInTraversalOrder.size(),
+                  node.childrenInTraversalOrder.data(),
+                  node.childrenInHitTestOrder.data(),
+                  node.customAccessibilityActions.size(),
+                  node.customAccessibilityActions.data(),
+                  node.platformViewId,
+              };
+              update_semantics_node_callback(&embedder_node, user_data);
+            }
           }
-          const FlutterSemanticsCustomAction batch_end_sentinel = {
-              sizeof(FlutterSemanticsCustomAction),
-              kFlutterSemanticsCustomActionIdBatchEnd,
-          };
-          ptr(&batch_end_sentinel, user_data);
+
+          if (update_semantics_custom_action_callback != nullptr) {
+            for (const auto& value : actions) {
+              const auto& action = value.second;
+              const FlutterSemanticsCustomAction embedder_action = {
+                  sizeof(FlutterSemanticsCustomAction),
+                  action.id,
+                  static_cast<FlutterSemanticsAction>(action.overrideId),
+                  action.label.c_str(),
+                  action.hint.c_str(),
+              };
+              update_semantics_custom_action_callback(&embedder_action,
+                                                      user_data);
+            }
+          }
+
+          // Second, mark node and action batches completed now that all
+          // updates are queued.
+          if (update_semantics_node_callback != nullptr) {
+            const FlutterSemanticsNode batch_end_sentinel = {
+                sizeof(FlutterSemanticsNode),
+                kFlutterSemanticsNodeIdBatchEnd,
+            };
+            update_semantics_node_callback(&batch_end_sentinel, user_data);
+          }
+
+          if (update_semantics_custom_action_callback != nullptr) {
+            const FlutterSemanticsCustomAction batch_end_sentinel = {
+                sizeof(FlutterSemanticsCustomAction),
+                kFlutterSemanticsCustomActionIdBatchEnd,
+            };
+            update_semantics_custom_action_callback(&batch_end_sentinel,
+                                                    user_data);
+          }
         };
   }
 
@@ -1473,8 +1592,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
-          update_semantics_nodes_callback,            //
-          update_semantics_custom_actions_callback,   //
+          update_semantics_callback,                  //
           platform_message_response_callback,         //
           vsync_callback,                             //
           compute_platform_resolved_locale_callback,  //

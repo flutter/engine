@@ -23,66 +23,89 @@ void ColorMatrixFilterContents::SetMatrix(const ColorMatrix& matrix) {
   matrix_ = matrix;
 }
 
-bool ColorMatrixFilterContents::RenderFilter(const FilterInput::Vector& inputs,
-                                             const ContentContext& renderer,
-                                             const Entity& entity,
-                                             RenderPass& pass,
-                                             const Rect& coverage) const {
-  if (inputs.empty()) {
-    return true;
-  }
-
+std::optional<Snapshot> ColorMatrixFilterContents::RenderFilter(
+    const FilterInput::Vector& inputs,
+    const ContentContext& renderer,
+    const Entity& entity,
+    const Matrix& effect_transform,
+    const Rect& coverage) const {
   using VS = ColorMatrixColorFilterPipeline::VertexShader;
   using FS = ColorMatrixColorFilterPipeline::FragmentShader;
 
-  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
-  if (!input_snapshot.has_value()) {
-    return true;
+  //----------------------------------------------------------------------------
+  /// Handle inputs.
+  ///
+
+  if (inputs.empty()) {
+    return std::nullopt;
   }
 
-  Command cmd;
-  cmd.label = "Color Matrix Filter";
+  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  if (!input_snapshot.has_value()) {
+    return std::nullopt;
+  }
 
-  auto options = OptionsFromPass(pass);
-  options.blend_mode = Entity::BlendMode::kSource;
-  cmd.pipeline = renderer.GetColorMatrixColorFilterPipeline(options);
+  //----------------------------------------------------------------------------
+  /// Render to texture.
+  ///
 
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  vtx_builder.AddVertices({
-      {Point(0, 0)},
-      {Point(1, 0)},
-      {Point(1, 1)},
-      {Point(0, 0)},
-      {Point(1, 1)},
-      {Point(0, 1)},
-  });
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-  cmd.BindVertices(vtx_buffer);
+  ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
+                                                 RenderPass& pass) {
+    Command cmd;
+    cmd.label = "Color Matrix Filter";
 
-  VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    auto options = OptionsFromPass(pass);
+    options.blend_mode = Entity::BlendMode::kSource;
+    cmd.pipeline = renderer.GetColorMatrixColorFilterPipeline(options);
 
-  FS::FragInfo frag_info;
-  const float* matrix = matrix_.array;
-  frag_info.color_v = Vector4(matrix[4], matrix[9], matrix[14], matrix[19]);
-  // clang-format off
-  frag_info.color_m =
-      Matrix(
-        matrix[ 0], matrix[ 1], matrix[ 2], matrix[ 3],
-        matrix[ 5], matrix[ 6], matrix[ 7], matrix[ 8],
-        matrix[10], matrix[11], matrix[12], matrix[13],
-        matrix[15], matrix[16], matrix[17], matrix[18]
-      );
-  // clang-format on
+    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    vtx_builder.AddVertices({
+        {Point(0, 0)},
+        {Point(1, 0)},
+        {Point(1, 1)},
+        {Point(0, 0)},
+        {Point(1, 1)},
+        {Point(0, 1)},
+    });
+    auto& host_buffer = pass.GetTransientsBuffer();
+    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+    cmd.BindVertices(vtx_buffer);
 
-  auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-  FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    VS::FrameInfo frame_info;
+    frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
 
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+    FS::FragInfo frag_info;
+    const float* matrix = matrix_.array;
+    frag_info.color_v = Vector4(matrix[4], matrix[9], matrix[14], matrix[19]);
+    frag_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
+    // clang-format off
+    frag_info.color_m = Matrix(
+        matrix[0], matrix[5], matrix[10], matrix[15],
+        matrix[1], matrix[6], matrix[11], matrix[16],
+        matrix[2], matrix[7], matrix[12], matrix[17],
+        matrix[3], matrix[8], matrix[13], matrix[18]
+    );
+    // clang-format on
+    auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
+    FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
+    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.AddCommand(std::move(cmd));
+    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+
+    return pass.AddCommand(std::move(cmd));
+  };
+
+  auto out_texture =
+      renderer.MakeSubpass(input_snapshot->texture->GetSize(), callback);
+  if (!out_texture) {
+    return std::nullopt;
+  }
+  out_texture->SetLabel("ColorMatrixFilter Texture");
+
+  return Snapshot{.texture = out_texture,
+                  .transform = input_snapshot->transform,
+                  .sampler_descriptor = input_snapshot->sampler_descriptor};
 }
 
 }  // namespace impeller

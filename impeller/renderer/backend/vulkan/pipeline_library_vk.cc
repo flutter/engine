@@ -51,7 +51,7 @@ bool PipelineLibraryVK::IsValid() const {
 }
 
 // |PipelineLibrary|
-PipelineFuture PipelineLibraryVK::GetRenderPipeline(
+PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor) {
   Lock lock(pipelines_mutex_);
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
@@ -59,11 +59,13 @@ PipelineFuture PipelineLibraryVK::GetRenderPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline>>(nullptr);
+    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
+        nullptr);
   }
 
-  auto promise = std::make_shared<std::promise<std::shared_ptr<Pipeline>>>();
-  auto future = PipelineFuture{promise->get_future()};
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
+  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
   pipelines_[descriptor] = future;
 
   auto weak_this = weak_from_this();
@@ -82,6 +84,18 @@ PipelineFuture PipelineLibraryVK::GetRenderPipeline(
         weak_this, descriptor, std::move(pipeline_create_info)));
   });
 
+  return future;
+}
+
+// |PipelineLibrary|
+PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
+    ComputePipelineDescriptor descriptor) {
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
+  auto future =
+      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
+  // TODO(dnfield): implement compute for GLES.
+  promise->set_value(nullptr);
   return future;
 }
 
@@ -344,8 +358,13 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   }
   pipeline_info.setLayout(pipeline_layout.value.get());
 
-  // TODO(WIP)
-  // pipeline_info.setPDepthStencilState(&depth_stencil_state_);
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state;
+  depth_stencil_state.setDepthTestEnable(true);
+  depth_stencil_state.setDepthWriteEnable(true);
+  depth_stencil_state.setDepthCompareOp(vk::CompareOp::eLess);
+  depth_stencil_state.setDepthBoundsTestEnable(false);
+  depth_stencil_state.setStencilTestEnable(false);
+  pipeline_info.setPDepthStencilState(&depth_stencil_state);
 
   // See the note in the header about why this is a reader lock.
   ReaderLock lock(cache_mutex_);

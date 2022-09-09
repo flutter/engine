@@ -84,11 +84,6 @@ void PerformInitializationTasks(Settings& settings) {
 
   static std::once_flag gShellSettingsInitialization = {};
   std::call_once(gShellSettingsInitialization, [&settings] {
-    if (settings.engine_start_timestamp.count() == 0) {
-      settings.engine_start_timestamp =
-          std::chrono::microseconds(Dart_TimelineGetMicros());
-    }
-
     tonic::SetLogHandler(
         [](const char* message) { FML_LOG(ERROR) << message; });
 
@@ -342,8 +337,9 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Shell> shell;
+  auto platform_task_runner = task_runners.GetPlatformTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetPlatformTaskRunner(),
+      platform_task_runner,
       fml::MakeCopyable(
           [&latch,                                                        //
            &shell,                                                        //
@@ -609,6 +605,7 @@ void Shell::RunEngine(
             if (run_result == flutter::Engine::RunStatus::Failure) {
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
+
             result(run_result);
           }));
 }
@@ -1371,15 +1368,29 @@ void Shell::LoadDartDeferredLibrary(
 void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                          const std::string error_message,
                                          bool transient) {
-  engine_->LoadDartDeferredLibraryError(loading_unit_id, error_message,
-                                        transient);
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      [engine = weak_engine_, loading_unit_id, error_message, transient] {
+        if (engine) {
+          engine->LoadDartDeferredLibraryError(loading_unit_id, error_message,
+                                               transient);
+        }
+      });
 }
 
 void Shell::UpdateAssetResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
-  engine_->GetAssetManager()->UpdateResolverByType(
-      std::move(updated_asset_resolver), type);
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable(
+          [engine = weak_engine_, type,
+           asset_resolver = std::move(updated_asset_resolver)]() mutable {
+            if (engine) {
+              engine->GetAssetManager()->UpdateResolverByType(
+                  std::move(asset_resolver), type);
+            }
+          }));
 }
 
 // |Engine::Delegate|

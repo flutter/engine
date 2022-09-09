@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
+#include <dxgi.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <windows.h>
@@ -16,6 +17,8 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+typedef void (*VoidCallback)(void* /* user data */);
 
 // Opaque reference to a Flutter window controller.
 typedef struct FlutterDesktopViewControllerState*
@@ -185,10 +188,23 @@ FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
 FlutterDesktopEngineGetTextureRegistrar(FlutterDesktopEngineRef engine);
 
+// Schedule a callback to be called after the next frame is drawn.
+//
+// This must be called from the platform thread. The callback is executed only
+// once on the platform thread.
+FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
+    FlutterDesktopEngineRef engine,
+    VoidCallback callback,
+    void* user_data);
+
 // ========== View ==========
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
+
+// Returns the DXGI adapter used for rendering or nullptr in case of error.
+FLUTTER_EXPORT IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(
+    FlutterDesktopViewRef view);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h

@@ -49,8 +49,7 @@ TEST_F(ShellTest, PlatformConfigurationInitialization) {
   AddNativeCallback("ValidateConfiguration",
                     CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -100,8 +99,7 @@ TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
   AddNativeCallback("ValidateConfiguration",
                     CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -139,8 +137,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorHandlesError) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -190,8 +187,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -242,8 +238,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -268,6 +263,40 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
   ASSERT_EQ(errors[2], "Exception: throw1") << errors[2];
   ASSERT_EQ(errors[3].rfind("#0      customOnErrorThrow"), 0ul) << errors[3];
 
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, PlatformConfigurationSetDartPerformanceMode) {
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [message_latch](Dart_NativeArguments args) {
+    // call needs to happen on the UI thread.
+    Dart_PerformanceMode prev =
+        Dart_SetPerformanceMode(Dart_PerformanceMode_Default);
+    ASSERT_EQ(Dart_PerformanceMode_Latency, prev);
+    message_latch->Signal();
+  };
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
+
+  Settings settings = CreateSettingsForFixture();
+
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // raster
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto run_configuration = RunConfiguration::InferFromSettings(settings);
+  run_configuration.SetEntrypoint("setLatencyPerformanceMode");
+
+  shell->RunEngine(std::move(run_configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch->Wait();
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
