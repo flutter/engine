@@ -647,14 +647,15 @@ _SplitLicense _splitLicense(String body, { bool verifyResults = true }) {
       }
       end = lines.current.end;
       final String prefix = firstAuthor.substring(0, subindex);
-      while (lines.moveNext() && lines.current.value.startsWith(prefix)) {
+      bool hadMoreLines;
+      while (hadMoreLines = lines.moveNext() && lines.current.value.startsWith(prefix)) {
         final String nextAuthor = lines.current.value.substring(prefix.length);
         if (nextAuthor == '' || nextAuthor[0] == ' ' || nextAuthor[0] == '\t') {
           throw 'unexpectedly ragged author list when looking for copyright';
         }
         end = lines.current.end;
       }
-      if (lines.current == null) {
+      if (!hadMoreLines) {
         break;
       }
     } else if (line.contains(halfCopyrightPattern)) {
