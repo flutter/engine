@@ -60,13 +60,13 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
   static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
 
   bool get isIncludedInBuildProducts {
-    return !io.name.contains(_readmeNamePattern) &&
-        !io.name.contains(_buildTimePattern) &&
-        !io.name.contains(_docsPattern) &&
-        !io.name.contains(_devPattern) &&
-        !io.name.contains(_testsPattern) &&
-        !io.toString().contains(_icuSamplesPattern) &&
-        !isShellScript;
+    return !io.name.contains(_readmeNamePattern)
+        && !io.name.contains(_buildTimePattern)
+        && !io.name.contains(_docsPattern)
+        && !io.name.contains(_devPattern)
+        && !io.name.contains(_testsPattern)
+        && !io.toString().contains(_icuSamplesPattern)
+        && !isShellScript;
   }
 
   bool get isShellScript => false;
@@ -196,12 +196,13 @@ class _RepositoryApache4DNoticeFile extends _RepositorySingleLicenseFile {
   License? licenseOfType(LicenseType type) => null;
 
   static final RegExp _pattern = RegExp(
-      r'^(// ------------------------------------------------------------------\n'
-      r'// NOTICE file corresponding to the section 4d of The Apache License,\n'
-      r'// Version 2\.0, in this case for (?:.+)\n'
-      r'// ------------------------------------------------------------------\n)'
-      r'((?:.|\n)+)$',
-      caseSensitive: false);
+    r'^(// ------------------------------------------------------------------\n'
+    r'// NOTICE file corresponding to the section 4d of The Apache License,\n'
+    r'// Version 2\.0, in this case for (?:.+)\n'
+    r'// ------------------------------------------------------------------\n)'
+    r'((?:.|\n)+)$',
+    caseSensitive: false
+  );
 
   static bool consider(fs.TextFile io) {
     return io.readString().contains(_pattern);
@@ -215,9 +216,8 @@ class _RepositoryApache4DNoticeFile extends _RepositorySingleLicenseFile {
 }
 
 class _RepositoryLicenseRedirectFile extends _RepositorySingleLicenseFile {
-  _RepositoryLicenseRedirectFile(
-      _RepositoryDirectory parent, fs.TextFile io, License license)
-      : super(parent, io, license);
+  _RepositoryLicenseRedirectFile(_RepositoryDirectory parent, fs.TextFile io, License license)
+    : super(parent, io, license);
 
   @override
   License? licenseOfType(LicenseType type) {
@@ -227,11 +227,9 @@ class _RepositoryLicenseRedirectFile extends _RepositorySingleLicenseFile {
     return null;
   }
 
-  static _RepositoryLicenseRedirectFile? maybeCreateFrom(
-      _RepositoryDirectory parent, fs.TextFile io) {
+  static _RepositoryLicenseRedirectFile? maybeCreateFrom(_RepositoryDirectory parent, fs.TextFile io) {
     final String contents = io.readString();
-    final License? license =
-        interpretAsRedirectLicense(contents, parent, origin: io.fullName);
+    final License? license = interpretAsRedirectLicense(contents, parent, origin: io.fullName);
     if (license != null) {
       return _RepositoryLicenseRedirectFile(parent, io, license);
     }
@@ -252,14 +250,13 @@ class _RepositoryLicenseFileWithLeader extends _RepositorySingleLicenseFile {
     if (match == null) {
       throw 'failed to strip leader from $io\nleader: /$leader/\nbody:\n---\n$body\n---';
     }
-    return License.fromBodyAndName(body.substring(match.end), io.name,
-        origin: io.fullName);
+    return License.fromBodyAndName(body.substring(match.end), io.name, origin: io.fullName);
   }
 }
 
 class _RepositoryReadmeIjgFile extends _RepositorySingleLicenseFile {
   _RepositoryReadmeIjgFile(_RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io, _parseLicense(io));
+    : super(parent, io, _parseLicense(io));
 
   static final RegExp _pattern = RegExp(
     r'Permission is hereby granted to use, copy, modify, and distribute this\n'
@@ -302,18 +299,19 @@ class _RepositoryReadmeIjgFile extends _RepositorySingleLicenseFile {
 
 class _RepositoryDartLicenseFile extends _RepositorySingleLicenseFile {
   _RepositoryDartLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io, _parseLicense(io));
+    : super(parent, io, _parseLicense(io));
 
-  static final RegExp _pattern =
-      RegExp(r'(Copyright (?:.|\n)+)$', caseSensitive: false);
+  static final RegExp _pattern = RegExp(
+    r'(Copyright (?:.|\n)+)$',
+    caseSensitive: false
+  );
 
   static License _parseLicense(fs.TextFile io) {
     final Match? match = _pattern.firstMatch(io.readString());
     if (match == null || match.groupCount != 1) {
       throw 'unexpected Dart license file contents';
     }
-    return License.template(match.group(1)!, LicenseType.bsd,
-        origin: io.fullName);
+    return License.template(match.group(1)!, LicenseType.bsd, origin: io.fullName);
   }
 
   @override
@@ -324,18 +322,13 @@ class _RepositoryDartLicenseFile extends _RepositorySingleLicenseFile {
 
 class _RepositoryLibPngLicenseFile extends _RepositorySingleLicenseFile {
   _RepositoryLibPngLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
-      : super(
-            parent,
-            io,
-            License.blank(io.readString(), LicenseType.libpng,
-                origin: io.fullName)) {
-    _verifyLicense(io);
+    : super(parent, io, License.blank(io.readString(), LicenseType.libpng, origin: io.fullName)) {
+      _verifyLicense(io);
   }
 
   static void _verifyLicense(fs.TextFile io) {
     final String contents = io.readString();
-    if (!contents
-            .contains(RegExp('COPYRIGHT NOTICE, DISCLAIMER, and LICENSE:?')) ||
+    if (!contents.contains(RegExp('COPYRIGHT NOTICE, DISCLAIMER, and LICENSE:?')) ||
         !contents.contains('png')) {
       throw 'unexpected libpng license file contents:\n----8<----\n$contents\n----<8----';
     }
@@ -351,9 +344,8 @@ class _RepositoryLibPngLicenseFile extends _RepositorySingleLicenseFile {
 }
 
 class _RepositoryBlankLicenseFile extends _RepositorySingleLicenseFile {
-  _RepositoryBlankLicenseFile(
-      _RepositoryDirectory parent, fs.TextFile io, String sanityCheck)
-      : super(parent, io, License.blank(io.readString(), LicenseType.unknown)) {
+  _RepositoryBlankLicenseFile(_RepositoryDirectory parent, fs.TextFile io, String sanityCheck)
+    : super(parent, io, License.blank(io.readString(), LicenseType.unknown)) {
     _verifyLicense(io, sanityCheck);
   }
 
@@ -368,11 +360,9 @@ class _RepositoryBlankLicenseFile extends _RepositorySingleLicenseFile {
   License? licenseOfType(LicenseType type) => null;
 }
 
-class _RepositoryCatapultApiClientLicenseFile
-    extends _RepositorySingleLicenseFile {
-  _RepositoryCatapultApiClientLicenseFile(
-      _RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io, _parseLicense(io));
+class _RepositoryCatapultApiClientLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryCatapultApiClientLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
+    : super(parent, io, _parseLicense(io));
 
   static final RegExp _pattern = RegExp(
     r' *Licensed under the Apache License, Version 2\.0 \(the "License"\);\n'
@@ -404,11 +394,9 @@ class _RepositoryCatapultApiClientLicenseFile
   }
 }
 
-class _RepositoryCatapultCoverageLicenseFile
-    extends _RepositorySingleLicenseFile {
-  _RepositoryCatapultCoverageLicenseFile(
-      _RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io, _parseLicense(io));
+class _RepositoryCatapultCoverageLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryCatapultCoverageLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
+    : super(parent, io, _parseLicense(io));
 
   static final RegExp _pattern = RegExp(
     r' *Except where noted otherwise, this software is licensed under the Apache\n'
@@ -442,28 +430,29 @@ class _RepositoryCatapultCoverageLicenseFile
 
 class _RepositoryLibJpegTurboLicense extends _RepositoryLicenseFile {
   _RepositoryLibJpegTurboLicense(_RepositoryDirectory parent, fs.TextFile io)
-      : super(parent, io) {
+    : super(parent, io) {
     _parseLicense(io);
   }
 
   static final RegExp _pattern = RegExp(
-      r'libjpeg-turbo is covered by three compatible BSD-style open source licenses:\n'
-      r'\n'
-      r'- The IJG \(Independent JPEG Group\) License, which is listed in\n'
-      r'  \[README\.ijg\]\(README\.ijg\)\n'
-      r'\n'
-      r'  This license applies to the libjpeg API library and associated programs\n'
-      r'  \(any code inherited from libjpeg, and any modifications to that code\.\)\n'
-      r'\n'
-      r'- The Modified \(3-clause\) BSD License, which is listed in\n'
-      r'  \[turbojpeg\.c\]\(turbojpeg\.c\)\n'
-      r'\n'
-      r'  This license covers the TurboJPEG API library and associated programs\.\n'
-      r'\n'
-      r'- The zlib License, which is listed in \[simd/jsimdext\.inc\]\(simd/jsimdext\.inc\)\n'
-      r'\n'
-      r'  This license is a subset of the other two, and it covers the libjpeg-turbo\n'
-      r'  SIMD extensions\.\n');
+    r'libjpeg-turbo is covered by three compatible BSD-style open source licenses:\n'
+    r'\n'
+    r'- The IJG \(Independent JPEG Group\) License, which is listed in\n'
+    r'  \[README\.ijg\]\(README\.ijg\)\n'
+    r'\n'
+    r'  This license applies to the libjpeg API library and associated programs\n'
+    r'  \(any code inherited from libjpeg, and any modifications to that code\.\)\n'
+    r'\n'
+    r'- The Modified \(3-clause\) BSD License, which is listed in\n'
+    r'  \[turbojpeg\.c\]\(turbojpeg\.c\)\n'
+    r'\n'
+    r'  This license covers the TurboJPEG API library and associated programs\.\n'
+    r'\n'
+    r'- The zlib License, which is listed in \[simd/jsimdext\.inc\]\(simd/jsimdext\.inc\)\n'
+    r'\n'
+    r'  This license is a subset of the other two, and it covers the libjpeg-turbo\n'
+    r'  SIMD extensions\.\n'
+  );
 
   static void _parseLicense(fs.TextFile io) {
     final String body = io.readString();
@@ -477,14 +466,10 @@ class _RepositoryLibJpegTurboLicense extends _RepositoryLicenseFile {
   @override
   List<License>? get licenses {
     if (_licenses == null && parent != null) {
-      final _RepositoryReadmeIjgFile readme =
-          parent!.getChildByName('README.ijg') as _RepositoryReadmeIjgFile;
-      final _RepositorySourceFile main =
-          parent!.getChildByName('turbojpeg.c') as _RepositorySourceFile;
-      final _RepositoryDirectory simd =
-          parent!.getChildByName('simd') as _RepositoryDirectory;
-      final _RepositorySourceFile zlib =
-          simd.getChildByName('jsimdext.inc') as _RepositorySourceFile;
+      final _RepositoryReadmeIjgFile readme = parent!.getChildByName('README.ijg') as _RepositoryReadmeIjgFile;
+      final _RepositorySourceFile main = parent!.getChildByName('turbojpeg.c') as _RepositorySourceFile;
+      final _RepositoryDirectory simd = parent!.getChildByName('simd') as _RepositoryDirectory;
+      final _RepositorySourceFile zlib = simd.getChildByName('jsimdext.inc') as _RepositorySourceFile;
       _licenses = <License>[];
       _licenses!.add(readme.license);
       _licenses!.add(main.licenses.single);
@@ -514,50 +499,51 @@ class _RepositoryLibJpegTurboLicense extends _RepositoryLicenseFile {
 
 class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
   _RepositoryFreetypeLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
-      : _target = _parseLicense(io),
-        super(parent, io);
+    : _target = _parseLicense(io), super(parent, io);
 
-  static final RegExp _pattern = RegExp(r'FREETYPE LICENSES\n'
-      r'-----------------\n'
-      r'\n'
-      r'The FreeType  2 font  engine is  copyrighted work  and cannot  be used\n'
-      r'legally without  a software  license\.  In order  to make  this project\n'
-      r'usable to  a vast majority of  developers, we distribute it  under two\n'
-      r'mutually exclusive open-source licenses\.\n'
-      r'\n'
-      r'This means that \*you\* must choose  \*one\* of the two licenses described\n'
-      r'below, then obey all its terms and conditions when using FreeType 2 in\n'
-      r'any of your projects or products\.\n'
-      r'\n'
-      r'  - The FreeType License,  found in the file  `docs/(FTL\.TXT)`, which is\n'
-      r'    similar to the  original BSD license \*with\*  an advertising clause\n'
-      r'    that forces  you to explicitly  cite the FreeType project  in your\n'
-      r"    product's  documentation\.  All  details are  in the  license file\.\n"
-      r"    This license is suited to products which don't use the GNU General\n"
-      r'    Public License\.\n'
-      r'\n'
-      r'    Note that  this license  is compatible to  the GNU  General Public\n'
-      r'    License version 3, but not version 2\.\n'
-      r'\n'
-      r'  - The   GNU   General   Public   License   version   2,   found   in\n'
-      r'    `docs/GPLv2\.TXT`  \(any  later  version  can  be  used  also\),  for\n'
-      r'    programs  which  already  use  the  GPL\.  Note  that  the  FTL  is\n'
-      r'    incompatible with GPLv2 due to its advertisement clause\.\n'
-      r'\n'
-      r'The contributed  BDF and PCF  drivers come  with a license  similar to\n'
-      r'that  of the  X Window  System\.   It is  compatible to  the above  two\n'
-      r'licenses \(see files `src/bdf/README`  and `src/pcf/README`\)\.  The same\n'
-      r'holds   for   the   source    code   files   `src/base/fthash\.c`   and\n'
-      r'`include/freetype/internal/fthash\.h`; they wer part  of the BDF driver\n'
-      r'in earlier FreeType versions\.\n'
-      r'\n'
-      r'The gzip  module uses the  zlib license \(see  `src/gzip/zlib\.h`\) which\n'
-      r'too is compatible to the above two licenses\.\n'
-      r'\n'
-      r'The  MD5 checksum  support  \(only used  for  debugging in  development\n'
-      r'builds\) is in the public domain\.\n'
-      r'\n*'
-      r'--- end of LICENSE\.TXT ---\n*$');
+  static final RegExp _pattern = RegExp(
+    r'FREETYPE LICENSES\n'
+    r'-----------------\n'
+    r'\n'
+    r'The FreeType  2 font  engine is  copyrighted work  and cannot  be used\n'
+    r'legally without  a software  license\.  In order  to make  this project\n'
+    r'usable to  a vast majority of  developers, we distribute it  under two\n'
+    r'mutually exclusive open-source licenses\.\n'
+    r'\n'
+    r'This means that \*you\* must choose  \*one\* of the two licenses described\n'
+    r'below, then obey all its terms and conditions when using FreeType 2 in\n'
+    r'any of your projects or products\.\n'
+    r'\n'
+    r'  - The FreeType License,  found in the file  `docs/(FTL\.TXT)`, which is\n'
+    r'    similar to the  original BSD license \*with\*  an advertising clause\n'
+    r'    that forces  you to explicitly  cite the FreeType project  in your\n'
+    r"    product's  documentation\.  All  details are  in the  license file\.\n"
+    r"    This license is suited to products which don't use the GNU General\n"
+    r'    Public License\.\n'
+    r'\n'
+    r'    Note that  this license  is compatible to  the GNU  General Public\n'
+    r'    License version 3, but not version 2\.\n'
+    r'\n'
+    r'  - The   GNU   General   Public   License   version   2,   found   in\n'
+    r'    `docs/GPLv2\.TXT`  \(any  later  version  can  be  used  also\),  for\n'
+    r'    programs  which  already  use  the  GPL\.  Note  that  the  FTL  is\n'
+    r'    incompatible with GPLv2 due to its advertisement clause\.\n'
+    r'\n'
+    r'The contributed  BDF and PCF  drivers come  with a license  similar to\n'
+    r'that  of the  X Window  System\.   It is  compatible to  the above  two\n'
+    r'licenses \(see files `src/bdf/README`  and `src/pcf/README`\)\.  The same\n'
+    r'holds   for   the   source    code   files   `src/base/fthash\.c`   and\n'
+    r'`include/freetype/internal/fthash\.h`; they wer part  of the BDF driver\n'
+    r'in earlier FreeType versions\.\n'
+    r'\n'
+    r'The gzip  module uses the  zlib license \(see  `src/gzip/zlib\.h`\) which\n'
+    r'too is compatible to the above two licenses\.\n'
+    r'\n'
+    r'The  MD5 checksum  support  \(only used  for  debugging in  development\n'
+    r'builds\) is in the public domain\.\n'
+    r'\n*'
+    r'--- end of LICENSE\.TXT ---\n*$'
+  );
 
   static String? _parseLicense(fs.TextFile io) {
     final Match? match = _pattern.firstMatch(io.readString());
@@ -595,144 +581,144 @@ class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
   }
 
   @override
-  Iterable<License> get licenses sync* {}
+  Iterable<License> get licenses sync* { }
 }
 
 class _RepositoryIcuLicenseFile extends _RepositoryLicenseFile {
   _RepositoryIcuLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
-      : _licenses = _parseLicense(io),
-        super(parent, io);
+    : _licenses = _parseLicense(io), super(parent, io);
 
   final List<License> _licenses;
 
   static final RegExp _pattern = RegExp(
-      r'^UNICODE, INC\. LICENSE AGREEMENT - DATA FILES AND SOFTWARE\n+'
-      r'( *See Terms of Use (?:.|\n)+?)\n+' // 1
-      r'-+\n'
-      r'\n'
-      r'Third-Party Software Licenses\n+'
-      r' *This section contains third-party software notices and/or additional\n'
-      r' *terms for licensed third-party software components included within ICU\n'
-      r' *libraries\.\n+'
-      r'-+\n'
-      r'\n'
-      r' *ICU License - ICU 1\.8\.1 to ICU 57.1[ \n]+?'
-      r' *COPYRIGHT AND PERMISSION NOTICE\n+'
-      r'(Copyright (?:.|\n)+?)\n+' // 2
-      r'-+\n'
-      r'\n'
-      r'Chinese/Japanese Word Break Dictionary Data \(cjdict\.txt\)\n+'
-      r' #     The Google Chrome software developed by Google is licensed under\n?'
-      r' # the BSD license\. Other software included in this distribution is\n?'
-      r' # provided under other licenses, as set forth below\.\n'
-      r' #\n'
-      r'( #  The BSD License\n'
-      r' #  http://opensource\.org/licenses/bsd-license\.php\n'
-      r' # +Copyright(?:.|\n)+?)\n' // 3
-      r' #\n'
-      r' #\n'
-      r' #  The word list in cjdict.txt are generated by combining three word lists\n?'
-      r' # listed below with further processing for compound word breaking\. The\n?'
-      r' # frequency is generated with an iterative training against Google web\n?'
-      r' # corpora\.\n'
-      r' #\n'
-      r' #  \* Libtabe \(Chinese\)\n'
-      r' #    - https://sourceforge\.net/project/\?group_id=1519\n'
-      r' #    - Its license terms and conditions are shown below\.\n'
-      r' #\n'
-      r' #  \* IPADIC \(Japanese\)\n'
-      r' #    - http://chasen\.aist-nara\.ac\.jp/chasen/distribution\.html\n'
-      r' #    - Its license terms and conditions are shown below\.\n'
-      r' #\n'
-      r' #  ---------COPYING\.libtabe ---- BEGIN--------------------\n'
-      r' #\n'
-      r' # +/\*\n'
-      r'( # +\* Copyright (?:.|\n)+?)\n' // 4
-      r' # +\*/\n'
-      r' #\n'
-      r' # +/\*\n'
-      r'( # +\* Copyright (?:.|\n)+?)\n' // 5
-      r' # +\*/\n'
-      r' #\n'
-      r'( # +Copyright (?:.|\n)+?)\n' // 6
-      r' #\n'
-      r' # +---------------COPYING\.libtabe-----END--------------------------------\n'
-      r' #\n'
-      r' #\n'
-      r' # +---------------COPYING\.ipadic-----BEGIN-------------------------------\n'
-      r' #\n'
-      r'( # +Copyright (?:.|\n)+?)\n' // 7
-      r' #\n'
-      r' # +---------------COPYING\.ipadic-----END----------------------------------\n'
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *Lao Word Break Dictionary Data \(laodict\.txt\)\n'
-      r'\n'
-      r'( # +Copyright(?:.|\n)+?)\n' // 8
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *Burmese Word Break Dictionary Data \(burmesedict\.txt\)\n'
-      r'\n'
-      r'( # +Copyright(?:.|\n)+?)\n' // 9
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *Time Zone Database\n'
-      r'((?:.|\n)+)\n' // 10
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *Google double-conversion\n'
-      r'\n'
-      r'(Copyright(?:.|\n)+)\n' // 11
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *File: aclocal\.m4 \(only for ICU4C\)\n'
-      r' *Section: pkg\.m4 - Macros to locate and utilise pkg-config\.\n+'
-      r'(Copyright (?:.|\n)+?)\n' // 12
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *File: config\.guess \(only for ICU4C\)\n+'
-      r'(This file is free software(?:.|\n)+?)\n' // 13
-      r'\n'
-      r'-+\n'
-      r'\n'
-      r' *File: install-sh \(only for ICU4C\)\n+'
-      r'(Copyright(?:.|\n)+?)\n$', // 14
-      multiLine: true,
-      caseSensitive: false);
+    r'^UNICODE, INC\. LICENSE AGREEMENT - DATA FILES AND SOFTWARE\n+'
+    r'( *See Terms of Use (?:.|\n)+?)\n+' // 1
+    r'-+\n'
+    r'\n'
+    r'Third-Party Software Licenses\n+'
+    r' *This section contains third-party software notices and/or additional\n'
+    r' *terms for licensed third-party software components included within ICU\n'
+    r' *libraries\.\n+'
+    r'-+\n'
+    r'\n'
+    r' *ICU License - ICU 1\.8\.1 to ICU 57.1[ \n]+?'
+    r' *COPYRIGHT AND PERMISSION NOTICE\n+'
+    r'(Copyright (?:.|\n)+?)\n+' // 2
+    r'-+\n'
+    r'\n'
+    r'Chinese/Japanese Word Break Dictionary Data \(cjdict\.txt\)\n+'
+    r' #     The Google Chrome software developed by Google is licensed under\n?'
+    r' # the BSD license\. Other software included in this distribution is\n?'
+    r' # provided under other licenses, as set forth below\.\n'
+    r' #\n'
+    r'( #  The BSD License\n'
+    r' #  http://opensource\.org/licenses/bsd-license\.php\n'
+    r' # +Copyright(?:.|\n)+?)\n' // 3
+    r' #\n'
+    r' #\n'
+    r' #  The word list in cjdict.txt are generated by combining three word lists\n?'
+    r' # listed below with further processing for compound word breaking\. The\n?'
+    r' # frequency is generated with an iterative training against Google web\n?'
+    r' # corpora\.\n'
+    r' #\n'
+    r' #  \* Libtabe \(Chinese\)\n'
+    r' #    - https://sourceforge\.net/project/\?group_id=1519\n'
+    r' #    - Its license terms and conditions are shown below\.\n'
+    r' #\n'
+    r' #  \* IPADIC \(Japanese\)\n'
+    r' #    - http://chasen\.aist-nara\.ac\.jp/chasen/distribution\.html\n'
+    r' #    - Its license terms and conditions are shown below\.\n'
+    r' #\n'
+    r' #  ---------COPYING\.libtabe ---- BEGIN--------------------\n'
+    r' #\n'
+    r' # +/\*\n'
+    r'( # +\* Copyright (?:.|\n)+?)\n' // 4
+    r' # +\*/\n'
+    r' #\n'
+    r' # +/\*\n'
+    r'( # +\* Copyright (?:.|\n)+?)\n' // 5
+    r' # +\*/\n'
+    r' #\n'
+    r'( # +Copyright (?:.|\n)+?)\n' // 6
+    r' #\n'
+    r' # +---------------COPYING\.libtabe-----END--------------------------------\n'
+    r' #\n'
+    r' #\n'
+    r' # +---------------COPYING\.ipadic-----BEGIN-------------------------------\n'
+    r' #\n'
+    r'( # +Copyright (?:.|\n)+?)\n' // 7
+    r' #\n'
+    r' # +---------------COPYING\.ipadic-----END----------------------------------\n'
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *Lao Word Break Dictionary Data \(laodict\.txt\)\n'
+    r'\n'
+    r'( # +Copyright(?:.|\n)+?)\n' // 8
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *Burmese Word Break Dictionary Data \(burmesedict\.txt\)\n'
+    r'\n'
+    r'( # +Copyright(?:.|\n)+?)\n' // 9
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *Time Zone Database\n'
+    r'((?:.|\n)+)\n' // 10
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *Google double-conversion\n'
+    r'\n'
+    r'(Copyright(?:.|\n)+)\n' // 11
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *File: aclocal\.m4 \(only for ICU4C\)\n'
+    r' *Section: pkg\.m4 - Macros to locate and utilise pkg-config\.\n+'
+    r'(Copyright (?:.|\n)+?)\n' // 12
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *File: config\.guess \(only for ICU4C\)\n+'
+    r'(This file is free software(?:.|\n)+?)\n' // 13
+    r'\n'
+    r'-+\n'
+    r'\n'
+    r' *File: install-sh \(only for ICU4C\)\n+'
+    r'(Copyright(?:.|\n)+?)\n$', // 14
+    multiLine: true,
+    caseSensitive: false
+  );
 
   static final RegExp _unexpectedHash = RegExp(r'^.+ #', multiLine: true);
   static final RegExp _newlineHash = RegExp(r' # ?');
 
   static const String gplExceptionExplanation1 =
-      'As a special exception to the GNU General Public License, if you\n'
-      'distribute this file as part of a program that contains a\n'
-      'configuration script generated by Autoconf, you may include it under\n'
-      'the same distribution terms that you use for the rest of that\n'
-      'program.\n'
-      '\n'
-      '\n'
-      '(The condition for the exception is fulfilled because\n'
-      'ICU4C includes a configuration script generated by Autoconf,\n'
-      'namely the `configure` script.)';
+    'As a special exception to the GNU General Public License, if you\n'
+    'distribute this file as part of a program that contains a\n'
+    'configuration script generated by Autoconf, you may include it under\n'
+    'the same distribution terms that you use for the rest of that\n'
+    'program.\n'
+    '\n'
+    '\n'
+    '(The condition for the exception is fulfilled because\n'
+    'ICU4C includes a configuration script generated by Autoconf,\n'
+    'namely the `configure` script.)';
 
   static const String gplExceptionExplanation2 =
-      'As a special exception to the GNU General Public License, if you\n'
-      'distribute this file as part of a program that contains a\n'
-      'configuration script generated by Autoconf, you may include it under\n'
-      'the same distribution terms that you use for the rest of that\n'
-      'program.  This Exception is an additional permission under section 7\n'
-      'of the GNU General Public License, version 3 ("GPLv3").\n'
-      '\n'
-      '\n'
-      '(The condition for the exception is fulfilled because\n'
-      'ICU4C includes a configuration script generated by Autoconf,\n'
-      'namely the `configure` script.)';
+    'As a special exception to the GNU General Public License, if you\n'
+    'distribute this file as part of a program that contains a\n'
+    'configuration script generated by Autoconf, you may include it under\n'
+    'the same distribution terms that you use for the rest of that\n'
+    'program.  This Exception is an additional permission under section 7\n'
+    'of the GNU General Public License, version 3 ("GPLv3").\n'
+    '\n'
+    '\n'
+    '(The condition for the exception is fulfilled because\n'
+    'ICU4C includes a configuration script generated by Autoconf,\n'
+    'namely the `configure` script.)';
 
   static String _dewrap(String s) {
     if (!s.startsWith(' # ')) {
@@ -744,10 +730,7 @@ class _RepositoryIcuLicenseFile extends _RepositoryLicenseFile {
     if (s.contains('\x2028')) {
       throw 'ICU license file contained unexpected line separator';
     }
-    return s
-        .replaceAll(_newlineHash, '\x2028')
-        .replaceAll('\n', '')
-        .replaceAll('\x2028', '\n');
+    return s.replaceAll(_newlineHash, '\x2028').replaceAll('\n', '').replaceAll('\x2028', '\n');
   }
 
   static List<License> _parseLicense(fs.TextFile io) {
