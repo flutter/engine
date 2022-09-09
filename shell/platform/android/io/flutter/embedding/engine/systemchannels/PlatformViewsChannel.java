@@ -291,6 +291,7 @@ public class PlatformViewsChannel {
      * was not available and the view creation fell back to {@code PlatformViewLayer} mode.
      *
      * This can only be returned if the {@link PlatformViewCreationRequest} sets
+     * {@code TEXTURE_WITH_HYBRID_FALLBACK} as the requested display mode.
      */
     static final long NON_TEXTURE_FALLBACK = -2;
 
