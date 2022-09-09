@@ -82,13 +82,17 @@ class FilterContents : public Contents {
 
   static std::shared_ptr<FilterContents> MakeColorMatrix(
       FilterInput::Ref input,
-      const ColorMatrix& matrix);
+      const ColorMatrix& color_matrix);
 
   static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
       FilterInput::Ref input);
 
   static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
       FilterInput::Ref input);
+
+  static std::shared_ptr<FilterContents> MakeMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix);
 
   FilterContents();
 
