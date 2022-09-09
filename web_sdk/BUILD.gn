@@ -626,7 +626,7 @@ copy("copy_canvaskit") {
   outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
 }
 
-copy("copy_canvaskit") {
+copy("copy_canvaskit_profiling") {
   canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
 
   deps = [ canvaskit_target ]
