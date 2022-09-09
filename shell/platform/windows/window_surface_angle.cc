@@ -22,6 +22,13 @@ void WindowSurfaceAngle::Destroy() {
   window_ = nullptr;
 }
 
+void WindowSurfaceAngle::GetSurfaceDimensions(unsigned int &width, unsigned int &height) {
+  EGLint egl_width, egl_height;
+  surface_manager_->GetSurfaceDimensions(&egl_width, &egl_height);
+  width = egl_width;
+  height = egl_height;
+}
+
 static WindowSurfaceAngle* GetWindowSurface(void* user_data) {
   auto host = static_cast<FlutterWindowsEngine*>(user_data);
   return static_cast<WindowSurfaceAngle*>(host->surface());

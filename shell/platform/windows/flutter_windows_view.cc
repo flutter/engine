@@ -110,14 +110,13 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   // Called on the platform thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
-  if (!engine_->surface_manager()) {
+  if (!engine_->surface()) {
     SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
     return;
   }
 
-  EGLint surface_width, surface_height;
-  engine_->surface_manager()->GetSurfaceDimensions(&surface_width,
-                                                   &surface_height);
+  unsigned int surface_width, surface_height;
+  engine_->surface()->GetSurfaceDimensions(surface_width, surface_height);
 
   bool surface_will_update =
       SurfaceWillUpdate(surface_width, surface_height, width, height);

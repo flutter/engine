@@ -23,6 +23,9 @@ public:
   void Destroy() override;
 
   // |WindowSurface|
+  void GetSurfaceDimensions(unsigned int &width, unsigned int &height) override;
+
+  // |WindowSurface|
   void OnResize(unsigned int width, unsigned int height) override;
 
   // |WindowSurface|

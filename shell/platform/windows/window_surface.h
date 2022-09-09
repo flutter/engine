@@ -37,6 +37,8 @@ public:
   // Destroys the surface previously initialized by Init.
   virtual void Destroy() = 0;
 
+  virtual void GetSurfaceDimensions(unsigned int &width, unsigned int &height) = 0;
+
   // Resizes the surface to match the new size.
   virtual void OnResize(unsigned int width, unsigned int height) = 0;
 
