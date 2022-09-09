@@ -1062,7 +1062,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void flutterSurfaceViewVisibilityChangedWhitFlutterView() {
+  public void flutterSurfaceViewVisibilityChangedWithFlutterView() {
     // ---- Test setup ----
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
