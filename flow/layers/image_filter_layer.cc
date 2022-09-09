@@ -54,16 +54,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
 
   SkRect child_bounds = SkRect::MakeEmpty();
-<<<<<<< HEAD
-  PrerollChildren(context, matrix, &child_bounds);
-  context->subtree_can_inherit_opacity = true;
-=======
   SkMatrix child_matrix = matrix;
   if (context->raster_cache) {
     child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix);
   }
   PrerollChildren(context, child_matrix, &child_bounds);
->>>>>>> 07ebf3c997... add pixel snapping conditional on presence of raster cache (#35981)
+  context->subtree_can_inherit_opacity = true;
 
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
