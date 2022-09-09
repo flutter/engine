@@ -66,7 +66,7 @@ def generate_gen_snapshot(directory, destination):
     print('Cannot find gen_snapshot at %s' % gen_snapshot_dir)
     sys.exit(1)
 
-  sresult = subprocess.run([
+  result = subprocess.run([
       'xcrun', 'bitcode_strip', '-r', gen_snapshot_dir, '-o', destination
   ])
   if result.returncode != 0:
