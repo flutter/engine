@@ -38,11 +38,13 @@ class RunTestsStep implements PipelineStep {
     required this.requireSkiaGold,
     this.testFiles,
     required this.overridePathToCanvasKit,
-  }) : _browserEnvironment = getBrowserEnvironment(browserName);
+    required this.wasm
+  }) : _browserEnvironment = getBrowserEnvironment(browserName, enableWasmGC: wasm);
 
   final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
+  final bool wasm;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
 
@@ -73,6 +75,7 @@ class RunTestsStep implements PipelineStep {
       browserEnvironment: _browserEnvironment,
       expectFailure: false,
       isDebug: isDebug,
+      wasm: wasm,
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       skiaClient: skiaClient,
       overridePathToCanvasKit: overridePathToCanvasKit,
@@ -144,6 +147,7 @@ Future<void> _prepareTestResultsDirectory() async {
 Future<void> _runTestBatch({
   required List<FilePath> testFiles,
   required bool isDebug,
+  required bool wasm,
   required BrowserEnvironment browserEnvironment,
   required bool doUpdateScreenshotGoldens,
   required bool expectFailure,
@@ -188,6 +192,7 @@ Future<void> _runTestBatch({
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       skiaClient: skiaClient,
       overridePathToCanvasKit: overridePathToCanvasKit,
+      wasm: wasm,
     );
   });
 

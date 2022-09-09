@@ -47,6 +47,7 @@ class BrowserPlatform extends PlatformPlugin {
     required this.browserEnvironment,
     required this.server,
     required this.isDebug,
+    required this.wasm,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
     required this.skiaClient,
@@ -105,6 +106,7 @@ class BrowserPlatform extends PlatformPlugin {
     required bool doUpdateScreenshotGoldens,
     required SkiaGoldClient? skiaClient,
     required String? overridePathToCanvasKit,
+    required bool wasm,
   }) async {
     final shelf_io.IOServer server =
         shelf_io.IOServer(await HttpMultiServer.loopback(0));
@@ -112,6 +114,7 @@ class BrowserPlatform extends PlatformPlugin {
       browserEnvironment: browserEnvironment,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
+      wasm: wasm,
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       packageConfig: await loadPackageConfigUri((await Isolate.packageConfig)!),
       skiaClient: skiaClient,
@@ -123,6 +126,8 @@ class BrowserPlatform extends PlatformPlugin {
   /// pauses before running the tests to give the developer a chance to set
   /// breakpoints in the code.
   final bool isDebug;
+
+  final bool wasm;
 
   /// The underlying server.
   final shelf.Server server;
@@ -442,6 +447,8 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase">';
 
+      final String testRunner = wasm ? '../dev/test_dart2wasm.js' : 'packages/test/dart.js';
+
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
@@ -454,7 +461,7 @@ class BrowserPlatform extends PlatformPlugin {
             };
           </script>
           $link
-          <script src="packages/test/dart.js"></script>
+          <script src="$testRunner"></script>
         </head>
         </html>
       ''', headers: <String, String>{'Content-Type': 'text/html'});
@@ -532,6 +539,7 @@ class BrowserPlatform extends PlatformPlugin {
       url: hostUrl,
       future: completer.future,
       packageConfig: packageConfig,
+      wasm: wasm,
       debug: isDebug,
     );
 
@@ -628,7 +636,7 @@ class BrowserManager {
   /// Creates a new BrowserManager that communicates with the browser over
   /// [webSocket].
   BrowserManager._(this.packageConfig, this._browser, this._browserEnvironment,
-      WebSocketChannel webSocket) {
+      this._wasm, WebSocketChannel webSocket) {
     // The duration should be short enough that the debugging console is open as
     // soon as the user is done setting breakpoints, but long enough that a test
     // doing a lot of synchronous work doesn't trigger a false positive.
@@ -697,6 +705,9 @@ class BrowserManager {
   /// Whether the channel to the browser has closed.
   bool _closed = false;
 
+  /// Whether we are running tests that have been compiled to WebAssembly.
+  final bool _wasm;
+
   /// The completer for [_BrowserEnvironment.displayPause].
   ///
   /// This will be `null` as long as the browser isn't displaying a pause
@@ -738,6 +749,7 @@ class BrowserManager {
     required Uri url,
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
+    required bool wasm,
     bool debug = false,
   }) async {
     final Browser browser =
@@ -748,6 +760,7 @@ class BrowserManager {
         future: future,
         packageConfig: packageConfig,
         browser: browser,
+        wasm: wasm,
         debug: debug);
   }
 
@@ -757,6 +770,7 @@ class BrowserManager {
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
     required Browser browser,
+    required bool wasm,
     bool debug = false,
   }) {
     final Completer<BrowserManager> completer = Completer<BrowserManager>();
@@ -778,7 +792,7 @@ class BrowserManager {
         return;
       }
       completer.complete(BrowserManager._(
-          packageConfig, browser, browserEnvironment, webSocket));
+          packageConfig, browser, browserEnvironment, wasm, webSocket));
     }).catchError((Object error, StackTrace stackTrace) {
       browser.close();
       if (completer.isCompleted) {
@@ -857,24 +871,26 @@ class BrowserManager {
             suiteChannel,
             message);
 
-        final String sourceMapFileName =
-            '${p.basename(path)}.browser_test.dart.js.map';
-        final String pathToTest = p.dirname(path);
+        if (!_wasm) {
+          final String sourceMapFileName =
+              '${p.basename(path)}.browser_test.dart.js.map';
+          final String pathToTest = p.dirname(path);
 
-        final String mapPath = p.join(env.environment.webUiRootDir.path,
-            'build', pathToTest, sourceMapFileName);
+          final String mapPath = p.join(env.environment.webUiRootDir.path,
+              'build', pathToTest, sourceMapFileName);
 
-        final Map<String, Uri> packageMap = <String, Uri>{
-          for (Package p in packageConfig.packages) p.name: p.packageUriRoot
-        };
-        final JSStackTraceMapper mapper = JSStackTraceMapper(
-          await File(mapPath).readAsString(),
-          mapUrl: p.toUri(mapPath),
-          packageMap: packageMap,
-          sdkRoot: p.toUri(sdkDir),
-        );
+          final Map<String, Uri> packageMap = <String, Uri>{
+            for (Package p in packageConfig.packages) p.name: p.packageUriRoot
+          };
+          final JSStackTraceMapper mapper = JSStackTraceMapper(
+            await File(mapPath).readAsString(),
+            mapUrl: p.toUri(mapPath),
+            packageMap: packageMap,
+            sdkRoot: p.toUri(sdkDir),
+          );
 
-        controller!.channel('test.browser.mapper').sink.add(mapper.serialize());
+          controller!.channel('test.browser.mapper').sink.add(mapper.serialize());
+        }
 
         _controllers.add(controller!);
         return await controller!.suite;

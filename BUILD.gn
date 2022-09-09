@@ -14,6 +14,7 @@ import("//third_party/dart/build/dart/copy_tree.gni")
 # required for the flutter web sdk.
 declare_args() {
   full_dart_sdk = false
+  dart2wasm = false
 }
 
 config("config") {
@@ -117,6 +118,10 @@ group("flutter") {
 
       if (full_dart_sdk) {
         public_deps += [ "//flutter/web_sdk" ]
+      }
+
+      if (dart2wasm) {
+        public_deps += [ "//third_party/dart:dart2wasm"]
       }
     }
   }

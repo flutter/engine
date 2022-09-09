@@ -216,7 +216,7 @@ Future<void> compileTests(List<FilePath> testFiles, bool wasm) async {
   final int targetCount = htmlTargets.length + canvasKitTargets.length;
   print(
     'Built $targetCount tests in ${stopwatch.elapsedMilliseconds ~/ 1000} '
-    'seconds using $_dart2jsConcurrency concurrent dart2js processes.',
+    'seconds using $_dart2jsConcurrency concurrent compile processes.',
   );
 }
 

@@ -76,7 +76,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'wasm',
-        help: 'If set, compiles tests using dart2wasm instead of dart2js.',
+        help: 'Whether the test we are running are compiled to webassembly.'
       );
   }
 
@@ -134,6 +134,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         browserName: browserName,
         testFiles: testFiles,
         isDebug: isDebug,
+        wasm: wasm,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         requireSkiaGold: requireSkiaGold,
         overridePathToCanvasKit: overridePathToCanvasKit,
