@@ -215,7 +215,6 @@ void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(std::move(contents));
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetAddsToCoverage(false);
 
   GetCurrentPass().AddEntity(std::move(entity));
 
@@ -230,7 +229,6 @@ void Canvas::RestoreClip() {
   // takes up the full render target.
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetAddsToCoverage(false);
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
@@ -336,7 +334,7 @@ void Canvas::SaveLayer(Paint paint,
 void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   auto lazy_glyph_atlas = GetCurrentPass().GetLazyGlyphAtlas();
 
-  lazy_glyph_atlas->AddTextFrame(std::move(text_frame));
+  lazy_glyph_atlas->AddTextFrame(text_frame);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(std::move(text_frame));

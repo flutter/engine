@@ -337,8 +337,9 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Shell> shell;
+  auto platform_task_runner = task_runners.GetPlatformTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetPlatformTaskRunner(),
+      platform_task_runner,
       fml::MakeCopyable(
           [&latch,                                                        //
            &shell,                                                        //
@@ -604,6 +605,7 @@ void Shell::RunEngine(
             if (run_result == flutter::Engine::RunStatus::Failure) {
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
+
             result(run_result);
           }));
 }
