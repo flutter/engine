@@ -377,50 +377,34 @@ void main() {
     expect(rrectMix2.blRadius, equals(const Radius.elliptical(10, 6)));
   });
 
-  test('RRect asserts when corner radii are negative', () {
-    bool asserted = false;
-    try {
+  test('RRect asserts when corner radii are negative', () async {
+    expect(() async {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         topLeft: const Radius.circular(-1),
       );
-    } on AssertionError {
-      asserted = true;
-    }
-    expect(asserted, isTrue, reason: "Constructing an RRect with negative topLeft radii didn't assert");
-    asserted = false;
+    }, throwsA(AssertionError));
 
-    try {
+    expect(() async {
       RRect.fromRectAndCorners(
-      const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
+        const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         topRight: const Radius.circular(-2),
       );
-    } on AssertionError {
-      asserted = true;
-    }
-    expect(asserted, isTrue, reason: "Constructing an RRect with negative topRight radii didn't assert");
-    asserted = false;
+    }, throwsA(AssertionError));
 
-    try {
+    expect(() async {
       RRect.fromRectAndCorners(
-      const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
+        const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         bottomLeft: const Radius.circular(-3),
       );
-    } on AssertionError {
-      asserted = true;
-    }
-    expect(asserted, isTrue, reason: "Constructing an RRect with negative bottomLeft radii didn't assert");
-    asserted = false;
+    }, throwsA(AssertionError));
 
-    try {
+    expect(() async {
       RRect.fromRectAndCorners(
-      const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
+        const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         bottomRight: const Radius.circular(-4),
       );
-    } on AssertionError {
-      asserted = true;
-    }
-    expect(asserted, isTrue, reason: "Constructing an RRect with negative bottomRight radii didn't assert");
+    }, throwsA(AssertionError));
   });
 
   test('RRect.inflate clamps when deflating past zero', () {
