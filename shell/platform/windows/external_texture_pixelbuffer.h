@@ -5,12 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_EXTERNAL_TEXTURE_PIXELBUFFER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_EXTERNAL_TEXTURE_PIXELBUFFER_H_
 
-#include <stdint.h>
-
-#include <memory>
-
 #include "flutter/shell/platform/common/public/flutter_texture_registrar.h"
-
 #include "flutter/shell/platform/windows/external_texture.h"
 
 namespace flutter {
