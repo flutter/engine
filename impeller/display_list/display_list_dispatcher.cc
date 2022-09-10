@@ -574,6 +574,38 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       };
       break;
     }
+    case flutter::DlImageFilterType::kMatrix: {
+      auto matrix_filter = filter->asMatrix();
+      FML_DCHECK(matrix_filter);
+      auto matrix = ToMatrix(matrix_filter->matrix());
+      return [matrix](FilterInput::Ref input, const Matrix& effect_transform) {
+        return FilterContents::MakeMatrixFilter(input, matrix);
+      };
+      break;
+    }
+    case flutter::DlImageFilterType::kComposeFilter: {
+      auto compose = filter->asCompose();
+      FML_DCHECK(compose);
+      auto outer = compose->outer();
+      auto inner = compose->inner();
+      auto outer_proc = ToImageFilterProc(outer.get());
+      auto inner_proc = ToImageFilterProc(inner.get());
+      if (!outer_proc.has_value()) {
+        return inner_proc;
+      }
+      if (!inner_proc.has_value()) {
+        return outer_proc;
+      }
+      FML_DCHECK(outer_proc.has_value() && inner_proc.has_value());
+      return [outer_filter = outer_proc.value(),
+              inner_filter = inner_proc.value()](
+                 FilterInput::Ref input, const Matrix& effect_transform) {
+        auto contents = inner_filter(input, effect_transform);
+        contents = outer_filter(FilterInput::Make(contents), effect_transform);
+        return contents;
+      };
+      break;
+    }
     case flutter::DlImageFilterType::kColorFilter: {
       auto color_filter_image_filter = filter->asColorFilter();
       FML_DCHECK(color_filter_image_filter);
@@ -588,9 +620,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       };
       break;
     }
-    case flutter::DlImageFilterType::kMatrix:
     case flutter::DlImageFilterType::kLocalMatrixFilter:
-    case flutter::DlImageFilterType::kComposeFilter:
     case flutter::DlImageFilterType::kUnknown:
       return std::nullopt;
   }
