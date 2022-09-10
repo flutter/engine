@@ -15,13 +15,11 @@
 
 namespace flutter {
 
-typedef struct ExternalTexturePixelBufferState ExternalTexturePixelBufferState;
-
 // An abstraction of an pixel-buffer based texture.
 class ExternalTexturePixelBuffer : public ExternalTexture {
  public:
   ExternalTexturePixelBuffer(
-      FlutterDesktopPixelBufferTextureCallback texture_callback,
+      const FlutterDesktopPixelBufferTextureCallback texture_callback,
       void* user_data,
       const GlProcs& gl_procs);
 
@@ -41,10 +39,10 @@ class ExternalTexturePixelBuffer : public ExternalTexture {
   // by |texture_callback_| was invalid.
   bool CopyPixelBuffer(size_t& width, size_t& height);
 
-  std::unique_ptr<ExternalTexturePixelBufferState> state_;
-  FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
+  const FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
   void* const user_data_ = nullptr;
   const GlProcs& gl_;
+  GLuint gl_texture_ = 0;
 };
 
 }  // namespace flutter
