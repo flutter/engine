@@ -94,7 +94,7 @@ def generate_gen_snapshot(directory, destination):
   if exit_status != 0:
     print(
         'Error processing command with stdout[%s] and stderr[%s]' %
-        (result.stdout, result.stderr)
+        (stdout, stderr)
     )
     return 1
 
