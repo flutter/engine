@@ -812,7 +812,8 @@ Iterable<List<int>> splitIntList(List<int> data, int boundary) sync* {
 
 class _RepositoryMultiLicenseNoticesForFilesFile extends _RepositoryLicenseFile {
   _RepositoryMultiLicenseNoticesForFilesFile(_RepositoryDirectory parent, fs.File io)
-    : _licenses = _parseLicense(io), super(parent, io);
+    : _licenses = _parseLicense(io),
+      super(parent, io);
 
   final Map<String, License> _licenses;
 
@@ -953,7 +954,7 @@ class _RepositoryCxxStlDualLicenseFile extends _RepositoryLicenseFile {
 // DIRECTORIES
 
 class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
-  _RepositoryDirectory(_RepositoryDirectory? parent, fs.Directory io): super(parent, io) {
+  _RepositoryDirectory(_RepositoryDirectory? parent, fs.Directory io) : super(parent, io) {
     crawl();
   }
 
@@ -965,7 +966,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
 
   List<_RepositoryDirectory> get subdirectories => _subdirectories;
 
-  final Map<String, _RepositoryEntry> _childrenByName =   <String, _RepositoryEntry>{};
+  final Map<String, _RepositoryEntry> _childrenByName = <String, _RepositoryEntry>{};
 
   // the bit at the beginning excludes files like "license.py".
   static final RegExp _licenseNamePattern = RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|bsd|mpl?|ftl\.txt)_*\b', caseSensitive: false);
@@ -1203,7 +1204,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     return parent != null && (authors != null || isLicenseRootException || (!isLicenseRoot && !parent!.subdirectoriesAreLicenseRoots));
   }
 
-  License? _nearestAncestorLicenseWithName(String? name, {String? authors}) {
+  License? _nearestAncestorLicenseWithName(String? name, { String? authors }) {
     final License? result = _localLicenseWithName(name, authors: authors);
     if (result != null) {
       return result;
@@ -1214,13 +1215,13 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     return null;
   }
 
-  License? _fullWalkUpForLicenseWithName(String? name, {String? authors, bool ignoreCase = false}) {
+  License? _fullWalkUpForLicenseWithName(String? name, { String? authors, bool ignoreCase = false }) {
     return _canGoUp(authors)
             ? parent?._fullWalkUpForLicenseWithName(name, authors: authors, ignoreCase: ignoreCase)
             : _fullWalkDownForLicenseWithName(name, authors: authors, ignoreCase: ignoreCase);
   }
 
-  License? _fullWalkDownForLicenseWithName(String? name, {String? authors, bool ignoreCase = false}) {
+  License? _fullWalkDownForLicenseWithName(String? name, { String? authors, bool ignoreCase = false }) {
     License? result = _localLicenseWithName(name, authors: authors, ignoreCase: ignoreCase);
     if (result == null) {
       for (final _RepositoryDirectory directory in _subdirectories) {
@@ -1260,7 +1261,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   /// to the LICENSE in the root of the repo.
   bool get isLicenseRootException => false;
 
-  License? _localLicenseWithName(String? name, {String? authors, bool ignoreCase = false}) {
+  License? _localLicenseWithName(String? name, { String? authors, bool ignoreCase = false }) {
     Map<String, _RepositoryEntry> map;
     if (ignoreCase) {
       // we get here if we're trying a last-ditch effort at finding a file.
@@ -1373,14 +1374,14 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
 }
 
 class _RepositoryGenericThirdPartyDirectory extends _RepositoryDirectory {
-  _RepositoryGenericThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io): super(parent, io);
+  _RepositoryGenericThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
 }
 
 class _RepositoryReachOutFile extends _RepositoryLicensedFile {
-  _RepositoryReachOutFile(_RepositoryDirectory parent, fs.File io, this.offset): super(parent, io);
+  _RepositoryReachOutFile(_RepositoryDirectory parent, fs.File io, this.offset) : super(parent, io);
 
   final int offset;
 
@@ -1415,7 +1416,7 @@ class _RepositoryReachOutDirectory extends _RepositoryDirectory {
 }
 
 class _RepositoryExcludeSubpathDirectory extends _RepositoryDirectory {
-  _RepositoryExcludeSubpathDirectory(_RepositoryDirectory parent, fs.Directory io, this.paths, [this.index = 0]) : super(parent, io);
+  _RepositoryExcludeSubpathDirectory(_RepositoryDirectory parent, fs.Directory io, this.paths, [ this.index = 0 ]) : super(parent, io);
 
   final List<String> paths;
   final int index;
@@ -1481,9 +1482,7 @@ class _RepositoryAngleSrcThirdPartyDirectory extends _RepositoryDirectory {
 }
 
 class _RepositoryAndroidPlatformDirectory extends _RepositoryDirectory {
-  _RepositoryAndroidPlatformDirectory(
-      _RepositoryDirectory parent, fs.Directory io)
-      : super(parent, io);
+  _RepositoryAndroidPlatformDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1577,7 +1576,8 @@ class _RepositoryFreetypeSrcDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'tools' && super.shouldRecurse(entry);
+    return entry.name != 'tools'
+        && super.shouldRecurse(entry);
   }
 }
 
@@ -1686,8 +1686,7 @@ class _RepositoryJSR305Directory extends _RepositoryDirectory {
 }
 
 class _RepositoryJSR305SrcDirectory extends _RepositoryDirectory {
-  _RepositoryJSR305SrcDirectory(_RepositoryDirectory parent, fs.Directory io)
-      : super(parent, io);
+  _RepositoryJSR305SrcDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1702,7 +1701,8 @@ class _RepositoryLibcxxDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'utils' && super.shouldRecurse(entry);
+    return entry.name != 'utils'
+        && super.shouldRecurse(entry);
   }
 
   @override
@@ -1739,7 +1739,8 @@ class _RepositoryLibcxxSrcSupportDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'solaris' && super.shouldRecurse(entry);
+    return entry.name != 'solaris'
+        && super.shouldRecurse(entry);
   }
 }
 
@@ -1748,7 +1749,8 @@ class _RepositoryLibcxxabiDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'www' && super.shouldRecurse(entry);
+    return entry.name != 'www'
+        && super.shouldRecurse(entry);
   }
 
   @override
@@ -1914,12 +1916,10 @@ class _RepositorySkiaThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'ktx') {
-      return _RepositoryReachOutDirectory(
-          this, entry, const <String>{'ktx.h', 'ktx.cpp'}, 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'ktx.h', 'ktx.cpp'}, 2);
     }
     if (entry.name == 'libmicrohttpd') {
-      return _RepositoryReachOutDirectory(
-          this, entry, const <String>{'MHD_config.h'}, 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'MHD_config.h'}, 2);
     }
     if (entry.name == 'libwebp') {
       return _RepositorySkiaLibWebPDirectory(this, entry);
@@ -1958,14 +1958,14 @@ class _RepositoryVulkanDirectory extends _RepositoryDirectory {
   @override
   bool shouldRecurse(fs.IoNode entry) {
     // Flutter only uses the headers in the include directory.
-    return entry.name == 'include' && super.shouldRecurse(entry);
+    return entry.name == 'include'
+        && super.shouldRecurse(entry);
   }
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src') {
-      return _RepositoryExcludeSubpathDirectory(
-          this, entry, const <String>['spec']);
+      return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['spec']);
     }
     return super.createSubdirectory(entry);
   }
@@ -1983,8 +1983,7 @@ class _RepositoryWuffsDirectory extends _RepositoryDirectory {
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src') {
-      return _RepositoryExcludeSubpathDirectory(
-          this, entry, const <String>['spec']);
+      return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['spec']);
     }
     return super.createSubdirectory(entry);
   }
@@ -2049,7 +2048,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'mockito' // only used by tests
         && entry.name != 'pymock' // presumably only used by tests
         && entry.name != 'pyyaml' // build-time dependency only
-        && entry.name != 'yapf' // only used for code formatting
+        && entry.name != 'yapf'  // only used for code formatting
         && entry.name != 'android_embedding_dependencies' // testing framework for android
         && entry.name != 'yasm' // build-time dependency only
         && entry.name != 'binutils' // build-time dependency only
@@ -2162,7 +2161,8 @@ class _RepositoryVulkanMemoryAllocatorDirectory extends _RepositoryDirectory {
   @override
   bool shouldRecurse(fs.IoNode entry) {
     // Flutter only uses the headers in the include directory.
-    return entry.name == 'include' && super.shouldRecurse(entry);
+    return entry.name == 'include'
+        && super.shouldRecurse(entry);
   }
 }
 
@@ -2250,8 +2250,7 @@ class _RepositoryBoringSSLDirectory extends _RepositoryDirectory {
   @override
   _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'README') {
-      return _RepositoryBlankLicenseFile(this, entry as fs.TextFile,
-          'This repository contains the files generated by boringssl for its build.');
+      return _RepositoryBlankLicenseFile(this, entry as fs.TextFile, 'This repository contains the files generated by boringssl for its build.');
     }
     return super.createFile(entry);
   }
@@ -2271,8 +2270,7 @@ class _RepositoryCatapultThirdPartyApiClientDirectory extends _RepositoryDirecto
   @override
   _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE') {
-      return _RepositoryCatapultApiClientLicenseFile(
-          this, entry as fs.TextFile);
+      return _RepositoryCatapultApiClientLicenseFile(this, entry as fs.TextFile);
     }
     return super.createFile(entry);
   }
@@ -2463,14 +2461,14 @@ _RelativePathDenylistRepositoryDirectory _createImpellerDirectory(fs.Directory e
 /// A specialized crawler for "github.com/flutter/engine/lib" directory.
 ///
 /// It includes everything except build tools, test build artifacts, and test code.
-_RelativePathDenylistRepositoryDirectory _createLibDirectoryRoot(
-    fs.Directory entry, _RepositoryDirectory parent) {
+_RelativePathDenylistRepositoryDirectory _createLibDirectoryRoot(fs.Directory entry, _RepositoryDirectory parent) {
   return _RelativePathDenylistRepositoryDirectory(
     rootDir: entry,
-    denylist: <Pattern>['web_ui/lib/assets/ahem.ttf', // this gitignored file exists only for testing purposes
-      RegExp(r'web_ui/build/.*'), // this is compiler-generated output
-      RegExp(r'web_ui/dev/.*'), // these are build tools; they do not end up in Engine artifacts
-      RegExp(r'web_ui/test/.*'), // tests do not end up in Engine artifacts
+    denylist: <Pattern>[
+      'web_ui/lib/assets/ahem.ttf', // this gitignored file exists only for testing purposes
+      RegExp(r'web_ui/build/.*'),   // this is compiler-generated output
+      RegExp(r'web_ui/dev/.*'),     // these are build tools; they do not end up in Engine artifacts
+      RegExp(r'web_ui/test/.*'),    // tests do not end up in Engine artifacts
     ],
     parent: parent,
     io: entry,
@@ -2513,8 +2511,7 @@ class _RelativePathDenylistRepositoryDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    final String relativePath =
-        path.relative(entry.fullName, from: rootDir.fullName);
+    final String relativePath = path.relative(entry.fullName, from: rootDir.fullName);
     final bool denied = denylist.any(
       (Pattern pattern) => pattern.matchAsPrefix(relativePath) != null,
     );
@@ -2546,7 +2543,8 @@ class _RepositoryFuchsiaDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'toolchain' && super.shouldRecurse(entry);
+    return entry.name != 'toolchain'
+        && super.shouldRecurse(entry);
   }
 
   @override
@@ -2571,7 +2569,7 @@ class _RepositoryFuchsiaSdkDirectory extends _RepositoryDirectory {
 }
 
 class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
-  _RepositoryFuchsiaSdkLinuxDirectory(_RepositoryDirectory parent, fs.Directory io): super(parent, io);
+  _RepositoryFuchsiaSdkLinuxDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -2588,7 +2586,7 @@ class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
 }
 
 class _RepositoryFlutterThirdPartyDirectory extends _RepositoryDirectory {
-  _RepositoryFlutterThirdPartyDirectory( _RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+  _RepositoryFlutterThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
@@ -2634,7 +2632,8 @@ class _RepositoryFlutterLicenseToolDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'data' && super.shouldRecurse(entry);
+    return entry.name != 'data'
+        && super.shouldRecurse(entry);
   }
 }
 
@@ -2646,7 +2645,8 @@ class _RepositoryFlutterLicenseToolDirectory extends _RepositoryDirectory {
 ///
 /// This is not the root of the flutter/engine repository.
 /// [_RepositoryFlutterDirectory] represents that.
-class _EngineSrcDirectory extends _RepositoryDirectory {_EngineSrcDirectory(fs.Directory io) : super(null, io);
+class _EngineSrcDirectory extends _RepositoryDirectory {
+  _EngineSrcDirectory(fs.Directory io) : super(null, io);
 
   @override
   String get libraryName {
@@ -2693,8 +2693,7 @@ class _EngineSrcDirectory extends _RepositoryDirectory {_EngineSrcDirectory(fs.D
   List<_RepositoryDirectory> get virtualSubdirectories {
     // Skia is updated more frequently than other third party libraries and
     // is therefore represented as a separate top-level component.
-    final fs.Directory thirdPartyNode =
-        findChildDirectory(ioDirectory, 'third_party')!;
+    final fs.Directory thirdPartyNode = findChildDirectory(ioDirectory, 'third_party')!;
     final fs.Directory skiaNode = findChildDirectory(thirdPartyNode, 'skia')!;
     return <_RepositoryDirectory>[_RepositorySkiaDirectory(this, skiaNode)];
   }
@@ -2726,8 +2725,7 @@ class _Progress {
   int _lastLength = 0;
   set label(String value) {
     if (value.length > 50) {
-      value =
-          '.../${value.substring(math.max(0, value.lastIndexOf('/', value.length - 45) + 1))}';
+      value = '.../${value.substring(math.max(0, value.lastIndexOf('/', value.length - 45) + 1))}';
     }
     if (_label != value) {
       _label = value;
@@ -2768,8 +2766,7 @@ class _Progress {
   bool get hadErrors => _withoutLicense > 0;
   @override
   String toString() {
-    final int percent =
-        (100.0 * (_withLicense + _withoutLicense) / max).round();
+    final int percent = (100.0 * (_withLicense + _withoutLicense) / max).round();
     return '${(_withLicense + _withoutLicense).toString().padLeft(10)} of $max ${'█' * (percent ~/ 10)}${'░' * (10 - (percent ~/ 10))} $percent% ($_withoutLicense missing licenses)  $label';
   }
 }
@@ -2778,10 +2775,8 @@ class _Progress {
 Future<String?> _readSignature(String goldenPath) async {
   try {
     final system.File goldenFile = system.File(goldenPath);
-    final String goldenSignature = await utf8.decoder
-        .bind(goldenFile.openRead())
-        .transform(const LineSplitter())
-        .first;
+    final String goldenSignature = await utf8.decoder.bind(goldenFile.openRead())
+        .transform(const LineSplitter()).first;
     final RegExp signaturePattern = RegExp(r'Signature: (\w+)');
     final Match? goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
     if (goldenMatch != null) {
@@ -2804,12 +2799,9 @@ void _writeSignature(String signature, system.IOSink sink) {
 // Checks for changes to the license tool itself.
 //
 // Returns true if changes are detected.
-Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root,
-    {required String goldenSignaturePath,
-    required String outputSignaturePath}) async {
+Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root, { required String goldenSignaturePath,required String outputSignaturePath }) async {
   system.stderr.writeln('Computing signature for license tool');
-  final fs.Directory flutterNode =
-      findChildDirectory(root.ioDirectory, 'flutter')!;
+  final fs.Directory flutterNode = findChildDirectory(root.ioDirectory, 'flutter')!;
   final fs.Directory toolsNode = findChildDirectory(flutterNode, 'tools')!;
   final fs.Directory licenseNode = findChildDirectory(toolsNode, 'licenses')!;
   final _RepositoryFlutterLicenseToolDirectory licenseToolDirectory =
@@ -2828,8 +2820,7 @@ Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root,
 ///
 /// If [writeSignature] is set, the signature is written to the output file.
 /// If [force] is set, collection is run regardless of whether or not the signature matches.
-Future<void> _collectLicensesForComponent(
-  _RepositoryDirectory componentRoot, {
+Future<void> _collectLicensesForComponent(_RepositoryDirectory componentRoot, {
   required String inputGoldenPath,
   String? outputGoldenPath,
   bool? writeSignature,
@@ -2840,8 +2831,7 @@ Future<void> _collectLicensesForComponent(
   final String? goldenSignature = await _readSignature(inputGoldenPath);
   final String signature = await componentRoot.signature;
   if (!force && goldenSignature == signature) {
-    system.stderr
-        .writeln('    Skipping this component - no change in signature');
+    system.stderr.writeln('    Skipping this component - no change in signature');
     return;
   }
 
@@ -2853,8 +2843,7 @@ Future<void> _collectLicensesForComponent(
     _writeSignature(signature, sink);
   }
 
-  final List<License> licenses =
-      Set<License>.from(componentRoot.getLicenses(progress).toList()).toList();
+  final List<License> licenses = Set<License>.from(componentRoot.getLicenses(progress).toList()).toList();
 
   if (progress.hadErrors) {
     throw 'Had failures while collecting licenses.';
@@ -2862,18 +2851,16 @@ Future<void> _collectLicensesForComponent(
 
   sink.writeln('UNUSED LICENSES:\n');
   final List<String> unusedLicenses = licenses
-      .where((License license) => !license.isUsed)
-      .map((License license) => license.toString())
-      .toList();
+    .where((License license) => !license.isUsed)
+    .map((License license) => license.toString())
+    .toList();
   unusedLicenses.sort();
   sink.writeln(unusedLicenses.join('\n\n'));
   sink.writeln('~' * 80);
 
   sink.writeln('USED LICENSES:\n');
-  final List<License> usedLicenses =
-      licenses.where((License license) => license.isUsed).toList();
-  final List<String> output =
-      usedLicenses.map((License license) => license.toString()).toList();
+  final List<License> usedLicenses = licenses.where((License license) => license.isUsed).toList();
+  final List<String> output = usedLicenses.map((License license) => license.toString()).toList();
   for (int index = 0; index < output.length; index += 1) {
     // The strings we look for here are strings which we do not expect to see in
     // any of the licenses we use. They either represent examples of misparsing
@@ -2900,19 +2887,16 @@ Future<void> _collectLicensesForComponent(
     if (output[index].contains('Contents of this folder are ported from')) {
       throw 'Unexpected block found in: ${usedLicenses[index].origin}';
     }
-    if (output[index].contains(
-        'https://github.com/w3c/web-platform-tests/tree/master/selectors-api')) {
+    if (output[index].contains('https://github.com/w3c/web-platform-tests/tree/master/selectors-api')) {
       throw 'Unexpected W3C content found in: ${usedLicenses[index].origin}';
     }
-    if (output[index].contains(
-        'http://www.w3.org/Consortium/Legal/2008/04-testsuite-copyright.html')) {
+    if (output[index].contains('http://www.w3.org/Consortium/Legal/2008/04-testsuite-copyright.html')) {
       throw 'Unexpected W3C copyright found in: ${usedLicenses[index].origin}';
     }
     if (output[index].contains('It is based on commit')) {
       throw 'Unexpected content found in: ${usedLicenses[index].origin}';
     }
-    if (output[index].contains(
-        'The original code is covered by the dual-licensing approach described in:')) {
+    if (output[index].contains('The original code is covered by the dual-licensing approach described in:')) {
       throw 'Unexpected old license reference found in: ${usedLicenses[index].origin}';
     }
     if (output[index].contains('must choose')) {
@@ -2937,10 +2921,8 @@ Future<void> main(List<String> arguments) async {
     ..addOption('src', help: 'The root of the engine source')
     ..addOption('out', help: 'The directory where output is written')
     ..addOption('golden', help: 'The directory containing golden results')
-    ..addFlag('quiet',
-        help: 'If set, the diagnostic output is much less verbose')
-    ..addFlag('release',
-        help: 'Print output in the format used for product releases');
+    ..addFlag('quiet', help: 'If set, the diagnostic output is much less verbose')
+    ..addFlag('release', help: 'Print output in the format used for product releases');
 
   final ArgResults argResults = parser.parse(arguments);
   final bool? quiet = argResults['quiet'] as bool?;
@@ -2952,13 +2934,11 @@ Future<void> main(List<String> arguments) async {
   }
   if (!releaseMode) {
     if (argResults['out'] == null || argResults['golden'] == null) {
-      print(
-          'Flutter license script: Must provide --out and --golden directories in non-release mode');
+      print('Flutter license script: Must provide --out and --golden directories in non-release mode');
       print(parser.usage);
       system.exit(1);
     }
-    if (!system.FileSystemEntity.isDirectorySync(
-        argResults['golden'] as String)) {
+    if (!system.FileSystemEntity.isDirectorySync(argResults['golden'] as String)) {
       print('Flutter license script: Golden directory does not exist');
       print(parser.usage);
       system.exit(1);
@@ -2971,26 +2951,24 @@ Future<void> main(List<String> arguments) async {
 
   try {
     system.stderr.writeln('Finding files...');
-    final fs.FileSystemDirectory rootDirectory =
-        fs.FileSystemDirectory.fromPath(argResults['src'] as String);
+    final fs.FileSystemDirectory rootDirectory = fs.FileSystemDirectory.fromPath(argResults['src'] as String);
     final _RepositoryDirectory root = _EngineSrcDirectory(rootDirectory);
 
     if (releaseMode) {
       system.stderr.writeln('Collecting licenses...');
       system.stderr.writeln('quiet: $quiet');
       final _Progress progress = _Progress(root.fileCount, quiet: quiet);
-      final List<License> licenses =
-          Set<License>.from(root.getLicenses(progress).toList()).toList();
+      final List<License> licenses = Set<License>.from(root.getLicenses(progress).toList()).toList();
       if (progress.hadErrors) {
         throw 'Had failures while collecting licenses.';
       }
       progress.label = 'Dumping results...';
       progress.flush();
       final List<String?> output = licenses
-          .where((License license) => license.isUsed)
-          .map((License license) => license.toStringFormal())
-          .whereNotNull()
-          .toList();
+        .where((License license) => license.isUsed)
+        .map((License license) => license.toStringFormal())
+        .whereNotNull()
+        .toList();
       output.sort();
       print(output.join('\n${"-" * 80}\n'));
       progress.label = 'Done.';
@@ -3039,28 +3017,22 @@ Future<void> main(List<String> arguments) async {
         // the golden signature for those changes.
         final String goldenFileName = 'licenses_${component.io.name}';
         await _collectLicensesForComponent(
-          componentRoot,
-          inputGoldenPath:
-              path.join(argResults['golden'] as String, goldenFileName),
-          outputGoldenPath:
-              path.join(argResults['out'] as String, goldenFileName),
-          writeSignature: component.io.name != 'flutter',
-          force: forceRunAll || component.io.name == 'flutter',
-          quiet: quiet,
+            componentRoot,
+            inputGoldenPath: path.join(argResults['golden'] as String, goldenFileName),
+            outputGoldenPath: path.join(argResults['out'] as String, goldenFileName),
+            writeSignature: component.io.name != 'flutter',
+            force: forceRunAll || component.io.name == 'flutter',
+            quiet: quiet,
         );
         usedGoldens.add(goldenFileName);
       }
 
-      final Set<String> unusedGoldens =
-          system.Directory(argResults['golden'] as String)
-              .listSync()
-              .map((system.FileSystemEntity file) => path.basename(file.path))
-              .toSet()
-            ..removeAll(usedGoldens)
-            ..remove(toolSignatureFilename);
+      final Set<String> unusedGoldens = system.Directory(argResults['golden'] as String).listSync()
+        .map((system.FileSystemEntity file) => path.basename(file.path)).toSet()
+        ..removeAll(usedGoldens)
+        ..remove(toolSignatureFilename);
       if (unusedGoldens.isNotEmpty) {
-        system.stderr.writeln(
-            'The following golden files in ${argResults['golden']} are unused and need to be deleted:');
+        system.stderr.writeln('The following golden files in ${argResults['golden']} are unused and need to be deleted:');
         unusedGoldens.map((String s) => ' * $s').forEach(system.stderr.writeln);
         system.exit(1);
       }
