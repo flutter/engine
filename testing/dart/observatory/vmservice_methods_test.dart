@@ -55,8 +55,7 @@ void main() {
       );
       final String viewId = await getViewId(vmService);
 
-
-      final vms.Response response = await vmService.callMethod(
+      final vms.Response response = await vmService.callServiceExtension(
         'ext.ui.window.impellerEnabled',
         args: <String, Object>{'viewId': viewId},
       );
