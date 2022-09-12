@@ -571,6 +571,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
         // texture ID.
+        @TargetApi(23)
         private long configureForTextureLayerComposition(
             @NonNull PlatformView platformView,
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
