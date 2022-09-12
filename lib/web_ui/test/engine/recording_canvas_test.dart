@@ -121,7 +121,7 @@ void testMain() {
       expect(mockCanvas.methodCallLog.single.methodName, 'endOfPaint');
     });
 
-    test('negative corners in inner RRect get passed through to draw', () {
+    test('deflated corners in inner RRect get passed through to draw', () {
       // This comes from github issue #40728
       final RRect outer = RRect.fromRectAndCorners(
           const Rect.fromLTWH(0, 0, 88, 48),
