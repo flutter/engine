@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -43,9 +44,15 @@ PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
                        PipelineDescriptor desc,
                        std::unique_ptr<PipelineCreateInfoVK> create_info)
     : Pipeline(std::move(library), std::move(desc)),
-      pipeline_info_(std::move(create_info)) {}
+      pipeline_info_(std::move(create_info)) {
+  FML_LOG(ERROR) << "created pipeline " << desc.GetLabel()
+                 << ", addr: " << pipeline_info_->GetVKPipeline();
+}
 
-PipelineVK::~PipelineVK() = default;
+PipelineVK::~PipelineVK() {
+  FML_LOG(ERROR) << "destroyed pipeline " << GetDescriptor().GetLabel()
+                 << ", addr: " << pipeline_info_->GetVKPipeline();
+}
 
 bool PipelineVK::IsValid() const {
   return pipeline_info_->IsValid();

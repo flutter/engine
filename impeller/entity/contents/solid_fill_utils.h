@@ -14,8 +14,11 @@ VertexBuffer CreateSolidFillVertices(const Path& path, HostBuffer& buffer) {
   VertexBufferBuilder<PerVertexData> vtx_builder;
 
   auto tesselation_result = Tessellator{}.Tessellate(
-      path.GetFillType(), path.CreatePolyline(),
-      [&vtx_builder](auto point) { vtx_builder.AppendVertex({point}); });
+      path.GetFillType(), path.CreatePolyline(), [&vtx_builder](auto point) {
+        FML_LOG(ERROR) << "point: " << point.x << ", " << point.y;
+        vtx_builder.AppendVertex({point});
+      });
+
   if (tesselation_result != Tessellator::Result::kSuccess) {
     return {};
   }

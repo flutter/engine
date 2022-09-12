@@ -21,7 +21,8 @@ DeviceBufferAllocationVK::DeviceBufferAllocationVK(
 
 DeviceBufferAllocationVK::~DeviceBufferAllocationVK() {
   if (buffer_) {
-    vmaDestroyBuffer(allocator_, buffer_, allocation_);
+    FML_LOG(ERROR) << "Destroying buffer " << buffer_;
+    // vmaDestroyBuffer(allocator_, buffer_, allocation_);
   }
 }
 
@@ -53,6 +54,8 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   }
 
   if (source) {
+    FML_LOG(ERROR) << "Copying " << source_range.length << " bytes from "
+                   << source << " to " << dest << " at offset " << offset;
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
 

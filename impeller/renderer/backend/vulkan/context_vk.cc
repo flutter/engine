@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -335,6 +336,10 @@ ContextVK::ContextVK(
     return;
   }
 
+  auto val =
+      physical_device->getProperties().limits.minUniformBufferOffsetAlignment;
+  FML_LOG(ERROR) << "__minUniformBufferOffsetAlignment: " << val << std::endl;
+
   auto graphics_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);
   auto transfer_queue =
@@ -473,8 +478,8 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-std::unique_ptr<Surface> ContextVK::AcquireSurface() {
-  return surface_producer_->AcquireSurface();
+std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
+  return surface_producer_->AcquireSurface(current_frame);
 }
 
 void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {

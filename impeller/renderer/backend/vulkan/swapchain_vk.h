@@ -10,6 +10,7 @@
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/surface.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
