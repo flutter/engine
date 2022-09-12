@@ -383,28 +383,28 @@ void main() {
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         topLeft: const Radius.circular(-1),
       );
-    }, throwsAssertionError);
+    }, throwsA(isInstanceOf<AssertionError>()));
 
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         topRight: const Radius.circular(-2),
       );
-    }, throwsAssertionError);
+    }, throwsA(isInstanceOf<AssertionError>()));
 
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         bottomLeft: const Radius.circular(-3),
       );
-    }, throwsAssertionError);
+    }, throwsA(isInstanceOf<AssertionError>()));
 
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         bottomRight: const Radius.circular(-4),
       );
-    }, throwsAssertionError);
+    }, throwsA(isInstanceOf<AssertionError>()));
   });
 
   test('RRect.inflate clamps when deflating past zero', () {
