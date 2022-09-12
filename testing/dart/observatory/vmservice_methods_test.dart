@@ -13,7 +13,7 @@ import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 
 void main() {
-  test('Can return whether or not impeller is enabled', () async {
+  test('Setting invalid directory returns an error', () async {
     vms.VmService? vmService;
     try {
       final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
@@ -29,8 +29,8 @@ void main() {
       dynamic error;
       try {
         await vmService.callMethod(
-          'ext.ui.window.impellerEnabled',
-          args: <String, Object>{'viewId': viewId},
+          '_flutter.setAssetBundlePath',
+          args: <String, Object>{'viewId': viewId, 'assetDirectory': ''},
         );
       } catch (err) {
         error = err;
@@ -42,7 +42,7 @@ void main() {
   });
 
 
-  test('Setting invalid directory returns an error', () async {
+  test('Can return whether or not impeller is enabled', () async {
     vms.VmService? vmService;
     try {
       final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
@@ -57,8 +57,8 @@ void main() {
 
 
       final vms.Response response = await vmService.callMethod(
-        '_flutter.setAssetBundlePath',
-        args: <String, Object>{'viewId': viewId, 'assetDirectory': ''},
+        'ext.ui.window.impellerEnabled',
+        args: <String, Object>{'viewId': viewId},
       );
       expect(response.json!['enabled'], false);
     } finally {
