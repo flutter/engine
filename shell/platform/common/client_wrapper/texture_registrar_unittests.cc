@@ -8,7 +8,6 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/client_wrapper/testing/stub_flutter_api.h"
 #include "gtest/gtest.h"
@@ -42,17 +41,13 @@ class TestApi : public testing::StubFlutterApi {
     return last_texture_id_;
   }
 
-  void TextureRegistrarUnregisterExternalTexture(
-      int64_t texture_id,
-      void (*callback)(void* user_data),
-      void* user_data) override {
+  bool TextureRegistrarUnregisterExternalTexture(int64_t texture_id) override {
     auto it = textures_.find(texture_id);
     if (it != textures_.end()) {
       textures_.erase(it);
+      return true;
     }
-    if (callback) {
-      callback(user_data);
-    }
+    return false;
   }
 
   bool TextureRegistrarMarkTextureFrameAvailable(int64_t texture_id) override {
@@ -115,17 +110,15 @@ TEST(TextureRegistrarTest, RegisterUnregisterTexture) {
   EXPECT_TRUE(success);
   EXPECT_EQ(texture->mark_count, 3);
 
-  fml::AutoResetWaitableEvent unregister_latch;
-  textures->UnregisterTexture(texture_id, [&]() { unregister_latch.Signal(); });
-  unregister_latch.Wait();
+  success = textures->UnregisterTexture(texture_id);
+  EXPECT_TRUE(success);
 
   texture = test_api->GetFakeTexture(texture_id);
   EXPECT_EQ(texture, nullptr);
   EXPECT_EQ(test_api->textures_size(), static_cast<size_t>(0));
 }
 
-// Tests that the unregister callback gets also invoked when attempting to
-// unregister a texture with an unknown id.
+// Tests that unregistering a texture with an unknown id returns false.
 TEST(TextureRegistrarTest, UnregisterInvalidTexture) {
   auto dummy_registrar_handle =
       reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
@@ -133,9 +126,8 @@ TEST(TextureRegistrarTest, UnregisterInvalidTexture) {
 
   TextureRegistrar* textures = registrar.texture_registrar();
 
-  fml::AutoResetWaitableEvent latch;
-  textures->UnregisterTexture(42, [&]() { latch.Signal(); });
-  latch.Wait();
+  bool success = textures->UnregisterTexture(42);
+  EXPECT_FALSE(success);
 }
 
 // Tests that claiming a new frame being available for an unknown texture

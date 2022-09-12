@@ -728,9 +728,10 @@ static void SetUpLocales(FlutterDesktopEngineState* state) {
   // Convert the locale list to the locale pointer list that must be provided.
   std::vector<const FlutterLocale*> flutter_locale_list;
   flutter_locale_list.reserve(flutter_locales.size());
-  std::transform(flutter_locales.begin(), flutter_locales.end(),
-                 std::back_inserter(flutter_locale_list),
-                 [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(
+      flutter_locales.begin(), flutter_locales.end(),
+      std::back_inserter(flutter_locale_list),
+      [](const auto& arg) -> const auto* { return &arg; });
   FlutterEngineResult result = FlutterEngineUpdateLocales(
       state->flutter_engine, flutter_locale_list.data(),
       flutter_locale_list.size());
@@ -1113,12 +1114,11 @@ int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
   return -1;
 }
 
-void FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    int64_t texture_id,
-    void (*callback)(void* user_data),
-    void* user_data) {
+    int64_t texture_id) {
   std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return false;
 }
 
 bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(

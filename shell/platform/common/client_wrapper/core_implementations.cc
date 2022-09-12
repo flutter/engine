@@ -195,32 +195,9 @@ bool TextureRegistrarImpl::MarkTextureFrameAvailable(int64_t texture_id) {
       texture_registrar_ref_, texture_id);
 }
 
-void TextureRegistrarImpl::UnregisterTexture(int64_t texture_id,
-                                             std::function<void()> callback) {
-  if (callback == nullptr) {
-    FlutterDesktopTextureRegistrarUnregisterExternalTexture(
-        texture_registrar_ref_, texture_id, nullptr, nullptr);
-    return;
-  }
-
-  struct Captures {
-    std::function<void()> callback;
-  };
-  auto captures = new Captures();
-  captures->callback = std::move(callback);
-  FlutterDesktopTextureRegistrarUnregisterExternalTexture(
-      texture_registrar_ref_, texture_id,
-      [](void* opaque) {
-        auto captures = reinterpret_cast<Captures*>(opaque);
-        captures->callback();
-        delete captures;
-      },
-      captures);
-}
-
 bool TextureRegistrarImpl::UnregisterTexture(int64_t texture_id) {
-  UnregisterTexture(texture_id, nullptr);
-  return true;
+  return FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+      texture_registrar_ref_, texture_id);
 }
 
 }  // namespace flutter

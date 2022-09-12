@@ -4,7 +4,6 @@
 
 #include <iostream>
 
-#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
@@ -114,13 +113,6 @@ TEST(FlutterWindowsTextureRegistrarTest, RegisterUnregisterTexture) {
                          return kSuccess;
                        }));
 
-  modifier.embedder_api().PostRenderThreadTask =
-      MOCK_ENGINE_PROC(PostRenderThreadTask,
-                       [](auto engine, auto callback, void* callback_data) {
-                         callback(callback_data);
-                         return kSuccess;
-                       });
-
   auto texture_id = registrar.RegisterTexture(&texture_info);
   EXPECT_TRUE(register_called);
   EXPECT_NE(texture_id, -1);
@@ -129,10 +121,8 @@ TEST(FlutterWindowsTextureRegistrarTest, RegisterUnregisterTexture) {
   EXPECT_TRUE(registrar.MarkTextureFrameAvailable(texture_id));
   EXPECT_TRUE(mark_frame_available_called);
 
-  fml::AutoResetWaitableEvent latch;
-  registrar.UnregisterTexture(texture_id, [&]() { latch.Signal(); });
-  latch.Wait();
-  ASSERT_TRUE(unregister_called);
+  EXPECT_TRUE(registrar.UnregisterTexture(texture_id));
+  EXPECT_TRUE(unregister_called);
 }
 
 TEST(FlutterWindowsTextureRegistrarTest, RegisterUnknownTextureType) {
@@ -303,18 +293,6 @@ TEST(FlutterWindowsTextureRegistrarTest, PopulateInvalidTexture) {
 
   auto result = registrar.PopulateTexture(1, 640, 480, nullptr);
   EXPECT_FALSE(result);
-}
-
-TEST(FlutterWindowsTextureRegistrarTest,
-     UnregisterTextureWithEngineDownInvokesCallback) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  std::unique_ptr<MockGlFunctions> gl = std::make_unique<MockGlFunctions>();
-
-  FlutterWindowsTextureRegistrar registrar(engine.get(), gl->gl_procs());
-
-  fml::AutoResetWaitableEvent latch;
-  registrar.UnregisterTexture(1234, [&]() { latch.Signal(); });
-  latch.Wait();
 }
 
 }  // namespace testing

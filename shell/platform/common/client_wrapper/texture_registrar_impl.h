@@ -28,10 +28,6 @@ class TextureRegistrarImpl : public TextureRegistrar {
   bool MarkTextureFrameAvailable(int64_t texture_id) override;
 
   // |flutter::TextureRegistrar|
-  void UnregisterTexture(int64_t texture_id,
-                         std::function<void()> callback) override;
-
-  // |flutter::TextureRegistrar|
   bool UnregisterTexture(int64_t texture_id) override;
 
  private:
