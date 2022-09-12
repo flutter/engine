@@ -129,9 +129,8 @@ void testMain() {
           bottomLeft: const Radius.circular(6));
       final RRect inner = outer.deflate(1);
 
-      // If these assertions fail, check [_measureBorderRadius] in recording_canvas.dart
-      expect(inner.brRadius, equals(const Radius.circular(-1)));
-      expect(inner.trRadius, equals(const Radius.circular(-1)));
+      expect(inner.brRadius, equals(Radius.zero));
+      expect(inner.trRadius, equals(Radius.zero));
 
       underTest.drawDRRect(outer, inner, somePaint);
       underTest.endRecording();
