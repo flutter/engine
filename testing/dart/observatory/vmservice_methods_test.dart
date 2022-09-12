@@ -119,6 +119,7 @@ Future<String?> getIsolateId(vms.VmService vmService) async {
     }
     return isolate.id;
   }
+  return null;
 }
 
 class PlatformResponse {
