@@ -79,7 +79,7 @@ void testMain() {
         return picture.toImage(100, 100);
       }
 
-      final ui.Image tabImage = await drawText('> <');
+      final ui.Image tabImage = await drawText('>\t<');
       final ui.Image spaceImage = await drawText('> <');
       final ui.Image tofuImage = await drawText('>\b<');
 
