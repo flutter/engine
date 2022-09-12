@@ -586,10 +586,14 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_in
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
@@ -678,6 +682,8 @@ FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
+FILE: ../../../flutter/impeller/geometry/gradient.cc
+FILE: ../../../flutter/impeller/geometry/gradient.h
 FILE: ../../../flutter/impeller/geometry/matrix.cc
 FILE: ../../../flutter/impeller/geometry/matrix.h
 FILE: ../../../flutter/impeller/geometry/matrix_decomposition.cc
@@ -1070,7 +1076,6 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
-FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
 FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
@@ -1120,6 +1125,9 @@ FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.cc
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port_unittests.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
@@ -1283,6 +1291,10 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/canvas_paragraph.dart
@@ -1418,6 +1430,12 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
+FILE: ../../../flutter/shell/common/snapshot_controller.cc
+FILE: ../../../flutter/shell/common/snapshot_controller.h
+FILE: ../../../flutter/shell/common/snapshot_controller_impeller.cc
+FILE: ../../../flutter/shell/common/snapshot_controller_impeller.h
+FILE: ../../../flutter/shell/common/snapshot_controller_skia.cc
+FILE: ../../../flutter/shell/common/snapshot_controller_skia.h
 FILE: ../../../flutter/shell/common/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h

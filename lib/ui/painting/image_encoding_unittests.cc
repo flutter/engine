@@ -88,8 +88,7 @@ TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
   AddNativeCallback("ValidateExternal",
                     CREATE_NATIVE_ENTRY(nativeValidateExternal));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -125,7 +124,6 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
         image_handle, tonic::DartWrappable::kPeerIndex, &peer);
     ASSERT_FALSE(Dart_IsError(result));
     CanvasImage* canvas_image = reinterpret_cast<CanvasImage*>(peer);
-    ASSERT_EQ(canvas_image->GetAllocationSize(), sizeof(*canvas_image));
 
     int64_t format = -1;
     result = Dart_IntegerToInt64(format_handle, &format);
@@ -154,8 +152,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
 
   AddNativeCallback("EncodeImage", CREATE_NATIVE_ENTRY(native_encode_image));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
