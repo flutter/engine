@@ -53,11 +53,11 @@ void main() {
       vmService = await vmServiceConnectUri(
         'ws://localhost:${info.serverUri!.port}${info.serverUri!.path}ws',
       );
-      final String viewId = await getViewId(vmService);
+      final String? isolateId = await getIsolateId(vmService);
 
       final vms.Response response = await vmService.callServiceExtension(
         'ext.ui.window.impellerEnabled',
-        args: <String, Object>{'viewId': viewId},
+        isolateId: isolateId,
       );
       expect(response.json!['enabled'], false);
     } finally {
@@ -109,6 +109,16 @@ Future<String> getViewId(vms.VmService vmService) async {
   final vms.Response response = await vmService.callMethod('_flutter.listViews');
   final List<Object?>? rawViews = response.json!['views'] as List<Object?>?;
   return (rawViews![0]! as Map<String, Object?>?)!['id']! as String;
+}
+
+Future<String?> getIsolateId(vms.VmService vmService) async {
+  final vms.VM vm = await vmService.getVM();
+  for (final vms.IsolateRef isolate in vm.isolates!) {
+    if (isolate.isSystemIsolate ?? false) {
+      continue;
+    }
+    return isolate.id;
+  }
 }
 
 class PlatformResponse {
