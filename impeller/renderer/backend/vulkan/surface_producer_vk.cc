@@ -118,7 +118,7 @@ bool SurfaceProducerVK::SetupSyncObjects() {
   return true;
 }
 
-bool SurfaceProducerVK::Submit(vk::CommandBuffer buffer) {
+bool SurfaceProducerVK::Submit(vk::UniqueCommandBuffer buffer) {
   vk::SubmitInfo submit_info;
   std::array<vk::PipelineStageFlags, 1> wait_stages = {
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
@@ -131,8 +131,10 @@ bool SurfaceProducerVK::Submit(vk::CommandBuffer buffer) {
       *render_finished_semaphore_};
   submit_info.setSignalSemaphores(signal_semaphores);
 
-  std::array<vk::CommandBuffer, 1> command_buffers = {buffer};
+  std::array<vk::CommandBuffer, 1> command_buffers = {*buffer};
   submit_info.setCommandBuffers(command_buffers);
+
+  cmd_buffer_ = std::move(buffer);
 
   auto graphics_submit_res =
       create_info_.graphics_queue.submit({submit_info}, *in_flight_fence_);
@@ -162,9 +164,11 @@ bool SurfaceProducerVK::Present(uint32_t image_index) {
   auto present_res = create_info_.present_queue.presentKHR(present_info);
   if (present_res != vk::Result::eSuccess) {
     FML_LOG(ERROR) << "Failed to present: " << vk::to_string(present_res);
+    cmd_buffer_.reset();
     return false;
   }
 
+  cmd_buffer_.reset();
   return true;
 }
 

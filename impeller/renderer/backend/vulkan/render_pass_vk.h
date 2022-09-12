@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -14,6 +15,7 @@ namespace impeller {
 class RenderPassVK final : public RenderPass {
  public:
   RenderPassVK(std::weak_ptr<const Context> context,
+               vk::Device device,
                RenderTarget target,
                vk::CommandBuffer command_buffer,
                vk::UniqueRenderPass render_pass);
@@ -24,6 +26,7 @@ class RenderPassVK final : public RenderPass {
  private:
   friend class CommandBufferVK;
 
+  vk::Device device_;
   vk::CommandBuffer command_buffer_;
   vk::UniqueRenderPass render_pass_;
   std::string label_ = "";
@@ -37,6 +40,11 @@ class RenderPassVK final : public RenderPass {
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;
+
+  bool EndCommandBuffer() const;
+
+  vk::UniqueFramebuffer CreateFrameBuffer(
+      const WrappedTextureInfoVK& wrapped_texture_info) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);
 };

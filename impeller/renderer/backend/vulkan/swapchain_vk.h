@@ -10,6 +10,7 @@
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/surface.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -27,6 +28,8 @@ class SwapchainImageVK {
   ISize GetSize() const;
 
   vk::Image GetImage() const;
+
+  vk::ImageView GetImageView() const;
 
  private:
   vk::Image image_;

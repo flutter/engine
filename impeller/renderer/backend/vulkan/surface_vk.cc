@@ -22,6 +22,7 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   color0_tex.size = swapchain_image->GetSize();
   color0_tex.usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   color0_tex.sample_count = SampleCount::kCount1;
+  color0_tex.storage_mode = StorageMode::kDevicePrivate;
 
   ColorAttachment color0;
   auto color_texture_info = std::make_unique<TextureInfoVK>(TextureInfoVK{
@@ -35,7 +36,7 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
                                                std::move(color_texture_info));
   color0.clear_color = Color::DarkSlateGray();
   color0.load_action = LoadAction::kClear;
-  color0.store_action = StoreAction::kStore;
+  color0.store_action = StoreAction::kDontCare;
 
   TextureDescriptor stencil0_tex;
   stencil0_tex.type = TextureType::kTexture2D;

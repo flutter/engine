@@ -61,7 +61,7 @@ bool CommandBufferVK::IsValid() const {
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  bool result = surface_producer_->Submit(*command_buffer_);
+  bool result = surface_producer_->Submit(std::move(command_buffer_));
 
   if (callback) {
     callback(result ? CommandBuffer::Status::kCompleted
@@ -73,13 +73,6 @@ bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
     RenderTarget target) const {
-  vk::CommandBufferBeginInfo begin_info;
-  auto res = command_buffer_->begin(begin_info);
-  if (res != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Failed to begin command buffer: " << vk::to_string(res);
-    return nullptr;
-  }
-
   std::vector<vk::AttachmentDescription> color_attachments;
   for (const auto& [k, attachment] : target.GetColorAttachments()) {
     const TextureDescriptor& tex_desc =
@@ -125,7 +118,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
   }
 
   return std::make_shared<RenderPassVK>(
-      context_, std::move(target), *command_buffer_,
+      context_, device_, std::move(target), *command_buffer_,
       std::move(render_pass_create_res.value));
 }
 

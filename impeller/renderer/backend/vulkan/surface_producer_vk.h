@@ -10,6 +10,7 @@
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/surface.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -33,10 +34,12 @@ class SurfaceProducerVK {
 
   std::unique_ptr<Surface> AcquireSurface();
 
-  bool Submit(vk::CommandBuffer buffer);
+  // take ownership of the command buffer until present.
+  bool Submit(vk::UniqueCommandBuffer buffer);
 
  private:
   std::weak_ptr<Context> context_;
+  vk::UniqueCommandBuffer cmd_buffer_;
 
   bool SetupSyncObjects();
 
