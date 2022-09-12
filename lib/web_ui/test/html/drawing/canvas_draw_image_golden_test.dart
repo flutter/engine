@@ -39,7 +39,6 @@ Future<void> testMain() async {
   });
 
   test('Images from raw data are composited when picture is roundtripped through toImage', () async {
-    print('length: ${base64PngData.length}');
     final Uint8List imageData = base64Decode(base64PngData);
     final Codec codec = await instantiateImageCodec(imageData);
     final FrameInfo frameInfo = await codec.getNextFrame();
@@ -745,7 +744,7 @@ const String base64PngData = 'iVBORw0KGgoAAAANSUh'
     'Z2x0yEXi0PeqFO87AiFGCkemvOKYkSF/6yS1vnLOWTaHN/VcmnSWt0eHThELBHBiCGisGra'
     'SI5l6R3qD0q05ZR4TNVHES7bnltEgcg6JF3uVlyFsBpdB+lzgdRTMHeejneZR0H1BrnKECH'
     '7GyVy1BAmcsr17WxYs78QNqQF4bppFXqX9BBqIrzmcExwueASjAFzlaWncpqEpJCXVc7wv'
-    'Nj7eT/BbztCaofk+k0AAAAAElFTkSuQmCA==';
+    'Nj7eT/BbztCaofk+k0AAAAAyBMj8AAAAAElFTkSuQmCC';
 const String base64ImageUrl = 'data:image/png;base64,$base64PngData';
 
 HtmlImage createNineSliceImage() {
