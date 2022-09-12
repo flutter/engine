@@ -589,7 +589,7 @@ class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
 
 class _RepositoryIcuLicenseFile extends _RepositoryLicenseFile {
   _RepositoryIcuLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
-    : _licenses = _parseLicense(io), 
+    : _licenses = _parseLicense(io),
       super(parent, io);
 
   final List<License> _licenses;
