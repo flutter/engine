@@ -21,8 +21,6 @@ web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
 
 group("web_sdk") {
   deps = [
-    ":copy_canvaskit",
-    ":copy_canvaskit_profiling",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk_sound",
     ":flutter_dartdevc_canvaskit_kernel_sdk",
@@ -611,37 +609,37 @@ _kernel_worker("flutter_dartdevc_kernel_sdk_outline_sound") {
   ]
 }
 
-copy("copy_canvaskit") {
-  canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
+# copy("copy_canvaskit") {
+#   canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
 
-  deps = [ canvaskit_target ]
+#   deps = [ canvaskit_target ]
 
-  canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
+#   canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
 
-  sources = [
-    "$canvaskit_out_dir/canvaskit.js",
-    "$canvaskit_out_dir/canvaskit.wasm",
-  ]
+#   sources = [
+#     "$canvaskit_out_dir/canvaskit.js",
+#     "$canvaskit_out_dir/canvaskit.wasm",
+#   ]
 
-  outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
-}
+#   outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
+# }
 
-copy("copy_canvaskit_profiling") {
-  canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
+# copy("copy_canvaskit_profiling") {
+#   canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
 
-  deps = [ canvaskit_target ]
+#   deps = [ canvaskit_target ]
 
-  canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
+#   canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
 
-  sources = [
-    "$canvaskit_out_dir/canvaskit.js",
-    "$canvaskit_out_dir/canvaskit.wasm",
-  ]
+#   sources = [
+#     "$canvaskit_out_dir/canvaskit.js",
+#     "$canvaskit_out_dir/canvaskit.wasm",
+#   ]
 
-  outputs = [
-    "$root_out_dir/flutter_web_sdk/canvaskit/profiling/{{source_file_part}}",
-  ]
-}
+#   outputs = [
+#     "$root_out_dir/flutter_web_sdk/canvaskit/profiling/{{source_file_part}}",
+#   ]
+# }
 
 # Archives Flutter Web SDK
 if (!is_fuchsia) {
