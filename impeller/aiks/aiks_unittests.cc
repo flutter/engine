@@ -539,7 +539,7 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
           Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
           Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
       std::vector<Scalar> stops = {
-          0.0,  2.0 / 62.0,  4.0 / 62.0, 8.0 / 62.0,
+          0.0,         2.0 / 62.0,  4.0 / 62.0, 8.0 / 62.0,
           16.0 / 62.0, 32.0 / 62.0, 1.0,
       };
 
