@@ -68,6 +68,10 @@ void testMain() {
     });
 
     test('Renders tab as space instead of tofu', () async {
+      // CanvasKit renders a tofu if the font does not have a glyph for a
+      // character. However, Flutter opts-in to a CanvasKit feature to render
+      // tabs as a single space.
+      // See: https://github.com/flutter/flutter/issues/79153
       Future<ui.Image> drawText(String text) {
         const ui.Rect bounds = ui.Rect.fromLTRB(0, 0, 100, 100);
         final CkPictureRecorder recorder = CkPictureRecorder();
@@ -79,6 +83,8 @@ void testMain() {
         return picture.toImage(100, 100);
       }
 
+      // The backspace character, \b, does not have a corresponding glyph and
+      // is rendered as a tofu.
       final ui.Image tabImage = await drawText('>\t<');
       final ui.Image spaceImage = await drawText('> <');
       final ui.Image tofuImage = await drawText('>\b<');
