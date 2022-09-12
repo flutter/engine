@@ -13,7 +13,7 @@ import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 
 void main() {
-  test('Setting invalid directory returns an error', () async {
+  test('Can return whether or not impeller is enabled', () async {
     vms.VmService? vmService;
     try {
       final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
@@ -29,13 +29,38 @@ void main() {
       dynamic error;
       try {
         await vmService.callMethod(
-          '_flutter.setAssetBundlePath',
-          args: <String, Object>{'viewId': viewId, 'assetDirectory': ''},
+          'ext.ui.window.impellerEnabled',
+          args: <String, Object>{'viewId': viewId},
         );
       } catch (err) {
         error = err;
       }
       expect(error != null, true);
+    } finally {
+      await vmService?.dispose();
+    }
+  });
+
+
+  test('Setting invalid directory returns an error', () async {
+    vms.VmService? vmService;
+    try {
+      final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
+      if (info.serverUri == null) {
+        fail('This test must not be run with --disable-observatory.');
+      }
+
+      vmService = await vmServiceConnectUri(
+        'ws://localhost:${info.serverUri!.port}${info.serverUri!.path}ws',
+      );
+      final String viewId = await getViewId(vmService);
+
+
+      final vms.Response response = await vmService.callMethod(
+        '_flutter.setAssetBundlePath',
+        args: <String, Object>{'viewId': viewId, 'assetDirectory': ''},
+      );
+      expect(response.json!['enabled'], false);
     } finally {
       await vmService?.dispose();
     }
