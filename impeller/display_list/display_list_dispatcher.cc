@@ -313,16 +313,19 @@ void DisplayListDispatcher::setColorSource(
       auto start_point = ToPoint(linear->start_point());
       auto end_point = ToPoint(linear->end_point());
       std::vector<Color> colors;
+      std::vector<float> stops;
       for (auto i = 0; i < linear->stop_count(); i++) {
         colors.emplace_back(ToColor(linear->colors()[i]));
+        stops.emplace_back(linear->stops()[i]);
       }
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
       paint_.color_source = [start_point, end_point, colors = std::move(colors),
-                             tile_mode, matrix]() {
+                             stops = std::move(stops), tile_mode, matrix]() {
         auto contents = std::make_shared<LinearGradientContents>();
-        contents->SetEndPoints(start_point, end_point);
         contents->SetColors(std::move(colors));
+        contents->SetStops(std::move(stops));
+        contents->SetEndPoints(start_point, end_point);
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;
@@ -336,16 +339,19 @@ void DisplayListDispatcher::setColorSource(
       auto center = ToPoint(radialGradient->center());
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
+      std::vector<float> stops;
       for (auto i = 0; i < radialGradient->stop_count(); i++) {
         colors.emplace_back(ToColor(radialGradient->colors()[i]));
+        stops.emplace_back(radialGradient->stops()[i]);
       }
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
       paint_.color_source = [center, radius, colors = std::move(colors),
-                             tile_mode, matrix]() {
+                             stops = std::move(stops), tile_mode, matrix]() {
         auto contents = std::make_shared<RadialGradientContents>();
-        contents->SetCenterAndRadius(center, radius);
         contents->SetColors(std::move(colors));
+        contents->SetStops(std::move(stops));
+        contents->SetCenterAndRadius(center, radius);
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;
@@ -361,16 +367,20 @@ void DisplayListDispatcher::setColorSource(
       auto start_angle = Degrees(sweepGradient->start());
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
+      std::vector<Scalar> stops;
       for (auto i = 0; i < sweepGradient->stop_count(); i++) {
         colors.emplace_back(ToColor(sweepGradient->colors()[i]));
+        stops.emplace_back(sweepGradient->stops()[i]);
       }
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
       paint_.color_source = [center, start_angle, end_angle,
-                             colors = std::move(colors), tile_mode, matrix]() {
+                             colors = std::move(colors),
+                             stops = std::move(stops), tile_mode, matrix]() {
         auto contents = std::make_shared<SweepGradientContents>();
         contents->SetCenterAndAngles(center, start_angle, end_angle);
         contents->SetColors(std::move(colors));
+        contents->SetStops(std::move(stops));
         contents->SetTileMode(tile_mode);
         contents->SetMatrix(matrix);
         return contents;
@@ -408,51 +418,48 @@ void DisplayListDispatcher::setColorSource(
   UNIMPLEMENTED;
 }
 
-// |flutter::Dispatcher|
-void DisplayListDispatcher::setColorFilter(
+static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
     const flutter::DlColorFilter* filter) {
-  // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
-    // Reset everything
-    paint_.color_filter = std::nullopt;
-    return;
+    return std::nullopt;
   }
   switch (filter->type()) {
     case flutter::DlColorFilterType::kBlend: {
       auto dl_blend = filter->asBlend();
-
       auto blend_mode = ToBlendMode(dl_blend->mode());
       auto color = ToColor(dl_blend->color());
-
-      paint_.color_filter = [blend_mode, color](FilterInput::Ref input) {
+      return [blend_mode, color](FilterInput::Ref input) {
         return FilterContents::MakeBlend(blend_mode, {input}, color);
       };
-      return;
     }
     case flutter::DlColorFilterType::kMatrix: {
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
       impeller::FilterContents::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
-      paint_.color_filter = [color_matrix](FilterInput::Ref input) {
+      return [color_matrix](FilterInput::Ref input) {
         return FilterContents::MakeColorMatrix({input}, color_matrix);
       };
-      return;
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      paint_.color_filter = [](FilterInput::Ref input) {
+      return [](FilterInput::Ref input) {
         return FilterContents::MakeSrgbToLinearFilter({input});
       };
-      return;
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      paint_.color_filter = [](FilterInput::Ref input) {
+      return [](FilterInput::Ref input) {
         return FilterContents::MakeLinearToSrgbFilter({input});
       };
-      return;
     case flutter::DlColorFilterType::kUnknown:
       FML_LOG(ERROR) << "requested DlColorFilterType::kUnknown";
       UNIMPLEMENTED;
-      break;
   }
+  return std::nullopt;
+}
+
+// |flutter::Dispatcher|
+void DisplayListDispatcher::setColorFilter(
+    const flutter::DlColorFilter* filter) {
+  // Needs https://github.com/flutter/flutter/issues/95434
+  paint_.color_filter = ToColorFilterProc(filter);
 }
 
 // |flutter::Dispatcher|
@@ -546,7 +553,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       return [radius_x, radius_y](FilterInput::Ref input,
                                   const Matrix& effect_transform) {
         return FilterContents::MakeMorphology(
-            input, radius_x, radius_y, FilterContents::MorphType::kDilate);
+            input, radius_x, radius_y, FilterContents::MorphType::kDilate,
+            effect_transform);
       };
       break;
     }
@@ -560,15 +568,59 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto radius_y = Radius(erode->radius_y());
       return [radius_x, radius_y](FilterInput::Ref input,
                                   const Matrix& effect_transform) {
-        return FilterContents::MakeMorphology(
-            input, radius_x, radius_y, FilterContents::MorphType::kErode);
+        return FilterContents::MakeMorphology(input, radius_x, radius_y,
+                                              FilterContents::MorphType::kErode,
+                                              effect_transform);
       };
       break;
     }
-    case flutter::DlImageFilterType::kMatrix:
+    case flutter::DlImageFilterType::kMatrix: {
+      auto matrix_filter = filter->asMatrix();
+      FML_DCHECK(matrix_filter);
+      auto matrix = ToMatrix(matrix_filter->matrix());
+      return [matrix](FilterInput::Ref input, const Matrix& effect_transform) {
+        return FilterContents::MakeMatrixFilter(input, matrix);
+      };
+      break;
+    }
+    case flutter::DlImageFilterType::kComposeFilter: {
+      auto compose = filter->asCompose();
+      FML_DCHECK(compose);
+      auto outer = compose->outer();
+      auto inner = compose->inner();
+      auto outer_proc = ToImageFilterProc(outer.get());
+      auto inner_proc = ToImageFilterProc(inner.get());
+      if (!outer_proc.has_value()) {
+        return inner_proc;
+      }
+      if (!inner_proc.has_value()) {
+        return outer_proc;
+      }
+      FML_DCHECK(outer_proc.has_value() && inner_proc.has_value());
+      return [outer_filter = outer_proc.value(),
+              inner_filter = inner_proc.value()](
+                 FilterInput::Ref input, const Matrix& effect_transform) {
+        auto contents = inner_filter(input, effect_transform);
+        contents = outer_filter(FilterInput::Make(contents), effect_transform);
+        return contents;
+      };
+      break;
+    }
+    case flutter::DlImageFilterType::kColorFilter: {
+      auto color_filter_image_filter = filter->asColorFilter();
+      FML_DCHECK(color_filter_image_filter);
+      auto color_filter_proc =
+          ToColorFilterProc(color_filter_image_filter->color_filter().get());
+      if (!color_filter_proc.has_value()) {
+        return std::nullopt;
+      }
+      return [color_filter = color_filter_proc.value()](
+                 FilterInput::Ref input, const Matrix& effect_transform) {
+        return color_filter(input);
+      };
+      break;
+    }
     case flutter::DlImageFilterType::kLocalMatrixFilter:
-    case flutter::DlImageFilterType::kComposeFilter:
-    case flutter::DlImageFilterType::kColorFilter:
     case flutter::DlImageFilterType::kUnknown:
       return std::nullopt;
   }
