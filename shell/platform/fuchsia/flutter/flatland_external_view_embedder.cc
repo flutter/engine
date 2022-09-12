@@ -222,7 +222,8 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         }
 
         // TODO(fxbug.dev/94000): Set HitTestBehavior.
-        // TODO(fxbug.dev/94000): Set opacity.
+
+        // Set opacity.
         flatland_->flatland()->SetOpacity(viewport.transform_id, view_mutators.opacity);
 
         // Set size
