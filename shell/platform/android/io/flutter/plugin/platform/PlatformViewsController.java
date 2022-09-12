@@ -475,6 +475,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         // Creates a platform view based on `request`, performs configuration that's common to
         // all display modes, and adds it to `platformViews`.
+        @TargetApi(19)
         private PlatformView createPlatformView(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           final PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
