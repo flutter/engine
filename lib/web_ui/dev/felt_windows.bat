@@ -47,7 +47,7 @@ IF %orTempValue%==0 (
   CALL python %GN% --unoptimized --full-dart-sdk
   CALL ninja -C %HOST_DEBUG_UNOPT_DIR%)
 
-:: TODO(yjbanov): The batch script does not support snaphot option.
+:: TODO(yjbanov): The batch script does not support snapshot option.
 :: Support snapshot option.
 CALL :installdeps
 IF "%1"=="test" (%DART_SDK_DIR%\bin\dart %DEV_DIR%\felt.dart %* --browser=chrome) ELSE ( %DART_SDK_DIR%\bin\dart %DEV_DIR%\felt.dart %* )
