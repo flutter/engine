@@ -32,8 +32,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
-  SkRect bounds =
-      RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+  SkRect bounds = RasterCacheUtil::GetRoundedOutDeviceBounds(
+      logical_rect_, canvas.getTotalMatrix());
   FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
@@ -54,14 +54,12 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const std::function<void(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  SkRect dest_rect =
-      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-  // we always round out here so that the texture is integer sized.
-  int width = SkScalarCeilToInt(dest_rect.width());
-  int height = SkScalarCeilToInt(dest_rect.height());
+  SkRect dest_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
+      context.logical_rect, context.matrix);
 
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      width, height, sk_ref_sp(context.dst_color_space));
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
+                                 sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
@@ -112,7 +110,8 @@ bool RasterCache::UpdateCacheEntry(
 int RasterCache::MarkSeen(const RasterCacheKeyID& id,
                           const SkMatrix& matrix,
                           bool visible) const {
-  RasterCacheKey key = RasterCacheKey(id, matrix);
+  RasterCacheKey key =
+      RasterCacheKey(id, RasterCacheUtil::GetIntegralTransCTM(matrix));
   Entry& entry = cache_[key];
   entry.encountered_this_frame = true;
   entry.visible_this_frame = visible;
@@ -124,7 +123,8 @@ int RasterCache::MarkSeen(const RasterCacheKeyID& id,
 
 int RasterCache::GetAccessCount(const RasterCacheKeyID& id,
                                 const SkMatrix& matrix) const {
-  RasterCacheKey key = RasterCacheKey(id, matrix);
+  RasterCacheKey key =
+      RasterCacheKey(id, RasterCacheUtil::GetIntegralTransCTM(matrix));
   auto entry = cache_.find(key);
   if (entry != cache_.cend()) {
     return entry->second.accesses_since_visible;
@@ -134,7 +134,8 @@ int RasterCache::GetAccessCount(const RasterCacheKeyID& id,
 
 bool RasterCache::HasEntry(const RasterCacheKeyID& id,
                            const SkMatrix& matrix) const {
-  RasterCacheKey key = RasterCacheKey(id, matrix);
+  RasterCacheKey key =
+      RasterCacheKey(id, RasterCacheUtil::GetIntegralTransCTM(matrix));
   if (cache_.find(key) != cache_.cend()) {
     return true;
   }
@@ -144,7 +145,8 @@ bool RasterCache::HasEntry(const RasterCacheKeyID& id,
 bool RasterCache::Draw(const RasterCacheKeyID& id,
                        SkCanvas& canvas,
                        const SkPaint* paint) const {
-  auto it = cache_.find(RasterCacheKey(id, canvas.getTotalMatrix()));
+  auto it = cache_.find(RasterCacheKey(
+      id, RasterCacheUtil::GetIntegralTransCTM(canvas.getTotalMatrix())));
   if (it == cache_.end()) {
     return false;
   }

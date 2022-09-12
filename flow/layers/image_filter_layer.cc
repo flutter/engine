@@ -24,6 +24,11 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
+  if (context->has_raster_cache()) {
+    context->SetTransform(
+        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+  }
+
   if (filter_) {
     auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
@@ -49,7 +54,11 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
 
   SkRect child_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_bounds);
+  SkMatrix child_matrix = matrix;
+  if (context->raster_cache) {
+    child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix);
+  }
+  PrerollChildren(context, child_matrix, &child_bounds);
   context->subtree_can_inherit_opacity = true;
 
   // We always paint with a saveLayer (or a cached rendering),
@@ -72,7 +81,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   // So in here we reset the LayerRasterCacheItem cache state.
   layer_raster_cache_item_->MarkNotCacheChildren();
 
-  transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
+  transformed_filter_ = filter_->makeWithLocalMatrix(child_matrix);
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();
   }
@@ -83,6 +92,12 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
+
+  if (context.raster_cache) {
+    context.internal_nodes_canvas->setMatrix(
+        RasterCacheUtil::GetIntegralTransCTM(
+            context.leaf_nodes_canvas->getTotalMatrix()));
+  }
 
   if (layer_raster_cache_item_->IsCacheChildren()) {
     cache_paint.setImageFilter(transformed_filter_);
