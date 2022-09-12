@@ -37,6 +37,8 @@ class SweepGradientContents final : public ColorSourceContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
+  void SetAlpha(Scalar alpha);
+
   const std::vector<Color>& GetColors() const;
 
   const std::vector<Scalar>& GetStops() const;
@@ -48,6 +50,7 @@ class SweepGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Scalar alpha_ = 1.0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SweepGradientContents);
 };

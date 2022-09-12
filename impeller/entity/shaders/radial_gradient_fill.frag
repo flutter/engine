@@ -11,6 +11,7 @@ uniform GradientInfo {
   float radius;
   float tile_mode;
   float texture_sampler_y_coord_scale;
+  float alpha;
 } gradient_info;
 
 in vec2 v_position;
@@ -25,5 +26,5 @@ void main() {
     vec2(t, 0.5),
     gradient_info.texture_sampler_y_coord_scale,
     gradient_info.tile_mode,
-    gradient_info.tile_mode);
+    gradient_info.tile_mode) * gradient_info.alpha;
 }

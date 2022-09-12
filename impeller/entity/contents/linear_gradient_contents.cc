@@ -32,6 +32,10 @@ void LinearGradientContents::SetStops(std::vector<Scalar> stops) {
   stops_ = std::move(stops);
 }
 
+void LinearGradientContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
 const std::vector<Color>& LinearGradientContents::GetColors() const {
   return colors_;
 }
@@ -80,6 +84,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
   gradient_info.texture_sampler_y_coord_scale =
       gradient_texture->GetYCoordScale();
+  gradient_info.alpha = alpha_;
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

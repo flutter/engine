@@ -41,6 +41,11 @@ void SweepGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
+void SweepGradientContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+
 const std::vector<Color>& SweepGradientContents::GetColors() const {
   return colors_;
 }
@@ -86,6 +91,7 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
   gradient_info.texture_sampler_y_coord_scale =
       gradient_texture->GetYCoordScale();
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  gradient_info.alpha = alpha_;
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
