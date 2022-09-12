@@ -256,6 +256,30 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawWithColorFilterImageFilter) {
+  const float invert_color_matrix[20] = {
+      -1, 0,  0,  0, 1,  //
+      0,  -1, 0,  0, 1,  //
+      0,  0,  -1, 0, 1,  //
+      0,  0,  0,  1, 0,  //
+  };
+  auto texture = CreateTextureForFixture("boston.jpg");
+  flutter::DisplayListBuilder builder;
+  auto color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(invert_color_matrix);
+  auto image_filter =
+      std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
+  builder.setImageFilter(image_filter.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+
+  builder.translate(0, 700);
+  builder.setColorFilter(color_filter.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
 
@@ -285,6 +309,23 @@ TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, CanDrawWithComposeImageFilter) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  flutter::DisplayListBuilder builder;
+  auto dilate = std::make_shared<flutter::DlDilateImageFilter>(10.0, 10.0);
+  auto erode = std::make_shared<flutter::DlErodeImageFilter>(10.0, 10.0);
+  auto open = std::make_shared<flutter::DlComposeImageFilter>(dilate, erode);
+  auto close = std::make_shared<flutter::DlComposeImageFilter>(erode, dilate);
+  builder.setImageFilter(open.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  builder.translate(0, 700);
+  builder.setImageFilter(close.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(DisplayListTest, CanDrawBackdropFilter) {
