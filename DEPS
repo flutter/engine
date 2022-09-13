@@ -28,7 +28,7 @@ vars = {
   # This prevents us from downloading the Emscripten toolchain for builds
   # which do not build for the web. This toolchain is needed to build CanvasKit
   # for the web engine.
-  'download_emsdk': True,
+  'download_emsdk': False,
 
   # As Dart does, we use Fuchsia's GN and Clang toolchain. These revision
   # should be kept up to date with the revisions pulled by Dart.
