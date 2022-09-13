@@ -586,10 +586,14 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_in
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
@@ -678,6 +682,8 @@ FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
+FILE: ../../../flutter/impeller/geometry/gradient.cc
+FILE: ../../../flutter/impeller/geometry/gradient.h
 FILE: ../../../flutter/impeller/geometry/matrix.cc
 FILE: ../../../flutter/impeller/geometry/matrix.h
 FILE: ../../../flutter/impeller/geometry/matrix_decomposition.cc
@@ -861,6 +867,7 @@ FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.h
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h
+FILE: ../../../flutter/impeller/renderer/compute_unittests.cc
 FILE: ../../../flutter/impeller/renderer/context.cc
 FILE: ../../../flutter/impeller/renderer/context.h
 FILE: ../../../flutter/impeller/renderer/descriptor_set_layout.h
@@ -999,6 +1006,7 @@ FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h
 FILE: ../../../flutter/lib/ui/key.dart
 FILE: ../../../flutter/lib/ui/lerp.dart
+FILE: ../../../flutter/lib/ui/math.dart
 FILE: ../../../flutter/lib/ui/natives.dart
 FILE: ../../../flutter/lib/ui/painting.dart
 FILE: ../../../flutter/lib/ui/painting/canvas.cc
@@ -1070,7 +1078,6 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
-FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
 FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
@@ -1120,6 +1127,9 @@ FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.cc
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port_unittests.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
@@ -1141,6 +1151,7 @@ FILE: ../../../flutter/lib/web_ui/lib/hash_codes.dart
 FILE: ../../../flutter/lib/web_ui/lib/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/key.dart
 FILE: ../../../flutter/lib/web_ui/lib/lerp.dart
+FILE: ../../../flutter/lib/web_ui/lib/math.dart
 FILE: ../../../flutter/lib/web_ui/lib/natives.dart
 FILE: ../../../flutter/lib/web_ui/lib/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/path.dart
@@ -1635,7 +1646,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Predicate.java

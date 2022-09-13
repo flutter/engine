@@ -132,12 +132,6 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
     return false;
   }
 
-  if (!SAFE_EXISTS(open_gl_config, populate_existing_damage)) {
-    FML_LOG(INFO) << "populate_existing_damage was not defined, disabling "
-                     "partial repaint. If you wish to enable partial repaint, "
-                     "please define this callback.";
-  }
-
   return true;
 }
 
@@ -1196,6 +1190,14 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
         reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
         true);
   }
+
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  settings.dart_library_sources_kernel = []() {
+    return std::make_unique<fml::NonOwnedMapping>(kPlatformStrongDill,
+                                                  kPlatformStrongDillSize);
+  };
+#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
+        // FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 void PopulateAOTSnapshotMappingCallbacks(
@@ -1245,12 +1247,6 @@ void PopulateAOTSnapshotMappingCallbacks(
         args->isolate_snapshot_instructions,
         SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
   }
-
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-  settings.dart_library_sources_kernel =
-      make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
-        // FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 FlutterEngineResult FlutterEngineRun(size_t version,

@@ -20,6 +20,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/filters/linear_to_srgb_filter_contents.h"
+#include "impeller/entity/contents/filters/matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/morphology_filter_contents.h"
 #include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -128,12 +129,14 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalMorphology(
     FilterInput::Ref input,
     Radius radius,
     Vector2 direction,
-    MorphType morph_type) {
+    MorphType morph_type,
+    const Matrix& effect_transform) {
   auto filter = std::make_shared<DirectionalMorphologyFilterContents>();
   filter->SetInputs({input});
   filter->SetRadius(radius);
   filter->SetDirection(direction);
   filter->SetMorphType(morph_type);
+  filter->SetEffectTransform(effect_transform);
   return filter;
 }
 
@@ -141,20 +144,22 @@ std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
     FilterInput::Ref input,
     Radius radius_x,
     Radius radius_y,
-    MorphType morph_type) {
-  auto x_morphology =
-      MakeDirectionalMorphology(input, radius_x, Point(1, 0), morph_type);
-  auto y_morphology = MakeDirectionalMorphology(
-      FilterInput::Make(x_morphology), radius_y, Point(0, 1), morph_type);
+    MorphType morph_type,
+    const Matrix& effect_transform) {
+  auto x_morphology = MakeDirectionalMorphology(input, radius_x, Point(1, 0),
+                                                morph_type, effect_transform);
+  auto y_morphology =
+      MakeDirectionalMorphology(FilterInput::Make(x_morphology), radius_y,
+                                Point(0, 1), morph_type, effect_transform);
   return y_morphology;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(
     FilterInput::Ref input,
-    const ColorMatrix& matrix) {
+    const ColorMatrix& color_matrix) {
   auto filter = std::make_shared<ColorMatrixFilterContents>();
   filter->SetInputs({input});
-  filter->SetMatrix(matrix);
+  filter->SetMatrix(color_matrix);
   return filter;
 }
 
@@ -169,6 +174,15 @@ std::shared_ptr<FilterContents> FilterContents::MakeSrgbToLinearFilter(
     FilterInput::Ref input) {
   auto filter = std::make_shared<SrgbToLinearFilterContents>();
   filter->SetInputs({input});
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
+    FilterInput::Ref input,
+    const Matrix& matrix) {
+  auto filter = std::make_shared<MatrixFilterContents>();
+  filter->SetInputs({input});
+  filter->SetMatrix(matrix);
   return filter;
 }
 
@@ -280,12 +294,12 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
                       effect_transform_, coverage.value());
 }
 
-Matrix FilterContents::GetLocalTransform() const {
+Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
   return Matrix();
 }
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
-  return parent_transform * GetLocalTransform();
+  return parent_transform * GetLocalTransform(parent_transform);
 }
 
 }  // namespace impeller
