@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -32,8 +34,28 @@ Future<void> testMain() async {
     rc.save();
     rc.drawImage(createTestImage(), Offset.zero, SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image');
+  });
+
+  test('Images from raw data are composited when picture is roundtripped through toImage', () async {
+    final Uint8List imageData = base64Decode(base64PngData);
+    final Codec codec = await instantiateImageCodec(imageData);
+    final FrameInfo frameInfo = await codec.getNextFrame();
+
+    const Rect bounds = Rect.fromLTRB(0, 0, 400, 300);
+    final EnginePictureRecorder recorder = EnginePictureRecorder();
+    final RecordingCanvas scratchCanvas = recorder.beginRecording(bounds);
+    scratchCanvas.save();
+    scratchCanvas.drawImage(frameInfo.image, Offset.zero, SurfacePaint());
+    scratchCanvas.restore();
+    final Picture picture = recorder.endRecording();
+    final Image image = await picture.toImage(400, 300);
+
+    final RecordingCanvas rc = RecordingCanvas(bounds);
+    rc.save();
+    rc.drawImage(image, Offset.zero, SurfacePaint());
+    rc.restore();
+    await canvasScreenshot(rc, 'draw_raw_image');
   });
 
   test('Paints image with transform', () async {
@@ -44,8 +66,7 @@ Future<void> testMain() async {
     rc.rotate(math.pi / 4.0);
     rc.drawImage(createTestImage(), Offset.zero, SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_with_transform',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_with_transform');
   });
 
   test('Paints image with transform and offset', () async {
@@ -56,8 +77,7 @@ Future<void> testMain() async {
     rc.rotate(math.pi / 4.0);
     rc.drawImage(createTestImage(), const Offset(30, 20), SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_with_transform_and_offset',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_with_transform_and_offset');
   });
 
   test('Paints image with transform using destination', () async {
@@ -72,8 +92,7 @@ Future<void> testMain() async {
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_transform',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_transform');
   });
 
   test('Paints image with source and destination', () async {
@@ -89,8 +108,7 @@ Future<void> testMain() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight),
         SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_source',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_source');
   });
 
   test('Paints image with source and destination and round clip', () async {
@@ -108,8 +126,7 @@ Future<void> testMain() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight),
         SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_source_and_clip',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_source_and_clip');
   });
 
   test('Paints image with transform using source and destination', () async {
@@ -127,8 +144,7 @@ Future<void> testMain() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight),
         SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_transform_source',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_transform_source');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -149,8 +165,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -171,8 +186,7 @@ Future<void> testMain() async {
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_below_image',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_below_image');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -194,8 +208,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -221,8 +234,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_transform',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_transform');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -250,8 +262,7 @@ Future<void> testMain() async {
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_stack',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_stack');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -273,8 +284,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rrect',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rrect');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -301,8 +311,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_path',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_path');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/53078
@@ -592,9 +601,8 @@ Future<void> testMain() async {
         setupPerspective: true);
   });
 }
-
 // 9 slice test image that has a shiny/glass look.
-const String base64ImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUh'
+const String base64PngData = 'iVBORw0KGgoAAAANSUh'
     'EUgAAADwAAAA8CAYAAAA6/NlyAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPo'
     'AAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAApGVYSWZNTQAqAAAACAAFARIAAwAAAAEAAQA'
     'AARoABQAAAAEAAABKARsABQAAAAEAAABSATEAAgAAACAAAABah2kABAAAAAEAAAB6AAAAAAAA'
@@ -721,11 +729,12 @@ const String base64ImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUh'
     'Z2x0yEXi0PeqFO87AiFGCkemvOKYkSF/6yS1vnLOWTaHN/VcmnSWt0eHThELBHBiCGisGra'
     'SI5l6R3qD0q05ZR4TNVHES7bnltEgcg6JF3uVlyFsBpdB+lzgdRTMHeejneZR0H1BrnKECH'
     '7GyVy1BAmcsr17WxYs78QNqQF4bppFXqX9BBqIrzmcExwueASjAFzlaWncpqEpJCXVc7wv'
-    'Nj7eT/BbztCaofk+k0AAAAAElFTkSuQmCC';
+    'Nj7eT/BbztCaofk+k0AAAAAyBMj8AAAAAElFTkSuQmCC';
+const String base64ImageUrl = 'data:image/png;base64,$base64PngData';
 
 HtmlImage createNineSliceImage() {
   return HtmlImage(
-    createDomHTMLImageElement()..src = base64ImageData,
+    createDomHTMLImageElement()..src = base64ImageUrl,
     60,
     60,
   );
