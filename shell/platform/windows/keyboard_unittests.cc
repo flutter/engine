@@ -2375,7 +2375,7 @@ TEST(KeyboardTest, VietnameseTelexAddDiacriticWithSlowTrueResponse) {
 }
 
 // Ensure that the scancode-less key events issued by Narrator
-// when toggling caps lock do violate assert statements.
+// when toggling caps lock don't violate assert statements.
 TEST(KeyboardTest, DoubleCapsLock) {
   KeyboardTester tester;
   tester.Responding(false);
