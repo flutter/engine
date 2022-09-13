@@ -219,9 +219,8 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
                static_cast<int32_t>(view_mutators.transform.getTranslateY())});
 
           flatland_->flatland()->SetScale(
-              viewport.transform_id,
-              {view_mutators.transform.getScaleX(),
-               view_mutators.transform.getScaleY()});
+              viewport.transform_id, {view_mutators.transform.getScaleX(),
+                                      view_mutators.transform.getScaleY()});
           viewport.mutators.transform = view_mutators.transform;
         }
 
