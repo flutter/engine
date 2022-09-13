@@ -921,12 +921,12 @@ Iterable<_LicenseMatch> _tryReferenceByType(String body, RegExp pattern, License
   }
 }
 
-License _dereferenceLicense(int groupIndex, String? Function(int? index) group, MultipleVersionedLicenseReferencePattern pattern, LicenseSource parentDirectory, { String? origin }) {
+License _dereferenceLicense(int groupIndex, String? Function(int index) group, MultipleVersionedLicenseReferencePattern pattern, LicenseSource parentDirectory, { String? origin }) {
   License? result = pattern.checkLocalFirst ? parentDirectory.nearestLicenseWithName(group(groupIndex)!) : null;
   if (result == null) {
     String suffix = '';
     if (pattern.versionIndices != null && pattern.versionIndices!.containsKey(groupIndex)) {
-      suffix = ':${group(pattern.versionIndices![groupIndex])}';
+      suffix = ':${group(pattern.versionIndices![groupIndex]!)}';
     }
     result = License.fromUrl('${group(groupIndex)}$suffix', origin: origin);
   }

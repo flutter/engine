@@ -42,7 +42,7 @@ abstract class _RepositoryFile extends _RepositoryEntry {
   Iterable<License>? get licenses;
 
   @override
-  String get libraryName => parent?.libraryName ?? '';
+  String get libraryName => parent!.libraryName;
 
   fs.File get ioFile => super.io as fs.File;
 }
@@ -465,7 +465,7 @@ class _RepositoryLibJpegTurboLicense extends _RepositoryLicenseFile {
 
   @override
   List<License>? get licenses {
-    if (_licenses == null && parent != null) {
+    if (_licenses == null) {
       final _RepositoryReadmeIjgFile readme = parent!.getChildByName('README.ijg') as _RepositoryReadmeIjgFile;
       final _RepositorySourceFile main = parent!.getChildByName('turbojpeg.c') as _RepositorySourceFile;
       final _RepositoryDirectory simd = parent!.getChildByName('simd') as _RepositoryDirectory;
@@ -559,9 +559,7 @@ class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
   void _warmCache() {
     if (parent != null && _targetLicense == null) {
       final License? license = parent!.nearestLicenseWithName(_target);
-      if (license != null) {
-        _targetLicense = <License>[license];
-      }
+      _targetLicense = <License>[license!];
     }
   }
 
@@ -2799,7 +2797,7 @@ void _writeSignature(String signature, system.IOSink sink) {
 // Checks for changes to the license tool itself.
 //
 // Returns true if changes are detected.
-Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root, { required String goldenSignaturePath,required String outputSignaturePath }) async {
+Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root, { required String goldenSignaturePath, required String outputSignaturePath }) async {
   system.stderr.writeln('Computing signature for license tool');
   final fs.Directory flutterNode = findChildDirectory(root.ioDirectory, 'flutter')!;
   final fs.Directory toolsNode = findChildDirectory(flutterNode, 'tools')!;
