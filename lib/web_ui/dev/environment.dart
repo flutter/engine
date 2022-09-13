@@ -25,6 +25,8 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory hostDebugUnoptDir =
         io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
+    final io.Directory wasmDebugOutDir =
+        io.Directory(pathlib.join(outDir.path, 'wasm_debug'));
     final io.Directory dartSdkDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
@@ -32,7 +34,6 @@ class Environment {
 
     for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
-      outDir,
       dartSdkDir,
       webUiRootDir
     ]) {
@@ -49,6 +50,7 @@ class Environment {
       engineToolsDir: engineToolsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
+      wasmDebugOutDir: wasmDebugOutDir,
       dartSdkDir: dartSdkDir,
     );
   }
@@ -60,6 +62,7 @@ class Environment {
     required this.engineToolsDir,
     required this.outDir,
     required this.hostDebugUnoptDir,
+    required this.wasmDebugOutDir,
     required this.dartSdkDir,
   });
 
@@ -82,6 +85,9 @@ class Environment {
 
   /// The output directory for the host_debug_unopt build.
   final io.Directory hostDebugUnoptDir;
+
+  /// The output directory for the wasm_debug build.
+  final io.Directory wasmDebugOutDir;
 
   /// The root of the Dart SDK.
   final io.Directory dartSdkDir;

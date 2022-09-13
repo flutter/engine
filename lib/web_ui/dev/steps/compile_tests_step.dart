@@ -43,7 +43,7 @@ class CompileTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webUiBuildDir.create();
-    await copyCanvasKitFiles(useLocalCanvasKit: true);
+    await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
@@ -127,9 +127,7 @@ Future<void> copySkiaTestImages() async {
 Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
   final io.File localCanvasKitWasm = io.File(pathlib.join(
-    environment.hostDebugUnoptDir.path,
-    'flutter_web_sdk',
-    'canvaskit',
+    environment.wasmDebugOutDir.path,
     'canvaskit.wasm',
   ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync() && useLocalCanvasKit;
@@ -143,9 +141,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
     final List<io.File> canvasKitFiles = <io.File>[
       localCanvasKitWasm,
       io.File(pathlib.join(
-        environment.hostDebugUnoptDir.path,
-        'flutter_web_sdk',
-        'canvaskit',
+        environment.wasmDebugOutDir.path,
         'canvaskit.js',
       )),
     ];

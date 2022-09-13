@@ -609,38 +609,6 @@ _kernel_worker("flutter_dartdevc_kernel_sdk_outline_sound") {
   ]
 }
 
-# copy("copy_canvaskit") {
-#   canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
-
-#   deps = [ canvaskit_target ]
-
-#   canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
-
-#   sources = [
-#     "$canvaskit_out_dir/canvaskit.js",
-#     "$canvaskit_out_dir/canvaskit.wasm",
-#   ]
-
-#   outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
-# }
-
-# copy("copy_canvaskit_profiling") {
-#   canvaskit_target = "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm:wasm_for_canvaskit)"
-
-#   deps = [ canvaskit_target ]
-
-#   canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
-
-#   sources = [
-#     "$canvaskit_out_dir/canvaskit.js",
-#     "$canvaskit_out_dir/canvaskit.wasm",
-#   ]
-
-#   outputs = [
-#     "$root_out_dir/flutter_web_sdk/canvaskit/profiling/{{source_file_part}}",
-#   ]
-# }
-
 # Archives Flutter Web SDK
 if (!is_fuchsia) {
   zip_bundle_from_file("flutter_web_sdk_archive") {

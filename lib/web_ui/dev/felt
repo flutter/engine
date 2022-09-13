@@ -30,7 +30,7 @@ WEB_UI_DIR="${FLUTTER_DIR}/lib/web_ui"
 DEV_DIR="${WEB_UI_DIR}/dev"
 OUT_DIR="${ENGINE_SRC_DIR}/out"
 HOST_DEBUG_UNOPT_DIR="${ENGINE_SRC_DIR}/out/host_debug_unopt"
-DART_SDK_DIR="${ENGINE_SRC_DIR}/out/host_debug_unopt/dart-sdk"
+DART_SDK_DIR="${ENGINE_SRC_DIR}/third_party/dart/tools/sdks/dart-sdk"
 GN="${FLUTTER_DIR}/tools/gn"
 DART_TOOL_DIR="${WEB_UI_DIR}/.dart_tool"
 DART_PATH="$DART_SDK_DIR/bin/dart"
@@ -41,10 +41,8 @@ REVISION="$(cd "$FLUTTER_DIR"; git rev-parse HEAD)"
 
 if [ ! -f "${DART_PATH}" ]
 then
-  echo "Compiling the Dart SDK."
+  echo "Downloading the Dart SDK."
   gclient sync
-  $GN --unoptimized --full-dart-sdk
-  "$NINJA_PATH" -C "$HOST_DEBUG_UNOPT_DIR"
 fi
 
 install_deps() {
