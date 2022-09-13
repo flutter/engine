@@ -40,7 +40,7 @@ Future<void> testMain() async {
               Radius.circular(rRectRadii[i])),
           niceRRectPaint);
     }
-    await canvasScreenshot(rc, 'canvas_rrect_round_square.png', canvasRect: screenRect, region: region);
+    await canvasScreenshot(rc, 'canvas_rrect_round_square', canvasRect: screenRect, region: region);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/62631
@@ -52,7 +52,7 @@ Future<void> testMain() async {
           const Radius.circular(30)),
       niceRRectPaint);
     rc.drawPath(Path()..moveTo(0, 0)..lineTo(20, 0), niceRRectPaint);
-    await canvasScreenshot(rc, 'canvas_rrect_flipped.png', canvasRect: screenRect, region: const Rect.fromLTWH(0, 0, 100, 200));
+    await canvasScreenshot(rc, 'canvas_rrect_flipped', canvasRect: screenRect, region: const Rect.fromLTWH(0, 0, 100, 200));
   });
 
   test('round rect with big radius scale down smaller radius', () async {
@@ -66,7 +66,7 @@ Future<void> testMain() async {
 
       rc.drawRRect(rrect, niceRRectPaint);
     }
-    await canvasScreenshot(rc, 'canvas_rrect_overlapping_radius.png', canvasRect: screenRect, region: region);
+    await canvasScreenshot(rc, 'canvas_rrect_overlapping_radius', canvasRect: screenRect, region: region);
   });
 
   test('diff round rect with big radius scale down smaller radius', () async {
@@ -88,6 +88,6 @@ Future<void> testMain() async {
       rc.drawDRRect(outerRRect, innerRRect, niceRRectPaint);
     }
 
-    await canvasScreenshot(rc, 'canvas_drrect_overlapping_radius.png', canvasRect: screenRect, region: region);
+    await canvasScreenshot(rc, 'canvas_drrect_overlapping_radius', canvasRect: screenRect, region: region);
   });
 }
