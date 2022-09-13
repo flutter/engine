@@ -1,9 +1,9 @@
 name: Scorecards supply-chain security
-on:
+on: push
   # Only the default branch is supported.
-  branch_protection_rule:
-  push:
-    branches: [ separate-github-workflow-jobs ]
+  # branch_protection_rule:
+  # push:
+  #   branches: [ main ]
 
 # Declare default permissions as read only.
 permissions: read-all
