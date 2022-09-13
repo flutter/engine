@@ -57,7 +57,6 @@ Future<void> takeScreenshot(
   EngineCanvas canvas,
   Rect region,
   String fileName, {
-  bool write = false,
   double? maxDiffRatePercent,
 }) async {
   final DomElement sceneElement = createDomElement('flt-scene');
@@ -74,7 +73,6 @@ Future<void> takeScreenshot(
       '$fileName.png',
       region: region,
       maxDiffRatePercent: maxDiffRatePercent,
-      write: write,
     );
   } finally {
     // The page is reused across tests, so remove the element after taking the
