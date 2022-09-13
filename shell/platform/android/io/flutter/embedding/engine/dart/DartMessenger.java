@@ -344,8 +344,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
     HandlerInfo handlerInfo;
     boolean messageDeferred;
-    // TODO(gaaclarke): This can potentially be a bottleneck and could replaced
-    // with a read/write lock.
+    // This lock can potentially be a bottleneck and could replaced with a
+    // read/write lock.
     synchronized (handlersLock) {
       handlerInfo = messageHandlers.get(channel);
       messageDeferred = (enableBufferingIncomingMessages.get() && handlerInfo == null);
