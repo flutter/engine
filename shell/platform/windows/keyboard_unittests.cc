@@ -2385,7 +2385,6 @@ TEST(KeyboardTest, DoubleCapsLock) {
       WmKeyUpInfo{VK_CAPITAL, 0, kNotExtended}.Build()});
 
   clear_key_calls();
-  
 }
 
 }  // namespace testing
