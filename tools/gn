@@ -214,8 +214,8 @@ def to_gn_args(args):
   gn_args['is_debug'] = args.unoptimized
 
   if args.target_os == 'wasm':
-      to_gn_wasm_args(args, gn_args)
-      return gn_args
+    to_gn_wasm_args(args, gn_args)
+    return gn_args
 
   if args.bitcode:
     if args.target_os != 'ios':
@@ -326,7 +326,7 @@ def to_gn_args(args):
   gn_args['flutter_runtime_mode'] = runtime_mode
   gn_args['full_dart_sdk'] = args.full_dart_sdk
   gn_args['dart_version_git_info'] = not args.no_dart_version_git_info
-  
+
   gn_args['dart_lib_export_symbols'] = False
   if runtime_mode == 'debug':
     gn_args['dart_runtime_mode'] = 'develop'
@@ -334,14 +334,14 @@ def to_gn_args(args):
     gn_args['dart_runtime_mode'] = 'release'
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
-  
+
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
   # flags allow preventing those those targets from being part of the build
   # tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
-  
+
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
   # on Android.
   gn_args['bssl_use_clang_integrated_as'] = True
@@ -564,6 +564,7 @@ def to_gn_args(args):
 
   return gn_args
 
+
 def to_gn_wasm_args(args, gn_args):
   gn_args['is_official_build'] = True
   gn_args['skia_enable_flutter_defines'] = True
@@ -619,6 +620,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_enable_paragraph'] = True
   gn_args['skia_canvaskit_enable_webgl'] = True
   gn_args['skia_canvaskit_enable_webgpu'] = False
+
 
 def parse_args(args):
   args = args[1:]
