@@ -55,8 +55,7 @@ Future<void> testMain() async {
     rc.save();
     rc.drawImage(image, Offset.zero, SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_raw_image',
-      region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_raw_image');
   });
 
   test('Paints image with transform', () async {
