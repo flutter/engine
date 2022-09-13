@@ -212,12 +212,16 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         }
 
         // Set transform for the viewport.
-        // TODO(fxbug.dev/94000): Handle scaling.
         if (view_mutators.transform != viewport.mutators.transform) {
           flatland_->flatland()->SetTranslation(
               viewport.transform_id,
               {static_cast<int32_t>(view_mutators.transform.getTranslateX()),
                static_cast<int32_t>(view_mutators.transform.getTranslateY())});
+
+          flatland_->flatland()->SetScale(
+              viewport.transform_id,
+              {view_mutators.transform.getScaleX(),
+               view_mutators.transform.getScaleY()});
           viewport.mutators.transform = view_mutators.transform;
         }
 
