@@ -10,7 +10,6 @@
 # and writes the to a file. This file will be later used to validate the dependencies
 # are pinned to a hash.
 
-
 import argparse
 import os
 import sys
