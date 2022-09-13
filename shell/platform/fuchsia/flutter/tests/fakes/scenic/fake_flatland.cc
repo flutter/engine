@@ -234,6 +234,20 @@ void FakeFlatland::SetOrientation(
   transform->orientation = orientation;
 }
 
+
+void FakeFlatland::SetOpacity(TransformId transform_id, float value) {
+  if (transform_id.value == 0) {
+    // TODO(fxb/85619): Raise a FlatlandError here
+    FML_CHECK(false)
+        << "FakeFlatland::SetOpacity: TransformId 0 is invalid.";
+    return;
+  }
+
+  if (value < 0.f || value > 1.f) {
+    FML_CHECK(false) << "FakeFlatland::SetOpacity: Invalid opacity value.";
+  }
+}
+
 void FakeFlatland::SetClipBoundary(
     fuchsia::ui::composition::TransformId transform_id,
     std::unique_ptr<fuchsia::math::Rect> bounds) {
