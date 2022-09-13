@@ -159,9 +159,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   }
 
   if (context.builder) {
-    auto display_list = display_list_.skia_object();
-    auto restore = context.state_stack.applyState(display_list->bounds(), 0);
-    context.builder->drawDisplayList(display_list);
+    context.builder->drawDisplayList(display_list_.skia_object(), opacity);
   } else {
     display_list()->RenderTo(context.canvas, opacity);
   }

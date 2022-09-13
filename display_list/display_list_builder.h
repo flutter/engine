@@ -24,13 +24,19 @@ namespace flutter {
 // If there is some code that already renders to an SkCanvas object,
 // those rendering commands can be captured into a DisplayList using
 // the DisplayListCanvasRecorder class.
-class DisplayListBuilder final : public virtual Dispatcher,
+class DisplayListBuilder final : private virtual Dispatcher,
                                  public SkRefCnt,
                                  DisplayListOpFlags {
  public:
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect_);
 
   ~DisplayListBuilder();
+
+  void insert(DisplayList& display_list) { display_list.Dispatch(*this); }
+  void insert(DisplayList* display_list) { display_list->Dispatch(*this); }
+  void insert(sk_sp<DisplayList> display_list) {
+    display_list->Dispatch(*this);
+  }
 
   void setAntiAlias(bool aa) override {
     if (current_.isAntiAlias() != aa) {
@@ -156,16 +162,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
   // other flags will be ignored and calculated anew as the DisplayList is
   // built. Alternatively, use the |saveLayer(SkRect, bool)| method.
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
-  // Convenience method with just a boolean to indicate whether the saveLayer
-  // should apply the rendering attributes.
-  void saveLayer(const SkRect* bounds, bool renders_with_attributes) {
-    saveLayer(bounds,
-              renders_with_attributes ? SaveLayerOptions::kWithAttributes
-                                      : SaveLayerOptions::kNoAttributes,
-              nullptr);
-  }
+                 RenderWith with,
+                 const DlImageFilter* backdrop = nullptr,
+                 int optimizations = 0) override;
   void saveLayer(const SkRect* bounds,
                  const DlPaint* paint,
                  const DlImageFilter* backdrop = nullptr);
@@ -279,7 +278,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
-                 bool render_with_attributes) override;
+                 RenderWith with) override;
   void drawImage(const sk_sp<DlImage>& image,
                  const SkPoint point,
                  DlImageSampling sampling,
@@ -289,7 +288,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
       const SkRect& src,
       const SkRect& dst,
       DlImageSampling sampling,
-      bool render_with_attributes,
+      RenderWith with,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
   void drawImageRect(const sk_sp<DlImage>& image,
@@ -303,7 +302,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool render_with_attributes) override;
+                     RenderWith with) override;
   void drawImageNine(const sk_sp<DlImage>& image,
                      const SkIRect& center,
                      const SkRect& dst,
@@ -313,7 +312,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override;
+                        RenderWith with) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -322,7 +321,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cullRect,
-                 bool render_with_attributes) override;
+                 RenderWith with) override;
   void drawAtlas(const sk_sp<DlImage>& atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -334,8 +333,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlPaint* paint = nullptr);
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override;
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+                   RenderWith with) override;
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity = SK_Scalar1) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
@@ -469,13 +469,14 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   // Check for opacity compatibility for an op that may or may not use the
-  // current rendering attributes as indicated by |uses_blend_attribute|.
-  // If the flag is false then the rendering op will be able to substitute
-  // a default Paint object with the opacity applied using the default SrcOver
-  // blend mode which is always compatible with applying an inherited opacity.
-  void CheckLayerOpacityCompatibility(bool uses_blend_attribute = true) {
-    UpdateLayerOpacityCompatibility(!uses_blend_attribute ||
-                                    current_opacity_compatibility_);
+  // current rendering attributes as indicated by the RenderWith option.
+  // If the option does not use paint attributes then the rendering op will
+  // be able to substitute a default Paint object with the opacity applied
+  // using the default SrcOver blend mode which is always compatible with
+  // applying an inherited opacity.
+  void CheckLayerOpacityCompatibility(RenderWith with = RenderWith::kDlPaint) {
+    UpdateLayerOpacityCompatibility(current_opacity_compatibility_ ||
+                                    (with < RenderWith::kDlPaint));
   }
 
   void CheckLayerOpacityHairlineCompatibility() {

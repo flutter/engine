@@ -60,8 +60,9 @@ class DisplayListStreamDispatcher final : public Dispatcher {
 
   void save() override;
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 RenderWith with,
+                 const DlImageFilter* backdrop,
+                 int optimizations) override;
   void restore() override;
 
   void translate(SkScalar tx, SkScalar ty) override;
@@ -105,23 +106,23 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
-                 bool render_with_attributes) override;
+                 RenderWith with) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
-                     bool render_with_attributes,
+                     RenderWith with,
                      SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool render_with_attributes) override;
+                     RenderWith with) override;
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override;
+                        RenderWith with) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -130,11 +131,12 @@ class DisplayListStreamDispatcher final : public Dispatcher {
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
-                 bool render_with_attributes) override;
+                 RenderWith with) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override;
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+                   RenderWith with) override;
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;

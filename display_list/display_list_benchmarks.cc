@@ -975,7 +975,7 @@ void BM_DrawImage(benchmark::State& state,
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.drawImage(DlImage::Make(image), dst, options, true);
+    builder.drawImage(DlImage::Make(image), dst, options, RenderWith::kDlPaint);
 
     dst.offset(offset, offset);
     if (dst.x() + bitmap_size > canvas_size) {
@@ -1058,8 +1058,8 @@ void BM_DrawImageRect(benchmark::State& state,
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.drawImageRect(DlImage::Make(image), src, dst, options, true,
-                          constraint);
+    builder.drawImageRect(DlImage::Make(image), src, dst, options,
+                          RenderWith::kDlPaint, constraint);
     dst.offset(offset, offset);
     if (dst.right() > canvas_size) {
       dst.offsetTo(0, dst.y());
@@ -1143,7 +1143,8 @@ void BM_DrawImageNine(benchmark::State& state,
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.drawImageNine(DlImage::Make(image), center, dst, filter, true);
+    builder.drawImageNine(DlImage::Make(image), center, dst, filter,
+                          RenderWith::kDlPaint);
     dst.offset(offset, offset);
     if (dst.right() > canvas_size) {
       dst.offsetTo(0, dst.y());
@@ -1306,7 +1307,7 @@ void BM_SaveLayer(benchmark::State& state,
   state.counters["DrawCallCount_Varies"] = save_layer_calls * save_depth;
   for (size_t i = 0; i < save_layer_calls; i++) {
     for (size_t j = 0; j < save_depth; j++) {
-      builder.saveLayer(nullptr, false);
+      builder.saveLayer(nullptr, nullptr);
       builder.drawRect(rect1);
       builder.drawRect(rect2);
     }

@@ -5,7 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PAINT_H_
 #define FLUTTER_LIB_UI_PAINTING_PAINT_H_
 
-#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -27,8 +27,8 @@ class Paint {
   /// either be DCHECKed or used to indicate to the DisplayList
   /// draw operation whether or not to use the synchronized attributes
   /// (mainly the drawImage and saveLayer methods).
-  bool sync_to(DisplayListBuilder* builder,
-               const DisplayListAttributeFlags& flags) const;
+  RenderWith sync_to(DisplayListBuilder* builder,
+                     const DisplayListAttributeFlags& flags) const;
 
   bool isNull() const { return Dart_IsNull(paint_data_); }
   bool isNotNull() const { return !Dart_IsNull(paint_data_); }

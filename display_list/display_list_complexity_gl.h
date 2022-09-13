@@ -38,8 +38,9 @@ class DisplayListGLComplexityCalculator
           draw_text_blob_count_(0) {}
 
     void saveLayer(const SkRect* bounds,
-                   const SaveLayerOptions options,
-                   const DlImageFilter* backdrop) override;
+                   RenderWith with,
+                   const DlImageFilter* backdrop,
+                   int optimizations) override;
 
     void drawLine(const SkPoint& p0, const SkPoint& p1) override;
     void drawRect(const SkRect& rect) override;
@@ -60,13 +61,14 @@ class DisplayListGLComplexityCalculator
     void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,
                    DlImageSampling sampling,
-                   bool render_with_attributes) override;
+                   RenderWith with) override;
     void drawImageNine(const sk_sp<DlImage> image,
                        const SkIRect& center,
                        const SkRect& dst,
                        DlFilterMode filter,
-                       bool render_with_attributes) override;
-    void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+                       RenderWith with) override;
+    void drawDisplayList(const sk_sp<DisplayList> display_list,
+                         SkScalar opacity) override;
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
                       SkScalar y) override;
@@ -79,7 +81,7 @@ class DisplayListGLComplexityCalculator
    protected:
     void ImageRect(const SkISize& size,
                    bool texture_backed,
-                   bool render_with_attributes,
+                   RenderWith with,
                    SkCanvas::SrcRectConstraint constraint) override;
 
     unsigned int BatchedComplexity() override;

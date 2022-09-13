@@ -5,7 +5,6 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_DISPATCHER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_DISPATCHER_H_
 
-#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_color_source.h"
@@ -21,6 +20,12 @@ namespace flutter {
 
 class DisplayList;
 
+enum class RenderWith {
+  kDefaults,
+  kAlpha,
+  kDlPaint,
+};
+
 //------------------------------------------------------------------------------
 /// @brief      The pure virtual interface for interacting with a display list.
 ///             This interface represents the methods used to build a list
@@ -31,6 +36,8 @@ class Dispatcher {
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
   static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
+
+  static constexpr int kSaveLayerOpacityCompatible = 1;
 
   // The following methods are nearly 1:1 with the methods on SkPaint and
   // carry the same meanings. Each method sets a persistent value for the
@@ -61,20 +68,20 @@ class Dispatcher {
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
-  // The |options| parameter can specify whether the existing rendering
+  // The |with| parameter can specify which of the existing rendering
   // attributes will be applied to the save layer surface while rendering
-  // it back to the current surface. If the flag is false then this method
-  // is equivalent to |SkCanvas::saveLayer| with a null paint object.
-  // The |options| parameter may contain other options that indicate some
+  // it back to the current surface.
+  // The |optimizations| parameter may contain bits that indicate some
   // specific optimizations may be made by the underlying implementation
-  // to avoid creating a temporary layer, these optimization options will
+  // to avoid creating a temporary layer, these optimizations will
   // be determined as the |DisplayList| is constructed and should not be
   // specified in calling a |DisplayListBuilder| as they will be ignored.
   // The |backdrop| filter, if not null, is used to initialize the new
   // layer before further rendering happens.
   virtual void saveLayer(const SkRect* bounds,
-                         const SaveLayerOptions options,
-                         const DlImageFilter* backdrop = nullptr) = 0;
+                         RenderWith with,
+                         const DlImageFilter* backdrop = nullptr,
+                         int optimizations = 0) = 0;
   virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;
@@ -218,23 +225,23 @@ class Dispatcher {
   virtual void drawImage(const sk_sp<DlImage> image,
                          const SkPoint point,
                          DlImageSampling sampling,
-                         bool render_with_attributes) = 0;
+                         RenderWith with) = 0;
   virtual void drawImageRect(const sk_sp<DlImage> image,
                              const SkRect& src,
                              const SkRect& dst,
                              DlImageSampling sampling,
-                             bool render_with_attributes,
+                             RenderWith with,
                              SkCanvas::SrcRectConstraint constraint) = 0;
   virtual void drawImageNine(const sk_sp<DlImage> image,
                              const SkIRect& center,
                              const SkRect& dst,
                              DlFilterMode filter,
-                             bool render_with_attributes) = 0;
+                             RenderWith with) = 0;
   virtual void drawImageLattice(const sk_sp<DlImage> image,
                                 const SkCanvas::Lattice& lattice,
                                 const SkRect& dst,
                                 DlFilterMode filter,
-                                bool render_with_attributes) = 0;
+                                RenderWith with) = 0;
   virtual void drawAtlas(const sk_sp<DlImage> atlas,
                          const SkRSXform xform[],
                          const SkRect tex[],
@@ -243,11 +250,12 @@ class Dispatcher {
                          DlBlendMode mode,
                          DlImageSampling sampling,
                          const SkRect* cull_rect,
-                         bool render_with_attributes) = 0;
+                         RenderWith with) = 0;
   virtual void drawPicture(const sk_sp<SkPicture> picture,
                            const SkMatrix* matrix,
-                           bool render_with_attributes) = 0;
-  virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
+                           RenderWith with) = 0;
+  virtual void drawDisplayList(const sk_sp<DisplayList> display_list,
+                               SkScalar opacity) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
                             SkScalar y) = 0;

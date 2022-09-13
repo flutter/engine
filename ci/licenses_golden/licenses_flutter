@@ -684,6 +684,8 @@ FILE: ../../../flutter/display_list/display_list_complexity_helper.h
 FILE: ../../../flutter/display_list/display_list_complexity_metal.cc
 FILE: ../../../flutter/display_list/display_list_complexity_metal.h
 FILE: ../../../flutter/display_list/display_list_complexity_unittests.cc
+FILE: ../../../flutter/display_list/display_list_delegate.cc
+FILE: ../../../flutter/display_list/display_list_delegate.h
 FILE: ../../../flutter/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_enum_unittests.cc
@@ -699,6 +701,8 @@ FILE: ../../../flutter/display_list/display_list_image_skia.h
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.h
 FILE: ../../../flutter/display_list/display_list_mask_filter_unittests.cc
+FILE: ../../../flutter/display_list/display_list_opacity_modulator.cc
+FILE: ../../../flutter/display_list/display_list_opacity_modulator.h
 FILE: ../../../flutter/display_list/display_list_ops.cc
 FILE: ../../../flutter/display_list/display_list_ops.h
 FILE: ../../../flutter/display_list/display_list_paint.cc

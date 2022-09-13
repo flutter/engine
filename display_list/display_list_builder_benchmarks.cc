@@ -101,7 +101,7 @@ static void BM_DisplayListBuilderWithSaveLayer(
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {
         auto& invocation = group.variants[i];
-        builder.saveLayer(nullptr, false);
+        builder.saveLayer(nullptr, nullptr);
         invocation.Invoke(builder);
         builder.restore();
       }

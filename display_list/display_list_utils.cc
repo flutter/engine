@@ -28,18 +28,6 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
-  save_stack_.emplace_back(opacity_);
-  set_opacity(child_opacity);
-}
-void SkPaintDispatchHelper::restore_opacity() {
-  if (save_stack_.empty()) {
-    return;
-  }
-  set_opacity(save_stack_.back().opacity);
-  save_stack_.pop_back();
-}
-
 void SkPaintDispatchHelper::setAntiAlias(bool aa) {
   paint_.setAntiAlias(aa);
 }
@@ -66,11 +54,7 @@ void SkPaintDispatchHelper::setStrokeMiter(SkScalar limit) {
   paint_.setStrokeMiter(limit);
 }
 void SkPaintDispatchHelper::setColor(DlColor color) {
-  current_color_ = color;
   paint_.setColor(color);
-  if (has_opacity()) {
-    paint_.setAlphaf(paint_.getAlphaf() * opacity());
-  }
 }
 void SkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
@@ -430,11 +414,12 @@ void DisplayListBoundsCalculator::save() {
   accumulator_.save();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options,
-                                            const DlImageFilter* backdrop) {
+                                            RenderWith with,
+                                            const DlImageFilter* backdrop,
+                                            int optimizations) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  if (options.renders_with_attributes()) {
+  if (with == RenderWith::kDlPaint) {
     // The actual flood of the outer layer clip will occur after the
     // (eventual) corresponding restore is called, but rather than
     // remember this information in the LayerInfo until the restore
@@ -589,10 +574,10 @@ void DisplayListBoundsCalculator::drawVertices(const DlVertices* vertices,
 void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
                                             DlImageSampling sampling,
-                                            bool render_with_attributes) {
+                                            RenderWith with) {
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
                                    image->width(), image->height());
-  DisplayListAttributeFlags flags = render_with_attributes  //
+  DisplayListAttributeFlags flags = with == RenderWith::kDlPaint  //
                                         ? kDrawImageWithPaintFlags
                                         : kDrawImageFlags;
   AccumulateOpBounds(bounds, flags);
@@ -602,9 +587,9 @@ void DisplayListBoundsCalculator::drawImageRect(
     const SkRect& src,
     const SkRect& dst,
     DlImageSampling sampling,
-    bool render_with_attributes,
+    RenderWith with,
     SkCanvas::SrcRectConstraint constraint) {
-  DisplayListAttributeFlags flags = render_with_attributes
+  DisplayListAttributeFlags flags = with == RenderWith::kDlPaint
                                         ? kDrawImageRectWithPaintFlags
                                         : kDrawImageRectFlags;
   AccumulateOpBounds(dst, flags);
@@ -613,8 +598,8 @@ void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
                                                 DlFilterMode filter,
-                                                bool render_with_attributes) {
-  DisplayListAttributeFlags flags = render_with_attributes
+                                                RenderWith with) {
+  DisplayListAttributeFlags flags = with == RenderWith::kDlPaint
                                         ? kDrawImageNineWithPaintFlags
                                         : kDrawImageNineFlags;
   AccumulateOpBounds(dst, flags);
@@ -624,8 +609,8 @@ void DisplayListBoundsCalculator::drawImageLattice(
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
     DlFilterMode filter,
-    bool render_with_attributes) {
-  DisplayListAttributeFlags flags = render_with_attributes
+    RenderWith with) {
+  DisplayListAttributeFlags flags = with == RenderWith::kDlPaint
                                         ? kDrawImageLatticeWithPaintFlags
                                         : kDrawImageLatticeFlags;
   AccumulateOpBounds(dst, flags);
@@ -638,7 +623,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                             DlBlendMode mode,
                                             DlImageSampling sampling,
                                             const SkRect* cullRect,
-                                            bool render_with_attributes) {
+                                            RenderWith with) {
   SkPoint quad[4];
   RectBoundsAccumulator atlas_bounds;
   for (int i = 0; i < count; i++) {
@@ -649,7 +634,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
     }
   }
   if (atlas_bounds.is_not_empty()) {
-    DisplayListAttributeFlags flags = render_with_attributes  //
+    DisplayListAttributeFlags flags = with == RenderWith::kDlPaint  //
                                           ? kDrawAtlasWithPaintFlags
                                           : kDrawAtlasFlags;
     AccumulateOpBounds(atlas_bounds.bounds(), flags);
@@ -657,7 +642,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
 }
 void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* pic_matrix,
-                                              bool render_with_attributes) {
+                                              RenderWith with) {
   // TODO(flar) cull rect really cannot be trusted in general, but it will
   // work for SkPictures generated from our own PictureRecorder or any
   // picture captured with an SkRTreeFactory or accurate bounds estimate.
@@ -665,13 +650,14 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
   if (pic_matrix) {
     pic_matrix->mapRect(&bounds);
   }
-  DisplayListAttributeFlags flags = render_with_attributes  //
+  DisplayListAttributeFlags flags = with == RenderWith::kDlPaint  //
                                         ? kDrawPictureWithPaintFlags
                                         : kDrawPictureFlags;
   AccumulateOpBounds(bounds, flags);
 }
 void DisplayListBoundsCalculator::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   AccumulateOpBounds(display_list->bounds(), kDrawDisplayListFlags);
 }
 void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,

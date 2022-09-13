@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_color.h"
 #include "flutter/display_list/display_list_image.h"

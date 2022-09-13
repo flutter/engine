@@ -458,14 +458,13 @@ TEST_F(ClipRectLayerTest, OpacityInheritanceSaveLayerPainting) {
       /* ClipRectLayer::Paint() */ {
         expected_builder.save();
         expected_builder.clipRect(clip_rect, SkClipOp::kIntersect, true);
-        expected_builder.setColor(opacity_alpha << 24);
-        expected_builder.saveLayer(&children_bounds, true);
+        auto paint = DlPaint().setColor(opacity_alpha << 24);
+        expected_builder.saveLayer(&children_bounds, &paint);
         /* child layer1 paint */ {
-          expected_builder.setColor(0xFF000000);
-          expected_builder.drawPath(path1);
+          expected_builder.drawPath(path1, DlPaint());
         }
         /* child layer2 paint */ {  //
-          expected_builder.drawPath(path2);
+          expected_builder.drawPath(path2, DlPaint());
         }
         expected_builder.restore();
       }

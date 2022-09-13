@@ -129,6 +129,8 @@ class DisplayListCanvasRecorder
 
  private:
   sk_sp<DisplayListBuilder> builder_;
+
+  RenderWith with(const SkPaint* paint, DisplayListAttributeFlags flags);
 };
 
 }  // namespace flutter

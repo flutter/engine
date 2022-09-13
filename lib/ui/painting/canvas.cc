@@ -76,11 +76,10 @@ void Canvas::saveLayerWithoutBounds(Dart_Handle paint_objects,
 
   FML_DCHECK(paint.isNotNull());
   if (display_list_recorder_) {
-    bool restore_with_paint =
-        paint.sync_to(builder(), kSaveLayerWithPaintFlags);
-    FML_DCHECK(restore_with_paint);
+    auto restore_with = paint.sync_to(builder(), kSaveLayerWithPaintFlags);
+    FML_DCHECK(restore_with == RenderWith::kDlPaint);
     TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
-    builder()->saveLayer(nullptr, restore_with_paint);
+    builder()->saveLayer(nullptr, restore_with);
   }
 }
 
@@ -95,11 +94,10 @@ void Canvas::saveLayer(double left,
   FML_DCHECK(paint.isNotNull());
   SkRect bounds = SkRect::MakeLTRB(left, top, right, bottom);
   if (display_list_recorder_) {
-    bool restore_with_paint =
-        paint.sync_to(builder(), kSaveLayerWithPaintFlags);
-    FML_DCHECK(restore_with_paint);
+    auto restore_with = paint.sync_to(builder(), kSaveLayerWithPaintFlags);
+    FML_DCHECK(restore_with == RenderWith::kDlPaint);
     TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
-    builder()->saveLayer(&bounds, restore_with_paint);
+    builder()->saveLayer(&bounds, restore_with);
   }
 }
 
@@ -396,7 +394,7 @@ Dart_Handle Canvas::drawImage(const CanvasImage* image,
 
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   if (display_list_recorder_) {
-    bool with_attributes = paint.sync_to(builder(), kDrawImageWithPaintFlags);
+    auto with_attributes = paint.sync_to(builder(), kDrawImageWithPaintFlags);
     builder()->drawImage(dl_image, SkPoint::Make(x, y), sampling,
                          with_attributes);
   }
@@ -435,7 +433,7 @@ Dart_Handle Canvas::drawImageRect(const CanvasImage* image,
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   if (display_list_recorder_) {
-    bool with_attributes =
+    auto with_attributes =
         paint.sync_to(builder(), kDrawImageRectWithPaintFlags);
     builder()->drawImageRect(dl_image, src, dst, sampling, with_attributes,
                              SkCanvas::kFast_SrcRectConstraint);
@@ -477,7 +475,7 @@ Dart_Handle Canvas::drawImageNine(const CanvasImage* image,
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
   auto filter = ImageFilter::FilterModeFromIndex(bitmapSamplingIndex);
   if (display_list_recorder_) {
-    bool with_attributes =
+    auto with_attributes =
         paint.sync_to(builder(), kDrawImageNineWithPaintFlags);
     builder()->drawImageNine(dl_image, icenter, dst, filter, with_attributes);
   }
@@ -584,7 +582,7 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
     tonic::Int32List colors(colors_handle);
     tonic::Float32List cull_rect(cull_rect_handle);
 
-    bool with_attributes = paint.sync_to(builder(), kDrawAtlasWithPaintFlags);
+    auto with_attributes = paint.sync_to(builder(), kDrawAtlasWithPaintFlags);
     builder()->drawAtlas(
         dl_image, reinterpret_cast<const SkRSXform*>(transforms.data()),
         reinterpret_cast<const SkRect*>(rects.data()),

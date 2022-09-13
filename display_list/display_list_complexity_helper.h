@@ -150,28 +150,26 @@ class ComplexityCalculatorHelper
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
-                     bool render_with_attributes,
+                     RenderWith with,
                      SkCanvas::SrcRectConstraint constraint) override {
     if (IsComplex()) {
       return;
     }
-    ImageRect(image->dimensions(), image->isTextureBacked(),
-              render_with_attributes, constraint);
+    ImageRect(image->dimensions(), image->isTextureBacked(), with, constraint);
   }
 
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override {
+                        RenderWith with) override {
     if (IsComplex()) {
       return;
     }
     // This is not currently called from Flutter code, and this API is likely
     // to be removed in the future. For now, just return what drawImageNine
     // would
-    ImageRect(image->dimensions(), image->isTextureBacked(),
-              render_with_attributes,
+    ImageRect(image->dimensions(), image->isTextureBacked(), with,
               SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
   }
 
@@ -183,22 +181,21 @@ class ComplexityCalculatorHelper
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
-                 bool render_with_attributes) override {
+                 RenderWith with) override {
     if (IsComplex()) {
       return;
     }
     // This API just does a series of drawImage calls from the atlas
     // This is equivalent to calling drawImageRect lots of times
     for (int i = 0; i < count; i++) {
-      ImageRect(SkISize::Make(tex[i].width(), tex[i].height()), true,
-                render_with_attributes,
+      ImageRect(SkISize::Make(tex[i].width(), tex[i].height()), true, with,
                 SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
     }
   }
 
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override {
+                   RenderWith with) override {
     // This API shouldn't be used, but for now just take the
     // approximateOpCount() and multiply by 50 as a placeholder.
     AccumulateComplexity(picture->approximateOpCount() * 50);
@@ -272,7 +269,7 @@ class ComplexityCalculatorHelper
 
   virtual void ImageRect(const SkISize& size,
                          bool texture_backed,
-                         bool render_with_attributes,
+                         RenderWith with,
                          SkCanvas::SrcRectConstraint constraint) = 0;
 
   // This calculates and returns the cost of draw calls which are batched and

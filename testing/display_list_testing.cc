@@ -84,12 +84,12 @@ std::ostream& operator<<(std::ostream& os, const DlBlendMode& mode) {
   }
 }
 
-std::ostream& operator<<(std::ostream& os, const SaveLayerOptions& options) {
-  return os << "SaveLayerOptions("
-            << "can_distribute_opacity: " << options.can_distribute_opacity()
-            << ", "
-            << "renders_with_attributes: " << options.renders_with_attributes()
-            << ")";
+std::ostream& operator<<(std::ostream& os, const RenderWith& with) {
+  switch (with) {
+    case RenderWith::kDefaults:  return os << "RenderWith::kDefaults";
+    case RenderWith::kAlpha:     return os << "RenderWith::kAlpha";
+    case RenderWith::kDlPaint:   return os << "RenderWith::kDlPaint";
+  }
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkPoint& point) {
@@ -581,9 +581,10 @@ void DisplayListStreamDispatcher::save() {
   indent();
 }
 void DisplayListStreamDispatcher::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options,
-                                            const DlImageFilter* backdrop) {
-  startl() << "saveLayer(" << bounds << ", " << options;
+                                            RenderWith with,
+                                            const DlImageFilter* backdrop,
+                                            int optimizations) {
+  startl() << "saveLayer(" << bounds << ", " << with;
   if (backdrop) {
     os_ << "," << std::endl;
     indent(10);
@@ -591,9 +592,17 @@ void DisplayListStreamDispatcher::saveLayer(const SkRect* bounds,
     out(backdrop);
     outdent(10);
   } else {
-    os_ << ", no backdrop";
+    os_ << ", no backdrop, ";
   }
-  os_ << ");" << std::endl;
+  os_ << "[";
+  if (optimizations == 0) {
+    os_ << "no optimizations";
+  } else {
+    if (optimizations & kSaveLayerOpacityCompatible) {
+      os_ << "OpacityPeepholeCompatible, ";
+    }
+  }
+  os_ << "]);" << std::endl;
   startl() << "{" << std::endl;
   indent();
 }
@@ -755,24 +764,24 @@ void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
 void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
                                             DlImageSampling sampling,
-                                            bool render_with_attributes) {
+                                            RenderWith with) {
   startl() << "drawImage(" << image.get() << "," << std::endl;
   startl() << "          " << point << ", "
                            << sampling << ", "
-                           << "with attributes: " << render_with_attributes
+                           << with
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                                 const SkRect& src,
                                                 const SkRect& dst,
                                                 DlImageSampling sampling,
-                                                bool render_with_attributes,
+                                                RenderWith with,
                                                 SkCanvas::SrcRectConstraint constraint) {
   startl() << "drawImageRect(" << image.get() << "," << std::endl;
   startl() << "              src: " << src << "," << std::endl;
   startl() << "              dst: " << dst << "," << std::endl;
   startl() << "              " << sampling << ", "
-                               << "with attributes: " << render_with_attributes << ", "
+                               << with << ", "
                                << constraint
            << ");" << std::endl;
 }
@@ -780,19 +789,19 @@ void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
                                                 DlFilterMode filter,
-                                                bool render_with_attributes) {
+                                                RenderWith with) {
   startl() << "drawImageNine(" << image.get() << "," << std::endl;
   startl() << "              center: " << center << "," << std::endl;
   startl() << "              dst: " << dst << "," << std::endl;
   startl() << "              " << filter << ", "
-                               << "with attributes: " << render_with_attributes
+                               << with
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImageLattice(const sk_sp<DlImage> image,
                                                    const SkCanvas::Lattice& lattice,
                                                    const SkRect& dst,
                                                    DlFilterMode filter,
-                                                   bool render_with_attributes) {
+                                                   RenderWith with) {
   startl() << "drawImageLattice(blah blah);" << std::endl;
 }
 void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
@@ -803,27 +812,31 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             DlBlendMode mode,
                                             DlImageSampling sampling,
                                             const SkRect* cull_rect,
-                                            bool render_with_attributes) {
+                                            RenderWith with) {
   startl() << "drawAtlas(" << atlas.get() << ", ";
                    out_array("xforms", count, xform) << ", ";
                    out_array("tex_coords", count, tex) << ", ";
                    out_array("colors", count, colors) << ", "
                    << mode << ", " << sampling << ", cull: " << cull_rect << ", "
-                   << "with attributes: " << render_with_attributes
+                   << "with attributes: " << with
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* matrix,
-                                              bool render_with_attributes) {
+                                              RenderWith with) {
   startl() << "drawPicture("
            << "SkPicture(ID: " << picture->uniqueID() << ", bounds: " << picture->cullRect() << ", @" << picture << "), "
            << matrix << ", "
-           << render_with_attributes
+           << with
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
-  startl() << "drawDisplayList(ID: " << display_list->unique_id() << ", bounds: " << display_list->bounds() << ");" << std::endl;
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
+  startl() << "drawDisplayList(ID: " << display_list->unique_id() << ", " <<
+                              "bounds: " << display_list->bounds() << ", " <<
+                              "opacity: " << opacity << ");"
+           << std::endl;
 }
 void DisplayListStreamDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,

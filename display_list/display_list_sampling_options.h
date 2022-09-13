@@ -7,6 +7,7 @@
 
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkSamplingOptions.h"
+
 namespace flutter {
 
 enum class DlFilterMode {

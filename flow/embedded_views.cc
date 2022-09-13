@@ -36,7 +36,7 @@ void SkPictureEmbedderViewSlice::render_into(SkCanvas* canvas) {
 }
 
 void SkPictureEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
-  builder->drawPicture(picture_, nullptr, false);
+  builder->drawPicture(picture_, nullptr, RenderWith::kDefaults);
 }
 
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {

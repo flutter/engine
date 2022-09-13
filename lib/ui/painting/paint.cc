@@ -190,10 +190,10 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   return &paint;
 }
 
-bool Paint::sync_to(DisplayListBuilder* builder,
-                    const DisplayListAttributeFlags& flags) const {
+RenderWith Paint::sync_to(DisplayListBuilder* builder,
+                          const DisplayListAttributeFlags& flags) const {
   if (isNull()) {
-    return false;
+    return RenderWith::kDefaults;
   }
   tonic::DartByteData byte_data(paint_data_);
   FML_CHECK(byte_data.length_in_bytes() == kDataByteCount);
@@ -220,7 +220,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     FML_CHECK(length == kObjectCount);
     if (Dart_IsError(
             Dart_ListGetRange(paint_objects_, 0, kObjectCount, values))) {
-      return false;
+      return RenderWith::kDefaults;
     }
 
     if (flags.applies_shader()) {
@@ -328,7 +328,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     }
   }
 
-  return true;
+  return RenderWith::kDlPaint;
 }
 
 void Paint::toDlPaint(DlPaint& paint) const {

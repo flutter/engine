@@ -6,15 +6,12 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
+#include "flutter/display_list/display_list_opacity_modulator.h"
 #include "flutter/display_list/display_list_ops.h"
 #include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
-
-const SaveLayerOptions SaveLayerOptions::kNoAttributes = SaveLayerOptions();
-const SaveLayerOptions SaveLayerOptions::kWithAttributes =
-    kNoAttributes.with_renders_with_attributes();
 
 DisplayList::DisplayList()
     : byte_count_(0),
@@ -186,18 +183,30 @@ static bool CompareOps(uint8_t* ptrA,
   return true;
 }
 
-void DisplayList::RenderTo(DisplayListBuilder* builder,
-                           SkScalar opacity) const {
-  // TODO(100983): Opacity is not respected and attributes are not reset.
-  if (!builder) {
-    return;
+void DisplayList::Dispatch(Dispatcher& ctx, SkScalar opacity) const {
+  if (opacity > 0.0f) {
+    uint8_t* ptr = storage_.get();
+    uint8_t* end = ptr + byte_count_;
+    if (opacity >= SK_Scalar1) {
+      Dispatch(ctx, ptr, end);
+      return;
+    }
+    if (can_apply_group_opacity()) {
+      auto modulator = OpacityModulator(ctx, opacity);
+      Dispatch(modulator, ptr, end);
+      return;
+    }
+    ctx.setColor(DlColor::kBlack().modulateOpacity(opacity));
+    ctx.saveLayer(nullptr, RenderWith::kAlpha);
+    ctx.setColor(DlPaint::kDefaultColor);
+    Dispatch(ctx, ptr, end);
+    ctx.restore();
   }
-  Dispatch(*builder);
 }
 
 void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
-  DisplayListCanvasDispatcher dispatcher(canvas, opacity);
-  Dispatch(dispatcher);
+  DisplayListCanvasDispatcher dispatcher(canvas);
+  Dispatch(dispatcher, opacity);
 }
 
 bool DisplayList::Equals(const DisplayList* other) const {

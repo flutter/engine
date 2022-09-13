@@ -97,8 +97,9 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
  public:
   void save() override {}
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {}
+                 RenderWith with,
+                 const DlImageFilter* backdrop,
+                 int optimizations) override {}
   void restore() override {}
   void drawColor(DlColor color, DlBlendMode mode) override {}
   void drawPaint() override {}
@@ -122,23 +123,23 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
-                 bool render_with_attributes) override {}
+                 RenderWith with) override {}
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
-                     bool render_with_attributes,
+                     RenderWith with,
                      SkCanvas::SrcRectConstraint constraint) override {}
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool render_with_attributes) override {}
+                     RenderWith with) override {}
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override {}
+                        RenderWith with) override {}
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -147,11 +148,12 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
-                 bool render_with_attributes) override {}
+                 RenderWith with) override {}
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override {}
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override {}
+                   RenderWith with) override {}
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override {}
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override {}
@@ -167,12 +169,7 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
 // which can be accessed at any time via paint().
 class SkPaintDispatchHelper : public virtual Dispatcher {
  public:
-  SkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
-      : current_color_(SK_ColorBLACK), opacity_(opacity) {
-    if (opacity < SK_Scalar1) {
-      paint_.setAlphaf(opacity);
-    }
-  }
+  SkPaintDispatchHelper() {}
 
   void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;
@@ -193,45 +190,12 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
 
   const SkPaint& paint() { return paint_; }
 
-  /// Returns the current opacity attribute which is used to reduce
-  /// the alpha of all setColor calls encountered in the streeam
-  SkScalar opacity() { return opacity_; }
-  /// Returns the combined opacity that includes both the current
-  /// opacity attribute and the alpha of the most recent color.
-  /// The most recently set color will have combined the two and
-  /// stored the combined value in the alpha of the paint.
-  SkScalar combined_opacity() { return paint_.getAlphaf(); }
-  /// Returns true iff the current opacity attribute is not opaque,
-  /// irrespective of the alpha of the current color
-  bool has_opacity() { return opacity_ < SK_Scalar1; }
-
- protected:
-  void save_opacity(SkScalar opacity_for_children);
-  void restore_opacity();
-
  private:
   SkPaint paint_;
   bool invert_colors_ = false;
   std::shared_ptr<const DlColorFilter> color_filter_;
 
   sk_sp<SkColorFilter> makeColorFilter() const;
-
-  struct SaveInfo {
-    SaveInfo(SkScalar opacity) : opacity(opacity) {}
-
-    SkScalar opacity;
-  };
-  std::vector<SaveInfo> save_stack_;
-
-  void set_opacity(SkScalar opacity) {
-    if (opacity_ != opacity) {
-      opacity_ = opacity;
-      setColor(current_color_);
-    }
-  }
-
-  SkColor current_color_;
-  SkScalar opacity_;
 };
 
 class SkMatrixSource {
@@ -495,8 +459,9 @@ class DisplayListBoundsCalculator final
 
   void save() override;
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 RenderWith with,
+                 const DlImageFilter* backdrop,
+                 int optimizations) override;
   void restore() override;
 
   void drawPaint() override;
@@ -521,23 +486,23 @@ class DisplayListBoundsCalculator final
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
-                 bool render_with_attributes) override;
+                 RenderWith with) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
-                     bool render_with_attributes,
+                     RenderWith with,
                      SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool render_with_attributes) override;
+                     RenderWith with) override;
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override;
+                        RenderWith with) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -546,11 +511,12 @@ class DisplayListBoundsCalculator final
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cullRect,
-                 bool render_with_attributes) override;
+                 RenderWith with) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool with_save_layer) override;
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+                   RenderWith with) override;
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;

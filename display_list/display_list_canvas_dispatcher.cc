@@ -12,64 +12,37 @@ namespace flutter {
 const SkScalar kLightHeight = 600;
 const SkScalar kLightRadius = 800;
 
-const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
-  if (use_attributes) {
-    // The accumulated SkPaint object will already have incorporated
-    // any attribute overrides.
-    return &paint();
-  } else if (has_opacity()) {
-    temp_paint_.setAlphaf(opacity());
-    return &temp_paint_;
-  } else {
-    return nullptr;
+const SkPaint* DisplayListCanvasDispatcher::safe_paint(RenderWith with) {
+  switch (with) {
+    case RenderWith::kDlPaint:
+      // The accumulated SkPaint object will already have incorporated
+      // any attribute overrides.
+      return &paint();
+    case RenderWith::kAlpha:
+      temp_paint_.setColor(paint().getColor());
+      return &temp_paint_;
+    case RenderWith::kDefaults:
+      return nullptr;
   }
+  FML_DCHECK(false);
 }
 
 void DisplayListCanvasDispatcher::save() {
   canvas_->save();
-  // save has no impact on attributes, but it needs to register a record
-  // on the restore stack so that the eventual call to restore() will
-  // know what to do at that time. We could annotate the restore record
-  // with a flag that the record came from a save call, but it is simpler
-  // to just pass in the current opacity value as the value to be used by
-  // the children and let the utility calls notice that it didn't change.
-  save_opacity(opacity());
 }
 void DisplayListCanvasDispatcher::restore() {
   canvas_->restore();
-  restore_opacity();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options,
-                                            const DlImageFilter* backdrop) {
-  if (bounds == nullptr && options.can_distribute_opacity() &&
-      backdrop == nullptr) {
-    // We know that:
-    // - no bounds is needed for clipping here
-    // - no backdrop filter is used to initialize the layer
-    // - the current attributes only have an alpha
-    // - the children are compatible with individually rendering with
-    //   an inherited opacity
-    // Therefore we can just use a save instead of a saveLayer and pass the
-    // intended opacity to the children.
-    canvas_->save();
-    // If the saveLayer does not use attributes, the children should continue
-    // to render with the inherited opacity unmodified. If attributes are to
-    // be applied, the children should render with the combination of the
-    // inherited opacity combined with the alpha from the current color.
-    save_opacity(options.renders_with_attributes() ? combined_opacity()
-                                                   : opacity());
-  } else {
-    TRACE_EVENT0("flutter", "Canvas::saveLayer");
-    const SkPaint* paint = safe_paint(options.renders_with_attributes());
-    const sk_sp<SkImageFilter> sk_backdrop =
-        backdrop ? backdrop->skia_object() : nullptr;
-    canvas_->saveLayer(
-        SkCanvas::SaveLayerRec(bounds, paint, sk_backdrop.get(), 0));
-    // saveLayer will apply the current opacity on behalf of the children
-    // so they will inherit an opaque opacity.
-    save_opacity(SK_Scalar1);
-  }
+                                            RenderWith with,
+                                            const DlImageFilter* backdrop,
+                                            int optimizations) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  const SkPaint* paint = safe_paint(with);
+  const sk_sp<SkImageFilter> sk_backdrop =
+      backdrop ? backdrop->skia_object() : nullptr;
+  canvas_->saveLayer(
+      SkCanvas::SaveLayerRec(bounds, paint, sk_backdrop.get(), 0));
 }
 
 void DisplayListCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {
@@ -139,11 +112,7 @@ void DisplayListCanvasDispatcher::drawPaint() {
   canvas_->drawPaint(sk_paint);
 }
 void DisplayListCanvasDispatcher::drawColor(DlColor color, DlBlendMode mode) {
-  // SkCanvas::drawColor(SkColor) does the following conversion anyway
-  // We do it here manually to increase precision on applying opacity
-  SkColor4f color4f = SkColor4f::FromColor(color);
-  color4f.fA *= opacity();
-  canvas_->drawColor(color4f, ToSk(mode));
+  canvas_->drawColor(color, ToSk(mode));
 }
 void DisplayListCanvasDispatcher::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
@@ -192,26 +161,25 @@ void DisplayListCanvasDispatcher::drawVertices(const DlVertices* vertices,
 void DisplayListCanvasDispatcher::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
                                             DlImageSampling sampling,
-                                            bool render_with_attributes) {
+                                            RenderWith with) {
   canvas_->drawImage(image ? image->skia_image() : nullptr, point.fX, point.fY,
-                     ToSk(sampling), safe_paint(render_with_attributes));
+                     ToSk(sampling), safe_paint(with));
 }
 void DisplayListCanvasDispatcher::drawImageRect(
     const sk_sp<DlImage> image,
     const SkRect& src,
     const SkRect& dst,
     DlImageSampling sampling,
-    bool render_with_attributes,
+    RenderWith with,
     SkCanvas::SrcRectConstraint constraint) {
   canvas_->drawImageRect(image ? image->skia_image() : nullptr, src, dst,
-                         ToSk(sampling), safe_paint(render_with_attributes),
-                         constraint);
+                         ToSk(sampling), safe_paint(with), constraint);
 }
 void DisplayListCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
                                                 DlFilterMode filter,
-                                                bool render_with_attributes) {
+                                                RenderWith with) {
   if (!image) {
     return;
   }
@@ -220,14 +188,14 @@ void DisplayListCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
     return;
   }
   canvas_->drawImageNine(skia_image.get(), center, dst, ToSk(filter),
-                         safe_paint(render_with_attributes));
+                         safe_paint(with));
 }
 void DisplayListCanvasDispatcher::drawImageLattice(
     const sk_sp<DlImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
     DlFilterMode filter,
-    bool render_with_attributes) {
+    RenderWith with) {
   if (!image) {
     return;
   }
@@ -236,7 +204,7 @@ void DisplayListCanvasDispatcher::drawImageLattice(
     return;
   }
   canvas_->drawImageLattice(skia_image.get(), lattice, dst, ToSk(filter),
-                            safe_paint(render_with_attributes));
+                            safe_paint(with));
 }
 void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const SkRSXform xform[],
@@ -246,7 +214,7 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             DlBlendMode mode,
                                             DlImageSampling sampling,
                                             const SkRect* cullRect,
-                                            bool render_with_attributes) {
+                                            RenderWith with) {
   if (!atlas) {
     return;
   }
@@ -256,13 +224,12 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
   }
   const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors);
   canvas_->drawAtlas(skia_atlas.get(), xform, tex, sk_colors, count, ToSk(mode),
-                     ToSk(sampling), cullRect,
-                     safe_paint(render_with_attributes));
+                     ToSk(sampling), cullRect, safe_paint(with));
 }
 void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* matrix,
-                                              bool render_with_attributes) {
-  const SkPaint* paint = safe_paint(render_with_attributes);
+                                              RenderWith with) {
+  const SkPaint* paint = safe_paint(with);
   if (paint) {
     // drawPicture does an implicit saveLayer if an SkPaint is supplied.
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
@@ -272,9 +239,10 @@ void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
   }
 }
 void DisplayListCanvasDispatcher::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   int save_count = canvas_->save();
-  display_list->RenderTo(canvas_, opacity());
+  display_list->RenderTo(canvas_, opacity);
   canvas_->restoreToCount(save_count);
 }
 void DisplayListCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,

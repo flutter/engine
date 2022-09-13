@@ -64,8 +64,9 @@ DisplayListMetalComplexityCalculator::MetalHelper::BatchedComplexity() {
 
 void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
     const SkRect* bounds,
-    const SaveLayerOptions options,
-    const DlImageFilter* backdrop) {
+    RenderWith with,
+    const DlImageFilter* backdrop,
+    int optimizations) {
   if (IsComplex()) {
     return;
   }
@@ -486,7 +487,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
     const sk_sp<DlImage> image,
     const SkPoint point,
     DlImageSampling sampling,
-    bool render_with_attributes) {
+    RenderWith with) {
   if (IsComplex()) {
     return;
   }
@@ -520,7 +521,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
 void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
     const SkISize& size,
     bool texture_backed,
-    bool render_with_attributes,
+    RenderWith with,
     SkCanvas::SrcRectConstraint constraint) {
   if (IsComplex()) {
     return;
@@ -540,16 +541,14 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
     // m = 1/23000
     // c = 2.3
     complexity = (area + 52900) * 2 / 115;
-    if (render_with_attributes &&
-        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-        IsAntiAliased()) {
+    if (with == RenderWith::kDlPaint && IsAntiAliased() &&
+        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint) {
       // There's about a 30% performance penalty from the baseline.
       complexity *= 1.3f;
     }
   } else {
-    if (render_with_attributes &&
-        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-        IsAntiAliased()) {
+    if (with == RenderWith::kDlPaint && IsAntiAliased() &&
+        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint) {
       // m = 1/12200
       // c = 2.75
       complexity = (area + 33550) * 2 / 61;
@@ -568,7 +567,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
     const SkIRect& center,
     const SkRect& dst,
     DlFilterMode filter,
-    bool render_with_attributes) {
+    RenderWith with) {
   if (IsComplex()) {
     return;
   }
@@ -584,7 +583,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   if (IsComplex()) {
     return;
   }

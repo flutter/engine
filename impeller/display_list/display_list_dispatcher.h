@@ -75,8 +75,9 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
 
   // |flutter::Dispatcher|
   void saveLayer(const SkRect* bounds,
-                 const flutter::SaveLayerOptions options,
-                 const flutter::DlImageFilter* backdrop) override;
+                 flutter::RenderWith with,
+                 const flutter::DlImageFilter* backdrop,
+                 int optimizations) override;
 
   // |flutter::Dispatcher|
   void restore() override;
@@ -181,14 +182,14 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
   void drawImage(const sk_sp<flutter::DlImage> image,
                  const SkPoint point,
                  flutter::DlImageSampling sampling,
-                 bool render_with_attributes) override;
+                 flutter::RenderWith with) override;
 
   // |flutter::Dispatcher|
   void drawImageRect(const sk_sp<flutter::DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      flutter::DlImageSampling sampling,
-                     bool render_with_attributes,
+                     flutter::RenderWith with,
                      SkCanvas::SrcRectConstraint constraint) override;
 
   // |flutter::Dispatcher|
@@ -196,14 +197,14 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
                      const SkIRect& center,
                      const SkRect& dst,
                      flutter::DlFilterMode filter,
-                     bool render_with_attributes) override;
+                     flutter::RenderWith with) override;
 
   // |flutter::Dispatcher|
   void drawImageLattice(const sk_sp<flutter::DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         flutter::DlFilterMode filter,
-                        bool render_with_attributes) override;
+                        flutter::RenderWith with) override;
 
   // |flutter::Dispatcher|
   void drawAtlas(const sk_sp<flutter::DlImage> atlas,
@@ -214,15 +215,16 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
                  flutter::DlBlendMode mode,
                  flutter::DlImageSampling sampling,
                  const SkRect* cull_rect,
-                 bool render_with_attributes) override;
+                 flutter::RenderWith with) override;
 
   // |flutter::Dispatcher|
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override;
+                   flutter::RenderWith with) override;
 
   // |flutter::Dispatcher|
-  void drawDisplayList(const sk_sp<flutter::DisplayList> display_list) override;
+  void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
+                       SkScalar opacity) override;
 
   // |flutter::Dispatcher|
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
@@ -239,6 +241,9 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
  private:
   Paint paint_;
   Canvas canvas_;
+
+  Paint alpha_paint_;
+  Paint& paint(flutter::RenderWith with);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DisplayListDispatcher);
 };

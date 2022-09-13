@@ -19,6 +19,15 @@ namespace flutter {
     }                                                                     \
   } while (0)
 
+RenderWith DisplayListCanvasRecorder::with(const SkPaint* paint,
+                                           DisplayListAttributeFlags flags) {
+  if (paint == nullptr) {
+    return RenderWith::kDefaults;
+  }
+  builder_->setAttributesFromPaint(*paint, flags);
+  return RenderWith::kDlPaint;
+}
+
 DisplayListCanvasRecorder::DisplayListCanvasRecorder(const SkRect& bounds)
     : SkCanvasVirtualEnforcer(bounds.width(), bounds.height()),
       builder_(sk_make_sp<DisplayListBuilder>(bounds)) {}
@@ -82,11 +91,9 @@ SkCanvas::SaveLayerStrategy DisplayListCanvasRecorder::getSaveLayerStrategy(
   std::shared_ptr<DlImageFilter> backdrop = DlImageFilter::From(rec.fBackdrop);
   if (rec.fPaint) {
     builder_->setAttributesFromPaint(*rec.fPaint, kSaveLayerWithPaintFlags);
-    builder_->saveLayer(rec.fBounds, SaveLayerOptions::kWithAttributes,
-                        backdrop.get());
+    builder_->saveLayer(rec.fBounds, RenderWith::kDlPaint, backdrop.get());
   } else {
-    builder_->saveLayer(rec.fBounds, SaveLayerOptions::kNoAttributes,
-                        backdrop.get());
+    builder_->saveLayer(rec.fBounds, RenderWith::kDefaults, backdrop.get());
   }
   return SaveLayerStrategy::kNoLayer_SaveLayerStrategy;
 }
@@ -185,11 +192,8 @@ void DisplayListCanvasRecorder::onDrawImage2(const SkImage* image,
                                              const SkSamplingOptions& sampling,
                                              const SkPaint* paint) {
   CHECK_DISPOSE();
-  if (paint != nullptr) {
-    builder_->setAttributesFromPaint(*paint, kDrawImageWithPaintFlags);
-  }
   builder_->drawImage(DlImage::Make(image), SkPoint::Make(dx, dy),
-                      ToDl(sampling), paint != nullptr);
+                      ToDl(sampling), with(paint, kDrawImageWithPaintFlags));
 }
 void DisplayListCanvasRecorder::onDrawImageRect2(
     const SkImage* image,
@@ -199,11 +203,9 @@ void DisplayListCanvasRecorder::onDrawImageRect2(
     const SkPaint* paint,
     SrcRectConstraint constraint) {
   CHECK_DISPOSE();
-  if (paint != nullptr) {
-    builder_->setAttributesFromPaint(*paint, kDrawImageRectWithPaintFlags);
-  }
   builder_->drawImageRect(DlImage::Make(image), src, dst, ToDl(sampling),
-                          paint != nullptr, constraint);
+                          with(paint, kDrawImageRectWithPaintFlags),
+                          constraint);
 }
 void DisplayListCanvasRecorder::onDrawImageLattice2(const SkImage* image,
                                                     const Lattice& lattice,
@@ -211,18 +213,13 @@ void DisplayListCanvasRecorder::onDrawImageLattice2(const SkImage* image,
                                                     SkFilterMode filter,
                                                     const SkPaint* paint) {
   CHECK_DISPOSE();
-  if (paint != nullptr) {
+  if (paint != nullptr && *paint == SkPaint()) {
     // SkCanvas will always construct a paint,
     // though it is a default paint most of the time
-    SkPaint default_paint;
-    if (*paint == default_paint) {
-      paint = nullptr;
-    } else {
-      builder_->setAttributesFromPaint(*paint, kDrawImageLatticeWithPaintFlags);
-    }
+    paint = nullptr;
   }
   builder_->drawImageLattice(DlImage::Make(image), lattice, dst, ToDl(filter),
-                             paint != nullptr);
+                             with(paint, kDrawImageLatticeWithPaintFlags));
 }
 void DisplayListCanvasRecorder::onDrawAtlas2(const SkImage* image,
                                              const SkRSXform xform[],
@@ -234,12 +231,10 @@ void DisplayListCanvasRecorder::onDrawAtlas2(const SkImage* image,
                                              const SkRect* cull,
                                              const SkPaint* paint) {
   CHECK_DISPOSE();
-  if (paint != nullptr) {
-    builder_->setAttributesFromPaint(*paint, kDrawAtlasWithPaintFlags);
-  }
   const DlColor* dl_colors = reinterpret_cast<const DlColor*>(colors);
   builder_->drawAtlas(DlImage::Make(image), xform, src, dl_colors, count,
-                      ToDl(mode), ToDl(sampling), cull, paint != nullptr);
+                      ToDl(mode), ToDl(sampling), cull,
+                      with(paint, kDrawAtlasWithPaintFlags));
 }
 
 void DisplayListCanvasRecorder::onDrawTextBlob(const SkTextBlob* blob,
@@ -255,10 +250,8 @@ void DisplayListCanvasRecorder::onDrawPicture(const SkPicture* picture,
                                               const SkMatrix* matrix,
                                               const SkPaint* paint) {
   CHECK_DISPOSE();
-  if (paint != nullptr) {
-    builder_->setAttributesFromPaint(*paint, kDrawPictureWithPaintFlags);
-  }
-  builder_->drawPicture(sk_ref_sp(picture), matrix, paint != nullptr);
+  builder_->drawPicture(sk_ref_sp(picture), matrix,
+                        with(paint, kDrawPictureWithPaintFlags));
 }
 
 void DisplayListCanvasRecorder::onDrawShadowRec(const SkPath& path,

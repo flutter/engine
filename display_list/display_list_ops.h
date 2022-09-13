@@ -300,45 +300,51 @@ struct SaveOp final : DLOp {
 struct SaveLayerOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayer;
 
-  explicit SaveLayerOp(const SaveLayerOptions options) : options(options) {}
+  explicit SaveLayerOp(RenderWith options)
+      : options(options), optimizations(0) {}
 
-  SaveLayerOptions options;
+  RenderWith options : 16;
+  int optimizations : 16;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(nullptr, options);
+    dispatcher.saveLayer(nullptr, options, nullptr, optimizations);
   }
 };
 // 4 byte header + 20 byte payload packs evenly into 24 bytes
 struct SaveLayerBoundsOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayerBounds;
 
-  SaveLayerBoundsOp(SkRect rect, const SaveLayerOptions options)
-      : options(options), rect(rect) {}
+  SaveLayerBoundsOp(SkRect rect, RenderWith options)
+      : options(options), optimizations(0), rect(rect) {}
 
-  SaveLayerOptions options;
+  RenderWith options : 16;
+  int optimizations : 16;
   const SkRect rect;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(&rect, options);
+    dispatcher.saveLayer(&rect, options, nullptr, optimizations);
   }
 };
 // 4 byte header + 20 byte payload packs into minimum 24 bytes
 struct SaveLayerBackdropOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayerBackdrop;
 
-  explicit SaveLayerBackdropOp(const SaveLayerOptions options,
+  explicit SaveLayerBackdropOp(RenderWith options,
                                const DlImageFilter* backdrop)
-      : options(options), backdrop(backdrop->shared()) {}
+      : options(options), optimizations(0), backdrop(backdrop->shared()) {}
 
-  SaveLayerOptions options;
+  RenderWith options : 16;
+  int optimizations : 16;
   const std::shared_ptr<DlImageFilter> backdrop;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(nullptr, options, backdrop.get());
+    dispatcher.saveLayer(nullptr, options, backdrop.get(), optimizations);
   }
 
   DisplayListCompare equals(const SaveLayerBackdropOp* other) const {
-    return options == other->options && Equals(backdrop, other->backdrop)
+    return (options == other->options &&
+            optimizations == other->optimizations &&
+            Equals(backdrop, other->backdrop))
                ? DisplayListCompare::kEqual
                : DisplayListCompare::kNotEqual;
   }
@@ -348,20 +354,25 @@ struct SaveLayerBackdropBoundsOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayerBackdropBounds;
 
   SaveLayerBackdropBoundsOp(SkRect rect,
-                            const SaveLayerOptions options,
+                            RenderWith options,
                             const DlImageFilter* backdrop)
-      : options(options), rect(rect), backdrop(backdrop->shared()) {}
+      : options(options),
+        optimizations(0),
+        rect(rect),
+        backdrop(backdrop->shared()) {}
 
-  SaveLayerOptions options;
+  RenderWith options : 16;
+  int optimizations : 16;
   const SkRect rect;
   const std::shared_ptr<DlImageFilter> backdrop;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(&rect, options, backdrop.get());
+    dispatcher.saveLayer(&rect, options, backdrop.get(), optimizations);
   }
 
   DisplayListCompare equals(const SaveLayerBackdropBoundsOp* other) const {
-    return (options == other->options && rect == other->rect &&
+    return (options == other->options &&
+            optimizations == other->optimizations && rect == other->rect &&
             Equals(backdrop, other->backdrop))
                ? DisplayListCompare::kEqual
                : DisplayListCompare::kNotEqual;
@@ -697,31 +708,27 @@ struct DrawSkVerticesOp final : DLOp {
   }
 };
 
-// 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
-// (4 bytes unused)
-#define DEFINE_DRAW_IMAGE_OP(name, with_attributes)                    \
-  struct name##Op final : DLOp {                                       \
-    static const auto kType = DisplayListOpType::k##name;              \
-                                                                       \
-    name##Op(const sk_sp<DlImage> image,                               \
-             const SkPoint& point,                                     \
-             DlImageSampling sampling)                                 \
-        : point(point), sampling(sampling), image(std::move(image)) {} \
-                                                                       \
-    const SkPoint point;                                               \
-    const DlImageSampling sampling;                                    \
-    const sk_sp<DlImage> image;                                        \
-                                                                       \
-    void dispatch(Dispatcher& dispatcher) const {                      \
-      dispatcher.drawImage(image, point, sampling, with_attributes);   \
-    }                                                                  \
-  };
-DEFINE_DRAW_IMAGE_OP(DrawImage, false)
-DEFINE_DRAW_IMAGE_OP(DrawImageWithAttr, true)
-#undef DEFINE_DRAW_IMAGE_OP
+// 4 byte header + 20 byte payload packs evenly into 24 bytes
+struct DrawImageOp final : DLOp {
+  static const auto kType = DisplayListOpType::kDrawImage;
 
-// 4 byte header + 72 byte payload uses 76 bytes but is rounded up to 80 bytes
-// (4 bytes unused)
+  DrawImageOp(const sk_sp<DlImage> image,
+              const SkPoint& point,
+              const RenderWith with,
+              const DlImageSampling sampling)
+      : with(with), sampling(sampling), point(point), image(std::move(image)) {}
+
+  const RenderWith with : 16;
+  const DlImageSampling sampling : 16;
+  const SkPoint point;
+  const sk_sp<DlImage> image;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.drawImage(image, point, sampling, with);
+  }
+};
+
+// 4 byte header + 52 byte payload packs evenly into 80 bytes
 struct DrawImageRectOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageRect;
 
@@ -729,52 +736,52 @@ struct DrawImageRectOp final : DLOp {
                   const SkRect& src,
                   const SkRect& dst,
                   DlImageSampling sampling,
-                  bool render_with_attributes,
+                  RenderWith with,
                   SkCanvas::SrcRectConstraint constraint)
-      : src(src),
-        dst(dst),
+      : with(with),
         sampling(sampling),
-        render_with_attributes(render_with_attributes),
+        src(src),
+        dst(dst),
         constraint(constraint),
         image(std::move(image)) {}
 
+  const RenderWith with : 16;
+  const DlImageSampling sampling : 16;
   const SkRect src;
   const SkRect dst;
-  const DlImageSampling sampling;
-  const bool render_with_attributes;
   const SkCanvas::SrcRectConstraint constraint;
   const sk_sp<DlImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawImageRect(image, src, dst, sampling, render_with_attributes,
-                             constraint);
+    dispatcher.drawImageRect(image, src, dst, sampling, with, constraint);
   }
 };
 
 // 4 byte header + 44 byte payload packs efficiently into 48 bytes
-#define DEFINE_DRAW_IMAGE_NINE_OP(name, render_with_attributes)                \
-  struct name##Op final : DLOp {                                               \
-    static const auto kType = DisplayListOpType::k##name;                      \
-                                                                               \
-    name##Op(const sk_sp<DlImage> image,                                       \
-             const SkIRect& center,                                            \
-             const SkRect& dst,                                                \
-             DlFilterMode filter)                                              \
-        : center(center), dst(dst), filter(filter), image(std::move(image)) {} \
-                                                                               \
-    const SkIRect center;                                                      \
-    const SkRect dst;                                                          \
-    const DlFilterMode filter;                                                 \
-    const sk_sp<DlImage> image;                                                \
-                                                                               \
-    void dispatch(Dispatcher& dispatcher) const {                              \
-      dispatcher.drawImageNine(image, center, dst, filter,                     \
-                               render_with_attributes);                        \
-    }                                                                          \
-  };
-DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNine, false)
-DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNineWithAttr, true)
-#undef DEFINE_DRAW_IMAGE_NINE_OP
+struct DrawImageNineOp final : DLOp {
+  static const auto kType = DisplayListOpType::kDrawImageNine;
+
+  DrawImageNineOp(const sk_sp<DlImage> image,
+                  const SkIRect& center,
+                  const SkRect& dst,
+                  DlFilterMode mode,
+                  RenderWith with)
+      : with(with),
+        mode(mode),
+        center(center),
+        dst(dst),
+        image(std::move(image)) {}
+
+  const RenderWith with : 16;
+  const DlFilterMode mode : 16;
+  const SkIRect center;
+  const SkRect dst;
+  const sk_sp<DlImage> image;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.drawImageNine(image, center, dst, mode, with);
+  }
+};
 
 // 4 byte header + 60 byte payload packs evenly into 64 bytes
 struct DrawImageLatticeOp final : DLOp {
@@ -787,8 +794,8 @@ struct DrawImageLatticeOp final : DLOp {
                      const SkIRect& src,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool with_paint)
-      : with_paint(with_paint),
+                     RenderWith with)
+      : with(with),
         x_count(x_count),
         y_count(y_count),
         cell_count(cell_count),
@@ -797,7 +804,7 @@ struct DrawImageLatticeOp final : DLOp {
         dst(dst),
         image(std::move(image)) {}
 
-  const bool with_paint;
+  const RenderWith with;
   const int x_count;
   const int y_count;
   const int cell_count;
@@ -819,7 +826,7 @@ struct DrawImageLatticeOp final : DLOp {
                                                                    cell_count);
     dispatcher.drawImageLattice(
         image, {xDivs, yDivs, types, x_count, y_count, &src, colors}, dst,
-        filter, with_paint);
+        filter, with);
   }
 };
 
@@ -836,18 +843,18 @@ struct DrawAtlasBaseOp : DLOp {
                   DlBlendMode mode,
                   DlImageSampling sampling,
                   bool has_colors,
-                  bool render_with_attributes)
+                  RenderWith with)
       : count(count),
         mode_index(static_cast<uint16_t>(mode)),
         has_colors(has_colors),
-        render_with_attributes(render_with_attributes),
+        with(with),
         sampling(sampling),
         atlas(std::move(atlas)) {}
 
   const int count;
   const uint16_t mode_index;
   const uint8_t has_colors;
-  const uint8_t render_with_attributes;
+  const RenderWith with : 8;
   const DlImageSampling sampling;
   const sk_sp<DlImage> atlas;
 };
@@ -862,13 +869,8 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
               DlBlendMode mode,
               DlImageSampling sampling,
               bool has_colors,
-              bool render_with_attributes)
-      : DrawAtlasBaseOp(atlas,
-                        count,
-                        mode,
-                        sampling,
-                        has_colors,
-                        render_with_attributes) {}
+              RenderWith with)
+      : DrawAtlasBaseOp(atlas, count, mode, sampling, has_colors, with) {}
 
   void dispatch(Dispatcher& dispatcher) const {
     const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
@@ -877,7 +879,7 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
         has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
     const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
-                         nullptr, render_with_attributes);
+                         nullptr, with);
   }
 };
 
@@ -894,13 +896,8 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
                     DlImageSampling sampling,
                     bool has_colors,
                     const SkRect& cull_rect,
-                    bool render_with_attributes)
-      : DrawAtlasBaseOp(atlas,
-                        count,
-                        mode,
-                        sampling,
-                        has_colors,
-                        render_with_attributes),
+                    RenderWith with)
+      : DrawAtlasBaseOp(atlas, count, mode, sampling, has_colors, with),
         cull_rect(cull_rect) {}
 
   const SkRect cull_rect;
@@ -912,7 +909,7 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
         has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
     const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
-                         &cull_rect, render_with_attributes);
+                         &cull_rect, with);
   }
 };
 
@@ -920,15 +917,14 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
 struct DrawSkPictureOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawSkPicture;
 
-  DrawSkPictureOp(sk_sp<SkPicture> picture, bool render_with_attributes)
-      : render_with_attributes(render_with_attributes),
-        picture(std::move(picture)) {}
+  DrawSkPictureOp(sk_sp<SkPicture> picture, RenderWith with)
+      : with(with), picture(std::move(picture)) {}
 
-  const bool render_with_attributes;
+  const RenderWith with;
   const sk_sp<SkPicture> picture;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture, nullptr, render_with_attributes);
+    dispatcher.drawPicture(picture, nullptr, with);
   }
 };
 
@@ -938,36 +934,36 @@ struct DrawSkPictureMatrixOp final : DLOp {
 
   DrawSkPictureMatrixOp(sk_sp<SkPicture> picture,
                         const SkMatrix matrix,
-                        bool render_with_attributes)
-      : render_with_attributes(render_with_attributes),
-        picture(std::move(picture)),
-        matrix(matrix) {}
+                        RenderWith with)
+      : with(with), picture(std::move(picture)), matrix(matrix) {}
 
-  const bool render_with_attributes;
+  const RenderWith with;
   const sk_sp<SkPicture> picture;
   const SkMatrix matrix;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture, &matrix, render_with_attributes);
+    dispatcher.drawPicture(picture, &matrix, with);
   }
 };
 
-// 4 byte header + ptr aligned payload uses 12 bytes round up to 16
-// (4 bytes unused)
+// 4 byte header + 12 byte payload packs evenly into 16 bytes
 struct DrawDisplayListOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawDisplayList;
 
-  explicit DrawDisplayListOp(const sk_sp<DisplayList> display_list)
-      : display_list(std::move(display_list)) {}
+  explicit DrawDisplayListOp(const sk_sp<DisplayList> display_list,
+                             SkScalar opacity)
+      : opacity(opacity), display_list(std::move(display_list)) {}
 
+  SkScalar opacity;
   sk_sp<DisplayList> display_list;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawDisplayList(display_list);
+    dispatcher.drawDisplayList(display_list, opacity);
   }
 
   DisplayListCompare equals(const DrawDisplayListOp* other) const {
-    return display_list->Equals(other->display_list)
+    return (opacity == other->opacity &&
+            display_list->Equals(other->display_list))
                ? DisplayListCompare::kEqual
                : DisplayListCompare::kNotEqual;
   }

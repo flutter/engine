@@ -306,8 +306,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
        {
            {5, 104, 5, 104,
             [](DisplayListBuilder& b) {
-              b.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-                          &kTestCFImageFilter1);
+              b.saveLayer(nullptr, RenderWith::kDefaults, &kTestCFImageFilter1);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
@@ -330,7 +329,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            {5, 88, 5, 88,
             [](DisplayListBuilder& b) {
-              b.saveLayer(nullptr, false);
+              b.saveLayer(nullptr, RenderWith::kDefaults);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
@@ -338,7 +337,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            {5, 88, 5, 88,
             [](DisplayListBuilder& b) {
-              b.saveLayer(nullptr, true);
+              b.saveLayer(nullptr, RenderWith::kDlPaint);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
@@ -346,7 +345,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            {5, 104, 5, 104,
             [](DisplayListBuilder& b) {
-              b.saveLayer(&kTestBounds, false);
+              b.saveLayer(&kTestBounds, RenderWith::kDefaults);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
@@ -354,7 +353,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            {5, 104, 5, 104,
             [](DisplayListBuilder& b) {
-              b.saveLayer(&kTestBounds, true);
+              b.saveLayer(&kTestBounds, RenderWith::kDlPaint);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
@@ -371,7 +370,15 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            // }},
            {5, 104, 5, 104,
             [](DisplayListBuilder& b) {
-              b.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
+              b.saveLayer(nullptr, RenderWith::kDlPaint, &kTestCFImageFilter1);
+              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.drawRect({5, 5, 15, 15});
+              b.drawRect({10, 10, 20, 20});
+              b.restore();
+            }},
+           {5, 120, 5, 120,
+            [](DisplayListBuilder& b) {
+              b.saveLayer(&kTestBounds, RenderWith::kDefaults,
                           &kTestCFImageFilter1);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
@@ -380,16 +387,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            {5, 120, 5, 120,
             [](DisplayListBuilder& b) {
-              b.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
-                          &kTestCFImageFilter1);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
-              b.drawRect({5, 5, 15, 15});
-              b.drawRect({10, 10, 20, 20});
-              b.restore();
-            }},
-           {5, 120, 5, 120,
-            [](DisplayListBuilder& b) {
-              b.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
+              b.saveLayer(&kTestBounds, RenderWith::kDlPaint,
                           &kTestCFImageFilter1);
               b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
@@ -754,27 +752,33 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 24, -1, 48,
             [](DisplayListBuilder& b) {
-              b.drawImage(TestImage1, {10, 10}, kNearestSampling, false);
+              b.drawImage(TestImage1, {10, 10}, kNearestSampling,
+                          RenderWith::kDefaults);
             }},
            {1, 24, -1, 48,
             [](DisplayListBuilder& b) {
-              b.drawImage(TestImage1, {10, 10}, kNearestSampling, true);
+              b.drawImage(TestImage1, {10, 10}, kNearestSampling,
+                          RenderWith::kDlPaint);
             }},
            {1, 24, -1, 48,
             [](DisplayListBuilder& b) {
-              b.drawImage(TestImage1, {20, 10}, kNearestSampling, false);
+              b.drawImage(TestImage1, {20, 10}, kNearestSampling,
+                          RenderWith::kDefaults);
             }},
            {1, 24, -1, 48,
             [](DisplayListBuilder& b) {
-              b.drawImage(TestImage1, {10, 20}, kNearestSampling, false);
+              b.drawImage(TestImage1, {10, 20}, kNearestSampling,
+                          RenderWith::kDefaults);
             }},
            {1, 24, -1, 48,
             [](DisplayListBuilder& b) {
-              b.drawImage(TestImage1, {10, 10}, kLinearSampling, false);
+              b.drawImage(TestImage1, {10, 10}, kLinearSampling,
+                          RenderWith::kDefaults);
             }},
            {1, 24, -1, 48,
             [](DisplayListBuilder& b) {
-              b.drawImage(TestImage2, {10, 10}, kNearestSampling, false);
+              b.drawImage(TestImage2, {10, 10}, kNearestSampling,
+                          RenderWith::kDefaults);
             }},
        }},
       {"DrawImageRect",
@@ -782,39 +786,39 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                              kNearestSampling, false);
+                              kNearestSampling, RenderWith::kDefaults);
             }},
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                              kNearestSampling, true);
+                              kNearestSampling, RenderWith::kDlPaint);
             }},
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(
                   TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                  kNearestSampling, false,
+                  kNearestSampling, RenderWith::kDefaults,
                   SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
             }},
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                              kNearestSampling, false);
+                              kNearestSampling, RenderWith::kDefaults);
             }},
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                              kNearestSampling, false);
+                              kNearestSampling, RenderWith::kDefaults);
             }},
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                              kLinearSampling, false);
+                              kLinearSampling, RenderWith::kDefaults);
             }},
            {1, 56, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                              kNearestSampling, false);
+                              kNearestSampling, RenderWith::kDefaults);
             }},
        }},
       {"DrawImageNine",
@@ -824,32 +828,32 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                              DlFilterMode::kNearest, false);
+                              DlFilterMode::kNearest, RenderWith::kDefaults);
             }},
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                              DlFilterMode::kNearest, true);
+                              DlFilterMode::kNearest, RenderWith::kDlPaint);
             }},
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                              DlFilterMode::kNearest, false);
+                              DlFilterMode::kNearest, RenderWith::kDefaults);
             }},
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                              DlFilterMode::kNearest, false);
+                              DlFilterMode::kNearest, RenderWith::kDefaults);
             }},
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                              DlFilterMode::kLinear, false);
+                              DlFilterMode::kLinear, RenderWith::kDefaults);
             }},
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
               b.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                              DlFilterMode::kNearest, false);
+                              DlFilterMode::kNearest, RenderWith::kDefaults);
             }},
        }},
       {"DrawImageLattice",
@@ -870,21 +874,24 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               b.drawImageLattice(
                   TestImage1,
                   {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
+                  {10, 10, 40, 40}, DlFilterMode::kNearest,
+                  RenderWith::kDefaults);
             }},
            {1, 88, -1, 88,
             [](DisplayListBuilder& b) {
               b.drawImageLattice(
                   TestImage1,
                   {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 45}, DlFilterMode::kNearest, false);
+                  {10, 10, 40, 45}, DlFilterMode::kNearest,
+                  RenderWith::kDefaults);
             }},
            {1, 88, -1, 88,
             [](DisplayListBuilder& b) {
               b.drawImageLattice(
                   TestImage1,
                   {kTestDivs2, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
+                  {10, 10, 40, 40}, DlFilterMode::kNearest,
+                  RenderWith::kDefaults);
             }},
            // One less yDiv does not change the allocation due to 8-byte
            // alignment
@@ -893,14 +900,16 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               b.drawImageLattice(
                   TestImage1,
                   {kTestDivs1, kTestDivs1, nullptr, 3, 2, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
+                  {10, 10, 40, 40}, DlFilterMode::kNearest,
+                  RenderWith::kDefaults);
             }},
            {1, 88, -1, 88,
             [](DisplayListBuilder& b) {
               b.drawImageLattice(
                   TestImage1,
                   {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kLinear, false);
+                  {10, 10, 40, 40}, DlFilterMode::kLinear,
+                  RenderWith::kDefaults);
             }},
            {1, 96, -1, 96,
             [](DisplayListBuilder& b) {
@@ -908,14 +917,16 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               b.drawImageLattice(
                   TestImage1,
                   {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, true);
+                  {10, 10, 40, 40}, DlFilterMode::kNearest,
+                  RenderWith::kDlPaint);
             }},
            {1, 88, -1, 88,
             [](DisplayListBuilder& b) {
               b.drawImageLattice(
                   TestImage2,
                   {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
+                  {10, 10, 40, 40}, DlFilterMode::kNearest,
+                  RenderWith::kDefaults);
             }},
            // Supplying fBounds does not change size because the Op record
            // always includes it
@@ -925,7 +936,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                                  {kTestDivs1, kTestDivs1, nullptr, 3, 3,
                                   &kTestLatticeSrcRect, nullptr},
                                  {10, 10, 40, 40}, DlFilterMode::kNearest,
-                                 false);
+                                 RenderWith::kDefaults);
             }},
            {1, 128, -1, 128,
             [](DisplayListBuilder& b) {
@@ -933,7 +944,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                                  {kTestDivs3, kTestDivs3, kTestRTypes, 2, 2,
                                   nullptr, kTestLatticeColors},
                                  {10, 10, 40, 40}, DlFilterMode::kNearest,
-                                 false);
+                                 RenderWith::kDefaults);
             }},
        }},
       {"DrawAtlas",
@@ -944,14 +955,15 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
               b.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
-                          false);
+                          RenderWith::kDefaults);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
               b.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                          DlBlendMode::kSrcIn, kNearestSampling, nullptr, true);
+                          DlBlendMode::kSrcIn, kNearestSampling, nullptr,
+                          RenderWith::kDlPaint);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
@@ -959,7 +971,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
               b.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
-                          false);
+                          RenderWith::kDefaults);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
@@ -967,14 +979,15 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 25, 30, 30}};
               b.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
-                          false);
+                          RenderWith::kDefaults);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
               b.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                          DlBlendMode::kSrcIn, kLinearSampling, nullptr, false);
+                          DlBlendMode::kSrcIn, kLinearSampling, nullptr,
+                          RenderWith::kDefaults);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
@@ -982,7 +995,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
               b.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kDstIn, kNearestSampling, nullptr,
-                          false);
+                          RenderWith::kDefaults);
             }},
            {1, 64 + 32 + 8, -1, 64 + 32 + 32,
             [](DisplayListBuilder& b) {
@@ -991,7 +1004,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static SkRect cull_rect = {0, 0, 200, 200};
               b.drawAtlas(TestImage2, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
-                          false);
+                          RenderWith::kDefaults);
             }},
            {1, 48 + 32 + 8 + 8, -1, 48 + 32 + 32 + 8,
             [](DisplayListBuilder& b) {
@@ -1000,7 +1013,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlColor colors[] = {DlColor::kBlue(), DlColor::kGreen()};
               b.drawAtlas(TestImage1, xforms, texs, colors, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
-                          false);
+                          RenderWith::kDefaults);
             }},
            {1, 64 + 32 + 8 + 8, -1, 64 + 32 + 32 + 8,
             [](DisplayListBuilder& b) {
@@ -1010,7 +1023,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static SkRect cull_rect = {0, 0, 200, 200};
               b.drawAtlas(TestImage1, xforms, texs, colors, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
-                          false);
+                          RenderWith::kDefaults);
             }},
        }},
       {"DrawPicture",
@@ -1018,27 +1031,27 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            // cv.drawPicture cannot be compared as SkCanvas may inline it
            {1, 16, -1, 16,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, nullptr, false);
+              b.drawPicture(TestPicture1, nullptr, RenderWith::kDefaults);
             }},
            {1, 16, -1, 16,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture2, nullptr, false);
+              b.drawPicture(TestPicture2, nullptr, RenderWith::kDefaults);
             }},
            {1, 16, -1, 16,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, nullptr, true);
+              b.drawPicture(TestPicture1, nullptr, RenderWith::kDlPaint);
             }},
            {1, 56, -1, 56,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, &kTestMatrix1, false);
+              b.drawPicture(TestPicture1, &kTestMatrix1, RenderWith::kDefaults);
             }},
            {1, 56, -1, 56,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, &kTestMatrix2, false);
+              b.drawPicture(TestPicture1, &kTestMatrix2, RenderWith::kDefaults);
             }},
            {1, 56, -1, 56,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, &kTestMatrix1, true);
+              b.drawPicture(TestPicture1, &kTestMatrix1, RenderWith::kDlPaint);
             }},
        }},
       {"DrawDisplayList",
@@ -1048,6 +1061,10 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DisplayListBuilder& b) { b.drawDisplayList(TestDisplayList1); }},
            {1, 16, -1, 16,
             [](DisplayListBuilder& b) { b.drawDisplayList(TestDisplayList2); }},
+           {1, 16, -1, 16,
+            [](DisplayListBuilder& b) {
+              b.drawDisplayList(TestDisplayList1, 0.5f);
+            }},
        }},
       {"DrawTextBlob",
        {

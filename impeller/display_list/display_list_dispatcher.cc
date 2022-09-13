@@ -179,6 +179,19 @@ static Matrix ToMatrix(const SkMatrix& m) {
   };
 }
 
+Paint& DisplayListDispatcher::paint(flutter::RenderWith with) {
+  switch (with) {
+    case flutter::RenderWith::kDefaults:
+      alpha_paint_.color = Color::Black();
+      return alpha_paint_;
+    case flutter::RenderWith::kAlpha:
+      alpha_paint_.color = paint_.color;
+      return alpha_paint_;
+    case flutter::RenderWith::kDlPaint:
+      return paint_;
+  }
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setAntiAlias(bool aa) {
   // Nothing to do because AA is implicit.
@@ -734,10 +747,10 @@ static std::vector<Rect> ToRects(const SkRect tex[], int count) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::saveLayer(const SkRect* bounds,
-                                      const flutter::SaveLayerOptions options,
-                                      const flutter::DlImageFilter* backdrop) {
-  auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
+                                      flutter::RenderWith with,
+                                      const flutter::DlImageFilter* backdrop,
+                                      int optimizations) {
+  canvas_.SaveLayer(paint(with), ToRect(bounds), ToImageFilterProc(backdrop));
 }
 
 // |flutter::Dispatcher|
@@ -1073,7 +1086,7 @@ void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
 void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
                                       const SkPoint point,
                                       flutter::DlImageSampling sampling,
-                                      bool render_with_attributes) {
+                                      flutter::RenderWith with) {
   if (!image) {
     return;
   }
@@ -1089,11 +1102,11 @@ void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
       SkRect::MakeXYWH(point.fX, point.fY, size.width, size.height);
 
   drawImageRect(
-      image,                   // image
-      src,                     // source rect
-      dest,                    // destination rect
-      sampling,                // sampling options
-      render_with_attributes,  // render with attributes
+      image,     // image
+      src,       // source rect
+      dest,      // destination rect
+      sampling,  // sampling options
+      with,      // render with attributes
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint  // constraint
   );
 }
@@ -1104,13 +1117,13 @@ void DisplayListDispatcher::drawImageRect(
     const SkRect& src,
     const SkRect& dst,
     flutter::DlImageSampling sampling,
-    bool render_with_attributes,
+    flutter::RenderWith with,
     SkCanvas::SrcRectConstraint constraint) {
   canvas_.DrawImageRect(
       std::make_shared<Image>(image->impeller_texture()),  // image
       ToRect(src),                                         // source rect
       ToRect(dst),                                         // destination rect
-      render_with_attributes ? paint_ : Paint(),           // paint
+      paint(with),                                         // paint
       ToSamplerDescriptor(sampling)                        // sampling
   );
 }
@@ -1120,12 +1133,12 @@ void DisplayListDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
                                           const SkIRect& center,
                                           const SkRect& dst,
                                           flutter::DlFilterMode filter,
-                                          bool render_with_attributes) {
+                                          flutter::RenderWith with) {
   NinePatchConverter converter = {};
   converter.DrawNinePatch(
       std::make_shared<Image>(image->impeller_texture()),
       Rect::MakeLTRB(center.fLeft, center.fTop, center.fRight, center.fBottom),
-      ToRect(dst), ToSamplerDescriptor(filter), &canvas_, &paint_);
+      ToRect(dst), ToSamplerDescriptor(filter), &canvas_, &paint(with));
 }
 
 // |flutter::Dispatcher|
@@ -1134,7 +1147,7 @@ void DisplayListDispatcher::drawImageLattice(
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
     flutter::DlFilterMode filter,
-    bool render_with_attributes) {
+    flutter::RenderWith with) {
   // Don't implement this one since it is not exposed by flutter,
   // Skia internally converts calls to drawImageNine into this method,
   // which is then converted back to drawImageNine by display list.
@@ -1149,28 +1162,30 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       flutter::DlBlendMode mode,
                                       flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
-                                      bool render_with_attributes) {
+                                      flutter::RenderWith with) {
   canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
                     ToRSXForms(xform, count), ToRects(tex, count),
                     ToColors(colors, count), ToBlendMode(mode),
-                    ToSamplerDescriptor(sampling), ToRect(cull_rect), paint_);
+                    ToSamplerDescriptor(sampling), ToRect(cull_rect),
+                    paint(with));
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                         const SkMatrix* matrix,
-                                        bool render_with_attributes) {
+                                        flutter::RenderWith with) {
   // Needs https://github.com/flutter/flutter/issues/95434
   UNIMPLEMENTED;
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawDisplayList(
-    const sk_sp<flutter::DisplayList> display_list) {
+    const sk_sp<flutter::DisplayList> display_list,
+    SkScalar opacity) {
   int saveCount = canvas_.GetSaveCount();
   Paint savePaint = paint_;
   paint_ = Paint();
-  display_list->Dispatch(*this);
+  display_list->Dispatch(*this, opacity);
   paint_ = savePaint;
   canvas_.RestoreToCount(saveCount);
 }

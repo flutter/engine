@@ -142,10 +142,8 @@ namespace flutter {
   V(DrawSkVertices)                 \
                                     \
   V(DrawImage)                      \
-  V(DrawImageWithAttr)              \
   V(DrawImageRect)                  \
   V(DrawImageNine)                  \
-  V(DrawImageNineWithAttr)          \
   V(DrawImageLattice)               \
   V(DrawAtlas)                      \
   V(DrawAtlasCulled)                \
@@ -163,57 +161,6 @@ enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 #undef DL_OP_TO_ENUM_VALUE
 
 class Dispatcher;
-class DisplayListBuilder;
-
-class SaveLayerOptions {
- public:
-  static const SaveLayerOptions kWithAttributes;
-  static const SaveLayerOptions kNoAttributes;
-
-  SaveLayerOptions() : flags_(0) {}
-  SaveLayerOptions(const SaveLayerOptions& options) : flags_(options.flags_) {}
-  SaveLayerOptions(const SaveLayerOptions* options) : flags_(options->flags_) {}
-
-  SaveLayerOptions without_optimizations() const {
-    SaveLayerOptions options;
-    options.fRendersWithAttributes = fRendersWithAttributes;
-    return options;
-  }
-
-  bool renders_with_attributes() const { return fRendersWithAttributes; }
-  SaveLayerOptions with_renders_with_attributes() const {
-    SaveLayerOptions options(this);
-    options.fRendersWithAttributes = true;
-    return options;
-  }
-
-  bool can_distribute_opacity() const { return fCanDistributeOpacity; }
-  SaveLayerOptions with_can_distribute_opacity() const {
-    SaveLayerOptions options(this);
-    options.fCanDistributeOpacity = true;
-    return options;
-  }
-
-  SaveLayerOptions& operator=(const SaveLayerOptions& other) {
-    flags_ = other.flags_;
-    return *this;
-  }
-  bool operator==(const SaveLayerOptions& other) const {
-    return flags_ == other.flags_;
-  }
-  bool operator!=(const SaveLayerOptions& other) const {
-    return flags_ != other.flags_;
-  }
-
- private:
-  union {
-    struct {
-      unsigned fRendersWithAttributes : 1;
-      unsigned fCanDistributeOpacity : 1;
-    };
-    uint32_t flags_;
-  };
-};
 
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
@@ -224,13 +171,7 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const {
-    uint8_t* ptr = storage_.get();
-    Dispatch(ctx, ptr, ptr + byte_count_);
-  }
-
-  void RenderTo(DisplayListBuilder* builder,
-                SkScalar opacity = SK_Scalar1) const;
+  void Dispatch(Dispatcher& ctx, SkScalar opacity = SK_Scalar1) const;
 
   void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
 
@@ -270,7 +211,7 @@ class DisplayList : public SkRefCnt {
     return Equals(other.get());
   }
 
-  bool can_apply_group_opacity() { return can_apply_group_opacity_; }
+  bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
 

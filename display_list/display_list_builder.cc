@@ -460,7 +460,7 @@ void DisplayListBuilder::restore() {
         // ensure consistency of rendering and |Equals()| behavior.
         SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
             storage_.get() + layer_info.save_layer_offset);
-        op->options = op->options.with_can_distribute_opacity();
+        op->optimizations |= kSaveLayerOpacityCompatible;
       }
     } else {
       // For regular save() ops there was no protecting layer so we have to
@@ -480,23 +480,23 @@ void DisplayListBuilder::restoreToCount(int restore_count) {
   }
 }
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
-                                   const SaveLayerOptions in_options,
-                                   const DlImageFilter* backdrop) {
-  SaveLayerOptions options = in_options.without_optimizations();
+                                   RenderWith with,
+                                   const DlImageFilter* backdrop,
+                                   int optimizations) {
   size_t save_layer_offset = used_;
   if (backdrop) {
     bounds  //
-        ? Push<SaveLayerBackdropBoundsOp>(0, 1, *bounds, options, backdrop)
-        : Push<SaveLayerBackdropOp>(0, 1, options, backdrop);
+        ? Push<SaveLayerBackdropBoundsOp>(0, 1, *bounds, with, backdrop)
+        : Push<SaveLayerBackdropOp>(0, 1, with, backdrop);
   } else {
     bounds  //
-        ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
-        : Push<SaveLayerOp>(0, 1, options);
+        ? Push<SaveLayerBoundsOp>(0, 1, *bounds, with)
+        : Push<SaveLayerOp>(0, 1, with);
   }
-  CheckLayerOpacityCompatibility(options.renders_with_attributes());
+  CheckLayerOpacityCompatibility(with);
   layer_stack_.emplace_back(current_layer_, save_layer_offset, true);
   current_layer_ = &layer_stack_.back();
-  if (options.renders_with_attributes()) {
+  if (with == RenderWith::kDlPaint) {
     // |current_opacity_compatibility_| does not take an ImageFilter into
     // account because an individual primitive with an ImageFilter can apply
     // opacity on top of it. But, if the layer is applying the ImageFilter
@@ -513,9 +513,9 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kSaveLayerWithPaintFlags);
-    saveLayer(bounds, SaveLayerOptions::kWithAttributes, backdrop);
+    saveLayer(bounds, RenderWith::kDlPaint, backdrop);
   } else {
-    saveLayer(bounds, SaveLayerOptions::kNoAttributes, backdrop);
+    saveLayer(bounds, RenderWith::kDefaults, backdrop);
   }
 }
 
@@ -905,11 +905,9 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
 void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    const SkPoint point,
                                    DlImageSampling sampling,
-                                   bool render_with_attributes) {
-  render_with_attributes
-      ? Push<DrawImageWithAttrOp>(0, 1, image, point, sampling)
-      : Push<DrawImageOp>(0, 1, image, point, sampling);
-  CheckLayerOpacityCompatibility(render_with_attributes);
+                                   RenderWith with) {
+  Push<DrawImageOp>(0, 1, image, point, with, sampling);
+  CheckLayerOpacityCompatibility(with);
 }
 void DisplayListBuilder::drawImage(const sk_sp<DlImage>& image,
                                    const SkPoint point,
@@ -918,20 +916,19 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage>& image,
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawImageWithPaintFlags);
-    drawImage(image, point, sampling, true);
+    drawImage(image, point, sampling, RenderWith::kDlPaint);
   } else {
-    drawImage(image, point, sampling, false);
+    drawImage(image, point, sampling, RenderWith::kDefaults);
   }
 }
 void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
                                        DlImageSampling sampling,
-                                       bool render_with_attributes,
+                                       RenderWith with,
                                        SkCanvas::SrcRectConstraint constraint) {
-  Push<DrawImageRectOp>(0, 1, image, src, dst, sampling, render_with_attributes,
-                        constraint);
-  CheckLayerOpacityCompatibility(render_with_attributes);
+  Push<DrawImageRectOp>(0, 1, image, src, dst, sampling, with, constraint);
+  CheckLayerOpacityCompatibility(with);
 }
 void DisplayListBuilder::drawImageRect(const sk_sp<DlImage>& image,
                                        const SkRect& src,
@@ -942,20 +939,18 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage>& image,
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawImageRectWithPaintFlags);
-    drawImageRect(image, src, dst, sampling, true, constraint);
+    drawImageRect(image, src, dst, sampling, RenderWith::kDlPaint, constraint);
   } else {
-    drawImageRect(image, src, dst, sampling, false, constraint);
+    drawImageRect(image, src, dst, sampling, RenderWith::kDefaults, constraint);
   }
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                        const SkIRect& center,
                                        const SkRect& dst,
                                        DlFilterMode filter,
-                                       bool render_with_attributes) {
-  render_with_attributes
-      ? Push<DrawImageNineWithAttrOp>(0, 1, image, center, dst, filter)
-      : Push<DrawImageNineOp>(0, 1, image, center, dst, filter);
-  CheckLayerOpacityCompatibility(render_with_attributes);
+                                       RenderWith with) {
+  Push<DrawImageNineOp>(0, 1, image, center, dst, filter, with);
+  CheckLayerOpacityCompatibility(with);
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage>& image,
                                        const SkIRect& center,
@@ -965,16 +960,16 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage>& image,
   if (paint != nullptr) {
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawImageNineWithPaintFlags);
-    drawImageNine(image, center, dst, filter, true);
+    drawImageNine(image, center, dst, filter, RenderWith::kDlPaint);
   } else {
-    drawImageNine(image, center, dst, filter, false);
+    drawImageNine(image, center, dst, filter, RenderWith::kDefaults);
   }
 }
 void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
                                           const SkCanvas::Lattice& lattice,
                                           const SkRect& dst,
                                           DlFilterMode filter,
-                                          bool render_with_attributes) {
+                                          RenderWith with) {
   int x_div_count = lattice.fXCount;
   int y_div_count = lattice.fYCount;
   FML_DCHECK((lattice.fRectTypes == nullptr) || (lattice.fColors != nullptr));
@@ -985,12 +980,12 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
       (x_div_count + y_div_count) * sizeof(int) +
       cell_count * (sizeof(SkColor) + sizeof(SkCanvas::Lattice::RectType));
   SkIRect src = lattice.fBounds ? *lattice.fBounds : image->bounds();
-  void* pod = this->Push<DrawImageLatticeOp>(bytes, 1, image, x_div_count,
-                                             y_div_count, cell_count, src, dst,
-                                             filter, render_with_attributes);
+  void* pod =
+      this->Push<DrawImageLatticeOp>(bytes, 1, image, x_div_count, y_div_count,
+                                     cell_count, src, dst, filter, with);
   CopyV(pod, lattice.fXDivs, x_div_count, lattice.fYDivs, y_div_count,
         lattice.fColors, cell_count, lattice.fRectTypes, cell_count);
-  CheckLayerOpacityCompatibility(render_with_attributes);
+  CheckLayerOpacityCompatibility(with);
 }
 void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const SkRSXform xform[],
@@ -1000,28 +995,26 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    DlBlendMode mode,
                                    DlImageSampling sampling,
                                    const SkRect* cull_rect,
-                                   bool render_with_attributes) {
+                                   RenderWith with) {
   int bytes = count * (sizeof(SkRSXform) + sizeof(SkRect));
   void* data_ptr;
   if (colors != nullptr) {
     bytes += count * sizeof(DlColor);
     if (cull_rect != nullptr) {
-      data_ptr =
-          Push<DrawAtlasCulledOp>(bytes, 1, atlas, count, mode, sampling, true,
-                                  *cull_rect, render_with_attributes);
+      data_ptr = Push<DrawAtlasCulledOp>(bytes, 1, atlas, count, mode, sampling,
+                                         true, *cull_rect, with);
     } else {
-      data_ptr = Push<DrawAtlasOp>(bytes, 1, atlas, count, mode, sampling, true,
-                                   render_with_attributes);
+      data_ptr =
+          Push<DrawAtlasOp>(bytes, 1, atlas, count, mode, sampling, true, with);
     }
     CopyV(data_ptr, xform, count, tex, count, colors, count);
   } else {
     if (cull_rect != nullptr) {
-      data_ptr =
-          Push<DrawAtlasCulledOp>(bytes, 1, atlas, count, mode, sampling, false,
-                                  *cull_rect, render_with_attributes);
+      data_ptr = Push<DrawAtlasCulledOp>(bytes, 1, atlas, count, mode, sampling,
+                                         false, *cull_rect, with);
     } else {
       data_ptr = Push<DrawAtlasOp>(bytes, 1, atlas, count, mode, sampling,
-                                   false, render_with_attributes);
+                                   false, with);
     }
     CopyV(data_ptr, xform, count, tex, count);
   }
@@ -1043,20 +1036,19 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage>& atlas,
     setAttributesFromDlPaint(*paint,
                              DisplayListOpFlags::kDrawAtlasWithPaintFlags);
     drawAtlas(atlas, xform, tex, colors, count, mode, sampling, cull_rect,
-              true);
+              RenderWith::kDlPaint);
   } else {
     drawAtlas(atlas, xform, tex, colors, count, mode, sampling, cull_rect,
-              false);
+              RenderWith::kDefaults);
   }
 }
 
 void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
-                                     bool render_with_attributes) {
+                                     RenderWith with) {
   matrix  //
-      ? Push<DrawSkPictureMatrixOp>(0, 1, picture, *matrix,
-                                    render_with_attributes)
-      : Push<DrawSkPictureOp>(0, 1, picture, render_with_attributes);
+      ? Push<DrawSkPictureMatrixOp>(0, 1, picture, *matrix, with)
+      : Push<DrawSkPictureOp>(0, 1, picture, with);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawPicture| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawPicture| call itself
@@ -1065,11 +1057,11 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
   // This behavior is identical to the way SkPicture computes nested op counts.
   nested_op_count_ += picture->approximateOpCount(true) - 1;
   nested_bytes_ += picture->approximateBytesUsed();
-  CheckLayerOpacityCompatibility(render_with_attributes);
+  CheckLayerOpacityCompatibility(with);
 }
-void DisplayListBuilder::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
-  Push<DrawDisplayListOp>(0, 1, display_list);
+void DisplayListBuilder::drawDisplayList(const sk_sp<DisplayList> display_list,
+                                         SkScalar opacity) {
+  Push<DrawDisplayListOp>(0, 1, display_list, opacity);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawDisplayList| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawDisplayList| call itself

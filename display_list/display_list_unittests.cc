@@ -75,7 +75,7 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
       // Verify recapturing the replay of the display list is Equals()
       // when dispatching directly from the DL to another builder
       DisplayListBuilder builder;
-      dl->Dispatch(builder);
+      builder.insert(dl);
       sk_sp<DisplayList> copy = builder.Build();
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " == copy)";
@@ -280,7 +280,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // No tricky stuff, just verifying drawing a rect produces rect bounds
     DisplayListBuilder builder(build_bounds);
-    builder.saveLayer(&save_bounds, true);
+    builder.saveLayer(&save_bounds, nullptr);
     builder.drawRect(rect);
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
@@ -290,10 +290,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Now checking that a normal color filter still produces rect bounds
     DisplayListBuilder builder(build_bounds);
-    builder.setColorFilter(&base_color_filter);
-    builder.saveLayer(&save_bounds, true);
-    builder.setColorFilter(nullptr);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setColorFilter(&base_color_filter);
+    builder.saveLayer(&save_bounds, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), rect);
@@ -322,10 +321,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // cull rect of the DisplayListBuilder when it encounters a
     // save layer that modifies an unbounded region
     DisplayListBuilder builder(build_bounds);
-    builder.setColorFilter(&alpha_color_filter);
-    builder.saveLayer(&save_bounds, true);
-    builder.setColorFilter(nullptr);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setColorFilter(&alpha_color_filter);
+    builder.saveLayer(&save_bounds, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), build_bounds);
@@ -335,10 +333,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Verifying that the save layer bounds are not relevant
     // to the behavior in the previous example
     DisplayListBuilder builder(build_bounds);
-    builder.setColorFilter(&alpha_color_filter);
-    builder.saveLayer(nullptr, true);
-    builder.setColorFilter(nullptr);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setColorFilter(&alpha_color_filter);
+    builder.saveLayer(nullptr, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), build_bounds);
@@ -349,10 +346,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
     DlColorFilterImageFilter color_filter_image_filter(base_color_filter);
-    builder.setImageFilter(&color_filter_image_filter);
-    builder.saveLayer(&save_bounds, true);
-    builder.setImageFilter(nullptr);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setImageFilter(&color_filter_image_filter);
+    builder.saveLayer(&save_bounds, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), rect);
@@ -363,10 +359,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // will generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
     DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
-    builder.setImageFilter(&color_filter_image_filter);
-    builder.saveLayer(&save_bounds, true);
-    builder.setImageFilter(nullptr);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setImageFilter(&color_filter_image_filter);
+    builder.saveLayer(&save_bounds, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), build_bounds);
@@ -376,10 +371,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Same as above (ImageFilter hiding ColorFilter) with no save bounds
     DisplayListBuilder builder(build_bounds);
     DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
-    builder.setImageFilter(&color_filter_image_filter);
-    builder.saveLayer(nullptr, true);
-    builder.setImageFilter(nullptr);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setImageFilter(&color_filter_image_filter);
+    builder.saveLayer(nullptr, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), build_bounds);
@@ -388,10 +382,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Testing behavior with an unboundable blend mode
     DisplayListBuilder builder(build_bounds);
-    builder.setBlendMode(DlBlendMode::kClear);
-    builder.saveLayer(&save_bounds, true);
-    builder.setBlendMode(DlBlendMode::kSrcOver);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setBlendMode(DlBlendMode::kClear);
+    builder.saveLayer(&save_bounds, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), build_bounds);
@@ -400,10 +393,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Same as previous with no save bounds
     DisplayListBuilder builder(build_bounds);
-    builder.setBlendMode(DlBlendMode::kClear);
-    builder.saveLayer(nullptr, true);
-    builder.setBlendMode(DlBlendMode::kSrcOver);
-    builder.drawRect(rect);
+    auto paint = DlPaint().setBlendMode(DlBlendMode::kClear);
+    builder.saveLayer(nullptr, &paint);
+    builder.drawRect(rect, DlPaint());
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
     ASSERT_EQ(display_list->bounds(), build_bounds);
@@ -645,40 +637,45 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
                                 TestPoints);
              , false);
   RUN_TESTS2(builder.drawVertices(TestVertices1, DlBlendMode::kSrc);, false);
-  RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, kLinearSampling, true););
-  RUN_TESTS2(builder.drawImage(TestImage1, {0, 0}, kLinearSampling, false);
+  RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, kLinearSampling,
+                              RenderWith::kDlPaint););
+  RUN_TESTS2(builder.drawImage(TestImage1, {0, 0}, kLinearSampling,
+                               RenderWith::kDefaults);
              , true);
   RUN_TESTS(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                  kNearestSampling, true););
+                                  kNearestSampling, RenderWith::kDlPaint););
   RUN_TESTS2(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                   kNearestSampling, false);
+                                   kNearestSampling, RenderWith::kDefaults);
              , true);
   RUN_TESTS(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
-                                  DlFilterMode::kLinear, true););
-  RUN_TESTS2(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
-                                   DlFilterMode::kLinear, false);
-             , true);
+                                  DlFilterMode::kLinear,
+                                  RenderWith::kDlPaint););
+  RUN_TESTS2(
+      builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
+                            DlFilterMode::kLinear, RenderWith::kDefaults);
+      , true);
   RUN_TESTS(builder.drawImageLattice(
       TestImage1,
       {kTestDivs1, kTestDivs1, nullptr, 3, 3, &kTestLatticeSrcRect, nullptr},
-      {10, 10, 40, 40}, DlFilterMode::kNearest, true););
+      {10, 10, 40, 40}, DlFilterMode::kNearest, RenderWith::kDlPaint););
   RUN_TESTS2(builder.drawImageLattice(
       TestImage1,
       {kTestDivs1, kTestDivs1, nullptr, 3, 3, &kTestLatticeSrcRect, nullptr},
-      {10, 10, 40, 40}, DlFilterMode::kNearest, false);
+      {10, 10, 40, 40}, DlFilterMode::kNearest, RenderWith::kDefaults);
              , true);
   static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
   static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
-  RUN_TESTS2(
-      builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                        DlBlendMode::kSrcIn, kNearestSampling, nullptr, true);
-      , false);
-  RUN_TESTS2(
-      builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                        DlBlendMode::kSrcIn, kNearestSampling, nullptr, false);
-      , false);
-  RUN_TESTS(builder.drawPicture(TestPicture1, nullptr, true););
-  RUN_TESTS2(builder.drawPicture(TestPicture1, nullptr, false);, true);
+  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
+                               DlBlendMode::kSrcIn, kNearestSampling, nullptr,
+                               RenderWith::kDlPaint);
+             , false);
+  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
+                               DlBlendMode::kSrcIn, kNearestSampling, nullptr,
+                               RenderWith::kDefaults);
+             , false);
+  RUN_TESTS(builder.drawPicture(TestPicture1, nullptr, RenderWith::kDlPaint););
+  RUN_TESTS2(builder.drawPicture(TestPicture1, nullptr, RenderWith::kDefaults);
+             , true);
   EXPECT_TRUE(TestDisplayList1->can_apply_group_opacity());
   RUN_TESTS2(builder.drawDisplayList(TestDisplayList1);, true);
   {
@@ -705,9 +702,10 @@ TEST(DisplayList, OverlappingOpsDoNotSupportGroupOpacity) {
   EXPECT_FALSE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithOverlappingChidren) {
+TEST(DisplayList,
+     SaveLayerRenderWithDefaultSupportsGroupOpacityWithOverlappingChidren) {
   DisplayListBuilder builder;
-  builder.saveLayer(nullptr, false);
+  builder.saveLayer(nullptr, RenderWith::kDefaults);
   for (int i = 0; i < 10; i++) {
     builder.drawRect(SkRect::MakeXYWH(i * 10, 0, 30, 30));
   }
@@ -716,9 +714,10 @@ TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithOverlappingChidren) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithOverlappingChidren) {
+TEST(DisplayList,
+     SaveLayerRenderWithDlPaintSupportsGroupOpacityWithOverlappingChidren) {
   DisplayListBuilder builder;
-  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, RenderWith::kDlPaint);
   for (int i = 0; i < 10; i++) {
     builder.drawRect(SkRect::MakeXYWH(i * 10, 0, 30, 30));
   }
@@ -727,29 +726,32 @@ TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithOverlappingChidren) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
+TEST(DisplayList,
+     SaveLayerRenderWithDefaultsDespiteSrcBlendSupportsGroupOpacity) {
   DisplayListBuilder builder;
   builder.setBlendMode(DlBlendMode::kSrc);
-  builder.saveLayer(nullptr, false);
+  builder.saveLayer(nullptr, RenderWith::kDefaults);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
   auto display_list = builder.Build();
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerTrueWithSrcBlendDoesNotSupportGroupOpacity) {
+TEST(DisplayList,
+     SaveLayerRenderWithDlPaintWithSrcBlendDoesNotSupportGroupOpacity) {
   DisplayListBuilder builder;
   builder.setBlendMode(DlBlendMode::kSrc);
-  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, RenderWith::kDlPaint);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
   auto display_list = builder.Build();
   EXPECT_FALSE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
+TEST(DisplayList,
+     SaveLayerRenderWithDefaultSupportsGroupOpacityWithChildSrcBlend) {
   DisplayListBuilder builder;
-  builder.saveLayer(nullptr, false);
+  builder.saveLayer(nullptr, RenderWith::kDefaults);
   builder.setBlendMode(DlBlendMode::kSrc);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
@@ -757,9 +759,10 @@ TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithChildSrcBlend) {
+TEST(DisplayList,
+     SaveLayerRenderWithDlPaintSupportsGroupOpacityWithChildSrcBlend) {
   DisplayListBuilder builder;
-  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, RenderWith::kDlPaint);
   builder.setBlendMode(DlBlendMode::kSrc);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
@@ -769,7 +772,7 @@ TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithChildSrcBlend) {
 
 TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
   DisplayListBuilder builder;
-  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, RenderWith::kDlPaint);
   builder.drawRect({50, 50, 100, 100});
   // This image filter should be ignored since it was not set before saveLayer
   builder.setImageFilter(&kTestBlurImageFilter1);
@@ -784,35 +787,34 @@ class SaveLayerOptionsExpector : public virtual Dispatcher,
                                  public IgnoreTransformDispatchHelper,
                                  public IgnoreDrawDispatchHelper {
  public:
-  explicit SaveLayerOptionsExpector(const SaveLayerOptions& expected) {
+  explicit SaveLayerOptionsExpector(int expected) {
     expected_.push_back(expected);
   }
 
-  explicit SaveLayerOptionsExpector(std::vector<SaveLayerOptions> expected)
+  explicit SaveLayerOptionsExpector(std::vector<int> expected)
       : expected_(std::move(expected)) {}
 
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
-    EXPECT_EQ(options, expected_[save_layer_count_]);
+                 RenderWith with,
+                 const DlImageFilter* backdrop,
+                 int optimizations) override {
+    EXPECT_EQ(optimizations, expected_[save_layer_count_]);
     save_layer_count_++;
   }
 
   int save_layer_count() { return save_layer_count_; }
 
  private:
-  std::vector<SaveLayerOptions> expected_;
+  std::vector<int> expected_;
   int save_layer_count_ = 0;
 };
 
 TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
-  SaveLayerOptions expected =
-      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(Dispatcher::kSaveLayerOpacityCompatible);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 
@@ -821,12 +823,10 @@ TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerNoAttributesSupportsOpacityOptimization) {
-  SaveLayerOptions expected =
-      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(Dispatcher::kSaveLayerOpacityCompatible);
 
   DisplayListBuilder builder;
-  builder.saveLayer(nullptr, false);
+  builder.saveLayer(nullptr, RenderWith::kDefaults);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 
@@ -835,12 +835,11 @@ TEST(DisplayList, SaveLayerNoAttributesSupportsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerTwoOverlappingOpsPreventsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(0);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
   builder.drawRect({10, 10, 20, 20});
   builder.drawRect({15, 15, 25, 25});
   builder.restore();
@@ -850,19 +849,17 @@ TEST(DisplayList, SaveLayerTwoOverlappingOpsPreventsOpacityOptimization) {
 }
 
 TEST(DisplayList, NestedSaveLayersMightSupportOpacityOptimization) {
-  SaveLayerOptions expected1 =
-      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptions expected2 = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptions expected3 =
-      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
+  int expected1 = Dispatcher::kSaveLayerOpacityCompatible;
+  int expected2 = 0;
+  int expected3 = Dispatcher::kSaveLayerOpacityCompatible;
   SaveLayerOptionsExpector expector({expected1, expected2, expected3});
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
-  builder.saveLayer(nullptr, true);
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
+  builder.saveLayer(nullptr, &paint);
   builder.drawRect({10, 10, 20, 20});
-  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, &paint);
   builder.drawRect({15, 15, 25, 25});
   builder.restore();
   builder.restore();
@@ -873,16 +870,14 @@ TEST(DisplayList, NestedSaveLayersMightSupportOpacityOptimization) {
 }
 
 TEST(DisplayList, NestedSaveLayersCanBothSupportOpacityOptimization) {
-  SaveLayerOptions expected1 =
-      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptions expected2 =
-      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
+  int expected1 = Dispatcher::kSaveLayerOpacityCompatible;
+  int expected2 = Dispatcher::kSaveLayerOpacityCompatible;
   SaveLayerOptionsExpector expector({expected1, expected2});
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
-  builder.saveLayer(nullptr, false);
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
+  builder.saveLayer(nullptr, nullptr);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
   builder.restore();
@@ -892,15 +887,15 @@ TEST(DisplayList, NestedSaveLayersCanBothSupportOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(0);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setImageFilter(&kTestBlurImageFilter1);
-  builder.saveLayer(nullptr, true);
-  builder.setImageFilter(nullptr);
-  builder.drawRect({10, 10, 20, 20});
+  auto paint = DlPaint()
+                   .setColor(SkColorSetARGB(127, 255, 255, 255))
+                   .setImageFilter(&kTestBlurImageFilter1);
+  builder.saveLayer(nullptr, &paint);
+  paint.setImageFilter(nullptr);
+  builder.drawRect({10, 10, 20, 20}, paint);
   builder.restore();
 
   builder.Build()->Dispatch(expector);
@@ -908,15 +903,15 @@ TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(0);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setColorFilter(&kTestMatrixColorFilter1);
-  builder.saveLayer(nullptr, true);
-  builder.setColorFilter(nullptr);
-  builder.drawRect({10, 10, 20, 20});
+  auto paint = DlPaint()
+                   .setColor(SkColorSetARGB(127, 255, 255, 255))
+                   .setColorFilter(&kTestMatrixColorFilter1);
+  builder.saveLayer(nullptr, &paint);
+  paint.setColorFilter(nullptr);
+  builder.drawRect({10, 10, 20, 20}, paint);
   builder.restore();
 
   builder.Build()->Dispatch(expector);
@@ -924,15 +919,15 @@ TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(0);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setBlendMode(DlBlendMode::kSrc);
-  builder.saveLayer(nullptr, true);
-  builder.setBlendMode(DlBlendMode::kSrcOver);
-  builder.drawRect({10, 10, 20, 20});
+  auto paint = DlPaint()
+                   .setColor(SkColorSetARGB(127, 255, 255, 255))
+                   .setBlendMode(DlBlendMode::kSrc);
+  builder.saveLayer(nullptr, &paint);
+  paint.setBlendMode(DlBlendMode::kSrcOver);
+  builder.drawRect({10, 10, 20, 20}, paint);
   builder.restore();
 
   builder.Build()->Dispatch(expector);
@@ -940,15 +935,13 @@ TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
-  SaveLayerOptions expected =
-      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(Dispatcher::kSaveLayerOpacityCompatible);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
-  builder.setImageFilter(&kTestBlurImageFilter1);
-  builder.drawRect({10, 10, 20, 20});
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
+  paint.setImageFilter(&kTestBlurImageFilter1);
+  builder.drawRect({10, 10, 20, 20}, paint);
   builder.restore();
 
   builder.Build()->Dispatch(expector);
@@ -956,14 +949,13 @@ TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(0);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
-  builder.setColorFilter(&kTestMatrixColorFilter1);
-  builder.drawRect({10, 10, 20, 20});
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
+  paint.setColorFilter(&kTestMatrixColorFilter1);
+  builder.drawRect({10, 10, 20, 20}, paint);
   builder.restore();
 
   builder.Build()->Dispatch(expector);
@@ -971,14 +963,13 @@ TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerSrcBlendOnChildPreventsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerOptionsExpector expector(0);
 
   DisplayListBuilder builder;
-  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.saveLayer(nullptr, true);
-  builder.setBlendMode(DlBlendMode::kSrc);
-  builder.drawRect({10, 10, 20, 20});
+  auto paint = DlPaint().setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, &paint);
+  paint.setBlendMode(DlBlendMode::kSrc);
+  builder.drawRect({10, 10, 20, 20}, paint);
   builder.restore();
 
   builder.Build()->Dispatch(expector);
@@ -1067,8 +1058,7 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
         builder.save();
         builder.clipRect({1172, 245, 1218, 294}, SkClipOp::kIntersect, true);
         {
-          builder.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
-                            nullptr);
+          builder.saveLayer(nullptr, RenderWith::kDlPaint, nullptr);
           {
             builder.save();
             builder.transform2DAffine(1.4375, 0, 1164.09,  //
@@ -1716,7 +1706,7 @@ TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
 TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
   DisplayListBuilder builder1;
   builder1.save();
-  builder1.saveLayer(nullptr, false);
+  builder1.saveLayer(nullptr, nullptr);
   builder1.drawRect({0, 0, 100, 100});
   builder1.scale(2, 2);
   builder1.restore();
@@ -1724,7 +1714,7 @@ TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  builder2.saveLayer(nullptr, false);
+  builder2.saveLayer(nullptr, nullptr);
   builder2.drawRect({0, 0, 100, 100});
   builder2.scale(2, 2);
   builder2.restore();
@@ -1769,7 +1759,7 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
   {
     DisplayListBuilder builder(build_bounds);
     builder.save();
-    builder.saveLayer(&build_bounds, true);
+    builder.saveLayer(&build_bounds, RenderWith::kDlPaint);
     DlPaint paint;
     paint.setImageFilter(&color_filter_image_filter);
     builder.drawRect(rect, paint);
@@ -1778,7 +1768,7 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
     sk_sp<DisplayList> display_list1 = builder.Build();
 
     DisplayListBuilder builder2(build_bounds);
-    builder2.saveLayer(&build_bounds, true);
+    builder2.saveLayer(&build_bounds, RenderWith::kDlPaint);
     DlPaint paint2;
     paint2.setImageFilter(&color_filter_image_filter);
     builder2.drawRect(rect, paint2);

@@ -15,13 +15,11 @@ class MockDispatchHelper final : public virtual Dispatcher,
                                  public virtual IgnoreDrawDispatchHelper {
  public:
   void save() override {
-    SkPaintDispatchHelper::save_opacity(0.5f);
     SkMatrixDispatchHelper::save();
     ClipBoundsDispatchHelper::save();
   }
 
   void restore() override {
-    SkPaintDispatchHelper::restore_opacity();
     SkMatrixDispatchHelper::restore();
     ClipBoundsDispatchHelper::restore();
   }

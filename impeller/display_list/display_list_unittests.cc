@@ -47,7 +47,7 @@ TEST_P(DisplayListTest, CanDrawImage) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlImageSampling::kNearestNeighbor, true);
+                    flutter::DlImageSampling::kNearestNeighbor, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -200,9 +200,9 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
   // Mask blurred image.
   {
     auto filter = flutter::DlBlurMaskFilter(kNormal_SkBlurStyle, 10.0f);
-    builder.setMaskFilter(&filter);
+    auto paint = flutter::DlPaint().setMaskFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                      flutter::DlImageSampling::kNearestNeighbor, true);
+                      flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
   // Mask blurred filled path.
@@ -232,18 +232,18 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
   {
     auto filter = flutter::DlBlendColorFilter(SK_ColorYELLOW,
                                               flutter::DlBlendMode::kModulate);
-    builder.setColorFilter(&filter);
+    auto paint = flutter::DlPaint().setColorFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                      flutter::DlImageSampling::kNearestNeighbor, true);
+                      flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
   // Advanced blended image.
   {
     auto filter =
         flutter::DlBlendColorFilter(SK_ColorRED, flutter::DlBlendMode::kScreen);
-    builder.setColorFilter(&filter);
+    auto paint = flutter::DlPaint().setColorFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(250, 250),
-                      flutter::DlImageSampling::kNearestNeighbor, true);
+                      flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -262,14 +262,14 @@ TEST_P(DisplayListTest, CanDrawWithColorFilterImageFilter) {
       std::make_shared<flutter::DlMatrixColorFilter>(invert_color_matrix);
   auto image_filter =
       std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
-  builder.setImageFilter(image_filter.get());
+  auto paint = flutter::DlPaint().setImageFilter(image_filter.get());
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlImageSampling::kNearestNeighbor, true);
+                    flutter::DlImageSampling::kNearestNeighbor, &paint);
 
   builder.translate(0, 700);
-  builder.setColorFilter(color_filter.get());
+  paint.setColorFilter(color_filter.get());
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlImageSampling::kNearestNeighbor, true);
+                    flutter::DlImageSampling::kNearestNeighbor, &paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -287,9 +287,9 @@ TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
 
     auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
                                              flutter::DlTileMode::kClamp);
-    builder.setImageFilter(&filter);
+    auto paint = flutter::DlPaint().setImageFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
-                      flutter::DlImageSampling::kNearestNeighbor, true);
+                      flutter::DlImageSampling::kNearestNeighbor, &paint);
 
     return builder.Build();
   };
@@ -304,13 +304,13 @@ TEST_P(DisplayListTest, CanDrawWithComposeImageFilter) {
   auto erode = std::make_shared<flutter::DlErodeImageFilter>(10.0, 10.0);
   auto open = std::make_shared<flutter::DlComposeImageFilter>(dilate, erode);
   auto close = std::make_shared<flutter::DlComposeImageFilter>(erode, dilate);
-  builder.setImageFilter(open.get());
+  auto paint = flutter::DlPaint().setImageFilter(open.get());
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlImageSampling::kNearestNeighbor, true);
+                    flutter::DlImageSampling::kNearestNeighbor, &paint);
   builder.translate(0, 700);
-  builder.setImageFilter(close.get());
+  paint.setImageFilter(close.get());
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlImageSampling::kNearestNeighbor, true);
+                    flutter::DlImageSampling::kNearestNeighbor, &paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -341,7 +341,8 @@ TEST_P(DisplayListTest, CanClampTheResultingColorOfColorMatrixFilter) {
   flutter::DisplayListBuilder builder;
   builder.setImageFilter(compose.get());
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlImageSampling::kNearestNeighbor, true);
+                    flutter::DlImageSampling::kNearestNeighbor,
+                    flutter::RenderWith::kDlPaint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -495,7 +496,7 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
     }
 
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
-                      flutter::DlImageSampling::kNearestNeighbor, true);
+                      flutter::DlImageSampling::kNearestNeighbor, nullptr);
     builder.saveLayer(bounds.has_value() ? &bounds.value() : nullptr, nullptr,
                       &filter);
 
@@ -527,7 +528,7 @@ TEST_P(DisplayListTest, CanDrawNinePatchImage) {
       SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
       SkRect::MakeLTRB(0, 0, size.width * 2, size.height * 2),
-      flutter::DlFilterMode::kNearest, true);
+      flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -543,7 +544,7 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterWidthBiggerThanDest) {
       SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
       SkRect::MakeLTRB(0, 0, size.width / 2, size.height),
-      flutter::DlFilterMode::kNearest, true);
+      flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -559,7 +560,7 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterHeightBiggerThanDest) {
       SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
       SkRect::MakeLTRB(0, 0, size.width, size.height / 2),
-      flutter::DlFilterMode::kNearest, true);
+      flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -574,7 +575,7 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterBiggerThanDest) {
       SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
       SkRect::MakeLTRB(0, 0, size.width / 2, size.height / 2),
-      flutter::DlFilterMode::kNearest, true);
+      flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -589,7 +590,7 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCornersScaledDown) {
       SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
       SkRect::MakeLTRB(0, 0, size.width / 4, size.height / 4),
-      flutter::DlFilterMode::kNearest, true);
+      flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -788,7 +789,7 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
     ImGui::End();
 
     flutter::DisplayListBuilder builder;
-    SkPaint paint;
+    flutter::DlPaint paint;
     if (enable_savelayer) {
       builder.saveLayer(nullptr, nullptr);
     }
@@ -814,7 +815,7 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
           case 0: {
             auto filter = flutter::DlMatrixImageFilter(
                 filter_matrix, flutter::DlImageSampling::kLinear);
-            builder.setImageFilter(&filter);
+            paint.setImageFilter(&filter);
             break;
           }
           case 1: {
@@ -823,14 +824,14 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
                     .shared();
             auto filter = flutter::DlLocalMatrixImageFilter(filter_matrix,
                                                             internal_filter);
-            builder.setImageFilter(&filter);
+            paint.setImageFilter(&filter);
             break;
           }
         }
       }
 
       builder.drawImage(DlImageImpeller::Make(boston), {},
-                        flutter::DlImageSampling::kLinear, true);
+                        flutter::DlImageSampling::kLinear, &paint);
     }
     if (enable_savelayer) {
       builder.restore();

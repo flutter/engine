@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_path_effect.h"
+
 namespace flutter {
 
 const DisplayListSpecialGeometryFlags DisplayListAttributeFlags::WithPathEffect(

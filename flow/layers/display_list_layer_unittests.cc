@@ -134,10 +134,9 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
         expected_builder.save();
         {
           expected_builder.translate(layer_offset.fX, layer_offset.fY);
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&picture_bounds, true);
           /* display_list contents */ {  //
-            expected_builder.drawDisplayList(child_display_list);
+            expected_builder.drawDisplayList(child_display_list,
+                                             opacity_alpha / 255.0);
           }
           expected_builder.restore();
         }
@@ -190,8 +189,8 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
     expected_builder.save();
     {
       expected_builder.translate(opacity_offset.fX, opacity_offset.fY);
-      expected_builder.setColor(opacity_alpha << 24);
-      expected_builder.saveLayer(&save_layer_bounds, true);
+      auto paint = DlPaint().setColor(opacity_alpha << 24);
+      expected_builder.saveLayer(&save_layer_bounds, &paint);
       {
         /* display_list_layer::Paint() */ {
           expected_builder.save();

@@ -605,11 +605,10 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithIncompatibleChild) {
         expected_builder.save();
         {
           expected_builder.translate(offset2.fX, offset2.fY);
-          expected_builder.setColor(savelayer_paint.getAlpha() << 24);
-          expected_builder.saveLayer(&mock_layer->paint_bounds(), true);
-          /* mock_layer::Paint */ {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(mock_path);
+          auto paint = DlPaint().setColor(savelayer_paint.getAlpha() << 24);
+          expected_builder.saveLayer(&mock_layer->paint_bounds(), &paint);
+          /* mockLayer::Paint */ {
+            expected_builder.drawPath(mock_path, DlPaint());
           }
         }
         expected_builder.restore();

@@ -50,8 +50,9 @@ unsigned int DisplayListGLComplexityCalculator::GLHelper::BatchedComplexity() {
 
 void DisplayListGLComplexityCalculator::GLHelper::saveLayer(
     const SkRect* bounds,
-    const SaveLayerOptions options,
-    const DlImageFilter* backdrop) {
+    RenderWith with,
+    const DlImageFilter* backdrop,
+    int optimizations) {
   if (IsComplex()) {
     return;
   }
@@ -534,7 +535,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImage(
     const sk_sp<DlImage> image,
     const SkPoint point,
     DlImageSampling sampling,
-    bool render_with_attributes) {
+    RenderWith with) {
   if (IsComplex()) {
     return;
   }
@@ -577,7 +578,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImage(
 void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
     const SkISize& size,
     bool texture_backed,
-    bool render_with_attributes,
+    RenderWith with,
     SkCanvas::SrcRectConstraint constraint) {
   if (IsComplex()) {
     return;
@@ -592,9 +593,8 @@ void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
   unsigned int complexity;
   if (!texture_backed ||
-      (texture_backed && render_with_attributes &&
-       constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-       IsAntiAliased())) {
+      (texture_backed && with == RenderWith::kDlPaint && IsAntiAliased() &&
+       constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint)) {
     unsigned int area = size.width() * size.height();
     // m = 1/4000
     // c = 5
@@ -617,7 +617,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
     const SkIRect& center,
     const SkRect& dst,
     DlFilterMode filter,
-    bool render_with_attributes) {
+    RenderWith with) {
   if (IsComplex()) {
     return;
   }
@@ -638,7 +638,8 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   if (IsComplex()) {
     return;
   }

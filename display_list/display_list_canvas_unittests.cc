@@ -764,7 +764,7 @@ class CanvasCompareTester {
                      cv->saveLayer(nullptr, nullptr);
                    },
                    [=](DisplayListBuilder& b) {  //
-                     b.saveLayer(nullptr, false);
+                     b.saveLayer(nullptr, nullptr);
                    })
                    .with_restore(cv_safe_restore, dl_safe_restore, false));
     RenderWith(testP, env, tolerance,
@@ -774,7 +774,7 @@ class CanvasCompareTester {
                      cv->saveLayer(layer_bounds, nullptr);
                    },
                    [=](DisplayListBuilder& b) {  //
-                     b.saveLayer(&layer_bounds, false);
+                     b.saveLayer(&layer_bounds, nullptr);
                    })
                    .with_restore(cv_safe_restore, dl_safe_restore, true));
     RenderWith(testP, env, tolerance,
@@ -787,7 +787,7 @@ class CanvasCompareTester {
                    },
                    [=](DisplayListBuilder& b) {
                      b.setColor(alpha_layer_color);
-                     b.saveLayer(nullptr, true);
+                     b.saveLayer(nullptr, RenderWith::kDlPaint);
                      b.setColor(default_color);
                    })
                    .with_restore(cv_safe_restore, dl_safe_restore, true));
@@ -801,7 +801,7 @@ class CanvasCompareTester {
                    },
                    [=](DisplayListBuilder& b) {
                      b.setColor(alpha_layer_color);
-                     b.saveLayer(nullptr, true);
+                     b.saveLayer(nullptr, RenderWith::kDlPaint);
                      b.setColor(default_color);
                    })
                    .with_restore(cv_opt_restore, dl_opt_restore, true, true));
@@ -815,7 +815,7 @@ class CanvasCompareTester {
                    },
                    [=](DisplayListBuilder& b) {
                      b.setColor(alpha_layer_color);
-                     b.saveLayer(&layer_bounds, true);
+                     b.saveLayer(&layer_bounds, RenderWith::kDlPaint);
                      b.setColor(default_color);
                    })
                    .with_restore(cv_safe_restore, dl_safe_restore, true));
@@ -855,8 +855,7 @@ class CanvasCompareTester {
                      },
                      [=](DisplayListBuilder& b) {
                        dl_backdrop_setup(b);
-                       b.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-                                   &backdrop);
+                       b.saveLayer(nullptr, nullptr, &backdrop);
                      })
                      .with_restore(cv_safe_restore, dl_safe_restore, true));
       RenderWith(
@@ -870,8 +869,7 @@ class CanvasCompareTester {
               },
               [=](DisplayListBuilder& b) {
                 dl_backdrop_setup(b);
-                b.saveLayer(&layer_bounds, SaveLayerOptions::kNoAttributes,
-                            &backdrop);
+                b.saveLayer(&layer_bounds, nullptr, &backdrop);
               })
               .with_restore(cv_safe_restore, dl_safe_restore, true));
       RenderWith(testP, backdrop_env, tolerance,
@@ -886,8 +884,7 @@ class CanvasCompareTester {
                      [=](DisplayListBuilder& b) {
                        dl_backdrop_setup(b);
                        b.clipRect(layer_bounds, SkClipOp::kIntersect, false);
-                       b.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-                                   &backdrop);
+                       b.saveLayer(nullptr, nullptr, &backdrop);
                      })
                      .with_restore(cv_safe_restore, dl_safe_restore, true));
     }
@@ -914,7 +911,7 @@ class CanvasCompareTester {
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColorFilter(&filter);
-                         b.saveLayer(nullptr, true);
+                         b.saveLayer(nullptr, RenderWith::kDlPaint);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
@@ -932,7 +929,7 @@ class CanvasCompareTester {
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColorFilter(&filter);
-                         b.saveLayer(&kRenderBounds, true);
+                         b.saveLayer(&kRenderBounds, RenderWith::kDlPaint);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
@@ -955,7 +952,7 @@ class CanvasCompareTester {
                        },
                        [=](DisplayListBuilder& b) {
                          b.setImageFilter(&filter);
-                         b.saveLayer(nullptr, true);
+                         b.saveLayer(nullptr, RenderWith::kDlPaint);
                          b.setImageFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
@@ -973,7 +970,7 @@ class CanvasCompareTester {
                        },
                        [=](DisplayListBuilder& b) {
                          b.setImageFilter(&filter);
-                         b.saveLayer(&kRenderBounds, true);
+                         b.saveLayer(&kRenderBounds, RenderWith::kDlPaint);
                          b.setImageFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
@@ -1969,6 +1966,7 @@ class CanvasCompareTester {
 
     int pixels_touched = 0;
     int pixels_different = 0;
+    SkScalar worst = 0;
     // We need to allow some slight differences per component due to the
     // fact that rearranging discrete calculations can compound round off
     // errors. Off-by-2 is enough for 8 bit components, but for the 565
@@ -1992,6 +1990,7 @@ class CanvasCompareTester {
             SkScalar faded_comp = bg_comp + (ref_comp - bg_comp) * opacity;
             int test_comp = (test_pixel >> i) & 0xff;
             if (std::abs(faded_comp - test_comp) > fudge) {
+              worst = std::max(worst, std::abs(faded_comp - test_comp));
               pixels_different++;
               break;
             }
@@ -2000,7 +1999,7 @@ class CanvasCompareTester {
       }
     }
     ASSERT_GT(pixels_touched, 20) << info;
-    ASSERT_LE(pixels_different, 1) << info;
+    ASSERT_LE(pixels_different, 1) << "(worst: " << worst << "), " << info;
   }
 
   static void checkPixels(const SkPixmap* ref_pixels,
@@ -2687,7 +2686,8 @@ TEST_F(DisplayListCanvas, DrawImageNearest) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawImage(DlImage::Make(CanvasCompareTester::kTestImage),
                               SkPoint::Make(kRenderLeft, kRenderTop),
-                              DlImageSampling::kNearestNeighbor, true);
+                              DlImageSampling::kNearestNeighbor,
+                              RenderWith::kDlPaint);
           },
           kDrawImageWithPaintFlags));
 }
@@ -2703,7 +2703,8 @@ TEST_F(DisplayListCanvas, DrawImageNearestNoPaint) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawImage(DlImage::Make(CanvasCompareTester::kTestImage),
                               SkPoint::Make(kRenderLeft, kRenderTop),
-                              DlImageSampling::kNearestNeighbor, false);
+                              DlImageSampling::kNearestNeighbor,
+                              RenderWith::kDefaults);
           },
           kDrawImageFlags));
 }
@@ -2719,7 +2720,7 @@ TEST_F(DisplayListCanvas, DrawImageLinear) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawImage(DlImage::Make(CanvasCompareTester::kTestImage),
                               SkPoint::Make(kRenderLeft, kRenderTop),
-                              DlImageSampling::kLinear, true);
+                              DlImageSampling::kLinear, RenderWith::kDlPaint);
           },
           kDrawImageWithPaintFlags));
 }
@@ -2737,7 +2738,7 @@ TEST_F(DisplayListCanvas, DrawImageRectNearest) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DlImageSampling::kNearestNeighbor, true);
+                DlImageSampling::kNearestNeighbor, RenderWith::kDlPaint);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -2755,7 +2756,7 @@ TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DlImageSampling::kNearestNeighbor, false);
+                DlImageSampling::kNearestNeighbor, RenderWith::kDefaults);
           },
           kDrawImageRectFlags));
 }
@@ -2773,7 +2774,7 @@ TEST_F(DisplayListCanvas, DrawImageRectLinear) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DlImageSampling::kLinear, true);
+                DlImageSampling::kLinear, RenderWith::kDlPaint);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -2790,7 +2791,7 @@ TEST_F(DisplayListCanvas, DrawImageNineNearest) {
           },
           [=](DisplayListBuilder& builder) {
             builder.drawImageNine(DlImage::Make(image), src, dst,
-                                  DlFilterMode::kNearest, true);
+                                  DlFilterMode::kNearest, RenderWith::kDlPaint);
           },
           kDrawImageNineWithPaintFlags));
 }
@@ -2807,7 +2808,8 @@ TEST_F(DisplayListCanvas, DrawImageNineNearestNoPaint) {
           },
           [=](DisplayListBuilder& builder) {
             builder.drawImageNine(DlImage::Make(image), src, dst,
-                                  DlFilterMode::kNearest, false);
+                                  DlFilterMode::kNearest,
+                                  RenderWith::kDefaults);
           },
           kDrawImageNineFlags));
 }
@@ -2824,7 +2826,7 @@ TEST_F(DisplayListCanvas, DrawImageNineLinear) {
           },
           [=](DisplayListBuilder& builder) {
             builder.drawImageNine(DlImage::Make(image), src, dst,
-                                  DlFilterMode::kLinear, true);
+                                  DlFilterMode::kLinear, RenderWith::kDlPaint);
           },
           kDrawImageNineWithPaintFlags));
 }
@@ -2853,7 +2855,8 @@ TEST_F(DisplayListCanvas, DrawImageLatticeNearest) {
           },
           [=](DisplayListBuilder& builder) {
             builder.drawImageLattice(DlImage::Make(image), lattice, dst,
-                                     DlFilterMode::kNearest, true);
+                                     DlFilterMode::kNearest,
+                                     RenderWith::kDlPaint);
           },
           kDrawImageLatticeWithPaintFlags));
 }
@@ -2882,7 +2885,8 @@ TEST_F(DisplayListCanvas, DrawImageLatticeNearestNoPaint) {
           },
           [=](DisplayListBuilder& builder) {
             builder.drawImageLattice(DlImage::Make(image), lattice, dst,
-                                     DlFilterMode::kNearest, false);
+                                     DlFilterMode::kNearest,
+                                     RenderWith::kDefaults);
           },
           kDrawImageLatticeFlags));
 }
@@ -2911,7 +2915,8 @@ TEST_F(DisplayListCanvas, DrawImageLatticeLinear) {
           },
           [=](DisplayListBuilder& builder) {
             builder.drawImageLattice(DlImage::Make(image), lattice, dst,
-                                     DlFilterMode::kLinear, true);
+                                     DlFilterMode::kLinear,
+                                     RenderWith::kDlPaint);
           },
           kDrawImageLatticeWithPaintFlags));
 }
@@ -2952,7 +2957,8 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
           [=](DisplayListBuilder& builder) {
             const DlColor* dl_colors = reinterpret_cast<const DlColor*>(colors);
             builder.drawAtlas(DlImage::Make(image), xform, tex, dl_colors, 4,
-                              DlBlendMode::kSrcOver, sampling, nullptr, true);
+                              DlBlendMode::kSrcOver, sampling, nullptr,
+                              RenderWith::kDlPaint);
           },
           kDrawAtlasWithPaintFlags));
 }
@@ -2994,7 +3000,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
             const DlColor* dl_colors = reinterpret_cast<const DlColor*>(colors);
             builder.drawAtlas(DlImage::Make(image), xform, tex, dl_colors, 4,
                               DlBlendMode::kSrcOver, sampling,  //
-                              nullptr, false);
+                              nullptr, RenderWith::kDefaults);
           },
           kDrawAtlasFlags));
 }
@@ -3035,7 +3041,8 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
           [=](DisplayListBuilder& builder) {
             const DlColor* dl_colors = reinterpret_cast<const DlColor*>(colors);
             builder.drawAtlas(DlImage::Make(image), xform, tex, dl_colors, 2,
-                              DlBlendMode::kSrcOver, sampling, nullptr, true);
+                              DlBlendMode::kSrcOver, sampling, nullptr,
+                              RenderWith::kDlPaint);
           },
           kDrawAtlasWithPaintFlags));
 }
@@ -3065,7 +3072,7 @@ TEST_F(DisplayListCanvas, DrawPicture) {
             canvas->drawPicture(picture, nullptr, nullptr);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawPicture(picture, nullptr, false);
+            builder.drawPicture(picture, nullptr, RenderWith::kDefaults);
           },
           kDrawPictureFlags));
 }
@@ -3079,7 +3086,7 @@ TEST_F(DisplayListCanvas, DrawPictureWithMatrix) {
             canvas->drawPicture(picture, &matrix, nullptr);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawPicture(picture, &matrix, false);
+            builder.drawPicture(picture, &matrix, RenderWith::kDefaults);
           },
           kDrawPictureFlags));
 }
@@ -3092,7 +3099,7 @@ TEST_F(DisplayListCanvas, DrawPictureWithPaint) {
             canvas->drawPicture(picture, nullptr, &paint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawPicture(picture, nullptr, true);
+            builder.drawPicture(picture, nullptr, RenderWith::kDlPaint);
           },
           kDrawPictureWithPaintFlags));
 }
@@ -3122,6 +3129,20 @@ TEST_F(DisplayListCanvas, DrawDisplayList) {
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawDisplayList(display_list);
+          },
+          kDrawDisplayListFlags)
+          .set_draw_display_list());
+}
+
+TEST_F(DisplayListCanvas, DrawDisplayListOpacity) {
+  sk_sp<DisplayList> display_list = makeTestDisplayList();
+  CanvasCompareTester::RenderAll(  //
+      TestParameters(
+          [=](SkCanvas* canvas, const SkPaint& paint) {  //
+            display_list->RenderTo(canvas, 0.5f);
+          },
+          [=](DisplayListBuilder& builder) {  //
+            builder.drawDisplayList(display_list, 0.5f);
           },
           kDrawDisplayListFlags)
           .set_draw_display_list());
@@ -3300,7 +3321,7 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
 
   // clang-format off
   auto test_attributes = [&env, render_content]
-      (DlPaint& paint1, DlPaint& paint2, const DlPaint& paint_both,
+      (const DlPaint& paint1, const DlPaint& paint2, const DlPaint& paint_both,
        bool same, bool rev_same, const std::string& desc1,
        const std::string& desc2) {
     // clang-format on
