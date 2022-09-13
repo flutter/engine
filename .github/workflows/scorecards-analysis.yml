@@ -13,7 +13,7 @@ jobs:
   setup:
     name: Scorecards analysis setup
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'flutter/engine' }}
+    # if: ${{ github.repository == 'flutter/engine' }}
 
     steps:
       - name: "Checkout code"
@@ -32,7 +32,7 @@ jobs:
     name: Scorecards analysis
     needs: setup
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'flutter/engine' }}
+    # if: ${{ github.repository == 'flutter/engine' }}
     permissions:
       # Needed to upload the results to code-scanning dashboard.
       security-events: write
