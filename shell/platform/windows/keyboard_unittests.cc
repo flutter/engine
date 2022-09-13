@@ -2381,9 +2381,8 @@ TEST(KeyboardTest, DoubleCapsLock) {
   tester.Responding(false);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
-    WmKeyDownInfo{VK_CAPITAL, 0, kNotExtended}.Build(),
-    WmKeyUpInfo{VK_CAPITAL, 0, kNotExtended}.Build()
-  });
+      WmKeyDownInfo{VK_CAPITAL, 0, kNotExtended}.Build(),
+      WmKeyUpInfo{VK_CAPITAL, 0, kNotExtended}.Build()});
 
   clear_key_calls();
   
