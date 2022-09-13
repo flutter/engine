@@ -3,14 +3,33 @@ on:
   # Only the default branch is supported.
   branch_protection_rule:
   push:
-    branches: [ main ]
+    branches: [ separate-github-workflow-jobs ]
 
 # Declare default permissions as read only.
 permissions: read-all
 
 jobs:
+  setup:
+    name: Scorecards analysis setup
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'flutter/engine' }}
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        with:
+          persist-credentials: false
+
+      - name: "setup python"
+        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
+        with:
+          python-version: '3.7.7' # install the python version needed
+
+      - name: "execute py script"
+        run: python ci/deps_parser.py
   analysis:
     name: Scorecards analysis
+    needs: setup
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'flutter/engine' }}
     permissions:
@@ -20,19 +39,6 @@ jobs:
       contents: read
 
     steps:
-      - name: "Checkout code"
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
-        with:
-          persist-credentials: false
-
-      - name: setup python
-        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
-        with:
-          python-version: '3.7.7' # install the python version needed
-
-      - name: execute py script
-        run: python ci/deps_parser.py
-
       - name: "Run analysis"
         uses: ossf/scorecard-action@ce330fde6b1a5c9c75b417e7efc510b822a35564
         with:
