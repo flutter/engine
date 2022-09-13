@@ -234,12 +234,10 @@ void FakeFlatland::SetOrientation(
   transform->orientation = orientation;
 }
 
-
 void FakeFlatland::SetOpacity(TransformId transform_id, float value) {
   if (transform_id.value == 0) {
     // TODO(fxb/85619): Raise a FlatlandError here
-    FML_CHECK(false)
-        << "FakeFlatland::SetOpacity: TransformId 0 is invalid.";
+    FML_CHECK(false) << "FakeFlatland::SetOpacity: TransformId 0 is invalid.";
     return;
   }
 
