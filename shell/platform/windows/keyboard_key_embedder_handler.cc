@@ -264,9 +264,11 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     pressingRecords_[physical_key] = eventual_logical_record;
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
+    // Critical keys can be unset before this poitn if get_key_state_ finds they are not
+    // currently pressed. If a the physical key of a keyup event is not in pressingRecords_,
+    // only assert that it is a critical key.
     if (record_iter == pressingRecords_.end()) {
-      auto critical_iter = critical_keys_.find(key);
-      assert(critical_iter != critical_keys_.end());
+      assert(critical_keys_.find(key) != critical_keys_.end());
     } else {
       pressingRecords_.erase(record_iter);
     }
