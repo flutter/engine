@@ -100,7 +100,9 @@ bool AtlasContents::Render(const ContentContext& renderer,
   for (size_t i = 0; i < texture_coords_.size(); i++) {
     auto sample_rect = texture_coords_[i];
     auto matrix = transforms_[i];
-    auto color = (colors_.size() > 0 ? colors_[i] : Color::Black());
+    auto color = (colors_.size() > 0
+                      ? blendColor(Color::Black(), colors_[i], blend_mode_)
+                      : Color::Black());
     auto transformed_points =
         Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
 

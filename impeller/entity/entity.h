@@ -129,4 +129,8 @@ class Entity {
   uint32_t stencil_depth_ = 0u;
 };
 
+Color blendColor(const Color& src,
+                 const Color& dst,
+                 Entity::BlendMode blend_mode);
+
 }  // namespace impeller

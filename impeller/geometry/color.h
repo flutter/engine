@@ -14,6 +14,7 @@
 namespace impeller {
 
 struct ColorHSB;
+struct Vector4;
 
 /**
  *  Represents a RGBA color
@@ -42,6 +43,8 @@ struct Color {
   constexpr Color() {}
 
   explicit Color(const ColorHSB& hsbColor);
+
+  Color(const Vector4& value);
 
   constexpr Color(Scalar r, Scalar g, Scalar b, Scalar a)
       : red(r), green(g), blue(b), alpha(a) {}
@@ -688,6 +691,10 @@ struct Color {
         static_cast<Scalar>((std::rand() % 255) / 255.0),  //
         1.0                                                //
     };
+  }
+
+  Color operator*(const Color& c) const {
+    return Color(red * c.red, green * c.green, blue * c.blue, alpha * c.alpha);
   }
 
   constexpr bool IsTransparent() const { return alpha == 0.0; }

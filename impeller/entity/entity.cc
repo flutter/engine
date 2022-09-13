@@ -4,11 +4,14 @@
 
 #include "impeller/entity/entity.h"
 
+#include <algorithm>
 #include <optional>
 
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/entity_pass.h"
+#include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -99,4 +102,64 @@ bool Entity::Render(const ContentContext& renderer,
   return contents_->Render(renderer, *this, parent_pass);
 }
 
+Vector4 min(Vector4 value, float threshold) {
+  return Vector4(std::min(value.x, threshold), std::min(value.y, threshold),
+                 std::min(value.z, threshold), std::min(value.w, threshold));
+}
+
+Color blendColor(const Color& src,
+                 const Color& dst,
+                 Entity::BlendMode blend_mode) {
+  switch (blend_mode) {
+    case Entity::BlendMode::kClear:
+      return Color::BlackTransparent();
+    case Entity::BlendMode::kSource:
+      return src;
+    case Entity::BlendMode::kDestination:
+      return dst;
+    case Entity::BlendMode::kSourceOver:
+      // r = s + (1-sa)*d
+      return Color(Vector4(src) + Vector4(dst) * (1 - src.alpha));
+    case Entity::BlendMode::kDestinationOver:
+      // r = d + (1-da)*s
+      return Color(Vector4(dst) + Vector4(src) * (1 - dst.alpha));
+    case Entity::BlendMode::kSourceIn:
+      // r = s * da
+      return Color(Vector4(src) * dst.alpha);
+    case Entity::BlendMode::kDestinationIn:
+      // r = d * sa
+      return Color(Vector4(dst) * src.alpha);
+    case Entity::BlendMode::kSourceOut:
+      // r = s * ( 1- da)
+      return Color(Vector4(dst) * (1 - dst.alpha));
+    case Entity::BlendMode::kDestinationOut:
+      // r = d * (1-sa)
+      return Color(Vector4(dst) * (1 - src.alpha));
+    case Entity::BlendMode::kSourceATop:
+      // r = s*da + d*(1-sa)
+      return Color(Vector4(src) * dst.alpha + Vector4(dst) * (1 - src.alpha));
+    case Entity::BlendMode::kDestinationATop:
+      // r = d*sa + s*(1-da)
+      return Color(Vector4(dst) * src.alpha + Vector4(src) * (1 - dst.alpha));
+    case Entity::BlendMode::kXor:
+      // r = s*(1-da) + d*(1-sa)
+      return Color(Vector4(src) * (1 - dst.alpha) +
+                   Vector4(dst) * (1 - src.alpha));
+    case Entity::BlendMode::kPlus:
+      // r = min(s + d, 1)
+      return Color(min(Vector4(src) + Vector4(dst), 1));
+    case Entity::BlendMode::kModulate:
+      // r = s*d
+      return src * dst;
+    case Entity::BlendMode::kScreen: {
+      // r = s + d - s*d
+      auto v_s = Vector4(src);
+      auto v_d = Vector4(src);
+      return Color(v_s + v_d - (src * dst));
+    }
+    default:
+      // TODO:
+      return src;
+  }
+}
 }  // namespace impeller

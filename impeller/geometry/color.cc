@@ -8,6 +8,8 @@
 #include <cmath>
 #include <sstream>
 
+#include "impeller/geometry/vector.h"
+
 namespace impeller {
 
 ColorHSB ColorHSB::FromRGB(Color rgb) {
@@ -86,5 +88,8 @@ Color ColorHSB::ToRGBA() const {
 }
 
 Color::Color(const ColorHSB& hsbColor) : Color(hsbColor.ToRGBA()) {}
+
+Color::Color(const Vector4& value)
+    : red(value.x), green(value.y), blue(value.z), alpha(value.w) {}
 
 }  // namespace impeller
