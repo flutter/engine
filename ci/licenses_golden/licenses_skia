@@ -1,4 +1,4 @@
-Signature: 558e57bc36dcdb217ab4b8e1a9844530
+Signature: d7d11a45fd36f4251b0be2899e0395ca
 
 UNUSED LICENSES:
 
@@ -540,6 +540,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/npm_build/multicanvas.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/node.example.js
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package-lock.json
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package.json
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/paragraphs.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/shaping.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/textapi_utils.js
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/canvaskit-wasm-tests.ts
@@ -2945,7 +2946,6 @@ FILE: ../../../third_party/skia/src/image/SkImage_Gpu.h
 FILE: ../../../third_party/skia/src/image/SkImage_Lazy.cpp
 FILE: ../../../third_party/skia/src/opts/SkBlitMask_opts.h
 FILE: ../../../third_party/skia/src/opts/SkBlitRow_opts.h
-FILE: ../../../third_party/skia/src/opts/SkOpts_sse41.cpp
 FILE: ../../../third_party/skia/src/opts/SkOpts_ssse3.cpp
 FILE: ../../../third_party/skia/src/opts/SkXfermode_opts.h
 FILE: ../../../third_party/skia/src/pathops/SkDConicLineIntersection.cpp
@@ -5523,6 +5523,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlQueueManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlQueueManager.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.mm
+FILE: ../../../third_party/skia/src/gpu/graphite/render/AnalyticRRectRenderStep.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/render/AnalyticRRectRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/BitmapTextRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/BitmapTextRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CommonDepthStencilSettings.h
@@ -7084,13 +7086,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanTypes.h
+FILE: ../../../third_party/skia/include/private/gpu/graphite/VulkanGraphiteTypesPriv.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.h
+FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanGraphiteTypes.cpp
 FILE: ../../../third_party/skia/src/gpu/piet/PietTypes.h
 FILE: ../../../third_party/skia/src/gpu/piet/Render.cpp
 FILE: ../../../third_party/skia/src/gpu/piet/Render.h
