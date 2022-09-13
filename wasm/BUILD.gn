@@ -6,6 +6,7 @@
 # //flutter/BUILD.gn pulls in Flutter SDK dependencies which will crash
 # when the target CPU is WASM.
 
-group("wasm_artifacts") {
+# This is the default target when building when the target CPU is WASM.
+group("wasm") {
   deps = [ "//third_party/skia/modules/canvaskit" ]
 }

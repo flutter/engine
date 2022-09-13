@@ -48,7 +48,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     if (buildCanvasKit) {
       steps.addAll(<PipelineStep>[
         GnPipelineStep(target: 'canvaskit'),
-        NinjaPipelineStep(target: environment.wasmDebugOutDir),
+        NinjaPipelineStep(target: environment.wasmReleaseOutDir),
       ]);
     }
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -89,7 +89,7 @@ class GnPipelineStep extends ProcessStep {
 
   @override
   Future<ProcessManager> createProcess() {
-    print('Running gn...');
+    print('Running gn for $target...');
     final List<String> gnArgs = <String>[];
     if (target == 'engine') {
       gnArgs.addAll(<String>[
@@ -98,7 +98,10 @@ class GnPipelineStep extends ProcessStep {
         '--full-dart-sdk',
       ]);
     } else if (target == 'canvaskit') {
-      gnArgs.add('--wasm');
+      gnArgs.addAll(<String>[
+        '--wasm',
+        '--runtime-mode=release',
+      ]);
     } else {
       throw StateError('Target was not engine or canvaskit: $target');
     }

@@ -127,7 +127,7 @@ Future<void> copySkiaTestImages() async {
 Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
   final io.File localCanvasKitWasm = io.File(pathlib.join(
-    environment.wasmDebugOutDir.path,
+    environment.wasmReleaseOutDir.path,
     'canvaskit.wasm',
   ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync() && useLocalCanvasKit;
@@ -141,7 +141,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
     final List<io.File> canvasKitFiles = <io.File>[
       localCanvasKitWasm,
       io.File(pathlib.join(
-        environment.wasmDebugOutDir.path,
+        environment.wasmReleaseOutDir.path,
         'canvaskit.js',
       )),
     ];
