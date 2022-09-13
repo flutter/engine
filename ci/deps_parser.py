@@ -10,6 +10,8 @@
 # and writes the to a file. This file will be later used to validate the dependencies
 # are pinned to a hash.
 
+#minor change for scorecards purpose
+
 import argparse
 import os
 import sys
