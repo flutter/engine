@@ -22,7 +22,7 @@ List<int> _to64(num value) {
   final Uint8List temp = Uint8List(15);
   if (value is double) {
     temp.buffer.asByteData().setFloat64(7, value, Endian.little);
-  } else if (value is int) {
+  } else if (value is int) {  // ignore: avoid_double_and_int_checks
     temp.buffer.asByteData().setInt64(7, value, Endian.little);
   }
   return temp;
@@ -114,6 +114,42 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario
   }
 }
 
+
+/// A platform view that is larger than the display size.
+/// This is only applicable on Android while using virtual displays.
+/// Related issue: https://github.com/flutter/flutter/issues/28978.
+class PlatformViewLargerThanDisplaySize extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  ///
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewLargerThanDisplaySize(
+    PlatformDispatcher dispatcher, {
+    required this.id,
+  })  : assert(dispatcher != null),
+        super(dispatcher);
+
+  /// The platform view identifier.
+  final int id;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    addPlatformView(
+      id,
+      dispatcher: dispatcher,
+      sceneBuilder: builder,
+      width: 15000,
+      height: 60000,
+    );
+
+    finishBuilder(
+      builder,
+    );
+  }
+}
+
 /// A simple platform view with an overlay that partially intersects with the platform view.
 class PlatformViewPartialIntersectionScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
@@ -141,7 +177,7 @@ class PlatformViewPartialIntersectionScenario extends Scenario
 
     finishBuilder(
       builder,
-      overlayOffset: const Offset(150, 250),
+      overlayOffset: const Offset(150, 240),
     );
   }
 }
@@ -460,7 +496,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
       Paint()..color = const Color(0xFFFF0000),
     );
     final Picture picture = recorder.endRecording();
-    builder.addPicture(const Offset(0, 0), picture);
+    builder.addPicture(Offset.zero, picture);
 
     final Scene scene = builder.build();
     window.render(scene);
@@ -615,7 +651,7 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
     final Matrix4 matrix4 = Matrix4.identity()
       ..rotateZ(1)
       ..scale(0.5, 0.5, 1.0)
-      ..translate(1000.0, 100.0, 0.0);
+      ..translate(1000.0, 100.0);
 
     final SceneBuilder builder = SceneBuilder()..pushTransform(matrix4.storage);
     addPlatformView(
@@ -665,8 +701,13 @@ class PlatformViewForTouchIOSScenario extends Scenario
 
   late void Function() _nextFrame;
 
+  /// Whether gestures should be accepted or rejected.
   final bool accept;
+
+  /// The platform view identifier.
   final int id;
+
+  /// Whether touches should be rejected until the gesture ends.
   final bool rejectUntilTouchesEnded;
 
   @override
@@ -693,19 +734,19 @@ class PlatformViewForTouchIOSScenario extends Scenario
       if (accept) {
         method = 'acceptGesture';
       }
-      const int _valueString = 7;
-      const int _valueInt32 = 3;
-      const int _valueMap = 13;
+      const int valueString = 7;
+      const int valueInt32 = 3;
+      const int valueMap = 13;
       final Uint8List message = Uint8List.fromList(<int>[
-        _valueString,
+        valueString,
         method.length,
         ...utf8.encode(method),
-        _valueMap,
+        valueMap,
         1,
-        _valueString,
+        valueString,
         'id'.length,
         ...utf8.encode('id'),
-        _valueInt32,
+        valueInt32,
         ..._to32(id),
       ]);
       window.sendPlatformMessage(
@@ -812,7 +853,7 @@ class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
       Paint()..color = const Color(0xFF00FF00),
     );
     final Picture picture = recorder.endRecording();
-    builder.addPicture(const Offset(0, 0), picture);
+    builder.addPicture(Offset.zero, picture);
 
     final ImageFilter filter = ImageFilter.blur(sigmaX: 8, sigmaY: 8);
     builder.pushBackdropFilter(filter);
@@ -894,7 +935,7 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
       Paint()..color = const Color(0xFF00FF00),
     );
     final Picture picture1 = recorder.endRecording();
-    builder.addPicture(const Offset(0, 0), picture1);
+    builder.addPicture(Offset.zero, picture1);
 
     builder.pushOffset(0, 200);
 
@@ -1049,7 +1090,12 @@ void addPlatformView(
   double height = 500,
   String viewType = 'scenarios/textPlatformView',
 }) {
+  if (scenarioParams['view_type'] is String) {
+    viewType = scenarioParams['view_type'] as String;
+  }
+
   final String platformViewKey = '$viewType-$id';
+
   if (_createdPlatformViews.containsKey(platformViewKey)) {
     addPlatformViewToSceneBuilder(
       id,
@@ -1060,71 +1106,72 @@ void addPlatformView(
     );
     return;
   }
+
   bool usesAndroidHybridComposition = false;
-  if (scenarioParams['use_android_view'] != null) {
+  if (scenarioParams['use_android_view'] is bool) {
     usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
   }
 
-  const int _valueTrue = 1;
-  const int _valueInt32 = 3;
-  const int _valueFloat64 = 6;
-  const int _valueString = 7;
-  const int _valueUint8List = 8;
-  const int _valueMap = 13;
+  const int valueTrue = 1;
+  const int valueInt32 = 3;
+  const int valueFloat64 = 6;
+  const int valueString = 7;
+  const int valueUint8List = 8;
+  const int valueMap = 13;
 
   final Uint8List message = Uint8List.fromList(<int>[
-    _valueString,
+    valueString,
     'create'.length, // this won't work if we use multi-byte characters.
     ...utf8.encode('create'),
-    _valueMap,
+    valueMap,
     if (Platform.isIOS) 3, // 3 entries in map for iOS.
     if (Platform.isAndroid && !usesAndroidHybridComposition)
-      6, // 6 entries in map for virtual displays on Android.
+      6, // 6 entries in map for texture on Android.
     if (Platform.isAndroid && usesAndroidHybridComposition)
-      5, // 5 entries in map for Android views.
-    _valueString,
+      5, // 5 entries in map for hybrid composition on Android.
+    valueString,
     'id'.length,
     ...utf8.encode('id'),
-    _valueInt32,
+    valueInt32,
     ..._to32(id),
-    _valueString,
+    valueString,
     'viewType'.length,
     ...utf8.encode('viewType'),
-    _valueString,
+    valueString,
     viewType.length,
     ...utf8.encode(viewType),
     if (Platform.isAndroid && !usesAndroidHybridComposition) ...<int>[
-      _valueString,
+      valueString,
       'width'.length,
       ...utf8.encode('width'),
-      _valueFloat64,
+      valueFloat64,
       ..._to64(width),
-      _valueString,
+      valueString,
       'height'.length,
       ...utf8.encode('height'),
-      _valueFloat64,
+      valueFloat64,
       ..._to64(height),
-      _valueString,
+      valueString,
       'direction'.length,
       ...utf8.encode('direction'),
-      _valueInt32,
+      valueInt32,
       ..._to32(0), // LTR
     ],
     if (Platform.isAndroid && usesAndroidHybridComposition) ...<int>[
-      _valueString,
+      valueString,
       'hybrid'.length,
       ...utf8.encode('hybrid'),
-      _valueTrue,
-      _valueString,
+      valueTrue,
+      valueString,
       'direction'.length,
       ...utf8.encode('direction'),
-      _valueInt32,
+      valueInt32,
       ..._to32(0), // LTR
     ],
-    _valueString,
+    valueString,
     'params'.length,
     ...utf8.encode('params'),
-    _valueUint8List,
+    valueUint8List,
     text.length,
     ...utf8.encode(text),
   ]);

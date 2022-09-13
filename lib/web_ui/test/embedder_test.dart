@@ -4,8 +4,6 @@
 @JS()
 library embedder_test; // We need this to mess with the ShadowDOM.
 
-import 'dart:html' as html;
-
 import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -18,33 +16,31 @@ void main() {
 void testMain() {
   test('populates flt-renderer and flt-build-mode', () {
     FlutterViewEmbedder();
-    expect(html.document.body!.attributes['flt-renderer'],
+    expect(domDocument.body!.getAttribute('flt-renderer'),
         'html (requested explicitly)');
-    expect(html.document.body!.attributes['flt-build-mode'], 'debug');
+    expect(domDocument.body!.getAttribute('flt-build-mode'), 'debug');
   });
 
   test('innerHeight/innerWidth are equal to visualViewport height and width',
       () {
-    if (html.window.visualViewport != null) {
-      expect(html.window.visualViewport!.width, html.window.innerWidth);
-      expect(html.window.visualViewport!.height, html.window.innerHeight);
+    if (domWindow.visualViewport != null) {
+      expect(domWindow.visualViewport!.width, domWindow.innerWidth);
+      expect(domWindow.visualViewport!.height, domWindow.innerHeight);
     }
   });
 
   test('replaces viewport meta tags during style reset', () {
-    final html.MetaElement existingMeta = html.MetaElement()
+    final DomHTMLMetaElement existingMeta = createDomHTMLMetaElement()
       ..name = 'viewport'
       ..content = 'foo=bar';
-    html.document.head!.append(existingMeta);
+    domDocument.head!.append(existingMeta);
     expect(existingMeta.isConnected, isTrue);
 
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     embedder.reset();
   },
       // TODO(ferhat): https://github.com/flutter/flutter/issues/46638
-      // TODO(ferhat): https://github.com/flutter/flutter/issues/50828
-      skip: browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.firefox);
 
   test('accesibility placeholder is attached after creation', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
@@ -58,7 +54,7 @@ void testMain() {
   test('renders a shadowRoot by default', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     final HostNode hostNode = embedder.glassPaneShadow!;
-    expect(hostNode.node, isA<html.ShadowRoot>());
+    expect(domInstanceOfString(hostNode.node, 'ShadowRoot'), isTrue);
   });
 
   test('starts without shadowDom available too', () {
@@ -69,9 +65,9 @@ void testMain() {
 
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     final HostNode hostNode = embedder.glassPaneShadow!;
-    expect(hostNode.node, isA<html.Element>());
+    expect(domInstanceOfString(hostNode.node, 'Element'), isTrue);
     expect(
-      (hostNode.node as html.Element).tagName,
+      (hostNode.node as DomElement).tagName,
       equalsIgnoringCase('flt-element-host-node'),
     );
     attachShadow = oldAttachShadow; // Restore ShadowDOM
@@ -79,9 +75,9 @@ void testMain() {
 
   test('should add/remove global resource', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-    final html.DivElement resource = html.DivElement();
+    final DomHTMLDivElement resource = createDomHTMLDivElement();
     embedder.addResource(resource);
-    final html.Element? resourceRoot = resource.parent;
+    final DomElement? resourceRoot = resource.parent;
     expect(resourceRoot, isNotNull);
     expect(resourceRoot!.childNodes.length, 1);
     embedder.removeResource(resource);
@@ -90,24 +86,28 @@ void testMain() {
 
   test('hide placeholder text for textfield', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-    final html.InputElement regularTextField = html.InputElement();
+    final DomHTMLInputElement regularTextField = createDomHTMLInputElement();
     regularTextField.placeholder = 'Now you see me';
     embedder.addResource(regularTextField);
 
     regularTextField.focus();
-    html.CssStyleDeclaration? style = embedder.glassPaneShadow?.querySelector('input')?.getComputedStyle('::placeholder');
+    DomCSSStyleDeclaration? style = domWindow.getComputedStyle(
+        embedder.glassPaneShadow!.querySelector('input')!,
+        '::placeholder');
     expect(style, isNotNull);
-    expect(style?.opacity, isNot('0'));
+    expect(style.opacity, isNot('0'));
 
-    final html.InputElement textField = html.InputElement();
+    final DomHTMLInputElement textField = createDomHTMLInputElement();
     textField.placeholder = 'Now you dont';
-    textField.classes.add('flt-text-editing');
+    textField.classList.add('flt-text-editing');
     embedder.addResource(textField);
 
     textField.focus();
-    style = embedder.glassPaneShadow?.querySelector('input.flt-text-editing')?.getComputedStyle('::placeholder');
+    style = domWindow.getComputedStyle(
+        embedder.glassPaneShadow!.querySelector('input.flt-text-editing')!,
+        '::placeholder');
     expect(style, isNotNull);
-    expect(style?.opacity, '0');
+    expect(style.opacity, '0');
   }, skip: browserEngine != BrowserEngine.firefox);
 }
 

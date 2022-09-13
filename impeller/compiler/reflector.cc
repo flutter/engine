@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/105732
+
 #include "impeller/compiler/reflector.h"
 
 #include <atomic>
@@ -82,6 +84,21 @@ static std::string ExecutionModelToString(spv::ExecutionModel model) {
   }
 }
 
+static std::string ExecutionModelToCommandTypeName(
+    spv::ExecutionModel execution_model) {
+  switch (execution_model) {
+    case spv::ExecutionModel::ExecutionModelVertex:
+    case spv::ExecutionModel::ExecutionModelFragment:
+    case spv::ExecutionModel::ExecutionModelTessellationControl:
+    case spv::ExecutionModel::ExecutionModelTessellationEvaluation:
+      return "Command&";
+    case spv::ExecutionModel::ExecutionModelGLCompute:
+      return "ComputeCommand&";
+    default:
+      return "unsupported";
+  }
+}
+
 static std::string StringToShaderStage(std::string str) {
   if (str == "vertex") {
     return "ShaderStage::kVertex";
@@ -104,6 +121,28 @@ static std::string StringToShaderStage(std::string str) {
   }
 
   return "ShaderStage::kUnknown";
+}
+
+static std::string StringToVkShaderStage(std::string str) {
+  if (str == "vertex") {
+    return "VK_SHADER_STAGE_VERTEX_BIT";
+  }
+  if (str == "fragment") {
+    return "VK_SHADER_STAGE_FRAGMENT_BIT";
+  }
+
+  if (str == "tessellation_control") {
+    return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
+  }
+
+  if (str == "tessellation_evaluation") {
+    return "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT";
+  }
+
+  if (str == "compute") {
+    return "VK_SHADER_STAGE_COMPUTE_BIT";
+  }
+  return "VK_SHADER_STAGE_ALL_GRAPHICS";
 }
 
 Reflector::Reflector(Options options,
@@ -185,11 +224,11 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     return std::nullopt;
   }
 
+  auto execution_model = entrypoints.front().execution_model;
   {
     root["entrypoint"] = options_.entry_point_name;
     root["shader_name"] = options_.shader_name;
-    root["shader_stage"] =
-        ExecutionModelToString(entrypoints.front().execution_model);
+    root["shader_stage"] = ExecutionModelToString(execution_model);
     root["header_file_name"] = options_.header_file_name;
   }
 
@@ -291,7 +330,8 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
         });
   }
 
-  root["bind_prototypes"] = EmitBindPrototypes(shader_resources);
+  root["bind_prototypes"] =
+      EmitBindPrototypes(shader_resources, execution_model);
 
   return root;
 }
@@ -329,9 +369,23 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
         uniform_description.type = spir_type.basetype;
         uniform_description.rows = spir_type.vecsize;
         uniform_description.columns = spir_type.columns;
+        uniform_description.bit_width = spir_type.width;
+        uniform_description.array_elements = GetArrayElements(spir_type);
         data->AddUniformDescription(std::move(uniform_description));
       });
   return data;
+}
+
+uint32_t Reflector::GetArrayElements(const spirv_cross::SPIRType& type) const {
+  if (type.array.empty()) {
+    return 0;
+  }
+  uint32_t elements = 1;
+  for (size_t i = 0; i < type.array.size(); i++) {
+    FML_CHECK(type.array_size_literal[i]);
+    elements *= type.array[i];
+  }
+  return elements;
 }
 
 static std::string ToString(CompilerBackend::Type type) {
@@ -340,6 +394,8 @@ static std::string ToString(CompilerBackend::Type type) {
       return "Metal Shading Language";
     case CompilerBackend::Type::kGLSL:
       return "OpenGL Shading Language";
+    case CompilerBackend::Type::kSkSL:
+      return "SkSL Shading Language";
   }
   FML_UNREACHABLE();
 }
@@ -362,6 +418,10 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
                    [type = compiler_.GetType()](inja::Arguments& args) {
                      return ToString(type);
                    });
+  env.add_callback(
+      "to_vk_shader_stage_flag_bits", 1u, [](inja::Arguments& args) {
+        return StringToVkShaderStage(args.at(0u)->get<std::string>());
+      });
 
   auto inflated_template =
       std::make_shared<std::string>(env.render(tmpl, *template_arguments_));
@@ -843,7 +903,8 @@ std::string Reflector::GetMemberNameAtIndex(
 }
 
 std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
-    const spirv_cross::ShaderResources& resources) const {
+    const spirv_cross::ShaderResources& resources,
+    spv::ExecutionModel execution_model) const {
   std::vector<BindPrototype> prototypes;
   for (const auto& uniform_buffer : resources.uniform_buffers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
@@ -856,7 +917,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = "Command&",
+        .type_name = ExecutionModelToCommandTypeName(execution_model),
         .argument_name = "command",
     });
     proto.args.push_back(BindPrototypeArgument{
@@ -875,7 +936,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = "Command&",
+        .type_name = ExecutionModelToCommandTypeName(execution_model),
         .argument_name = "command",
     });
     proto.args.push_back(BindPrototypeArgument{
@@ -894,7 +955,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
       proto.docstring = stream.str();
     }
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = "Command&",
+        .type_name = ExecutionModelToCommandTypeName(execution_model),
         .argument_name = "command",
     });
     proto.args.push_back(BindPrototypeArgument{
@@ -948,8 +1009,9 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
 }
 
 nlohmann::json::array_t Reflector::EmitBindPrototypes(
-    const spirv_cross::ShaderResources& resources) const {
-  const auto prototypes = ReflectBindPrototypes(resources);
+    const spirv_cross::ShaderResources& resources,
+    spv::ExecutionModel execution_model) const {
+  const auto prototypes = ReflectBindPrototypes(resources, execution_model);
   nlohmann::json::array_t result;
   for (const auto& res : prototypes) {
     auto& item = result.emplace_back(nlohmann::json::object_t{});

@@ -288,7 +288,8 @@ void DrawSimpleFrame(FlatlandExternalViewEmbedder& external_view_embedder,
       nullptr, std::make_unique<flutter::SurfaceFrame>(
                    nullptr, std::move(framebuffer_info),
                    [](const flutter::SurfaceFrame& surface_frame,
-                      SkCanvas* canvas) { return true; }));
+                      SkCanvas* canvas) { return true; },
+                   frame_size));
 }
 
 void DrawFrameWithView(FlatlandExternalViewEmbedder& external_view_embedder,
@@ -306,7 +307,7 @@ void DrawFrameWithView(FlatlandExternalViewEmbedder& external_view_embedder,
     external_view_embedder.PostPrerollAction(nullptr);
     background_draw_callback(root_canvas);
     SkCanvas* overlay_canvas =
-        external_view_embedder.CompositeEmbeddedView(view_id);
+        external_view_embedder.CompositeEmbeddedView(view_id).canvas;
     overlay_draw_callback(overlay_canvas);
   }
   external_view_embedder.EndFrame(false, nullptr);
@@ -316,7 +317,8 @@ void DrawFrameWithView(FlatlandExternalViewEmbedder& external_view_embedder,
       nullptr, std::make_unique<flutter::SurfaceFrame>(
                    nullptr, std::move(framebuffer_info),
                    [](const flutter::SurfaceFrame& surface_frame,
-                      SkCanvas* canvas) { return true; }));
+                      SkCanvas* canvas) { return true; },
+                   frame_size));
 }
 
 };  // namespace
@@ -514,7 +516,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   external_view_embedder.CreateView(
       child_view_id, []() {},
       [](fuchsia::ui::composition::ContentId,
-         fuchsia::ui::composition::ChildViewWatcherPtr) {});
+         fuchsia::ui::composition::ChildViewWatcherHandle) {});
 
   // Draw the scene.  The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
@@ -645,7 +647,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   external_view_embedder.CreateView(
       child_view_id, []() {},
       [](fuchsia::ui::composition::ContentId,
-         fuchsia::ui::composition::ChildViewWatcherPtr) {});
+         fuchsia::ui::composition::ChildViewWatcherHandle) {});
 
   // Draw the scene.  The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
@@ -758,7 +760,7 @@ TEST_F(FlatlandExternalViewEmbedderTest,
   external_view_embedder.CreateView(
       child_view_id, []() {},
       [](fuchsia::ui::composition::ContentId,
-         fuchsia::ui::composition::ChildViewWatcherPtr) {});
+         fuchsia::ui::composition::ChildViewWatcherHandle) {});
 
   // Draw the scene without the view. The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);

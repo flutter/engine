@@ -64,7 +64,7 @@ constexpr float kInvertColors[20] = {
 // clang-format on
 
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
-enum MaskFilterType { Null, Blur };
+enum MaskFilterType { kNull, kBlur };
 
 Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data)
     : paint_objects_(paint_objects), paint_data_(paint_data) {}
@@ -95,10 +95,18 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
 
     Dart_Handle shader = values[kShaderIndex];
     if (!Dart_IsNull(shader)) {
-      Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
-      auto sampling =
-          ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-      paint.setShader(decoded->shader(sampling)->skia_object());
+      if (Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader)) {
+        auto sampling =
+            ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
+        auto color_source = decoded->shader(sampling);
+        // TODO(dnfield): Remove this restriction.
+        // This currently is only used by paragraph code. Once SkParagraph does
+        // not need to take an SkPaint, we won't be restricted in this way
+        // because we will not need to access the shader on the UI task runner.
+        if (color_source->owning_context() != DlImage::OwningContext::kRaster) {
+          paint.setShader(color_source->skia_object());
+        }
+      }
     }
 
     Dart_Handle color_filter = values[kColorFilterIndex];
@@ -169,9 +177,9 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   }
 
   switch (uint_data[kMaskFilterIndex]) {
-    case Null:
+    case kNull:
       break;
-    case Blur:
+    case kBlur:
       SkBlurStyle blur_style =
           static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
       double sigma = float_data[kMaskFilterSigmaIndex];
@@ -220,10 +228,13 @@ bool Paint::sync_to(DisplayListBuilder* builder,
       if (Dart_IsNull(shader)) {
         builder->setColorSource(nullptr);
       } else {
-        Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
-        auto sampling =
-            ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-        builder->setColorSource(decoded->shader(sampling).get());
+        if (Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader)) {
+          auto sampling =
+              ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
+          builder->setColorSource(decoded->shader(sampling).get());
+        } else {
+          builder->setColorSource(nullptr);
+        }
       }
     }
 
@@ -300,10 +311,10 @@ bool Paint::sync_to(DisplayListBuilder* builder,
 
   if (flags.applies_mask_filter()) {
     switch (uint_data[kMaskFilterIndex]) {
-      case Null:
+      case kNull:
         builder->setMaskFilter(nullptr);
         break;
-      case Blur:
+      case kBlur:
         SkBlurStyle blur_style =
             static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
         double sigma = float_data[kMaskFilterSigmaIndex];

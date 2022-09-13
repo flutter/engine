@@ -5,8 +5,11 @@
 #include "impeller/geometry/geometry_unittests.h"
 
 #include <limits>
+#include <sstream>
 
 #include "flutter/testing/testing.h"
+#include "impeller/geometry/constants.h"
+#include "impeller/geometry/gradient.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -28,7 +31,7 @@ TEST(GeometryTest, ScalarNearlyEqual) {
 }
 
 TEST(GeometryTest, RotationMatrix) {
-  auto rotation = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto expect = Matrix{0.707,  0.707, 0, 0,  //
                        -0.707, 0.707, 0, 0,  //
                        0,      0,     1, 0,  //
@@ -38,7 +41,7 @@ TEST(GeometryTest, RotationMatrix) {
 
 TEST(GeometryTest, InvertMultMatrix) {
   {
-    auto rotation = Matrix::MakeRotationZ(Radians{M_PI_4});
+    auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
     auto invert = rotation.Invert();
     auto expect = Matrix{0.707, -0.707, 0, 0,  //
                          0.707, 0.707,  0, 0,  //
@@ -71,7 +74,7 @@ TEST(GeometryTest, MatrixBasis) {
 }
 
 TEST(GeometryTest, MutliplicationMatrix) {
-  auto rotation = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto invert = rotation.Invert();
   ASSERT_MATRIX_NEAR(rotation * invert, Matrix{});
 }
@@ -98,7 +101,7 @@ TEST(GeometryTest, InvertMatrix) {
 }
 
 TEST(GeometryTest, TestDecomposition) {
-  auto rotated = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotated = Matrix::MakeRotationZ(Radians{kPiOver4});
 
   auto result = rotated.Decompose();
 
@@ -106,12 +109,12 @@ TEST(GeometryTest, TestDecomposition) {
 
   MatrixDecomposition res = result.value();
 
-  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
   ASSERT_QUATERNION_NEAR(res.rotation, quaternion);
 }
 
 TEST(GeometryTest, TestDecomposition2) {
-  auto rotated = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotated = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto scaled = Matrix::MakeScale({2.0, 3.0, 1.0});
   auto translated = Matrix::MakeTranslation({-200, 750, 20});
 
@@ -121,7 +124,7 @@ TEST(GeometryTest, TestDecomposition2) {
 
   MatrixDecomposition res = result.value();
 
-  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
 
   ASSERT_QUATERNION_NEAR(res.rotation, quaternion);
 
@@ -138,7 +141,7 @@ TEST(GeometryTest, TestRecomposition) {
   /*
    *  Decomposition.
    */
-  auto rotated = Matrix::MakeRotationZ(Radians{M_PI_4});
+  auto rotated = Matrix::MakeRotationZ(Radians{kPiOver4});
 
   auto result = rotated.Decompose();
 
@@ -146,7 +149,7 @@ TEST(GeometryTest, TestRecomposition) {
 
   MatrixDecomposition res = result.value();
 
-  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto quaternion = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
 
   ASSERT_QUATERNION_NEAR(res.rotation, quaternion);
 
@@ -158,7 +161,7 @@ TEST(GeometryTest, TestRecomposition) {
 
 TEST(GeometryTest, TestRecomposition2) {
   auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                Matrix::MakeRotationZ(Radians{M_PI_4}) *
+                Matrix::MakeRotationZ(Radians{kPiOver4}) *
                 Matrix::MakeScale({2.0, 2.0, 2.0});
 
   auto result = matrix.Decompose();
@@ -171,7 +174,7 @@ TEST(GeometryTest, TestRecomposition2) {
 TEST(GeometryTest, MatrixVectorMultiplication) {
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector4(10, 20, 30, 2);
 
@@ -182,7 +185,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector3(10, 20, 30);
 
@@ -193,7 +196,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Point(10, 20);
 
@@ -206,7 +209,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
 TEST(GeometryTest, MatrixTransformDirection) {
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector4(10, 20, 30, 2);
 
@@ -217,7 +220,7 @@ TEST(GeometryTest, MatrixTransformDirection) {
 
   {
     auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Vector3(10, 20, 30);
 
@@ -227,8 +230,8 @@ TEST(GeometryTest, MatrixTransformDirection) {
   }
 
   {
-    auto matrix = Matrix::MakeTranslation({100, 100, 100}) *
-                  Matrix::MakeRotationZ(Radians{M_PI_2}) *
+    auto matrix = Matrix::MakeTranslation({0, -0.4, 100}) *
+                  Matrix::MakeRotationZ(Radians{kPiOver2}) *
                   Matrix::MakeScale({2.0, 2.0, 2.0});
     auto vector = Point(10, 20);
 
@@ -283,8 +286,8 @@ TEST(GeometryTest, MatrixMakePerspective) {
     auto expect = Matrix{
         3.4641, 0,       0,        0,   //
         0,      1.73205, 0,        0,   //
-        0,      0,       -1.22222, -1,  //
-        0,      0,       -2.22222, 0,   //
+        0,      0,       -1.11111, -1,  //
+        0,      0,       -1.11111, 0,   //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
@@ -294,20 +297,81 @@ TEST(GeometryTest, MatrixMakePerspective) {
     auto expect = Matrix{
         0.915244, 0,       0,   0,   //
         0,        1.83049, 0,   0,   //
-        0,        0,       -3,  -1,  //
-        0,        0,       -40, 0,   //
+        0,        0,       -2,  -1,  //
+        0,        0,       -20, 0,   //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
 }
 
+TEST(GeometryTest, MatrixGetBasisVectors) {
+  {
+    auto m = Matrix();
+    Vector3 x = m.GetBasisX();
+    Vector3 y = m.GetBasisY();
+    Vector3 z = m.GetBasisZ();
+    ASSERT_VECTOR3_NEAR(x, Vector3(1, 0, 0));
+    ASSERT_VECTOR3_NEAR(y, Vector3(0, 1, 0));
+    ASSERT_VECTOR3_NEAR(z, Vector3(0, 0, 1));
+  }
+
+  {
+    auto m = Matrix::MakeRotationZ(Radians{kPiOver2}) *
+             Matrix::MakeRotationX(Radians{kPiOver2}) *
+             Matrix::MakeScale(Vector3(2, 3, 4));
+    Vector3 x = m.GetBasisX();
+    Vector3 y = m.GetBasisY();
+    Vector3 z = m.GetBasisZ();
+    ASSERT_VECTOR3_NEAR(x, Vector3(0, 2, 0));
+    ASSERT_VECTOR3_NEAR(y, Vector3(0, 0, 3));
+    ASSERT_VECTOR3_NEAR(z, Vector3(4, 0, 0));
+  }
+}
+
+TEST(GeometryTest, MatrixGetDirectionScale) {
+  {
+    auto m = Matrix();
+    Scalar result = m.GetDirectionScale(Vector3{1, 0, 0});
+    ASSERT_FLOAT_EQ(result, 1);
+  }
+
+  {
+    auto m = Matrix::MakeRotationX(Degrees{10}) *
+             Matrix::MakeRotationY(Degrees{83}) *
+             Matrix::MakeRotationZ(Degrees{172});
+    Scalar result = m.GetDirectionScale(Vector3{0, 1, 0});
+    ASSERT_FLOAT_EQ(result, 1);
+  }
+
+  {
+    auto m = Matrix::MakeRotationZ(Radians{kPiOver2}) *
+             Matrix::MakeScale(Vector3(3, 4, 5));
+    Scalar result = m.GetDirectionScale(Vector3{2, 0, 0});
+    ASSERT_FLOAT_EQ(result, 8);
+  }
+}
+
+TEST(GeometryTest, MatrixIsAligned) {
+  {
+    auto m = Matrix::MakeTranslation({1, 2, 3});
+    bool result = m.IsAligned();
+    ASSERT_TRUE(result);
+  }
+
+  {
+    auto m = Matrix::MakeRotationZ(Degrees{123});
+    bool result = m.IsAligned();
+    ASSERT_FALSE(result);
+  }
+}
+
 TEST(GeometryTest, QuaternionLerp) {
   auto q1 = Quaternion{{0.0, 0.0, 1.0}, 0.0};
-  auto q2 = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
+  auto q2 = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
 
   auto q3 = q1.Slerp(q2, 0.5);
 
-  auto expected = Quaternion{{0.0, 0.0, 1.0}, M_PI_4 / 2.0};
+  auto expected = Quaternion{{0.0, 0.0, 1.0}, kPiOver4 / 2.0};
 
   ASSERT_QUATERNION_NEAR(q3, expected);
 }
@@ -772,6 +836,35 @@ TEST(GeometryTest, PointAbs) {
   ASSERT_POINT_NEAR(a_abs, expected);
 }
 
+TEST(GeometryTest, PointAngleTo) {
+  // Negative result in the CCW (with up = -Y) direction.
+  {
+    Point a(1, 1);
+    Point b(1, -1);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+
+  // Check the other direction to ensure the result is signed correctly.
+  {
+    Point a(1, -1);
+    Point b(1, 1);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+
+  // Differences in magnitude should have no impact on the result.
+  {
+    Point a(100, -100);
+    Point b(0.01, 0.01);
+    Radians actual = a.AngleTo(b);
+    Radians expected = Radians{kPi / 2};
+    ASSERT_FLOAT_EQ(actual.radians, expected.radians);
+  }
+}
+
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
   {
     Vector3 p(1, 2, 4);
@@ -829,11 +922,83 @@ TEST(GeometryTest, ColorPremultiply) {
   }
 }
 
+TEST(GeometryTest, ColorR8G8B8A8) {
+  {
+    Color a(1.0, 0.5, 0.2, 0.5);
+    std::array<uint8_t, 4> expected = {255, 128, 51, 128};
+    ASSERT_ARRAY_4_NEAR(a.ToR8G8B8A8(), expected);
+  }
+
+  {
+    Color a(0.0, 0.0, 0.0, 0.0);
+    std::array<uint8_t, 4> expected = {0, 0, 0, 0};
+    ASSERT_ARRAY_4_NEAR(a.ToR8G8B8A8(), expected);
+  }
+
+  {
+    Color a(1.0, 1.0, 1.0, 1.0);
+    std::array<uint8_t, 4> expected = {255, 255, 255, 255};
+    ASSERT_ARRAY_4_NEAR(a.ToR8G8B8A8(), expected);
+  }
+}
+
+TEST(GeometryTest, ColorLerp) {
+  {
+    Color a(0.0, 0.0, 0.0, 0.0);
+    Color b(1.0, 1.0, 1.0, 1.0);
+
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.5, 0.5, 0.5, 0.5));
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.2, 0.2, 0.2, 0.2));
+  }
+
+  {
+    Color a(0.2, 0.4, 1.0, 0.5);
+    Color b(0.4, 1.0, 0.2, 0.3);
+
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.5), Color(0.3, 0.7, 0.6, 0.4));
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
+    ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+  }
+}
+
 TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
   {
     auto deg = Degrees{90.0};
     Radians rad = deg;
     ASSERT_FLOAT_EQ(rad.radians, kPiOver2);
+  }
+}
+
+TEST(GeometryTest, RectMakeSize) {
+  {
+    Size s(100, 200);
+    Rect r = Rect::MakeSize(s);
+    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_RECT_NEAR(r, expected);
+  }
+
+  {
+    ISize s(100, 200);
+    Rect r = Rect::MakeSize(s);
+    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_RECT_NEAR(r, expected);
+  }
+
+  {
+    Size s(100, 200);
+    IRect r = IRect::MakeSize(s);
+    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_EQ(r, expected);
+  }
+
+  {
+    ISize s(100, 200);
+    IRect r = IRect::MakeSize(s);
+    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_EQ(r, expected);
   }
 }
 
@@ -901,6 +1066,32 @@ TEST(GeometryTest, RectIntersection) {
     Rect b(100, 100, 100, 100);
     auto u = a.Intersection(b);
     ASSERT_FALSE(u.has_value());
+  }
+}
+
+TEST(GeometryTest, RectIntersectsWithRect) {
+  {
+    Rect a(100, 100, 100, 100);
+    Rect b(0, 0, 0, 0);
+    ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a(100, 100, 100, 100);
+    Rect b(10, 10, 0, 0);
+    ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a(0, 0, 100, 100);
+    Rect b(10, 10, 100, 100);
+    ASSERT_TRUE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a(0, 0, 100, 100);
+    Rect b(100, 100, 100, 100);
+    ASSERT_FALSE(a.IntersectsWithRect(b));
   }
 }
 
@@ -989,6 +1180,20 @@ TEST(GeometryTest, RectMakePointBounds) {
   {
     std::optional<Rect> r = Rect::MakePointBounds({});
     ASSERT_FALSE(r.has_value());
+  }
+}
+
+TEST(GeometryTest, RectGetPositive) {
+  {
+    Rect r{100, 200, 300, 400};
+    auto actual = r.GetPositive();
+    ASSERT_RECT_NEAR(r, actual);
+  }
+  {
+    Rect r{100, 200, -100, -100};
+    auto actual = r.GetPositive();
+    Rect expected(0, 100, 100, 100);
+    ASSERT_RECT_NEAR(expected, actual);
   }
 }
 
@@ -1177,10 +1382,103 @@ TEST(GeometryTest, VerticesConstructorAndGetters) {
                                Rect(0, 0, 4, 4));
 
   ASSERT_EQ(vertices.GetBoundingBox().value(), Rect(0, 0, 4, 4));
-  ASSERT_EQ(vertices.GetPoints(), points);
+  ASSERT_EQ(vertices.GetPositions(), points);
   ASSERT_EQ(vertices.GetIndices(), indices);
   ASSERT_EQ(vertices.GetColors(), colors);
   ASSERT_EQ(vertices.GetMode(), VertexMode::kTriangle);
+}
+
+TEST(GeometryTest, MatrixPrinting) {
+  std::stringstream stream;
+
+  Matrix m;
+
+  stream << m;
+
+  ASSERT_EQ(stream.str(), R"((
+       1.000000,       0.000000,       0.000000,       0.000000,
+       0.000000,       1.000000,       0.000000,       0.000000,
+       0.000000,       0.000000,       1.000000,       0.000000,
+       0.000000,       0.000000,       0.000000,       1.000000,
+))");
+
+  stream.str("");
+  stream.clear();
+
+  m = Matrix::MakeTranslation(Vector3(10, 20, 30));
+
+  stream << m;
+
+  ASSERT_EQ(stream.str(), R"((
+       1.000000,       0.000000,       0.000000,      10.000000,
+       0.000000,       1.000000,       0.000000,      20.000000,
+       0.000000,       0.000000,       1.000000,      30.000000,
+       0.000000,       0.000000,       0.000000,       1.000000,
+))");
+}
+
+TEST(GeometryTest, Gradient) {
+  {
+    // Simple 2 color gradient produces color buffer containing exactly those
+    // values.
+    std::vector<Color> colors = {Color::Red(), Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
+    ASSERT_EQ(texture_size, 2u);
+  }
+
+  {
+    // Simple N color gradient produces color buffer containing exactly those
+    // values.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
+                                 Color::White()};
+    std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
+    ASSERT_EQ(texture_size, 4u);
+  }
+
+  {
+    // Gradient with color stops will lerp and scale buffer.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
+    std::vector<Scalar> stops = {0.0, 0.25, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    std::vector<Color> lerped_colors = {
+        Color::Red(),
+        Color::Blue(),
+        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
+        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
+        Color::Green(),
+    };
+    ASSERT_COLOR_BUFFER_NEAR(gradient, lerped_colors);
+    ASSERT_EQ(texture_size, 5u);
+  }
+
+  {
+    // Gradient size is capped at 1024.
+    std::vector<Color> colors = {};
+    std::vector<Scalar> stops = {};
+    for (auto i = 0u; i < 2000; i++) {
+      colors.push_back(Color::Blue());
+      stops.push_back(i / 2000.0);
+    }
+    stops[1999] = 1.0;
+
+    uint32_t texture_size;
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    ASSERT_EQ(texture_size, 1024u);
+  }
 }
 
 }  // namespace testing

@@ -22,6 +22,7 @@
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
 - (bool)testTrackpadGesturesAreSentToFramework;
+- (bool)testViewWillAppearCalledMultipleTimes;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -69,6 +70,12 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   // The accessibilityChildren should only contains the FlutterView.
   EXPECT_EQ([accessibilityChildren count], 1u);
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
+}
+
+TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
+  FlutterViewController* viewControllerMock = CreateMockViewController();
+  [viewControllerMock loadView];
+  EXPECT_EQ([viewControllerMock.flutterView acceptsFirstMouse:nil], YES);
 }
 
 TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
@@ -132,6 +139,10 @@ TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
 
 TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework]);
+}
+
+TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewWillAppearCalledMultipleTimes]);
 }
 
 }  // namespace flutter::testing
@@ -474,6 +485,46 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
 
+  // Start system momentum.
+  CGEventRef cgEventMomentumStart = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventMomentumStart, kCGScrollWheelEventScrollPhase, 0);
+  CGEventSetIntegerValueField(cgEventMomentumStart, kCGScrollWheelEventMomentumPhase,
+                              kCGMomentumScrollPhaseBegin);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventMomentumStart]];
+  EXPECT_FALSE(called);
+
+  // Mock a touch on the trackpad.
+  id touchMock = OCMClassMock([NSTouch class]);
+  NSSet* touchSet = [NSSet setWithObject:touchMock];
+  id touchEventMock = OCMClassMock([NSEvent class]);
+  OCMStub([touchEventMock allTouches]).andReturn(touchSet);
+  CGPoint touchLocation = {0, 0};
+  OCMStub([touchEventMock locationInWindow]).andReturn(touchLocation);
+
+  // Scroll inertia cancel event should be issued.
+  called = false;
+  [viewController touchesBeganWithEvent:touchEventMock];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScrollInertiaCancel);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+
+  // End system momentum.
+  CGEventRef cgEventMomentumEnd = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventMomentumEnd, kCGScrollWheelEventScrollPhase, 0);
+  CGEventSetIntegerValueField(cgEventMomentumEnd, kCGScrollWheelEventMomentumPhase,
+                              kCGMomentumScrollPhaseEnd);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventMomentumEnd]];
+  EXPECT_FALSE(called);
+
+  // Scroll inertia cancel event should not be issued after momentum has ended.
+  called = false;
+  [viewController touchesBeganWithEvent:touchEventMock];
+  EXPECT_FALSE(called);
+
   // May-begin and cancel are used while macOS determines which type of gesture to choose.
   CGEventRef cgEventMayBegin = CGEventCreateCopy(cgEventStart);
   CGEventSetIntegerValueField(cgEventMayBegin, kCGScrollWheelEventScrollPhase,
@@ -515,6 +566,16 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   EXPECT_EQ(last_event.scroll_delta_x, -40 * viewController.flutterView.layer.contentsScale);
   EXPECT_EQ(last_event.scroll_delta_y, -80 * viewController.flutterView.layer.contentsScale);
 
+  return true;
+}
+
+- (bool)testViewWillAppearCalledMultipleTimes {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController viewWillAppear];
+  [viewController viewWillAppear];
   return true;
 }
 

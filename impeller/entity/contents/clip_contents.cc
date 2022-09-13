@@ -3,16 +3,16 @@
 // found in the LICENSE file.
 
 #include <optional>
-#include "impeller/geometry/path_builder.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "linear_gradient_contents.h"
 
+#include "fml/logging.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -33,19 +33,53 @@ void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
 }
 
 std::optional<Rect> ClipContents::GetCoverage(const Entity& entity) const {
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
+  return std::nullopt;
 };
+
+Contents::StencilCoverage ClipContents::GetStencilCoverage(
+    const Entity& entity,
+    const std::optional<Rect>& current_stencil_coverage) const {
+  if (!current_stencil_coverage.has_value()) {
+    return {.type = StencilCoverage::Type::kAppend, .coverage = std::nullopt};
+  }
+  switch (clip_op_) {
+    case Entity::ClipOperation::kDifference:
+      // This can be optimized further by considering cases when the bounds of
+      // the current stencil will shrink.
+      return {.type = StencilCoverage::Type::kAppend,
+              .coverage = current_stencil_coverage};
+    case Entity::ClipOperation::kIntersect:
+      return {
+          .type = StencilCoverage::Type::kAppend,
+          .coverage = current_stencil_coverage->Intersection(
+              path_.GetTransformedBoundingBox(entity.GetTransformation())
+                  .value()),
+      };
+  }
+  FML_UNREACHABLE();
+}
+
+bool ClipContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
+  return true;
+}
 
 bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
+  using FS = ClipPipeline::FragmentShader;
 
-  VS::FrameInfo info;
-  // The color really doesn't matter.
-  info.color = Color::SkyBlue();
+  VS::VertInfo info;
 
   Command cmd;
+
+  FS::FragInfo frag_info;
+  // The color really doesn't matter.
+  frag_info.color = Color::SkyBlue();
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+
   auto options = OptionsFromPassAndEntity(pass, entity);
   cmd.stencil_reference = entity.GetStencilDepth();
   options.stencil_compare = CompareFunction::kEqual;
@@ -64,7 +98,7 @@ bool ClipContents::Render(const ContentContext& renderer,
       cmd.BindVertices(std::move(vertices));
 
       info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-      VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+      VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
       cmd.pipeline = renderer.GetClipPipeline(options);
       pass.AddCommand(cmd);
@@ -90,7 +124,7 @@ bool ClipContents::Render(const ContentContext& renderer,
 
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
              entity.GetTransformation();
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
   pass.AddCommand(std::move(cmd));
   return true;
@@ -109,10 +143,23 @@ std::optional<Rect> ClipRestoreContents::GetCoverage(
   return std::nullopt;
 };
 
+Contents::StencilCoverage ClipRestoreContents::GetStencilCoverage(
+    const Entity& entity,
+    const std::optional<Rect>& current_stencil_coverage) const {
+  return {.type = StencilCoverage::Type::kRestore, .coverage = std::nullopt};
+}
+
+bool ClipRestoreContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
+  return true;
+}
+
 bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  const Entity& entity,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
+  using FS = ClipPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "Restore Clip";
@@ -135,12 +182,14 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   });
   cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-  VS::FrameInfo info;
-  // The color really doesn't matter.
-  info.color = Color::SkyBlue();
+  VS::VertInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+  FS::FragInfo frag_info;
+  // The color really doesn't matter.
+  frag_info.color = Color::SkyBlue();
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   pass.AddCommand(std::move(cmd));
   return true;

@@ -4,8 +4,6 @@
 
 import 'dart:ui';
 
-import 'package:scenario_app/src/texture.dart';
-
 import 'animated_color_square.dart';
 import 'bogus_font_text.dart';
 import 'initial_route_reply.dart';
@@ -13,6 +11,7 @@ import 'locale_initialization.dart';
 import 'platform_view.dart';
 import 'poppable_screen.dart';
 import 'scenario.dart';
+import 'texture.dart';
 import 'touches_scenario.dart';
 
 typedef ScenarioFactory = Scenario Function(); // ignore: public_member_api_docs
@@ -24,6 +23,7 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'locale_initialization': () => LocaleInitialization(PlatformDispatcher.instance),
   'platform_view': () => PlatformViewScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_no_overlay_intersection': () => PlatformViewNoOverlayIntersectionScenario(PlatformDispatcher.instance, id: _viewId++),
+  'platform_view_larger_than_display_size': () => PlatformViewLargerThanDisplaySize(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_partial_intersection': () => PlatformViewPartialIntersectionScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_two_intersecting_overlays': () => PlatformViewTwoIntersectingOverlaysScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_one_overlay_two_intersecting_overlays': () => PlatformViewOneOverlayTwoIntersectingOverlaysScenario(PlatformDispatcher.instance, id: _viewId++),

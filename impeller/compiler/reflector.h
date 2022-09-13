@@ -12,8 +12,8 @@
 #include "impeller/compiler/compiler_backend.h"
 #include "impeller/compiler/runtime_stage_data.h"
 #include "inja/inja.hpp"
-#include "third_party/spirv_cross/spirv_msl.hpp"
-#include "third_party/spirv_cross/spirv_parser.hpp"
+#include "spirv_msl.hpp"
+#include "spirv_parser.hpp"
 
 namespace impeller {
 namespace compiler {
@@ -118,10 +118,12 @@ class Reflector {
       const spirv_cross::TypeID& type_id) const;
 
   std::vector<BindPrototype> ReflectBindPrototypes(
-      const spirv_cross::ShaderResources& resources) const;
+      const spirv_cross::ShaderResources& resources,
+      spv::ExecutionModel execution_model) const;
 
   nlohmann::json::array_t EmitBindPrototypes(
-      const spirv_cross::ShaderResources& resources) const;
+      const spirv_cross::ShaderResources& resources,
+      spv::ExecutionModel execution_model) const;
 
   std::optional<StructDefinition> ReflectPerVertexStructDefinition(
       const spirv_cross::SmallVector<spirv_cross::Resource>& stage_inputs)
@@ -137,6 +139,8 @@ class Reflector {
 
   std::vector<StructMember> ReadStructMembers(
       const spirv_cross::TypeID& type_id) const;
+
+  uint32_t GetArrayElements(const spirv_cross::SPIRType& type) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Reflector);
 };

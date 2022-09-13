@@ -4,6 +4,7 @@
 
 #include "impeller/compiler/runtime_stage_data.h"
 
+#include <array>
 #include <optional>
 
 #include "impeller/base/validation.h"
@@ -56,7 +57,10 @@ static std::optional<fb::TargetPlatform> ToTargetPlatform(
     case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kVulkan:
       return std::nullopt;
+    case TargetPlatform::kSkSL:
+      return fb::TargetPlatform::kSkSL;
     case TargetPlatform::kRuntimeStageMetal:
       return fb::TargetPlatform::kMetal;
     case TargetPlatform::kRuntimeStageGLES:
@@ -152,6 +156,8 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
       return nullptr;
     }
     desc->type = uniform_type.value();
+    desc->bit_width = uniform.bit_width;
+    desc->array_elements = uniform.array_elements;
 
     runtime_stage.uniforms.emplace_back(std::move(desc));
   }

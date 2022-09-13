@@ -4,13 +4,10 @@
 
 import 'dart:math' as math;
 
-import 'font_fallbacks.dart' show CodeunitRange;
+import 'noto_font.dart' show CodeunitRange;
 
 /// A tree which stores a set of intervals that can be queried for intersection.
 class IntervalTree<T> {
-  /// The root node of the interval tree.
-  final IntervalTreeNode<T> root;
-
   IntervalTree._(this.root);
 
   /// Creates an interval tree from a mapping of [T] values to a list of ranges.
@@ -32,7 +29,7 @@ class IntervalTree<T> {
         .sort((IntervalTreeNode<T> a, IntervalTreeNode<T> b) => a.low - b.low);
 
     // Make a balanced binary search tree from the nodes sorted by low value.
-    IntervalTreeNode<T>? _makeBalancedTree(List<IntervalTreeNode<T>> nodes) {
+    IntervalTreeNode<T>? makeBalancedTree(List<IntervalTreeNode<T>> nodes) {
       if (nodes.isEmpty) {
         return null;
       }
@@ -41,26 +38,26 @@ class IntervalTree<T> {
       }
       final int mid = nodes.length ~/ 2;
       final IntervalTreeNode<T> root = nodes[mid];
-      root.left = _makeBalancedTree(nodes.sublist(0, mid));
-      root.right = _makeBalancedTree(nodes.sublist(mid + 1));
+      root.left = makeBalancedTree(nodes.sublist(0, mid));
+      root.right = makeBalancedTree(nodes.sublist(mid + 1));
       return root;
     }
 
     // Given a node, computes the highest `high` point of all of the subnodes.
     //
     // As a side effect, this also computes the high point of all subnodes.
-    void _computeHigh(IntervalTreeNode<T> root) {
+    void computeHigh(IntervalTreeNode<T> root) {
       if (root.left == null && root.right == null) {
         root.computedHigh = root.high;
       } else if (root.left == null) {
-        _computeHigh(root.right!);
+        computeHigh(root.right!);
         root.computedHigh = math.max(root.high, root.right!.computedHigh);
       } else if (root.right == null) {
-        _computeHigh(root.left!);
+        computeHigh(root.left!);
         root.computedHigh = math.max(root.high, root.left!.computedHigh);
       } else {
-        _computeHigh(root.right!);
-        _computeHigh(root.left!);
+        computeHigh(root.right!);
+        computeHigh(root.left!);
         root.computedHigh = math.max(
             root.high,
             math.max(
@@ -70,11 +67,14 @@ class IntervalTree<T> {
       }
     }
 
-    final IntervalTreeNode<T> root = _makeBalancedTree(intervals)!;
-    _computeHigh(root);
+    final IntervalTreeNode<T> root = makeBalancedTree(intervals)!;
+    computeHigh(root);
 
     return IntervalTree<T>._(root);
   }
+
+  /// The root node of the interval tree.
+  final IntervalTreeNode<T> root;
 
   /// Returns the list of objects which have been associated with intervals that
   /// intersect with [x].
@@ -91,6 +91,8 @@ class IntervalTree<T> {
 }
 
 class IntervalTreeNode<T> {
+  IntervalTreeNode(this.value, this.low, this.high) : computedHigh = high;
+
   final T value;
   final int low;
   final int high;
@@ -98,8 +100,6 @@ class IntervalTreeNode<T> {
 
   IntervalTreeNode<T>? left;
   IntervalTreeNode<T>? right;
-
-  IntervalTreeNode(this.value, this.low, this.high) : computedHigh = high;
 
   Iterable<T> enumerateAllElements() sync* {
     if (left != null) {
@@ -130,14 +130,14 @@ class IntervalTreeNode<T> {
     if (containsShallow(x)) {
       return true;
     }
-    if (left?.containsDeep(x) == true) {
+    if (left?.containsDeep(x) ?? false) {
       return true;
     }
     if (x < low) {
       // The right tree can't possible contain x. Don't bother checking.
       return false;
     }
-    return right?.containsDeep(x) == true;
+    return right?.containsDeep(x) ?? false;
   }
 
   // Searches the tree rooted at this node for all T containing [x].

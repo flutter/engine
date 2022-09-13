@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -22,24 +21,16 @@ import 'shaders/vertex_shaders.dart';
 GlRenderer? glRenderer;
 
 class SurfaceVertices implements ui.Vertices {
-  final ui.VertexMode mode;
-  final Float32List positions;
-  final Int32List? colors;
-  final Uint16List? indices; // ignore: unused_field
-
   SurfaceVertices(
     this.mode,
     List<ui.Offset> positions, {
     List<ui.Color>? colors,
     List<int>? indices,
-  })  : assert(mode != null), // ignore: unnecessary_null_comparison
-        assert(positions != null), // ignore: unnecessary_null_comparison
-        // ignore: unnecessary_this
-        this.colors = colors != null ? _int32ListFromColors(colors) : null,
-        // ignore: unnecessary_this
-        this.indices = indices != null ? Uint16List.fromList(indices) : null,
-        // ignore: unnecessary_this
-        this.positions = offsetListToFloat32List(positions) {
+  })  : assert(mode != null),
+        assert(positions != null),
+        colors = colors != null ? _int32ListFromColors(colors) : null,
+        indices = indices != null ? Uint16List.fromList(indices) : null,
+        positions = offsetListToFloat32List(positions) {
     initWebGl();
   }
 
@@ -48,10 +39,15 @@ class SurfaceVertices implements ui.Vertices {
     this.positions, {
     this.colors,
     this.indices,
-  })  : assert(mode != null), // ignore: unnecessary_null_comparison
-        assert(positions != null) { // ignore: unnecessary_null_comparison
+  })  : assert(mode != null),
+        assert(positions != null) {
     initWebGl();
   }
+
+  final ui.VertexMode mode;
+  final Float32List positions;
+  final Int32List? colors;
+  final Uint16List? indices;
 
   static Int32List _int32ListFromColors(List<ui.Color> colors) {
     final Int32List list = Int32List(colors.length);
@@ -60,6 +56,21 @@ class SurfaceVertices implements ui.Vertices {
       list[i] = colors[i].value;
     }
     return list;
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Vertices.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }
 
@@ -92,7 +103,7 @@ abstract class GlRenderer {
       int widthInPixels,
       int heightInPixels);
 
-  void drawHairline(DomCanvasRenderingContext2D? _ctx, Float32List positions);
+  void drawHairline(DomCanvasRenderingContext2D? ctx, Float32List positions);
 }
 
 /// Treeshakeable backend for rendering webgl on canvas.
@@ -181,7 +192,7 @@ class _WebGlRenderer implements GlRenderer {
     //
     // Create buffer for vertex coordinates.
     final Object positionsBuffer = gl.createBuffer()!;
-    assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
+    assert(positionsBuffer != null);
 
     Object? vao;
     if (imageShader != null) {
@@ -300,7 +311,7 @@ class _WebGlRenderer implements GlRenderer {
 
     context!.save();
     context.resetTransform();
-    gl.drawImage(context as html.CanvasRenderingContext2D, offsetX, offsetY);
+    gl.drawImage(context, offsetX, offsetY);
     context.restore();
   }
 
@@ -373,7 +384,7 @@ class _WebGlRenderer implements GlRenderer {
 
     // Setup geometry.
     final Object positionsBuffer = gl.createBuffer()!;
-    assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
+    assert(positionsBuffer != null);
     gl.bindArrayBuffer(positionsBuffer);
     gl.bufferData(vertices, gl.kStaticDraw);
     // Point an attribute to the currently bound vertex buffer object.
@@ -447,11 +458,11 @@ class _WebGlRenderer implements GlRenderer {
 
   @override
   void drawHairline(
-      DomCanvasRenderingContext2D? _ctx, Float32List positions) {
-    assert(positions != null); // ignore: unnecessary_null_comparison
+      DomCanvasRenderingContext2D? ctx, Float32List positions) {
+    assert(positions != null);
     final int pointCount = positions.length ~/ 2;
-    _ctx!.lineWidth = 1.0;
-    _ctx.beginPath();
+    ctx!.lineWidth = 1.0;
+    ctx.beginPath();
     final int len = pointCount * 2;
     for (int i = 0; i < len;) {
       for (int triangleVertexIndex = 0;
@@ -461,15 +472,15 @@ class _WebGlRenderer implements GlRenderer {
         final double dy = positions[i + 1];
         switch (triangleVertexIndex) {
           case 0:
-            _ctx.moveTo(dx, dy);
+            ctx.moveTo(dx, dy);
             break;
           case 1:
-            _ctx.lineTo(dx, dy);
+            ctx.lineTo(dx, dy);
             break;
           case 2:
-            _ctx.lineTo(dx, dy);
-            _ctx.closePath();
-            _ctx.stroke();
+            ctx.lineTo(dx, dy);
+            ctx.closePath();
+            ctx.stroke();
         }
       }
     }

@@ -8,13 +8,21 @@ typedef VoidCallback = void Function();
 typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
-typedef KeyDataCallback = bool Function(KeyData packet);
+typedef KeyDataCallback = bool Function(KeyData data);
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-typedef ErrorCallback = bool Function(Object exception, StackTrace? stackTrace);
+typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
+
+// ignore: avoid_classes_with_only_static_members
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  static RootIsolateToken? get instance {
+    throw UnsupportedError('Root isolate not identifiable on web.');
+  }
+}
 
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
@@ -49,10 +57,20 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port);
+
+  void registerBackgroundIsolate(RootIsolateToken token);
+
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
   void setIsolateDebugName(String name) {}
+
+  void requestDartPerformanceMode(DartPerformanceMode mode) {}
 
   ByteData? getPersistentIsolateData() => null;
 
@@ -265,10 +283,10 @@ class FrameTiming {
     ]);
   }
 
-  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
-
   FrameTiming._(this._data)
       : assert(_data.length == _dataLength);
+
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
   int timestampInMicroseconds(FramePhase phase) => _data[phase.index];
 
@@ -359,10 +377,12 @@ class DisplayFeature {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is DisplayFeature && bounds == other.bounds &&
         type == other.type && state == other.state;
   }
@@ -394,7 +414,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != null), // ignore: unnecessary_null_comparison
+  ])  : assert(_languageCode != null),
         assert(_languageCode != ''),
         scriptCode = null;
 
@@ -402,7 +422,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  })  : assert(languageCode != null), // ignore: unnecessary_null_comparison
+  })  : assert(languageCode != null),
         assert(languageCode != ''),
         _languageCode = languageCode,
         assert(scriptCode != ''),
@@ -541,4 +561,11 @@ class Locale {
     }
     return out.toString();
   }
+}
+
+enum DartPerformanceMode {
+  balanced,
+  latency,
+  throughput,
+  memory,
 }

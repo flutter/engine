@@ -10,7 +10,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/types.h"
-#include "third_party/spirv_cross/spirv_parser.hpp"
+#include "spirv_parser.hpp"
 
 namespace impeller {
 namespace compiler {
@@ -21,6 +21,8 @@ struct UniformDescription {
   spirv_cross::SPIRType::BaseType type = spirv_cross::SPIRType::BaseType::Float;
   size_t rows = 0u;
   size_t columns = 0u;
+  size_t bit_width = 0u;
+  size_t array_elements = 0u;
 };
 
 class RuntimeStageData {

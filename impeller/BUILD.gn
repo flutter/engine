@@ -9,10 +9,6 @@ config("impeller_public_config") {
 
   defines = []
 
-  if (impeller_supports_platform) {
-    defines += [ "IMPELLER_SUPPORTS_PLATFORM=1" ]
-  }
-
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }
@@ -25,6 +21,10 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_ENABLE_OPENGLES=1" ]
   }
 
+  if (impeller_enable_vulkan) {
+    defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
+  }
+
   if (impeller_trace_all_gl_calls) {
     defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
   }
@@ -35,8 +35,6 @@ config("impeller_public_config") {
 
   if (is_win) {
     defines += [
-      "_USE_MATH_DEFINES",
-
       # TODO(dnfield): https://github.com/flutter/flutter/issues/50053
       "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
     ]

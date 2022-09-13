@@ -8,6 +8,7 @@
 enabled_branches:
   - main
   - flutter-\d+\.\d+-candidate\.\d+
+  - fuchsia_r\d+
 
 platform_properties:
   linux:
@@ -117,7 +118,7 @@ targets:
       - DEPS
       - .ci.yaml
       - testing/**
-      - shell/platforms/android/**
+      - shell/platform/android/**
 
   - name: Linux Benchmarks
     enabled_branches:
@@ -173,6 +174,13 @@ targets:
 
   - name: Linux Unopt
     recipe: engine/engine_unopt
+    properties:
+      add_recipes_cq: "true"
+      clobber: "true"
+    timeout: 60
+
+  - name: Linux License
+    recipe: engine/engine_license
     properties:
       add_recipes_cq: "true"
       clobber: "true"
@@ -286,6 +294,14 @@ targets:
       jazzy_version: "0.14.1"
     timeout: 75
 
+  - name: Mac mac_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_android_aot_engine
+      environment: Staging
+
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
     bringup: true
@@ -302,8 +318,9 @@ targets:
       runtime_versions: >-
         [
           "ios-13-0",
-          "ios-15-0"
+          "ios-16-0_14a5294e"
         ]
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac clang-tidy
@@ -311,6 +328,7 @@ targets:
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac iOS Engine
@@ -330,8 +348,6 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
-      os: Mac-10.15
-      xcode: 12c33 # xcode 12.3
     timeout: 60
     runIf:
       - DEPS
@@ -419,22 +435,26 @@ targets:
       - web_sdk/**
 
   - name: Mac iOS Engine Profile
-    presubmit: false
     recipe: engine/engine
     properties:
       build_ios: "true"
       ios_profile: "true"
       jazzy_version: "0.14.1"
     timeout: 90
+    runIf:
+      - DEPS
+      - .ci.yaml
 
   - name: Mac iOS Engine Release
-    presubmit: false
     recipe: engine/engine
     properties:
       build_ios: "true"
       ios_release: "true"
       jazzy_version: "0.14.1"
     timeout: 90
+    runIf:
+      - DEPS
+      - .ci.yaml
 
   - name: Linux ci_yaml engine roller
     bringup: true

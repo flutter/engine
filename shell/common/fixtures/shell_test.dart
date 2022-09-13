@@ -321,3 +321,46 @@ void scene_with_red_box() {
   };
   PlatformDispatcher.instance.scheduleFrame();
 }
+
+
+@pragma('vm:entry-point')
+Future<void> toImageSync() async {
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  canvas.drawPaint(Paint()..color = const Color(0xFFAAAAAA));
+  final Picture picture = recorder.endRecording();
+
+  final Image image = picture.toImageSync(20, 25);
+  void expect(Object? a, Object? b) {
+    if (a != b) {
+      throw 'Expected $a to == $b';
+    }
+  }
+  expect(image.width, 20);
+  expect(image.height, 25);
+
+  final ByteData dataBefore = (await image.toByteData())!;
+  expect(dataBefore.lengthInBytes, 20 * 25 * 4);
+  for (final int byte in dataBefore.buffer.asUint32List()) {
+    expect(byte, 0xFFAAAAAA);
+  }
+
+  // Cause the rasterizer to get torn down.
+  notifyNative();
+
+  final ByteData dataAfter = (await image.toByteData())!;
+  expect(dataAfter.lengthInBytes, 20 * 25 * 4);
+  for (final int byte in dataAfter.buffer.asUint32List()) {
+    expect(byte, 0xFFAAAAAA);
+  }
+
+  // Verify that the image can be drawn successfully.
+  final PictureRecorder recorder2 = PictureRecorder();
+  final Canvas canvas2 = Canvas(recorder2);
+  canvas2.drawImage(image, Offset.zero, Paint());
+  final Picture picture2 = recorder2.endRecording();
+
+  picture.dispose();
+  picture2.dispose();
+  notifyNative();
+}

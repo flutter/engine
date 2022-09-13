@@ -21,12 +21,10 @@ const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {bool write = false}) async {
-  final EnginePlatformDispatcher dispatcher =
-  ui.window.platformDispatcher as EnginePlatformDispatcher;
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  dispatcher.rasterizer!.draw(sb.build().layerTree);
+  CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
   await matchGoldenFile(goldenFile, region: region, write: write);
 }
 
@@ -101,7 +99,6 @@ void testMain() {
         recorder.endRecording(),
       );
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);
 }

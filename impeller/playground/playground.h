@@ -8,7 +8,6 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-#include "gtest/gtest.h"
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/texture.h"
@@ -20,25 +19,26 @@ class PlaygroundImpl;
 enum class PlaygroundBackend {
   kMetal,
   kOpenGLES,
+  kVulkan,
 };
 
 std::string PlaygroundBackendToString(PlaygroundBackend backend);
 
-class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
+class Playground {
  public:
   using SinglePassCallback = std::function<bool(RenderPass& pass)>;
 
-  Playground();
+  explicit Playground();
 
-  ~Playground();
+  virtual ~Playground();
 
   static constexpr bool is_enabled() { return is_enabled_; }
 
-  void SetUp() override;
+  static bool ShouldOpenNewPlaygrounds();
 
-  void TearDown() override;
+  void SetupWindow(PlaygroundBackend backend);
 
-  PlaygroundBackend GetBackend() const;
+  void TeardownWindow();
 
   Point GetCursorPosition() const;
 
@@ -56,10 +56,18 @@ class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
       const char* fixture_name) const;
 
   std::shared_ptr<Texture> CreateTextureForFixture(
-      const char* fixture_name) const;
+      const char* fixture_name,
+      bool enable_mipmapping = false) const;
 
   std::shared_ptr<Texture> CreateTextureCubeForFixture(
       std::array<const char*, 6> fixture_names) const;
+
+  static bool SupportsBackend(PlaygroundBackend backend);
+
+  virtual std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
+      std::string asset_name) const = 0;
+
+  virtual std::string GetWindowTitle() const = 0;
 
  private:
 #if IMPELLER_ENABLE_PLAYGROUND
@@ -81,14 +89,5 @@ class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
 
   FML_DISALLOW_COPY_AND_ASSIGN(Playground);
 };
-
-#define INSTANTIATE_PLAYGROUND_SUITE(playground)                        \
-  INSTANTIATE_TEST_SUITE_P(                                             \
-      Play, playground,                                                 \
-      ::testing::Values(PlaygroundBackend::kMetal,                      \
-                        PlaygroundBackend::kOpenGLES),                  \
-      [](const ::testing::TestParamInfo<Playground::ParamType>& info) { \
-        return PlaygroundBackendToString(info.param);                   \
-      });
 
 }  // namespace impeller

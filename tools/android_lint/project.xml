@@ -2,7 +2,7 @@
 <!-- WILL AUTOMATICALLY FIND ALL .java FILES AND INCLUDE THEM HERE       -->
 <project>
   <sdk dir="../../../third_party/android_tools/sdk" />
-  <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-S">
+  <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-T">
   <manifest file="../../../flutter/shell/platform/android/AndroidManifest.xml" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/KeyCodes.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/FakeKeyEvent.java" />
@@ -23,6 +23,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/util/Predicate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/TraceSection.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardMap.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java" />
@@ -107,7 +108,9 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineGroup.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistry.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistryImpl.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewFactory.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java" />

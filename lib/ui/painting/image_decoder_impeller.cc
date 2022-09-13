@@ -58,7 +58,8 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 
 std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
-    SkISize target_size) {
+    SkISize target_size,
+    impeller::ISize max_texture_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";
@@ -70,6 +71,10 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
         << "Uncompressed images are not implemented in Impeller yet.";
     return nullptr;
   }
+  target_size.set(std::min(static_cast<int32_t>(max_texture_size.width),
+                           target_size.width()),
+                  std::min(static_cast<int32_t>(max_texture_size.height),
+                           target_size.height()));
 
   const SkISize source_size = descriptor->image_info().dimensions();
   auto decode_size = descriptor->get_scaled_dimensions(std::max(
@@ -146,19 +151,24 @@ static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
   }
 
   impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
 
-  auto texture = context->GetPermanentsAllocator()->CreateTexture(
-      impeller::StorageMode::kHostVisible, texture_descriptor);
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
   if (!texture) {
     FML_DLOG(ERROR) << "Could not create Impeller texture.";
     return nullptr;
   }
 
-  if (!texture->SetContents(
-          reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),
-          texture_descriptor.GetByteSizeOfBaseMipLevel())) {
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
+      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
+  );
+
+  if (!texture->SetContents(mapping)) {
     FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
     return nullptr;
   }
@@ -196,8 +206,12 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        io_runner = runners_.GetIOTaskRunner(),                    //
        result                                                     //
   ]() {
+        auto max_size_supported =
+            context->GetResourceAllocator()->GetMaxTextureSizeSupported();
+
         // Always decompress on the concurrent runner.
-        auto bitmap = DecompressTexture(raw_descriptor, target_size);
+        auto bitmap =
+            DecompressTexture(raw_descriptor, target_size, max_size_supported);
         if (!bitmap) {
           result(nullptr);
           return;

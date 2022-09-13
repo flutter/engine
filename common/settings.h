@@ -203,9 +203,6 @@ struct Settings {
   // not supported on the platform.
   bool enable_impeller = false;
 
-  // Selects the DisplayList for storage of rendering operations.
-  bool enable_display_list = true;
-
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;
 
@@ -303,11 +300,6 @@ struct Settings {
 
   // Max bytes threshold of resource cache, or 0 for unlimited.
   size_t resource_cache_max_bytes_threshold = 0;
-
-  /// A timestamp representing when the engine started. The value is based
-  /// on the clock used by the Dart timeline APIs. This timestamp is used
-  /// to log a timeline event that tracks the latency of engine startup.
-  std::chrono::microseconds engine_start_timestamp = {};
 
   /// The minimum number of samples to require in multipsampled anti-aliasing.
   ///

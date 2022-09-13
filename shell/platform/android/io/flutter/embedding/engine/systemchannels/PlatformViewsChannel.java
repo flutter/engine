@@ -11,8 +11,6 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -38,10 +36,7 @@ public class PlatformViewsChannel {
   }
 
   private static String detailedExceptionString(Exception exception) {
-    StringWriter stringWriter = new StringWriter();
-    PrintWriter printWriter = new PrintWriter(stringWriter);
-    exception.printStackTrace(printWriter);
-    return stringWriter.toString();
+    return Log.getStackTraceString(exception);
   }
 
   private final MethodChannel.MethodCallHandler parsingHandler =
@@ -147,15 +142,18 @@ public class PlatformViewsChannel {
                   (double) resizeArgs.get("width"),
                   (double) resizeArgs.get("height"));
           try {
-            final PlatformViewBufferSize sz = handler.resize(resizeRequest);
-            if (sz == null) {
-              result.error("error", "Failed to resize the platform view", null);
-            } else {
-              final Map<String, Object> response = new HashMap<>();
-              response.put("width", (double) sz.width);
-              response.put("height", (double) sz.height);
-              result.success(response);
-            }
+            handler.resize(
+                resizeRequest,
+                (PlatformViewBufferSize bufferSize) -> {
+                  if (bufferSize == null) {
+                    result.error("error", "Failed to resize the platform view", null);
+                  } else {
+                    final Map<String, Object> response = new HashMap<>();
+                    response.put("width", (double) bufferSize.width);
+                    response.put("height", (double) bufferSize.height);
+                    result.success(response);
+                  }
+                });
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
           }
@@ -298,9 +296,11 @@ public class PlatformViewsChannel {
      * The Flutter application would like to resize an existing Android {@code View}.
      *
      * @param request The request to resize the platform view.
-     * @return The buffer size where the platform view pixels are written to.
+     * @param onComplete Once the resize is completed, this is the handler to notify the size of the
+     *     platform view buffer.
      */
-    PlatformViewBufferSize resize(@NonNull PlatformViewResizeRequest request);
+    void resize(
+        @NonNull PlatformViewResizeRequest request, @NonNull PlatformViewBufferResized onComplete);
 
     /**
      * The Flutter application would like to change the offset of an existing Android {@code View}.
@@ -416,6 +416,11 @@ public class PlatformViewsChannel {
       this.width = width;
       this.height = height;
     }
+  }
+
+  /** Allows to notify when a platform view buffer has been resized. */
+  public interface PlatformViewBufferResized {
+    void run(@Nullable PlatformViewBufferSize bufferSize);
   }
 
   /** The state of a touch event in Flutter within a platform view. */

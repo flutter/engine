@@ -5,16 +5,16 @@
 #ifndef FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 
-#include "flutter/flow/layers/container_layer.h"
-#include "third_party/skia/include/core/SkShader.h"
+#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/flow/layers/cacheable_layer.h"
 
 namespace flutter {
 
-class ShaderMaskLayer : public ContainerLayer {
+class ShaderMaskLayer : public CacheableContainerLayer {
  public:
-  ShaderMaskLayer(sk_sp<SkShader> shader,
+  ShaderMaskLayer(std::shared_ptr<DlColorSource> color_source,
                   const SkRect& mask_rect,
-                  SkBlendMode blend_mode);
+                  DlBlendMode blend_mode);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -23,12 +23,9 @@ class ShaderMaskLayer : public ContainerLayer {
   void Paint(PaintContext& context) const override;
 
  private:
-  sk_sp<SkShader> shader_;
+  std::shared_ptr<DlColorSource> color_source_;
   SkRect mask_rect_;
-  SkBlendMode blend_mode_;
-
-  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
-  int render_count_;
+  DlBlendMode blend_mode_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
 };

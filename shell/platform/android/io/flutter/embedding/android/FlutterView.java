@@ -874,6 +874,21 @@ public class FlutterView extends FrameLayout
   }
 
   /**
+   * Allows a {@code View} that is not currently the input connection target to invoke commands on
+   * the {@link android.view.inputmethod.InputMethodManager}, which is otherwise disallowed.
+   *
+   * <p>Returns true to allow non-input-connection-targets to invoke methods on {@code
+   * InputMethodManager}, or false to exclusively allow the input connection target to invoke such
+   * methods.
+   */
+  @Override
+  public boolean checkInputConnectionProxy(View view) {
+    return flutterEngine != null
+        ? flutterEngine.getPlatformViewsController().checkInputConnectionProxy(view)
+        : super.checkInputConnectionProxy(view);
+  }
+
+  /**
    * Invoked when a hardware key is pressed or released.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
@@ -1195,7 +1210,6 @@ public class FlutterView extends FrameLayout
             false,
             systemSettingsObserver);
 
-    localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
@@ -1294,6 +1308,11 @@ public class FlutterView extends FrameLayout
         getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
   }
 
+  @VisibleForTesting
+  public FlutterImageView getCurrentImageSurface() {
+    return flutterImageView;
+  }
+
   /**
    * Converts the current render surface to a {@link FlutterImageView} if it's not one already.
    * Otherwise, it resizes the {@link FlutterImageView} based on the current view size.
@@ -1356,7 +1375,7 @@ public class FlutterView extends FrameLayout
           public void onFlutterUiDisplayed() {
             renderer.removeIsDisplayingFlutterUiListener(this);
             onDone.run();
-            if (!(renderSurface instanceof FlutterImageView)) {
+            if (!(renderSurface instanceof FlutterImageView) && flutterImageView != null) {
               flutterImageView.detachFromRenderer();
             }
           }

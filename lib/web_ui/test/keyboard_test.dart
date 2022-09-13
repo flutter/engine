@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/keyboard.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
@@ -51,7 +50,7 @@ void testMain() {
         dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
       };
 
-      html.KeyboardEvent event;
+      DomKeyboardEvent event;
 
       event = dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
 
@@ -68,9 +67,7 @@ void testMain() {
       });
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches keydown to flutter/keyevent channel', () {
       Keyboard.initialize();
@@ -83,7 +80,7 @@ void testMain() {
         dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
       };
 
-      html.KeyboardEvent event;
+      DomKeyboardEvent event;
 
       event =
           dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
@@ -101,9 +98,7 @@ void testMain() {
       expect(event.defaultPrevented, isFalse);
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches correct meta state', () {
       Keyboard.initialize();
@@ -114,7 +109,7 @@ void testMain() {
         dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
       };
 
-      html.KeyboardEvent event;
+      DomKeyboardEvent event;
 
       event = dispatchKeyboardEvent(
         'keydown',
@@ -155,9 +150,7 @@ void testMain() {
       });
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches repeat events', () {
       Keyboard.initialize();
@@ -168,7 +161,7 @@ void testMain() {
         messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
       };
 
-      html.KeyboardEvent event;
+      DomKeyboardEvent event;
 
       event = dispatchKeyboardEvent(
         'keydown',
@@ -210,9 +203,7 @@ void testMain() {
       ]);
 
       Keyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('stops dispatching events after dispose', () {
       Keyboard.initialize();
@@ -249,7 +240,7 @@ void testMain() {
         callback!(response);
       };
 
-      final html.KeyboardEvent event = dispatchKeyboardEvent(
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
         'keydown',
         key: 'Tab',
         code: 'Tab',
@@ -272,7 +263,7 @@ void testMain() {
         callback!(response);
       };
 
-      final html.KeyboardEvent event = dispatchKeyboardEvent(
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
         'keydown',
         key: 'Tab',
         code: 'Tab',
@@ -293,8 +284,8 @@ void testMain() {
         count += 1;
       };
 
-      useTextEditingElement((html.Element element) {
-        final html.KeyboardEvent event = dispatchKeyboardEvent(
+      useTextEditingElement((DomElement element) {
+        final DomKeyboardEvent event = dispatchKeyboardEvent(
           'keydown',
           key: 'SomeKey',
           code: 'SomeCode',
@@ -319,8 +310,8 @@ void testMain() {
         callback!(response);
       };
 
-      useTextEditingElement((html.Element element) {
-        final html.KeyboardEvent event = dispatchKeyboardEvent(
+      useTextEditingElement((DomElement element) {
+        final DomKeyboardEvent event = dispatchKeyboardEvent(
           'keydown',
           key: 'Tab',
           code: 'Tab',
@@ -643,7 +634,7 @@ void testMain() {
     testFakeAsync(
       'On non-macOS, do not synthesize keyup for shortcuts',
       (FakeAsync async) {
-        Keyboard.initialize(onMacOs: false);
+        Keyboard.initialize();
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
         ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -703,23 +694,23 @@ void testMain() {
   });
 }
 
-typedef ElementCallback = void Function(html.Element element);
+typedef ElementCallback = void Function(DomElement element);
 
 void useTextEditingElement(ElementCallback callback) {
-  final html.InputElement input = html.InputElement();
-  input.classes.add(HybridTextEditing.textEditingClass);
+  final DomHTMLInputElement input = createDomHTMLInputElement();
+  input.classList.add(HybridTextEditing.textEditingClass);
 
   try {
-    html.document.body!.append(input);
+    domDocument.body!.append(input);
     callback(input);
   } finally {
     input.remove();
   }
 }
 
-html.KeyboardEvent dispatchKeyboardEvent(
+DomKeyboardEvent dispatchKeyboardEvent(
   String type, {
-  html.EventTarget? target,
+  DomEventTarget? target,
   String? key,
   String? code,
   int location = 0,
@@ -730,10 +721,10 @@ html.KeyboardEvent dispatchKeyboardEvent(
   bool isMetaPressed = false,
   int keyCode = 0,
 }) {
-  target ??= html.window;
+  target ??= domWindow;
 
   final Function jsKeyboardEvent =
-      js_util.getProperty<Function>(html.window, 'KeyboardEvent');
+      js_util.getProperty<Function>(domWindow, 'KeyboardEvent');
   final List<dynamic> eventArgs = <dynamic>[
     type,
     <String, dynamic>{
@@ -750,7 +741,7 @@ html.KeyboardEvent dispatchKeyboardEvent(
       'cancelable': true,
     }
   ];
-  final html.KeyboardEvent event = js_util.callConstructor<html.KeyboardEvent>(
+  final DomKeyboardEvent event = js_util.callConstructor<DomKeyboardEvent>(
     jsKeyboardEvent,
     js_util.jsify(eventArgs) as List<Object?>,
   );

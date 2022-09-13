@@ -25,6 +25,8 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -122,6 +124,44 @@ public class AccessibilityBridgeTest {
     nodeInfo.getBoundsInScreen(outBoundsInScreen);
     assertEquals(position, outBoundsInScreen.left);
     assertEquals(position, outBoundsInScreen.top);
+  }
+
+  @Test
+  public void itSetsAccessibleNavigation() {
+    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+    AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityManager mockManager = mock(AccessibilityManager.class);
+    View mockRootView = mock(View.class);
+    Context context = mock(Context.class);
+    when(mockRootView.getContext()).thenReturn(context);
+    when(context.getPackageName()).thenReturn("test");
+    when(mockManager.isTouchExplorationEnabled()).thenReturn(false);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            /*rootAccessibilityView=*/ mockRootView,
+            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityManager=*/ mockManager,
+            /*contentResolver=*/ null,
+            /*accessibilityViewEmbedder=*/ mockViewEmbedder,
+            /*platformViewsAccessibilityDelegate=*/ null);
+    ArgumentCaptor<AccessibilityManager.TouchExplorationStateChangeListener> listenerCaptor =
+        ArgumentCaptor.forClass(AccessibilityManager.TouchExplorationStateChangeListener.class);
+    verify(mockManager).addTouchExplorationStateChangeListener(listenerCaptor.capture());
+
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), false);
+    verify(mockChannel).setAccessibilityFeatures(0);
+    reset(mockChannel);
+
+    // Simulate assistive technology accessing accessibility tree.
+    accessibilityBridge.createAccessibilityNodeInfo(0);
+    verify(mockChannel).setAccessibilityFeatures(1);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), true);
+
+    // Simulate turning off TalkBack.
+    reset(mockChannel);
+    listenerCaptor.getValue().onTouchExplorationStateChanged(false);
+    verify(mockChannel).setAccessibilityFeatures(0);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), false);
   }
 
   @Test
@@ -993,6 +1033,34 @@ public class AccessibilityBridgeTest {
     assertTrue(node2Info.isFocusable());
   }
 
+  @TargetApi(31)
+  @Test
+  public void itSetsBoldTextFlagCorrectly() {
+    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+    AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityManager mockManager = mock(AccessibilityManager.class);
+    View mockRootView = mock(View.class);
+    Context context = mock(Context.class);
+    Resources resource = mock(Resources.class);
+    Configuration config = new Configuration();
+    config.fontWeightAdjustment = 300;
+
+    when(mockRootView.getContext()).thenReturn(context);
+    when(mockRootView.getResources()).thenReturn(resource);
+    when(resource.getConfiguration()).thenReturn(config);
+
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            /*rootAccessibilityView=*/ mockRootView,
+            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityManager=*/ mockManager,
+            /*contentResolver=*/ null,
+            /*accessibilityViewEmbedder=*/ mockViewEmbedder,
+            /*platformViewsAccessibilityDelegate=*/ null);
+
+    verify(mockChannel).setAccessibilityFeatures(1 << 3);
+  }
+
   @Test
   public void itSetsFocusedNodeBeforeSendingEvent() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
@@ -1527,6 +1595,7 @@ public class AccessibilityBridgeTest {
 
     View embeddedView = mock(View.class);
     when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(accessibilityDelegate.usesVirtualDisplay(1)).thenReturn(false);
 
     AccessibilityNodeInfo nodeInfo = mock(AccessibilityNodeInfo.class);
     when(embeddedView.createAccessibilityNodeInfo()).thenReturn(nodeInfo);
@@ -1564,6 +1633,7 @@ public class AccessibilityBridgeTest {
 
     View embeddedView = mock(View.class);
     when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(accessibilityDelegate.usesVirtualDisplay(1)).thenReturn(false);
 
     TestSemanticsUpdate testSemanticsRootUpdate = root.toUpdate();
     testSemanticsRootUpdate.sendUpdateToBridge(accessibilityBridge);
@@ -1598,6 +1668,7 @@ public class AccessibilityBridgeTest {
 
     View embeddedView = mock(View.class);
     when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(accessibilityDelegate.usesVirtualDisplay(1)).thenReturn(false);
 
     TestSemanticsUpdate testSemanticsRootWithPlatformViewUpdate = rootWithPlatformView.toUpdate();
     testSemanticsRootWithPlatformViewUpdate.sendUpdateToBridge(accessibilityBridge);
@@ -1610,6 +1681,34 @@ public class AccessibilityBridgeTest {
 
     verify(embeddedView)
         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+  }
+
+  @Test
+  public void itProducesPlatformViewNodeForVirtualDisplay() {
+    PlatformViewsAccessibilityDelegate accessibilityDelegate =
+        mock(PlatformViewsAccessibilityDelegate.class);
+    AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            /*rootAccessibilityView=*/ null,
+            /*accessibilityChannel=*/ null,
+            /*accessibilityManager=*/ null,
+            /*contentResolver=*/ null,
+            accessibilityViewEmbedder,
+            accessibilityDelegate);
+
+    TestSemanticsNode platformView = new TestSemanticsNode();
+    platformView.platformViewId = 1;
+
+    TestSemanticsUpdate testSemanticsUpdate = platformView.toUpdate();
+    testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
+
+    View embeddedView = mock(View.class);
+    when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(accessibilityDelegate.usesVirtualDisplay(1)).thenReturn(true);
+
+    accessibilityBridge.createAccessibilityNodeInfo(0);
+    verify(accessibilityViewEmbedder).getRootNode(eq(embeddedView), eq(0), any(Rect.class));
   }
 
   @Test

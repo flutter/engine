@@ -4,6 +4,9 @@
 
 #include "flutter/lib/ui/painting/image.h"
 
+#include <algorithm>
+#include <limits>
+
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -18,22 +21,9 @@ typedef CanvasImage Image;
 static const tonic::DartWrapperInfo kDartWrapperInfo_ui_Image = {
     "ui",
     "_Image",
-    sizeof(Image),
 };
 const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
     kDartWrapperInfo_ui_Image;
-
-#define FOR_EACH_BINDING(V) \
-  V(Image, width)           \
-  V(Image, height)          \
-  V(Image, toByteData)      \
-  V(Image, dispose)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void CanvasImage::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
 
 CanvasImage::CanvasImage() = default;
 
@@ -46,14 +36,6 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 void CanvasImage::dispose() {
   image_.reset();
   ClearDartWrapper();
-}
-
-size_t CanvasImage::GetAllocationSize() const {
-  auto size = sizeof(this);
-  if (image_) {
-    size += image_->GetApproximateByteSize();
-  }
-  return size;
 }
 
 }  // namespace flutter

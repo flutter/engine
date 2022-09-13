@@ -6,6 +6,7 @@ part of ui;
 
 abstract class Scene {
   Future<Image> toImage(int width, int height);
+  Image toImageSync(int width, int height);
   void dispose();
 }
 
@@ -32,13 +33,9 @@ abstract class ShaderMaskEngineLayer implements EngineLayer {}
 abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 
 abstract class SceneBuilder {
-  factory SceneBuilder() {
-    if (engine.useCanvasKit) {
-      return engine.LayerSceneBuilder();
-    } else {
-      return engine.SurfaceSceneBuilder();
-    }
-  }
+  factory SceneBuilder() =>
+    engine.renderer.createSceneBuilder();
+
   OffsetEngineLayer pushOffset(
     double dx,
     double dy, {
@@ -88,6 +85,10 @@ abstract class SceneBuilder {
     ShaderMaskEngineLayer? oldLayer,
     FilterQuality filterQuality = FilterQuality.low,
   });
+  @Deprecated(
+    'Use a clip and canvas operations directly (See RenderPhysicalModel). '
+    'This feature was deprecated after v3.1.0-0.0.pre.',
+  )
   PhysicalShapeEngineLayer pushPhysicalShape({
     required Path path,
     required double elevation,

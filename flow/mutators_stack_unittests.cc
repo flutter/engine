@@ -36,10 +36,10 @@ TEST(MutatorsStack, CopyAndUpdateTheCopy) {
   ASSERT_TRUE(copy.is_empty());
   ASSERT_TRUE(!stack.is_empty());
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRRect);
   ASSERT_TRUE(iter->get()->GetRRect() == rrect);
   ++iter;
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRect);
   ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
@@ -48,7 +48,7 @@ TEST(MutatorsStack, PushClipRect) {
   auto rect = SkRect::MakeEmpty();
   stack.PushClipRect(rect);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRect);
   ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
@@ -57,7 +57,7 @@ TEST(MutatorsStack, PushClipRRect) {
   auto rrect = SkRRect::MakeEmpty();
   stack.PushClipRRect(rrect);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRRect);
   ASSERT_TRUE(iter->get()->GetRRect() == rrect);
 }
 
@@ -66,7 +66,7 @@ TEST(MutatorsStack, PushClipPath) {
   SkPath path;
   stack.PushClipPath(path);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == flutter::MutatorType::clip_path);
+  ASSERT_TRUE(iter->get()->GetType() == flutter::MutatorType::kClipPath);
   ASSERT_TRUE(iter->get()->GetPath() == path);
 }
 
@@ -76,7 +76,7 @@ TEST(MutatorsStack, PushTransform) {
   matrix.setIdentity();
   stack.PushTransform(matrix);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::transform);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kTransform);
   ASSERT_TRUE(iter->get()->GetMatrix() == matrix);
 }
 
@@ -85,8 +85,27 @@ TEST(MutatorsStack, PushOpacity) {
   int alpha = 240;
   stack.PushOpacity(alpha);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::opacity);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kOpacity);
   ASSERT_TRUE(iter->get()->GetAlpha() == 240);
+}
+
+TEST(MutatorsStack, PushBackdropFilter) {
+  MutatorsStack stack;
+  const int num_of_mutators = 10;
+  for (int i = 0; i < num_of_mutators; i++) {
+    auto filter = std::make_shared<DlBlurImageFilter>(i, 5, DlTileMode::kClamp);
+    stack.PushBackdropFilter(filter);
+  }
+
+  auto iter = stack.Begin();
+  int i = 0;
+  while (iter != stack.End()) {
+    ASSERT_EQ(iter->get()->GetType(), MutatorType::kBackdropFilter);
+    ASSERT_EQ(iter->get()->GetFilter().asBlur()->sigma_x(), i);
+    ++iter;
+    ++i;
+  }
+  ASSERT_EQ(i, num_of_mutators);
 }
 
 TEST(MutatorsStack, Pop) {
@@ -113,15 +132,15 @@ TEST(MutatorsStack, Traversal) {
   while (iter != stack.Top()) {
     switch (index) {
       case 0:
-        ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+        ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRRect);
         ASSERT_TRUE(iter->get()->GetRRect() == rrect);
         break;
       case 1:
-        ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+        ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRect);
         ASSERT_TRUE(iter->get()->GetRect() == rect);
         break;
       case 2:
-        ASSERT_TRUE(iter->get()->GetType() == MutatorType::transform);
+        ASSERT_TRUE(iter->get()->GetType() == MutatorType::kTransform);
         ASSERT_TRUE(iter->get()->GetMatrix() == matrix);
         break;
       default:
@@ -144,6 +163,8 @@ TEST(MutatorsStack, Equality) {
   stack.PushClipPath(path);
   int alpha = 240;
   stack.PushOpacity(alpha);
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  stack.PushBackdropFilter(filter);
 
   MutatorsStack stackOther;
   SkMatrix matrixOther = SkMatrix::Scale(1, 1);
@@ -156,6 +177,9 @@ TEST(MutatorsStack, Equality) {
   stackOther.PushClipPath(otherPath);
   int otherAlpha = 240;
   stackOther.PushOpacity(otherAlpha);
+  auto otherFilter =
+      std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  stackOther.PushBackdropFilter(otherFilter);
 
   ASSERT_TRUE(stack == stackOther);
 }
@@ -163,28 +187,33 @@ TEST(MutatorsStack, Equality) {
 TEST(Mutator, Initialization) {
   SkRect rect = SkRect::MakeEmpty();
   Mutator mutator = Mutator(rect);
-  ASSERT_TRUE(mutator.GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(mutator.GetType() == MutatorType::kClipRect);
   ASSERT_TRUE(mutator.GetRect() == rect);
 
   SkRRect rrect = SkRRect::MakeEmpty();
   Mutator mutator2 = Mutator(rrect);
-  ASSERT_TRUE(mutator2.GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(mutator2.GetType() == MutatorType::kClipRRect);
   ASSERT_TRUE(mutator2.GetRRect() == rrect);
 
   SkPath path;
   Mutator mutator3 = Mutator(path);
-  ASSERT_TRUE(mutator3.GetType() == MutatorType::clip_path);
+  ASSERT_TRUE(mutator3.GetType() == MutatorType::kClipPath);
   ASSERT_TRUE(mutator3.GetPath() == path);
 
   SkMatrix matrix;
   matrix.setIdentity();
   Mutator mutator4 = Mutator(matrix);
-  ASSERT_TRUE(mutator4.GetType() == MutatorType::transform);
+  ASSERT_TRUE(mutator4.GetType() == MutatorType::kTransform);
   ASSERT_TRUE(mutator4.GetMatrix() == matrix);
 
   int alpha = 240;
   Mutator mutator5 = Mutator(alpha);
-  ASSERT_TRUE(mutator5.GetType() == MutatorType::opacity);
+  ASSERT_TRUE(mutator5.GetType() == MutatorType::kOpacity);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  ASSERT_TRUE(mutator6.GetType() == MutatorType::kBackdropFilter);
+  ASSERT_TRUE(mutator6.GetFilter() == *filter);
 }
 
 TEST(Mutator, CopyConstructor) {
@@ -213,6 +242,11 @@ TEST(Mutator, CopyConstructor) {
   Mutator mutator5 = Mutator(alpha);
   Mutator copy5 = Mutator(mutator5);
   ASSERT_TRUE(mutator5 == copy5);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  Mutator copy6 = Mutator(mutator6);
+  ASSERT_TRUE(mutator6 == copy6);
 }
 
 TEST(Mutator, Equality) {
@@ -241,6 +275,11 @@ TEST(Mutator, Equality) {
   Mutator mutator5 = Mutator(alpha);
   Mutator otherMutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5 == otherMutator5);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  Mutator otherMutator6 = Mutator(filter);
+  ASSERT_TRUE(mutator6 == otherMutator6);
 }
 
 TEST(Mutator, UnEquality) {
@@ -256,6 +295,13 @@ TEST(Mutator, UnEquality) {
   Mutator mutator2 = Mutator(alpha);
   Mutator otherMutator2 = Mutator(alpha2);
   ASSERT_TRUE(mutator2 != otherMutator2);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter2 =
+      std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
+  Mutator mutator3 = Mutator(filter);
+  Mutator otherMutator3 = Mutator(filter2);
+  ASSERT_TRUE(mutator3 != otherMutator3);
 }
 
 }  // namespace testing

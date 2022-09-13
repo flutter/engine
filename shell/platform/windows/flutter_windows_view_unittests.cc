@@ -14,6 +14,7 @@
 
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
@@ -89,7 +90,7 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
   MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
   return engine;
 }
 
@@ -575,6 +576,152 @@ TEST(FlutterWindowsViewTest, WindowResizeTests) {
   auto result = resize_completed.get_future().wait_for(std::chrono::seconds(1));
   EXPECT_EQ(std::future_status::ready, result);
   EXPECT_TRUE(send_window_metrics_event_called);
+}
+
+TEST(FlutterWindowsViewTest, WindowRepaintTests) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  FlutterWindowsView view(std::make_unique<flutter::FlutterWindow>(100, 100));
+  view.SetEngine(std::move(engine));
+  view.CreateRenderSurface();
+
+  bool schedule_frame_called = false;
+  modifier.embedder_api().ScheduleFrame =
+      MOCK_ENGINE_PROC(ScheduleFrame, ([&schedule_frame_called](auto engine) {
+                         schedule_frame_called = true;
+                         return kSuccess;
+                       }));
+
+  view.OnWindowRepaint();
+  EXPECT_TRUE(schedule_frame_called);
+}
+
+// Ensure that checkboxes have their checked status set apropriately
+// Previously, only Radios could have this flag updated
+// Resulted in the issue seen at
+// https://github.com/flutter/flutter/issues/96218
+// This test ensures that the native state of Checkboxes on Windows,
+// specifically, is updated as desired.
+TEST(FlutterWindowsViewTest, CheckboxNativeState) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().UpdateSemanticsEnabled =
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine, bool enabled) {
+        return kSuccess;
+      };
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  FlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(std::move(engine));
+
+  // Enable semantics to instantiate accessibility bridge.
+  view.OnUpdateSemanticsEnabled(true);
+
+  auto bridge = view.GetEngine()->accessibility_bridge().lock();
+  ASSERT_TRUE(bridge);
+
+  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 0};
+  root.id = 0;
+  root.label = "root";
+  root.hint = "";
+  root.value = "";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  root.flags = static_cast<FlutterSemanticsFlag>(
+      FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
+      FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+
+  bridge->CommitUpdates();
+
+  {
+    auto root_node = bridge
+                         ->GetFlutterPlatformNodeDelegateFromID(
+                             AccessibilityBridge::kRootNodeId)
+                         .lock();
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
+    EXPECT_EQ(root_node->GetData().GetCheckedState(),
+              ax::mojom::CheckedState::kTrue);
+
+    // Get the IAccessible for the root node.
+    IAccessible* native_view = root_node->GetNativeViewAccessible();
+    ASSERT_TRUE(native_view != nullptr);
+
+    // Look up against the node itself (not one of its children).
+    VARIANT varchild = {};
+    varchild.vt = VT_I4;
+
+    // Verify the checkbox is checked.
+    varchild.lVal = CHILDID_SELF;
+    VARIANT native_state = {};
+    ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
+    EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_CHECKED);
+  }
+
+  // Test unchecked too.
+  root.flags = static_cast<FlutterSemanticsFlag>(
+      FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->CommitUpdates();
+
+  {
+    auto root_node = bridge
+                         ->GetFlutterPlatformNodeDelegateFromID(
+                             AccessibilityBridge::kRootNodeId)
+                         .lock();
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
+    EXPECT_EQ(root_node->GetData().GetCheckedState(),
+              ax::mojom::CheckedState::kFalse);
+
+    // Get the IAccessible for the root node.
+    IAccessible* native_view = root_node->GetNativeViewAccessible();
+    ASSERT_TRUE(native_view != nullptr);
+
+    // Look up against the node itself (not one of its children).
+    VARIANT varchild = {};
+    varchild.vt = VT_I4;
+
+    // Verify the checkbox is checked.
+    varchild.lVal = CHILDID_SELF;
+    VARIANT native_state = {};
+    ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
+    EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_CHECKED);
+  }
+
+  // Now check mixed state.
+  root.flags = static_cast<FlutterSemanticsFlag>(
+      FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
+      FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->CommitUpdates();
+
+  {
+    auto root_node = bridge
+                         ->GetFlutterPlatformNodeDelegateFromID(
+                             AccessibilityBridge::kRootNodeId)
+                         .lock();
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
+    EXPECT_EQ(root_node->GetData().GetCheckedState(),
+              ax::mojom::CheckedState::kMixed);
+
+    // Get the IAccessible for the root node.
+    IAccessible* native_view = root_node->GetNativeViewAccessible();
+    ASSERT_TRUE(native_view != nullptr);
+
+    // Look up against the node itself (not one of its children).
+    VARIANT varchild = {};
+    varchild.vt = VT_I4;
+
+    // Verify the checkbox is checked.
+    varchild.lVal = CHILDID_SELF;
+    VARIANT native_state = {};
+    ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
+    EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_MIXED);
+  }
 }
 
 }  // namespace testing

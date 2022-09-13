@@ -109,7 +109,8 @@ std::unique_ptr<Engine> Engine::Spawn(
     Settings settings,
     std::unique_ptr<Animator> animator,
     const std::string& initial_route,
-    fml::WeakPtr<IOManager> io_manager) const {
+    fml::WeakPtr<IOManager> io_manager,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const {
   auto result = std::make_unique<Engine>(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
@@ -131,7 +132,8 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*persistent_isolate_data=*/settings.persistent_isolate_data,
       /*io_manager=*/io_manager,
       /*image_decoder=*/result->GetImageDecoderWeakPtr(),
-      /*image_generator_registry=*/result->GetImageGeneratorRegistry());
+      /*image_generator_registry=*/result->GetImageGeneratorRegistry(),
+      /*snapshot_delegate=*/snapshot_delegate);
   result->initial_route_ = initial_route;
   return result;
 }
@@ -437,7 +439,7 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+void Engine::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree) {
     return;
   }
@@ -536,6 +538,11 @@ const std::vector<std::string>& Engine::GetLastEntrypointArgs() const {
 // |RuntimeDelegate|
 void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return delegate_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
+std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
+    const {
+  return delegate_.GetPlatformMessageHandler();
 }
 
 void Engine::LoadDartDeferredLibrary(

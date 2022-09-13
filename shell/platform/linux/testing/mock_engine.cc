@@ -19,6 +19,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "gtest/gtest.h"
 
+const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
 struct _FlutterEngineTexture {
@@ -466,6 +467,12 @@ FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterAccessibilityFeature features) {
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     uint64_t id,
@@ -539,5 +546,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   table->MarkExternalTextureFrameAvailable =
       &FlutterEngineMarkExternalTextureFrameAvailable;
   table->UnregisterExternalTexture = &FlutterEngineUnregisterExternalTexture;
+  table->UpdateAccessibilityFeatures =
+      &FlutterEngineUpdateAccessibilityFeatures;
   return kSuccess;
 }

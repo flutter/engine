@@ -29,6 +29,26 @@ config("embedder_header_config") {
   include_dirs = [ "." ]
 }
 
+config("embedder_jit_snapshot_setup") {
+  _lib_snapshot_label = "//flutter/lib/snapshot:vm_isolate_snapshot.bin"
+  _lib_snapshot_gen_dir = get_label_info(_lib_snapshot_label, "target_gen_dir")
+
+  _isolate_snapshot_data = "${_lib_snapshot_gen_dir}/isolate_snapshot.bin"
+  _isolate_snapshot_instructions =
+      "${_lib_snapshot_gen_dir}/isolate_snapshot_instructions.bin"
+  _vm_snapshot_data = "${_lib_snapshot_gen_dir}/vm_isolate_snapshot.bin"
+  _vm_snapshot_instructions =
+      "${_lib_snapshot_gen_dir}/vm_snapshot_instructions.bin"
+
+  # For testing JIT snapshot setup.
+  defines = [
+    "TEST_ISOLATE_SNAPSHOT_DATA=\"${_isolate_snapshot_data}\"",
+    "TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS=\"${_isolate_snapshot_instructions}\"",
+    "TEST_VM_SNAPSHOT_DATA=\"${_vm_snapshot_data}\"",
+    "TEST_VM_SNAPSHOT_INSTRUCTIONS=\"${_vm_snapshot_instructions}\"",
+  ]
+}
+
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
 template("embedder_source_set") {
@@ -64,6 +84,7 @@ template("embedder_source_set") {
       "embedder_task_runner.h",
       "embedder_thread_host.cc",
       "embedder_thread_host.h",
+      "pixel_formats.cc",
       "platform_view_embedder.cc",
       "platform_view_embedder.h",
       "vsync_waiter_embedder.cc",
@@ -142,7 +163,7 @@ source_set("embedder_headers") {
 
 source_set("embedder_test_utils") {
   public = [
-    "test_utils/key_codes.h",
+    "test_utils/key_codes.g.h",
     "test_utils/proc_table_replacement.h",
   ]
 
@@ -189,7 +210,7 @@ test_fixtures("fixtures") {
 }
 
 if (enable_unittests) {
-  executable("embedder_unittests") {
+  source_set("embedder_unittests_library") {
     testonly = true
 
     configs += [
@@ -200,7 +221,6 @@ if (enable_unittests) {
     include_dirs = [ "." ]
 
     sources = [
-      "tests/embedder_a11y_unittests.cc",
       "tests/embedder_config_builder.cc",
       "tests/embedder_config_builder.h",
       "tests/embedder_test.cc",
@@ -215,11 +235,10 @@ if (enable_unittests) {
       "tests/embedder_test_context.h",
       "tests/embedder_test_context_software.cc",
       "tests/embedder_test_context_software.h",
-      "tests/embedder_unittests.cc",
       "tests/embedder_unittests_util.cc",
     ]
 
-    deps = [
+    public_deps = [
       ":embedder",
       ":embedder_gpu_configuration",
       ":fixtures",
@@ -241,10 +260,12 @@ if (enable_unittests) {
         "tests/embedder_test_compositor_gl.h",
         "tests/embedder_test_context_gl.cc",
         "tests/embedder_test_context_gl.h",
-        "tests/embedder_unittests_gl.cc",
       ]
 
-      deps += [ "//flutter/testing:opengl" ]
+      public_deps += [
+        "//flutter/testing:opengl",
+        "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
+      ]
     }
 
     if (test_enable_metal) {
@@ -253,10 +274,9 @@ if (enable_unittests) {
         "tests/embedder_test_compositor_metal.h",
         "tests/embedder_test_context_metal.cc",
         "tests/embedder_test_context_metal.h",
-        "tests/embedder_unittests_metal.mm",
       ]
 
-      deps += [ "//flutter/testing:metal" ]
+      public_deps += [ "//flutter/testing:metal" ]
     }
 
     if (test_enable_vulkan) {
@@ -267,11 +287,50 @@ if (enable_unittests) {
         "tests/embedder_test_context_vulkan.h",
       ]
 
-      deps += [
+      public_deps += [
         "//flutter/testing:vulkan",
         "//flutter/vulkan",
       ]
     }
+  }
+
+  executable("embedder_unittests") {
+    testonly = true
+
+    configs += [
+      ":embedder_jit_snapshot_setup",
+      ":embedder_gpu_configuration_config",
+      "//flutter:export_dynamic_symbols",
+    ]
+
+    include_dirs = [ "." ]
+
+    sources = [ "tests/embedder_unittests.cc" ]
+
+    deps = [ ":embedder_unittests_library" ]
+
+    if (test_enable_gl) {
+      sources += [ "tests/embedder_unittests_gl.cc" ]
+    }
+
+    if (test_enable_metal) {
+      sources += [ "tests/embedder_unittests_metal.mm" ]
+    }
+  }
+
+  executable("embedder_a11y_unittests") {
+    testonly = true
+
+    configs += [
+      ":embedder_gpu_configuration_config",
+      "//flutter:export_dynamic_symbols",
+    ]
+
+    include_dirs = [ "." ]
+
+    sources = [ "tests/embedder_a11y_unittests.cc" ]
+
+    deps = [ ":embedder_unittests_library" ]
   }
 
   # Tests that build in FLUTTER_ENGINE_NO_PROTOTYPES mode.

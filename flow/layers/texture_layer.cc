@@ -12,7 +12,7 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            const SkSize& size,
                            int64_t texture_id,
                            bool freeze,
-                           const SkSamplingOptions& sampling)
+                           DlImageSampling sampling)
     : offset_(offset),
       size_(size),
       texture_id_(texture_id),
@@ -54,14 +54,16 @@ void TextureLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   std::shared_ptr<Texture> texture =
-      context.texture_registry.GetTexture(texture_id_);
+      context.texture_registry
+          ? context.texture_registry->GetTexture(texture_id_)
+          : nullptr;
   if (!texture) {
     TRACE_EVENT_INSTANT0("flutter", "null texture");
     return;
   }
   AutoCachePaint cache_paint(context);
   texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
-                 context.gr_context, sampling_, cache_paint.paint());
+                 context.gr_context, ToSk(sampling_), cache_paint.sk_paint());
 }
 
 }  // namespace flutter

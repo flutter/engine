@@ -8,6 +8,7 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../util.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -40,7 +41,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  final String plainText;
+  late String plainText;
 
   /// The number of placeholders in this paragraph.
   final int placeholderCount;
@@ -254,6 +255,24 @@ class CanvasParagraph implements ui.Paragraph {
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
   }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    // TODO(dnfield): It should be possible to clear resources here, but would
+    // need refcounting done on any surfaces/pictures holding references to this
+    // object.
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Paragraph.debugDisposed is only avialalbe when asserts are enabled.');
+  }
 }
 
 void _positionSpanElement(DomElement element, ParagraphLine line, RangeBox box) {
@@ -315,20 +334,13 @@ class FlatTextSpan implements ParagraphSpan {
 class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
   PlaceholderSpan(
     int index,
-    double width,
-    double height,
-    ui.PlaceholderAlignment alignment, {
-    required double baselineOffset,
-    required ui.TextBaseline baseline,
+    super.width,
+    super.height,
+    super.alignment, {
+    required super.baselineOffset,
+    required super.baseline,
   })   : start = index,
-        end = index,
-        super(
-          width,
-          height,
-          alignment,
-          baselineOffset: baselineOffset,
-          baseline: baseline,
-        );
+        end = index;
 
   @override
   final int start;
@@ -574,7 +586,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   final List<ParagraphSpan> _spans = <ParagraphSpan>[];
   final List<StyleNode> _styleStack = <StyleNode>[];
 
-  RootStyleNode _rootStyleNode;
+  final RootStyleNode _rootStyleNode;
   StyleNode get _currentStyleNode => _styleStack.isEmpty
       ? _rootStyleNode
       : _styleStack[_styleStack.length - 1];

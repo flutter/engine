@@ -12,7 +12,10 @@
 
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
-#include "flutter/flow/layers/picture_layer.h"
+#include "flutter/flow/layers/backdrop_filter_layer.h"
+#include "flutter/flow/layers/display_list_layer.h"
+#include "flutter/flow/layers/layer_raster_cache_item.h"
+#include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/dart/dart_converter.h"
@@ -268,6 +271,13 @@ static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
     latch.Signal();
   });
   latch.Wait();
+}
+
+static sk_sp<DisplayList> MakeSizedDisplayList(int width, int height) {
+  DisplayListCanvasRecorder recorder(SkRect::MakeXYWH(0, 0, width, height));
+  recorder.drawRect(SkRect::MakeXYWH(0, 0, width, height),
+                    SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+  return recorder.Build();
 }
 
 TEST_F(ShellTest, InitializeWithInvalidThreads) {
@@ -744,24 +754,74 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
   end_frame_latch.Wait();
-
   ASSERT_TRUE(end_frame_called);
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+  bool end_frame_called = false;
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        ASSERT_TRUE(raster_thread_merger.get() == nullptr);
+        ASSERT_FALSE(should_resubmit_frame);
+        end_frame_called = true;
+        end_frame_latch.Signal();
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kResubmitFrame, false);
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    auto platform_view_layer = std::make_shared<PlatformViewLayer>(
+        SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
+    root->Add(platform_view_layer);
+    auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+    auto backdrop_filter_layer =
+        std::make_shared<BackdropFilterLayer>(filter, DlBlendMode::kSrcOver);
+    root->Add(backdrop_filter_layer);
+    auto platform_view_layer2 = std::make_shared<PlatformViewLayer>(
+        SkPoint::Make(10, 10), SkSize::Make(10, 10), 75);
+    backdrop_filter_layer->Add(platform_view_layer2);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  end_frame_latch.Wait();
+  ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews().size(),
+            (const unsigned long)2);
+  ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[0], 50);
+  ASSERT_EQ(external_view_embedder->GetVisitedPlatformViews()[1], 75);
+  ASSERT_TRUE(external_view_embedder->GetStack(75).is_empty());
+  ASSERT_FALSE(external_view_embedder->GetStack(50).is_empty());
+
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
+  auto mutator = *external_view_embedder->GetStack(50).Begin();
+  ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
+  ASSERT_EQ(mutator->GetFilter(), filter);
 
   DestroyShell(std::move(shell));
 }
@@ -799,18 +859,14 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -852,18 +908,14 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -925,18 +977,14 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1000,18 +1048,14 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1073,18 +1117,14 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
   end_frame_latch.Wait();
@@ -1121,18 +1161,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
 
@@ -1192,18 +1228,14 @@ TEST_F(ShellTest,
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
   end_frame_latch.Wait();
@@ -1242,18 +1274,14 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
   end_frame_latch.Wait();
@@ -2028,18 +2056,14 @@ TEST_F(ShellTest, Screenshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
-    SkPictureRecorder recorder;
-    SkCanvas* recording_canvas =
-        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
-    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
-                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-    auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-    auto picture_layer = std::make_shared<PictureLayer>(
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
-    root->Add(picture_layer);
+        flutter::SkiaGPUObject<DisplayList>(
+            {MakeSizedDisplayList(80, 80), queue}),
+        false, false);
+    root->Add(display_list_layer);
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -2376,8 +2400,8 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
       shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
-        sk_sp<SkImage> image = delegate->MakeRasterSnapshot(
-            SkPicture::MakePlaceholder({0, 0, 50, 50}), SkISize::Make(50, 50));
+        sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
+            MakeSizedDisplayList(50, 50), SkISize::Make(50, 50));
         EXPECT_NE(image, nullptr);
 
         latch->Signal();
@@ -2386,43 +2410,53 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-static sk_sp<SkPicture> MakeSizedPicture(int width, int height) {
-  SkPictureRecorder recorder;
-  SkCanvas* recording_canvas =
-      recorder.beginRecording(SkRect::MakeXYWH(0, 0, width, height));
-  recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, width, height),
-                             SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-  return recorder.finishRecordingAsPicture();
-}
-
 TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // 1. Construct a picture and a picture layer to be raster cached.
-  sk_sp<SkPicture> picture = MakeSizedPicture(10, 10);
+  sk_sp<DisplayList> display_list = MakeSizedDisplayList(10, 10);
   fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
       GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-  auto picture_layer = std::make_shared<PictureLayer>(
+  auto display_list_layer = std::make_shared<DisplayListLayer>(
       SkPoint::Make(0, 0),
-      flutter::SkiaGPUObject<SkPicture>({MakeSizedPicture(100, 100), queue}),
+      flutter::SkiaGPUObject<DisplayList>(
+          {MakeSizedDisplayList(100, 100), queue}),
       false, false);
-  picture_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
+  display_list_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
 
   // 2. Rasterize the picture and the picture layer in the raster cache.
   std::promise<bool> rasterized;
+
   shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [&shell, &rasterized, &picture, &picture_layer] {
+      [&shell, &rasterized, &display_list, &display_list_layer] {
+        std::vector<RasterCacheItem*> raster_cache_items;
         auto* compositor_context = shell->GetRasterizer()->compositor_context();
         auto& raster_cache = compositor_context->raster_cache();
 
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
         MutatorsStack mutators_stack;
-        TextureRegistry texture_registry;
+        PaintContext paint_context = {
+            // clang-format off
+            .internal_nodes_canvas         = nullptr,
+            .leaf_nodes_canvas             = nullptr,
+            .gr_context                    = nullptr,
+            .dst_color_space               = nullptr,
+            .view_embedder                 = nullptr,
+            .raster_time                   = raster_time,
+            .ui_time                       = ui_time,
+            .texture_registry              = nullptr,
+            .raster_cache                  = &raster_cache,
+            .checkerboard_offscreen_layers = false,
+            .frame_device_pixel_ratio      = 1.0f,
+            .inherited_opacity             = SK_Scalar1,
+            // clang-format on
+        };
+
         PrerollContext preroll_context = {
             // clang-format off
-            .raster_cache                  = nullptr,
+            .raster_cache                  = &raster_cache,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .mutators_stack                = mutators_stack,
@@ -2431,29 +2465,42 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .surface_needs_readback        = false,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
-            .texture_registry              = texture_registry,
+            .texture_registry              = nullptr,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
+            .has_texture_layer             = false,
+            .raster_cached_entries         = &raster_cache_items,
             // clang-format on
         };
 
         // 2.1. Rasterize the picture. Call Draw multiple times to pass the
         // access threshold (default to 3) so a cache can be generated.
         SkCanvas dummy_canvas;
+        SkPaint paint;
         bool picture_cache_generated;
+        DisplayListRasterCacheItem display_list_raster_cache_item(
+            display_list.get(), SkPoint(), true, false);
         for (int i = 0; i < 4; i += 1) {
           SkMatrix matrix = SkMatrix::I();
-
-          picture_cache_generated = raster_cache.Prepare(
-              &preroll_context, picture.get(), true, false, matrix);
-          raster_cache.Draw(*picture, dummy_canvas);
+          display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
+          display_list_raster_cache_item.PrerollFinalize(&preroll_context,
+                                                         matrix);
+          picture_cache_generated =
+              display_list_raster_cache_item.need_caching();
+          display_list_raster_cache_item.TryToPrepareRasterCache(paint_context);
+          display_list_raster_cache_item.Draw(paint_context, &dummy_canvas,
+                                              &paint);
         }
         ASSERT_TRUE(picture_cache_generated);
 
         // 2.2. Rasterize the picture layer.
-        raster_cache.Prepare(&preroll_context, picture_layer.get(),
-                             SkMatrix::I());
+        LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
+        layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
+        layer_raster_cache_item.PrerollFinalize(&preroll_context,
+                                                SkMatrix::I());
+        layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
+        layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
         rasterized.set_value(true);
       });
   rasterized.get_future().wait();
@@ -2991,25 +3038,34 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_NE(nullptr, spawn.get());
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
-        PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner, initial_route] {
-                   // Check second shell ran the second entrypoint.
-                   ASSERT_EQ("testCanLaunchSecondaryIsolate",
-                             spawn->GetEngine()->GetLastEntrypoint());
-                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
+        PostSync(spawner->GetTaskRunners().GetUITaskRunner(), [&spawn, &spawner,
+                                                               initial_route] {
+          // Check second shell ran the second entrypoint.
+          ASSERT_EQ("testCanLaunchSecondaryIsolate",
+                    spawn->GetEngine()->GetLastEntrypoint());
+          ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
 
-                   ASSERT_NE(spawner->GetEngine()
-                                 ->GetRuntimeController()
-                                 ->GetRootIsolateGroup(),
-                             0u);
-                   ASSERT_EQ(spawner->GetEngine()
-                                 ->GetRuntimeController()
-                                 ->GetRootIsolateGroup(),
-                             spawn->GetEngine()
-                                 ->GetRuntimeController()
-                                 ->GetRootIsolateGroup());
-                 });
-
+          ASSERT_NE(spawner->GetEngine()
+                        ->GetRuntimeController()
+                        ->GetRootIsolateGroup(),
+                    0u);
+          ASSERT_EQ(spawner->GetEngine()
+                        ->GetRuntimeController()
+                        ->GetRootIsolateGroup(),
+                    spawn->GetEngine()
+                        ->GetRuntimeController()
+                        ->GetRootIsolateGroup());
+          auto spawner_snapshot_delegate = spawner->GetEngine()
+                                               ->GetRuntimeController()
+                                               ->GetSnapshotDelegate();
+          auto spawn_snapshot_delegate =
+              spawn->GetEngine()->GetRuntimeController()->GetSnapshotDelegate();
+          PostSync(spawner->GetTaskRunners().GetRasterTaskRunner(),
+                   [spawner_snapshot_delegate, spawn_snapshot_delegate] {
+                     ASSERT_NE(spawner_snapshot_delegate.get(),
+                               spawn_snapshot_delegate.get());
+                   });
+        });
         PostSync(
             spawner->GetTaskRunners().GetIOTaskRunner(), [&spawner, &spawn] {
               ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
@@ -3282,9 +3338,9 @@ TEST_F(ShellTest, ImageGeneratorRegistryNotNullAfterParentShellDestroyed) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3294,7 +3350,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3324,9 +3383,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3336,7 +3395,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3399,10 +3461,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform));
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   auto shell = CreateShell(std::move(settings), task_runners);
@@ -3412,7 +3473,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
   auto asset_manager = configuration.GetAssetManager();
-  RunEngine(shell.get(), std::move(configuration));
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
@@ -3759,6 +3823,43 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
 
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, PictureToImageSync) {
+#if !SHELL_ENABLE_GL
+  // This test uses the GL backend.
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_GL
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                       //
+                  GetTaskRunnersForFixture(),                     //
+                  false,                                          //
+                  nullptr,                                        //
+                  false,                                          //
+                  ShellTestPlatformView::BackendType::kGLBackend  //
+      );
+
+  fml::CountDownLatch latch(2);
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      // Teardown and set up rasterizer again.
+                      PlatformViewNotifyDestroyed(shell.get());
+                      PlatformViewNotifyCreated(shell.get());
+                      latch.CountDown();
+                    }));
+
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  PlatformViewNotifyCreated(shell.get());
+  configuration.SetEntrypoint("toImageSync");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

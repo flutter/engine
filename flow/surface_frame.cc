@@ -15,10 +15,10 @@ namespace flutter {
 SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
                            FramebufferInfo framebuffer_info,
                            const SubmitCallback& submit_callback,
+                           SkISize frame_size,
                            std::unique_ptr<GLContextResult> context_result,
                            bool display_list_fallback)
-    : submitted_(false),
-      surface_(surface),
+    : surface_(surface),
       framebuffer_info_(std::move(framebuffer_info)),
       submit_callback_(submit_callback),
       context_result_(std::move(context_result)) {
@@ -26,9 +26,9 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
   if (surface_) {
     canvas_ = surface_->getCanvas();
   } else if (display_list_fallback) {
-    dl_recorder_ = sk_make_sp<DisplayListCanvasRecorder>(
-        SkRect::MakeWH(std::numeric_limits<SkScalar>::max(),
-                       std::numeric_limits<SkScalar>::max()));
+    FML_DCHECK(!frame_size.isEmpty());
+    dl_recorder_ =
+        sk_make_sp<DisplayListCanvasRecorder>(SkRect::Make(frame_size));
     canvas_ = dl_recorder_.get();
   }
 }

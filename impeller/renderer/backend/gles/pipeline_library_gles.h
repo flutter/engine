@@ -26,7 +26,15 @@ class PipelineLibraryGLES final : public PipelineLibrary {
   PipelineLibraryGLES(ReactorGLES::Ref reactor);
 
   // |PipelineLibrary|
-  PipelineFuture GetRenderPipeline(PipelineDescriptor descriptor) override;
+  bool IsValid() const override;
+
+  // |PipelineLibrary|
+  PipelineFuture<PipelineDescriptor> GetPipeline(
+      PipelineDescriptor descriptor) override;
+
+  // |PipelineLibrary|
+  PipelineFuture<ComputePipelineDescriptor> GetPipeline(
+      ComputePipelineDescriptor descriptor) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryGLES);
 };

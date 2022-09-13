@@ -799,7 +799,7 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void eventsWithForgedCodes() {
+  public void eventsWithMintedCodes() {
     final KeyboardTester tester = new KeyboardTester();
     final ArrayList<CallRecord> calls = new ArrayList<>();
 
@@ -814,7 +814,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, 0x300000042L, LOGICAL_ENTER, "\n", false),
+          buildKeyData(Type.kDown, 0x1100000042L, LOGICAL_ENTER, "\n", false),
         });
     calls.clear();
 
@@ -1343,6 +1343,56 @@ public class KeyboardManagerTest {
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kUp, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
+    calls.clear();
+  }
+
+  // Regression test for https://github.com/flutter/flutter/issues/108124
+  @Test
+  public void synchronizeModifiersForConflictingMetaState() {
+    // Test if ShiftLeft can be correctly synchronized during down events of
+    // ShiftLeft that has 0 for its metaState.
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+    // Even though the event is for ShiftRight, we still set SHIFT | SHIFT_LEFT here.
+    // See the comment in synchronizePressingKey for the reason.
+    final int SHIFT_LEFT_ON = META_SHIFT_LEFT_ON | META_SHIFT_ON;
+
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    // Test: Down event when the current state is 0.
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0)));
+    assertEquals(calls.size(), 2);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+    assertEmbedderEventEquals(
+        calls.get(1).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
+    calls.clear();
+
+    // A normal down event.
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+    calls.clear();
+
+    // Test: Repeat event when the current state is 0.
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', 0)));
+    assertEquals(calls.size(), 2);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kRepeat, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+    assertEmbedderEventEquals(
+        calls.get(1).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
     calls.clear();
   }
 

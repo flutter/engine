@@ -4,6 +4,7 @@
 
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/renderer/allocator.h"
@@ -102,32 +103,33 @@ static size_t OptimumAtlasSizeForFontGlyphPairs(
   return 0u;
 }
 
-static std::optional<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
-                                                 size_t atlas_size) {
+static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
+                                                   size_t atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
-  SkBitmap bitmap;
+  auto bitmap = std::make_shared<SkBitmap>();
   auto image_info = SkImageInfo::MakeA8(atlas_size, atlas_size);
-  if (!bitmap.tryAllocPixels(image_info)) {
-    return std::nullopt;
+  if (!bitmap->tryAllocPixels(image_info)) {
+    return nullptr;
   }
-  auto surface = SkSurface::MakeRasterDirect(bitmap.pixmap());
+  auto surface = SkSurface::MakeRasterDirect(bitmap->pixmap());
   if (!surface) {
-    return std::nullopt;
+    return nullptr;
   }
   auto canvas = surface->getCanvas();
   if (!canvas) {
-    return std::nullopt;
+    return nullptr;
   }
 
   atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
                                const Rect& location) -> bool {
-    const auto position = SkPoint::Make(location.origin.x, location.origin.y);
+    const auto position =
+        SkPoint::Make(location.origin.x / font_glyph.font.GetMetrics().scale,
+                      location.origin.y / font_glyph.font.GetMetrics().scale);
     SkGlyphID glyph_id = font_glyph.glyph.index;
 
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-        font_glyph.font.GetMetrics().point_size *
-            font_glyph.font.GetMetrics().scale);
+        font_glyph.font.GetMetrics().point_size);
 
     const auto& metrics = font_glyph.font.GetMetrics();
 
@@ -135,14 +137,16 @@ static std::optional<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
     SkPaint glyph_paint;
     glyph_paint.setColor(glyph_color);
-    canvas->drawGlyphs(
-        1u,         // count
-        &glyph_id,  // glyphs
-        &position,  // positions
-        SkPoint::Make(-metrics.min_extent.x * metrics.scale,
-                      -metrics.ascent * metrics.scale),  // origin
-        sk_font,                                         // font
-        glyph_paint                                      // paint
+    canvas->resetMatrix();
+    canvas->scale(font_glyph.font.GetMetrics().scale,
+                  font_glyph.font.GetMetrics().scale);
+    canvas->drawGlyphs(1u,         // count
+                       &glyph_id,  // glyphs
+                       &position,  // positions
+                       SkPoint::Make(-metrics.min_extent.x,
+                                     -metrics.ascent),  // origin
+                       sk_font,                         // font
+                       glyph_paint                      // paint
     );
     return true;
   });
@@ -152,16 +156,18 @@ static std::optional<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     std::shared_ptr<Allocator> allocator,
-    const SkBitmap& bitmap,
+    std::shared_ptr<SkBitmap> bitmap,
     size_t atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!allocator) {
     return nullptr;
   }
 
-  const auto& pixmap = bitmap.pixmap();
+  FML_DCHECK(bitmap != nullptr);
+  const auto& pixmap = bitmap->pixmap();
 
   TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
   texture_descriptor.format = PixelFormat::kA8UNormInt;
   texture_descriptor.size = ISize::MakeWH(atlas_size, atlas_size);
 
@@ -170,15 +176,19 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     return nullptr;
   }
 
-  auto texture =
-      allocator->CreateTexture(StorageMode::kHostVisible, texture_descriptor);
+  auto texture = allocator->CreateTexture(texture_descriptor);
   if (!texture || !texture->IsValid()) {
     return nullptr;
   }
   texture->SetLabel("GlyphAtlas");
 
-  if (!texture->SetContents(static_cast<const uint8_t*>(pixmap.addr()),
-                            pixmap.rowBytes() * pixmap.height())) {
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
+      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
+  );
+
+  if (!texture->SetContents(mapping)) {
     return nullptr;
   }
   return texture;
@@ -234,15 +244,15 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 5: Draw font-glyph pairs in the correct spot in the atlas.
   // ---------------------------------------------------------------------------
   auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size);
-  if (!bitmap.has_value()) {
+  if (!bitmap) {
     return nullptr;
   }
 
   // ---------------------------------------------------------------------------
   // Step 6: Upload the atlas as a texture.
   // ---------------------------------------------------------------------------
-  auto texture = UploadGlyphTextureAtlas(GetContext()->GetTransientsAllocator(),
-                                         bitmap.value(), atlas_size);
+  auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
+                                         bitmap, atlas_size);
   if (!texture) {
     return nullptr;
   }

@@ -65,7 +65,7 @@ struct Command {
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
   ///
-  std::shared_ptr<Pipeline> pipeline;
+  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
   //----------------------------------------------------------------------------
   /// The buffer, texture, and sampler bindings used by the vertex pipeline
   /// stage.
@@ -107,20 +107,6 @@ struct Command {
   /// @see         `BindVertices`
   ///
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  //----------------------------------------------------------------------------
-  /// The orientation of vertices of the front-facing polygons. This usually
-  /// matters when culling is enabled.
-  ///
-  /// @see         `cull_mode`
-  ///
-  WindingOrder winding = WindingOrder::kClockwise;
-  //----------------------------------------------------------------------------
-  /// How to control culling of polygons. The orientation of front-facing
-  /// polygons is controlled via the `winding` parameter.
-  ///
-  /// @see         `winding`
-  ///
-  CullMode cull_mode = CullMode::kNone;
   //----------------------------------------------------------------------------
   /// The reference value to use in stenciling operations. Stencil configuration
   /// is part of pipeline setup and can be read from the pipelines descriptor.
@@ -188,43 +174,6 @@ struct Command {
   BufferView GetVertexBuffer() const;
 
   constexpr operator bool() const { return pipeline && pipeline->IsValid(); }
-};
-
-template <class VertexShader_, class FragmentShader_>
-struct CommandT {
-  using VertexShader = VertexShader_;
-  using FragmentShader = FragmentShader_;
-  using VertexBufferBuilder =
-      VertexBufferBuilder<typename VertexShader_::PerVertexData>;
-  using Pipeline = PipelineT<VertexShader_, FragmentShader_>;
-
-  CommandT(PipelineT<VertexShader, FragmentShader>& pipeline) {
-    command_.label = VertexShader::kLabel;
-
-    // This could be moved to the accessor to delay the wait.
-    command_.pipeline = pipeline.WaitAndGet();
-  }
-
-  static VertexBufferBuilder CreateVertexBuilder() {
-    VertexBufferBuilder builder;
-    builder.SetLabel(std::string{VertexShader::kLabel});
-    return builder;
-  }
-
-  Command& Get() { return command_; }
-
-  operator Command&() { return Get(); }
-
-  bool BindVertices(VertexBufferBuilder builder, HostBuffer& buffer) {
-    return command_.BindVertices(builder.CreateVertexBuffer(buffer));
-  }
-
-  bool BindVerticesDynamic(const VertexBuffer& buffer) {
-    return command_.BindVertices(buffer);
-  }
-
- private:
-  Command command_;
 };
 
 }  // namespace impeller

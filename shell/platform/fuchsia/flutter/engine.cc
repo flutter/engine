@@ -166,8 +166,8 @@ void Engine::Initialize(
   } else {
     gfx_protocols.set_view_focuser(focuser.NewRequest());
     gfx_protocols.set_view_ref_focused(view_ref_focused.NewRequest());
-    // TODO(fxbug.dev/85125): Enable TouchSource for GFX.
-    // gfx_protocols.set_touch_source(touch_source.NewRequest());
+    gfx_protocols.set_touch_source(touch_source.NewRequest());
+    // GFX used only on products without a mouse.
   }
   scenic->CreateSessionT(std::move(gfx_protocols), [] {});
 
@@ -212,6 +212,17 @@ void Engine::Initialize(
   FML_DCHECK(keyboard_status == ZX_OK)
       << "fuchsia::ui::input3::Keyboard connection failed: "
       << zx_status_get_string(keyboard_status);
+
+  // Connect to Pointerinjector service.
+  fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry;
+  zx_status_t pointerinjector_registry_status =
+      runner_services->Connect<fuchsia::ui::pointerinjector::Registry>(
+          pointerinjector_registry.NewRequest());
+  if (pointerinjector_registry_status != ZX_OK) {
+    FML_LOG(WARNING)
+        << "fuchsia::ui::pointerinjector::Registry connection failed: "
+        << zx_status_get_string(pointerinjector_registry_status);
+  }
 
   // Make clones of the `ViewRef` before sending it to various places.
   fuchsia::ui::views::ViewRef platform_view_ref;
@@ -401,6 +412,7 @@ void Engine::Initialize(
            view_ref_focused = std::move(view_ref_focused),
            touch_source = std::move(touch_source),
            mouse_source = std::move(mouse_source),
+           pointerinjector_registry = std::move(pointerinjector_registry),
            on_session_listener_error_callback =
                std::move(on_session_listener_error_callback),
            on_enable_wireframe_callback =
@@ -479,6 +491,7 @@ void Engine::Initialize(
                       std::move(mouse_source), std::move(focuser),
                       std::move(view_ref_focused),
                       std::move(parent_viewport_watcher),
+                      std::move(pointerinjector_registry),
                       std::move(on_enable_wireframe_callback),
                       std::move(on_create_flatland_view_callback),
                       std::move(on_update_view_callback),
@@ -496,6 +509,7 @@ void Engine::Initialize(
                   std::move(keyboard), std::move(touch_source),
                   std::move(mouse_source), std::move(focuser),
                   std::move(view_ref_focused),
+                  std::move(pointerinjector_registry),
                   std::move(session_listener_request),
                   std::move(on_session_listener_error_callback),
                   std::move(on_enable_wireframe_callback),

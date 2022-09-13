@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <filesystem>
+#include <system_error>
 
 #include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
@@ -13,11 +14,27 @@
 #include "impeller/compiler/compiler.h"
 #include "impeller/compiler/source_options.h"
 #include "impeller/compiler/switches.h"
+#include "impeller/compiler/types.h"
 #include "impeller/compiler/utilities.h"
 #include "third_party/shaderc/libshaderc/include/shaderc/shaderc.hpp"
 
 namespace impeller {
 namespace compiler {
+
+// Sets the file access mode of the file at path 'p' to 0644.
+static bool SetPermissiveAccess(const std::filesystem::path& p) {
+  auto permissions =
+      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write |
+      std::filesystem::perms::group_read | std::filesystem::perms::others_read;
+  std::error_code error;
+  std::filesystem::permissions(p, permissions, error);
+  if (error) {
+    std::cerr << "Failed to set access on file '" << p
+              << "': " << error.message() << std::endl;
+    return false;
+  }
+  return true;
+}
 
 bool Main(const fml::CommandLine& command_line) {
   fml::InstallCrashHandler();
@@ -42,14 +59,17 @@ bool Main(const fml::CommandLine& command_line) {
 
   SourceOptions options;
   options.target_platform = switches.target_platform;
-  options.type = SourceTypeFromFileName(switches.source_file_name);
+  if (switches.input_type == SourceType::kUnknown) {
+    options.type = SourceTypeFromFileName(switches.source_file_name);
+  } else {
+    options.type = switches.input_type;
+  }
   options.working_directory = switches.working_directory;
   options.file_name = switches.source_file_name;
   options.include_dirs = switches.include_directories;
   options.defines = switches.defines;
   options.entry_point_name = EntryPointFunctionNameFromSourceName(
-      switches.source_file_name,
-      SourceTypeFromFileName(switches.source_file_name));
+      switches.source_file_name, options.type);
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = switches.target_platform;
@@ -81,7 +101,7 @@ bool Main(const fml::CommandLine& command_line) {
   if (TargetPlatformNeedsSL(options.target_platform)) {
     auto sl_file_name = std::filesystem::absolute(
         std::filesystem::current_path() / switches.sl_file_name);
-    const bool is_runtime_stage_data = HasSuffix(switches.sl_file_name, "iplr");
+    const bool is_runtime_stage_data = switches.iplr;
     if (is_runtime_stage_data) {
       auto reflector = compiler.GetReflector();
       if (reflector == nullptr) {
@@ -104,6 +124,11 @@ bool Main(const fml::CommandLine& command_line) {
                                 )) {
         std::cerr << "Could not write file to " << switches.sl_file_name
                   << std::endl;
+        return false;
+      }
+      // Tools that consume the runtime stage data expect the access mode to
+      // be 0644.
+      if (!SetPermissiveAccess(sl_file_name)) {
         return false;
       }
     } else {
@@ -168,6 +193,8 @@ bool Main(const fml::CommandLine& command_line) {
       case TargetPlatform::kOpenGLDesktop:
       case TargetPlatform::kRuntimeStageMetal:
       case TargetPlatform::kRuntimeStageGLES:
+      case TargetPlatform::kSkSL:
+      case TargetPlatform::kVulkan:
         result_file = switches.sl_file_name;
         break;
       case TargetPlatform::kFlutterSPIRV:
