@@ -264,8 +264,12 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     pressingRecords_[physical_key] = eventual_logical_record;
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
-    assert(record_iter != pressingRecords_.end());
-    pressingRecords_.erase(record_iter);
+    if (record_iter == pressingRecords_.end()) {
+      auto critical_iter = critical_keys_.find(key);
+      assert(critical_iter != critical_keys_.end());
+    } else {
+      pressingRecords_.erase(record_iter);
+    }
   }
 
   FlutterKeyEvent key_data{
