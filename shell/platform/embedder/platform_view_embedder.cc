@@ -46,15 +46,15 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
     PlatformDispatchTable platform_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : PlatformView(delegate, std::move(task_runners)),
+    : PlatformView(delegate, task_runners),
       external_view_embedder_(external_view_embedder),
       embedder_surface_(
           std::make_unique<EmbedderSurfaceSoftware>(software_dispatch_table,
                                                     external_view_embedder_)),
-      platform_dispatch_table_(platform_dispatch_table) {
-  platform_message_handler_ = std::make_shared<EmbedderPlatformMessageHandler>(
-      this, task_runners_.GetPlatformTaskRunner());
-}
+      platform_message_handler_(new EmbedderPlatformMessageHandler(
+          this,
+          task_runners.GetPlatformTaskRunner())),
+      platform_dispatch_table_(platform_dispatch_table) {}
 
 #ifdef SHELL_ENABLE_GL
 PlatformViewEmbedder::PlatformViewEmbedder(
@@ -64,16 +64,16 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     bool fbo_reset_after_present,
     PlatformDispatchTable platform_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : PlatformView(delegate, std::move(task_runners)),
+    : PlatformView(delegate, task_runners),
       external_view_embedder_(external_view_embedder),
       embedder_surface_(
           std::make_unique<EmbedderSurfaceGL>(gl_dispatch_table,
                                               fbo_reset_after_present,
                                               external_view_embedder_)),
-      platform_dispatch_table_(platform_dispatch_table) {
-  platform_message_handler_ = std::make_shared<EmbedderPlatformMessageHandler>(
-      this, task_runners_.GetPlatformTaskRunner());
-}
+      platform_message_handler_(new EmbedderPlatformMessageHandler(
+          this,
+          task_runners.GetPlatformTaskRunner())),
+      platform_dispatch_table_(platform_dispatch_table) {}
 #endif
 
 #ifdef SHELL_ENABLE_METAL
@@ -83,13 +83,13 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     std::unique_ptr<EmbedderSurfaceMetal> embedder_surface,
     PlatformDispatchTable platform_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : PlatformView(delegate, std::move(task_runners)),
+    : PlatformView(delegate, task_runners),
       external_view_embedder_(external_view_embedder),
       embedder_surface_(std::move(embedder_surface)),
-      platform_dispatch_table_(platform_dispatch_table) {
-  platform_message_handler_ = std::make_shared<EmbedderPlatformMessageHandler>(
-      this, task_runners_.GetPlatformTaskRunner());
-}
+      platform_message_handler_(new EmbedderPlatformMessageHandler(
+          this,
+          task_runners.GetPlatformTaskRunner())),
+      platform_dispatch_table_(platform_dispatch_table) {}
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN
@@ -99,13 +99,13 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     std::unique_ptr<EmbedderSurfaceVulkan> embedder_surface,
     PlatformDispatchTable platform_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : PlatformView(delegate, std::move(task_runners)),
+    : PlatformView(delegate, task_runners),
       external_view_embedder_(external_view_embedder),
       embedder_surface_(std::move(embedder_surface)),
-      platform_dispatch_table_(platform_dispatch_table) {
-  platform_message_handler_ = std::make_shared<EmbedderPlatformMessageHandler>(
-      this, task_runners_.GetPlatformTaskRunner());
-}
+      platform_message_handler_(new EmbedderPlatformMessageHandler(
+          this,
+          task_runners.GetPlatformTaskRunner())),
+      platform_dispatch_table_(platform_dispatch_table) {}
 #endif
 
 PlatformViewEmbedder::~PlatformViewEmbedder() {
