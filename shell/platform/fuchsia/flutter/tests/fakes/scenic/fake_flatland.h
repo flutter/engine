@@ -225,6 +225,9 @@ class FakeFlatland
   void SetOrientation(
       fuchsia::ui::composition::TransformId transform_id,
       fuchsia::ui::composition::Orientation orientation) override;
+  
+  // |fuchsia::ui::composition::Flatland|
+  void SetOpacity(TransformId transform_id, float value) override;
 
   // |fuchsia::ui::composition::Flatland|
   void SetClipBoundary(fuchsia::ui::composition::TransformId transform_id,
