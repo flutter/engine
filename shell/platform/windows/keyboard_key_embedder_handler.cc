@@ -264,15 +264,11 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     pressingRecords_[physical_key] = eventual_logical_record;
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
-    // Critical keys can be unset before this point if get_key_state_ finds they
-    // are not currently pressed. If the physical key of a keyup event is not in
-    // pressingRecords_, only assert that it is a critical key.
-    // This can occur when caps lock is double pressed with Windows Narrator
-    // running, as key events with wparam 0x14 (caps lock) but with scancode
-    // 0x00 are issued.
-    if (record_iter == pressingRecords_.end()) {
-      assert(critical_keys_.find(key) != critical_keys_.end());
-    } else {
+    // Synthesized keyup events can be handled causing the
+    // key state to be released before the keyup event is
+    // received. Therefore, only erase the record if the
+    // key is currently recorded as pressed.
+    if (record_iter != pressingRecords_.end()) {
       pressingRecords_.erase(record_iter);
     }
   }
