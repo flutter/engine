@@ -522,10 +522,11 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   auto matrix = SkMatrix::I();
   matrix.setScaleX(scale.x);
   matrix.setScaleY(scale.y);
+
+  auto mutators_stack = flutter::MutatorsStack();
   mutators_stack.PushOpacity(kOpacity);
   mutators_stack.SetTransform(matrix);
 
-  auto mutators_stack = flutter::MutatorsStack();
   mutators flutter::EmbeddedViewParams child_view_params(
       SkMatrix::I(), child_view_size_signed, mutators_stack);
   external_view_embedder.CreateView(
