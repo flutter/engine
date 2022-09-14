@@ -464,7 +464,7 @@ public class TextInputChannel {
       }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
 
-      // Build list of content commit mime types from the data in JSON list
+      // Build list of content commit mime types from the data in the JSON list.
       List<String> contentList = new ArrayList<String>();
       JSONArray contentCommitMimeTypes =
           json.isNull("contentCommitMimeTypes")

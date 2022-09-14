@@ -517,6 +517,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
           // Extract byte data from the given URI.
           is = context.getContentResolver().openInputStream(uri);
         } catch (FileNotFoundException ex) {
+          inputContentInfo.releasePermission();
           return false;
         }
 
@@ -534,6 +535,8 @@ public class InputConnectionAdaptor extends BaseInputConnection
           return true;
         }
       }
+
+      inputContentInfo.releasePermission();
     }
     return false;
   }
