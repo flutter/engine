@@ -1853,11 +1853,6 @@ extension SkPictureExtension on SkPicture {
 class SkParagraphBuilderNamespace {}
 
 extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
-  external SkParagraphBuilder Make(
-    SkParagraphStyle paragraphStyle,
-    SkFontMgr? fontManager,
-  );
-
   external SkParagraphBuilder MakeFromFontProvider(
     SkParagraphStyle paragraphStyle,
     TypefaceFontProvider? fontManager,
@@ -1905,6 +1900,7 @@ extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   external set ellipsis(String? value);
   external set textStyle(SkTextStyleProperties? value);
   external set strutStyle(SkStrutStyleProperties? strutStyle);
+  external set replaceTabCharacters(bool? bool);
 }
 
 @JS()
