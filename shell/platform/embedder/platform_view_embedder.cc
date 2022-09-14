@@ -28,6 +28,11 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
           }
         }));
   }
+
+  virtual bool DoesHandlePlatformMessageOnPlatformThread() const {
+    return true;
+  }
+
   virtual void InvokePlatformMessageResponseCallback(
       int response_id,
       std::unique_ptr<fml::Mapping> mapping) {}
