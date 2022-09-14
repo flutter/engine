@@ -79,6 +79,7 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
   gradient_info.texture_sampler_y_coord_scale =
       gradient_texture->GetYCoordScale();
   gradient_info.alpha = GetAlpha();
+  gradient_info.half_texel_width = 0.5 / gradient_texture->GetSize().width;
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

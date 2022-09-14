@@ -12,6 +12,7 @@ uniform GradientInfo {
   float tile_mode;
   float texture_sampler_y_coord_scale;
   float alpha;
+  float half_texel_width;
 } gradient_info;
 
 in vec2 v_position;
@@ -21,11 +22,17 @@ out vec4 frag_color;
 void main() {
   float len = length(v_position - gradient_info.center);
   float t = len / gradient_info.radius;
-  frag_color = IPSampleWithTileMode(
+  if ((t < 0.0 || t >= 1.0) && gradient_info.tile_mode == kTileModeDecal) {
+    frag_color = vec4(0);
+    return;
+  }
+
+  t = IPFloatTile(t, gradient_info.tile_mode);
+  float coords_x = mix(gradient_info.half_texel_width, 1 - gradient_info.half_texel_width, t);
+
+  frag_color = IPSample(
     texture_sampler,
-    vec2(t, 0.5),
-    gradient_info.texture_sampler_y_coord_scale,
-    gradient_info.tile_mode,
-    gradient_info.tile_mode);
+    vec2(coords_x, 0.5),
+    gradient_info.texture_sampler_y_coord_scale);
   frag_color = vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
 }
