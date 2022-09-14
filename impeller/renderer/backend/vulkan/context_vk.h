@@ -61,7 +61,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   void SetupSwapchain(vk::UniqueSurfaceKHR surface);
 
-  std::unique_ptr<Surface> AcquireSurface();
+  std::unique_ptr<Surface> AcquireSurface(size_t current_frame);
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -83,6 +83,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
   std::shared_ptr<WorkQueue> work_queue_;
   bool is_valid_ = false;
+  uint32_t frame_number_ = 0;
 
   ContextVK(
       PFN_vkGetInstanceProcAddr proc_address_callback,

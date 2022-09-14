@@ -61,18 +61,21 @@ bool CommandBufferVK::IsValid() const {
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  bool result = surface_producer_->Submit(std::move(command_buffer_));
+  // todo fix this.
 
   if (callback) {
-    callback(result ? CommandBuffer::Status::kCompleted
-                    : CommandBuffer::Status::kError);
+    callback(CommandBuffer::Status::kCompleted);
   }
 
-  return result;
+  return true;
 }
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
-    RenderTarget target) const {
+    RenderTarget target) {
+  FML_LOG(ERROR) << __PRETTY_FUNCTION__
+                 << ": w, h = " << target.GetRenderTargetSize().width << ", "
+                 << target.GetRenderTargetSize().height;
+
   std::vector<vk::AttachmentDescription> color_attachments;
   for (const auto& [k, attachment] : target.GetColorAttachments()) {
     const TextureDescriptor& tex_desc =
@@ -86,7 +89,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
 
     color_attachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
     color_attachment.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-    color_attachment.setInitialLayout(vk::ImageLayout::eUndefined);
+    color_attachment.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal);
     color_attachment.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
     color_attachments.push_back(color_attachment);
@@ -100,7 +103,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
 
   vk::SubpassDescription subpass_desc;
   subpass_desc.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-  subpass_desc.setColorAttachmentCount(color_attachments.size());
+  subpass_desc.setColorAttachmentCount(1);
   subpass_desc.setPColorAttachments(&color_attachment_ref);
 
   vk::RenderPassCreateInfo render_pass_create;
@@ -118,8 +121,8 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
   }
 
   return std::make_shared<RenderPassVK>(
-      context_, device_, std::move(target), *command_buffer_,
-      std::move(render_pass_create_res.value));
+      context_, device_, std::move(target), std::move(command_buffer_),
+      std::move(render_pass_create_res.value), surface_producer_);
 }
 
 std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {

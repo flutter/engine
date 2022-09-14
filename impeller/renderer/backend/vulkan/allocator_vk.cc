@@ -62,6 +62,9 @@ bool AllocatorVK::IsValid() const {
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
+  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << "w, h: " << desc.size.width << ", "
+                 << desc.size.height;
+
   auto image_create_info = vk::ImageCreateInfo{};
   image_create_info.imageType = vk::ImageType::e2D;
   image_create_info.format = ToVKImageFormat(desc.format);

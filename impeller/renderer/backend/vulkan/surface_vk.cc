@@ -4,14 +4,19 @@
 
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 
+#include "fml/logging.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
 std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
+    uint32_t frame_num,
     SwapchainImageVK* swapchain_image,
     ContextVK* context,
     SwapCallback swap_callback) {
+  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " " << frame_num
+                 << ", swapchain_image: " << swapchain_image;
+
   if (!swapchain_image) {
     return nullptr;
   }
@@ -30,6 +35,7 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
       .wrapped_texture =
           {
               .swapchain_image = swapchain_image,
+              .frame_num = frame_num,
           },
   });
   color0.texture = std::make_shared<TextureVK>(std::move(color0_tex), context,
@@ -53,6 +59,7 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
       .wrapped_texture =
           {
               .swapchain_image = swapchain_image,
+              .frame_num = frame_num,
           },
   });
   stencil0.texture = std::make_shared<TextureVK>(
@@ -71,7 +78,9 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
 SurfaceVK::SurfaceVK(RenderTarget target,
                      SwapchainImageVK* swapchain_image,
                      SwapCallback swap_callback)
-    : Surface(target) {}
+    : Surface(target) {
+  swap_callback_ = std::move(swap_callback);
+}
 
 SurfaceVK::~SurfaceVK() = default;
 

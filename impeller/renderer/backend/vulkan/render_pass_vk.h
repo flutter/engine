@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/render_pass.h"
@@ -17,8 +18,9 @@ class RenderPassVK final : public RenderPass {
   RenderPassVK(std::weak_ptr<const Context> context,
                vk::Device device,
                RenderTarget target,
-               vk::CommandBuffer command_buffer,
-               vk::UniqueRenderPass render_pass);
+               vk::UniqueCommandBuffer command_buffer,
+               vk::UniqueRenderPass render_pass,
+               SurfaceProducerVK* surface_producer);
 
   // |RenderPass|
   ~RenderPassVK() override;
@@ -27,8 +29,10 @@ class RenderPassVK final : public RenderPass {
   friend class CommandBufferVK;
 
   vk::Device device_;
-  vk::CommandBuffer command_buffer_;
+  vk::UniqueCommandBuffer command_buffer_;
   vk::UniqueRenderPass render_pass_;
+  SurfaceProducerVK* surface_producer_;
+
   std::string label_ = "";
   bool is_valid_ = false;
 
@@ -41,7 +45,7 @@ class RenderPassVK final : public RenderPass {
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;
 
-  bool EndCommandBuffer() const;
+  bool EndCommandBuffer(uint32_t frame_num);
 
   vk::UniqueFramebuffer CreateFrameBuffer(
       const WrappedTextureInfoVK& wrapped_texture_info) const;

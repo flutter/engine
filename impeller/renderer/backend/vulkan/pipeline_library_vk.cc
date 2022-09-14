@@ -117,7 +117,7 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   desc.setStoreOp(vk::AttachmentStoreOp::eDontCare);
   desc.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
   desc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-  desc.setInitialLayout(vk::ImageLayout::eUndefined);
+  desc.setInitialLayout(vk::ImageLayout::eGeneral);
   desc.setFinalLayout(vk::ImageLayout::eGeneral);
 
   return desc;

@@ -21,6 +21,15 @@ struct SurfaceProducerCreateInfoVK {
   SwapchainVK* swapchain;
 };
 
+class SurfaceSyncObjectsVK {
+ public:
+  vk::UniqueSemaphore image_available_semaphore;
+  vk::UniqueSemaphore render_finished_semaphore;
+  vk::UniqueFence in_flight_fence;
+
+  static std::unique_ptr<SurfaceSyncObjectsVK> Create(vk::Device device);
+};
+
 class SurfaceProducerVK {
  public:
   static std::unique_ptr<SurfaceProducerVK> Create(
@@ -32,25 +41,30 @@ class SurfaceProducerVK {
 
   ~SurfaceProducerVK();
 
-  std::unique_ptr<Surface> AcquireSurface();
+  std::unique_ptr<Surface> AcquireSurface(size_t current_frame);
 
   // take ownership of the command buffer until present.
-  bool Submit(vk::UniqueCommandBuffer buffer);
+  bool QueueCommandBuffer(uint32_t frame_num, vk::UniqueCommandBuffer buffer);
+
+  void StashRP(uint32_t frame_num, vk::UniqueRenderPass data) {
+    stash_rp_[frame_num].push_back(std::move(data));
+  }
 
  private:
   std::weak_ptr<Context> context_;
-  vk::UniqueCommandBuffer cmd_buffer_;
 
   bool SetupSyncObjects();
 
-  bool Present(uint32_t image_index);
+  bool Submit(uint32_t frame_num);
+
+  bool Present(size_t frame_num, uint32_t image_index);
 
   const SurfaceProducerCreateInfoVK create_info_;
 
   // sync objects
-  vk::UniqueSemaphore image_available_semaphore_;
-  vk::UniqueSemaphore render_finished_semaphore_;
-  vk::UniqueFence in_flight_fence_;
+  std::unique_ptr<SurfaceSyncObjectsVK> sync_objects_[kMaxFramesInFlight];
+  std::vector<vk::UniqueCommandBuffer> command_buffers_[kMaxFramesInFlight];
+  std::vector<vk::UniqueRenderPass> stash_rp_[kMaxFramesInFlight];
 
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceProducerVK);
 };
