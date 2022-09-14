@@ -287,6 +287,10 @@ void FakeFlatland::SetOpacity(
   if (value < 0.f || value > 1.f) {
     FML_CHECK(false) << "FakeFlatland::SetOpacity: Invalid opacity value.";
   }
+
+  auto& transform = found_transform->second;
+  FML_CHECK(transform);
+  transform->opacity = value;
 }
 
 void FakeFlatland::SetClipBoundary(
