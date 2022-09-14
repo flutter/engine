@@ -29,8 +29,8 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
         }));
   }
 
-  virtual bool DoesHandlePlatformMessageOnPlatformThread() const {
-    return true;
+  virtual void SetRouteThroughPlatformThread(bool route) {
+    // Do nothing, we always route through the platform thread.
   }
 
   virtual void InvokePlatformMessageResponseCallback(

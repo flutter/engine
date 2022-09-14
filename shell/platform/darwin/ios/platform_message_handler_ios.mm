@@ -47,6 +47,10 @@ NSObject<FlutterTaskQueue>* PlatformMessageHandlerIos::MakeBackgroundTaskQueue()
 PlatformMessageHandlerIos::PlatformMessageHandlerIos(TaskRunners task_runners)
     : task_runners_(task_runners) {}
 
+void PlatformMessageHandlerIos::SetRouteThroughPlatformThread(bool route) {
+  does_route_through_platform_thread_.store(route);
+}
+
 void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   // This can be called from any isolate's thread.
   fml::RefPtr<flutter::PlatformMessageResponse> completer = message->response();
@@ -86,7 +90,14 @@ void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMe
     };
 
     if (handler_info.task_queue.get()) {
-      [handler_info.task_queue.get() dispatch:run_handler];
+      if (does_route_through_platform_thread_.load()) {
+        NSObject<FlutterTaskQueue>* task_queue = handler_info.task_queue.get();
+        dispatch_async(dispatch_get_main_queue(), ^{
+          [task_queue dispatch:run_handler];
+        });
+      } else {
+        [handler_info.task_queue.get() dispatch:run_handler];
+      }
     } else {
       dispatch_async(dispatch_get_main_queue(), run_handler);
     }

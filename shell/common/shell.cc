@@ -659,13 +659,17 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   platform_view_ = std::move(platform_view);
   platform_message_handler_ = platform_view_->GetPlatformMessageHandler();
-  route_messages_through_platform_thread_.store(true);
-  task_runners_.GetPlatformTaskRunner()->PostTask(
-      [self = weak_factory_.GetWeakPtr()] {
-        if (self) {
-          self->route_messages_through_platform_thread_.store(false);
-        }
-      });
+  if (platform_message_handler_) {
+    platform_message_handler_->SetRouteThroughPlatformThread(true);
+    task_runners_.GetPlatformTaskRunner()->PostTask(
+        [weak_handler =
+             std::weak_ptr<PlatformMessageHandler>(platform_message_handler_)] {
+          auto handler = weak_handler.lock();
+          if (handler) {
+            handler->SetRouteThroughPlatformThread(false);
+          }
+        });
+  }
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
   io_manager_ = io_manager;
@@ -1223,43 +1227,7 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 
   if (platform_message_handler_) {
-    if (route_messages_through_platform_thread_ &&
-        !platform_message_handler_
-             ->DoesHandlePlatformMessageOnPlatformThread()) {
-#if _WIN32
-      // On Windows capturing a TaskRunner with a TaskRunner will cause an
-      // uncaught exception in process shutdown because of the deletion order of
-      // global variables. See also
-      // https://github.com/flutter/flutter/issues/111575.
-      // This won't be an issue until Windows supports background platform
-      // channels. Then this can potentially be addressed by capturing a
-      // weak_ptr to an object that retains the ui TaskRunner, instead of the
-      // TaskRunner directly.
-      FML_DCHECK(false);
-#endif
-      // We route messages through the platform thread temporarily when the
-      // shell is being initialized to be backwards compatible with setting
-      // message handlers in the same event as starting the isolate, but after
-      // it is started.
-      auto ui_task_runner = task_runners_.GetUITaskRunner();
-      task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
-          [weak_platform_message_handler =
-               std::weak_ptr<PlatformMessageHandler>(platform_message_handler_),
-           message = std::move(message), ui_task_runner]() mutable {
-            ui_task_runner->PostTask(
-                fml::MakeCopyable([weak_platform_message_handler,
-                                   message = std::move(message)]() mutable {
-                  auto platform_message_handler =
-                      weak_platform_message_handler.lock();
-                  if (platform_message_handler) {
-                    platform_message_handler->HandlePlatformMessage(
-                        std::move(message));
-                  }
-                }));
-          }));
-    } else {
-      platform_message_handler_->HandlePlatformMessage(std::move(message));
-    }
+    platform_message_handler_->HandlePlatformMessage(std::move(message));
   } else {
     task_runners_.GetPlatformTaskRunner()->PostTask(
         fml::MakeCopyable([view = platform_view_->GetWeakPtr(),

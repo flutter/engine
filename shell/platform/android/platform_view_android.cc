@@ -99,7 +99,10 @@ PlatformViewAndroid::PlatformViewAndroid(
       jni_facade_(jni_facade),
       android_context_(std::move(android_context)),
       platform_view_android_delegate_(jni_facade),
-      platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
+      platform_message_handler_(new PlatformMessageHandlerAndroid(
+          jni_facade,
+          task_runners.GetPlatformTaskRunner(),
+          task_runners.GetUITaskRunner())) {
   if (android_context_) {
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";

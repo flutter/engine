@@ -25,7 +25,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
 
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
-  bool DoesHandlePlatformMessageOnPlatformThread() const override { return false; }
+  void SetRouteThroughPlatformThread(bool route) override;
 
   void InvokePlatformMessageResponseCallback(int response_id,
                                              std::unique_ptr<fml::Mapping> mapping) override;
@@ -45,6 +45,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
   std::unordered_map<std::string, HandlerInfo> message_handlers_;
   TaskRunners task_runners_;
   std::mutex message_handlers_mutex_;
+  std::atomic<bool> does_route_through_platform_thread_ = false;
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageHandlerIos);
 };
 
