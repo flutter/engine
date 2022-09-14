@@ -228,8 +228,11 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // TODO(fxbug.dev/94000): Set ClipRegions.
 
         // Set opacity.
-        flatland_->flatland()->SetOpacity(viewport.transform_id,
-                                          view_mutators.opacity);
+        if (view_mutators.opacity != viewport.mutators.opacity) {
+          flatland_->flatland()->SetOpacity(viewport.transform_id,
+                                            view_mutators.opacity);
+          viewport.mutators.opacity = view_mutators.opacity;
+        }
 
         // Set size
         // TODO(): Set occlusion hint, and focusable.
