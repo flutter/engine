@@ -273,6 +273,7 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
       /*num_hit_regions*/ 0));
 }
 
+
 fuchsia::ui::composition::OnNextFrameBeginValues WithPresentCredits(
     uint32_t additional_present_credits) {
   fuchsia::ui::composition::OnNextFrameBeginValues values;
