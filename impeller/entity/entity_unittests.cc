@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "flutter/testing/testing.h"
+#include "fml/logging.h"
+#include "gtest/gtest.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/contents.h"
@@ -29,6 +33,7 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
+#include "include/core/SkBlendMode.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
@@ -139,7 +144,7 @@ TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
 
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   auto image = CreateTextureForFixture("boston.jpg");
-  auto filter = FilterContents::MakeBlend(Entity::BlendMode::kSoftLight,
+  auto filter = FilterContents::MakeBlend(BlendMode::kSoftLight,
                                           FilterInput::Make({image}));
 
   // Without the crop rect (default behavior).
@@ -645,59 +650,59 @@ TEST_P(EntityTest, SolidStrokeContentsSetMiter) {
 
 TEST_P(EntityTest, BlendingModeOptions) {
   std::vector<const char*> blend_mode_names;
-  std::vector<Entity::BlendMode> blend_mode_values;
+  std::vector<BlendMode> blend_mode_values;
   {
     // Force an exhausiveness check with a switch. When adding blend modes,
     // update this switch with a new name/value to to make it selectable in the
     // test GUI.
 
-    const Entity::BlendMode b{};
-    static_assert(b == Entity::BlendMode::kClear);  // Ensure the first item in
-                                                    // the switch is the first
-                                                    // item in the enum.
+    const BlendMode b{};
+    static_assert(b == BlendMode::kClear);  // Ensure the first item in
+                                            // the switch is the first
+                                            // item in the enum.
     switch (b) {
-      case Entity::BlendMode::kClear:
+      case BlendMode::kClear:
         blend_mode_names.push_back("Clear");
-        blend_mode_values.push_back(Entity::BlendMode::kClear);
-      case Entity::BlendMode::kSource:
+        blend_mode_values.push_back(BlendMode::kClear);
+      case BlendMode::kSource:
         blend_mode_names.push_back("Source");
-        blend_mode_values.push_back(Entity::BlendMode::kSource);
-      case Entity::BlendMode::kDestination:
+        blend_mode_values.push_back(BlendMode::kSource);
+      case BlendMode::kDestination:
         blend_mode_names.push_back("Destination");
-        blend_mode_values.push_back(Entity::BlendMode::kDestination);
-      case Entity::BlendMode::kSourceOver:
+        blend_mode_values.push_back(BlendMode::kDestination);
+      case BlendMode::kSourceOver:
         blend_mode_names.push_back("SourceOver");
-        blend_mode_values.push_back(Entity::BlendMode::kSourceOver);
-      case Entity::BlendMode::kDestinationOver:
+        blend_mode_values.push_back(BlendMode::kSourceOver);
+      case BlendMode::kDestinationOver:
         blend_mode_names.push_back("DestinationOver");
-        blend_mode_values.push_back(Entity::BlendMode::kDestinationOver);
-      case Entity::BlendMode::kSourceIn:
+        blend_mode_values.push_back(BlendMode::kDestinationOver);
+      case BlendMode::kSourceIn:
         blend_mode_names.push_back("SourceIn");
-        blend_mode_values.push_back(Entity::BlendMode::kSourceIn);
-      case Entity::BlendMode::kDestinationIn:
+        blend_mode_values.push_back(BlendMode::kSourceIn);
+      case BlendMode::kDestinationIn:
         blend_mode_names.push_back("DestinationIn");
-        blend_mode_values.push_back(Entity::BlendMode::kDestinationIn);
-      case Entity::BlendMode::kSourceOut:
+        blend_mode_values.push_back(BlendMode::kDestinationIn);
+      case BlendMode::kSourceOut:
         blend_mode_names.push_back("SourceOut");
-        blend_mode_values.push_back(Entity::BlendMode::kSourceOut);
-      case Entity::BlendMode::kDestinationOut:
+        blend_mode_values.push_back(BlendMode::kSourceOut);
+      case BlendMode::kDestinationOut:
         blend_mode_names.push_back("DestinationOut");
-        blend_mode_values.push_back(Entity::BlendMode::kDestinationOut);
-      case Entity::BlendMode::kSourceATop:
+        blend_mode_values.push_back(BlendMode::kDestinationOut);
+      case BlendMode::kSourceATop:
         blend_mode_names.push_back("SourceATop");
-        blend_mode_values.push_back(Entity::BlendMode::kSourceATop);
-      case Entity::BlendMode::kDestinationATop:
+        blend_mode_values.push_back(BlendMode::kSourceATop);
+      case BlendMode::kDestinationATop:
         blend_mode_names.push_back("DestinationATop");
-        blend_mode_values.push_back(Entity::BlendMode::kDestinationATop);
-      case Entity::BlendMode::kXor:
+        blend_mode_values.push_back(BlendMode::kDestinationATop);
+      case BlendMode::kXor:
         blend_mode_names.push_back("Xor");
-        blend_mode_values.push_back(Entity::BlendMode::kXor);
-      case Entity::BlendMode::kPlus:
+        blend_mode_values.push_back(BlendMode::kXor);
+      case BlendMode::kPlus:
         blend_mode_names.push_back("Plus");
-        blend_mode_values.push_back(Entity::BlendMode::kPlus);
-      case Entity::BlendMode::kModulate:
+        blend_mode_values.push_back(BlendMode::kPlus);
+      case BlendMode::kModulate:
         blend_mode_names.push_back("Modulate");
-        blend_mode_values.push_back(Entity::BlendMode::kModulate);
+        blend_mode_values.push_back(BlendMode::kModulate);
     };
   }
 
@@ -711,8 +716,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
 
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     auto draw_rect = [&context, &pass, &world_matrix](
-                         Rect rect, Color color,
-                         Entity::BlendMode blend_mode) -> bool {
+                         Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
       using FS = SolidFillPipeline::FragmentShader;
 
@@ -762,7 +766,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
                    blend_mode_names.data(), blend_mode_names.size());
     ImGui::End();
 
-    Entity::BlendMode selected_mode = blend_mode_values[current_blend_index];
+    BlendMode selected_mode = blend_mode_values[current_blend_index];
 
     Point a, b, c, d;
     std::tie(a, b) = IMPELLER_PLAYGROUND_LINE(
@@ -773,9 +777,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
     bool result = true;
     result = result && draw_rect(Rect(0, 0, pass.GetRenderTargetSize().width,
                                       pass.GetRenderTargetSize().height),
-                                 Color(), Entity::BlendMode::kClear);
+                                 Color(), BlendMode::kClear);
     result = result && draw_rect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), color1,
-                                 Entity::BlendMode::kSourceOver);
+                                 BlendMode::kSourceOver);
     result = result && draw_rect(Rect::MakeLTRB(c.x, c.y, d.x, d.y), color2,
                                  selected_mode);
     return result;
@@ -819,11 +823,11 @@ TEST_P(EntityTest, Filters) {
     auto fi_boston = FilterInput::Make(boston);
     auto fi_kalimba = FilterInput::Make(kalimba);
 
-    auto blend0 = FilterContents::MakeBlend(Entity::BlendMode::kModulate,
+    auto blend0 = FilterContents::MakeBlend(BlendMode::kModulate,
                                             {fi_kalimba, fi_boston});
 
     auto blend1 = FilterContents::MakeBlend(
-        Entity::BlendMode::kScreen,
+        BlendMode::kScreen,
         {fi_bridge, FilterInput::Make(blend0), fi_bridge, fi_bridge});
 
     Entity entity;
@@ -1100,9 +1104,9 @@ TEST_P(EntityTest, MorphologyFilter) {
 
 TEST_P(EntityTest, SetBlendMode) {
   Entity entity;
-  ASSERT_EQ(entity.GetBlendMode(), Entity::BlendMode::kSourceOver);
-  entity.SetBlendMode(Entity::BlendMode::kClear);
-  ASSERT_EQ(entity.GetBlendMode(), Entity::BlendMode::kClear);
+  ASSERT_EQ(entity.GetBlendMode(), BlendMode::kSourceOver);
+  entity.SetBlendMode(BlendMode::kClear);
+  ASSERT_EQ(entity.GetBlendMode(), BlendMode::kClear);
 }
 
 TEST_P(EntityTest, ContentsGetBoundsForEmptyPathReturnsNullopt) {
@@ -1199,7 +1203,7 @@ TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
 
   std::shared_ptr<VerticesContents> contents =
       std::make_shared<VerticesContents>(vertices);
-  contents->SetBlendMode(Entity::BlendMode::kSourceOver);
+  contents->SetBlendMode(BlendMode::kSourceOver);
   contents->SetColor(Color::Red().WithAlpha(0.5));
 
   Entity e;
@@ -1250,7 +1254,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   contents->SetTransforms(std::move(transforms));
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
-  contents->SetBlendMode(Entity::BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kSource);
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
@@ -1286,7 +1290,7 @@ TEST_P(EntityTest, DrawAtlasWithColor) {
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
   contents->SetColors(colors);
-  contents->SetBlendMode(Entity::BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kSource);
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
@@ -1317,7 +1321,7 @@ TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
   contents->SetTransforms(std::move(transforms));
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
-  contents->SetBlendMode(Entity::BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kSource);
 
   auto transform = Matrix::MakeScale(GetContentScale());
   Entity e;
@@ -1358,7 +1362,7 @@ TEST_P(EntityTest, DrawAtlasWithOpacity) {
   contents->SetTransforms(std::move(transforms));
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
-  contents->SetBlendMode(Entity::BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kSource);
   contents->SetAlpha(0.5);
 
   Entity e;
@@ -1379,7 +1383,7 @@ TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
   contents->SetTransforms(std::move(transforms));
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
-  contents->SetBlendMode(Entity::BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kSource);
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
@@ -1736,6 +1740,150 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, TTTBlendColor) {
+  std::vector<BlendMode> blend_modes = {
+      BlendMode::kClear,
+      BlendMode::kSource,
+      BlendMode::kDestination,
+      BlendMode::kSourceOver,
+      BlendMode::kDestinationOver,
+      BlendMode::kSourceIn,
+      BlendMode::kDestinationIn,
+      BlendMode::kSourceOut,
+      BlendMode::kDestinationOut,
+      BlendMode::kSourceATop,
+      BlendMode::kDestinationATop,
+      BlendMode::kXor,
+      BlendMode::kPlus,
+      BlendMode::kModulate,
+  };
+
+  auto check_func = [blend_modes](Color& src, Color& dst,
+                                  std::vector<Color> expected_colors) {
+    FML_LOG(ERROR) << "Source " << src << " Dst " << dst;
+    for (unsigned i = 0; i < blend_modes.size(); ++i) {
+      auto blend_color = Color::BlendColor(src, dst, blend_modes[i]);
+      auto expected_color = expected_colors[i];
+      ASSERT_EQ(blend_color, expected_color);
+      FML_LOG(ERROR) << "blend_mode: " << i;
+    }
+  };
+
+  auto generator_expected_colors = [](Color& src,
+                                      Color& dst) -> std::vector<Color> {
+    return {
+        Color(0, 0, 0, 0),  // kClear
+        src,                // kSource
+        dst,                // kDestination
+
+        Color(src.red + (1 - src.alpha) * dst.red,  // kSourceOver
+              src.green + (1 - src.alpha) * dst.green,
+              src.blue + (1 - src.alpha) * dst.blue,
+              src.alpha + (1 - src.alpha) * dst.alpha),
+
+        Color(dst.red + (1 - dst.alpha) * src.red,  // kDestinationOver
+              dst.green + (1 - dst.alpha) * src.green,
+              dst.blue + (1 - dst.alpha) * src.blue,
+              dst.alpha + (1 - dst.alpha) * src.alpha),
+        // kSourceIn
+        Color(src.red * dst.alpha, src.green * dst.alpha, src.blue * dst.alpha,
+              src.alpha * dst.alpha),
+        // kDestinationIn
+        Color(dst.red * src.alpha, dst.green * src.alpha, dst.blue * src.alpha,
+              src.alpha * dst.alpha),
+
+        // kSourceOut
+        Color((1 - dst.alpha) * src.red, (1 - dst.alpha) * src.green,
+              (1 - dst.alpha) * src.blue, (1 - dst.alpha) * src.alpha),
+        // kDestinationOut
+        Color((1 - src.alpha) * dst.red, (1 - src.alpha) * dst.green,
+              (1 - src.alpha) * dst.blue, (1 - src.alpha) * dst.alpha),
+
+        // kSourceATop
+        Color(dst.alpha * src.red + (1 - src.alpha) * dst.red,
+              dst.alpha * src.green + (1 - src.alpha) * dst.green,
+              dst.alpha * src.blue + (1 - src.alpha) * dst.blue, dst.alpha),
+
+        // kDestinationATop
+        Color(src.alpha * dst.red + (1 - dst.alpha) * src.red,
+              src.alpha * dst.green + (1 - dst.alpha) * src.green,
+              src.alpha * dst.blue + (1 - dst.alpha) * src.blue, src.alpha),
+
+        // kXor
+        Color((1 - src.alpha) * dst.red + (1 - dst.alpha) * src.red,
+              (1 - src.alpha) * dst.green + (1 - dst.alpha) * src.green,
+              (1 - src.alpha) * dst.blue + (1 - dst.alpha) * src.blue,
+              (1 - src.alpha) * dst.alpha + (1 - dst.alpha) * src.alpha),
+
+        // kPlus
+        Color(std::max(0.f, std::min(src.red + dst.red, 1.f)),
+              std::max(0.f, std::min(src.green + dst.green, 1.f)),
+              std::max(0.f, std::min(src.blue + dst.blue, 1.f)),
+              std::max(0.f, std::min(src.alpha + dst.alpha, 1.f))),
+
+        // kModulate
+        Color(src.red * dst.red, src.green * dst.green, src.blue * dst.blue,
+              src.alpha * dst.alpha),
+    };
+  };
+
+  {
+    Color src = {1, 0, 0, 0.5};
+    Color dst = {1, 0, 1, 1};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
+
+  {
+    Color src = {1, 1, 0, 1};
+    Color dst = {1, 0, 1, 1};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
+
+  {
+    Color src = {1, 1, 0, 0.2};
+    Color dst = {1, 1, 1, 0.5};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
+
+  {
+    Color src = {1, 0.5, 0, 0.2};
+    Color dst = {1, 1, 0.5, 0.5};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
+
+  {
+    Color src = {0.5, 0.5, 0, 0.2};
+    Color dst = {0, 1, 0.5, 0.5};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
+
+  {
+    Color src = {0.5, 0.5, 0.2, 0.2};
+    Color dst = {0.2, 1, 0.5, 0.5};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
+
+  {
+    Color src = {0.5, 0.5, 0.2, 0.2};
+    Color dst = {0.2, 0.2, 0.5, 0.5};
+    auto expected_colors = generator_expected_colors(src, dst);
+    ASSERT_EQ(expected_colors.size(), blend_modes.size());
+    check_func(src, dst, expected_colors);
+  }
 }
 
 }  // namespace testing

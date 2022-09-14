@@ -8,13 +8,55 @@
 #include <array>
 #include <cstdlib>
 #include <ostream>
-
 #include "impeller/geometry/scalar.h"
 
 namespace impeller {
 
 struct ColorHSB;
 struct Vector4;
+
+/// All blend modes assume that both the source (fragment output) and
+/// destination (first color attachment) have colors with premultiplied alpha.
+enum class BlendMode {
+  // The following blend modes are able to be used as pipeline blend modes or
+  // via `BlendFilterContents`.
+  kClear,
+  kSource,
+  kDestination,
+  kSourceOver,
+  kDestinationOver,
+  kSourceIn,
+  kDestinationIn,
+  kSourceOut,
+  kDestinationOut,
+  kSourceATop,
+  kDestinationATop,
+  kXor,
+  kPlus,
+  kModulate,
+
+  // The following blend modes use equations that are not available for
+  // pipelines on most graphics devices without extensions, and so they are
+  // only able to be used via `BlendFilterContents`.
+  kScreen,
+  kOverlay,
+  kDarken,
+  kLighten,
+  kColorDodge,
+  kColorBurn,
+  kHardLight,
+  kSoftLight,
+  kDifference,
+  kExclusion,
+  kMultiply,
+  kHue,
+  kSaturation,
+  kColor,
+  kLuminosity,
+
+  kLastPipelineBlendMode = kModulate,
+  kLastAdvancedBlendMode = kLuminosity,
+};
 
 /**
  *  Represents a RGBA color
@@ -693,9 +735,19 @@ struct Color {
     };
   }
 
+  static Color BlendColor(const Color& src,
+                          const Color& dst,
+                          BlendMode blend_mode);
+
   Color operator*(const Color& c) const {
     return Color(red * c.red, green * c.green, blue * c.blue, alpha * c.alpha);
   }
+
+  Color operator+(const Color& c) const;
+
+  Color operator-(const Color& c) const;
+
+  Color operator*(Scalar value) const;
 
   constexpr bool IsTransparent() const { return alpha == 0.0; }
 

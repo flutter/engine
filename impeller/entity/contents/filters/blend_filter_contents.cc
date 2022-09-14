@@ -19,7 +19,7 @@
 namespace impeller {
 
 BlendFilterContents::BlendFilterContents() {
-  SetBlendMode(Entity::BlendMode::kSourceOver);
+  SetBlendMode(BlendMode::kSourceOver);
 }
 
 BlendFilterContents::~BlendFilterContents() = default;
@@ -148,7 +148,7 @@ static std::optional<Snapshot> PipelineBlend(
     const ContentContext& renderer,
     const Entity& entity,
     const Rect& coverage,
-    Entity::BlendMode pipeline_blend,
+    BlendMode pipeline_blend,
     std::optional<Color> foreground_color) {
   using VS = BlendPipeline::VertexShader;
   using FS = BlendPipeline::FragmentShader;
@@ -201,7 +201,7 @@ static std::optional<Snapshot> PipelineBlend(
 
     // Draw the first texture using kSource.
 
-    options.blend_mode = Entity::BlendMode::kSource;
+    options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetBlendPipeline(options);
     if (!add_blend_command(inputs[0]->GetSnapshot(renderer, entity))) {
       return true;
@@ -256,7 +256,7 @@ static std::optional<Snapshot> PipelineBlend(
 }
 
 #define BLEND_CASE(mode)                                                  \
-  case Entity::BlendMode::k##mode:                                        \
+  case BlendMode::k##mode:                                                \
     advanced_blend_proc_ = [](const FilterInput::Vector& inputs,          \
                               const ContentContext& renderer,             \
                               const Entity& entity, const Rect& coverage, \
@@ -267,17 +267,16 @@ static std::optional<Snapshot> PipelineBlend(
     };                                                                    \
     break;
 
-void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
-  if (blend_mode > Entity::BlendMode::kLastAdvancedBlendMode) {
+void BlendFilterContents::SetBlendMode(BlendMode blend_mode) {
+  if (blend_mode > BlendMode::kLastAdvancedBlendMode) {
     VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
                    << " assigned to BlendFilterContents.";
   }
 
   blend_mode_ = blend_mode;
 
-  if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
-    static_assert(Entity::BlendMode::kLastAdvancedBlendMode ==
-                  Entity::BlendMode::kLuminosity);
+  if (blend_mode > BlendMode::kLastPipelineBlendMode) {
+    static_assert(BlendMode::kLastAdvancedBlendMode == BlendMode::kLuminosity);
 
     switch (blend_mode) {
       BLEND_CASE(Screen)
@@ -317,16 +316,16 @@ std::optional<Snapshot> BlendFilterContents::RenderFilter(
 
   if (inputs.size() == 1 && !foreground_color_.has_value()) {
     // Nothing to blend.
-    return PipelineBlend(inputs, renderer, entity, coverage,
-                         Entity::BlendMode::kSource, std::nullopt);
+    return PipelineBlend(inputs, renderer, entity, coverage, BlendMode::kSource,
+                         std::nullopt);
   }
 
-  if (blend_mode_ <= Entity::BlendMode::kLastPipelineBlendMode) {
+  if (blend_mode_ <= BlendMode::kLastPipelineBlendMode) {
     return PipelineBlend(inputs, renderer, entity, coverage, blend_mode_,
                          foreground_color_);
   }
 
-  if (blend_mode_ <= Entity::BlendMode::kLastAdvancedBlendMode) {
+  if (blend_mode_ <= BlendMode::kLastAdvancedBlendMode) {
     return advanced_blend_proc_(inputs, renderer, entity, coverage,
                                 foreground_color_);
   }

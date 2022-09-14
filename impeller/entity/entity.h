@@ -19,48 +19,8 @@ class RenderPass;
 
 class Entity {
  public:
-  /// All blend modes assume that both the source (fragment output) and
-  /// destination (first color attachment) have colors with premultiplied alpha.
-  enum class BlendMode {
-    // The following blend modes are able to be used as pipeline blend modes or
-    // via `BlendFilterContents`.
-    kClear,
-    kSource,
-    kDestination,
-    kSourceOver,
-    kDestinationOver,
-    kSourceIn,
-    kDestinationIn,
-    kSourceOut,
-    kDestinationOut,
-    kSourceATop,
-    kDestinationATop,
-    kXor,
-    kPlus,
-    kModulate,
-
-    // The following blend modes use equations that are not available for
-    // pipelines on most graphics devices without extensions, and so they are
-    // only able to be used via `BlendFilterContents`.
-    kScreen,
-    kOverlay,
-    kDarken,
-    kLighten,
-    kColorDodge,
-    kColorBurn,
-    kHardLight,
-    kSoftLight,
-    kDifference,
-    kExclusion,
-    kMultiply,
-    kHue,
-    kSaturation,
-    kColor,
-    kLuminosity,
-
-    kLastPipelineBlendMode = kModulate,
-    kLastAdvancedBlendMode = kLuminosity,
-  };
+  static const BlendMode kLastPipelineBlendMode;
+  static const BlendMode kLastAdvancedBlendMode;
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
   /// typically defined range of the source of the colors (such as the
@@ -128,9 +88,5 @@ class Entity {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   uint32_t stencil_depth_ = 0u;
 };
-
-Color blendColor(const Color& src,
-                 const Color& dst,
-                 Entity::BlendMode blend_mode);
 
 }  // namespace impeller

@@ -28,7 +28,7 @@ void VerticesContents::SetColor(Color color) {
   color_ = color.Premultiply();
 }
 
-void VerticesContents::SetBlendMode(Entity::BlendMode blend_mode) {
+void VerticesContents::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
 }
 
@@ -66,7 +66,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
     const auto& colors = vertices_.GetColors();
     for (size_t i = 0; i < positions.size(); i++) {
       auto color = i < colors.size()
-                       ? blendColor(color_, colors[i], blend_mode_)
+                       ? Color::BlendColor(color_, colors[i], blend_mode_)
                        : color_;
       vertex_data.push_back(VS::PerVertexData{
           .position = positions[i],
