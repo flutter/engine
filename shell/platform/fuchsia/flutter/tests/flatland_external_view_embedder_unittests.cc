@@ -527,7 +527,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   mutators_stack.PushOpacity(kOpacity);
   mutators_stack.PushTransform(matrix);
 
-  mutators flutter::EmbeddedViewParams child_view_params(
+  flutter::EmbeddedViewParams child_view_params(
       SkMatrix::I(), child_view_size_signed, mutators_stack);
   external_view_embedder.CreateView(
       child_view_id, []() {},
