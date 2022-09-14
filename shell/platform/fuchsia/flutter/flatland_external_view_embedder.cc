@@ -225,6 +225,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         }
 
         // TODO(fxbug.dev/94000): Set HitTestBehavior.
+        // TODO(fxbug.dev/94000): Set ClipRegions.
 
         // Set opacity.
         flatland_->flatland()->SetOpacity(viewport.transform_id,
@@ -237,9 +238,6 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
           properties.set_logical_size(
               {static_cast<uint32_t>(view_size.fWidth),
                static_cast<uint32_t>(view_size.fHeight)});
-          // Setting the viewport boundaries here also automatically
-          // sets the clip region for the view, based on the logical
-          // size of the properties.
           flatland_->flatland()->SetViewportProperties(viewport.viewport_id,
                                                        std::move(properties));
           viewport.size = view_size;
