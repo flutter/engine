@@ -273,7 +273,6 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
       /*num_hit_regions*/ 0));
 }
 
-
 fuchsia::ui::composition::OnNextFrameBeginValues WithPresentCredits(
     uint32_t additional_present_credits) {
   fuchsia::ui::composition::OnNextFrameBeginValues values;
@@ -590,24 +589,24 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   loop().RunUntilIdle();
   EXPECT_THAT(
       fake_flatland().graph(),
-      IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                     view_ref, /*layers*/
-                     {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-                      IsViewportLayer(child_view_token, child_view_size,
-                                      child_view_inset, {0, 0}, kScale, kOpacity),
-                      IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
+      IsFlutterGraph(
+          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
+           IsViewportLayer(child_view_token, child_view_size, child_view_inset,
+                           {0, 0}, kScale, kOpacity),
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
   external_view_embedder.DestroyView(
       child_view_id, [](fuchsia::ui::composition::ContentId) {});
   EXPECT_THAT(
       fake_flatland().graph(),
-      IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                     view_ref, /*layers*/
-                     {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-                      IsViewportLayer(child_view_token, child_view_size,
-                                      child_view_inset, {0, 0}, kScale, kOpacity),
-                      IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
+      IsFlutterGraph(
+          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
+           IsViewportLayer(child_view_token, child_view_size, child_view_inset,
+                           {0, 0}, kScale, kOpacity),
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
   DrawSimpleFrame(
@@ -624,12 +623,12 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
       });
   EXPECT_THAT(
       fake_flatland().graph(),
-      IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                     view_ref, /*layers*/
-                     {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-                      IsViewportLayer(child_view_token, child_view_size,
-                                      child_view_inset, {0, 0}, kScale, kOpacity),
-                      IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
+      IsFlutterGraph(
+          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
+           IsViewportLayer(child_view_token, child_view_size, child_view_inset,
+                           {0, 0}, kScale, kOpacity),
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -714,22 +713,24 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   loop().RunUntilIdle();
   EXPECT_THAT(
       fake_flatland().graph(),
-      IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
-          {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-           IsViewportLayer(child_view_token, child_view_size,
-                           FakeViewport::kDefaultViewportInset, {0, 0}, {0.f, 0.f}, 1.f)}));
+      IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
+                     view_ref, /*layers*/
+                     {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
+                      IsViewportLayer(child_view_token, child_view_size,
+                                      FakeViewport::kDefaultViewportInset,
+                                      {0, 0}, {0.f, 0.f}, 1.f)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
   external_view_embedder.DestroyView(
       child_view_id, [](fuchsia::ui::composition::ContentId) {});
   EXPECT_THAT(
       fake_flatland().graph(),
-      IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
-          {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-           IsViewportLayer(child_view_token, child_view_size,
-                           FakeViewport::kDefaultViewportInset, {0, 0}, {0.f, 0.f}, 1.f)}));
+      IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
+                     view_ref, /*layers*/
+                     {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
+                      IsViewportLayer(child_view_token, child_view_size,
+                                      FakeViewport::kDefaultViewportInset,
+                                      {0, 0}, {0.f, 0.f}, 1.f)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
   DrawSimpleFrame(
@@ -747,11 +748,12 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
 
   EXPECT_THAT(
       fake_flatland().graph(),
-      IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
-          {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-           IsViewportLayer(child_view_token, child_view_size,
-                           FakeViewport::kDefaultViewportInset, {0, 0}, {0.f, 0.f}, 1.f)}));
+      IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
+                     view_ref, /*layers*/
+                     {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
+                      IsViewportLayer(child_view_token, child_view_size,
+                                      FakeViewport::kDefaultViewportInset,
+                                      {0, 0}, {0.f, 0.f}, 1.f)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
