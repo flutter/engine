@@ -33,6 +33,11 @@ inline bool operator==(const fuchsia::math::Vec& a,
   return a.x == b.x && a.y == b.y;
 }
 
+inline bool operator==(const fuchsia::math::VecF& a,
+                       const fuchsia::math::VecF& b) {
+  return a.x == b.x && a.y == b.y;
+}
+
 inline bool operator==(const fuchsia::math::Rect& a,
                        const fuchsia::math::Rect& b) {
   return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
