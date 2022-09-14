@@ -518,7 +518,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
 
   const float kOpacity = 0.7;
   const fuchsia::math::VecF scale{0.5f, 0.9f};
-  SkMatrix matrix;
+  
+  auto matrix = SkMatrix::I();
   matrix.scale = scale;
   mutators_stack.PushOpacity(kOpacity);
   mutators_stack.SetTransform(matrix);
