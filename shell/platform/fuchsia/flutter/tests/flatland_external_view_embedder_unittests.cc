@@ -516,8 +516,18 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
       static_cast<uint32_t>(child_view_size_signed.height())};
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
+
+  const float kOpacity = 0.7;
+  const fuchsia::math::VecF scale{0.5f, 0.9f};
+  SkMatrix matrix;
+  matrix.scale = scale;
+  mutators_stack.PushOpacity(kOpacity);
+  mutators_stack.SetTransform(matrix);
+  
+  auto mutators_stack = flutter::MutatorsStack();
+  mutators
   flutter::EmbeddedViewParams child_view_params(
-      SkMatrix::I(), child_view_size_signed, flutter::MutatorsStack());
+      SkMatrix::I(), child_view_size_signed, mutators_stack);
   external_view_embedder.CreateView(
       child_view_id, []() {},
       [](fuchsia::ui::composition::ContentId,
@@ -566,7 +576,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
       IsFlutterGraph(
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
-           IsViewportLayer(child_view_token, child_view_size, {0, 0}, {0.f, 0.f}, 1.f),
+           IsViewportLayer(child_view_token, child_view_size, {0, 0}, kScale, kOpacity),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
