@@ -222,6 +222,10 @@ class FakeFlatland
                       fuchsia::math::Vec translation) override;
 
   // |fuchsia::ui::composition::Flatland|
+  void SetScale(fuchsia::ui::composition::TransformId transform_id,
+                fuchsia::math::VecF scale) override;
+
+  // |fuchsia::ui::composition::Flatland|
   void SetOrientation(
       fuchsia::ui::composition::TransformId transform_id,
       fuchsia::ui::composition::Orientation orientation) override;
