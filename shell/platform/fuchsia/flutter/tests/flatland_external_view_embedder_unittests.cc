@@ -217,6 +217,7 @@ Matcher<FakeGraph> IsFlutterGraph(
           /*id*/ _, FakeTransform::kDefaultTranslation,
           FakeTransform::kDefaultScale, FakeTransform::kDefaultOrientation,
           /*clip_bounds*/ _,
+          FakeTransform::kDefaultOpacity,
           /*children*/ ElementsAreArray(layer_matchers),
           /*content*/ Eq(nullptr), /*num_hit_regions*/ _)),
       Eq(FakeView{
@@ -239,6 +240,7 @@ Matcher<std::shared_ptr<FakeTransform>> IsImageLayer(
       /*id*/ _, FakeTransform::kDefaultTranslation,
       FakeTransform::kDefaultScale, FakeTransform::kDefaultOrientation,
       /*clip_bounds*/ _,
+      FakeTransform::kDefaultOpacity,
       /*children*/ IsEmpty(),
       /*content*/
       Pointee(VariantWith<FakeImage>(FieldsAre(
