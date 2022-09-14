@@ -517,15 +517,15 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   const uint32_t child_view_id = child_viewport_token.value.get();
 
   const float kOpacity = 0.7;
-  const fuchsia::math::VecF scale{0.5f, 0.9f};
+  const fuchsia::math::VecF kScale{0.5f, 0.9f};
 
   auto matrix = SkMatrix::I();
-  matrix.setScaleX(scale.x);
-  matrix.setScaleY(scale.y);
+  matrix.setScaleX(kScale.x);
+  matrix.setScaleY(kScale.y);
 
   auto mutators_stack = flutter::MutatorsStack();
   mutators_stack.PushOpacity(kOpacity);
-  mutators_stack.SetTransform(matrix);
+  mutators_stack.PushTransform(matrix);
 
   mutators flutter::EmbeddedViewParams child_view_params(
       SkMatrix::I(), child_view_size_signed, mutators_stack);
@@ -590,7 +590,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
                      view_ref, /*layers*/
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size, {0, 0},
-                                      {0.f, 0.f}, 1.f),
+                                      kScale, kOpacity),
                       IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
@@ -612,7 +612,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
                      view_ref, /*layers*/
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size, {0, 0},
-                                      {0.f, 0.f}, 1.f),
+                                      kScale, kOpacity),
                       IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
