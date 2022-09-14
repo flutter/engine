@@ -12,7 +12,7 @@ import 'package:ui/ui.dart' hide TextStyle;
 import 'package:web_engine_tester/golden_tester.dart';
 
 import '../matchers.dart';
-import 'paragraph/text_scuba.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -701,8 +701,6 @@ Future<void> testMain() async {
       await matchGoldenFile(
         'paint_spread_bounds.png',
         region: const Rect.fromLTRB(0, 0, 250, 600),
-        maxDiffRatePercent: 0.21,
-        pixelComparison: PixelComparison.precise,
       );
     } finally {
       sceneElement.remove();
