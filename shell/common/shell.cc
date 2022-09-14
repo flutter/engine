@@ -1233,12 +1233,9 @@ void Shell::OnEngineHandlePlatformMessage(
           [weak_platform_message_handler =
                std::weak_ptr<PlatformMessageHandler>(platform_message_handler_),
            message = std::move(message), ui_task_runner]() mutable {
-            // The static leak checker gets confused by the use of
-            // fml::MakeCopyable.
-            // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
-            ui_task_runner->PostTask(fml::MakeCopyable(
-                [weak_platform_message_handler, message = std::move(message),
-                 ui_task_runner]() mutable {
+            ui_task_runner->PostTask(
+                fml::MakeCopyable([weak_platform_message_handler,
+                                   message = std::move(message)]() mutable {
                   auto platform_message_handler =
                       weak_platform_message_handler.lock();
                   if (platform_message_handler) {
