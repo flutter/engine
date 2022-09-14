@@ -1087,8 +1087,16 @@ class Radius {
 class RRect {
   /// Construct a rounded rectangle from its left, top, right, and bottom edges,
   /// and the same radii along its horizontal axis and its vertical axis.
-  const RRect.fromLTRBXY(double left, double top, double right, double bottom,
-                   double radiusX, double radiusY) : this._raw(
+  ///
+  /// Will assert in debug mode if `radiusX` or `radiusY` are negative.
+  const RRect.fromLTRBXY(
+    double left,
+    double top,
+    double right,
+    double bottom,
+    double radiusX,
+    double radiusY,
+  ) : this._raw(
     top: top,
     left: left,
     right: right,
@@ -1105,8 +1113,15 @@ class RRect {
 
   /// Construct a rounded rectangle from its left, top, right, and bottom edges,
   /// and the same radius in each corner.
-  RRect.fromLTRBR(double left, double top, double right, double bottom,
-                  Radius radius)
+  ///
+  /// Will assert in debug mode if the `radius` is negative in either x or y.
+  RRect.fromLTRBR(
+    double left,
+    double top,
+    double right,
+    double bottom,
+    Radius radius,
+  )
     : this._raw(
         top: top,
         left: left,
@@ -1124,6 +1139,8 @@ class RRect {
 
   /// Construct a rounded rectangle from its bounding box and the same radii
   /// along its horizontal axis and its vertical axis.
+  ///
+  /// Will assert in debug mode if `radiusX` or `radiusY` are negative.
   RRect.fromRectXY(Rect rect, double radiusX, double radiusY)
     : this._raw(
         top: rect.top,
@@ -1142,6 +1159,8 @@ class RRect {
 
   /// Construct a rounded rectangle from its bounding box and a radius that is
   /// the same in each corner.
+  ///
+  /// Will assert in debug mode if the `radius` is negative in either x or y.
   RRect.fromRectAndRadius(Rect rect, Radius radius)
     : this._raw(
         top: rect.top,
@@ -1161,7 +1180,8 @@ class RRect {
   /// Construct a rounded rectangle from its left, top, right, and bottom edges,
   /// and topLeft, topRight, bottomRight, and bottomLeft radii.
   ///
-  /// The corner radii default to [Radius.zero], i.e. right-angled corners.
+  /// The corner radii default to [Radius.zero], i.e. right-angled corners. Will
+  /// assert in debug mode if any of the radii are negative in either x or y.
   RRect.fromLTRBAndCorners(
     double left,
     double top,
@@ -1189,7 +1209,8 @@ class RRect {
   /// Construct a rounded rectangle from its bounding box and and topLeft,
   /// topRight, bottomRight, and bottomLeft radii.
   ///
-  /// The corner radii default to [Radius.zero], i.e. right-angled corners
+  /// The corner radii default to [Radius.zero], i.e. right-angled corners. Will
+  /// assert in debug mode if any of the radii are negative in either x or y.
   RRect.fromRectAndCorners(
     Rect rect,
     {
