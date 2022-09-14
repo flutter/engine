@@ -175,18 +175,24 @@ class TestCollector implements Collector {
   }
 }
 
+Future<void> matchSceneGolden(String goldenFile, LayerScene scene, {
+  required ui.Rect region,
+}) async {
+  CanvasKitRenderer.instance.rasterizer.draw(scene.layerTree);
+  await matchGoldenFile(goldenFile, region: region);
+}
+
 /// Checks that a [picture] matches the [goldenFile].
 ///
 /// The picture is drawn onto the UI at [ui.Offset.zero] with no additional
 /// layers.
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
-    {required ui.Rect region, bool write = false}) async {
+    {required ui.Rect region}) async {
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
   CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
-  await matchGoldenFile(goldenFile,
-      region: region, maxDiffRatePercent: 0.0, write: write);
+  await matchGoldenFile(goldenFile, region: region, maxDiffRatePercent: 0.0);
 }
 
 /// Sends a platform message to create a Platform View with the given id and viewType.
