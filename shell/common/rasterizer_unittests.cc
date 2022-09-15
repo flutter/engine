@@ -36,6 +36,7 @@ class MockDelegate : public Rasterizer::Delegate {
   MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
                      std::shared_ptr<const fml::SyncSwitch>());
   MOCK_METHOD0(CreateSnapshotSurface, std::unique_ptr<Surface>());
+  MOCK_CONST_METHOD0(GetSettings, const Settings&());
 };
 
 class MockSurface : public Surface {
@@ -80,6 +81,8 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
 
 TEST(RasterizerTest, create) {
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
   EXPECT_TRUE(rasterizer != nullptr);
 }
@@ -109,6 +112,8 @@ TEST(RasterizerTest, drawEmptyPipeline) {
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   ON_CALL(delegate, GetTaskRunners()).WillByDefault(ReturnRef(task_runners));
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
   auto surface = std::make_unique<NiceMock<MockSurface>>();
@@ -136,6 +141,8 @@ TEST(RasterizerTest,
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -151,7 +158,8 @@ TEST(RasterizerTest,
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
@@ -176,7 +184,7 @@ TEST(RasterizerTest,
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -203,6 +211,8 @@ TEST(
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -217,7 +227,8 @@ TEST(
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
@@ -238,7 +249,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -268,6 +279,8 @@ TEST(
                            thread_host.io_thread->GetTaskRunner());
 
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -284,7 +297,8 @@ TEST(
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
@@ -306,7 +320,7 @@ TEST(
   rasterizer->Setup(std::move(surface));
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-  auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+  auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                 /*device_pixel_ratio=*/2.0f);
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -332,6 +346,8 @@ TEST(RasterizerTest,
                            thread_host.io_thread->GetTaskRunner());
 
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -348,10 +364,12 @@ TEST(RasterizerTest,
 
   auto surface_frame1 = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   auto surface_frame2 = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
   // Prepare two frames for Draw() and DrawLastLayerTree().
@@ -376,7 +394,7 @@ TEST(RasterizerTest,
   rasterizer->Setup(std::move(surface));
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-  auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+  auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                 /*device_pixel_ratio=*/2.0f);
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -405,6 +423,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
@@ -423,7 +443,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -448,6 +468,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
 
@@ -476,7 +498,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -503,6 +525,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
 
@@ -546,6 +570,8 @@ TEST(RasterizerTest,
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -559,7 +585,8 @@ TEST(RasterizerTest,
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
@@ -573,7 +600,7 @@ TEST(RasterizerTest,
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -600,6 +627,8 @@ TEST(
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -613,7 +642,8 @@ TEST(
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
@@ -627,7 +657,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -655,6 +685,8 @@ TEST(
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
@@ -668,7 +700,8 @@ TEST(
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
@@ -681,7 +714,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -709,6 +742,8 @@ TEST(
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_)).Times(0);
@@ -722,7 +757,8 @@ TEST(
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
@@ -734,7 +770,7 @@ TEST(
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder());
@@ -761,6 +797,8 @@ TEST(RasterizerTest,
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   ON_CALL(delegate, GetTaskRunners()).WillByDefault(ReturnRef(task_runners));
 
   fml::AutoResetWaitableEvent latch;
@@ -780,9 +818,9 @@ TEST(RasterizerTest,
         framebuffer_info.supports_readback = true;
         return std::make_unique<SurfaceFrame>(
             /*surface=*/nullptr, framebuffer_info,
-            /*submit_callback=*/[](const SurfaceFrame& frame, SkCanvas*) {
-              return true;
-            });
+            /*submit_callback=*/
+            [](const SurfaceFrame& frame, SkCanvas*) { return true; },
+            /*frame_size=*/SkISize::Make(800, 600));
       }));
   ON_CALL(*surface, MakeRenderContextCurrent())
       .WillByDefault(::testing::Invoke(
@@ -811,7 +849,7 @@ TEST(RasterizerTest,
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree =
-          std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+          std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                       /*device_pixel_ratio=*/2.0f);
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]));
@@ -845,6 +883,8 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
                            thread_host.io_thread->GetTaskRunner());
 
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
 
@@ -906,6 +946,8 @@ TEST(RasterizerTest, TeardownNoSurface) {
                            thread_host.io_thread->GetTaskRunner());
 
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
 
@@ -927,6 +969,8 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
                            thread_host.io_thread->GetTaskRunner());
 
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   ON_CALL(delegate, GetTaskRunners()).WillByDefault(ReturnRef(task_runners));
 
   fml::AutoResetWaitableEvent latch;
@@ -952,7 +996,8 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
         framebuffer_info.supports_readback = true;
         return std::make_unique<SurfaceFrame>(
             /*surface=*/nullptr, framebuffer_info,
-            /*submit_callback=*/[&](const SurfaceFrame& frame, SkCanvas*) {
+            /*submit_callback=*/
+            [&](const SurfaceFrame& frame, SkCanvas*) {
               const auto pres_time = *frame.submit_info().presentation_time;
               const auto diff = pres_time - first_timestamp;
               int num_frames_submitted = frames_submitted++;
@@ -960,7 +1005,8 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
                         num_frames_submitted * millis_16.ToMilliseconds());
               submit_latch.CountDown();
               return true;
-            });
+            },
+            /*frame_size=*/SkISize::Make(800, 600));
       }));
 
   ON_CALL(*surface, MakeRenderContextCurrent())
@@ -972,7 +1018,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree =
-          std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+          std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                       /*device_pixel_ratio=*/2.0f);
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]));
@@ -1007,6 +1053,8 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
                            thread_host.io_thread->GetTaskRunner());
 
   NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   ON_CALL(delegate, GetTaskRunners()).WillByDefault(ReturnRef(task_runners));
 
   fml::AutoResetWaitableEvent latch;
@@ -1029,13 +1077,15 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
         framebuffer_info.supports_readback = true;
         return std::make_unique<SurfaceFrame>(
             /*surface=*/nullptr, framebuffer_info,
-            /*submit_callback=*/[&](const SurfaceFrame& frame, SkCanvas*) {
+            /*submit_callback=*/
+            [&](const SurfaceFrame& frame, SkCanvas*) {
               const std::optional<fml::TimePoint> pres_time =
                   frame.submit_info().presentation_time;
               EXPECT_EQ(pres_time, std::nullopt);
               submit_latch.CountDown();
               return true;
-            });
+            },
+            /*frame_size=*/SkISize::Make(800, 600));
       }));
 
   ON_CALL(*surface, MakeRenderContextCurrent())
@@ -1045,7 +1095,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+    auto layer_tree = std::make_shared<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(first_timestamp));

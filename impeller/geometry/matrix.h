@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <iomanip>
 #include <optional>
 #include <ostream>
 #include <utility>
@@ -248,13 +249,38 @@ struct Matrix {
   }
 
   constexpr Scalar GetDirectionScale(Vector3 direction) const {
-    return 1.0 / (this->Invert() * direction.Normalize()).Length() *
+    return 1.0 / (this->Basis().Invert() * direction.Normalize()).Length() *
            direction.Length();
   }
 
   constexpr bool IsAffine() const {
     return (m[2] == 0 && m[3] == 0 && m[6] == 0 && m[7] == 0 && m[8] == 0 &&
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
+  }
+
+  constexpr bool IsAligned(Scalar tolerance = 0) const {
+    int v[] = {!ScalarNearlyZero(m[0], tolerance),  //
+               !ScalarNearlyZero(m[1], tolerance),  //
+               !ScalarNearlyZero(m[2], tolerance),  //
+               !ScalarNearlyZero(m[4], tolerance),  //
+               !ScalarNearlyZero(m[5], tolerance),  //
+               !ScalarNearlyZero(m[6], tolerance),  //
+               !ScalarNearlyZero(m[8], tolerance),  //
+               !ScalarNearlyZero(m[9], tolerance),  //
+               !ScalarNearlyZero(m[10], tolerance)};
+    // Check if all three basis vectors are aligned to an axis.
+    if (v[0] + v[1] + v[2] != 1 ||  //
+        v[3] + v[4] + v[5] != 1 ||  //
+        v[6] + v[7] + v[8] != 1) {
+      return false;
+    }
+    // Ensure that none of the basis vectors overlap.
+    if (v[0] + v[3] + v[6] != 1 ||  //
+        v[1] + v[4] + v[7] != 1 ||  //
+        v[2] + v[5] + v[8] != 1) {
+      return false;
+    }
+    return true;
   }
 
   constexpr bool IsIdentity() const {
@@ -374,10 +400,10 @@ static_assert(sizeof(struct Matrix) == sizeof(Scalar) * 16,
 
 namespace std {
 inline std::ostream& operator<<(std::ostream& out, const impeller::Matrix& m) {
-  out << "(";
+  out << "(" << std::endl << std::fixed;
   for (size_t i = 0; i < 4u; i++) {
     for (size_t j = 0; j < 4u; j++) {
-      out << m.e[i][j] << ",";
+      out << std::setw(15) << m.e[j][i] << ",";
     }
     out << std::endl;
   }

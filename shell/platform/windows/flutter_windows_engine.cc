@@ -557,6 +557,26 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
+bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
+  struct Captures {
+    fml::closure callback;
+  };
+  auto captures = new Captures();
+  captures->callback = std::move(callback);
+  if (embedder_api_.PostRenderThreadTask(
+          engine_,
+          [](void* opaque) {
+            auto captures = reinterpret_cast<Captures*>(opaque);
+            captures->callback();
+            delete captures;
+          },
+          captures) == kSuccess) {
+    return true;
+  }
+  delete captures;
+  return false;
+}
+
 bool FlutterWindowsEngine::DispatchSemanticsAction(
     uint64_t target,
     FlutterSemanticsAction action,
@@ -605,6 +625,35 @@ std::string FlutterWindowsEngine::GetExecutableName() const {
     return executable_path.substr(last_separator + 1);
   }
   return "Flutter";
+}
+
+void FlutterWindowsEngine::UpdateAccessibilityFeatures(
+    FlutterAccessibilityFeature flags) {
+  embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
+}
+
+void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
+  high_contrast_enabled_ = enabled;
+  int flags = EnabledAccessibilityFeatures();
+  if (enabled) {
+    flags |=
+        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  } else {
+    flags &=
+        ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
+}
+
+int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
+  int flags = 0;
+  if (high_contrast_enabled()) {
+    flags |=
+        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  // As more accessibility features are enabled for Windows,
+  // the corresponding checks and flags should be added here.
+  return flags;
 }
 
 }  // namespace flutter

@@ -122,13 +122,14 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
                                const Rect& location) -> bool {
-    const auto position = SkPoint::Make(location.origin.x, location.origin.y);
+    const auto position =
+        SkPoint::Make(location.origin.x / font_glyph.font.GetMetrics().scale,
+                      location.origin.y / font_glyph.font.GetMetrics().scale);
     SkGlyphID glyph_id = font_glyph.glyph.index;
 
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-        font_glyph.font.GetMetrics().point_size *
-            font_glyph.font.GetMetrics().scale);
+        font_glyph.font.GetMetrics().point_size);
 
     const auto& metrics = font_glyph.font.GetMetrics();
 
@@ -136,14 +137,16 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
     SkPaint glyph_paint;
     glyph_paint.setColor(glyph_color);
-    canvas->drawGlyphs(
-        1u,         // count
-        &glyph_id,  // glyphs
-        &position,  // positions
-        SkPoint::Make(-metrics.min_extent.x * metrics.scale,
-                      -metrics.ascent * metrics.scale),  // origin
-        sk_font,                                         // font
-        glyph_paint                                      // paint
+    canvas->resetMatrix();
+    canvas->scale(font_glyph.font.GetMetrics().scale,
+                  font_glyph.font.GetMetrics().scale);
+    canvas->drawGlyphs(1u,         // count
+                       &glyph_id,  // glyphs
+                       &position,  // positions
+                       SkPoint::Make(-metrics.min_extent.x,
+                                     -metrics.ascent),  // origin
+                       sk_font,                         // font
+                       glyph_paint                      // paint
     );
     return true;
   });
@@ -164,6 +167,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   const auto& pixmap = bitmap->pixmap();
 
   TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
   texture_descriptor.format = PixelFormat::kA8UNormInt;
   texture_descriptor.size = ISize::MakeWH(atlas_size, atlas_size);
 
@@ -172,8 +176,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     return nullptr;
   }
 
-  auto texture =
-      allocator->CreateTexture(StorageMode::kHostVisible, texture_descriptor);
+  auto texture = allocator->CreateTexture(texture_descriptor);
   if (!texture || !texture->IsValid()) {
     return nullptr;
   }

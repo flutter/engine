@@ -1,4 +1,4 @@
-Signature: 0e240be838d32639b8bb4dc3fe2c4cce
+Signature: 640372296da717028e5e5f51b5e8f529
 
 UNUSED LICENSES:
 
@@ -10767,6 +10767,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/hash_factories.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/identical_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/internal_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/isolate_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_util_patch.dart
@@ -11068,6 +11069,7 @@ FILE: ../../../third_party/dart/runtime/bin/analyze_snapshot.cc
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.mm
 FILE: ../../../third_party/dart/runtime/bin/secure_socket_utils_test.cc
+FILE: ../../../third_party/dart/runtime/bin/socket_base_posix.cc
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_fuchsia.cc

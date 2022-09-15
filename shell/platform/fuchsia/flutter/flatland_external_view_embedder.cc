@@ -184,7 +184,14 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
         // Get the FlatlandView structure corresponding to the platform view.
         auto found = flatland_views_.find(layer_id.value());
-        FML_CHECK(found != flatland_views_.end());
+        FML_CHECK(found != flatland_views_.end())
+            << "No FlatlandView for layer_id = " << layer_id.value()
+            << ". This typically indicates that the Dart code in "
+               "Fuchsia's fuchsia_scenic_flutter library failed to create "
+               "the platform view, leading to a crash later down the road in "
+               "the Flutter Engine code that tries to find that platform view. "
+               "Check the Flutter Framework for changes to PlatformView that "
+               "might have caused a regression.";
         auto& viewport = found->second;
 
         // Compute mutators, and size for the platform view.
@@ -196,8 +203,10 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
         if (viewport.pending_create_viewport_callback) {
           if (view_size.fWidth && view_size.fHeight) {
-            viewport.pending_create_viewport_callback(view_size);
+            viewport.pending_create_viewport_callback(
+                view_size, viewport.pending_occlusion_hint);
             viewport.size = view_size;
+            viewport.occlusion_hint = viewport.pending_occlusion_hint;
           } else {
             FML_DLOG(WARNING)
                 << "Failed to create viewport because width or height is zero.";
@@ -219,16 +228,22 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // TODO(fxbug.dev/94000): Set HitTestBehavior.
         // TODO(fxbug.dev/94000): Set opacity.
 
-        // Set size
-        // TODO(): Set occlusion hint, and focusable.
-        if (view_size != viewport.size) {
+        // Set size and occlusion hint.
+        if (view_size != viewport.size ||
+            viewport.pending_occlusion_hint != viewport.occlusion_hint) {
           fuchsia::ui::composition::ViewportProperties properties;
           properties.set_logical_size(
               {static_cast<uint32_t>(view_size.fWidth),
                static_cast<uint32_t>(view_size.fHeight)});
+          properties.set_inset(
+              {static_cast<int32_t>(viewport.pending_occlusion_hint.fTop),
+               static_cast<int32_t>(viewport.pending_occlusion_hint.fRight),
+               static_cast<int32_t>(viewport.pending_occlusion_hint.fBottom),
+               static_cast<int32_t>(viewport.pending_occlusion_hint.fLeft)});
           flatland_->flatland()->SetViewportProperties(viewport.viewport_id,
                                                        std::move(properties));
           viewport.size = view_size;
+          viewport.occlusion_hint = viewport.pending_occlusion_hint;
         }
 
         // Attach the FlatlandView to the main scene graph.
@@ -367,11 +382,15 @@ void FlatlandExternalViewEmbedder::CreateView(
   fuchsia::ui::composition::ChildViewWatcherHandle child_view_watcher;
   new_view.pending_create_viewport_callback =
       [this, transform_id, viewport_id, view_id,
-       child_view_watcher_request =
-           child_view_watcher.NewRequest()](const SkSize& size) mutable {
+       child_view_watcher_request = child_view_watcher.NewRequest()](
+          const SkSize& size, const SkRect& inset) mutable {
         fuchsia::ui::composition::ViewportProperties properties;
         properties.set_logical_size({static_cast<uint32_t>(size.fWidth),
                                      static_cast<uint32_t>(size.fHeight)});
+        properties.set_inset({static_cast<int32_t>(inset.fTop),
+                              static_cast<int32_t>(inset.fRight),
+                              static_cast<int32_t>(inset.fBottom),
+                              static_cast<int32_t>(inset.fLeft)});
         flatland_->flatland()->CreateViewport(
             viewport_id, {zx::channel((zx_handle_t)view_id)},
             std::move(properties), std::move(child_view_watcher_request));
@@ -417,8 +436,10 @@ void FlatlandExternalViewEmbedder::SetViewProperties(
   auto found = flatland_views_.find(view_id);
   FML_CHECK(found != flatland_views_.end());
 
-  // TODO(fxbug.dev/94000): Set occlusion_hint, hit_testable and focusable. Note
-  // that pending_create_viewport_callback might not have run at this point.
+  // Note that pending_create_viewport_callback might not have run at this
+  // point.
+  auto& viewport = found->second;
+  viewport.pending_occlusion_hint = occlusion_hint;
 }
 
 void FlatlandExternalViewEmbedder::Reset() {

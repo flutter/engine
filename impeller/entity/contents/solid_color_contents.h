@@ -27,9 +27,6 @@ class SolidColorContents final : public Contents {
 
   static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
 
-  static VertexBuffer CreateSolidFillVertices(const Path& path,
-                                              HostBuffer& buffer);
-
   void SetPath(Path path);
 
   void SetCover(bool cover);
@@ -43,7 +40,7 @@ class SolidColorContents final : public Contents {
 
   // |Contents|
   bool ShouldRender(const Entity& entity,
-                    const ISize& target_size) const override;
+                    const std::optional<Rect>& stencil_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,

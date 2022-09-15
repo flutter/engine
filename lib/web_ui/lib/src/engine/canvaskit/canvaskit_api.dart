@@ -17,7 +17,9 @@ import 'dart:typed_data';
 import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../configuration.dart';
 import '../dom.dart';
+import '../initialization.dart';
 import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
@@ -1851,11 +1853,6 @@ extension SkPictureExtension on SkPicture {
 class SkParagraphBuilderNamespace {}
 
 extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
-  external SkParagraphBuilder Make(
-    SkParagraphStyle paragraphStyle,
-    SkFontMgr? fontManager,
-  );
-
   external SkParagraphBuilder MakeFromFontProvider(
     SkParagraphStyle paragraphStyle,
     TypefaceFontProvider? fontManager,
@@ -1903,6 +1900,7 @@ extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   external set ellipsis(String? value);
   external set textStyle(SkTextStyleProperties? value);
   external set strutStyle(SkStrutStyleProperties? strutStyle);
+  external set replaceTabCharacters(bool? bool);
 }
 
 @JS()
@@ -2028,6 +2026,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
   external set fontStyle(SkFontStyle? value);
   external set shadows(List<SkTextShadow>? value);
   external set fontFeatures(List<SkFontFeature>? value);
+  external set fontVariations(List<SkFontVariation>? value);
 }
 
 @JS()
@@ -2080,6 +2079,16 @@ extension SkFontFeatureExtension on SkFontFeature {
 @JS()
 @anonymous
 @staticInterop
+class SkFontVariation {}
+
+extension SkFontVariationExtension on SkFontVariation {
+  external set axis(String? value);
+  external set value(double? value);
+}
+
+@JS()
+@anonymous
+@staticInterop
 class SkTypeface {}
 
 @JS('window.flutterCanvasKit.Font')
@@ -2111,7 +2120,7 @@ class TypefaceFontProvider extends SkFontMgr {
   external factory TypefaceFontProvider();
 }
 
-extension TypefaceFontProviderExtension on SkFontMgr {
+extension TypefaceFontProviderExtension on TypefaceFontProvider {
   external void registerFont(Uint8List font, String family);
 }
 
@@ -2611,4 +2620,50 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
         'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
   domDocument.head!.appendChild(canvasKitScript);
+}
+
+String get canvasKitBuildUrl =>
+  configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
+String get canvasKitJavaScriptBindingsUrl =>
+    '${canvasKitBuildUrl}canvaskit.js';
+String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+    canvasKitBase + file;
+
+/// Download and initialize the CanvasKit module.
+///
+/// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
+/// and intialize the CanvasKit wasm.
+Future<CanvasKit> downloadCanvasKit() async {
+  await _downloadCanvasKitJs();
+  final Completer<CanvasKit> canvasKitInitCompleter = Completer<CanvasKit>();
+  final CanvasKitInitPromise canvasKitInitPromise =
+      CanvasKitInit(CanvasKitInitOptions(
+    locateFile: allowInterop((String file, String unusedBase) =>
+        canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
+  ));
+  canvasKitInitPromise.then(allowInterop((CanvasKit ck) {
+    canvasKitInitCompleter.complete(ck);
+  }));
+  return canvasKitInitCompleter.future;
+}
+
+/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
+Future<void> _downloadCanvasKitJs() {
+  final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
+
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = canvasKitJavaScriptUrl;
+
+  final Completer<void> canvasKitLoadCompleter = Completer<void>();
+  late DomEventListener callback;
+  void loadEventHandler(DomEvent _) {
+    canvasKitLoadCompleter.complete();
+    canvasKitScript.removeEventListener('load', callback);
+  }
+  callback = allowInterop(loadEventHandler);
+  canvasKitScript.addEventListener('load', callback);
+
+  patchCanvasKitModule(canvasKitScript);
+
+  return canvasKitLoadCompleter.future;
 }

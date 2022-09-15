@@ -216,7 +216,7 @@ class Shell final : public PlatformView::Delegate,
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
   ///
-  const Settings& GetSettings() const;
+  const Settings& GetSettings() const override;
 
   //------------------------------------------------------------------------------
   /// @brief      If callers wish to interact directly with any shell
@@ -397,11 +397,9 @@ class Shell final : public PlatformView::Delegate,
   /// @see        `CreateCompatibleGenerator`
   void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
 
-  //----------------------------------------------------------------------------
-  /// @brief Returns the delegate object that handles PlatformMessage's from
-  ///        Flutter to the host platform (and its responses).
+  // |Engine::Delegate|
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
-      const;
+      const override;
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 

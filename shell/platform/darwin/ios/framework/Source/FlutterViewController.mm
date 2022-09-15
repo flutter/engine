@@ -65,6 +65,14 @@ typedef struct MouseState {
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 
+/// VSyncClient for touch events delivery frame rate correction.
+///
+/// On promotion devices(eg: iPhone13 Pro), the delivery frame rate of touch events is 60HZ
+/// but the frame rate of rendering is 120HZ, which is different and will leads jitter and laggy.
+/// With this VSyncClient, it can correct the delivery frame rate of touch events to let it keep
+/// the same with frame rate of rendering.
+@property(nonatomic, retain) VSyncClient* touchRateCorrectionVSyncClient;
+
 /*
  * Mouse and trackpad gesture recognizers
  */
@@ -114,6 +122,15 @@ typedef struct MouseState {
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
+  // Timestamp after which a scroll inertia cancel event should be inferred.
+  NSTimeInterval _scrollInertiaEventStartline;
+  // When an iOS app is running in emulation on an Apple Silicon Mac, trackpad input goes through
+  // a translation layer, and events are not received with precise deltas. Due to this, we can't
+  // rely on checking for a stationary trackpad event. Fortunately, AppKit will send an event of
+  // type UIEventTypeScroll following a scroll when inertia should stop. This field is needed to
+  // estimate if such an event represents the natural end of scrolling inertia or a user-initiated
+  // cancellation.
+  NSTimeInterval _scrollInertiaEventAppKitDeadline;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -671,6 +688,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Register internal plugins.
   [self addInternalPlugins];
 
+  // Create a vsync client to correct delivery frame rate of touch events if needed.
+  [self createTouchRateCorrectionVSyncClientIfNeeded];
+
   if (@available(iOS 13.4, *)) {
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
@@ -833,6 +853,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [self invalidateKeyboardAnimationVSyncClient];
+  [self invalidateTouchRateCorrectionVSyncClient];
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
@@ -965,6 +986,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       touches_to_remove_count++;
     }
   }
+
+  // Activate or pause the correction of delivery frame rate of touch events.
+  [self triggerTouchRateCorrectionIfNeeded:touches];
 
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet =
@@ -1109,6 +1133,63 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)forceTouchesCancelled:(NSSet*)touches {
   flutter::PointerData::Change cancel = flutter::PointerData::Change::kCancel;
   [self dispatchTouches:touches pointerDataChangeOverride:&cancel event:nullptr];
+}
+
+#pragma mark - Touch events rate correction
+
+- (void)createTouchRateCorrectionVSyncClientIfNeeded {
+  if (_touchRateCorrectionVSyncClient != nil) {
+    return;
+  }
+
+  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  const double epsilon = 0.1;
+  if (displayRefreshRate < 60.0 + epsilon) {  // displayRefreshRate <= 60.0
+
+    // If current device's max frame rate is not larger than 60HZ, the delivery rate of touch events
+    // is the same with render vsync rate. So it is unnecessary to create
+    // _touchRateCorrectionVSyncClient to correct touch callback's rate.
+    return;
+  }
+
+  flutter::Shell& shell = [_engine.get() shell];
+  auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    // Do nothing in this block. Just trigger system to callback touch events with correct rate.
+  };
+  _touchRateCorrectionVSyncClient =
+      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
+                                     callback:callback];
+  _touchRateCorrectionVSyncClient.allowPauseAfterVsync = NO;
+}
+
+- (void)triggerTouchRateCorrectionIfNeeded:(NSSet*)touches {
+  if (_touchRateCorrectionVSyncClient == nil) {
+    // If the _touchRateCorrectionVSyncClient is not created, means current devices doesn't
+    // need to correct the touch rate. So just return.
+    return;
+  }
+
+  // As long as there is a touch's phase is UITouchPhaseBegan or UITouchPhaseMoved,
+  // activate the correction. Otherwise pause the correction.
+  BOOL isUserInteracting = NO;
+  for (UITouch* touch in touches) {
+    if (touch.phase == UITouchPhaseBegan || touch.phase == UITouchPhaseMoved) {
+      isUserInteracting = YES;
+      break;
+    }
+  }
+
+  if (isUserInteracting && [_engine.get() viewController] == self) {
+    [_touchRateCorrectionVSyncClient await];
+  } else {
+    [_touchRateCorrectionVSyncClient pause];
+  }
+}
+
+- (void)invalidateTouchRateCorrectionVSyncClient {
+  [_touchRateCorrectionVSyncClient invalidate];
+  [_touchRateCorrectionVSyncClient release];
+  _touchRateCorrectionVSyncClient = nil;
 }
 
 #pragma mark - Handle view resizing
@@ -1573,7 +1654,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"textScaleFactor" : @([self textScaleFactor]),
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
-    @"platformContrast" : [self contrastMode]
+    @"platformContrast" : [self contrastMode],
+    @"nativeSpellCheckServiceDefined" : @true
   }];
 }
 
@@ -1832,9 +1914,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return YES;
 }
 
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+       shouldReceiveEvent:(UIEvent*)event API_AVAILABLE(ios(13.4)) {
+  if (gestureRecognizer == _continuousScrollingPanGestureRecognizer &&
+      event.type == UIEventTypeScroll) {
+    // Events with type UIEventTypeScroll are only received when running on macOS under emulation.
+    flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+    pointer_data.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
+    pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+    pointer_data.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
+
+    if (event.timestamp < _scrollInertiaEventAppKitDeadline) {
+      // Only send the event if it occured before the expected natural end of gesture momentum.
+      // If received after the deadline, it's not likely the event is from a user-initiated cancel.
+      auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+      packet->SetPointerData(/*index=*/0, pointer_data);
+      [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+      _scrollInertiaEventAppKitDeadline = 0;
+    }
+  }
+  // This method is also called for UITouches, should return YES to process all touches.
+  return YES;
+}
+
 - (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint location = [recognizer locationInView:self.view];
   CGFloat scale = [UIScreen mainScreen].scale;
+  CGPoint oldLocation = _mouseState.location;
   _mouseState.location = {location.x * scale, location.y * scale};
 
   flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
@@ -1859,9 +1965,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
   }
 
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
-  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  NSTimeInterval time = [NSProcessInfo processInfo].systemUptime;
+  BOOL isRunningOnMac = NO;
+  if (@available(iOS 14.0, *)) {
+    // This "stationary pointer" heuristic is not reliable when running within macOS.
+    // We instead receive a scroll cancel event directly from AppKit.
+    // See gestureRecognizer:shouldReceiveEvent:
+    isRunningOnMac = [NSProcessInfo processInfo].iOSAppOnMac;
+  }
+  if (!isRunningOnMac && CGPointEqualToPoint(oldLocation, _mouseState.location) &&
+      time > _scrollInertiaEventStartline) {
+    // iPadOS reports trackpad movements events with high (sub-pixel) precision. When an event
+    // is received with the same position as the previous one, it can only be from a finger
+    // making or breaking contact with the trackpad surface.
+    auto packet = std::make_unique<flutter::PointerDataPacket>(2);
+    packet->SetPointerData(/*index=*/0, pointer_data);
+    flutter::PointerData inertia_cancel = pointer_data;
+    inertia_cancel.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
+    inertia_cancel.kind = flutter::PointerData::DeviceKind::kTrackpad;
+    inertia_cancel.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
+    packet->SetPointerData(/*index=*/1, inertia_cancel);
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+    _scrollInertiaEventStartline = DBL_MAX;
+  } else {
+    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+    packet->SetPointerData(/*index=*/0, pointer_data);
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  }
 }
 
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
@@ -1914,6 +2044,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
     case UIGestureRecognizerStateEnded:
     case UIGestureRecognizerStateCancelled:
+      _scrollInertiaEventStartline =
+          [[NSProcessInfo processInfo] systemUptime] +
+          0.1;  // Time to lift fingers off trackpad (experimentally determined)
+      // When running an iOS app on an Apple Silicon Mac, AppKit will send an event
+      // of type UIEventTypeScroll when trackpad scroll momentum has ended. This event
+      // is sent whether the momentum ended normally or was cancelled by a trackpad touch.
+      // Since Flutter scrolling inertia will likely not match the system inertia, we should
+      // only send a PointerScrollInertiaCancel event for user-initiated cancellations.
+      // The following (curve-fitted) calculation provides a cutoff point after which any
+      // UIEventTypeScroll event will likely be from the system instead of the user.
+      // See https://github.com/flutter/engine/pull/34929.
+      _scrollInertiaEventAppKitDeadline =
+          [[NSProcessInfo processInfo] systemUptime] +
+          (0.1821 * log(fmax([recognizer velocityInView:self.view].x,
+                             [recognizer velocityInView:self.view].y))) -
+          0.4825;
       pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
       break;
     default:

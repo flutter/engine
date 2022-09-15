@@ -9,7 +9,9 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -93,11 +95,16 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.text_color = ToVector(color_.Premultiply());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
+  SamplerDescriptor sampler_desc;
+  sampler_desc.min_filter = MinMagFilter::kLinear;
+  sampler_desc.mag_filter = MinMagFilter::kLinear;
+
   // Common fragment uniforms for all glyphs.
   FS::BindGlyphAtlasSampler(
-      cmd,                                                        // command
-      atlas->GetTexture(),                                        // texture
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler({})  // sampler
+      cmd,                  // command
+      atlas->GetTexture(),  // texture
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+          sampler_desc)  // sampler
   );
 
   // Common vertex information for all glyphs.
@@ -131,7 +138,9 @@ bool TextContents::Render(const ContentContext& renderer,
             Point{font.GetMetrics().min_extent.x, font.GetMetrics().ascent};
         vtx.glyph_size = Point{static_cast<Scalar>(glyph_size.width),
                                static_cast<Scalar>(glyph_size.height)};
-        vtx.atlas_position = atlas_glyph_pos->origin;
+        vtx.atlas_position =
+            atlas_glyph_pos->origin + Point{1 / atlas_glyph_pos->size.width,
+                                            1 / atlas_glyph_pos->size.height};
         vtx.atlas_glyph_size =
             Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
         vertex_builder.AppendVertex(std::move(vtx));

@@ -61,7 +61,8 @@ class TestPassDelegate final : public EntityPassDelegate {
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
-      std::shared_ptr<Texture> target) override {
+      std::shared_ptr<Texture> target,
+      const Matrix& transform) override {
     return nullptr;
   }
 
@@ -863,7 +864,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
     static int selected_pass_variation = 0;
-    static float blur_amount[2] = {20, 20};
+    static float blur_amount[2] = {10, 10};
     static int selected_blur_style = 0;
     static int selected_tile_mode = 3;
     static Color cover_color(1, 0, 0, 0.2);
@@ -893,7 +894,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma", blur_amount, 0, 200);
+      ImGui::SliderFloat2("Sigma", blur_amount, 0, 10);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -980,6 +981,113 @@ TEST_P(EntityTest, GaussianBlurFilter) {
         PathBuilder{}
             .AddRect(target_contents->GetCoverage(entity).value())
             .TakePath(),
+        bounds_color));
+    bounds_entity.SetTransformation(Matrix());
+
+    bounds_entity.Render(context, pass);
+
+    return true;
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, MorphologyFilter) {
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+
+  bool first_frame = true;
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowPos({10, 10});
+    }
+
+    const char* morphology_type_names[] = {"Dilate", "Erode"};
+    const FilterContents::MorphType morphology_types[] = {
+        FilterContents::MorphType::kDilate, FilterContents::MorphType::kErode};
+    static Color input_color = Color::Black();
+    // UI state.
+    static int selected_morphology_type = 0;
+    static float radius[2] = {20, 20};
+    static Color cover_color(1, 0, 0, 0.2);
+    static Color bounds_color(0, 1, 0, 0.1);
+    static float offset[2] = {500, 400};
+    static float rotation = 0;
+    static float scale[2] = {0.65, 0.65};
+    static float skew[2] = {0, 0};
+    static float path_rect[4] = {0, 0,
+                                 static_cast<float>(boston->GetSize().width),
+                                 static_cast<float>(boston->GetSize().height)};
+    static float effect_transform_scale = 1;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      ImGui::Combo("Morphology type", &selected_morphology_type,
+                   morphology_type_names,
+                   sizeof(morphology_type_names) / sizeof(char*));
+      ImGui::SliderFloat2("Radius", radius, 0, 200);
+      ImGui::SliderFloat("Input opacity", &input_color.alpha, 0, 1);
+      ImGui::ColorEdit4("Cover color", reinterpret_cast<float*>(&cover_color));
+      ImGui::ColorEdit4("Bounds color",
+                        reinterpret_cast<float*>(&bounds_color));
+      ImGui::SliderFloat2("Translation", offset, 0,
+                          pass.GetRenderTargetSize().width);
+      ImGui::SliderFloat("Rotation", &rotation, 0, kPi * 2);
+      ImGui::SliderFloat2("Scale", scale, 0, 3);
+      ImGui::SliderFloat2("Skew", skew, -3, 3);
+      ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
+      ImGui::SliderFloat("Effect transform scale", &effect_transform_scale, 0,
+                         3);
+    }
+    ImGui::End();
+
+    std::shared_ptr<Contents> input;
+    Size input_size;
+
+    auto input_rect =
+        Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
+    auto texture = std::make_shared<TextureContents>();
+    texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
+    texture->SetPath(PathBuilder{}.AddRect(input_rect).TakePath());
+    texture->SetTexture(boston);
+    texture->SetOpacity(input_color.alpha);
+
+    input = texture;
+    input_size = input_rect.size;
+
+    auto effect_transform = Matrix::MakeScale(
+        Vector2{effect_transform_scale, effect_transform_scale});
+
+    auto contents = FilterContents::MakeMorphology(
+        FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
+        morphology_types[selected_morphology_type], effect_transform);
+
+    auto ctm = Matrix::MakeScale(GetContentScale()) *
+               Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
+               Matrix::MakeRotationZ(Radians(rotation)) *
+               Matrix::MakeScale(Vector2(scale[0], scale[1])) *
+               Matrix::MakeSkew(skew[0], skew[1]) *
+               Matrix::MakeTranslation(-Point(input_size) / 2);
+
+    Entity entity;
+    entity.SetContents(contents);
+    entity.SetTransformation(ctm);
+
+    entity.Render(context, pass);
+
+    // Renders a red "cover" rectangle that shows the original position of the
+    // unfiltered input.
+    Entity cover_entity;
+    cover_entity.SetContents(SolidColorContents::Make(
+        PathBuilder{}.AddRect(input_rect).TakePath(), cover_color));
+    cover_entity.SetTransformation(ctm);
+
+    cover_entity.Render(context, pass);
+
+    // Renders a green bounding rect of the target filter.
+    Entity bounds_entity;
+    bounds_entity.SetContents(SolidColorContents::Make(
+        PathBuilder{}.AddRect(contents->GetCoverage(entity).value()).TakePath(),
         bounds_color));
     bounds_entity.SetTransformation(Matrix());
 
@@ -1325,7 +1433,9 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
   {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::CornflowerBlue());
-    ASSERT_FALSE(fill->ShouldRender(Entity{}, {100, 100}));
+    ASSERT_FALSE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_FALSE(
+        fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 
   // With path.
@@ -1334,7 +1444,9 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     fill->SetColor(Color::CornflowerBlue());
     fill->SetPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
-    ASSERT_TRUE(fill->ShouldRender(Entity{}, {100, 100}));
+    ASSERT_TRUE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_FALSE(
+        fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 
   // With paint cover.
@@ -1342,24 +1454,33 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::CornflowerBlue());
     fill->SetCover(true);
-    ASSERT_TRUE(fill->ShouldRender(Entity{}, {100, 100}));
+    ASSERT_TRUE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_TRUE(
+        fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 }
 
 TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
+  // For clip ops, `ShouldRender` should always return true.
+
   // Clip.
   {
     auto clip = std::make_shared<ClipContents>();
-    ASSERT_TRUE(clip->ShouldRender(Entity{}, {100, 100}));
+    ASSERT_TRUE(clip->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
     clip->SetPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
-    ASSERT_TRUE(clip->ShouldRender(Entity{}, {100, 100}));
+    ASSERT_TRUE(clip->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_TRUE(
+        clip->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 
   // Clip restore.
   {
     auto restore = std::make_shared<ClipRestoreContents>();
-    ASSERT_TRUE(restore->ShouldRender(Entity{}, {100, 100}));
+    ASSERT_TRUE(
+        restore->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
+    ASSERT_TRUE(
+        restore->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
 }
 
@@ -1448,35 +1569,6 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   ASSERT_RECT_NEAR(actual.value(), expected);
 }
 
-TEST_P(EntityTest, ColorMatrixFilter) {
-  auto image = CreateTextureForFixture("boston.jpg");
-  ASSERT_TRUE(image);
-
-  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    // Set the color matrix filter.
-    FilterContents::ColorMatrix matrix = {
-        1, 0, 0, 0, 0,  //
-        0, 3, 0, 0, 0,  //
-        0, 0, 1, 0, 0,  //
-        0, 0, 0, 1, 0,  //
-    };
-
-    auto filter =
-        FilterContents::MakeColorMatrix(FilterInput::Make(image), matrix);
-
-    // Define the entity with the color matrix filter.
-    Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
-    entity.SetContents(filter);
-    return entity.Render(context, pass);
-  };
-
-  // Should output the boston image with a green filter.
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
 TEST_P(EntityTest, ColorMatrixFilterEditable) {
   auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
   ASSERT_TRUE(bay_bridge);
@@ -1505,7 +1597,6 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
     ImGui::Begin("Color Matrix", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
       std::string label = "##1";
-      label.c_str();
       for (int i = 0; i < 20; i += 5) {
         ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
                             &(color_matrix.array[i]), 5, nullptr, nullptr,

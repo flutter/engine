@@ -476,7 +476,7 @@ void DisplayListBuilder::restore() {
 }
 void DisplayListBuilder::restoreToCount(int restore_count) {
   FML_DCHECK(restore_count <= getSaveCount());
-  while (restore_count < getSaveCount()) {
+  while (restore_count < getSaveCount() && getSaveCount() > 1) {
     restore();
   }
 }
@@ -695,17 +695,17 @@ void DisplayListBuilder::clipPath(const SkPath& path,
   }
 }
 void DisplayListBuilder::intersect(const SkRect& rect) {
-  SkRect devClipBounds = getTransform().mapRect(rect);
-  if (!current_layer_->clip_bounds.intersect(devClipBounds)) {
+  SkRect dev_clip_bounds = getTransform().mapRect(rect);
+  if (!current_layer_->clip_bounds.intersect(dev_clip_bounds)) {
     current_layer_->clip_bounds.setEmpty();
   }
 }
 SkRect DisplayListBuilder::getLocalClipBounds() {
   SkM44 inverse;
   if (current_layer_->matrix.invert(&inverse)) {
-    SkRect devBounds;
-    current_layer_->clip_bounds.roundOut(&devBounds);
-    return inverse.asM33().mapRect(devBounds);
+    SkRect dev_bounds;
+    current_layer_->clip_bounds.roundOut(&dev_bounds);
+    return inverse.asM33().mapRect(dev_bounds);
   }
   return kMaxCullRect_;
 }
@@ -962,21 +962,21 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
                                           const SkRect& dst,
                                           DlFilterMode filter,
                                           bool render_with_attributes) {
-  int xDivCount = lattice.fXCount;
-  int yDivCount = lattice.fYCount;
+  int x_div_count = lattice.fXCount;
+  int y_div_count = lattice.fYCount;
   FML_DCHECK((lattice.fRectTypes == nullptr) || (lattice.fColors != nullptr));
-  int cellCount = lattice.fRectTypes && lattice.fColors
-                      ? (xDivCount + 1) * (yDivCount + 1)
-                      : 0;
+  int cell_count = lattice.fRectTypes && lattice.fColors
+                       ? (x_div_count + 1) * (y_div_count + 1)
+                       : 0;
   size_t bytes =
-      (xDivCount + yDivCount) * sizeof(int) +
-      cellCount * (sizeof(SkColor) + sizeof(SkCanvas::Lattice::RectType));
+      (x_div_count + y_div_count) * sizeof(int) +
+      cell_count * (sizeof(SkColor) + sizeof(SkCanvas::Lattice::RectType));
   SkIRect src = lattice.fBounds ? *lattice.fBounds : image->bounds();
   void* pod = this->Push<DrawImageLatticeOp>(
-      bytes, 1, std::move(image), xDivCount, yDivCount, cellCount, src, dst,
-      filter, render_with_attributes);
-  CopyV(pod, lattice.fXDivs, xDivCount, lattice.fYDivs, yDivCount,
-        lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
+      bytes, 1, std::move(image), x_div_count, y_div_count, cell_count, src,
+      dst, filter, render_with_attributes);
+  CopyV(pod, lattice.fXDivs, x_div_count, lattice.fYDivs, y_div_count,
+        lattice.fColors, cell_count, lattice.fRectTypes, cell_count);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
 void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
@@ -1041,9 +1041,9 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
                                      bool render_with_attributes) {
   matrix  //
-      ? Push<DrawSkPictureMatrixOp>(0, 1, std::move(picture), *matrix,
+      ? Push<DrawSkPictureMatrixOp>(0, 1, picture, *matrix,
                                     render_with_attributes)
-      : Push<DrawSkPictureOp>(0, 1, std::move(picture), render_with_attributes);
+      : Push<DrawSkPictureOp>(0, 1, picture, render_with_attributes);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawPicture| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawPicture| call itself
@@ -1056,7 +1056,7 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  Push<DrawDisplayListOp>(0, 1, std::move(display_list));
+  Push<DrawDisplayListOp>(0, 1, display_list);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawDisplayList| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawDisplayList| call itself

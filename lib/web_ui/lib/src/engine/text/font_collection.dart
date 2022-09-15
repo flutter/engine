@@ -6,19 +6,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/fonts.dart';
+
 import '../assets.dart';
-import '../browser_detection.dart';
 import '../dom.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
 import 'layout_service.dart';
-
-const String ahemFontFamily = 'Ahem';
-const String ahemFontUrl = '/assets/fonts/ahem.ttf';
-const String robotoFontFamily = 'Roboto';
-const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
-const String robotoVariableFontFamily = 'RobotoVariable';
-const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -26,12 +20,13 @@ const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_
 /// [registerFonts] with it to register fonts declared in the
 /// font manifest. If test fonts are enabled, then call
 /// [registerTestFonts] as well.
-class FontCollection {
+class HtmlFontCollection implements FontCollection {
   FontManager? _assetFontManager;
   FontManager? _testFontManager;
 
   /// Reads the font manifest using the [assetManager] and registers all of the
   /// fonts declared within.
+  @override
   Future<void> registerFonts(AssetManager assetManager) async {
     ByteData byteData;
 
@@ -78,11 +73,16 @@ class FontCollection {
     }
   }
 
-  Future<void> loadFontFromList(Uint8List list, {required String fontFamily}) {
+  @override
+  Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
+    if (fontFamily == null) {
+      throw AssertionError('Font family must be provided to HtmlFontCollection.');
+    }
     return _assetFontManager!._loadFontFaceBytes(fontFamily, list);
   }
 
   /// Registers fonts that are used by tests.
+  @override
   void debugRegisterTestFonts() {
     _testFontManager = FontManager();
     _testFontManager!.registerAsset(
@@ -95,12 +95,14 @@ class FontCollection {
 
   /// Returns a [Future] that completes when the registered fonts are loaded
   /// and ready to be used.
+  @override
   Future<void> ensureFontsLoaded() async {
     await _assetFontManager?.ensureFontsLoaded();
     await _testFontManager?.ensureFontsLoaded();
   }
 
   /// Unregister all fonts that have been registered.
+  @override
   void clear() {
     _assetFontManager = null;
     _testFontManager = null;
@@ -249,8 +251,7 @@ class _PolyfillFontManager extends FontManager {
     paragraph.style.position = 'absolute';
     paragraph.style.visibility = 'hidden';
     paragraph.style.fontSize = '72px';
-    final String fallbackFontName =
-        browserEngine == BrowserEngine.ie11 ? 'Times New Roman' : 'sans-serif';
+    const String fallbackFontName = 'sans-serif';
     paragraph.style.fontFamily = fallbackFontName;
     if (descriptors['style'] != null) {
       paragraph.style.fontStyle = descriptors['style']!;
