@@ -2830,7 +2830,16 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
   TextRange getWordBoundary(TextPosition position) {
-    final List<int> boundary = _getWordBoundary(position.offset);
+    final int characterPosition;
+    switch (position.affinity) {
+      case TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+        break;
+      case TextAffinity.downstream:
+        characterPosition = position.offset;
+        break;
+    }
+    final List<int> boundary = _getWordBoundary(characterPosition);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
 
