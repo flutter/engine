@@ -12,6 +12,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -268,16 +269,14 @@ static std::optional<Snapshot> PipelineBlend(
     break;
 
 void BlendFilterContents::SetBlendMode(BlendMode blend_mode) {
-  if (blend_mode > BlendMode::kLastAdvancedBlendMode) {
+  if (blend_mode > Entity::kLastAdvancedBlendMode) {
     VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
                    << " assigned to BlendFilterContents.";
   }
 
   blend_mode_ = blend_mode;
 
-  if (blend_mode > BlendMode::kLastPipelineBlendMode) {
-    static_assert(BlendMode::kLastAdvancedBlendMode == BlendMode::kLuminosity);
-
+  if (blend_mode > Entity::kLastPipelineBlendMode) {
     switch (blend_mode) {
       BLEND_CASE(Screen)
       BLEND_CASE(Overlay)
@@ -320,12 +319,12 @@ std::optional<Snapshot> BlendFilterContents::RenderFilter(
                          std::nullopt);
   }
 
-  if (blend_mode_ <= BlendMode::kLastPipelineBlendMode) {
+  if (blend_mode_ <= Entity::kLastPipelineBlendMode) {
     return PipelineBlend(inputs, renderer, entity, coverage, blend_mode_,
                          foreground_color_);
   }
 
-  if (blend_mode_ <= BlendMode::kLastAdvancedBlendMode) {
+  if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
     return advanced_blend_proc_(inputs, renderer, entity, coverage,
                                 foreground_color_);
   }

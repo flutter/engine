@@ -53,9 +53,6 @@ enum class BlendMode {
   kSaturation,
   kColor,
   kLuminosity,
-
-  kLastPipelineBlendMode = kModulate,
-  kLastAdvancedBlendMode = kLuminosity,
 };
 
 /**

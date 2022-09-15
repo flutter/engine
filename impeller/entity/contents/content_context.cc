@@ -6,6 +6,7 @@
 
 #include <sstream>
 
+#include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
@@ -16,7 +17,7 @@ namespace impeller {
 void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
-  if (blend_mode > BlendMode::kLastPipelineBlendMode) {
+  if (blend_mode > Entity::kLastPipelineBlendMode) {
     VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
                    << " as a pipeline blend.";
     pipeline_blend = BlendMode::kSourceOver;
@@ -27,8 +28,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
-
-  static_assert(BlendMode::kLastPipelineBlendMode == BlendMode::kModulate);
 
   switch (pipeline_blend) {
     case BlendMode::kClear:

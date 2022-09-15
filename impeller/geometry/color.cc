@@ -237,7 +237,6 @@ Color Color::BlendColor(const Color& src,
     case BlendMode::kSoftLight:
     default:
       return src + dst * (1 - src.alpha);
-      ;
   }
 }
 

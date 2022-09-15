@@ -1249,7 +1249,7 @@ TEST_P(AiksTest, ColorWheel) {
         {"Luminosity", BlendMode::kLuminosity},
     };
     assert(blends.size() ==
-           static_cast<size_t>(BlendMode::kLastAdvancedBlendMode) + 1);
+           static_cast<size_t>(Entity::kLastAdvancedBlendMode) + 1);
     for (const auto& [name, mode] : blends) {
       blend_mode_names.push_back(name);
       blend_mode_values.push_back(mode);

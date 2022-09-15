@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/testing/testing.h"
@@ -25,6 +26,7 @@
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
@@ -1760,129 +1762,139 @@ TEST_P(EntityTest, TTTBlendColor) {
       BlendMode::kModulate,
   };
 
-  auto check_func = [blend_modes](Color& src, Color& dst,
-                                  std::vector<Color> expected_colors) {
+  std::unordered_map<BlendMode,
+                     std::function<Color(const Color& src, const Color& dst)>>
+      blend_color_map = {
+          {BlendMode::kClear,
+           [](const Color& src, const Color& dst) {
+             return Color(0, 0, 0, 0);
+           }},
+          {BlendMode::kSource,
+           [](const Color& src, const Color& dst) { return src; }},
+          {BlendMode::kDestination,
+           [](const Color& src, const Color& dst) { return dst; }},
+          {BlendMode::kSourceOver,
+           [](const Color& src, const Color& dst) {
+             return Color(src.red + (1 - src.alpha) * dst.red,  // kSourceOver
+                          src.green + (1 - src.alpha) * dst.green,
+                          src.blue + (1 - src.alpha) * dst.blue,
+                          src.alpha + (1 - src.alpha) * dst.alpha);
+           }},
+          {BlendMode::kDestinationOver,
+           [](const Color& src, const Color& dst) {
+             return Color(
+                 dst.red + (1 - dst.alpha) * src.red,  // kDestinationOver
+                 dst.green + (1 - dst.alpha) * src.green,
+                 dst.blue + (1 - dst.alpha) * src.blue,
+                 dst.alpha + (1 - dst.alpha) * src.alpha);
+           }},
+          {BlendMode::kSourceIn,
+           [](const Color& src, const Color& dst) {
+             return Color(src.red * dst.alpha, src.green * dst.alpha,
+                          src.blue * dst.alpha, src.alpha * dst.alpha);
+           }},
+          {BlendMode::kDestinationIn,
+           [](const Color& src, const Color& dst) {
+             return Color(dst.red * src.alpha, dst.green * src.alpha,
+                          dst.blue * src.alpha, src.alpha * dst.alpha);
+           }},
+          {BlendMode::kSourceOut,
+           [](const Color& src, const Color& dst) {
+             return Color(
+                 (1 - dst.alpha) * src.red, (1 - dst.alpha) * src.green,
+                 (1 - dst.alpha) * src.blue, (1 - dst.alpha) * src.alpha);
+           }},
+          {BlendMode::kDestinationOut,
+           [](const Color& src, const Color& dst) {
+             return Color(
+                 (1 - src.alpha) * dst.red, (1 - src.alpha) * dst.green,
+                 (1 - src.alpha) * dst.blue, (1 - src.alpha) * dst.alpha);
+           }},
+          {BlendMode::kSourceATop,
+           [](const Color& src, const Color& dst) {
+             return Color(dst.alpha * src.red + (1 - src.alpha) * dst.red,
+                          dst.alpha * src.green + (1 - src.alpha) * dst.green,
+                          dst.alpha * src.blue + (1 - src.alpha) * dst.blue,
+                          dst.alpha);
+           }},
+          {BlendMode::kDestinationATop,
+           [](const Color& src, const Color& dst) {
+             return Color(src.alpha * dst.red + (1 - dst.alpha) * src.red,
+                          src.alpha * dst.green + (1 - dst.alpha) * src.green,
+                          src.alpha * dst.blue + (1 - dst.alpha) * src.blue,
+                          src.alpha);
+           }},
+          {BlendMode::kXor,
+           [](const Color& src, const Color& dst) {
+             return Color(
+                 (1 - src.alpha) * dst.red + (1 - dst.alpha) * src.red,
+                 (1 - src.alpha) * dst.green + (1 - dst.alpha) * src.green,
+                 (1 - src.alpha) * dst.blue + (1 - dst.alpha) * src.blue,
+                 (1 - src.alpha) * dst.alpha + (1 - dst.alpha) * src.alpha);
+           }},
+          {BlendMode::kPlus,
+           [](const Color& src, const Color& dst) {
+             return Color(std::max(0.f, std::min(src.red + dst.red, 1.f)),
+                          std::max(0.f, std::min(src.green + dst.green, 1.f)),
+                          std::max(0.f, std::min(src.blue + dst.blue, 1.f)),
+                          std::max(0.f, std::min(src.alpha + dst.alpha, 1.f)));
+           }},
+          {BlendMode::kModulate, [](const Color& src, const Color& dst) {
+             return Color(src.red * dst.red, src.green * dst.green,
+                          src.blue * dst.blue, src.alpha * dst.alpha);
+           }}};
+
+  auto check_func = [blend_modes, &blend_color_map](Color& src, Color& dst) {
     FML_LOG(ERROR) << "Source " << src << " Dst " << dst;
     for (unsigned i = 0; i < blend_modes.size(); ++i) {
       auto blend_color = Color::BlendColor(src, dst, blend_modes[i]);
-      auto expected_color = expected_colors[i];
-      ASSERT_EQ(blend_color, expected_color);
-      FML_LOG(ERROR) << "blend_mode: " << i;
+      if (blend_color_map.find(blend_modes[i]) != blend_color_map.end()) {
+        auto expected_color = blend_color_map[blend_modes[i]](src, dst);
+        ASSERT_EQ(blend_color, expected_color);
+      }
     }
-  };
-
-  auto generator_expected_colors = [](Color& src,
-                                      Color& dst) -> std::vector<Color> {
-    return {
-        Color(0, 0, 0, 0),  // kClear
-        src,                // kSource
-        dst,                // kDestination
-
-        Color(src.red + (1 - src.alpha) * dst.red,  // kSourceOver
-              src.green + (1 - src.alpha) * dst.green,
-              src.blue + (1 - src.alpha) * dst.blue,
-              src.alpha + (1 - src.alpha) * dst.alpha),
-
-        Color(dst.red + (1 - dst.alpha) * src.red,  // kDestinationOver
-              dst.green + (1 - dst.alpha) * src.green,
-              dst.blue + (1 - dst.alpha) * src.blue,
-              dst.alpha + (1 - dst.alpha) * src.alpha),
-        // kSourceIn
-        Color(src.red * dst.alpha, src.green * dst.alpha, src.blue * dst.alpha,
-              src.alpha * dst.alpha),
-        // kDestinationIn
-        Color(dst.red * src.alpha, dst.green * src.alpha, dst.blue * src.alpha,
-              src.alpha * dst.alpha),
-
-        // kSourceOut
-        Color((1 - dst.alpha) * src.red, (1 - dst.alpha) * src.green,
-              (1 - dst.alpha) * src.blue, (1 - dst.alpha) * src.alpha),
-        // kDestinationOut
-        Color((1 - src.alpha) * dst.red, (1 - src.alpha) * dst.green,
-              (1 - src.alpha) * dst.blue, (1 - src.alpha) * dst.alpha),
-
-        // kSourceATop
-        Color(dst.alpha * src.red + (1 - src.alpha) * dst.red,
-              dst.alpha * src.green + (1 - src.alpha) * dst.green,
-              dst.alpha * src.blue + (1 - src.alpha) * dst.blue, dst.alpha),
-
-        // kDestinationATop
-        Color(src.alpha * dst.red + (1 - dst.alpha) * src.red,
-              src.alpha * dst.green + (1 - dst.alpha) * src.green,
-              src.alpha * dst.blue + (1 - dst.alpha) * src.blue, src.alpha),
-
-        // kXor
-        Color((1 - src.alpha) * dst.red + (1 - dst.alpha) * src.red,
-              (1 - src.alpha) * dst.green + (1 - dst.alpha) * src.green,
-              (1 - src.alpha) * dst.blue + (1 - dst.alpha) * src.blue,
-              (1 - src.alpha) * dst.alpha + (1 - dst.alpha) * src.alpha),
-
-        // kPlus
-        Color(std::max(0.f, std::min(src.red + dst.red, 1.f)),
-              std::max(0.f, std::min(src.green + dst.green, 1.f)),
-              std::max(0.f, std::min(src.blue + dst.blue, 1.f)),
-              std::max(0.f, std::min(src.alpha + dst.alpha, 1.f))),
-
-        // kModulate
-        Color(src.red * dst.red, src.green * dst.green, src.blue * dst.blue,
-              src.alpha * dst.alpha),
-    };
   };
 
   {
     Color src = {1, 0, 0, 0.5};
     Color dst = {1, 0, 1, 1};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 
   {
     Color src = {1, 1, 0, 1};
     Color dst = {1, 0, 1, 1};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 
   {
     Color src = {1, 1, 0, 0.2};
     Color dst = {1, 1, 1, 0.5};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 
   {
     Color src = {1, 0.5, 0, 0.2};
     Color dst = {1, 1, 0.5, 0.5};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 
   {
     Color src = {0.5, 0.5, 0, 0.2};
     Color dst = {0, 1, 0.5, 0.5};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 
   {
     Color src = {0.5, 0.5, 0.2, 0.2};
     Color dst = {0.2, 1, 0.5, 0.5};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 
   {
     Color src = {0.5, 0.5, 0.2, 0.2};
     Color dst = {0.2, 0.2, 0.5, 0.5};
-    auto expected_colors = generator_expected_colors(src, dst);
-    ASSERT_EQ(expected_colors.size(), blend_modes.size());
-    check_func(src, dst, expected_colors);
+    check_func(src, dst);
   }
 }
 
