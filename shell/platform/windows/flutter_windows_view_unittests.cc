@@ -777,8 +777,14 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT varchild = {};
     varchild.vt = VT_I4;
 
-    // Verify the switch is pressed.
     varchild.lVal = CHILDID_SELF;
+    VARIANT varrole = {};
+
+    // Verify the role of the switch is CHECKBUTTON
+    ASSERT_EQ(native_view->get_accRole(varchild, &varrole), S_OK);
+    ASSERT_EQ(varrole.lVal, ROLE_SYSTEM_CHECKBUTTON);
+
+    // Verify the switch is pressed.
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_PRESSED);
