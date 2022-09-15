@@ -31,7 +31,6 @@ TestLine l(
 }
 
 void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
-  final String text = paragraph.toPlainText();
   final List<ParagraphLine> lines = paragraph.lines;
   expect(lines, hasLength(expectedLines.length));
   for (int i = 0; i < lines.length; i++) {
@@ -44,11 +43,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
       reason: 'line #$i had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
     );
     if (expectedLine.displayText != null) {
-      String displayText =
-          text.substring(line.startIndex, line.endIndexWithoutNewlines);
-      if (line.ellipsis != null) {
-        displayText += line.ellipsis!;
-      }
+      final String displayText = line.fragments.map((f) => f.getText(paragraph)).join();
       expect(
         displayText,
         expectedLine.displayText,

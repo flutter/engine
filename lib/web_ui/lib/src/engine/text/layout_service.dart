@@ -9,7 +9,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import 'canvas_paragraph.dart';
-import 'fragmenter.dart';
+import 'layout_fragmenter.dart';
 import 'line_breaker.dart';
 import 'measurement.dart';
 import 'paragraph.dart';
@@ -59,8 +59,8 @@ class TextLayoutService {
     paragraph.paragraphStyle.effectiveTextDirection,
     paragraph.spans,
   );
-  late final List<MeasuredFragment> measuredFragments =
-      layoutFragmenter.fragment().map(spanometer.measureFragment).toList();
+  late final List<LayoutFragment> fragments =
+      layoutFragmenter.fragment()..forEach(spanometer.measureFragment);
 
   /// Performs the layout on a paragraph given the [constraints].
   ///
@@ -97,7 +97,7 @@ class TextLayoutService {
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
     outerLoop:
-    for (final MeasuredFragment fragment in measuredFragments) {
+    for (final LayoutFragment fragment in fragments) {
       currentLine.addFragment(fragment);
 
       while (currentLine.isOverflowing) {
@@ -192,10 +192,10 @@ class TextLayoutService {
     double runningMinIntrinsicWidth = 0;
     double runningMaxIntrinsicWidth = 0;
 
-    for (final MeasuredFragment fragment in measuredFragments) {
-      runningMinIntrinsicWidth += fragment.metrics.widthExcludingTrailingSpaces;
+    for (final LayoutFragment fragment in fragments) {
+      runningMinIntrinsicWidth += fragment.widthExcludingTrailingSpaces;
       // Max intrinsic width includes the width of trailing spaces.
-      runningMaxIntrinsicWidth += fragment.metrics.widthIncludingTrailingSpaces;
+      runningMaxIntrinsicWidth += fragment.widthIncludingTrailingSpaces;
 
       switch (fragment.type) {
         case LineBreakType.prohibited:
@@ -226,7 +226,7 @@ class TextLayoutService {
     ParagraphLine line, {
     required bool withJustification,
   }) {
-    final List<MeasuredFragment> fragments = line.fragments;
+    final List<LayoutFragment> fragments = line.fragments;
     final double justifyPerSpaceFragment =
         withJustification ? _calculateJustifyPerSpaceFragment(line) : 0.0;
 
@@ -235,20 +235,17 @@ class TextLayoutService {
     int i = 0;
     double cumulativeWidth = 0.0;
     while (i < lengthExcludingTrailingSpaces) {
-      final MeasuredFragment fragment = fragments[i];
+      final LayoutFragment fragment = fragments[i];
       if (fragment.textDirection == _paragraphDirection) {
         // The fragment is in the same direction as the paragraph.
-        fragment.position(startOffset: cumulativeWidth, lineWidth: line.width);
+        fragment.setPosition(startOffset: cumulativeWidth, lineWidth: line.width);
 
         // Space-only fragments expand in width to justify the line.
         if (fragment.isSpaceOnly) {
-          final FragmentMetrics justifiedMetrics = fragment.metrics.copyWith(
-            widthIncludingTrailingSpaces: fragment.metrics.widthIncludingTrailingSpaces + justifyPerSpaceFragment,
-          );
-          fragments[i] = fragment.copyWith(metrics: justifiedMetrics);
+          fragment.justify(justifyPerSpaceFragment);
         }
 
-        cumulativeWidth += fragment.metrics.widthIncludingTrailingSpaces;
+        cumulativeWidth += fragment.widthIncludingTrailingSpaces;
         i++;
         continue;
       }
@@ -286,7 +283,7 @@ class TextLayoutService {
       int lastNonSpaceFragment = first;
       i++;
       while (i < lengthExcludingTrailingSpaces && fragments[i].textDirection != _paragraphDirection) {
-        final MeasuredFragment fragment = fragments[i];
+        final LayoutFragment fragment = fragments[i];
         if (fragment.isSpaceOnly) {
           // Do nothing.
         } else {
@@ -311,9 +308,9 @@ class TextLayoutService {
 
     // Now let's do the trailing space-only fragments.
     for (int i = lengthExcludingTrailingSpaces; i < fragments.length; i++) {
-      final MeasuredFragment fragment = fragments[i];
-      fragment.position(startOffset: cumulativeWidth, lineWidth: line.width);
-      cumulativeWidth += fragment.metrics.widthIncludingTrailingSpaces;
+      final LayoutFragment fragment = fragments[i];
+      fragment.setPosition(startOffset: cumulativeWidth, lineWidth: line.width);
+      cumulativeWidth += fragment.widthIncludingTrailingSpaces;
       i++;
     }
   }
@@ -334,22 +331,19 @@ class TextLayoutService {
     required double startOffset,
     required double justifyPerSpaceFragment,
   }) {
-    final List<MeasuredFragment> fragments = line.fragments;
+    final List<LayoutFragment> fragments = line.fragments;
     double cumulativeWidth = 0.0;
     for (int i = last; i >= first; i--) {
       // Update the visual position of each fragment.
-      final MeasuredFragment fragment = fragments[i];
+      final LayoutFragment fragment = fragments[i];
       assert(fragment.textDirection != _paragraphDirection);
 
-      fragment.position(startOffset: cumulativeWidth, lineWidth: line.width);
+      fragment.setPosition(startOffset: cumulativeWidth, lineWidth: line.width);
       if (fragment.isSpaceOnly) {
-        final FragmentMetrics justifiedMetrics = fragment.metrics.copyWith(
-          widthIncludingTrailingSpaces: fragment.metrics.widthIncludingTrailingSpaces + justifyPerSpaceFragment,
-        );
-        fragments[i] = fragment.copyWith(metrics: justifiedMetrics);
+        fragment.justify(justifyPerSpaceFragment);
       }
 
-      cumulativeWidth += fragment.metrics.widthIncludingTrailingSpaces;
+      cumulativeWidth += fragment.widthIncludingTrailingSpaces;
     }
     return cumulativeWidth;
   }
@@ -371,7 +365,7 @@ class TextLayoutService {
   List<ui.TextBox> getBoxesForPlaceholders() {
     final List<ui.TextBox> boxes = <ui.TextBox>[];
     for (final ParagraphLine line in lines) {
-      for (final MeasuredFragment fragment in line.fragments) {
+      for (final LayoutFragment fragment in line.fragments) {
         if (fragment.isPlaceholder) {
           boxes.add(fragment.toTextBox(line, forPainting: false));
         }
@@ -401,7 +395,7 @@ class TextLayoutService {
 
     for (final ParagraphLine line in lines) {
       if (line.overlapsWith(start, end)) {
-        for (final MeasuredFragment fragment in line.fragments) {
+        for (final LayoutFragment fragment in line.fragments) {
           if (!fragment.isPlaceholder && fragment.overlapsWith(start, end)) {
             boxes.add(fragment.intersect(line, start, end, forPainting: false));
           }
@@ -427,13 +421,13 @@ class TextLayoutService {
     // [offset] is to the right of the line.
     if (offset.dx >= line.left + line.widthWithTrailingSpaces) {
       return ui.TextPosition(
-        offset: line.endIndexWithoutNewlines,
+        offset: line.endIndex - line.trailingNewlines,
         affinity: ui.TextAffinity.upstream,
       );
     }
 
     final double dx = offset.dx - line.left;
-    for (final MeasuredFragment fragment in line.fragments) {
+    for (final LayoutFragment fragment in line.fragments) {
       if (fragment.left <= dx && dx <= fragment.right) {
         return fragment.getPositionForX(dx);
       }
@@ -907,7 +901,7 @@ class LineBuilder {
     required this.maxWidth,
     required this.lineNumber,
     required this.accumulatedHeight,
-    required List<MeasuredFragment> fragments,
+    required List<LayoutFragment> fragments,
   }) : _fragments = fragments {
     _recalculateMetrics();
   }
@@ -924,12 +918,12 @@ class LineBuilder {
       maxWidth: maxWidth,
       lineNumber: 0,
       accumulatedHeight: 0.0,
-      fragments: <MeasuredFragment>[],
+      fragments: <LayoutFragment>[],
     );
   }
 
-  final List<MeasuredFragment> _fragments;
-  List<MeasuredFragment>? _fragmentsForNextLine;
+  final List<LayoutFragment> _fragments;
+  List<LayoutFragment>? _fragmentsForNextLine;
 
   int get startIndex {
     assert(_fragments.isNotEmpty || _fragmentsForNextLine!.isNotEmpty);
@@ -962,7 +956,7 @@ class LineBuilder {
   double widthIncludingSpace = 0.0;
 
   double get _widthExcludingLastFragment => _fragments.length > 1
-    ? widthIncludingSpace - _fragments.last.metrics.widthIncludingTrailingSpaces
+    ? widthIncludingSpace - _fragments.last.widthIncludingTrailingSpaces
     : 0;
 
   /// The distance from the top of the line to the alphabetic baseline.
@@ -1032,8 +1026,8 @@ class LineBuilder {
   ui.TextDirection get _paragraphDirection =>
       paragraph.paragraphStyle.effectiveTextDirection;
 
-  void addFragment(MeasuredFragment fragment) {
-    fragment = _updateMetrics(fragment);
+  void addFragment(LayoutFragment fragment) {
+    _updateMetrics(fragment);
 
     if (fragment.isBreak) {
       _lastBreakableFragment = _fragments.length;
@@ -1043,13 +1037,13 @@ class LineBuilder {
   }
 
   /// Updates the [LineBuilder]'s metrics to take into account the new [fragment].
-  MeasuredFragment _updateMetrics(MeasuredFragment fragment) {
+  void _updateMetrics(LayoutFragment fragment) {
     if (fragment.isSpaceOnly) {
       _spaceBoxCount++;
     } else {
-      width = widthIncludingSpace + fragment.metrics.widthExcludingTrailingSpaces;
+      width = widthIncludingSpace + fragment.widthExcludingTrailingSpaces;
     }
-    widthIncludingSpace += fragment.metrics.widthIncludingTrailingSpaces;
+    widthIncludingSpace += fragment.widthIncludingTrailingSpaces;
 
     if (fragment.isPlaceholder) {
       return _updateHeightForPlaceholder(fragment);
@@ -1059,12 +1053,11 @@ class LineBuilder {
       _breakCount++;
     }
 
-    ascent = math.max(ascent, fragment.metrics.ascent);
-    descent = math.max(descent, fragment.metrics.descent);
-    return fragment;
+    ascent = math.max(ascent, fragment.ascent);
+    descent = math.max(descent, fragment.descent);
   }
 
-  MeasuredFragment _updateHeightForPlaceholder(MeasuredFragment fragment) {
+  void _updateHeightForPlaceholder(LayoutFragment fragment) {
     final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
 
     final double ascent, descent;
@@ -1113,11 +1106,11 @@ class LineBuilder {
 
     // Update the metrics of the fragment to reflect the calculated ascent and
     // descent.
-    return fragment.copyWith(
-      metrics: fragment.metrics.copyWith(
-        ascent: ascent,
-        descent: descent,
-      ),
+    fragment.setMetrics(
+      ascent: ascent,
+      descent: descent,
+      widthExcludingTrailingSpaces: fragment.widthExcludingTrailingSpaces,
+      widthIncludingTrailingSpaces: fragment.widthIncludingTrailingSpaces,
     );
   }
 
@@ -1131,7 +1124,7 @@ class LineBuilder {
     _lastBreakableFragment = -1;
 
     for (int i = 0; i < _fragments.length; i++) {
-      _fragments[i] = _updateMetrics(_fragments[i]);
+      _updateMetrics(_fragments[i]);
       if (_fragments[i].isBreak) {
         _lastBreakableFragment = i;
       }
@@ -1144,14 +1137,14 @@ class LineBuilder {
     availableWidth ??= maxWidth;
     assert(widthIncludingSpace > availableWidth);
 
-    _fragmentsForNextLine ??= <MeasuredFragment>[];
+    _fragmentsForNextLine ??= <LayoutFragment>[];
 
     // When the line has fragments other than the last one, we can always allow
     // the last fragment to be empty (i.e. completely removed from the line).
     final bool hasOtherFragments = _fragments.length > 1;
     final bool allowLastFragmentToBeEmpty = hasOtherFragments || allowEmptyLine;
 
-    final MeasuredFragment lastFragment = _fragments.removeLast();
+    final LayoutFragment lastFragment = _fragments.removeLast();
     _recalculateMetrics();
 
     final ParagraphSpan span = lastFragment.span;
@@ -1175,11 +1168,15 @@ class LineBuilder {
       }
 
       final List<LayoutFragment?> split = lastFragment.split(breakingPoint);
-      if (split.first != null) {
-        addFragment(spanometer.measureFragment(split.first!));
+      final LayoutFragment? first = split.first;
+      final LayoutFragment? second = split.last;
+      if (first != null) {
+        spanometer.measureFragment(first);
+        addFragment(first);
       }
-      if (split.last != null) {
-        _fragmentsForNextLine!.insert(0, spanometer.measureFragment(split.last!));
+      if (second != null) {
+        spanometer.measureFragment(second);
+        _fragmentsForNextLine!.insert(0, second);
       }
     } else {
       // This is a placeholder and we can't force-break a placeholder.
@@ -1194,21 +1191,13 @@ class LineBuilder {
     }
   }
 
-  String? get ellipsisText {
-    if (isEmpty) {
-      return null;
-    }
-
-    return _fragments.last.ellipsisText;
-  }
-
   void insertEllipsis() {
     assert(canHaveEllipsis);
     assert(isOverflowing);
 
     final String ellipsisText = paragraph.paragraphStyle.ellipsis!;
 
-    _fragmentsForNextLine = <MeasuredFragment>[];
+    _fragmentsForNextLine = <LayoutFragment>[];
 
     spanometer.currentSpan = _fragments.last.span;
     double ellipsisWidth = spanometer.measureText(ellipsisText);
@@ -1223,20 +1212,21 @@ class LineBuilder {
       availableWidth = maxWidth - ellipsisWidth;
     }
 
-    final MeasuredFragment lastFragment = _fragments.last;
+    final LayoutFragment lastFragment = _fragments.last;
     forceBreakLastFragment(availableWidth: availableWidth, allowEmptyLine: true);
 
     final EllipsisFragment ellipsisFragment = EllipsisFragment(
       endIndex,
       lastFragment.textDirection,
       lastFragment.span,
-      ellipsisText,
     );
-    final FragmentMetrics ellipsisMetrics = lastFragment.metrics.copyWith(
+    ellipsisFragment.setMetrics(
+      ascent: lastFragment.ascent,
+      descent: lastFragment.descent,
       widthExcludingTrailingSpaces: ellipsisWidth,
       widthIncludingTrailingSpaces: ellipsisWidth,
     );
-    addFragment(MeasuredFragment(ellipsisFragment, ellipsisMetrics));
+    addFragment(ellipsisFragment);
   }
 
   void revertToLastBreakOpportunity() {
@@ -1273,8 +1263,6 @@ class LineBuilder {
 
     return ParagraphLine(
       lineNumber: lineNumber,
-      // TODO(mdebbar): Remove this in favor of the new EllipsisFragment.
-      ellipsis: ellipsisText,
       startIndex: startIndex,
       endIndex: endIndex,
       trailingNewlines: trailingNewlines,
@@ -1303,7 +1291,7 @@ class LineBuilder {
 
     _trailingSpaceFragmentCount = 0;
     for (int i = _fragments.length - 1; i >= 0; i--) {
-      final MeasuredFragment fragment = _fragments[i];
+      final LayoutFragment fragment = _fragments[i];
       if (!fragment.isSpaceOnly) {
         // We traversed all trailing space fragments.
         break;
@@ -1320,7 +1308,7 @@ class LineBuilder {
       maxWidth: maxWidth,
       lineNumber: lineNumber + 1,
       accumulatedHeight: accumulatedHeight + height,
-      fragments: _fragmentsForNextLine ?? <MeasuredFragment>[],
+      fragments: _fragmentsForNextLine ?? <LayoutFragment>[],
     );
   }
 }
@@ -1410,14 +1398,12 @@ class Spanometer {
     return measureSubstring(context, text, 0, text.length);
   }
 
-  MeasuredFragment measureFragment(LayoutFragment fragment) {
-    final FragmentMetrics metrics;
-
+  void measureFragment(LayoutFragment fragment) {
     if (fragment.isPlaceholder) {
       final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
       // The ascent/descent values of the placeholder fragment will be finalized
       // later when the line is built.
-      metrics = FragmentMetrics(
+      fragment.setMetrics(
         ascent: placeholder.height,
         descent: 0,
         widthExcludingTrailingSpaces: placeholder.width,
@@ -1427,15 +1413,13 @@ class Spanometer {
       currentSpan = fragment.span as FlatTextSpan;
       final double widthExcludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingSpaces);
       final double widthIncludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingNewlines);
-      metrics = FragmentMetrics(
+      fragment.setMetrics(
         ascent: ascent,
         descent: descent,
         widthExcludingTrailingSpaces: widthExcludingTrailingSpaces,
         widthIncludingTrailingSpaces: widthIncludingTrailingSpaces,
       );
     }
-
-    return MeasuredFragment(fragment, metrics);
   }
 
   /// In a continuous, unbreakable block of text from [start] to [end], finds
@@ -1507,211 +1491,11 @@ class Spanometer {
   }
 }
 
-class MeasuredFragment {
-  MeasuredFragment(this._layoutFragment, this.metrics);
-
-  final LayoutFragment _layoutFragment;
-  final FragmentMetrics metrics;
-
-  String? get ellipsisText {
-    final LayoutFragment layoutFragment = _layoutFragment;
-    if (layoutFragment is EllipsisFragment) {
-      return layoutFragment.ellipsisText;
-    }
-    return null;
-  }
-
-  // Delegate these getters to `_layoutFragment` for convenience.
-
-  int get start => _layoutFragment.start;
-  int get end => _layoutFragment.end;
-  LineBreakType get type => _layoutFragment.type;
-  ui.TextDirection get textDirection => _layoutFragment.textDirection;
-  ParagraphSpan get span => _layoutFragment.span;
-  int get trailingNewlines => _layoutFragment.trailingNewlines;
-  int get trailingSpaces => _layoutFragment.trailingSpaces;
-  bool get isSpaceOnly => _layoutFragment.isSpaceOnly;
-  bool get isBreak => _layoutFragment.isBreak;
-  bool get isHardBreak => _layoutFragment.isHardBreak;
-  bool get isPlaceholder => _layoutFragment.isPlaceholder;
-  EngineTextStyle get style => _layoutFragment.style;
-
-
-  // START Positioning info:
-
-  /// The distance from the beginning of the line to the beginning of the fragment.
-  late final double startOffset;
-
-  /// The distance from the beginning of the line to the end of the fragment.
-  double get endOffset => startOffset + metrics.widthIncludingTrailingSpaces;
-
-  /// The distance from the left edge of the line to the left edge of the fragment.
-  double get left => textDirection == ui.TextDirection.ltr
-      ? startOffset
-      : lineWidth - endOffset;
-
-  /// The distance from the left edge of the line to the right edge of the fragment.
-  double get right => textDirection == ui.TextDirection.ltr
-      ? endOffset
-      : lineWidth - startOffset;
-
-  /// The width of the line that contains this fragment.
-  late final double lineWidth;
-
-  /// Set the position of this fragment relative to the line that contains it.
-  void position({ required double startOffset, required double lineWidth}) {
-    this.startOffset = startOffset;
-    this.lineWidth = lineWidth;
-  }
-
-  // END Positioning info.
-
-
-  MeasuredFragment copyWith({
-    LayoutFragment? layoutFragment,
-    FragmentMetrics? metrics,
-  }) {
-    return MeasuredFragment(
-      layoutFragment ?? _layoutFragment,
-      metrics ?? this.metrics,
-    );
-  }
-
-  List<LayoutFragment?> split(int index) {
-    assert(start <= index);
-    assert(index <= end);
-    assert(_layoutFragment is! EllipsisFragment, 'Cannot split an EllipsisFragment');
-
-    if (start == index) {
-      return <LayoutFragment?>[null, _layoutFragment];
-    }
-
-    if (end == index) {
-      return <LayoutFragment?>[_layoutFragment, null];
-    }
-
-    // The length of the second fragment after the split.
-    final int secondLength = end - index;
-
-    // Trailing spaces/new lines go to the second fragment. Any left over goes
-    // to the first fragment.
-    final int secondTrailingNewlines = math.min(trailingNewlines, secondLength);
-    final int secondTrailingSpaces = math.min(trailingSpaces, secondLength);
-
-    return <LayoutFragment>[
-      LayoutFragment(
-        start,
-        index,
-        LineBreakType.prohibited,
-        textDirection,
-        span,
-        trailingNewlines: trailingNewlines - secondTrailingNewlines,
-        trailingSpaces: trailingSpaces - secondTrailingSpaces,
-      ),
-      LayoutFragment(
-        index,
-        end,
-        type,
-        textDirection,
-        span,
-        trailingNewlines: secondTrailingNewlines,
-        trailingSpaces: secondTrailingSpaces,
-      ),
-    ];
-  }
-
-  /// Whether this fragment's range overlaps with the range from [start] to [end].
-  bool overlapsWith(int start, int end) {
-    return start < this.end && this.start < end;
-  }
-
-  /// Returns a [ui.TextBox] representing this fragment in the given [line].
-  ///
-  /// The coordinates of the resulting [ui.TextBox] are relative to the
-  /// paragraph, not to the line.
-  ///
-  /// The [forPainting] parameter specifies whether the text box is wanted for
-  /// painting purposes or not. The difference is observed in the handling of
-  /// trailing spaces. Trailing spaces aren't painted on the screen, but their
-  /// dimensions are still useful for other cases like highlighting selection.
-  ui.TextBox toTextBox(ParagraphLine line, {required bool forPainting}) {
-    // TODO(mdebbar): Implement this for placeholders and regular fragments.
-    return const ui.TextBox.fromLTRBD(0, 0, 0, 0, ui.TextDirection.ltr);
-  }
-
-  /// Performs the intersection of this fragment with the range given by [start] and
-  /// [end] indices, and returns a [ui.TextBox] representing that intersection.
-  ///
-  /// The coordinates of the resulting [ui.TextBox] are relative to the
-  /// paragraph, not to the line.
-  ui.TextBox intersect(ParagraphLine line, int start, int end, {required bool forPainting}) {
-    // TODO(mdebbar): Implement this for non-placeholder fragments.
-    return const ui.TextBox.fromLTRBD(0, 0, 0, 0, ui.TextDirection.ltr);
-  }
-
-  /// Returns the text position within this box's range that's closest to the
-  /// given [x] offset.
-  ///
-  /// The [x] offset is expected to be relative to the left edge of the line,
-  /// just like the coordinates of this box.
-  ui.TextPosition getPositionForX(double x) {
-    // TODO(mdebbar): Implement this for placeholders & regular fragments.
-    return const ui.TextPosition(offset: 0);
-  }
-}
-
-/// Immutable data class that holds measurement results for a fragment of text.
-class FragmentMetrics {
-  const FragmentMetrics({
-    required this.ascent,
-    required this.descent,
-    required this.widthExcludingTrailingSpaces,
-    required this.widthIncludingTrailingSpaces,
-  });
-
-  static const FragmentMetrics zero = FragmentMetrics(
-    ascent: 0,
-    descent: 0,
-    widthExcludingTrailingSpaces: 0,
-    widthIncludingTrailingSpaces: 0,
-  );
-
-  /// The rise from the baseline as calculated from the font and style for this text.
-  final double ascent;
-
-  /// The drop from the baseline as calculated from the font and style for this text.
-  final double descent;
-
-  /// The width of the measured text, not including trailing spaces.
-  final double widthExcludingTrailingSpaces;
-
-  /// The width of the measured text, including any trailing spaces.
-  final double widthIncludingTrailingSpaces;
-
-  /// The total height as calculated from the font and style for this text.
-  double get height => ascent + descent;
-
-  FragmentMetrics copyWith({
-    double? ascent,
-    double? descent,
-    double? widthExcludingTrailingSpaces,
-    double? widthIncludingTrailingSpaces,
-  }) {
-    return FragmentMetrics(
-      ascent: ascent ?? this.ascent,
-      descent: descent ?? this.descent,
-      widthExcludingTrailingSpaces: widthExcludingTrailingSpaces ?? this.widthExcludingTrailingSpaces,
-      widthIncludingTrailingSpaces: widthIncludingTrailingSpaces ?? this.widthIncludingTrailingSpaces,
-    );
-  }
-}
-
 class EllipsisFragment extends LayoutFragment {
   EllipsisFragment(
     int index,
     ui.TextDirection textDirection,
     ParagraphSpan span,
-    this.ellipsisText,
   ) : super(
           index,
           index,
@@ -1722,11 +1506,19 @@ class EllipsisFragment extends LayoutFragment {
           trailingSpaces: 0,
         );
 
-  final String ellipsisText;
-
   @override
   bool get isSpaceOnly => false;
 
   @override
   bool get isPlaceholder => false;
+
+  @override
+  String getText(CanvasParagraph paragraph) {
+    return paragraph.paragraphStyle.ellipsis!;
+  }
+
+  @override
+  List<LayoutFragment> split(int index) {
+    throw Exception('Cannot split an EllipsisFragment');
+  }
 }

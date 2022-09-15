@@ -10,7 +10,7 @@ import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../util.dart';
-import 'layout_service.dart';
+import 'layout_fragmenter.dart';
 import 'ruler.dart';
 
 class EngineLineMetrics implements ui.LineMetrics {
@@ -114,7 +114,6 @@ class ParagraphLine {
     required double left,
     required double baseline,
     required int lineNumber,
-    required this.ellipsis,
     required this.startIndex,
     required this.endIndex,
     required this.trailingNewlines,
@@ -138,12 +137,6 @@ class ParagraphLine {
 
   /// Metrics for this line of the paragraph.
   final EngineLineMetrics lineMetrics;
-
-  /// The string to be displayed as an overflow indicator.
-  ///
-  /// When the value is non-null, it means this line is overflowing and the
-  /// [ellipsis] needs to be displayed at the end of it.
-  final String? ellipsis;
 
   /// The index (inclusive) in the text where this line begins.
   final int startIndex;
@@ -170,7 +163,7 @@ class ParagraphLine {
   final double widthWithTrailingSpaces;
 
   /// The fragments that make up this line.
-  final List<MeasuredFragment> fragments;
+  final List<LayoutFragment> fragments;
 
   /// The number of boxes that are space-only.
   final int spaceBoxCount;
@@ -180,10 +173,6 @@ class ParagraphLine {
 
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
-
-  /// The index (exclusive) in the text where this line ends, ignoring newline
-  /// characters.
-  int get endIndexWithoutNewlines => endIndex - trailingNewlines;
 
   /// The number of space-only boxes excluding trailing spaces.
   int get nonTrailingSpaceBoxCount => spaceBoxCount - trailingSpaceBoxCount;
@@ -207,7 +196,6 @@ class ParagraphLine {
   @override
   int get hashCode => Object.hash(
         lineMetrics,
-        ellipsis,
         startIndex,
         endIndex,
         trailingNewlines,
@@ -228,7 +216,6 @@ class ParagraphLine {
     }
     return other is ParagraphLine &&
         other.lineMetrics == lineMetrics &&
-        other.ellipsis == ellipsis &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&
         other.trailingNewlines == trailingNewlines &&

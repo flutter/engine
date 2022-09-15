@@ -383,7 +383,7 @@ Future<void> testMain() async {
         builder.addText('DD');
       });
 
-      String getTextForFragment(MeasuredFragment fragment) {
+      String getTextForFragment(LayoutFragment fragment) {
         return paragraph.plainText.substring(fragment.start, fragment.end);
       }
 

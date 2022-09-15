@@ -8,7 +8,7 @@ import '../dom.dart';
 import '../html/bitmap_canvas.dart';
 import '../html/painting.dart';
 import 'canvas_paragraph.dart';
-import 'layout_service.dart';
+import 'layout_fragmenter.dart';
 import 'paragraph.dart';
 
 /// Responsible for painting a [CanvasParagraph] on a [BitmapCanvas].
@@ -28,7 +28,7 @@ class TextPaintService {
     }
 
     for (final ParagraphLine line in lines) {
-      final List<MeasuredFragment> fragments = line.fragments;
+      final List<LayoutFragment> fragments = line.fragments;
       if (fragments.isEmpty) {
         continue;
       }
@@ -49,7 +49,7 @@ class TextPaintService {
     BitmapCanvas canvas,
     ui.Offset offset,
     ParagraphLine line,
-    MeasuredFragment fragment,
+    LayoutFragment fragment,
   ) {
     final ParagraphSpan span = fragment.span;
     if (span is FlatTextSpan) {
@@ -66,7 +66,7 @@ class TextPaintService {
     BitmapCanvas canvas,
     ui.Offset offset,
     ParagraphLine line,
-    MeasuredFragment fragment,
+    LayoutFragment fragment,
   ) {
     // There's no text to paint in placeholder spans.
     final ParagraphSpan span = fragment.span;
@@ -78,10 +78,7 @@ class TextPaintService {
       // Don't paint the text for space-only boxes. This is just an
       // optimization, it doesn't have any effect on the output.
       if (!fragment.isSpaceOnly) {
-        final String text = paragraph.toPlainText().substring(
-              fragment.start,
-              fragment.end - fragment.trailingNewlines,
-            );
+        final String text = fragment.getText(paragraph);
         final double? letterSpacing = span.style.letterSpacing;
         if (letterSpacing == null || letterSpacing == 0.0) {
           canvas.drawText(text, x, y,
@@ -99,15 +96,6 @@ class TextPaintService {
             charX += letterSpacing + canvas.measureText(char).width!;
           }
         }
-      }
-
-      // TODO(mdebbar): Do we need this now that we have an EllipsisFragment?
-
-      // Paint the ellipsis using the same span styles.
-      final String? ellipsis = line.ellipsis;
-      if (ellipsis != null && fragment == line.fragments.last) {
-        final double x = offset.dx + line.left + fragment.right;
-        canvas.drawText(ellipsis, x, y, style: span.style.foreground?.style);
       }
 
       canvas.tearDownPaint();

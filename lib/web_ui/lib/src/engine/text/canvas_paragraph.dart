@@ -9,6 +9,7 @@ import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
 import '../util.dart';
+import 'layout_fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -170,46 +171,26 @@ class CanvasParagraph implements ui.Paragraph {
 
     // 2. Append all spans to the paragraph.
 
-    DomHTMLElement? lastSpanElement;
     for (int i = 0; i < lines.length; i++) {
       final ParagraphLine line = lines[i];
-      final List<MeasuredFragment> fragments = line.fragments;
-      final StringBuffer buffer = StringBuffer();
-
-      int j = 0;
-      while (j < fragments.length) {
-        final MeasuredFragment fragment = fragments[j++];
-
-        if (fragment.isPlaceholder) {
-          lastSpanElement = null;
-        } else {
-          lastSpanElement = domDocument.createElement('flt-span') as
-              DomHTMLElement;
+      for (final LayoutFragment fragment in line.fragments) {
+        if (!fragment.isPlaceholder) {
+          final DomHTMLElement spanElement =
+              domDocument.createElement('flt-span') as DomHTMLElement;
           applyTextStyleToElement(
-            element: lastSpanElement,
+            element: spanElement,
             style: fragment.style,
             isSpan: true,
           );
-          _positionSpanElement(lastSpanElement, line, fragment);
+          _positionSpanElement(spanElement, line, fragment);
 
-          final String fragmentText = _getFragmentText(fragment);
-          lastSpanElement.appendText(fragmentText);
-          rootElement.append(lastSpanElement);
-          buffer.write(fragmentText);
+          spanElement.appendText(fragment.getText(this));
+          rootElement.append(spanElement);
         }
-      }
-
-      final String? ellipsis = line.ellipsis;
-      if (ellipsis != null) {
-        (lastSpanElement ?? rootElement).appendText(ellipsis);
       }
     }
 
     return rootElement;
-  }
-
-  String _getFragmentText(MeasuredFragment fragment) {
-    return plainText.substring(fragment.start, fragment.end - fragment.trailingNewlines);
   }
 
   @override
@@ -281,7 +262,7 @@ class CanvasParagraph implements ui.Paragraph {
   }
 }
 
-void _positionSpanElement(DomElement element, ParagraphLine line, MeasuredFragment fragment) {
+void _positionSpanElement(DomElement element, ParagraphLine line, LayoutFragment fragment) {
   final ui.Rect boxRect = fragment.toTextBox(line, forPainting: true).toRect();
   element.style
     ..position = 'absolute'
