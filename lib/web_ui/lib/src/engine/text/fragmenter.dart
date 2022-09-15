@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
 import 'canvas_paragraph.dart';
 import 'line_breaker.dart';
 import 'paragraph.dart';
@@ -63,14 +64,15 @@ class LayoutFragmenter extends TextFragmenter {
       final int trailingNewlines = currentLineBreakFragment.trailingNewlines - distanceFromLineBreak;
       final int trailingSpaces = currentLineBreakFragment.trailingSpaces - distanceFromLineBreak;
 
+      final int fragmentLength = fragmentEnd - fragmentStart;
       fragments.add(LayoutFragment(
         fragmentStart,
         fragmentEnd,
         lineBreakType,
         currentBidiFragment.textDirection,
         currentSpan,
-        trailingNewlines: math.max(0, trailingNewlines),
-        trailingSpaces: math.max(0, trailingSpaces),
+        trailingNewlines: clampInt(trailingNewlines, 0, fragmentLength),
+        trailingSpaces: clampInt(trailingSpaces, 0, fragmentLength),
       ));
 
       fragmentStart = fragmentEnd;

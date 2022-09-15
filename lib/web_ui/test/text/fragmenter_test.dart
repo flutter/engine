@@ -9,10 +9,14 @@ import 'package:ui/ui.dart';
 
 import '../html/paragraph/helper.dart';
 
-final EngineTextStyle defaultStyle = EngineTextStyle.only();
-final EngineTextStyle style1 = EngineTextStyle.only(fontSize: 20);
-final EngineTextStyle style2 = EngineTextStyle.only(color: blue);
-final EngineTextStyle style3 = EngineTextStyle.only(fontFamily: 'Roboto');
+final EngineTextStyle defaultStyle = EngineTextStyle.only(
+  color: const Color(0xFFFF0000),
+  fontFamily: FlutterViewEmbedder.defaultFontFamily,
+  fontSize: FlutterViewEmbedder.defaultFontSize,
+);
+final EngineTextStyle style1 = defaultStyle.copyWith(fontSize: 20);
+final EngineTextStyle style2 = defaultStyle.copyWith(color: blue);
+final EngineTextStyle style3 = defaultStyle.copyWith(fontFamily: 'Roboto');
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -27,7 +31,7 @@ Future<void> testMain() async {
         _Fragment('Lorem ', opportunity, ltr, defaultStyle, sp: 1),
         _Fragment('12 ', opportunity, ltr, defaultStyle, sp: 1),
         _Fragment('$rtlWord1   ', opportunity, rtl, defaultStyle, sp: 3),
-        _Fragment('ipsum34', opportunity, ltr, defaultStyle),
+        _Fragment('ipsum34', endOfText, ltr, defaultStyle),
       ]);
     });
 
@@ -113,6 +117,29 @@ Future<void> testMain() async {
       ]);
     });
 
+    test('space-only spans', () {
+      final CanvasParagraph paragraph = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.addText('Lorem ');
+          builder.pushStyle(style1);
+          builder.addText('   ');
+          builder.pop();
+          builder.pushStyle(style2);
+          builder.addText('  ');
+          builder.pop();
+          builder.addText('ipsum');
+        },
+      );
+
+      expect(split(paragraph), <_Fragment>[
+        _Fragment('Lorem ', prohibited, ltr, defaultStyle, sp: 1),
+        _Fragment('   ', prohibited, ltr, style1, sp: 3),
+        _Fragment('  ', opportunity, ltr, style2, sp: 2),
+        _Fragment('ipsum', endOfText, ltr, defaultStyle),
+      ]);
+    });
+
     test('placeholders', () {
       final CanvasParagraph paragraph = rich(
         EngineParagraphStyle(),
@@ -182,18 +209,22 @@ class _Fragment {
   final int sp;
 
   @override
-  int get hashCode => Object.hash(text, textDirection);
+  int get hashCode => Object.hash(text, type, textDirection, style, nl, sp);
 
   @override
   bool operator ==(Object other) {
     return other is _Fragment &&
         other.text == text &&
-        other.textDirection == textDirection;
+        other.type == type &&
+        other.textDirection == textDirection &&
+        other.style == style &&
+        other.nl == nl &&
+        other.sp == sp;
   }
 
   @override
   String toString() {
-    return '"$text" ($textDirection)';
+    return '"$text" ($type, $textDirection, nl: $nl, sp: $sp)';
   }
 }
 
