@@ -58,6 +58,10 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   return true;
 }
 
+DeviceBufferAllocationVK* DeviceBufferVK::GetAllocation() const {
+  return device_allocation_.get();
+}
+
 bool DeviceBufferVK::SetLabel(const std::string& label) {
   context_.SetDebugName(device_allocation_->GetBufferHandle(), label);
   return true;

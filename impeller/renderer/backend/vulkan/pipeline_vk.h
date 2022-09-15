@@ -20,7 +20,7 @@ class PipelineCreateInfoVK {
 
   bool IsValid() const;
 
-  vk::UniquePipeline GetPipeline();
+  vk::Pipeline GetPipeline();
 
   vk::UniqueRenderPass GetRenderPass();
 
@@ -40,6 +40,8 @@ class PipelineVK final
 
   // |Pipeline|
   ~PipelineVK() override;
+
+  PipelineCreateInfoVK* GetCreateInfo();
 
  private:
   friend class PipelineLibraryVK;

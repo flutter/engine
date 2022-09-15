@@ -6,6 +6,8 @@
 #include <array>
 
 #include "fml/logging.h"
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "vulkan/vulkan_structs.hpp"
@@ -77,16 +79,6 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   // }
 
   // swapchain framebuffer.
-  for (const auto& command : commands_) {
-    if (command.index_count == 0u) {
-      continue;
-    }
-    if (command.instance_count == 0u) {
-      continue;
-    }
-
-    const auto& pipeline_desc = command.pipeline->GetDescriptor();
-  }
 
   // layout transition?
   {
@@ -178,6 +170,79 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
                            .setClearValues(clear_value);
 
   command_buffer_->beginRenderPass(rp_begin_info, vk::SubpassContents::eInline);
+
+  {
+    const auto& transients_allocator = context.GetResourceAllocator();
+
+    // encode the commands.
+    for (const auto& command : commands_) {
+      if (command.index_count == 0u) {
+        continue;
+      }
+
+      if (command.instance_count == 0u) {
+        continue;
+      }
+
+      if (!command.pipeline) {
+        continue;
+      }
+
+      const auto& pipeline_desc = command.pipeline->GetDescriptor();
+      // configure blending
+      // configure stencil
+      // configure depth
+      FML_LOG(ERROR) << "configuring pipeline: " << pipeline_desc.GetLabel();
+
+      auto& pipeline_vk = PipelineVK::Cast(*command.pipeline);
+      PipelineCreateInfoVK* pipeline_create_info = pipeline_vk.GetCreateInfo();
+
+      auto vertex_buffer_view = command.GetVertexBuffer();
+      auto index_buffer_view = command.index_buffer;
+
+      if (!vertex_buffer_view || !index_buffer_view) {
+        return false;
+      }
+
+      auto vertex_buffer =
+          vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      auto index_buffer =
+          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+
+      if (!vertex_buffer || !index_buffer) {
+        FML_LOG(ERROR) << "Failed to get device buffers for vertex and index";
+        return false;
+      } else {
+        FML_LOG(ERROR) << "got device buffers for vertex and index";
+      }
+
+      // bind pipeline
+      command_buffer_->bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                    pipeline_create_info->GetPipeline());
+
+      // bind vertex buffer
+      auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer)
+                                      .GetAllocation()
+                                      ->GetBufferHandle();
+      vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
+      vk::DeviceSize vertex_buffer_offsets[] = {
+          vertex_buffer_view.range.offset};
+      command_buffer_->bindVertexBuffers(0, 1, vertex_buffers,
+                                         vertex_buffer_offsets);
+
+      // index buffer
+      auto index_buffer_handle = DeviceBufferVK::Cast(*index_buffer)
+                                     .GetAllocation()
+                                     ->GetBufferHandle();
+      command_buffer_->bindIndexBuffer(index_buffer_handle,
+                                       index_buffer_view.range.offset,
+                                       vk::IndexType::eUint32);
+
+      // execute draw
+      command_buffer_->draw(vertex_buffer_view.range.length, 1, 0, 0);
+    }
+  }
+
   command_buffer_->endRenderPass();
 
   return const_cast<RenderPassVK*>(this)->EndCommandBuffer(frame_num);

@@ -16,8 +16,8 @@ bool PipelineCreateInfoVK::IsValid() const {
   return is_valid_;
 }
 
-vk::UniquePipeline PipelineCreateInfoVK::GetPipeline() {
-  return std::move(pipeline_);
+vk::Pipeline PipelineCreateInfoVK::GetPipeline() {
+  return *pipeline_;
 }
 
 vk::UniqueRenderPass PipelineCreateInfoVK::GetRenderPass() {
@@ -28,12 +28,22 @@ PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
                        PipelineDescriptor desc,
                        std::unique_ptr<PipelineCreateInfoVK> create_info)
     : Pipeline(std::move(library), std::move(desc)),
-      pipeline_info_(std::move(create_info)) {}
+      pipeline_info_(std::move(create_info)) {
+  FML_LOG(ERROR) << "created pipeline " << desc.GetLabel()
+                 << ", addr: " << pipeline_info_->GetPipeline();
+}
 
-PipelineVK::~PipelineVK() = default;
+PipelineVK::~PipelineVK() {
+  FML_LOG(ERROR) << "destroyed pipeline " << GetDescriptor().GetLabel()
+                 << ", addr: " << pipeline_info_->GetPipeline();
+}
 
 bool PipelineVK::IsValid() const {
   return pipeline_info_->IsValid();
+}
+
+PipelineCreateInfoVK* PipelineVK::GetCreateInfo() {
+  return pipeline_info_.get();
 }
 
 }  // namespace impeller
