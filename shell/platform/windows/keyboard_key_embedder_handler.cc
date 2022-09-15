@@ -260,8 +260,13 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     }
   }
 
+  auto new_record = pressingRecords_.end();
   if (eventual_logical_record != 0) {
-    pressingRecords_[physical_key] = eventual_logical_record;
+    auto this_record = pressingRecords_.insert(
+      std::pair<uint64_t, uint64_t>{physical_key, eventual_logical_record}).first;
+    if (!(get_key_state_(key) & kStateMaskPressed) && !event_key_can_be_repeat) {
+      new_record = this_record;
+    }
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
     // Synthesized keyup events can be handled causing the
@@ -304,6 +309,11 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   pending_responses_[response_id] = std::move(pending_ptr);
   SendEvent(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
             reinterpret_cast<void*>(pending_responses_[response_id].get()));
+
+  if (new_record != pressingRecords_.end()) {
+    SendEvent(SynthesizeSimpleEvent(kFlutterKeyEventTypeUp, physical_key, logical_key, ""),
+      nullptr, nullptr);
+  }
 }
 
 void KeyboardKeyEmbedderHandler::KeyboardHook(
