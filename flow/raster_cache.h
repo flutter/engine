@@ -99,7 +99,7 @@ struct RasterCacheMetrics {
  *         At the start of each layer's preroll, add cache items to
  *         `PrerollContext::raster_cached_entries`.
  *     - RasterCacheItem::PrerollFinalize
- *         At the end of each layer's preroll, may mark cache entris as
+ *         At the end of each layer's preroll, may mark cache entries as
  *         encountered by the current frame.
  * - Paint stage
  *   - RasterCache::EvictUnusedCacheEntries
