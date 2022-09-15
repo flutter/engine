@@ -103,7 +103,7 @@ struct RasterCacheMetrics {
  *         encountered by the current frame.
  * - Paint stage
  *   - RasterCache::EvictUnusedCacheEntries
- *       Evit cached images that are no longer used.
+ *       Evict cached images that are no longer used.
  *   - LayerTree::TryToPrepareRasterCache
  *       Create cache image for each cache entry if it does not exist.
  *   - LayerTree::Paint - for each layer in the tree:
