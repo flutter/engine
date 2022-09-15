@@ -38,7 +38,7 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
       std::unique_ptr<fml::Mapping> mapping) {}
   virtual void InvokePlatformMessageEmptyResponseCallback(int response_id) {}
 
-  void ClearParent() { parent_.reset(); }
+  void ClearParent() { *parent_ = nullptr; }
 
  private:
   std::shared_ptr<PlatformViewEmbedder*> parent_;
