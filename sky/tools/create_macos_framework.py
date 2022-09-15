@@ -81,6 +81,7 @@ def main():
 
   shutil.rmtree(fat_framework, True)
   shutil.copytree(arm64_framework, fat_framework, symlinks=True)
+  regenerate_symlinks(fat_framework)
 
   fat_framework_binary = os.path.join(
       fat_framework, 'Versions', 'A', 'FlutterMacOS'
@@ -91,6 +92,27 @@ def main():
       'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
   ])
   process_framework(dst, args, fat_framework, fat_framework_binary)
+
+
+def regenerate_symlinks(fat_framework):
+  """Regenerates the symlinks structure.
+
+  Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
+  This logic regenerates the symlinks in the expected structure.
+  """
+  if os.path.islink(os.path.join(fat_framework, 'FlutterMacOS')):
+    return
+  shutil.rmtree(os.path.join(fat_framework, 'FlutterMacOS'), True)
+  shutil.rmtree(os.path.join(fat_framework, 'Headers'), True)
+  shutil.rmtree(os.path.join(fat_framework, 'Modukles'), True)
+  shutil.rmtree(os.path.join(fat_framework, 'Resources'), True)
+  current_version_path = os.path.join(fat_framework, 'Versions', 'Current')
+  shutil.rmtree(current_version_path, True)
+  os.symlink('FlutterMacOS', os.path.join(current_version_path, 'FlutterMacOS'))
+  os.symlink('Headers', os.path.join(current_version_path, 'Headers'))
+  os.symlink('Modules', os.path.join(current_version_path, 'Modules'))
+  os.symlink('Resources', os.path.join(current_version_path, 'Resources'))
+  os.symlink('A', current_version_path)
 
 
 def process_framework(dst, args, fat_framework, fat_framework_binary):
