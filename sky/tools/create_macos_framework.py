@@ -108,11 +108,11 @@ def regenerate_symlinks(fat_framework):
   shutil.rmtree(os.path.join(fat_framework, 'Resources'), True)
   current_version_path = os.path.join(fat_framework, 'Versions', 'Current')
   shutil.rmtree(current_version_path, True)
+  os.symlink('A', current_version_path)
   os.symlink('FlutterMacOS', os.path.join(current_version_path, 'FlutterMacOS'))
   os.symlink('Headers', os.path.join(current_version_path, 'Headers'))
   os.symlink('Modules', os.path.join(current_version_path, 'Modules'))
   os.symlink('Resources', os.path.join(current_version_path, 'Resources'))
-  os.symlink('A', current_version_path)
 
 
 def process_framework(dst, args, fat_framework, fat_framework_binary):
