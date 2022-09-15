@@ -87,15 +87,19 @@ def main():
   )
 
   # Create the arm64/x64 fat framework.
-  result = subprocess.run([
+  print('Command: %s ' % (['lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary]) )
+  subprocess.check_call([
       'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
   ])
-  if result.returncode != 0:
-    print(
-        'Error processing command with stdout[%s] and stderr[%s]' %
-        (result.stdout, result.stderr)
-    )
-    return 1
+  #result = subprocess.run([
+  #    'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
+  #])
+  #if result.returncode != 0:
+  #  print(
+  #      'Error processing command with stdout[%s] and stderr[%s]' %
+  #      (result.stdout, result.stderr)
+  #  )
+  #  return 1
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
 
