@@ -38,7 +38,8 @@ void TextContents::SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas) {
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     std::shared_ptr<Context> context) const {
   if (auto lazy_atlas = std::get_if<std::shared_ptr<LazyGlyphAtlas>>(&atlas_)) {
-    return lazy_atlas->get()->CreateOrGetGlyphAtlas(context);
+    return lazy_atlas->get()->CreateOrGetGlyphAtlas(
+        GlyphAtlas::Type::kAlphaBitmap, context);
   }
 
   if (auto atlas = std::get_if<std::shared_ptr<GlyphAtlas>>(&atlas_)) {

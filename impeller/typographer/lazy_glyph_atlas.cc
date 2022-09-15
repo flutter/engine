@@ -19,6 +19,7 @@ void LazyGlyphAtlas::AddTextFrame(TextFrame frame) {
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
+    GlyphAtlas::Type type,
     std::shared_ptr<Context> context) const {
   if (atlas_) {
     return atlas_;
@@ -37,7 +38,7 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     i++;
     return &result;
   };
-  auto atlas = text_context->CreateGlyphAtlas(iterator);
+  auto atlas = text_context->CreateGlyphAtlas(type, iterator);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;

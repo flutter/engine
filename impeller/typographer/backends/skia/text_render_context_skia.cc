@@ -26,11 +26,19 @@ TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
 TextRenderContextSkia::~TextRenderContextSkia() = default;
 
 static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
+    GlyphAtlas::Type type,
     TextRenderContext::FrameIterator frame_iterator) {
   FontGlyphPair::Set set;
   while (auto frame = frame_iterator()) {
     for (const auto& run : frame->GetRuns()) {
       auto font = run.GetFont();
+      switch (type) {
+        case GlyphAtlas::Type::kSignedDistanceField:
+          font = Font(font.GetTypeface(), {.point_size = 16.0f});
+          break;
+        case GlyphAtlas::Type::kAlphaBitmap:
+          break;
+      }
       for (const auto& glyph_position : run.GetGlyphPositions()) {
         set.insert({font, glyph_position.glyph});
       }
@@ -40,10 +48,11 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
 }
 
 static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
+    GlyphAtlas::Type type,
     TextRenderContext::FrameIterator frame_iterator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FontGlyphPair::Vector vector;
-  auto set = CollectUniqueFontGlyphPairsSet(frame_iterator);
+  auto set = CollectUniqueFontGlyphPairsSet(type, frame_iterator);
   vector.reserve(set.size());
   for (const auto& item : set) {
     vector.emplace_back(std::move(item));
@@ -107,7 +116,16 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
                                                    size_t atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
-  auto image_info = SkImageInfo::MakeA8(atlas_size, atlas_size);
+  SkImageInfo image_info;
+  switch (atlas.GetType()) {
+    case GlyphAtlas::Type::kSignedDistanceField:
+      image_info = SkImageInfo::Make(atlas_size, atlas_size,
+                                     kGray_8_SkColorType, kOpaque_SkAlphaType);
+      break;
+    case GlyphAtlas::Type::kAlphaBitmap:
+      image_info = SkImageInfo::MakeA8(atlas_size, atlas_size);
+      break;
+  }
   if (!bitmap->tryAllocPixels(image_info)) {
     return nullptr;
   }
@@ -195,19 +213,20 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 }
 
 std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
+    GlyphAtlas::Type type,
     FrameIterator frame_iterator) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!IsValid()) {
     return nullptr;
   }
 
-  auto glyph_atlas = std::make_shared<GlyphAtlas>();
+  auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
 
   // ---------------------------------------------------------------------------
   // Step 1: Collect unique font-glyph pairs in the frame.
   // ---------------------------------------------------------------------------
 
-  auto font_glyph_pairs = CollectUniqueFontGlyphPairs(frame_iterator);
+  auto font_glyph_pairs = CollectUniqueFontGlyphPairs(type, frame_iterator);
   if (font_glyph_pairs.empty()) {
     return glyph_atlas;
   }

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "glyph_atlas.h"
 #include "impeller/renderer/context.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -20,6 +21,7 @@ class LazyGlyphAtlas {
   void AddTextFrame(TextFrame frame);
 
   std::shared_ptr<GlyphAtlas> CreateOrGetGlyphAtlas(
+      GlyphAtlas::Type type,
       std::shared_ptr<Context> context) const;
 
  private:

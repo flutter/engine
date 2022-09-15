@@ -24,13 +24,40 @@ namespace impeller {
 class GlyphAtlas {
  public:
   //----------------------------------------------------------------------------
+  /// @brief      Describes how the glyphs are represented in the texture.
+  enum class Type {
+    //--------------------------------------------------------------------------
+    /// The glyphs are represented at a fixed size in an 8-bit grayscale texture
+    /// where the value of each pixel represents a signed-distance field that
+    /// stores the glyph outlines.
+    ///
+    kSignedDistanceField,
+
+    //--------------------------------------------------------------------------
+    /// The glyphs are reprsented at their requested size using only an 8-bit
+    /// alpha channel.
+    ///
+    kAlphaBitmap,
+
+    // TODO(dnfield): Decide if we need this to support COLR fonts.
+    // https://github.com/flutter/flutter/issues/111599
+    // kColorBitmap,
+  };
+
+  //----------------------------------------------------------------------------
   /// @brief      Create an empty glyph atlas.
   ///
-  GlyphAtlas();
+  /// @param[in]  type  How the glyphs are represented in the texture.
+  ///
+  explicit GlyphAtlas(Type type);
 
   ~GlyphAtlas();
 
   bool IsValid() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Describes how the glyphs are represented in the texture.
+  Type GetType() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Set the texture for the glyph atlas.
@@ -85,6 +112,7 @@ class GlyphAtlas {
   std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
 
  private:
+  const Type type_;
   std::shared_ptr<Texture> texture_;
 
   std::unordered_map<FontGlyphPair,
