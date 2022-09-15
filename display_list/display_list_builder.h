@@ -94,9 +94,19 @@ class DisplayListBuilder final : public virtual Dispatcher,
       onSetColorSource(source);
     }
   }
+  void setColorSource(const std::shared_ptr<DlColorSource>& source) {
+    if (source) {
+      setColorSource(source.get());
+    }
+  }
   void setImageFilter(const DlImageFilter* filter) override {
     if (NotEquals(current_.getImageFilter(), filter)) {
       onSetImageFilter(filter);
+    }
+  }
+  void setImageFilter(const std::shared_ptr<DlImageFilter>& filter) {
+    if (filter) {
+      setImageFilter(filter.get());
     }
   }
   void setColorFilter(const DlColorFilter* filter) override {
@@ -104,14 +114,29 @@ class DisplayListBuilder final : public virtual Dispatcher,
       onSetColorFilter(filter);
     }
   }
+  void setColorFilter(const std::shared_ptr<DlColorFilter>& filter) {
+    if (filter) {
+      setColorFilter(filter.get());
+    }
+  }
   void setPathEffect(const DlPathEffect* effect) override {
     if (NotEquals(current_.getPathEffect(), effect)) {
       onSetPathEffect(effect);
     }
   }
+  void setPathEffect(const std::shared_ptr<DlPathEffect>& effect) {
+    if (effect) {
+      setPathEffect(effect.get());
+    }
+  }
   void setMaskFilter(const DlMaskFilter* filter) override {
     if (NotEquals(current_.getMaskFilter(), filter)) {
       onSetMaskFilter(filter);
+    }
+  }
+  void setMaskFilter(const std::shared_ptr<DlMaskFilter>& filter) {
+    if (filter) {
+      setMaskFilter(filter.get());
     }
   }
 
