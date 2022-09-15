@@ -12,6 +12,7 @@ Font::Font(std::shared_ptr<Typeface> typeface, Metrics metrics)
     return;
   }
   is_valid_ = true;
+  has_color_ = typeface_->HasColor();
 }
 
 Font::~Font() = default;

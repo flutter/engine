@@ -33,6 +33,14 @@ class Typeface : public Comparable<Typeface> {
   ///
   virtual Rect GetBoundingBox() const = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Indicates the presence of a COLR table in the typeface. This
+  ///             implies that an R8G8B8A8 atlas must be used.
+  ///
+  /// @return     Whether the typeface contains a COLR table.
+  ///
+  virtual bool HasColor() const = 0;
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Typeface);
 };

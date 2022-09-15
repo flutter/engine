@@ -31,6 +31,9 @@ class TypefaceSkia final : public Typeface,
   // |Typeface|
   Rect GetBoundingBox() const override;
 
+  // |Typeface|
+  bool HasColor() const override;
+
   const sk_sp<SkTypeface>& GetSkiaTypeface() const;
 
  private:

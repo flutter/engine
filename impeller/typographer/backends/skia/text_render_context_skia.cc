@@ -107,7 +107,9 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
                                                    size_t atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
-  auto image_info = SkImageInfo::MakeA8(atlas_size, atlas_size);
+  auto image_info = atlas.HasColor()
+                        ? SkImageInfo::MakeN32Premul(atlas_size, atlas_size)
+                        : SkImageInfo::MakeA8(atlas_size, atlas_size);
   if (!bitmap->tryAllocPixels(image_info)) {
     return nullptr;
   }
@@ -122,24 +124,21 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
                                const Rect& location) -> bool {
-    const auto position =
-        SkPoint::Make(location.origin.x / font_glyph.font.GetMetrics().scale,
-                      location.origin.y / font_glyph.font.GetMetrics().scale);
+    const auto& metrics = font_glyph.font.GetMetrics();
+    const auto position = SkPoint::Make(location.origin.x / metrics.scale,
+                                        location.origin.y / metrics.scale);
     SkGlyphID glyph_id = font_glyph.glyph.index;
 
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-        font_glyph.font.GetMetrics().point_size);
-
-    const auto& metrics = font_glyph.font.GetMetrics();
+        metrics.point_size);
 
     auto glyph_color = SK_ColorWHITE;
 
     SkPaint glyph_paint;
     glyph_paint.setColor(glyph_color);
     canvas->resetMatrix();
-    canvas->scale(font_glyph.font.GetMetrics().scale,
-                  font_glyph.font.GetMetrics().scale);
+    canvas->scale(metrics.scale, metrics.scale);
     canvas->drawGlyphs(1u,         // count
                        &glyph_id,  // glyphs
                        &position,  // positions
@@ -157,7 +156,8 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     std::shared_ptr<Allocator> allocator,
     std::shared_ptr<SkBitmap> bitmap,
-    size_t atlas_size) {
+    size_t atlas_size,
+    PixelFormat format) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!allocator) {
     return nullptr;
@@ -168,7 +168,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 
   TextureDescriptor texture_descriptor;
   texture_descriptor.storage_mode = StorageMode::kHostVisible;
-  texture_descriptor.format = PixelFormat::kA8UNormInt;
+  texture_descriptor.format = format;
   texture_descriptor.size = ISize::MakeWH(atlas_size, atlas_size);
 
   if (pixmap.rowBytes() * pixmap.height() !=
@@ -251,8 +251,10 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 6: Upload the atlas as a texture.
   // ---------------------------------------------------------------------------
+  auto format = glyph_atlas->HasColor() ? PixelFormat::kR8G8B8A8UNormInt
+                                        : PixelFormat::kA8UNormInt;
   auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
-                                         bitmap, atlas_size);
+                                         bitmap, atlas_size, format);
   if (!texture) {
     return nullptr;
   }

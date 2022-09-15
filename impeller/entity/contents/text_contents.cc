@@ -89,15 +89,19 @@ bool TextContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
-  frame_info.atlas_size =
-      Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
-            static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
-  frame_info.text_color = ToVector(color_.Premultiply());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
+
+  FS::FragInfo frag_info;
+  frag_info.font_has_color = atlas->HasColor() ? 1.0 : 0.0;
+  frag_info.text_color = ToVector(color_.Premultiply());
+  frag_info.atlas_size =
+      Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
+            static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   // Common fragment uniforms for all glyphs.
   FS::BindGlyphAtlasSampler(
