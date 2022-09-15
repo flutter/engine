@@ -11,7 +11,10 @@
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/display_list_path_effect.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/display_list/display_list_utils.h"
@@ -2228,6 +2231,38 @@ TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
 
   // Hitting both drawRect calls
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList,
+     DisplayListBuilderSetAttributeSharedPointerConvenientMethods) {
+  const sk_sp<DlImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
+  DlImageColorSource colorSource(kTestImage1, DlTileMode::kClamp,
+                                 DlTileMode::kClamp, DlImageSampling::kLinear,
+                                 &kTestMatrix1);
+  DlBlurImageFilter imageFilter(5.0, 5.0, DlTileMode::kDecal);
+  DlBlendColorFilter colorFilter(DlColor::kRed(), DlBlendMode::kColorBurn);
+  const SkScalar test_dashes[] = {4.0, 2.0};
+  std::shared_ptr<DlPathEffect> dashPathEffect =
+      DlDashPathEffect::Make(test_dashes, 2, 0.0);
+  DlBlurMaskFilter maskFilter(SkBlurStyle::kNormal_SkBlurStyle, 5.0);
+
+  DisplayListBuilder builder1;
+  builder1.setColorSource(&colorSource);
+  builder1.setImageFilter(&imageFilter);
+  builder1.setColorFilter(&colorFilter);
+  builder1.setPathEffect(dashPathEffect.get());
+  builder1.setMaskFilter(&maskFilter);
+
+  DisplayListBuilder builder2;
+  builder2.setColorSource(colorSource.shared());
+  builder2.setImageFilter(imageFilter.shared());
+  builder2.setColorFilter(colorFilter.shared());
+  builder2.setPathEffect(dashPathEffect);
+  builder2.setMaskFilter(maskFilter.shared());
+
+  auto display_list1 = builder1.Build();
+  auto display_list2 = builder2.Build();
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
 }  // namespace testing
