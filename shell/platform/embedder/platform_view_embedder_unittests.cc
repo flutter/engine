@@ -69,9 +69,7 @@ TEST(PlatformViewEmbedderTest, HasPlatformMessageHandler) {
   task_runners.GetPlatformTaskRunner()->PostTask([&latch, task_runners] {
     MockDelegate delegate;
     EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table;
-    memset(&software_dispatch_table, 0, sizeof(software_dispatch_table));
     PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
-    memset(&platform_dispatch_table, 0, sizeof(platform_dispatch_table));
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
     auto embedder = std::make_unique<PlatformViewEmbedder>(
         delegate, task_runners, software_dispatch_table,
@@ -97,9 +95,7 @@ TEST(PlatformViewEmbedderTest, Dispatches) {
                                                     &did_call, &embedder] {
       MockDelegate delegate;
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table;
-      memset(&software_dispatch_table, 0, sizeof(software_dispatch_table));
       PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
-      memset(&platform_dispatch_table, 0, sizeof(platform_dispatch_table));
       platform_dispatch_table.platform_message_response_callback =
           [&did_call](std::unique_ptr<PlatformMessage> message) {
             did_call = true;
@@ -143,9 +139,7 @@ TEST(PlatformViewEmbedderTest, DeletionDisabledDispatch) {
                                                     &did_call] {
       MockDelegate delegate;
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table;
-      memset(&software_dispatch_table, 0, sizeof(software_dispatch_table));
       PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
-      memset(&platform_dispatch_table, 0, sizeof(platform_dispatch_table));
       platform_dispatch_table.platform_message_response_callback =
           [&did_call](std::unique_ptr<PlatformMessage> message) {
             did_call = true;
