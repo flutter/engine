@@ -492,6 +492,12 @@ class BrowserPlatform extends PlatformPlugin {
     return suite;
   }
 
+  @override
+  StreamChannel loadChannel(String path, SuitePlatform platform) {
+    // TODO: implement loadChannel
+    throw UnimplementedError();
+  }
+
   Future<BrowserManager?>? _browserManager;
   Future<BrowserManager> get browserManager async => (await _browserManager!)!;
 

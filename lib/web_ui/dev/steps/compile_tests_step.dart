@@ -336,7 +336,9 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required bool forCanvasKit, 
   }
 
   final List<String> arguments = <String>[
-    environment.dart2wasmPath,
+    environment.dart2wasmSnapshotPath,
+
+    '--dart-sdk=${environment.dartSdkDir.path}',
 
     // We do not want to auto-select a renderer in tests. As of today, tests
     // are designed to run in one specific mode. So instead, we specify the
@@ -349,7 +351,7 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required bool forCanvasKit, 
   ];
 
   final int exitCode = await runProcess(
-    environment.dartExecutable,
+    environment.dartPrecompiledRuntimePath,
     arguments,
     workingDirectory: environment.webUiRootDir.path,
   );

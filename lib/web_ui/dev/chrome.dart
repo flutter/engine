@@ -81,9 +81,9 @@ class Chrome extends Browser {
           Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       final String dir = environment.webUiDartToolDir.createTempSync('test_chrome_user_data_').resolveSymbolicLinksSync();
       final String jsFlags = enableWasmGC ? <String>[
-        '--experimental-wasm-gc', 
-        '--wasm-gc-js-interop', 
-        '--experimental-wasm-stack-switching', 
+        '--experimental-wasm-gc',
+        '--wasm-gc-js-interop',
+        '--experimental-wasm-stack-switching',
         '--experimental-wasm-type-reflection',
       ].join(' ') : '';
       final List<String> args = <String>[
