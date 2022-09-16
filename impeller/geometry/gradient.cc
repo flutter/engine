@@ -28,7 +28,8 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     auto minimum_delta = 1.0;
     for (size_t i = 1; i < stops.size(); i++) {
       auto value = stops[i] - stops[i - 1];
-      if (value < kEhCloseEnough) {
+      // Smaller than kEhCloseEnough
+      if (value < 0.0001) {
         continue;
       }
       if (value < minimum_delta) {

@@ -1499,9 +1499,9 @@ TEST(GeometryTest, Gradient) {
     // Gradient size is capped at 1024.
     std::vector<Color> colors = {};
     std::vector<Scalar> stops = {};
-    for (auto i = 0u; i < 2000; i++) {
+    for (auto i = 0u; i < 1025; i++) {
       colors.push_back(Color::Blue());
-      stops.push_back(i / 2000.0);
+      stops.push_back(i / 1025.0);
     }
     stops[1999] = 1.0;
 
