@@ -33,6 +33,7 @@ class Typeface : public Comparable<Typeface> {
   ///
   virtual Rect GetBoundingBox() const = 0;
 
+ private:
   FML_DISALLOW_COPY_AND_ASSIGN(Typeface);
 };
 

@@ -99,8 +99,6 @@ class Font : public Comparable<Font> {
   // |Comparable<Font>|
   std::size_t GetHash() const override;
 
-  bool HasColor(const Glyph& glyph) const;
-
   // |Comparable<Font>|
   bool IsEqual(const Font& other) const override;
 

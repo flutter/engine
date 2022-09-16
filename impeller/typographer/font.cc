@@ -14,10 +14,6 @@ Font::Font(std::shared_ptr<Typeface> typeface, Metrics metrics)
   is_valid_ = true;
 }
 
-bool Font::HasColor(const Glyph& glyph) const {
-  return false;
-}
-
 Font::~Font() = default;
 
 bool Font::IsValid() const {
