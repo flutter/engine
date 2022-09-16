@@ -16,7 +16,7 @@ void MatrixFilterContents::SetMatrix(Matrix matrix) {
 
 Matrix MatrixFilterContents::GetLocalTransform(
     const Matrix& parent_transform) const {
-  return parent_transform.Invert() * matrix_ * parent_transform;
+  return matrix_;
 }
 
 std::optional<Snapshot> MatrixFilterContents::RenderFilter(
