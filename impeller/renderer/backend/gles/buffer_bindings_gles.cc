@@ -224,18 +224,21 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     auto* buffer_data =
         reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
 
-    std::vector<uint8_t> buffer;
+    std::vector<uint8_t> array_element_buffer;
     if (member.array_elements > 1) {
       // When binding uniform arrays, the elements must be contiguous. Copy the
       // uniforms to a temp buffer to eliminate any padding needed by the other
       // backends.
-      buffer.reserve(member.size * member.array_elements);
+      array_element_buffer.resize(member.size * member.array_elements);
       for (size_t element_i = 0; element_i < member.array_elements;
            element_i++) {
-        std::memcpy(buffer.data(), buffer_data + element_i * element_stride,
+        std::memcpy(array_element_buffer.data() + element_i * member.size,
+                    reinterpret_cast<const char*>(buffer_data) +
+                        element_i * element_stride,
                     member.size);
       }
-      buffer_data = reinterpret_cast<const GLfloat*>(buffer.data());
+      buffer_data =
+          reinterpret_cast<const GLfloat*>(array_element_buffer.data());
     }
 
     switch (member.type) {
