@@ -475,6 +475,7 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       member["base_type"] = struct_member.base_type;
       member["offset"] = struct_member.offset;
       member["size"] = struct_member.byte_length;
+      member["array_elements"] = struct_member.array_elements;
       members.emplace_back(std::move(member));
     }
   }
@@ -580,7 +581,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           SPrintF("_PADDING_%s_",
                   GetMemberNameAtIndex(struct_type, i).c_str()),  // name
           current_byte_offset,                                    // offset
-          alignment_pad                                           // byte_length
+          alignment_pad,                                          // byte_length
+          1  // array_elements
       });
       current_byte_offset += alignment_pad;
     }
@@ -590,6 +592,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
                          (member.width / 8) * member.columns * member.vecsize);
 
     FML_CHECK(current_byte_offset == struct_member_offset);
+
+    auto array_elements = std::max(1u, GetArrayElements(member));
 
     // Tightly packed 4x4 Matrix is special cased as we know how to work with
     // those.
@@ -603,9 +607,10 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Matrix)                         // byte_length
+          sizeof(Matrix) * array_elements,       // byte_length
+          array_elements                         // array_elements
       });
-      current_byte_offset += sizeof(Matrix);
+      current_byte_offset += sizeof(Matrix) * array_elements;
       continue;
     }
 
@@ -620,9 +625,10 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Point)                          // byte_length
+          sizeof(Point) * array_elements,        // byte_length
+          array_elements                         // array_elements
       });
-      current_byte_offset += sizeof(Point);
+      current_byte_offset += sizeof(Point) * array_elements;
       continue;
     }
 
@@ -637,9 +643,10 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Vector3)                        // byte_length
+          sizeof(Vector3) * array_elements,      // byte_length
+          array_elements                         // array_elements
       });
-      current_byte_offset += sizeof(Vector3);
+      current_byte_offset += sizeof(Vector3) * array_elements;
       continue;
     }
 
@@ -654,9 +661,10 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Vector4)                        // byte_length
+          sizeof(Vector4) * array_elements,      // byte_length
+          array_elements                         // array_elements
       });
-      current_byte_offset += sizeof(Vector4);
+      current_byte_offset += sizeof(Vector4) * array_elements;
       continue;
     }
 
@@ -669,13 +677,15 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       ) {
         // Add the type directly.
         result.emplace_back(StructMember{
-            maybe_known_type.value().name,         // type
-            BaseTypeToString(member.basetype),     // basetype
-            GetMemberNameAtIndex(struct_type, i),  // name
-            struct_member_offset,                  // offset
-            maybe_known_type.value().byte_size     // byte_length
+            maybe_known_type.value().name,                        // type
+            BaseTypeToString(member.basetype),                    // basetype
+            GetMemberNameAtIndex(struct_type, i),                 // name
+            struct_member_offset,                                 // offset
+            maybe_known_type.value().byte_size * array_elements,  // byte_length
+            array_elements  // array_elements
         });
-        current_byte_offset += maybe_known_type.value().byte_size;
+        current_byte_offset +=
+            maybe_known_type.value().byte_size * array_elements;
         continue;
       }
     }
@@ -690,9 +700,10 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),       // basetype
           GetMemberNameAtIndex(struct_type, i),    // name
           struct_member_offset,                    // offset
-          byte_length                              // byte_length
+          byte_length * array_elements,            // byte_length
+          array_elements                           // array_elements
       });
-      current_byte_offset += byte_length;
+      current_byte_offset += byte_length * array_elements;
       continue;
     }
   }
@@ -709,7 +720,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
                 spirv_cross::SPIRType::BaseType::Void),  // basetype
             "_PADDING_",                                 // name
             current_byte_offset,                         // offset
-            padding                                      // byte_length
+            padding,                                     // byte_length
+            1                                            // array_elements
         });
       }
     }
@@ -753,6 +765,7 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
     member["base_type"] = struc_member.base_type;
     member["offset"] = struc_member.offset;
     member["byte_length"] = struc_member.byte_length;
+    member["array_elements"] = struc_member.array_elements;
   }
   return result;
 }
@@ -863,7 +876,8 @@ Reflector::ReflectPerVertexStructDefinition(
         vertex_type.base_type_name,  // base type
         vertex_type.variable_name,   // name
         struc.byte_length,           // offset
-        vertex_type.byte_length      // byte_length
+        vertex_type.byte_length,     // byte_length
+        1                            // array_elements
     };
     struc.byte_length += vertex_type.byte_length;
     struc.members.emplace_back(std::move(member));

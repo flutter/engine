@@ -67,6 +67,7 @@ struct ShaderStructMemberMetadata {
   std::string name;
   size_t offset;
   size_t size;
+  size_t array_elements;
 };
 
 struct ShaderMetadata {

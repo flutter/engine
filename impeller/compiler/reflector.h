@@ -24,17 +24,20 @@ struct StructMember {
   std::string name;
   size_t offset = 0u;
   size_t byte_length = 0u;
+  size_t array_elements = 1u;
 
   StructMember(std::string p_type,
                std::string p_base_type,
                std::string p_name,
                size_t p_offset,
-               size_t p_byte_length)
+               size_t p_byte_length,
+               size_t p_array_elements)
       : type(std::move(p_type)),
         base_type(std::move(p_base_type)),
         name(std::move(p_name)),
         offset(p_offset),
-        byte_length(p_byte_length) {}
+        byte_length(p_byte_length),
+        array_elements(p_array_elements) {}
 };
 
 class Reflector {
