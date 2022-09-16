@@ -942,7 +942,7 @@ TEST(KeyboardKeyEmbedderHandlerTest,
       VK_NUMLOCK, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
-  EXPECT_EQ(results.size(), 3);
+  EXPECT_EQ(results.size(), 4);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalNumLock);
