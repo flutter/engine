@@ -270,6 +270,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     // key is currently recorded as pressed.
     if (record_iter != pressingRecords_.end()) {
       pressingRecords_.erase(record_iter);
+    } else {
+      assert(false);
     }
   }
 
