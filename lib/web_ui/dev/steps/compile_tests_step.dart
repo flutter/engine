@@ -130,14 +130,20 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
     environment.wasmReleaseOutDir.path,
     'canvaskit.wasm',
   ));
-  final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync() && useLocalCanvasKit;
+  final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
+  if (useLocalCanvasKit && !builtLocalCanvasKit) {
+    print('WARNING: Requested to use local CanvasKit but could not find the '
+        'built CanvasKit at ${localCanvasKitWasm.path}. Falling back to '
+        'CanvasKit from CIPD.');
+    useLocalCanvasKit = false;
+  }
 
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
     'canvaskit',
   ));
 
-  if (builtLocalCanvasKit) {
+  if (useLocalCanvasKit) {
     final List<io.File> canvasKitFiles = <io.File>[
       localCanvasKitWasm,
       io.File(pathlib.join(
