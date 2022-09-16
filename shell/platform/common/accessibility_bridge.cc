@@ -57,7 +57,8 @@ void AccessibilityBridge::CommitUpdates() {
 
     std::string error = tree_.error();
     if (!error.empty()) {
-      BASE_LOG() << "Failed to update ui::AXTree, error: " << error;
+      FML_LOG(ERROR) << "Failed to update ui::AXTree, error: " << error;
+      assert(false);
       return;
     }
   }
@@ -95,7 +96,7 @@ void AccessibilityBridge::CommitUpdates() {
 
   std::string error = tree_.error();
   if (!error.empty()) {
-    BASE_LOG() << "Failed to update ui::AXTree, error: " << error;
+    FML_LOG(ERROR) << "Failed to update ui::AXTree, error: " << error;
     return;
   }
   // Handles accessibility events as the result of the semantics update.
@@ -240,13 +241,13 @@ AccessibilityBridge::CreateRemoveReparentedNodesUpdate() {
     return std::nullopt;
   }
 
-  ui::AXTreeUpdate update = {
+  ui::AXTreeUpdate update{
       .tree_data = tree_.data(),
       .nodes = std::vector<ui::AXNodeData>(),
   };
 
   for (std::pair<int32_t, ui::AXNodeData> data : updates) {
-    update.nodes.push_back(data.second);
+    update.nodes.push_back(std::move(data.second));
   }
 
   return update;

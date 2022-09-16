@@ -224,8 +224,7 @@ class AccessibilityBridge
   void InitAXTree(const ui::AXTreeUpdate& initial_state);
 
   // Create an update that removes any nodes that will be reparented by
-  // pending_semantics_updates_. Returns std::nullopt if no nodes are
-  // reparented.
+  // pending_semantics_updates_. Returns std::nullopt if none are reparented.
   std::optional<ui::AXTreeUpdate> CreateRemoveReparentedNodesUpdate();
 
   void GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result);
