@@ -1452,6 +1452,17 @@ TEST(GeometryTest, Gradient) {
   }
 
   {
+    // Gradient with duplicate stops does not create an empty texture.
+    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
+                                 Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    ASSERT_EQ(texture_size, 5u);
+  }
+
+  {
     // Simple N color gradient produces color buffer containing exactly those
     // values.
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),

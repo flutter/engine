@@ -22,14 +22,15 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
   uint32_t texture_size;
   // TODO(jonahwilliams): we should add a display list flag to check if the
   // stops were provided or not, then we can skip this step.
-  // TODO(jonahwilliams): Skia has a check for stop sizes below a certain
-  // threshold, we should make sure that we behave reasonably with them.
   if (stops.size() == 2) {
     texture_size = 2;
   } else {
-    auto minimum_delta = 1.0;
+    auto minimum_delta = 1.0; 
     for (size_t i = 1; i < stops.size(); i++) {
       auto value = stops[i] - stops[i - 1];
+      if (value < kEhCloseEnough) {
+        continue;
+      }
       if (value < minimum_delta) {
         minimum_delta = value;
       }
@@ -41,7 +42,6 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     texture_size =
         std::min((uint32_t)std::round(1.0 / minimum_delta) + 1, 1024u);
   }
-
   *out_texture_size = texture_size;
   std::vector<uint8_t> color_stop_channels;
   color_stop_channels.reserve(texture_size * 4);
