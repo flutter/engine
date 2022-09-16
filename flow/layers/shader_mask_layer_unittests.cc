@@ -400,10 +400,9 @@ TEST_F(ShaderMaskLayerTest, SimpleFilterWithRasterCache) {
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
   auto layer_filter =
       SkPerlinNoiseShader::MakeFractalNoise(1.0f, 1.0f, 1, 1.0f);
-  auto dl_filter = DlColorSource::From(layer_filter);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<ShaderMaskLayer>(dl_filter, layer_bounds,
-                                                 DlBlendMode::kSrc);
+  auto layer = std::make_shared<ShaderMaskLayer>(layer_filter, layer_bounds,
+                                                 SkBlendMode::kSrc);
   layer->Add(mock_layer);
   layer->Preroll(preroll_context(), initial_transform);
 
