@@ -14,9 +14,8 @@ void MatrixFilterContents::SetMatrix(Matrix matrix) {
   matrix_ = matrix;
 }
 
-Matrix MatrixFilterContents::GetLocalTransform(
-    const Matrix& parent_transform) const {
-  return matrix_;
+void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
+  sampler_descriptor_ = std::move(desc);
 }
 
 std::optional<Snapshot> MatrixFilterContents::RenderFilter(
@@ -25,7 +24,35 @@ std::optional<Snapshot> MatrixFilterContents::RenderFilter(
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  return inputs[0]->GetSnapshot(renderer, entity);
+  auto snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  if (!snapshot.has_value()) {
+    return std::nullopt;
+  }
+
+  auto transform = GetTransform(entity.GetTransformation()).Invert();
+  transform = matrix_ * transform;
+  transform = GetTransform(entity.GetTransformation()) * transform;
+  snapshot->transform = transform * snapshot->transform;
+  snapshot->sampler_descriptor = sampler_descriptor_;
+  return snapshot;
+}
+
+std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
+    const FilterInput::Vector& inputs,
+    const Entity& entity,
+    const Matrix& effect_transform) const {
+  if (inputs.empty()) {
+    return std::nullopt;
+  }
+
+  auto coverage = inputs[0]->GetCoverage(entity);
+  if (!coverage.has_value()) {
+    return std::nullopt;
+  }
+  auto transform = inputs[0]->GetTransform(entity).Invert();
+  transform = matrix_ * transform;
+  transform = inputs[0]->GetTransform(entity) * transform;
+  return coverage->TransformBounds(transform);
 }
 
 }  // namespace impeller
