@@ -418,23 +418,22 @@ TEST_F(ShaderMaskLayerTest, SimpleFilterWithRasterCache) {
   layer->Paint(paint_context());
   EXPECT_EQ(
       mock_canvas().draw_calls(),
-      std::vector(
-          {MockCanvas::DrawCall{
-               0, MockCanvas::SetMatrixData{SkM44(SkMatrix::Translate(0.0, 0.0))}},
-           MockCanvas::DrawCall{
-               0,
-               MockCanvas::SaveLayerData{child_bounds, SkPaint(), nullptr, 1}},
-           MockCanvas::DrawCall{
-               1, MockCanvas::DrawPathData{child_path, child_paint}},
-           MockCanvas::DrawCall{1,
-                                MockCanvas::ConcatMatrixData{SkM44::Translate(
-                                    layer_bounds.fLeft, layer_bounds.fTop)}},
-           MockCanvas::DrawCall{
-               1,
-               MockCanvas::DrawRectData{
-                   SkRect::MakeWH(layer_bounds.width(), layer_bounds.height()),
-                   filter_paint}},
-           MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+      std::vector({MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44(
+                                               SkMatrix::Translate(0.0, 0.0))}},
+                   MockCanvas::DrawCall{
+                       0, MockCanvas::SaveLayerData{child_bounds, SkPaint(),
+                                                    nullptr, 1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawPathData{child_path, child_paint}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::ConcatMatrixData{SkM44::Translate(
+                              layer_bounds.fLeft, layer_bounds.fTop)}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawRectData{SkRect::MakeWH(
+                                                       layer_bounds.width(),
+                                                       layer_bounds.height()),
+                                                   filter_paint}},
+                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 }  // namespace testing
