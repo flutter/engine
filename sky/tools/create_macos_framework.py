@@ -102,7 +102,7 @@ def regenerate_symlinks(fat_framework):
   """
   if os.path.islink(os.path.join(fat_framework, 'FlutterMacOS')):
     return
-  shutil.rmtree(os.path.join(fat_framework, 'FlutterMacOS'), True)
+  os.remove(os.path.join(fat_framework, 'FlutterMacOS'))
   shutil.rmtree(os.path.join(fat_framework, 'Headers'), True)
   shutil.rmtree(os.path.join(fat_framework, 'Modules'), True)
   shutil.rmtree(os.path.join(fat_framework, 'Resources'), True)
