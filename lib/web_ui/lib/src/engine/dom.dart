@@ -601,8 +601,6 @@ extension DomCanvasElementExtension on DomCanvasElement {
 
   DomCanvasRenderingContext2D get context2D =>
       getContext('2d')! as DomCanvasRenderingContext2D;
-
-    
 }
 
 @JS()
