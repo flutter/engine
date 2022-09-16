@@ -245,7 +245,6 @@ def to_gn_args(args):
                                         '0') == '1':
       gn_args['create_xcode_symlinks'] = True
 
-
   # If building for WASM, set the GN args using 'to_gn_wasm_args' as most
   # of the Flutter SDK specific arguments are unused.
   if args.target_os == 'wasm':
