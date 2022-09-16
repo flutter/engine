@@ -5,7 +5,9 @@
 #include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 
 #include <algorithm>
+#include <cstring>
 #include <sstream>
+#include <vector>
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
@@ -217,13 +219,28 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
       return false;
     }
 
-    size_t element_size = member.size / member.array_elements;
+    size_t element_stride = member.byte_length / member.array_elements;
+
     auto* buffer_data =
         reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
 
+    std::vector<uint8_t> buffer;
+    if (member.array_elements > 1) {
+      // When binding uniform arrays, the elements must be contiguous. Copy the
+      // uniforms to a temp buffer to eliminate any padding needed by the other
+      // backends.
+      buffer.reserve(member.size * member.array_elements);
+      for (size_t element_i = 0; element_i < member.array_elements;
+           element_i++) {
+        std::memcpy(buffer.data(), buffer_data + element_i * element_stride,
+                    member.size);
+      }
+      buffer_data = reinterpret_cast<const GLfloat*>(buffer.data());
+    }
+
     switch (member.type) {
       case ShaderType::kFloat:
-        switch (element_size) {
+        switch (member.size) {
           case sizeof(Matrix):
             gl.UniformMatrix4fv(location->second,       // location
                                 member.array_elements,  // count

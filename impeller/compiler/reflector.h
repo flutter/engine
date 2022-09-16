@@ -23,6 +23,7 @@ struct StructMember {
   std::string base_type;
   std::string name;
   size_t offset = 0u;
+  size_t size = 0u;
   size_t byte_length = 0u;
   size_t array_elements = 1u;
   size_t element_padding = 0u;
@@ -31,6 +32,7 @@ struct StructMember {
                std::string p_base_type,
                std::string p_name,
                size_t p_offset,
+               size_t p_size,
                size_t p_byte_length,
                size_t p_array_elements,
                size_t p_element_padding)
@@ -38,6 +40,7 @@ struct StructMember {
         base_type(std::move(p_base_type)),
         name(std::move(p_name)),
         offset(p_offset),
+        size(p_size),
         byte_length(p_byte_length),
         array_elements(p_array_elements),
         element_padding(p_element_padding) {}

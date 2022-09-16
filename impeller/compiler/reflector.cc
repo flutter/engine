@@ -474,7 +474,8 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       member["type"] = struct_member.type;
       member["base_type"] = struct_member.base_type;
       member["offset"] = struct_member.offset;
-      member["size"] = struct_member.byte_length;
+      member["size"] = struct_member.size;
+      member["byte_length"] = struct_member.byte_length;
       member["array_elements"] = struct_member.array_elements;
       members.emplace_back(std::move(member));
     }
@@ -582,6 +583,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           SPrintF("_PADDING_%s_",
                   GetMemberNameAtIndex(struct_type, i).c_str()),  // name
           current_byte_offset,                                    // offset
+          alignment_pad,                                          // size
           alignment_pad,                                          // byte_length
           1,  // array_elements
           0,  // element_padding
@@ -609,6 +611,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
+          sizeof(Matrix),                        // size
           stride * array_elements,               // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
@@ -630,6 +633,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
+          sizeof(Point),                         // size
           stride * array_elements,               // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
@@ -651,6 +655,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
+          sizeof(Vector3),                       // size
           stride * array_elements,               // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
@@ -672,6 +677,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
+          sizeof(Vector4),                       // size
           stride * array_elements,               // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
@@ -698,6 +704,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
             BaseTypeToString(member.basetype),     // basetype
             GetMemberNameAtIndex(struct_type, i),  // name
             struct_member_offset,                  // offset
+            maybe_known_type.value().byte_size,    // size
             stride * array_elements,               // byte_length
             array_elements,                        // array_elements
             element_padding,                       // element_padding
@@ -710,21 +717,21 @@ std::vector<StructMember> Reflector::ReadStructMembers(
     // Catch all for unknown types. Just add the necessary padding to the struct
     // and move on.
     {
-      const size_t byte_length =
-          (member.width * member.columns * member.vecsize) / 8u;
+      const size_t size = (member.width * member.columns * member.vecsize) / 8u;
       uint32_t stride = GetArrayStride<0>(struct_type, member, i);
       if (stride == 0) {
-        stride = byte_length;
+        stride = size;
       }
-      auto element_padding = stride - byte_length;
+      auto element_padding = stride - size;
       result.emplace_back(StructMember{
-          TypeNameWithPaddingOfSize(byte_length),  // type
-          BaseTypeToString(member.basetype),       // basetype
-          GetMemberNameAtIndex(struct_type, i),    // name
-          struct_member_offset,                    // offset
-          stride * array_elements,                 // byte_length
-          array_elements,                          // array_elements
-          0,                                       // element_padding
+          TypeNameWithPaddingOfSize(size),       // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          size,                                  // size
+          stride * array_elements,               // byte_length
+          array_elements,                        // array_elements
+          0,                                     // element_padding
       });
       current_byte_offset += stride * array_elements;
       continue;
@@ -743,6 +750,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
                 spirv_cross::SPIRType::BaseType::Void),  // basetype
             "_PADDING_",                                 // name
             current_byte_offset,                         // offset
+            padding,                                     // size
             padding,                                     // byte_length
             1,                                           // array_elements
             0,                                           // element_padding
@@ -901,6 +909,7 @@ Reflector::ReflectPerVertexStructDefinition(
         vertex_type.base_type_name,  // base type
         vertex_type.variable_name,   // name
         struc.byte_length,           // offset
+        vertex_type.byte_length,     // size
         vertex_type.byte_length,     // byte_length
         1,                           // array_elements
         0,                           // element_padding

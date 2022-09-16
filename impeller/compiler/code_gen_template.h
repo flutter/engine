@@ -209,6 +209,7 @@ ShaderMetadata Shader::kMetadata{{camel_case(buffer.name)}} = {
         "{{ member.name }}",         // name
         {{ member.offset }},         // offset
         {{ member.size }},           // size
+        {{ member.byte_length }},    // byte_length
         {{ member.array_elements }}, // array_elements
       },
     {% endfor %}
