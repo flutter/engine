@@ -24,7 +24,7 @@ namespace compiler {
 class Compiler {
  public:
   Compiler(const fml::Mapping& source_mapping,
-           SourceOptions options,
+           const SourceOptions& options,
            Reflector::Options reflector_options);
 
   ~Compiler();

@@ -17,7 +17,7 @@ class LazyGlyphAtlas {
 
   ~LazyGlyphAtlas();
 
-  void AddTextFrame(TextFrame frame);
+  void AddTextFrame(const TextFrame& frame);
 
   std::shared_ptr<GlyphAtlas> CreateOrGetGlyphAtlas(
       std::shared_ptr<Context> context) const;

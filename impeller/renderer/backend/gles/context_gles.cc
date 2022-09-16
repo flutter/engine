@@ -78,11 +78,11 @@ const ReactorGLES::Ref& ContextGLES::GetReactor() const {
 }
 
 std::optional<ReactorGLES::WorkerID> ContextGLES::AddReactorWorker(
-    std::shared_ptr<ReactorGLES::Worker> worker) {
+    const std::shared_ptr<ReactorGLES::Worker>& worker) {
   if (!IsValid()) {
     return std::nullopt;
   }
-  return reactor_->AddWorker(std::move(worker));
+  return reactor_->AddWorker(worker);
 }
 
 bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {

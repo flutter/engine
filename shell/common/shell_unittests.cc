@@ -8,6 +8,7 @@
 #include <ctime>
 #include <future>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "assets/directory_asset_bundle.h"
@@ -127,7 +128,8 @@ class MockSurface : public Surface {
 
 class MockPlatformView : public PlatformView {
  public:
-  MockPlatformView(MockPlatformViewDelegate& delegate, TaskRunners task_runners)
+  MockPlatformView(MockPlatformViewDelegate& delegate,
+                   const TaskRunners& task_runners)
       : PlatformView(delegate, task_runners) {}
   MOCK_METHOD0(CreateRenderingSurface, std::unique_ptr<Surface>());
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
@@ -136,7 +138,7 @@ class MockPlatformView : public PlatformView {
 
 class TestPlatformView : public PlatformView {
  public:
-  TestPlatformView(Shell& shell, TaskRunners task_runners)
+  TestPlatformView(Shell& shell, const TaskRunners& task_runners)
       : PlatformView(shell, task_runners) {}
   MOCK_METHOD0(CreateRenderingSurface, std::unique_ptr<Surface>());
 };
@@ -305,7 +307,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -320,7 +322,7 @@ TEST_F(ShellTest, InitializeWithSingleThread) {
   auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -334,7 +336,7 @@ TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
   auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -368,7 +370,7 @@ TEST_F(ShellTest,
       [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -391,7 +393,7 @@ TEST_F(ShellTest, InitializeWithDisabledGpu) {
       fml::SyncSwitch::Handlers().SetIfTrue([&] { is_disabled = true; }));
   ASSERT_TRUE(is_disabled);
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -411,7 +413,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   auto shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -734,7 +736,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
   bool end_frame_called = false;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         ASSERT_TRUE(raster_thread_merger.get() == nullptr);
         ASSERT_FALSE(should_resubmit_frame);
         end_frame_called = true;
@@ -753,7 +755,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -783,7 +785,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   MutatorsStack stack_75;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         if (end_frame_called)
           return;
         ASSERT_TRUE(raster_thread_merger.get() == nullptr);
@@ -809,7 +811,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto platform_view_layer = std::make_shared<PlatformViewLayer>(
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
     root->Add(platform_view_layer);
@@ -849,7 +851,7 @@ TEST_F(ShellTest,
   bool end_frame_called = false;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         ASSERT_TRUE(raster_thread_merger.get() != nullptr);
         ASSERT_TRUE(should_resubmit_frame);
         end_frame_called = true;
@@ -868,7 +870,7 @@ TEST_F(ShellTest,
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -901,7 +903,7 @@ TEST_F(ShellTest,
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> thread_merger) {
-        raster_thread_merger = thread_merger;
+        raster_thread_merger = std::move(thread_merger);
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
@@ -917,7 +919,7 @@ TEST_F(ShellTest,
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -960,7 +962,7 @@ TEST_F(ShellTest,
 
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(ThreadMergingLease);
 
@@ -986,7 +988,7 @@ TEST_F(ShellTest,
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -1034,7 +1036,7 @@ TEST_F(ShellTest,
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(kThreadMergingLease);
         }
@@ -1057,7 +1059,7 @@ TEST_F(ShellTest,
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -1110,7 +1112,7 @@ TEST_F(ShellTest,
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -1126,7 +1128,7 @@ TEST_F(ShellTest,
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -1170,7 +1172,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -1211,7 +1213,7 @@ TEST_F(ShellTest,
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -1237,7 +1239,7 @@ TEST_F(ShellTest,
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -1255,7 +1257,7 @@ TEST_F(ShellTest,
   // Validate the platform view can be recreated and destroyed again
   ValidateShell(shell.get());
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
@@ -1265,7 +1267,7 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
   bool used_this_frame = true;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         // We expect `used_this_frame` to be false.
         used_this_frame = external_view_embedder->GetUsedThisFrame();
         end_frame_latch.Signal();
@@ -1283,7 +1285,7 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -1319,7 +1321,7 @@ TEST_F(ShellTest,
 
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(10);
           external_view_embedder->UpdatePostPrerollResult(
@@ -1544,7 +1546,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   });
   ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::Max()));
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 static size_t GetRasterizerResourceCacheBytesSync(const Shell& shell) {
@@ -1680,7 +1682,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
             static_cast<size_t>(960000U));
 
   DestroyShell(std::move(second_shell), task_runners);
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, SetResourceCacheSize) {
@@ -1739,7 +1741,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 10000U);
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, SetResourceCacheSizeEarly) {
@@ -1766,7 +1768,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(3840000U));
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
@@ -1803,7 +1805,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(10000U));
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
@@ -1836,14 +1838,14 @@ TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
   RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 class MockTexture : public Texture {
  public:
   MockTexture(int64_t textureId,
               std::shared_ptr<fml::AutoResetWaitableEvent> latch)
-      : Texture(textureId), latch_(latch) {}
+      : Texture(textureId), latch_(std::move(latch)) {}
 
   ~MockTexture() override = default;
 
@@ -1912,7 +1914,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
   latch->Wait();
 
   EXPECT_EQ(mockTexture->unregistered(), true);
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
@@ -1950,7 +1952,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   });
 
   message_latch.Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
@@ -1979,7 +1981,7 @@ TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell]() { shell->GetPlatformView()->ScheduleFrame(); });
   check_latch.Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
@@ -2022,10 +2024,10 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
   count_down_latch.Wait();
   EXPECT_TRUE(is_on_begin_frame_called);
   EXPECT_TRUE(is_secondary_callback_called);
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
-static void LogSkData(sk_sp<SkData> data, const char* title) {
+static void LogSkData(const sk_sp<SkData>& data, const char* title) {
   FML_LOG(ERROR) << "---------- " << title;
   std::ostringstream ostr;
   for (size_t i = 0; i < data->size();) {
@@ -2056,7 +2058,7 @@ TEST_F(ShellTest, Screenshot) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
         this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto display_list_layer = std::make_shared<DisplayListLayer>(
@@ -2283,7 +2285,7 @@ TEST_F(ShellTest, CanRegisterImageDecoders) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->RegisterImageDecoder(
-            [](sk_sp<SkData> buffer) {
+            [](const sk_sp<SkData>& buffer) {
               return std::make_unique<SinglePixelImageGenerator>();
             },
             100);
@@ -2375,7 +2377,7 @@ TEST_F(ShellTest, RasterizerScreenshot) {
         latch->Signal();
       });
   latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
@@ -2406,7 +2408,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
         latch->Signal();
       });
   latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
@@ -2578,7 +2580,7 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_merge_thread,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -2637,7 +2639,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
   auto end_frame_callback =
       [&](bool should_merge_thread,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+          const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
         if (!raster_thread_merger_ref) {
           raster_thread_merger_ref = raster_thread_merger;
         }
@@ -2774,7 +2776,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   ASSERT_EQ(last_width, 600.0);
   ASSERT_EQ(last_height, 300.0);
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, OnServiceProtocolSetAssetBundlePathWorks) {
@@ -3374,7 +3376,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {
 
   ASSERT_FALSE(resolvers[1]->IsValidAfterAssetManagerChange());
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -3414,7 +3416,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
 
   ASSERT_FALSE(resolvers[1]->IsValidAfterAssetManagerChange());
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -3445,14 +3447,14 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
   asset_manager->PushBack(std::move(old_resolver));
 
   platform_view->UpdateAssetResolverByType(
-      std::move(nullptr), AssetResolver::AssetResolverType::kApkAssetProvider);
+      nullptr, AssetResolver::AssetResolverType::kApkAssetProvider);
 
   auto resolvers = asset_manager->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 2ull);
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
   ASSERT_TRUE(resolvers[1]->IsValidAfterAssetManagerChange());
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -3499,7 +3501,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
 
   ASSERT_FALSE(resolvers[2]->IsValidAfterAssetManagerChange());
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -3729,7 +3731,7 @@ TEST_F(ShellTest, UsesPlatformMessageHandler) {
         return result;
       };
   auto shell = CreateShell(
-      /*settings=*/std::move(settings),
+      /*settings=*/settings,
       /*task_runners=*/task_runners,
       /*simulate_vsync=*/false,
       /*shell_test_external_view_embedder=*/nullptr,

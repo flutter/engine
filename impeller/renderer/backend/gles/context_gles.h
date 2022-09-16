@@ -29,7 +29,7 @@ class ContextGLES final : public Context,
   const ReactorGLES::Ref& GetReactor() const;
 
   std::optional<ReactorGLES::WorkerID> AddReactorWorker(
-      std::shared_ptr<ReactorGLES::Worker> worker);
+      const std::shared_ptr<ReactorGLES::Worker>& worker);
 
   bool RemoveReactorWorker(ReactorGLES::WorkerID id);
 

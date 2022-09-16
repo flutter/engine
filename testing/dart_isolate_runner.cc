@@ -4,6 +4,8 @@
 
 #include "flutter/testing/dart_isolate_runner.h"
 
+#include <utility>
+
 #include "flutter/runtime/isolate_configuration.h"
 
 namespace flutter {
@@ -42,7 +44,7 @@ void AutoIsolateShutdown::Shutdown() {
 }
 
 [[nodiscard]] bool AutoIsolateShutdown::RunInIsolateScope(
-    std::function<bool(void)> closure) {
+    const std::function<bool(void)>& closure) {
   if (!IsValid()) {
     return false;
   }
@@ -70,7 +72,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     const std::vector<std::string>& args,
     const std::string& kernel_file_path,
     fml::WeakPtr<IOManager> io_manager,
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
   FML_CHECK(task_runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (!vm_ref) {
@@ -117,8 +119,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  UIDartState::Context context(std::move(task_runners));
-  context.io_manager = io_manager;
+  UIDartState::Context context(task_runners);
+  context.io_manager = std::move(io_manager);
   context.advisory_script_uri = "main.dart";
   context.advisory_script_entrypoint = entrypoint.c_str();
 

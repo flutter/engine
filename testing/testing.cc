@@ -4,6 +4,8 @@
 
 #include "testing.h"
 
+#include <utility>
+
 #include "flutter/fml/file.h"
 #include "flutter/fml/paths.h"
 
@@ -32,7 +34,7 @@ fml::UniqueFD OpenFixturesDirectory() {
   return fixtures_directory;
 }
 
-fml::UniqueFD OpenFixture(std::string fixture_name) {
+fml::UniqueFD OpenFixture(const std::string& fixture_name) {
   if (fixture_name.size() == 0) {
     FML_LOG(ERROR) << "Invalid fixture name.";
     return {};
@@ -55,7 +57,7 @@ fml::UniqueFD OpenFixture(std::string fixture_name) {
 }
 
 std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(std::string fixture_name) {
-  return fml::FileMapping::CreateReadOnly(OpenFixture(fixture_name));
+  return fml::FileMapping::CreateReadOnly(OpenFixture(std::move(fixture_name)));
 }
 
 bool MemsetPatternSetOrCheck(uint8_t* buffer, size_t size, MemsetPatternOp op) {

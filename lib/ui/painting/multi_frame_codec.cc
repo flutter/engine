@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 
+#include <utility>
+
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -27,7 +29,7 @@ MultiFrameCodec::State::State(std::shared_ptr<ImageGenerator> generator)
       nextFrameIndex_(0) {}
 
 static void InvokeNextFrameCallback(
-    fml::RefPtr<CanvasImage> image,
+    const fml::RefPtr<CanvasImage>& image,
     int duration,
     std::unique_ptr<DartPersistentValue> callback,
     size_t trace_id) {
@@ -151,7 +153,7 @@ sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
 
 void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     std::unique_ptr<DartPersistentValue> callback,
-    fml::RefPtr<fml::TaskRunner> ui_task_runner,
+    const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
     fml::WeakPtr<GrDirectContext> resourceContext,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
@@ -159,7 +161,7 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
   fml::RefPtr<CanvasImage> image = nullptr;
   int duration = 0;
   sk_sp<SkImage> skImage =
-      GetNextFrameImage(resourceContext, gpu_disable_sync_switch);
+      GetNextFrameImage(std::move(resourceContext), gpu_disable_sync_switch);
   if (skImage) {
     image = CanvasImage::Create();
     image->set_image(DlImageGPU::Make({skImage, std::move(unref_queue)}));

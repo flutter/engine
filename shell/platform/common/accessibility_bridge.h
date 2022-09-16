@@ -222,7 +222,8 @@ class AccessibilityBridge
   std::unique_ptr<AccessibilityBridgeDelegate> delegate_;
 
   void InitAXTree(const ui::AXTreeUpdate& initial_state);
-  void GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result);
+  void GetSubTreeList(const SemanticsNode& target,
+                      std::vector<SemanticsNode>& result);
   void ConvertFlutterUpdate(const SemanticsNode& node,
                             ui::AXTreeUpdate& tree_update);
   void SetRoleFromFlutterUpdate(ui::AXNodeData& node_data,

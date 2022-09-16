@@ -13,7 +13,7 @@ sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(
     const SkImageInfo& image_info,
     sk_sp<DisplayList> display_list,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPU>(new DlDeferredImageGPU(
       ImageWrapper::Make(image_info, std::move(display_list),
@@ -26,7 +26,7 @@ sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::MakeFromLayerTree(
     const SkImageInfo& image_info,
     std::shared_ptr<LayerTree> layer_tree,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPU>(new DlDeferredImageGPU(
       ImageWrapper::MakeFromLayerTree(
@@ -43,14 +43,14 @@ DlDeferredImageGPU::DlDeferredImageGPU(
 
 // |DlImage|
 DlDeferredImageGPU::~DlDeferredImageGPU() {
-  fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner_, [image_wrapper = std::move(image_wrapper_)]() {
-        if (!image_wrapper) {
-          return;
-        }
-        image_wrapper->Unregister();
-        image_wrapper->DeleteTexture();
-      });
+  fml::TaskRunner::RunNowOrPostTask(raster_task_runner_,
+                                    [image_wrapper = image_wrapper_]() {
+                                      if (!image_wrapper) {
+                                        return;
+                                      }
+                                      image_wrapper->Unregister();
+                                      image_wrapper->DeleteTexture();
+                                    });
 }
 
 // |DlImage|
@@ -192,7 +192,7 @@ void DlDeferredImageGPU::ImageWrapper::SnapshotDisplayList(
           wrapper->image_ = std::move(result->image);
         } else {
           std::scoped_lock lock(wrapper->error_mutex_);
-          wrapper->error_ = std::move(result->error);
+          wrapper->error_ = result->error;
         }
       });
 }
@@ -211,7 +211,7 @@ void DlDeferredImageGPU::ImageWrapper::Unregister() {
 
 void DlDeferredImageGPU::ImageWrapper::DeleteTexture() {
   if (texture_.isValid()) {
-    unref_queue_->DeleteTexture(std::move(texture_));
+    unref_queue_->DeleteTexture(texture_);
     texture_ = GrBackendTexture();
   }
   image_.reset();

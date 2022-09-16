@@ -13,16 +13,16 @@
 namespace flutter {
 
 ImageDecoderSkia::ImageDecoderSkia(
-    TaskRunners runners,
+    const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     fml::WeakPtr<IOManager> io_manager)
-    : ImageDecoder(std::move(runners),
+    : ImageDecoder(runners,
                    std::move(concurrent_task_runner),
                    std::move(io_manager)) {}
 
 ImageDecoderSkia::~ImageDecoderSkia() = default;
 
-static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
+static sk_sp<SkImage> ResizeRasterImage(const sk_sp<SkImage>& image,
                                         const SkISize& resized_dimensions,
                                         const fml::tracing::TraceFlow& flow) {
   FML_DCHECK(!image->isTextureBacked());
@@ -159,7 +159,7 @@ sk_sp<SkImage> ImageDecoderSkia::ImageFromCompressedData(
 
 static SkiaGPUObject<SkImage> UploadRasterImage(
     sk_sp<SkImage> image,
-    fml::WeakPtr<IOManager> io_manager,
+    const fml::WeakPtr<IOManager>& io_manager,
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);

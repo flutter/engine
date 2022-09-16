@@ -59,7 +59,7 @@ fml::UniqueFD OpenFixturesDirectory();
 /// @return     The file descriptor of the given fixture. An invalid file
 ///             descriptor is returned in case the fixture is not found.
 ///
-fml::UniqueFD OpenFixture(std::string fixture_name);
+fml::UniqueFD OpenFixture(const std::string& fixture_name);
 
 //------------------------------------------------------------------------------
 /// @brief      Opens a fixture of the given file name and returns a mapping to

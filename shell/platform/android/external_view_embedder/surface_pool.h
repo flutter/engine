@@ -55,8 +55,8 @@ class SurfacePool {
   std::shared_ptr<OverlayLayer> GetLayer(
       GrDirectContext* gr_context,
       const AndroidContext& android_context,
-      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-      std::shared_ptr<AndroidSurfaceFactory> surface_factory);
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      const std::shared_ptr<AndroidSurfaceFactory>& surface_factory);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -103,7 +103,8 @@ class SurfacePool {
   // Used to guard public methods.
   std::mutex mutex_;
 
-  void DestroyLayersLocked(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  void DestroyLayersLocked(
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
 };
 
 }  // namespace flutter

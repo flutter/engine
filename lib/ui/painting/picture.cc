@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/painting/picture.h"
 
 #include <memory>
+#include <utility>
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/canvas.h"
@@ -71,7 +72,7 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   auto dl_image = DlDeferredImageGPU::Make(
       image_info, std::move(display_list), std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue));
+      raster_task_runner, std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }
@@ -93,7 +94,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<DisplayList> display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
-  return RasterizeToImage(display_list, nullptr, width, height,
+  return RasterizeToImage(std::move(display_list), nullptr, width, height,
                           raw_image_callback);
 }
 
@@ -106,7 +107,7 @@ Dart_Handle Picture::RasterizeLayerTreeToImage(
                           raw_image_callback);
 }
 
-Dart_Handle Picture::RasterizeToImage(sk_sp<DisplayList> display_list,
+Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       std::shared_ptr<LayerTree> layer_tree,
                                       uint32_t width,
                                       uint32_t height,
@@ -158,7 +159,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<DisplayList> display_list,
 
         auto dart_image = CanvasImage::Create();
         dart_image->set_image(image);
-        auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
+        auto* raw_dart_image = tonic::ToDart(dart_image);
 
         // All done!
         tonic::DartInvoke(image_callback->Get(), {raw_dart_image});

@@ -13,7 +13,7 @@ LazyGlyphAtlas::LazyGlyphAtlas() = default;
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
-void LazyGlyphAtlas::AddTextFrame(TextFrame frame) {
+void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame) {
   FML_DCHECK(!atlas_);
   frames_.emplace_back(std::move(frame));
 }

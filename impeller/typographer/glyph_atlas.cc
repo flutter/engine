@@ -26,7 +26,8 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
   texture_ = std::move(texture);
 }
 
-void GlyphAtlas::AddTypefaceGlyphPosition(FontGlyphPair pair, Rect rect) {
+void GlyphAtlas::AddTypefaceGlyphPosition(const FontGlyphPair& pair,
+                                          Rect rect) {
   if (callback_.has_value()) {
     auto has_color = callback_.value()(pair);
     has_color_glyph |= has_color;
@@ -63,8 +64,8 @@ size_t GlyphAtlas::GetGlyphCount() const {
 }
 
 size_t GlyphAtlas::IterateGlyphs(
-    std::function<bool(const FontGlyphPair& pair, const Rect& rect)> iterator)
-    const {
+    const std::function<bool(const FontGlyphPair& pair, const Rect& rect)>&
+        iterator) const {
   if (!iterator) {
     return 0u;
   }

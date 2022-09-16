@@ -97,7 +97,7 @@ std::shared_ptr<fml::Mapping> CreateMappingWithCopy(const uint8_t* contents,
 }
 
 std::shared_ptr<fml::Mapping> CreateMappingFromAllocation(
-    std::shared_ptr<Allocation> allocation) {
+    const std::shared_ptr<Allocation>& allocation) {
   if (!allocation) {
     return nullptr;
   }

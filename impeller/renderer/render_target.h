@@ -22,7 +22,7 @@ class RenderTarget {
   static RenderTarget CreateOffscreen(
       const Context& context,
       ISize size,
-      std::string label = "Offscreen",
+      const std::string& label = "Offscreen",
       StorageMode color_storage_mode = StorageMode::kDevicePrivate,
       LoadAction color_load_action = LoadAction::kClear,
       StoreAction color_store_action = StoreAction::kStore,
@@ -33,7 +33,7 @@ class RenderTarget {
   static RenderTarget CreateOffscreenMSAA(
       const Context& context,
       ISize size,
-      std::string label = "Offscreen MSAA",
+      const std::string& label = "Offscreen MSAA",
       StorageMode color_storage_mode = StorageMode::kDeviceTransient,
       StorageMode color_resolve_storage_mode = StorageMode::kDevicePrivate,
       LoadAction color_load_action = LoadAction::kClear,
@@ -58,7 +58,8 @@ class RenderTarget {
 
   std::optional<ISize> GetColorAttachmentSize(size_t index) const;
 
-  RenderTarget& SetColorAttachment(ColorAttachment attachment, size_t index);
+  RenderTarget& SetColorAttachment(const ColorAttachment& attachment,
+                                   size_t index);
 
   RenderTarget& SetDepthAttachment(DepthAttachment attachment);
 
@@ -76,7 +77,7 @@ class RenderTarget {
   std::optional<StencilAttachment> stencil_;
 
   void IterateAllAttachments(
-      std::function<bool(const Attachment& attachment)> iterator) const;
+      const std::function<bool(const Attachment& attachment)>& iterator) const;
 };
 
 }  // namespace impeller

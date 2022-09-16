@@ -4,6 +4,8 @@
 
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 
+#include <utility>
+
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
@@ -27,7 +29,7 @@ TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
 TextRenderContextSkia::~TextRenderContextSkia() = default;
 
 static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
-    TextRenderContext::FrameIterator frame_iterator) {
+    const TextRenderContext::FrameIterator& frame_iterator) {
   FontGlyphPair::Set set;
   while (auto frame = frame_iterator()) {
     for (const auto& run : frame->GetRuns()) {
@@ -44,10 +46,10 @@ static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
     TextRenderContext::FrameIterator frame_iterator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FontGlyphPair::Vector vector;
-  auto set = CollectUniqueFontGlyphPairsSet(frame_iterator);
+  auto set = CollectUniqueFontGlyphPairsSet(std::move(frame_iterator));
   vector.reserve(set.size());
   for (const auto& item : set) {
-    vector.emplace_back(std::move(item));
+    vector.emplace_back(item);
   }
   return vector;
 }
@@ -155,7 +157,7 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 }
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
-    std::shared_ptr<Allocator> allocator,
+    const std::shared_ptr<Allocator>& allocator,
     std::shared_ptr<SkBitmap> bitmap,
     size_t atlas_size,
     PixelFormat format) {
