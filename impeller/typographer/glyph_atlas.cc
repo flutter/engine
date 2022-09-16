@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/typographer/glyph_atlas.h"
+#include <iostream>
 
 namespace impeller {
 

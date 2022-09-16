@@ -15,8 +15,8 @@
 #include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/src/core/SkIPoint16.h"   //nogncheck
-#include "third_party/skia/src/gpu/GrRectanizer.h"  //nogncheck
+#include "third_party/skia/src/core/SkIPoint16.h"   // nogncheck
+#include "third_party/skia/src/gpu/GrRectanizer.h"  // nogncheck
 
 namespace impeller {
 
@@ -37,6 +37,7 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
           font = Font(font.GetTypeface(), {.point_size = 16.0f});
           break;
         case GlyphAtlas::Type::kAlphaBitmap:
+        case GlyphAtlas::Type::kColorBitmap:
           break;
       }
       for (const auto& glyph_position : run.GetGlyphPositions()) {
@@ -117,6 +118,7 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
   SkImageInfo image_info;
+
   switch (atlas.GetType()) {
     case GlyphAtlas::Type::kSignedDistanceField:
       image_info = SkImageInfo::Make(atlas_size, atlas_size,
@@ -125,7 +127,11 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     case GlyphAtlas::Type::kAlphaBitmap:
       image_info = SkImageInfo::MakeA8(atlas_size, atlas_size);
       break;
+    case GlyphAtlas::Type::kColorBitmap:
+      image_info = SkImageInfo::MakeN32Premul(atlas_size, atlas_size);
+      break;
   }
+
   if (!bitmap->tryAllocPixels(image_info)) {
     return nullptr;
   }
@@ -140,24 +146,21 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
                                const Rect& location) -> bool {
-    const auto position =
-        SkPoint::Make(location.origin.x / font_glyph.font.GetMetrics().scale,
-                      location.origin.y / font_glyph.font.GetMetrics().scale);
+    const auto& metrics = font_glyph.font.GetMetrics();
+    const auto position = SkPoint::Make(location.origin.x / metrics.scale,
+                                        location.origin.y / metrics.scale);
     SkGlyphID glyph_id = font_glyph.glyph.index;
 
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-        font_glyph.font.GetMetrics().point_size);
-
-    const auto& metrics = font_glyph.font.GetMetrics();
+        metrics.point_size);
 
     auto glyph_color = SK_ColorWHITE;
 
     SkPaint glyph_paint;
     glyph_paint.setColor(glyph_color);
     canvas->resetMatrix();
-    canvas->scale(font_glyph.font.GetMetrics().scale,
-                  font_glyph.font.GetMetrics().scale);
+    canvas->scale(metrics.scale, metrics.scale);
     canvas->drawGlyphs(1u,         // count
                        &glyph_id,  // glyphs
                        &position,  // positions
@@ -175,7 +178,8 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     std::shared_ptr<Allocator> allocator,
     std::shared_ptr<SkBitmap> bitmap,
-    size_t atlas_size) {
+    size_t atlas_size,
+    PixelFormat format) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!allocator) {
     return nullptr;
@@ -186,7 +190,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 
   TextureDescriptor texture_descriptor;
   texture_descriptor.storage_mode = StorageMode::kHostVisible;
-  texture_descriptor.format = PixelFormat::kA8UNormInt;
+  texture_descriptor.format = format;
   texture_descriptor.size = ISize::MakeWH(atlas_size, atlas_size);
 
   if (pixmap.rowBytes() * pixmap.height() !=
@@ -270,8 +274,18 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 6: Upload the atlas as a texture.
   // ---------------------------------------------------------------------------
+  PixelFormat format;
+  switch (type) {
+    case GlyphAtlas::Type::kSignedDistanceField:
+    case GlyphAtlas::Type::kAlphaBitmap:
+      format = PixelFormat::kA8UNormInt;
+      break;
+    case GlyphAtlas::Type::kColorBitmap:
+      format = PixelFormat::kR8G8B8A8UNormInt;
+      break;
+  }
   auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
-                                         bitmap, atlas_size);
+                                         bitmap, atlas_size, format);
   if (!texture) {
     return nullptr;
   }

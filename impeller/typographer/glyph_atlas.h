@@ -39,9 +39,11 @@ class GlyphAtlas {
     ///
     kAlphaBitmap,
 
-    // TODO(dnfield): Decide if we need this to support COLR fonts.
-    // https://github.com/flutter/flutter/issues/111599
-    // kColorBitmap,
+    //--------------------------------------------------------------------------
+    /// The glyphs are reprsented at their requested size using N32 premul
+    /// colors.
+    ///
+    kColorBitmap,
   };
 
   //----------------------------------------------------------------------------
@@ -57,6 +59,7 @@ class GlyphAtlas {
 
   //----------------------------------------------------------------------------
   /// @brief      Describes how the glyphs are represented in the texture.
+  ///
   Type GetType() const;
 
   //----------------------------------------------------------------------------

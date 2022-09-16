@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/text_contents.h"
 
+#include <iostream>
 #include <optional>
 
 #include "impeller/entity/contents/content_context.h"
@@ -39,7 +40,9 @@ std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     std::shared_ptr<Context> context) const {
   if (auto lazy_atlas = std::get_if<std::shared_ptr<LazyGlyphAtlas>>(&atlas_)) {
     return lazy_atlas->get()->CreateOrGetGlyphAtlas(
-        GlyphAtlas::Type::kAlphaBitmap, context);
+        frame_.HasColor() ? GlyphAtlas::Type::kColorBitmap
+                          : GlyphAtlas::Type::kAlphaBitmap,
+        context);
   }
 
   if (auto atlas = std::get_if<std::shared_ptr<GlyphAtlas>>(&atlas_)) {
@@ -90,15 +93,18 @@ bool TextContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
-  frame_info.atlas_size =
-      Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
-            static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
-  frame_info.text_color = ToVector(color_.Premultiply());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
+
+  FS::FragInfo frag_info;
+  frag_info.text_color = ToVector(color_.Premultiply());
+  frag_info.atlas_size =
+      Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
+            static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   // Common fragment uniforms for all glyphs.
   FS::BindGlyphAtlasSampler(
@@ -124,11 +130,13 @@ bool TextContents::Render(const ContentContext& renderer,
     auto font = run.GetFont();
     auto glyph_size = ISize::Ceil(font.GetMetrics().GetBoundingBox().size);
     for (const auto& glyph_position : run.GetGlyphPositions()) {
+      FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
+      auto color_glyph =
+          glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
       for (const auto& point : unit_vertex_points) {
         VS::PerVertexData vtx;
         vtx.unit_vertex = point;
 
-        FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
         auto atlas_glyph_pos = atlas->FindFontGlyphPosition(font_glyph_pair);
         if (!atlas_glyph_pos.has_value()) {
           VALIDATION_LOG << "Could not find glyph position in the atlas.";
@@ -144,6 +152,7 @@ bool TextContents::Render(const ContentContext& renderer,
                                             1 / atlas_glyph_pos->size.height};
         vtx.atlas_glyph_size =
             Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
+        vtx.color_glyph = color_glyph;
         vertex_builder.AppendVertex(std::move(vtx));
       }
     }
