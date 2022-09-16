@@ -4,27 +4,32 @@
 
 #include "flutter/fml/backtrace.h"
 
-#include <cxxabi.h>
-#include <dlfcn.h>
-#include <execinfo.h>
-
 #include <csignal>
 #include <sstream>
 
-#if FML_OS_WIN
-#include <crtdbg.h>
-#include <debugapi.h>
-#endif
-
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "third_party/abseil-cpp/absl/debugging/symbolize.h"
+
+#ifdef FML_OS_WIN
+#include <Windows.h>
+#include <crtdbg.h>
+#include <debugapi.h>
+#else  // FML_OS_WIN
+#include <cxxabi.h>
+#include <dlfcn.h>
+#include <execinfo.h>
+#endif  // FML_OS_WIN
 
 namespace fml {
 
 static std::string kKUnknownFrameName = "Unknown";
 
 static std::string DemangleSymbolName(const std::string& mangled) {
+#if FML_OS_WIN
+  return mangled;
+#else
   if (mangled == kKUnknownFrameName) {
     return kKUnknownFrameName;
   }
@@ -44,6 +49,7 @@ static std::string DemangleSymbolName(const std::string& mangled) {
   auto demangled_string = std::string{demangled, length};
   free(demangled);
   return demangled_string;
+#endif  // FML_OS_WIN
 }
 
 static std::string GetSymbolName(void* symbol) {
@@ -55,10 +61,18 @@ static std::string GetSymbolName(void* symbol) {
   return DemangleSymbolName({name});
 }
 
+static int Backtrace(void** symbols, int size) {
+#if FML_OS_WIN
+  return CaptureStackBackTrace(0, size, symbols, NULL);
+#else
+  return ::backtrace(symbols, size);
+#endif  // FML_OS_WIN
+}
+
 std::string BacktraceHere(size_t offset) {
   constexpr size_t kMaxFrames = 256;
   void* symbols[kMaxFrames];
-  const auto available_frames = ::backtrace(symbols, kMaxFrames);
+  const auto available_frames = Backtrace(symbols, kMaxFrames);
   if (available_frames <= 0) {
     return "";
   }
@@ -74,12 +88,15 @@ std::string BacktraceHere(size_t offset) {
 static size_t kKnownSignalHandlers[] = {
     SIGABRT,  // abort program
     SIGFPE,   // floating-point exception
-    SIGBUS,   // bus error
+    SIGTERM,  // software termination signal
     SIGSEGV,  // segmentation violation
+#if !FML_OS_WIN
+    SIGBUS,   // bus error
     SIGSYS,   // non-existent system call invoked
     SIGPIPE,  // write on a pipe with no reader
     SIGALRM,  // real-time timer expired
-    SIGTERM,  // software termination signal
+
+#endif  // !FML_OS_WIN
 };
 
 static std::string SignalNameToString(int signal) {
@@ -88,18 +105,20 @@ static std::string SignalNameToString(int signal) {
       return "SIGABRT";
     case SIGFPE:
       return "SIGFPE";
-    case SIGBUS:
-      return "SIGBUS";
     case SIGSEGV:
       return "SIGSEGV";
+    case SIGTERM:
+      return "SIGTERM";
+#if !FML_OS_WIN
+    case SIGBUS:
+      return "SIGBUS";
     case SIGSYS:
       return "SIGSYS";
     case SIGPIPE:
       return "SIGPIPE";
     case SIGALRM:
       return "SIGALRM";
-    case SIGTERM:
-      return "SIGTERM";
+#endif  // !FML_OS_WIN
   };
   return std::to_string(signal);
 }
