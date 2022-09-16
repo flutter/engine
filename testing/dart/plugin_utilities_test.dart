@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
@@ -19,34 +18,6 @@ class Foo {
 }
 
 const Foo foo = Foo();
-
-@pragma('vm:entry-point')
-Future<void> included() async {
-
-}
-
-Future<void> excluded() async {
-
-}
-
-@pragma('vm:entry-point')
-Future<void> runCallback(IsolateParam param) async {
-  try {
-    final Future<dynamic> Function() func = PluginUtilities.getCallbackFromHandle(CallbackHandle.fromRawHandle(param.rawHandle))! as Future<dynamic> Function();
-    await func.call();
-    param.sendPort.send(true);
-  }
-  catch (e) {
-    print(e);
-    param.sendPort.send(false);
-  }
-}
-
-class IsolateParam {
-  const IsolateParam(this.sendPort, this.rawHandle);
-  final SendPort sendPort;
-  final int rawHandle;
-}
 
 void main() {
   test('PluginUtilities Callback Handles', () {
@@ -71,19 +42,5 @@ void main() {
     // Anonymous closures cannot be looked up.
     final Function anon = (int a, int b) => a + b; // ignore: prefer_function_declarations_over_variables
     expect(PluginUtilities.getCallbackHandle(anon), isNull);
-  });
-
-  test('PluginUtilities Callback Handles in Isolate', () async {
-    if (!const bool.fromEnvironment('dart.vm.product')) {
-      return;
-    }
-    ReceivePort port = ReceivePort();
-    await Isolate.spawn(runCallback, IsolateParam(port.sendPort, PluginUtilities.getCallbackHandle(included)!.toRawHandle()));
-    expect(await port.first, true);
-    port.close();
-    port = ReceivePort();
-    await Isolate.spawn(runCallback, IsolateParam(port.sendPort, PluginUtilities.getCallbackHandle(excluded)!.toRawHandle()));
-    expect(await port.first, false);
-    port.close();
   });
 }
