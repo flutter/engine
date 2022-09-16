@@ -57,7 +57,8 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix);
   }
 
-  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+  AutoCache cache =
+      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
 
   SkRect child_bounds = SkRect::MakeEmpty();
 

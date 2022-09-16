@@ -43,7 +43,8 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix);
   }
 
-  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+  AutoCache cache =
+      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
 
   ContainerLayer::Preroll(context, child_matrix);
   // We always paint with a saveLayer (or a cached rendering),
