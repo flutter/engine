@@ -100,11 +100,9 @@ class Scrollable extends RoleManager {
 
   @override
   void update() {
-    // We neutralize the scroll position after all children have been
-    // updated. Otherwise the browser does not yet have the sizes of the
-    // child nodes and resets the scrollTop value back to zero.
     semanticsObject.owner.addOneTimePostUpdateCallback(() {
       _neutralizeDomScrollPosition();
+      semanticsObject.recomputePositionAndSize();
     });
 
     if (_scrollListener == null) {
