@@ -53,6 +53,9 @@ class GlyphAtlas {
   void SetFontColorCallback(
       std::function<bool(const FontGlyphPair& pair)> callback);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Whether the provided glyph-font pair contains color.
+  ///
   bool IsColorFontGlyphPair(const FontGlyphPair& pair) const;
 
   //----------------------------------------------------------------------------

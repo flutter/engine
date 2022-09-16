@@ -204,6 +204,7 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
 
   auto glyph_atlas = std::make_shared<GlyphAtlas>();
   glyph_atlas->SetFontColorCallback([](const FontGlyphPair& font_glyph) {
+    // TODO(jonahwilliams): ask Skia for a public API to look this up.
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
         font_glyph.font.GetMetrics().point_size);
