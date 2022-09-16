@@ -25,7 +25,7 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
   if (stops.size() == 2) {
     texture_size = 2;
   } else {
-    auto minimum_delta = 1.0; 
+    auto minimum_delta = 1.0;
     for (size_t i = 1; i < stops.size(); i++) {
       auto value = stops[i] - stops[i - 1];
       if (value < kEhCloseEnough) {
