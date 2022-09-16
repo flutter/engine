@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
+#include <dxgi.h>
+#include <wrl/client.h>
 #include <thread>
 
 #include "flutter/fml/synchronization/count_down_latch.h"
@@ -36,6 +38,32 @@ TEST_F(WindowsTest, LaunchMain) {
   WindowsConfigBuilder builder(context);
   ViewControllerPtr controller{builder.Run()};
   ASSERT_NE(controller, nullptr);
+}
+
+// Verify there is no unexpected output from launching main.
+TEST_F(WindowsTest, LaunchMainHasNoOutput) {
+  // Replace stdout & stderr stream buffers with our own.
+  std::stringstream cout_buffer;
+  std::stringstream cerr_buffer;
+  std::streambuf* old_cout_buffer = std::cout.rdbuf();
+  std::streambuf* old_cerr_buffer = std::cerr.rdbuf();
+  std::cout.rdbuf(cout_buffer.rdbuf());
+  std::cerr.rdbuf(cerr_buffer.rdbuf());
+
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  // Restore original stdout & stderr stream buffer.
+  std::cout.rdbuf(old_cout_buffer);
+  std::cerr.rdbuf(old_cerr_buffer);
+
+  // Verify stdout & stderr have no output.
+  std::string cout = cout_buffer.str();
+  std::string cerr = cerr_buffer.str();
+  EXPECT_TRUE(cout.empty());
+  EXPECT_TRUE(cerr.empty());
 }
 
 // Verify we can successfully launch a custom entry point.
@@ -225,6 +253,20 @@ TEST_F(WindowsTest, NextFrameCallback) {
   });
 
   captures.frame_drawn_latch.Wait();
+}
+
+TEST_F(WindowsTest, GetGraphicsAdapter) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+  auto view = FlutterDesktopViewControllerGetView(controller.get());
+
+  Microsoft::WRL::ComPtr<IDXGIAdapter> dxgi_adapter;
+  dxgi_adapter = FlutterDesktopViewGetGraphicsAdapter(view);
+  ASSERT_NE(dxgi_adapter, nullptr);
+  DXGI_ADAPTER_DESC desc{};
+  ASSERT_TRUE(SUCCEEDED(dxgi_adapter->GetDesc(&desc)));
 }
 
 }  // namespace testing

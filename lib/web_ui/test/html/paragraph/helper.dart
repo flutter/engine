@@ -45,10 +45,8 @@ CanvasParagraph rich(
 Future<void> takeScreenshot(
   EngineCanvas canvas,
   Rect region,
-  String fileName, {
-  bool write = false,
-  double? maxDiffRatePercent,
-}) async {
+  String fileName,
+) async {
   final DomElement sceneElement = createDomElement('flt-scene');
   if (isIosSafari) {
     // Shrink to fit on the iPhone screen.
@@ -62,8 +60,6 @@ Future<void> takeScreenshot(
     await matchGoldenFile(
       '$fileName.png',
       region: region,
-      maxDiffRatePercent: maxDiffRatePercent,
-      write: write,
     );
   } finally {
     // The page is reused across tests, so remove the element after taking the

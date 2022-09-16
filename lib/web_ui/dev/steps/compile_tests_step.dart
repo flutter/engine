@@ -23,10 +23,12 @@ import '../utils.dart';
 ///  * test/        - compiled test code
 ///  * test_images/ - test images copied from Skis sources.
 class CompileTestsStep implements PipelineStep {
-  CompileTestsStep({this.testFiles, this.wasm = false});
+  CompileTestsStep({this.testFiles, this.useLocalCanvasKit = false, this.wasm = false});
 
   final List<FilePath>? testFiles;
   final bool wasm;
+
+  final bool useLocalCanvasKit;
 
   @override
   String get description => 'compile_tests';
@@ -42,7 +44,7 @@ class CompileTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webUiBuildDir.create();
-    await copyCanvasKitFiles();
+    await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
@@ -123,11 +125,13 @@ Future<void> copySkiaTestImages() async {
   }
 }
 
-Future<void> copyCanvasKitFiles() async {
+Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
-  final io.File localCanvasKitWasm =
-      io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.wasm'));
-  final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
+  final io.File localCanvasKitWasm = io.File(pathlib.join(
+    environment.wasmReleaseOutDir.path,
+    'canvaskit.wasm',
+  ));
+  final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync() && useLocalCanvasKit;
 
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
@@ -137,7 +141,10 @@ Future<void> copyCanvasKitFiles() async {
   if (builtLocalCanvasKit) {
     final List<io.File> canvasKitFiles = <io.File>[
       localCanvasKitWasm,
-      io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.js')),
+      io.File(pathlib.join(
+        environment.wasmReleaseOutDir.path,
+        'canvaskit.js',
+      )),
     ];
     for (final io.File file in canvasKitFiles) {
       final io.File normalTargetFile = io.File(pathlib.join(
@@ -285,7 +292,6 @@ Future<bool> compileUnitTestToJS(FilePath input, {required bool forCanvasKit, re
     '--no-minify',
     '--disable-inlining',
     '--enable-asserts',
-    '--no-sound-null-safety',
 
     // We do not want to auto-select a renderer in tests. As of today, tests
     // are designed to run in one specific mode. So instead, we specify the

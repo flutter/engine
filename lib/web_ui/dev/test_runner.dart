@@ -77,6 +77,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       ..addFlag(
         'wasm',
         help: 'Whether the test we are running are compiled to webassembly.'
+      )
+      ..addOption(
+        'use-local-canvaskit',
+        help: 'Optional. Whether or not to use the locally built version of '
+              'CanvasKit in the tests.',
       );
   }
 
@@ -121,6 +126,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Path to a CanvasKit build. Overrides the default CanvasKit.
   String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
 
+  /// Whether or not to use the locally built version of CanvasKit.
+  bool get useLocalCanvasKit => boolArg('use-local-canvaskit');
+
   @override
   Future<bool> run() async {
     final List<FilePath> testFiles = runAllTests
@@ -129,7 +137,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      CompileTestsStep(testFiles: testFiles, wasm: wasm),
+      CompileTestsStep(testFiles: testFiles, useLocalCanvasKit: useLocalCanvasKit, wasm: wasm),
       RunTestsStep(
         browserName: browserName,
         testFiles: testFiles,

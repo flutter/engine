@@ -1,7 +1,8 @@
 # Prefix check with "-" to ignore.
-Checks: "google-*,\
+Checks: "bugprone-use-after-move,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
+google-*,\
 modernize-use-default-member-init,\
 readability-identifier-naming,\
 -google-objc-global-variable-declaration,\
@@ -16,7 +17,8 @@ readability-identifier-naming,\
 # Add checks when all warnings are fixed
 # to prevent new warnings being introduced.
 # https://github.com/flutter/flutter/issues/93279
-WarningsAsErrors: "clang-analyzer-*,\
+WarningsAsErrors: "bugprone-use-after-move,\
+clang-analyzer-*,\
 readability-identifier-naming,\
 clang-diagnostic-*,\
 google-objc-*,\
@@ -29,6 +31,8 @@ CheckOptions:
     value:  'CamelCase'
   - key:    readability-identifier-naming.EnumConstantPrefix
     value:  'k'
+  - key:    readability-identifier-naming.GlobalConstantCase
+    value:  'CamelCase'
   - key:    readability-identifier-naming.GlobalConstantPrefix
     value:  'k'
   - key:    readability-identifier-naming.PrivateMemberCase

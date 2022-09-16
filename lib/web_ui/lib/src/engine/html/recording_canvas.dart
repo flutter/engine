@@ -23,16 +23,8 @@ import 'shaders/image_shader.dart';
 /// Enable this to print every command applied by a canvas.
 const bool _debugDumpPaintCommands = false;
 
-// Returns the squared length of the x, y (of a border radius)
-// It normalizes x, y values before working with them, by
-// assuming anything < 0 to be 0, because flutter may pass
-// negative radii (which Skia assumes to be 0), see:
-// https://skia.org/user/api/SkRRect_Reference#SkRRect_inset
-double _measureBorderRadius(double x, double y) {
-  final double clampedX = x < 0 ? 0 : x;
-  final double clampedY = y < 0 ? 0 : y;
-  return clampedX * clampedX + clampedY * clampedY;
-}
+// Returns the squared length of the x, y (of a border radius).
+double _measureBorderRadius(double x, double y) => x*x + y*y;
 
 /// Records canvas commands to be applied to a [EngineCanvas].
 ///
@@ -494,6 +486,20 @@ class RecordingCanvas {
       final ui.RRect? rrect = sPath.toRoundedRect();
       if (rrect != null) {
         drawRRect(rrect, paint);
+        return;
+      }
+      // Use drawRect for straight line paths painted with a zero strokeWidth
+      final ui.Rect? line = sPath.toStraightLine();
+      if (line != null && paint.strokeWidth == 0) {
+        final double left = math.min(line.left, line.right);
+        final double top = math.min(line.top, line.bottom);
+        final double width = line.width.abs();
+        final double height = line.height.abs();
+        final double inflatedHeight = line.height == 0 ? 1 : height;
+        final double inflatedWidth = line.width == 0 ? 1 : width;
+        final ui.Size inflatedSize = ui.Size(inflatedWidth, inflatedHeight);
+        paint.style = ui.PaintingStyle.fill;
+        drawRect(ui.Offset(left, top) & inflatedSize, paint);
         return;
       }
     }
