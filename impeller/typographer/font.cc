@@ -12,7 +12,10 @@ Font::Font(std::shared_ptr<Typeface> typeface, Metrics metrics)
     return;
   }
   is_valid_ = true;
-  has_color_ = typeface_->HasColor();
+}
+
+bool Font::HasColor(const Glyph& glyph) const {
+  return false;
 }
 
 Font::~Font() = default;

@@ -39,24 +39,6 @@ Rect TypefaceSkia::GetBoundingBox() const {
                         bounds.bottom());
 }
 
-static const SkFontTableTag kCOLRTableTag =
-    SkSetFourByteTag('C', 'O', 'L', 'R');
-
-bool TypefaceSkia::HasColor() const {
-  auto count = typeface_->countTables();
-  if (count == 0) {
-    return false;
-  }
-  std::vector<SkFontTableTag> tags(count);
-  typeface_->getTableTags(tags.data());
-  for (auto tag : tags) {
-    if (tag == kCOLRTableTag) {
-      return true;
-    }
-  }
-  return false;
-}
-
 const sk_sp<SkTypeface>& TypefaceSkia::GetSkiaTypeface() const {
   return typeface_;
 }

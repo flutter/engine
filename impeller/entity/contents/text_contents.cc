@@ -96,7 +96,6 @@ bool TextContents::Render(const ContentContext& renderer,
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
   FS::FragInfo frag_info;
-  frag_info.font_has_color = atlas->HasColor() ? 1.0 : 0.0;
   frag_info.text_color = ToVector(color_.Premultiply());
   frag_info.atlas_size =
       Point{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),

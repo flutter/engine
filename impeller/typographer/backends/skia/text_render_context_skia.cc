@@ -15,8 +15,9 @@
 #include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/src/core/SkIPoint16.h"   //nogncheck
-#include "third_party/skia/src/gpu/GrRectanizer.h"  //nogncheck
+#include "third_party/skia/src/core/SkIPoint16.h"    //nogncheck
+#include "third_party/skia/src/core/SkStrikeSpec.h"  // nogncheck
+#include "third_party/skia/src/gpu/GrRectanizer.h"   //nogncheck
 
 namespace impeller {
 
@@ -104,10 +105,25 @@ static size_t OptimumAtlasSizeForFontGlyphPairs(
 }
 
 static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
-                                                   size_t atlas_size) {
+                                                   size_t atlas_size,
+                                                   bool* has_color) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
-  auto image_info = atlas.HasColor()
+
+  atlas.IterateGlyphs([&has_color](const FontGlyphPair& font_glyph,
+                                   const Rect& location) -> bool {
+    SkFont sk_font(
+        TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
+        font_glyph.font.GetMetrics().point_size);
+
+    SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(sk_font);
+    SkBulkGlyphMetricsAndPaths paths{strikeSpec};
+    auto sk_glyph = paths.glyph(font_glyph.glyph.index);
+    *has_color |= sk_glyph->isColor();
+
+    return true;
+  });
+  auto image_info = *has_color
                         ? SkImageInfo::MakeN32Premul(atlas_size, atlas_size)
                         : SkImageInfo::MakeA8(atlas_size, atlas_size);
   if (!bitmap->tryAllocPixels(image_info)) {
@@ -243,7 +259,8 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 5: Draw font-glyph pairs in the correct spot in the atlas.
   // ---------------------------------------------------------------------------
-  auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size);
+  bool has_color = false;
+  auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size, &has_color);
   if (!bitmap) {
     return nullptr;
   }
@@ -251,8 +268,8 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 6: Upload the atlas as a texture.
   // ---------------------------------------------------------------------------
-  auto format = glyph_atlas->HasColor() ? PixelFormat::kR8G8B8A8UNormInt
-                                        : PixelFormat::kA8UNormInt;
+  auto format =
+      has_color ? PixelFormat::kR8G8B8A8UNormInt : PixelFormat::kA8UNormInt;
   auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
                                          bitmap, atlas_size, format);
   if (!texture) {

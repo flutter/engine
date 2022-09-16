@@ -23,12 +23,7 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
 }
 
 void GlyphAtlas::AddTypefaceGlyphPosition(FontGlyphPair pair, Rect rect) {
-  has_color_ = pair.font.HasColor();
   positions_[pair] = rect;
-}
-
-bool GlyphAtlas::HasColor() const {
-  return has_color_;
 }
 
 std::optional<Rect> GlyphAtlas::FindFontGlyphPosition(

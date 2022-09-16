@@ -20,15 +20,8 @@ void main() {
   vec2 scale_perspective = v_atlas_glyph_size / frag_info.atlas_size;
   vec2 offset = v_atlas_position / frag_info.atlas_size;
 
-  if (frag_info.font_has_color == 1.0) {
-    frag_color = texture(
-      glyph_atlas_sampler,
-      v_unit_vertex * scale_perspective + offset
-    ) * frag_info.text_color;
-  } else {
-    frag_color = texture(
-      glyph_atlas_sampler,
-      v_unit_vertex * scale_perspective + offset
-    ).aaaa * frag_info.text_color;
-  }
+  frag_color = texture(
+    glyph_atlas_sampler,
+    v_unit_vertex * scale_perspective + offset
+  ) * frag_info.text_color;
 }

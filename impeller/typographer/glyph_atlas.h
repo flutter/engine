@@ -32,8 +32,6 @@ class GlyphAtlas {
 
   bool IsValid() const;
 
-  bool HasColor() const;
-
   //----------------------------------------------------------------------------
   /// @brief      Set the texture for the glyph atlas.
   ///
@@ -88,7 +86,6 @@ class GlyphAtlas {
 
  private:
   std::shared_ptr<Texture> texture_;
-  bool has_color_ = false;
 
   std::unordered_map<FontGlyphPair,
                      Rect,
