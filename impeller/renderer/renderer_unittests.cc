@@ -778,10 +778,8 @@ TEST_P(RendererTest, ArrayUniforms) {
     };
 
     FS::FragInfo fs_uniform = {
-        .circle_positions = {Vector4(430, y_pos(0), 0, 0),
-                             Vector4(480, y_pos(1), 0, 0),
-                             Vector4(530, y_pos(2), 0, 0),
-                             Vector4(580, y_pos(3), 0, 0)},
+        .circle_positions = {Point(430, y_pos(0)), Point(480, y_pos(1)),
+                             Point(530, y_pos(2)), Point(580, y_pos(3))},
         .colors = {Color::MakeRGBA8(66, 133, 244, 255),
                    Color::MakeRGBA8(219, 68, 55, 255),
                    Color::MakeRGBA8(244, 180, 0, 255),

@@ -572,6 +572,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
     const auto& member = compiler_->get_type(struct_type.member_types[i]);
     const auto struct_member_offset =
         compiler_->type_struct_member_offset(struct_type, i);
+    auto array_elements = std::max(1u, GetArrayElements(member));
 
     if (struct_member_offset > current_byte_offset) {
       const auto alignment_pad = struct_member_offset - current_byte_offset;
@@ -582,7 +583,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
                   GetMemberNameAtIndex(struct_type, i).c_str()),  // name
           current_byte_offset,                                    // offset
           alignment_pad,                                          // byte_length
-          1  // array_elements
+          1,  // array_elements
+          0,  // element_padding
       });
       current_byte_offset += alignment_pad;
     }
@@ -593,8 +595,6 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     FML_CHECK(current_byte_offset == struct_member_offset);
 
-    auto array_elements = std::max(1u, GetArrayElements(member));
-
     // Tightly packed 4x4 Matrix is special cased as we know how to work with
     // those.
     if (member.basetype == spirv_cross::SPIRType::BaseType::Float &&  //
@@ -602,15 +602,18 @@ std::vector<StructMember> Reflector::ReadStructMembers(
         member.columns == 4 &&                                        //
         member.vecsize == 4                                           //
     ) {
+      uint32_t stride = GetArrayStride<sizeof(Matrix)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(Matrix);
       result.emplace_back(StructMember{
           "Matrix",                              // type
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Matrix) * array_elements,       // byte_length
-          array_elements                         // array_elements
+          stride * array_elements,               // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
       });
-      current_byte_offset += sizeof(Matrix) * array_elements;
+      current_byte_offset += stride * array_elements;
       continue;
     }
 
@@ -620,15 +623,18 @@ std::vector<StructMember> Reflector::ReadStructMembers(
         member.columns == 1 &&                                        //
         member.vecsize == 2                                           //
     ) {
+      uint32_t stride = GetArrayStride<sizeof(Point)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(Point);
       result.emplace_back(StructMember{
           "Point",                               // type
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Point) * array_elements,        // byte_length
-          array_elements                         // array_elements
+          stride * array_elements,               // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
       });
-      current_byte_offset += sizeof(Point) * array_elements;
+      current_byte_offset += stride * array_elements;
       continue;
     }
 
@@ -638,15 +644,18 @@ std::vector<StructMember> Reflector::ReadStructMembers(
         member.columns == 1 &&                                        //
         member.vecsize == 3                                           //
     ) {
+      uint32_t stride = GetArrayStride<sizeof(Vector3)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(Vector3);
       result.emplace_back(StructMember{
           "Vector3",                             // type
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Vector3) * array_elements,      // byte_length
-          array_elements                         // array_elements
+          stride * array_elements,               // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
       });
-      current_byte_offset += sizeof(Vector3) * array_elements;
+      current_byte_offset += stride * array_elements;
       continue;
     }
 
@@ -656,15 +665,18 @@ std::vector<StructMember> Reflector::ReadStructMembers(
         member.columns == 1 &&                                        //
         member.vecsize == 4                                           //
     ) {
+      uint32_t stride = GetArrayStride<sizeof(Vector4)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(Vector4);
       result.emplace_back(StructMember{
           "Vector4",                             // type
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(Vector4) * array_elements,      // byte_length
-          array_elements                         // array_elements
+          stride * array_elements,               // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
       });
-      current_byte_offset += sizeof(Vector4) * array_elements;
+      current_byte_offset += stride * array_elements;
       continue;
     }
 
@@ -675,17 +687,22 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           member.columns == 1 &&           //
           member.vecsize == 1              //
       ) {
+        uint32_t stride = GetArrayStride<0>(struct_type, member, i);
+        if (stride == 0) {
+          stride = maybe_known_type.value().byte_size;
+        }
+        uint32_t element_padding = stride - maybe_known_type.value().byte_size;
         // Add the type directly.
         result.emplace_back(StructMember{
-            maybe_known_type.value().name,                        // type
-            BaseTypeToString(member.basetype),                    // basetype
-            GetMemberNameAtIndex(struct_type, i),                 // name
-            struct_member_offset,                                 // offset
-            maybe_known_type.value().byte_size * array_elements,  // byte_length
-            array_elements  // array_elements
+            maybe_known_type.value().name,         // type
+            BaseTypeToString(member.basetype),     // basetype
+            GetMemberNameAtIndex(struct_type, i),  // name
+            struct_member_offset,                  // offset
+            stride * array_elements,               // byte_length
+            array_elements,                        // array_elements
+            element_padding,                       // element_padding
         });
-        current_byte_offset +=
-            maybe_known_type.value().byte_size * array_elements;
+        current_byte_offset += stride * array_elements;
         continue;
       }
     }
@@ -695,15 +712,21 @@ std::vector<StructMember> Reflector::ReadStructMembers(
     {
       const size_t byte_length =
           (member.width * member.columns * member.vecsize) / 8u;
+      uint32_t stride = GetArrayStride<0>(struct_type, member, i);
+      if (stride == 0) {
+        stride = byte_length;
+      }
+      auto element_padding = stride - byte_length;
       result.emplace_back(StructMember{
           TypeNameWithPaddingOfSize(byte_length),  // type
           BaseTypeToString(member.basetype),       // basetype
           GetMemberNameAtIndex(struct_type, i),    // name
           struct_member_offset,                    // offset
-          byte_length * array_elements,            // byte_length
-          array_elements                           // array_elements
+          stride * array_elements,                 // byte_length
+          array_elements,                          // array_elements
+          0,                                       // element_padding
       });
-      current_byte_offset += byte_length * array_elements;
+      current_byte_offset += stride * array_elements;
       continue;
     }
   }
@@ -721,7 +744,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
             "_PADDING_",                                 // name
             current_byte_offset,                         // offset
             padding,                                     // byte_length
-            1                                            // array_elements
+            1,                                           // array_elements
+            0,                                           // element_padding
         });
       }
     }
@@ -758,14 +782,15 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
   result["name"] = struc->name;
   result["byte_length"] = struc->byte_length;
   auto& members = result["members"] = nlohmann::json::array_t{};
-  for (const auto& struc_member : struc->members) {
+  for (const auto& struct_member : struc->members) {
     auto& member = members.emplace_back(nlohmann::json::object_t{});
-    member["name"] = struc_member.name;
-    member["type"] = struc_member.type;
-    member["base_type"] = struc_member.base_type;
-    member["offset"] = struc_member.offset;
-    member["byte_length"] = struc_member.byte_length;
-    member["array_elements"] = struc_member.array_elements;
+    member["name"] = struct_member.name;
+    member["type"] = struct_member.type;
+    member["base_type"] = struct_member.base_type;
+    member["offset"] = struct_member.offset;
+    member["byte_length"] = struct_member.byte_length;
+    member["array_elements"] = struct_member.array_elements;
+    member["element_padding"] = struct_member.element_padding;
   }
   return result;
 }
@@ -877,7 +902,8 @@ Reflector::ReflectPerVertexStructDefinition(
         vertex_type.variable_name,   // name
         struc.byte_length,           // offset
         vertex_type.byte_length,     // byte_length
-        1                            // array_elements
+        1,                           // array_elements
+        0,                           // element_padding
     };
     struc.byte_length += vertex_type.byte_length;
     struc.members.emplace_back(std::move(member));

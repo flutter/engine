@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 uniform FragInfo {
-  vec4 circle_positions[4];
+  vec2 circle_positions[4];
   vec4 colors[4];
 }
 frag_info;

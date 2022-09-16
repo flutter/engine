@@ -123,6 +123,17 @@ struct Padding {
   uint8_t pad_[Size];
 };
 
+/// @brief Struct used for padding uniform buffer array elements.
+template <typename T,
+          size_t Size,
+          class = std::enable_if_t<std::is_standard_layout_v<T>>>
+struct Padded {
+  T value;
+  Padding<Size> _PADDING_;
+
+  Padded(T p_value) : value(p_value){};  // NOLINT(google-explicit-constructor)
+};
+
 inline constexpr Vector4 ToVector(Color color) {
   return {color.red, color.green, color.blue, color.alpha};
 }

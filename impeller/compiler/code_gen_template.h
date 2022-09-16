@@ -50,7 +50,7 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
 {% for def in struct_definitions %}
   struct {{def.name}} {
 {% for member in def.members %}
-    {{member.type}} {{member.name}}{% if member.array_elements > 1 %}[{{member.array_elements}}]{% endif %}; // (offset {{member.offset}}, size {{member.byte_length}})
+{% if member.element_padding > 0 %}Padded<{{member.type}}, {{member.element_padding}}>{% else %}{{member.type}}{% endif %} {{" " + member.name}}{% if member.array_elements > 1 %}[{{member.array_elements}}]{% endif %}; // (offset {{member.offset}}, size {{member.byte_length}})
 {% endfor %}
   }; // struct {{def.name}} (size {{def.byte_length}})
 {% endfor %}
