@@ -301,22 +301,22 @@ static void ConvertStops(T* gradient,
   auto* dl_colors = gradient->colors();
   if (gradient->generated_stops()) {
     for (auto i = 0; i < gradient->stop_count(); i++) {
-      colors.emplace_back(dl_colors[i]);
+      colors.emplace_back(ToColor(dl_colors[i]));
     }
     return;
   }
 
   auto* dl_stops = gradient->stops();
   if (dl_stops[0] != 0.0) {
-    colors.emplace_back(dl_colors[0]);
+    colors.emplace_back(ToColor(dl_colors[0]));
     stops.emplace_back(0);
   }
   for (auto i = 0; i < gradient->stop_count(); i++) {
-    colors.emplace_back(dl_colors[i]);
+    colors.emplace_back(ToColor(dl_colors[i]));
     stops.emplace_back(dl_stops[i]);
   }
-  if (dl_stops.last() != 1.0) {
-    colors.emplace_back(dl_colors.last());
+  if (dl_stops->last() != 1.0) {
+    colors.emplace_back(ToColor(dl_colors->last()));
     stops.emplace_back(1.0);
   }
 }
