@@ -290,6 +290,36 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
   return result;
 }
 
+// Convert display list colors + stops into impeller colors and stops, taking
+// care to ensure that the stops always start with 0.0 and end with 1.0. If
+// the color stops were generated, only pass through the colors. This signals
+// that the colors are intended to be evenly space.d
+static void ConvertStops(DlGradientColorSourceBase* gradient,
+                         std::vector<Color> colors,
+                         std::vector<float> stops) {
+  if (gradient->generated_stops()) {
+    for (auto i = 0; i < linear->stop_count(); i++) {
+      colors.emplace_back(dl_colors[i]);
+    }
+    return;
+  }
+
+  auto* dl_stops = gradient->stops();
+  auto* dl_colors = gradient->colors();
+  if (dl_stops[0] != 0.0) {
+    colors.emplace_back(dl_colors[0]);
+    stops.emplace_back(0);
+  }
+  for (auto i = 0; i < linear->stop_count(); i++) {
+    colors.emplace_back(dl_colors[i]);
+    stops.emplace_back(dl_stops[i]);
+  }
+  if (dl_stops.last() != 1.0) {
+    colors.emplace_back(dl_colors.last());
+    stops.emplace_back(1.0);
+  }
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
@@ -314,10 +344,8 @@ void DisplayListDispatcher::setColorSource(
       auto end_point = ToPoint(linear->end_point());
       std::vector<Color> colors;
       std::vector<float> stops;
-      for (auto i = 0; i < linear->stop_count(); i++) {
-        colors.emplace_back(ToColor(linear->colors()[i]));
-        stops.emplace_back(linear->stops()[i]);
-      }
+      ConvertStops(linear, colors, stops);
+
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
       paint_.color_source = [start_point, end_point, colors = std::move(colors),
@@ -340,10 +368,8 @@ void DisplayListDispatcher::setColorSource(
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      for (auto i = 0; i < radialGradient->stop_count(); i++) {
-        colors.emplace_back(ToColor(radialGradient->colors()[i]));
-        stops.emplace_back(radialGradient->stops()[i]);
-      }
+      ConvertStops(radialGradient, colors, stops);
+
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
       paint_.color_source = [center, radius, colors = std::move(colors),
@@ -367,11 +393,9 @@ void DisplayListDispatcher::setColorSource(
       auto start_angle = Degrees(sweepGradient->start());
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
-      std::vector<Scalar> stops;
-      for (auto i = 0; i < sweepGradient->stop_count(); i++) {
-        colors.emplace_back(ToColor(sweepGradient->colors()[i]));
-        stops.emplace_back(sweepGradient->stops()[i]);
-      }
+      std::vector<float> stops;
+      ConvertStops(sweepGradient, colors, stops);
+
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
       paint_.color_source = [center, start_angle, end_angle,

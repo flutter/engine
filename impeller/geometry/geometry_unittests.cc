@@ -1452,6 +1452,18 @@ TEST(GeometryTest, Gradient) {
   }
 
   {
+    // N color gradient with no stops implies evenly spaced
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
+    std::vector<Scalar> stops = {};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+
+    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
+    ASSERT_EQ(texture_size, 3u);
+  }
+
+  {
     // Simple N color gradient produces color buffer containing exactly those
     // values.
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),

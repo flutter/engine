@@ -306,6 +306,7 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
 
   DlTileMode tile_mode() const { return mode_; }
   int stop_count() const { return stop_count_; }
+  bool generated_stops() const { return generated_stops_; }
   const DlColor* colors() const {
     return reinterpret_cast<const DlColor*>(pod());
   }
@@ -347,6 +348,7 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
     float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
     if (stop_data) {
       memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
+      generated_stops_ = false;
     } else {
       float div = stop_count_ - 1;
       if (div <= 0) {
@@ -355,12 +357,14 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
       for (uint32_t i = 0; i < stop_count_; i++) {
         stop_storage[i] = i / div;
       }
+      generated_stops_ = true;
     }
   }
 
  private:
   DlTileMode mode_;
   uint32_t stop_count_;
+  bool generated_stops_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlGradientColorSourceBase);
 };

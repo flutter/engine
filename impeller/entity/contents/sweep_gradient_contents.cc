@@ -34,8 +34,10 @@ void SweepGradientContents::SetColors(std::vector<Color> colors) {
   colors_ = std::move(colors);
 }
 
-void SweepGradientContents::SetStops(std::vector<Scalar> stops) {
+void SweepGradientContents::SetStops(std::vector<Scalar> stops,
+                                     bool generated_stops) {
   stops_ = std::move(stops);
+  generated_stops_ = generated_stops;
 }
 
 void SweepGradientContents::SetTileMode(Entity::TileMode tile_mode) {
