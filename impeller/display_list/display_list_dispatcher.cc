@@ -297,6 +297,7 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
 static void ConvertStops(DlGradientColorSourceBase* gradient,
                          std::vector<Color> colors,
                          std::vector<float> stops) {
+  auto* dl_colors = gradient->colors();
   if (gradient->generated_stops()) {
     for (auto i = 0; i < linear->stop_count(); i++) {
       colors.emplace_back(dl_colors[i]);
@@ -305,12 +306,11 @@ static void ConvertStops(DlGradientColorSourceBase* gradient,
   }
 
   auto* dl_stops = gradient->stops();
-  auto* dl_colors = gradient->colors();
   if (dl_stops[0] != 0.0) {
     colors.emplace_back(dl_colors[0]);
     stops.emplace_back(0);
   }
-  for (auto i = 0; i < linear->stop_count(); i++) {
+  for (auto i = 0; i < gradient->stop_count(); i++) {
     colors.emplace_back(dl_colors[i]);
     stops.emplace_back(dl_stops[i]);
   }

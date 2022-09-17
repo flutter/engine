@@ -27,8 +27,7 @@ std::shared_ptr<Texture> CreateGradientTexture(
   // or we may have very small stop values. For these gradients the lerped
   // values are computed here and then populated in a texture.
   uint32_t texture_size;
-  auto color_stop_channels =
-      CreateGradientBuffer(colors, stops, generated_stops, &texture_size);
+  auto color_stop_channels = CreateGradientBuffer(colors, stops, &texture_size);
   impeller::TextureDescriptor texture_descriptor;
   texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
