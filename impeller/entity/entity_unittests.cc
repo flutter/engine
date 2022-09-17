@@ -1850,6 +1850,7 @@ TEST_P(EntityTest, TTTBlendColor) {
       auto blend_color = Color::BlendColor(src, dst, blend_modes[i]);
       if (blend_color_map.find(blend_modes[i]) != blend_color_map.end()) {
         auto expected_color = blend_color_map[blend_modes[i]](src, dst);
+        FML_LOG(ERROR) << "COLOR " << expected_color;
         ASSERT_EQ(blend_color, expected_color);
       }
     }
@@ -1858,43 +1859,231 @@ TEST_P(EntityTest, TTTBlendColor) {
   {
     Color src = {1, 0, 0, 0.5};
     Color dst = {1, 0, 1, 1};
-    check_func(src, dst);
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(1, 0, 0, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(1.5, 0, 0.5, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(1, 0, 0, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(0.5, 0, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0.5, 0, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(1.5, 0, 0.5, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(0.5, 0, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
+              Color(0.5, 0, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus), Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(1, 0, 0, 0.5));
   }
 
   {
     Color src = {1, 1, 0, 1};
     Color dst = {1, 0, 1, 1};
-    check_func(src, dst);
+
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(1, 1, 0, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(1, 1, 0, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(1, 1, 0, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(1, 1, 0, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(1, 0, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor), Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus), Color(1, 1, 1, 1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(1, 0, 0, 1));
   }
 
   {
     Color src = {1, 1, 0, 0.2};
     Color dst = {1, 1, 1, 0.5};
-    check_func(src, dst);
+
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(1, 1, 0, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(1, 1, 1, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(1.8, 1.8, 0.8, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(1.5, 1.5, 1, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(0.5, 0.5, 0, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(0.2, 0.2, 0.2, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0.5, 0.5, 0, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0.8, 0.8, 0.8, 0.4));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(1.3, 1.3, 0.8, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(0.7, 0.7, 0.2, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
+              Color(1.3, 1.3, 0.8, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
+              Color(1, 1, 1, 0.7));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(1, 1, 0, 0.1));
   }
 
   {
     Color src = {1, 0.5, 0, 0.2};
     Color dst = {1, 1, 0.5, 0.5};
-    check_func(src, dst);
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(1, 0.5, 0, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(1, 1, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(1.8, 1.3, 0.4, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(1.5, 1.25, 0.5, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(0.5, 0.25, 0, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(0.2, 0.2, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0.5, 0.25, 0, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0.8, 0.8, 0.4, 0.4));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(1.3, 1.05, 0.4, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(0.7, 0.45, 0.1, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
+              Color(1.3, 1.05, 0.4, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
+              Color(1, 1, 0.5, 0.7));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(1, 0.5, 0, 0.1));
   }
 
   {
     Color src = {0.5, 0.5, 0, 0.2};
     Color dst = {0, 1, 0.5, 0.5};
-    check_func(src, dst);
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(0.5, 0.5, 0, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(0, 1, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(0.5, 1.3, 0.4, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(0.25, 1.25, 0.5, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(0.25, 0.25, 0, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(0, 0.2, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0.25, 0.25, 0, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0, 0.8, 0.4, 0.4));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(0.25, 1.05, 0.4, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(0.25, 0.45, 0.1, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
+              Color(0.25, 1.05, 0.4, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
+              Color(0.5, 1, 0.5, 0.7));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(0, 0.5, 0, 0.1));
   }
 
   {
     Color src = {0.5, 0.5, 0.2, 0.2};
     Color dst = {0.2, 1, 0.5, 0.5};
-    check_func(src, dst);
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(0.5, 0.5, 0.2, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(0.2, 1, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(0.66, 1.3, 0.6, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(0.45, 1.25, 0.6, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(0.25, 0.25, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(0.04, 0.2, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0.25, 0.25, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0.16, 0.8, 0.4, 0.4));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(0.41, 1.05, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(0.29, 0.45, 0.2, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
+              Color(0.41, 1.05, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
+              Color(0.7, 1, 0.7, 0.7));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(0.1, 0.5, 0.1, 0.1));
   }
 
   {
     Color src = {0.5, 0.5, 0.2, 0.2};
     Color dst = {0.2, 0.2, 0.5, 0.5};
-    check_func(src, dst);
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
+              Color(0, 0, 0, 0));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
+              Color(0.5, 0.5, 0.2, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
+              Color(0.2, 0.2, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
+              Color(0.66, 0.66, 0.6, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
+              Color(0.45, 0.45, 0.6, 0.6));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
+              Color(0.25, 0.25, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
+              Color(0.04, 0.04, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
+              Color(0.25, 0.25, 0.1, 0.1));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
+              Color(0.16, 0.16, 0.4, 0.4));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
+              Color(0.41, 0.41, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
+              Color(0.29, 0.29, 0.2, 0.2));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
+              Color(0.41, 0.41, 0.5, 0.5));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
+              Color(0.7, 0.7, 0.7, 0.7));
+    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
+              Color(0.1, 0.1, 0.1, 0.1));
   }
 }
 

@@ -94,8 +94,8 @@ struct Color {
   }
 
   constexpr bool operator==(const Color& c) const {
-    return red == c.red && green == c.green && blue == c.blue &&
-           alpha == c.alpha;
+    return ScalarNearlyEqual(red, c.red) && ScalarNearlyEqual(green, c.green) &&
+           ScalarNearlyEqual(blue, c.blue) && ScalarNearlyEqual(alpha, c.alpha);
   }
 
   constexpr Color Premultiply() const {
