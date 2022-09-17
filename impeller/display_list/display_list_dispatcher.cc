@@ -294,12 +294,13 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
 // care to ensure that the stops always start with 0.0 and end with 1.0. If
 // the color stops were generated, only pass through the colors. This signals
 // that the colors are intended to be evenly space.d
-static void ConvertStops(DlGradientColorSourceBase* gradient,
+template <typename T>
+static void ConvertStops(T* gradient,
                          std::vector<Color> colors,
                          std::vector<float> stops) {
   auto* dl_colors = gradient->colors();
   if (gradient->generated_stops()) {
-    for (auto i = 0; i < linear->stop_count(); i++) {
+    for (auto i = 0; i < gradient->stop_count(); i++) {
       colors.emplace_back(dl_colors[i]);
     }
     return;
