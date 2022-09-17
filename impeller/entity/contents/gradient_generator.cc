@@ -18,7 +18,6 @@ namespace impeller {
 std::shared_ptr<Texture> CreateGradientTexture(
     const std::vector<Color>& colors,
     const std::vector<Scalar>& stops,
-    bool generated_stops,
     std::shared_ptr<impeller::Context> context) {
   // If the computed scale is nearly the same as the color length, then the
   // stops are evenly spaced and we can lerp entirely in the gradient shader.

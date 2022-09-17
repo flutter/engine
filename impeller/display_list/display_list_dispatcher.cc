@@ -296,28 +296,28 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
 // that the colors are intended to be evenly space.d
 template <typename T>
 static void ConvertStops(T* gradient,
-                         std::vector<Color> colors,
-                         std::vector<float> stops) {
+                         std::vector<Color>* colors,
+                         std::vector<float>* stops) {
   auto* dl_colors = gradient->colors();
   if (gradient->generated_stops()) {
     for (auto i = 0; i < gradient->stop_count(); i++) {
-      colors.emplace_back(ToColor(dl_colors[i]));
+      colors->emplace_back(ToColor(dl_colors[i]));
     }
     return;
   }
 
   auto* dl_stops = gradient->stops();
   if (dl_stops[0] != 0.0) {
-    colors.emplace_back(ToColor(dl_colors[0]));
-    stops.emplace_back(0);
+    colors->emplace_back(ToColor(dl_colors[0]));
+    stops->emplace_back(0);
   }
   for (auto i = 0; i < gradient->stop_count(); i++) {
-    colors.emplace_back(ToColor(dl_colors[i]));
-    stops.emplace_back(dl_stops[i]);
+    colors->emplace_back(ToColor(dl_colors[i]));
+    stops->emplace_back(dl_stops[i]);
   }
-  if (dl_stops->last() != 1.0) {
-    colors.emplace_back(ToColor(dl_colors->last()));
-    stops.emplace_back(1.0);
+  if (stops->back() != 1.0) {
+    colors->emplace_back(colors->back());
+    stops->emplace_back(1.0);
   }
 }
 
@@ -345,7 +345,7 @@ void DisplayListDispatcher::setColorSource(
       auto end_point = ToPoint(linear->end_point());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(linear, colors, stops);
+      ConvertStops(linear, &colors, &stops);
 
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
@@ -369,7 +369,7 @@ void DisplayListDispatcher::setColorSource(
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(radialGradient, colors, stops);
+      ConvertStops(radialGradient, &colors, &stops);
 
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
@@ -395,7 +395,7 @@ void DisplayListDispatcher::setColorSource(
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(sweepGradient, colors, stops);
+      ConvertStops(sweepGradient, &colors, &stops);
 
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
