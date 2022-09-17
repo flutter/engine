@@ -139,7 +139,7 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
            {0, 96, 0, 0,
             [](DisplayListBuilder& b) { b.setColorSource(&kTestSource1); }},
            // stop_count * (sizeof(float) + sizeof(uint32_t)) = 80
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 80 + 6 * 4 + 8, 0, 0,
             [](DisplayListBuilder& b) {
               b.setColorSource(kTestSource2.get());
             }},
@@ -147,11 +147,11 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DisplayListBuilder& b) {
               b.setColorSource(kTestSource3.get());
             }},
-           {0, 88 + 6 * 4, 0, 0,
+           {0, 88 + 6 * 4 + 8, 0, 0,
             [](DisplayListBuilder& b) {
               b.setColorSource(kTestSource4.get());
             }},
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 80 + 6 * 4 + 8, 0, 0,
             [](DisplayListBuilder& b) {
               b.setColorSource(kTestSource5.get());
             }},
