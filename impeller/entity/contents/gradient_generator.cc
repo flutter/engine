@@ -36,8 +36,7 @@ std::shared_ptr<Texture> CreateGradientTexture(
     return nullptr;
   }
 
-  auto mapping =
-      std::make_shared<fml::DataMapping>(gradient_data.color_bytes);
+  auto mapping = std::make_shared<fml::DataMapping>(gradient_data.color_bytes);
   if (!texture->SetContents(mapping)) {
     FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
     return nullptr;

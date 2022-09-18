@@ -27,8 +27,7 @@ struct GradientData {
  * @param stops
  * @return GradientData
  */
-GradientData
-CreateGradientBuffer(const std::vector<Color>& colors,
-                     const std::vector<Scalar>& stops);
+GradientData CreateGradientBuffer(const std::vector<Color>& colors,
+                                  const std::vector<Scalar>& stops);
 
 }  // namespace impeller
