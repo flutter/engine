@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+#include "flutter/fml/macros.h"
 #include "impeller/geometry/gradient.h"
 
 namespace impeller {
@@ -16,9 +17,18 @@ static void AppendColor(const Color& color, std::vector<uint8_t>* colors) {
   colors->push_back(converted[3]);
 }
 
-std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
-                                          const std::vector<Scalar>& stops,
-                                          uint32_t* out_texture_size) {
+GradientData CreateGradientBuffer(const std::vector<Color>& colors,
+                                  const std::vector<Scalar>& stops) {
+  // check for gradients that are invalid due to either not enough colors or
+  // mismatched colors and stops
+  if (colors.size() < 2 ||
+      (stops.size() != 0 && stops.size() != colors.size())) {
+    return GradientData{
+        .color_bytes = {},
+        .texture_size = 0,
+    };
+  }
+
   uint32_t texture_size;
   if (stops.size() == 0) {
     texture_size = colors.size();
@@ -41,7 +51,6 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     texture_size =
         std::min((uint32_t)std::round(1.0 / minimum_delta) + 1, 1024u);
   }
-  *out_texture_size = texture_size;
   std::vector<uint8_t> color_stop_channels;
   color_stop_channels.reserve(texture_size * 4);
 
@@ -91,7 +100,10 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     // The last index is always equal to the last color, exactly.
     AppendColor(colors.back(), &color_stop_channels);
   }
-  return color_stop_channels;
+  return GradientData{
+      .color_bytes = std::move(color_stop_channels),
+      .texture_size = texture_size,
+  };
 }
 
 }  // namespace impeller

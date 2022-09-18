@@ -298,6 +298,8 @@ template <typename T>
 static void ConvertStops(T* gradient,
                          std::vector<Color>* colors,
                          std::vector<float>* stops) {
+  FML_DCHECK(gradient->stop_count() >= 2);
+
   auto* dl_colors = gradient->colors();
   if (gradient->generated_stops()) {
     for (auto i = 0; i < gradient->stop_count(); i++) {
