@@ -19,6 +19,18 @@ GlyphAtlas::Type GlyphAtlas::GetType() const {
   return type_;
 }
 
+std::shared_ptr<Pipeline<PipelineDescriptor>> GlyphAtlas::CreatePipeline(
+    const ContentContext& context,
+    const ContentContextOptions& options) {
+  switch (GetType()) {
+    case GlyphAtlas::Type::kSignedDistanceField:
+      return context.GetGlyphAtlasSdfPipeline(options);
+    case GlyphAtlas::Type::kAlphaBitmap:
+    case GlyphAtlas::Type::kColorBitmap:
+      return context.GetGlyphAtlasPipeline(options);
+  }
+}
+
 const std::shared_ptr<Texture>& GlyphAtlas::GetTexture() const {
   return texture_;
 }

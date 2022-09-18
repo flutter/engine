@@ -21,6 +21,9 @@ void main() {
   vec2 scale_perspective = v_atlas_glyph_size / frag_info.atlas_size;
   vec2 offset = v_atlas_position / frag_info.atlas_size;
 
+  // Inspired by Metal by Example's SDF text rendering shader:
+  // https://github.com/metal-by-example/sample-code/blob/master/objc/12-TextRendering/TextRendering/Shaders.metal
+
   // Outline of glyph is the isocontour with value 50%
   float edge_distance = 0.5;
   // Sample the signed-distance field to find distance from this fragment to the glyph outline

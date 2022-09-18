@@ -86,7 +86,7 @@ bool TextContents::Render(const ContentContext& renderer,
   cmd.label = "TextFrame";
   cmd.primitive_type = PrimitiveType::kTriangle;
   cmd.pipeline =
-      renderer.GetGlyphAtlasPipeline(OptionsFromPassAndEntity(pass, entity));
+      atlas->CreatePipeline(renderer, OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
   // Common vertex uniforms for all glyphs.
