@@ -132,10 +132,9 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
   if (useLocalCanvasKit && !builtLocalCanvasKit) {
-    print('WARNING: Requested to use local CanvasKit but could not find the '
+    throw ArgumentError('Requested to use local CanvasKit but could not find the '
         'built CanvasKit at ${localCanvasKitWasm.path}. Falling back to '
         'CanvasKit from CIPD.');
-    useLocalCanvasKit = false;
   }
 
   final io.Directory targetDir = io.Directory(pathlib.join(
