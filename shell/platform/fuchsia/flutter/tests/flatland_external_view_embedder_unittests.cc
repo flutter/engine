@@ -261,10 +261,9 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
     const fuchsia::math::Vec& view_translation,
     const fuchsia::math::VecF& view_scale,
     const float view_opacity) {
-
   return Pointee(FieldsAre(
       /* id */ _, view_translation, view_scale,
-      FakeTransform::kDefaultOrientation, /*clip_bounds*/ _, /*view_opacity*/_,
+      FakeTransform::kDefaultOrientation, /*clip_bounds*/ _, /*view_opacity*/ _,
       /*children*/ IsEmpty(),
       /*content*/
       Pointee(VariantWith<FakeViewport>(FieldsAre(
@@ -678,7 +677,6 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
 
-
   const float kOpacity = 0.3f;
   const fuchsia::math::VecF kScale{2.f, 3.0f};
 
@@ -690,8 +688,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   mutators_stack.PushOpacity(kOpacity);
   mutators_stack.PushTransform(matrix);
 
-  flutter::EmbeddedViewParams child_view_params(
-      matrix, child_view_size_signed, mutators_stack);
+  flutter::EmbeddedViewParams child_view_params(matrix, child_view_size_signed,
+                                                mutators_stack);
   external_view_embedder.CreateView(
       child_view_id, []() {},
       [](fuchsia::ui::composition::ContentId,
