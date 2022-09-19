@@ -16,7 +16,6 @@ import json
 import os
 import sys
 import subprocess
-from turtle import clone, up
 import requests
 from typing import Any, Dict, Optional
 import time
