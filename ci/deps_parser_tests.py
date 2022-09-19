@@ -12,7 +12,7 @@ class TestDepsParserMethods(unittest.TestCase):
     # extract both mirrored dep names and URLs &
     # upstream names and URLs from DEPs file
     def setUp(self):
-        with open(DEPS,'r', encoding='utf-8') as f:
+        with open(DEPS) as f:
             local_scope_upstream = {}
             global_scope_upstream = {'Var': lambda x: x} # dummy lambda
             # Read the content.
