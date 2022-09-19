@@ -2830,7 +2830,7 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
   ///
   /// The [TextPosition] is treated as caret position, its [TextPosition.affinity]
-  /// is used to determine which charater this position points to. For example,
+  /// is used to determine which character this position points to. For example,
   /// the word boundary at `TextPosition(offset: 5, affinity: TextPosition.upstream)`
   /// of the `string = 'Hello word'` will return range (0, 5) because the position
   /// points to the character 'o' instead of the space.
