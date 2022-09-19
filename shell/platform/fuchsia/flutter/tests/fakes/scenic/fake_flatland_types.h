@@ -180,7 +180,7 @@ struct FakeTransform {
   constexpr static fuchsia::math::VecF kDefaultScale{.x = 1.0f, .y = 1.0f};
   constexpr static fuchsia::ui::composition::Orientation kDefaultOrientation{
       fuchsia::ui::composition::Orientation::CCW_0_DEGREES};
-  constexpr static float kDefaultOpacity = 1.f;
+  constexpr static float kDefaultOpacity = 1.0f;
 
   fuchsia::ui::composition::TransformId id{kInvalidTransformId};
 
@@ -188,7 +188,7 @@ struct FakeTransform {
   fuchsia::math::VecF scale{kDefaultScale};
   fuchsia::ui::composition::Orientation orientation{kDefaultOrientation};
 
-  std::optional<fuchsia::math::Rect> clip_bounds;
+  std::optional<fuchsia::math::Rect> clip_bounds = std::nullopt;
 
   float opacity = kDefaultOpacity;
 

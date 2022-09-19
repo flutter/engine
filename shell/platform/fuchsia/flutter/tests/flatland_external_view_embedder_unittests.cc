@@ -522,7 +522,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
 
-  const float kOpacity = 1.0;
+  const int kOpacity = 200;
+  const float kOpacityFloat = 200 / 255.0f;
   const fuchsia::math::VecF kScale{0.5f, 0.9f};
 
   auto matrix = SkMatrix::I();
@@ -593,7 +594,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
-                           {0, 0}, kScale, kOpacity),
+                           {0, 0}, kScale, kOpacityFloat),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
@@ -605,7 +606,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
-                           {0, 0}, kScale, kOpacity),
+                           {0, 0}, kScale, kOpacityFloat),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
@@ -627,7 +628,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
-                           {0, 0}, kScale, kOpacity),
+                           {0, 0}, kScale, kOpacityFloat),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
@@ -677,7 +678,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
 
-  const float kOpacity = 1.0f;
+  const int kOpacity = 125;
+  const float kOpacityFloat = 125 / 255.0f;
   const fuchsia::math::VecF kScale{2.f, 3.0f};
 
   auto matrix = SkMatrix::I();
@@ -730,7 +732,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size,
                                       FakeViewport::kDefaultViewportInset,
-                                      {0, 0}, kScale, kOpacity)}));
+                                      {0, 0}, kScale, kOpacityFloat)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
   external_view_embedder.DestroyView(
@@ -742,7 +744,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size,
                                       FakeViewport::kDefaultViewportInset,
-                                      {0, 0}, kScale, kOpacity)}));
+                                      {0, 0}, kScale, kOpacityFloat)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
   DrawSimpleFrame(
@@ -765,7 +767,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size,
                                       FakeViewport::kDefaultViewportInset,
-                                      {0, 0}, kScale, kOpacity)}));
+                                      {0, 0}, kScale, kOpacityFloat)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
