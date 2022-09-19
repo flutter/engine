@@ -2833,7 +2833,7 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// is used to determine which charater this position points to. For example,
   /// the word boundary at `TextPosition(offset: 5, affinity: TextPosition.upstream)`
   /// of the `string = 'Hello word'` will return range (0, 5) because the position
-  /// points to the charater 'o' instead of the space.
+  /// points to the character 'o' instead of the space.
   TextRange getWordBoundary(TextPosition position) {
     final int characterPosition;
     switch (position.affinity) {
