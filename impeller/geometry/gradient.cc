@@ -66,7 +66,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
     AppendColor(previous_color, &color_stop_channels);
 
     for (auto i = 1u; i < texture_size - 1; i++) {
-      auto scaled_i = i / (texture_size * 1.0);
+      auto scaled_i = i / (texture_size * 1.0 - 1.0);
       Color next_color = colors[previous_color_index + 1];
       auto next_stop = stops[previous_color_index + 1];
       // We're almost exactly equal to the next stop.

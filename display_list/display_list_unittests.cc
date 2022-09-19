@@ -215,7 +215,6 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
     }
   }
   EXPECT_EQ(dl->op_count(false), op_count) << name;
-  EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
   return dl;
 }
 
