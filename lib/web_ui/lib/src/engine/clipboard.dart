@@ -89,7 +89,7 @@ class ClipboardMessageHandler {
 /// APIs and the browser.
 abstract class CopyToClipboardStrategy {
   factory CopyToClipboardStrategy() {
-    return !unsafeIsNull(domWindow.navigator.clipboard)
+    return domWindow.navigator.clipboard != null
         ? ClipboardAPICopyStrategy()
         : ExecCommandCopyStrategy();
   }
@@ -109,7 +109,7 @@ abstract class CopyToClipboardStrategy {
 abstract class PasteFromClipboardStrategy {
   factory PasteFromClipboardStrategy() {
     return (browserEngine == BrowserEngine.firefox ||
-            unsafeIsNull(domWindow.navigator.clipboard))
+            domWindow.navigator.clipboard == null)
         ? ExecCommandPasteStrategy()
         : ClipboardAPIPasteStrategy();
   }

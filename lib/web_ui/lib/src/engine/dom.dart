@@ -1298,8 +1298,17 @@ extension DomScreenExtension on DomScreen {
 class DomScreenOrientation extends DomEventTarget {}
 
 extension DomScreenOrientationExtension on DomScreenOrientation {
-  Future<dynamic> lock(String orientation) => js_util
-      .promiseToFuture(js_util.callMethod(this, 'lock', <String>[orientation]));
+  Future<dynamic> lock(String orientation) {
+    final Object jsResult = js_util.callMethod(this, 'lock', <String>[orientation]);
+    // `allowInterop` does not automatically convert Future to Promise. So when mocking
+    // this method in tests the returned Future doesn't need to be converted. To anyone
+    // reading this in the future, if you know of a better way, feel free to fix this.
+    // This special-case doesn't feel right.
+    if (jsResult is Future) {
+      return jsResult;
+    }
+    return js_util.promiseToFuture(jsResult);
+  }
   external void unlock();
 }
 
