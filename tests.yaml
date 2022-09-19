@@ -15,4 +15,4 @@ tasks:
   - task: ci
     script: deps_parser_tests.py
   - task: ci
-    script: sscan_flattened_deps_tests.py
+    script: scan_flattened_deps_tests.py
