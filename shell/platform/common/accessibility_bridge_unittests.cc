@@ -284,6 +284,8 @@ TEST(AccessibilityBridgeTest, doesNotAssignEditableRootToSelectableText) {
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
 
+  bridge = nullptr;
+
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -333,6 +335,8 @@ TEST(AccessibilityBridgeTest, SliderHasSliderRole) {
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
 
+  assert(false);
+
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kSlider);
 }
@@ -361,7 +365,7 @@ TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
   bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   bridge->CommitUpdates();
-
+  throw std::exception("Hello world");
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
   EXPECT_EQ(root_node->GetData().GetCheckedState(),
