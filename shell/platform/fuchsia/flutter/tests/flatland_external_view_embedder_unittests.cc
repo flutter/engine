@@ -263,7 +263,7 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
     const float view_opacity) {
   return Pointee(FieldsAre(
       /* id */ _, view_translation, view_scale,
-      FakeTransform::kDefaultOrientation, /*clip_bounds*/ _, /*view_opacity*/ _,
+      FakeTransform::kDefaultOrientation, /*clip_bounds*/ _, view_opacity,
       /*children*/ IsEmpty(),
       /*content*/
       Pointee(VariantWith<FakeViewport>(FieldsAre(
@@ -522,7 +522,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
 
-  const float kOpacity = 0.7;
+  const float kOpacity = 1.0;
   const fuchsia::math::VecF kScale{0.5f, 0.9f};
 
   auto matrix = SkMatrix::I();
@@ -677,7 +677,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
 
-  const float kOpacity = 0.3f;
+  const float kOpacity = 1.0f;
   const fuchsia::math::VecF kScale{2.f, 3.0f};
 
   auto matrix = SkMatrix::I();
