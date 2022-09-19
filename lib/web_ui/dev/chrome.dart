@@ -85,9 +85,10 @@ class Chrome extends Browser {
         '--wasm-gc-js-interop',
         '--experimental-wasm-stack-switching',
         '--experimental-wasm-type-reflection',
+        '--wasm-gc-js-interop',
       ].join(' ') : '';
       final List<String> args = <String>[
-        if (jsFlags.isNotEmpty) '--js-flags="$jsFlags"',
+        if (jsFlags.isNotEmpty) '--js-flags=$jsFlags',
         '--user-data-dir=$dir',
         url.toString(),
         if (!debug)

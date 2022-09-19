@@ -13,10 +13,10 @@ chrome:
   # `self.m.platform.name.capitalize()` evaluates to. See:
   #
   # recipe_modules/web_util/api.py
-  Linux: 1036826
-  Mac: 1036822
-  Win: 1036826
-  version: '106.0' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
+  Linux: 1046592
+  Mac: 1046592
+  Win: 1046592
+  version: '107.0' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
 
 ## Firefox does not use CIPD. To update the version, simply update it in this
 ## file.
