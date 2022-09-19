@@ -831,9 +831,7 @@ def parse_args(args):
       action='store_true',
       help='build dart2wasm as a dependency'
   )
-  parser.add_argument(
-      '--no-dart2wasm', dest='dart2wasm', action='store_false'
-  )
+  parser.add_argument('--no-dart2wasm', dest='dart2wasm', action='store_false')
 
   parser.add_argument(
       '--ide',

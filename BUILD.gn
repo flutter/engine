@@ -121,7 +121,7 @@ group("flutter") {
       }
 
       if (dart2wasm) {
-        public_deps += [ "//third_party/dart:dart2wasm"]
+        public_deps += [ "//third_party/dart:dart2wasm" ]
       }
     }
   }
