@@ -203,24 +203,24 @@ def getCommonAncestorCommit(dep):
 
           # create branch that will track the upstream dep
           print('attempting to add upstream remote from: ' + upstream)
-          os.system(f'git remote add upstream {upstream}')
-          os.system(f'git fetch --quiet upstream')
+          os.system('git remote add upstream ' + {upstream})
+          os.system('git fetch --quiet upstream')
 
           # get name of default branch for upstream
-          default_branch = subprocess.check_output(f'git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
+          default_branch = subprocess.check_output('git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
           print("default_branch found: " + default_branch)
 
           # make upstream branch track the upstream dep
-          os.system(f'git checkout -b upstream --track upstream/{default_branch}')
+          os.system('git checkout -b upstream --track upstream/' + {default_branch})
 
           # get the most recent commit from defaul branch of upstream
           commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
           commit = commit.decode().strip()
           print("commit found: " + commit)
-          print(f'git merge-base {commit} {dep[1]}')
+          print('git merge-base ' + {commit} + ' ' + {dep[1]})
 
           # perform merge-base on most recent default branch commit and pinned mirror commit
-          ancestorCommit = subprocess.check_output(f'git merge-base {commit} {dep[1]}', shell=True)
+          ancestorCommit = subprocess.check_output('git merge-base ' + {commit} + ' ' + {dep[1]}, shell=True)
           ancestorCommit = ancestorCommit.decode().strip()
           print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
           return ancestorCommit
