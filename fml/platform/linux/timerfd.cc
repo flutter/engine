@@ -4,9 +4,9 @@
 
 #include "flutter/fml/platform/linux/timerfd.h"
 
-#include <cstring>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cstring>
 
 #include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/logging.h"
