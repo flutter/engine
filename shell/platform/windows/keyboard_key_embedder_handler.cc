@@ -164,8 +164,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
          action == WM_SYSKEYDOWN || action == WM_SYSKEYUP);
 
   auto last_logical_record_iter = pressingRecords_.find(physical_key);
-  const bool had_record = last_logical_record_iter != pressingRecords_.end();
-  const uint64_t last_logical_record =
+  bool had_record = last_logical_record_iter != pressingRecords_.end();
+  uint64_t last_logical_record =
       had_record ? last_logical_record_iter->second : 0;
 
   // The logical key for the current "tap sequence".
@@ -207,6 +207,13 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // target key's pressed state will be updated immediately after this.
   SynchronizeCritialPressedStates(key, physical_key, is_event_down,
                                   event_key_can_be_repeat);
+
+  // Reassess the last logical record in case pressingRecords_ was modified
+  // by the above synchronization methods.
+  last_logical_record_iter = pressingRecords_.find(physical_key);
+  had_record = last_logical_record_iter != pressingRecords_.end();
+  last_logical_record =
+      had_record ? last_logical_record_iter->second : 0;
 
   // The resulting event's `type`.
   FlutterKeyEventType type;
