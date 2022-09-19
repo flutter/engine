@@ -1,4 +1,4 @@
-Signature: 06f9df936f451904c9bda5990b50d0d4
+Signature: b9ca18aae8614be983580a12d5978a5b
 
 UNUSED LICENSES:
 
@@ -913,7 +913,6 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.e
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/retry_ios_install_retries_exhausted.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test-win.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_mac.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_all_uploads.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_one_upload.json
