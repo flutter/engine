@@ -187,7 +187,7 @@ def getCommonAncestorCommit(dep):
           upstream = deps.get(dep_name)
           # clone dependency from mirror
           os.chdir('./clone-test')
-          print(f'attempting: git clone --quiet {dep_name}')
+          # print(f'attempting: git clone --quiet {dep[0]}')
           os.system(f'git clone {dep[0]} --quiet {dep_name}')
           os.chdir(f'./{dep_name}')
 
