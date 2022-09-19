@@ -4,6 +4,7 @@
 
 #include "flutter/fml/platform/linux/timerfd.h"
 
+#include <cstring>
 #include <sys/types.h>
 #include <unistd.h>
 
