@@ -4,7 +4,6 @@
 
 #include <algorithm>
 
-#include "flutter/fml/macros.h"
 #include "impeller/geometry/gradient.h"
 
 namespace impeller {
