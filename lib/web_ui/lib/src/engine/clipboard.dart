@@ -7,7 +7,6 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'services.dart';
-import 'util.dart';
 
 /// Handles clipboard related platform messages.
 class ClipboardMessageHandler {

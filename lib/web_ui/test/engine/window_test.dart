@@ -332,7 +332,13 @@ Future<void> testMain() async {
       'orientation': <Object?, Object?>{
         'lock': allowInterop((String lockType) {
           lockCalls.add(lockType);
-          return simulateError ? Future<void>.error('Simulating error') : Future<void>.value();
+          return JsPromise(allowInterop((Function(Object? value) resolve, Function reject) {
+            if (!simulateError) {
+              resolve(null);
+            } else {
+              reject('Simulating error');
+            }
+          }));
         }),
         'unlock': allowInterop(() {
           unlockCount += 1;
