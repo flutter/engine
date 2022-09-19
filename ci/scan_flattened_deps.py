@@ -121,7 +121,7 @@ def ParseDepsFile(deps_flat_file):
 
     # Extract commit hash, save in dictionary
     for line in Lines:
-        os.chdir(CHECKOUT_ROOT)
+        os.chdir('clone-test')
         dep = line.strip().split('@') # separate fully qualified dep into name + pinned hash
 
         common_commit = getCommonAncestorCommit(dep)
@@ -186,9 +186,9 @@ def getCommonAncestorCommit(dep):
           # get the upstream URL from the mapping in DEPS file
           upstream = deps.get(dep_name)
           # clone dependency from mirror
-          os.chdir('./clone-test')
-          # print(f'attempting: git clone --quiet {dep[0]}')
-          os.system(f'git clone {dep[0]} --quiet {dep_name}')
+          # print(f'attempting: git clone --quiet {dep_name}')
+          # os.system(f'git clone {dep[0]} --quiet {dep_name}')
+          os.system('git clone ' + {dep[0]} + ' --quiet ' + {dep_name})
           os.chdir(f'./{dep_name}')
 
           # check how old pinned commit is
