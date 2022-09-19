@@ -365,7 +365,6 @@ TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
   bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   bridge->CommitUpdates();
-  throw std::exception("Hello world");
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
   EXPECT_EQ(root_node->GetData().GetCheckedState(),

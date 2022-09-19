@@ -143,6 +143,7 @@ void AccessibilityBridge::OnRoleChanged(ui::AXTree* tree,
 
 void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
   BASE_DCHECK(node);
+  BASE_DCHECK(false);
   id_wrapper_map_[node->id()] = delegate_->CreateFlutterPlatformNodeDelegate();
   id_wrapper_map_[node->id()]->Init(
       std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
@@ -153,6 +154,7 @@ void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
 void AccessibilityBridge::OnNodeDeleted(ui::AXTree* tree,
                                         AccessibilityNodeId node_id) {
   BASE_DCHECK(node_id != ui::AXNode::kInvalidAXID);
+  BASE_CHECK(false);
   if (id_wrapper_map_.find(node_id) != id_wrapper_map_.end()) {
     id_wrapper_map_.erase(node_id);
   }
