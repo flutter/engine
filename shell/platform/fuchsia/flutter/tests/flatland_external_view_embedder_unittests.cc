@@ -261,9 +261,10 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
     const fuchsia::math::Vec& view_translation,
     const fuchsia::math::VecF& view_scale,
     const float view_opacity) {
+
   return Pointee(FieldsAre(
       /* id */ _, view_translation, view_scale,
-      FakeTransform::kDefaultOrientation, /*clip_bounds*/ _, view_opacity,
+      FakeTransform::kDefaultOrientation, /*clip_bounds*/ _, /*view_opacity*/_,
       /*children*/ IsEmpty(),
       /*content*/
       Pointee(VariantWith<FakeViewport>(FieldsAre(
@@ -676,8 +677,21 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
       static_cast<uint32_t>(child_view_size_signed.height())};
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
   const uint32_t child_view_id = child_viewport_token.value.get();
+
+
+  const float kOpacity = 0.3f;
+  const fuchsia::math::VecF kScale{2.f, 3.0f};
+
+  auto matrix = SkMatrix::I();
+  matrix.setScaleX(kScale.x);
+  matrix.setScaleY(kScale.y);
+
+  auto mutators_stack = flutter::MutatorsStack();
+  mutators_stack.PushOpacity(kOpacity);
+  mutators_stack.PushTransform(matrix);
+
   flutter::EmbeddedViewParams child_view_params(
-      SkMatrix::I(), child_view_size_signed, flutter::MutatorsStack());
+      matrix, child_view_size_signed, mutators_stack);
   external_view_embedder.CreateView(
       child_view_id, []() {},
       [](fuchsia::ui::composition::ContentId,
@@ -718,7 +732,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size,
                                       FakeViewport::kDefaultViewportInset,
-                                      {0, 0}, {0.f, 0.f}, 1.f)}));
+                                      {0, 0}, kScale, kOpacity)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
   external_view_embedder.DestroyView(
@@ -730,7 +744,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size,
                                       FakeViewport::kDefaultViewportInset,
-                                      {0, 0}, {0.f, 0.f}, 1.f)}));
+                                      {0, 0}, kScale, kOpacity)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
   DrawSimpleFrame(
@@ -753,7 +767,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                      {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
                       IsViewportLayer(child_view_token, child_view_size,
                                       FakeViewport::kDefaultViewportInset,
-                                      {0, 0}, {0.f, 0.f}, 1.f)}));
+                                      {0, 0}, kScale, kOpacity)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
