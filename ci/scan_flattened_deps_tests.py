@@ -1,5 +1,6 @@
 import unittest
 import scan_flattened_deps
+import requests
 
 class TestDepsScanMethods(unittest.TestCase):
 
