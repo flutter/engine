@@ -212,8 +212,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // by the above synchronization methods.
   last_logical_record_iter = pressingRecords_.find(physical_key);
   had_record = last_logical_record_iter != pressingRecords_.end();
-  last_logical_record =
-      had_record ? last_logical_record_iter->second : 0;
+  last_logical_record = had_record ? last_logical_record_iter->second : 0;
 
   // The resulting event's `type`.
   FlutterKeyEventType type;
