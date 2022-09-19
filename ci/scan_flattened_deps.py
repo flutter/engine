@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import subprocess
+from turtle import up
 import requests
 from typing import Any, Dict, Optional
 import time
@@ -144,7 +145,7 @@ def ParseDepsFile(deps_flat_file):
         results = responses.json().get("results")
         filtered_results = list(filter(lambda vuln: vuln != {}, results))
         if len(filtered_results)>0:
-            print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
+            print('Found {vuln_count} vulnerabilit(y/ies), adding to report'.format(vulnCount=str(len(filtered_results))))
             print(' '.join(filtered_results))
             return filtered_results
         else:
@@ -188,39 +189,39 @@ def getCommonAncestorCommit(dep):
           # clone dependency from mirror
           # print(f'attempting: git clone --quiet {dep_name}')
           # os.system(f'git clone {dep[0]} --quiet {dep_name}')
-          os.system('git clone ' + {dep[0]} + ' --quiet ' + {dep_name})
+          os.system('git clone {depUrl} --quiet {dep_name}'.format(depUrl=dep[0], dep_name=dep_name))
           # os.chdir(f'./{dep_name}')
-          os.chdir('./'+{dep_name})
+          os.chdir('./{dep_name}'.format(dep_name=dep_name))
 
           # check how old pinned commit is
           # dep_roll_date = subprocess.check_output(f'git show -s --format=%ct {dep[1]}', shell=True).decode()
-          dep_roll_date = subprocess.check_output('git show -s --format=%ct ' + {dep[1]}, shell=True).decode()
-          print("dep roll date is " + dep_roll_date)
+          dep_roll_date = subprocess.check_output('git show -s --format=%ct {dep}'.format(dep=dep[1]), shell=True).decode()
+          print('dep roll date is {dep_roll_date}'.format(dep_roll_date=dep_roll_date))
           years = (time.time() - int(dep_roll_date)) / 31556952 # number converts to years TODO - replace with more elegant than raw number
           if years >= 1:
-            print('Old dep found: ' + {dep[0]} + ' is from ' + {dep_roll_date})
+            print('Old dep found: {depUrl} is from {dep_roll_date}'.format(depUrl=dep[0], dep_roll_date=dep_roll_date))
             old_deps.append(dep[0])
 
           # create branch that will track the upstream dep
-          print('attempting to add upstream remote from: ' + upstream)
-          os.system('git remote add upstream ' + {upstream})
+          print('attempting to add upstream remote from: {upstream}'.format(upstream=upstream))
+          os.system('git remote add upstream {upstream}'.format(upstream=upstream))
           os.system('git fetch --quiet upstream')
 
           # get name of default branch for upstream
           default_branch = subprocess.check_output('git remote show upstream | sed -n \'/HEAD branch/s/.*: //p\'', shell=True).decode()
-          print("default_branch found: " + default_branch)
+          print('default_branch found: {default_branch}'.format(default_branch=default_branch))
 
           # make upstream branch track the upstream dep
-          os.system('git checkout -b upstream --track upstream/' + {default_branch})
+          os.system('git checkout -b upstream --track upstream/{default_branch}'.format(default_branch=default_branch))
 
           # get the most recent commit from defaul branch of upstream
           commit = subprocess.check_output("git for-each-ref --format='%(objectname:short)' refs/heads/upstream", shell=True)
           commit = commit.decode().strip()
           print("commit found: " + commit)
-          print('git merge-base ' + {commit} + ' ' + {dep[1]})
+          print('git merge-base {commit} {depUrl}'.format(commit=commit, depUrl=dep[1]))
 
           # perform merge-base on most recent default branch commit and pinned mirror commit
-          ancestorCommit = subprocess.check_output('git merge-base ' + {commit} + ' ' + {dep[1]}, shell=True)
+          ancestorCommit = subprocess.check_output('git merge-base {commit} {depUrl}'.format(commit=commit, depUrl=dep[1]), shell=True)
           ancestorCommit = ancestorCommit.decode().strip()
           print("FOUND ANCESTOR COMMIT: " + ancestorCommit)
           return ancestorCommit
@@ -250,7 +251,7 @@ def WriteSarif(responses, manifest_file):
           json.dump(data, out)
 
 
-def CreateRuleEntry(vuln: Dict[str, Any]):
+def CreateRuleEntry(vuln):
     """
     Creates a Sarif rule entry from an OSV finding.
     Vuln object follows OSV Schema and is required to have 'id' and 'modified'
