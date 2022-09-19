@@ -262,7 +262,7 @@ def CreateRuleEntry(vuln):
     rule['help']['text'].append("vuln['id']")
     return rule
 
-def CreateResultEntry(vuln: Dict[str, Any]):
+def CreateResultEntry(vuln):
     """
     Creates a Sarif res entry from an OSV entry.
     Rule finding linked to the associated rule metadata via ruleId
