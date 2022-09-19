@@ -189,14 +189,16 @@ def getCommonAncestorCommit(dep):
           # print(f'attempting: git clone --quiet {dep_name}')
           # os.system(f'git clone {dep[0]} --quiet {dep_name}')
           os.system('git clone ' + {dep[0]} + ' --quiet ' + {dep_name})
-          os.chdir(f'./{dep_name}')
+          # os.chdir(f'./{dep_name}')
+          os.chdir('./'+{dep_name})
 
           # check how old pinned commit is
-          dep_roll_date = subprocess.check_output(f'git show -s --format=%ct {dep[1]}', shell=True).decode()
+          # dep_roll_date = subprocess.check_output(f'git show -s --format=%ct {dep[1]}', shell=True).decode()
+          dep_roll_date = subprocess.check_output('git show -s --format=%ct ' + {dep[1]}, shell=True).decode()
           print("dep roll date is " + dep_roll_date)
           years = (time.time() - int(dep_roll_date)) / 31556952 # number converts to years TODO - replace with more elegant than raw number
           if years >= 1:
-            print(f'Old dep found: {dep[0]} is from {dep_roll_date}')
+            print('Old dep found: ' + {dep[0]} + ' is from ' + {dep_roll_date})
             old_deps.append(dep[0])
 
           # create branch that will track the upstream dep
