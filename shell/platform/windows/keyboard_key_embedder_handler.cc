@@ -271,7 +271,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
     // Assert this in debug mode. But in cases that it doesn't satisfy
-    // (such as due to a bug), make sure the `erase` is only called 
+    // (such as due to a bug), make sure the `erase` is only called
     // with a valid value to avoid crashing.
     if (record_iter != pressingRecords_.end()) {
       pressingRecords_.erase(record_iter);
