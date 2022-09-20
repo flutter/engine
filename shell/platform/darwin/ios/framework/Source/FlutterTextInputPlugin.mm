@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
+#import <CoreText/CoreText.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
@@ -702,6 +703,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+// The composed character that is temporarily removed by the keyboard API.
+// This is cleared at the start of each keyboard interaction. (Enter a character, delete a character
+// etc)
+@property(nonatomic, copy) NSString* temporarilyDeletedComposedCharacter;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -880,6 +885,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_markedTextStyle release];
   [_textContentType release];
   [_textInteraction release];
+  [_temporarilyDeletedComposedCharacter release];
+  _temporarilyDeletedComposedCharacter = nil;
   [super dealloc];
 }
 
@@ -1224,6 +1231,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
+  // `temporarilyDeletedComposedCharacter` should only be used during a single text change session.
+  // So it needs to be cleared at the start of each text editting session.
+  self.temporarilyDeletedComposedCharacter = nil;
+
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
     [self.textInputDelegate flutterTextInputView:self
                                    performAction:FlutterTextInputActionNewline
@@ -1848,6 +1859,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)insertText:(NSString*)text {
+  if (self.temporarilyDeletedComposedCharacter.length > 0 && text.length == 1 && !text.UTF8String &&
+      [text characterAtIndex:0] == [self.temporarilyDeletedComposedCharacter characterAtIndex:0]) {
+    // Workaround for https://github.com/flutter/flutter/issues/111494
+    // TODO(cyanglaz): revert this workaround if when flutter supports a minimum iOS version which
+    // this bug is fixed by Apple.
+    text = self.temporarilyDeletedComposedCharacter;
+    self.temporarilyDeletedComposedCharacter = nil;
+  }
+
   NSMutableArray<FlutterTextSelectionRect*>* copiedRects =
       [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
   NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
@@ -1936,6 +1956,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   }
 
   if (!_selectedTextRange.isEmpty) {
+    // Cache the last deleted composed characters to use for an iOS bug where the next
+    // insertion corrupts the composed characters.
+    // See: https://github.com/flutter/flutter/issues/111494#issuecomment-1248441346
+    NSString* deletedText = [self.text substringWithRange:_selectedTextRange.range];
+    CFRange range =
+        CFStringGetRangeOfComposedCharactersAtIndex((__bridge CFStringRef)deletedText, 0);
+    self.temporarilyDeletedComposedCharacter =
+        [deletedText substringWithRange:NSMakeRange(range.location, range.length)];
     [self replaceRange:_selectedTextRange withText:@""];
   }
 }
