@@ -246,7 +246,6 @@ class CkImage implements ui.Image, StackTraceDebugger {
     );
     ui.Image.onDispose?.call(this);
     _disposed = true;
-    videoFrame?.close();
     box.unref(this);
   }
 
