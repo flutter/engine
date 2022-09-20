@@ -325,7 +325,7 @@ class TextLayoutService {
       final LayoutFragment fragment = fragments[i];
       assert(fragment.textDirection != _paragraphDirection);
 
-      fragment.setPosition(startOffset: cumulativeWidth, line: line);
+      fragment.setPosition(startOffset: startOffset + cumulativeWidth, line: line);
       if (withJustification) {
         fragment.justifyTo(width, line);
       }
