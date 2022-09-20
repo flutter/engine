@@ -219,23 +219,23 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
 }
 
 mixin _FragmentMetrics on _CombinedFragment {
-  late final Spanometer _spanometer;
+  late Spanometer _spanometer;
 
   /// The rise from the baseline as calculated from the font and style for this text.
-  double get ascent => _checkForNull(_ascent);
-  double? _ascent;
+  double get ascent => _ascent;
+  late double _ascent;
 
   /// The drop from the baseline as calculated from the font and style for this text.
-  double get descent => _checkForNull(_descent);
-  double? _descent;
+  double get descent => _descent;
+  late double _descent;
 
   /// The width of the measured text, not including trailing spaces.
-  double get widthExcludingTrailingSpaces => _checkForNull(_widthExcludingTrailingSpaces);
-  double? _widthExcludingTrailingSpaces;
+  double get widthExcludingTrailingSpaces => _widthExcludingTrailingSpaces;
+  late double _widthExcludingTrailingSpaces;
 
   /// The width of the measured text, including any trailing spaces.
-  double get widthIncludingTrailingSpaces => _checkForNull(_widthIncludingTrailingSpaces) + _extraWidthForJustification;
-  double? _widthIncludingTrailingSpaces;
+  double get widthIncludingTrailingSpaces => _widthIncludingTrailingSpaces + _extraWidthForJustification;
+  late double _widthIncludingTrailingSpaces;
 
   double _extraWidthForJustification = 0.0;
 
@@ -277,27 +277,20 @@ mixin _FragmentMetrics on _CombinedFragment {
     final double justificationPerSpace = justificationTotal / line.nonTrailingSpaces;
     _extraWidthForJustification = justificationPerSpace * trailingSpaces;
   }
-
-  T _checkForNull<T>(T? value) {
-    if (value == null) {
-      throw Exception('Trying to read metrics before the fragment is measured.');
-    }
-    return value;
-  }
 }
 
 mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   /// The distance from the beginning of the line to the beginning of the fragment.
-  double get startOffset => _checkForNull(_startOffset);
-  double? _startOffset;
+  double get startOffset => _startOffset;
+  late double _startOffset;
 
   /// The width of the line that contains this fragment.
-  ParagraphLine get line => _checkForNull(_line);
-  ParagraphLine? _line;
+  ParagraphLine get line => _line;
+  late ParagraphLine _line;
 
   /// The baseline of the fragment relative to the top of the line.
-  double get baseline => _checkForNull(_baseline);
-  double? _baseline;
+  double get baseline => _baseline;
+  late double _baseline;
 
   /// The distance from the beginning of the line to the end of the fragment.
   double get endOffset => startOffset + widthIncludingTrailingSpaces;
@@ -322,14 +315,6 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   /// Set the baseline of this fragment relative to the line that contains it.
   void setBaseline(double baseline) {
     _baseline = baseline;
-  }
-
-  @override
-  T _checkForNull<T>(T? value) {
-    if (value == null) {
-      throw Exception('Trying to read position info before the fragment is positioned.');
-    }
-    return value;
   }
 }
 
