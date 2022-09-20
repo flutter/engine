@@ -270,10 +270,9 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     pressingRecords_[physical_key] = eventual_logical_record;
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
-    // Synthesized keyup events can be handled causing the
-    // key state to be released before the keyup event is
-    // received. Therefore, only erase the record if the
-    // key is currently recorded as pressed.
+    // Assert this in debug mode. But in cases that it doesn't satisfy
+    // (such as due to a bug), make sure the `erase` is only called 
+    // with a valid value to avoid crashing.
     if (record_iter != pressingRecords_.end()) {
       pressingRecords_.erase(record_iter);
     } else {
