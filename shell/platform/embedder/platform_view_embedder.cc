@@ -22,8 +22,8 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
           if (parent) {
             parent->HandlePlatformMessage(std::move(message));
           } else {
-            FML_DLOG(WARNING)
-                << "Dropping message on channel " << message->channel();
+            FML_DLOG(WARNING) << "Deleted engine dropping message on channel "
+                              << message->channel();
           }
         }));
   }

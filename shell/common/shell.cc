@@ -1232,9 +1232,9 @@ void Shell::OnEngineHandlePlatformMessage(
       // global variables. See also
       // https://github.com/flutter/flutter/issues/111575.
       // This won't be an issue until Windows supports background platform
-      // channels. Then this can potentially be addressed by capturing a
-      // weak_ptr to an object that retains the ui TaskRunner, instead of the
-      // TaskRunner directly.
+      // channels (https://github.com/flutter/flutter/issues/93945). Then this
+      // can potentially be addressed by capturing a weak_ptr to an object that
+      // retains the ui TaskRunner, instead of the TaskRunner directly.
       FML_DCHECK(false);
 #endif
       // We route messages through the platform thread temporarily when the
