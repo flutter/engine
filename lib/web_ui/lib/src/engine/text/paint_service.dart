@@ -33,13 +33,8 @@ class TextPaintService {
         continue;
       }
 
-      final int lengthExcludingTrailingSpaces = fragments.length - line.trailingSpaceBoxCount;
-
-      for (int i = 0; i < lengthExcludingTrailingSpaces; i++) {
+      for (int i = 0; i < fragments.length; i++) {
         _paintBackground(canvas, offset, line, fragments[i]);
-        _paintText(canvas, offset, line, fragments[i]);
-      }
-      for (int i = lengthExcludingTrailingSpaces; i < fragments.length; i++) {
         _paintText(canvas, offset, line, fragments[i]);
       }
     }
@@ -56,8 +51,10 @@ class TextPaintService {
       // Paint the background of the box, if the span has a background.
       final SurfacePaint? background = span.style.background as SurfacePaint?;
       if (background != null) {
-        final ui.Rect rect = fragment.toTextBox(line, forPainting: true).toRect().shift(offset);
-        canvas.drawRect(rect, background.paintData);
+        final ui.Rect rect = fragment.toPaintingTextBox().toRect();
+        if (!rect.isEmpty) {
+          canvas.drawRect(rect.shift(offset), background.paintData);
+        }
       }
     }
   }

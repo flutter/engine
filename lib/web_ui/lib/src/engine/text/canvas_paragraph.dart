@@ -263,7 +263,7 @@ class CanvasParagraph implements ui.Paragraph {
 }
 
 void _positionSpanElement(DomElement element, ParagraphLine line, LayoutFragment fragment) {
-  final ui.Rect boxRect = fragment.toTextBox(line, forPainting: true).toRect();
+  final ui.Rect boxRect = fragment.toPaintingTextBox().toRect();
   element.style
     ..position = 'absolute'
     ..top = '${boxRect.top}px'

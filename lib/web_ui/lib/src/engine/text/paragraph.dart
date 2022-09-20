@@ -117,10 +117,10 @@ class ParagraphLine {
     required this.startIndex,
     required this.endIndex,
     required this.trailingNewlines,
+    required this.trailingSpaces,
+    required this.spaceCount,
     required this.widthWithTrailingSpaces,
     required this.fragments,
-    required this.spaceBoxCount,
-    required this.trailingSpaceBoxCount,
     this.displayText,
   }) : assert(trailingNewlines <= endIndex - startIndex),
        lineMetrics = EngineLineMetrics(
@@ -150,6 +150,12 @@ class ParagraphLine {
   /// The number of new line characters at the end of the line.
   final int trailingNewlines;
 
+  /// The number of spaces at the end of the line.
+  final int trailingSpaces;
+
+  /// The number of space characters in the entire line.
+  final int spaceCount;
+
   /// The full width of the line including all trailing space but not new lines.
   ///
   /// The difference between [width] and [widthWithTrailingSpaces] is that
@@ -165,17 +171,11 @@ class ParagraphLine {
   /// The fragments that make up this line.
   final List<LayoutFragment> fragments;
 
-  /// The number of boxes that are space-only.
-  final int spaceBoxCount;
-
-  /// The number of trailing boxes that are space-only.
-  final int trailingSpaceBoxCount;
-
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
 
-  /// The number of space-only boxes excluding trailing spaces.
-  int get nonTrailingSpaceBoxCount => spaceBoxCount - trailingSpaceBoxCount;
+  /// The number of space characters in the line excluding trailing spaces.
+  int get nonTrailingSpaces => spaceCount - trailingSpaces;
 
   // Convenient getters for line metrics properties.
 
@@ -199,10 +199,10 @@ class ParagraphLine {
         startIndex,
         endIndex,
         trailingNewlines,
+        trailingSpaces,
+        spaceCount,
         widthWithTrailingSpaces,
         fragments,
-        spaceBoxCount,
-        trailingSpaceBoxCount,
         displayText,
       );
 
@@ -219,10 +219,10 @@ class ParagraphLine {
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&
         other.trailingNewlines == trailingNewlines &&
+        other.trailingSpaces == trailingSpaces &&
+        other.spaceCount == spaceCount &&
         other.widthWithTrailingSpaces == widthWithTrailingSpaces &&
         other.fragments == fragments &&
-        other.spaceBoxCount == spaceBoxCount &&
-        other.trailingSpaceBoxCount == trailingSpaceBoxCount &&
         other.displayText == displayText;
   }
 

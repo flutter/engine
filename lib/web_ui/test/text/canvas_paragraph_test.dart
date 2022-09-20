@@ -77,10 +77,8 @@ Future<void> testMain() async {
         // "Lorem "
         paragraph.getBoxesForRange(0, 6),
         <ui.TextBox>[
-          // "Lorem"
-          box(0, 0, 50, 10),
-          // " "
-          box(50, 0, 60, 10),
+          // "Lorem "
+          box(0, 0, 60, 10),
         ],
       );
 
@@ -97,10 +95,8 @@ Future<void> testMain() async {
         // "um "
         paragraph.getBoxesForRange(9, 12),
         <ui.TextBox>[
-          // "um"
-          box(90, 0, 110, 10),
-          // " "
-          box(110, 0, 120, 10),
+          // "um "
+          box(90, 0, 120, 10),
         ],
       );
 
@@ -110,10 +106,8 @@ Future<void> testMain() async {
         // "rem ipsum"
         paragraph.getBoxesForRange(2, 11),
         <ui.TextBox>[
-          // "rem"
-          box(20, 0, 50, 10),
-          // " "
-          box(50, 0, 60, 10),
+          // "rem "
+          box(20, 0, 60, 10),
           // "ipsum"
           box(60, 0, 110, 10),
         ],
@@ -125,14 +119,10 @@ Future<void> testMain() async {
         // "Lorem ipsum ."
         paragraph.getBoxesForRange(0, 13),
         <ui.TextBox>[
-          // "Lorem"
-          box(0, 0, 50, 10),
-          // " "
-          box(50, 0, 60, 10),
-          // "ipsum"
-          box(60, 0, 110, 10),
-          // " "
-          box(110, 0, 120, 10),
+          // "Lorem "
+          box(0, 0, 60, 10),
+          // "ipsum "
+          box(60, 0, 120, 10),
           // "."
           box(120, 0, 130, 10),
         ],
@@ -165,10 +155,8 @@ Future<void> testMain() async {
         // "Lorem "
         paragraph.getBoxesForRange(0, 6),
         <ui.TextBox>[
-          // "Lorem"
-          box(0, 0, 50, 10),
-          // " "
-          box(50, 0, 60, 10),
+          // "Lorem "
+          box(0, 0, 60, 10),
         ],
       );
 
@@ -178,10 +166,8 @@ Future<void> testMain() async {
         // "psum "
         paragraph.getBoxesForRange(7, 12),
         <ui.TextBox>[
-          // "psum"
-          box(10, 10, 50, 20),
-          // " "
-          box(50, 10, 60, 20),
+          // "psum "
+          box(10, 10, 60, 20),
         ],
       );
 
@@ -193,18 +179,12 @@ Future<void> testMain() async {
         // "dolor s"
         paragraph.getBoxesForRange(3, 19),
         <ui.TextBox>[
-          // "em"
-          box(30, 0, 50, 10),
-          // " "
-          box(50, 0, 60, 10),
-          // "ipsum"
-          box(0, 10, 50, 20),
-          // " "
-          box(50, 10, 60, 20),
-          // "dolor"
-          box(0, 20, 50, 30),
-          // " "
-          box(50, 20, 60, 30),
+          // "em "
+          box(30, 0, 60, 10),
+          // "ipsum "
+          box(0, 10, 60, 20),
+          // "dolor "
+          box(0, 20, 60, 30),
           // "s"
           box(60, 20, 70, 30),
         ],
@@ -240,10 +220,8 @@ Future<void> testMain() async {
         // "Lorem "
         paragraph.getBoxesForRange(0, 6),
         <ui.TextBox>[
-          // "Lorem"
-          box(0, 0, 50, 10),
-          // " "
-          box(50, 0, 60, 10),
+          // "Lorem "
+          box(0, 0, 60, 10),
         ],
       );
 
@@ -253,10 +231,8 @@ Future<void> testMain() async {
         // "psum "
         paragraph.getBoxesForRange(7, 12),
         <ui.TextBox>[
-          // "psum"
-          box(10, 10, 50, 20),
-          // " "
-          box(50, 10, 60, 20),
+          // "psum "
+          box(10, 10, 60, 20),
         ],
       );
 
@@ -266,10 +242,8 @@ Future<void> testMain() async {
         // "lor sit"
         paragraph.getBoxesForRange(14, 21),
         <ui.TextBox>[
-          // "lor"
-          box(20, 20, 50, 30),
-          // " "
-          box(50, 20, 60, 30),
+          // "lor "
+          box(20, 20, 60, 30),
           // "sit"
           box(60, 20, 90, 30),
         ],
@@ -283,18 +257,12 @@ Future<void> testMain() async {
         // "dolor s"
         paragraph.getBoxesForRange(3, 19),
         <ui.TextBox>[
-          //    "em"
-          box(30, 0, 50, 10),
-          //    " "
-          box(50, 0, 60, 10),
-          // "ipsum"
-          box(0, 10, 50, 20),
-          // " "
-          box(50, 10, 60, 20),
-          // "dolor"
-          box(0, 20, 50, 30),
-          // " "
-          box(50, 20, 60, 30),
+          //    "em "
+          box(30, 0, 60, 10),
+          // "ipsum "
+          box(0, 10, 60, 20),
+          // "dolor "
+          box(0, 20, 60, 30),
           // "s"
           box(60, 20, 70, 30),
         ],
@@ -334,14 +302,10 @@ Future<void> testMain() async {
         // "em ipsum dol"
         paragraph.getBoxesForRange(3, 15),
         <ui.TextBox>[
-          // "em"
-          box(60, 16, 100, 36),
-          // " "
-          box(100, 16, 120, 36),
-          // "ipsum"
-          box(120, 0, 320, 40),
-          // " "
-          box(320, 0, 360, 40),
+          // "em "
+          box(60, 16, 120, 36),
+          // "ipsum "
+          box(120, 0, 360, 40),
           // "dol"
           box(360, 24, 390, 34),
         ],
@@ -352,25 +316,19 @@ Future<void> testMain() async {
         // "sit amet"
         paragraph.getBoxesForRange(8, 26),
         <ui.TextBox>[
-          // "sum"
-          box(200, 0, 320, 40),
-          // " "
-          box(320, 0, 360, 40),
-          // "dolor"
-          box(360, 24, 410, 34),
-          // " "
-          box(410, 24, 420, 34),
-          // "sit"
-          box(0, 40, 90, 70),
-          // " "
-          box(90, 40, 120, 70),
+          // "sum "
+          box(200, 0, 360, 40),
+          // "dolor "
+          box(360, 24, 420, 34),
+          // "sit "
+          box(0, 40, 120, 70),
           // "amet"
           box(120, 48, 200, 68),
         ],
       );
     });
 
-    test('pops boxes when segments are popped', () {
+    test('reverts to last line break opportunity', () {
       final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
         // Lines:
         //   "AAA "
@@ -402,29 +360,23 @@ Future<void> testMain() async {
       final ParagraphLine firstLine = paragraph.lines[0];
       final ParagraphLine secondLine = paragraph.lines[1];
 
-      // There should be no "B" in the first line's boxes.
-      expect(firstLine.fragments, hasLength(2));
+      // There should be no "B" in the first line's fragments.
+      expect(firstLine.fragments, hasLength(1));
 
-      expect(getTextForFragment(firstLine.fragments[0]), 'AAA');
-      expect(firstLine.fragments[0].left, 0.0);
+      expect(getTextForFragment(firstLine.fragments.single), 'AAA ');
+      expect(firstLine.fragments.single.left, 0.0);
 
-      expect(getTextForFragment(firstLine.fragments[1]), ' ');
-      expect(firstLine.fragments[1].left, 30.0);
-
-      // Make sure the second line isn't missing any boxes.
-      expect(secondLine.fragments, hasLength(4));
+      // Make sure the second line isn't missing any fragments.
+      expect(secondLine.fragments, hasLength(3));
 
       expect(getTextForFragment(secondLine.fragments[0]), 'B');
       expect(secondLine.fragments[0].left, 0.0);
 
-      expect(getTextForFragment(secondLine.fragments[1]), '_C');
+      expect(getTextForFragment(secondLine.fragments[1]), '_C ');
       expect(secondLine.fragments[1].left, 10.0);
 
-      expect(getTextForFragment(secondLine.fragments[2]), ' ');
-      expect(secondLine.fragments[2].left, 30.0);
-
-      expect(getTextForFragment(secondLine.fragments[3]), 'DD');
-      expect(secondLine.fragments[3].left, 40.0);
+      expect(getTextForFragment(secondLine.fragments[2]), 'DD');
+      expect(secondLine.fragments[2].left, 40.0);
     });
   });
 
