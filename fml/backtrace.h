@@ -11,8 +11,6 @@
 
 namespace fml {
 
-std::string BacktraceHere(size_t offset = 0);
-
 void InstallCrashHandler();
 
 bool IsCrashHandlingSupported();

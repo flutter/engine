@@ -118,7 +118,7 @@ source_set("fml") {
   if (is_mac || is_linux || is_win || (is_ios && is_debug)) {
     # This abseil dependency is only used by backtrace.cc.
     deps += [
-      "//third_party/abseil-cpp/absl/debugging:stacktrace",
+      "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
       "//third_party/abseil-cpp/absl/debugging:symbolize"
     ]
   }
