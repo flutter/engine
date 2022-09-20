@@ -10,6 +10,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+#include "third_party/abseil-cpp/absl/debugging/stacktrace.h"
 #include "third_party/abseil-cpp/absl/debugging/symbolize.h"
 
 #ifdef FML_OS_WIN
@@ -61,25 +62,18 @@ static std::string GetSymbolName(void* symbol) {
   return DemangleSymbolName({name});
 }
 
-static int Backtrace(void** symbols, int size) {
-#if FML_OS_WIN
-  return CaptureStackBackTrace(0, size, symbols, NULL);
-#else
-  return ::backtrace(symbols, size);
-#endif  // FML_OS_WIN
-}
-
 std::string BacktraceHere(size_t offset) {
   constexpr size_t kMaxFrames = 256;
   void* symbols[kMaxFrames];
-  const auto available_frames = Backtrace(symbols, kMaxFrames);
+  const auto available_frames =
+      absl::GetStackTrace(symbols, kMaxFrames, offset);
   if (available_frames <= 0) {
     return "";
   }
 
   std::stringstream stream;
-  for (int i = 1 + offset; i < available_frames; ++i) {
-    stream << "Frame " << i - 1 - offset << ": " << symbols[i] << " "
+  for (int i = 0; i < available_frames; i++) {
+    stream << "Frame " << i << ": " << symbols[i] << " "
            << GetSymbolName(symbols[i]) << std::endl;
   }
   return stream.str();
