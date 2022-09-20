@@ -402,7 +402,7 @@ class TextLayoutService {
     final double dx = offset.dx - line.left;
     for (final LayoutFragment fragment in line.fragments) {
       if (fragment.left <= dx && dx <= fragment.right) {
-        return fragment.getPositionForX(dx);
+        return fragment.getPositionForX(dx - fragment.left);
       }
     }
     // Is this ever reachable?
@@ -820,6 +820,7 @@ class LineBuilder {
       ascent: ascent,
       descent: descent,
       fragments: _fragments,
+      textDirection: _paragraphDirection,
     );
   }
 
@@ -1067,7 +1068,7 @@ class Spanometer {
 
     int low = start;
     int high = end;
-    do {
+    while (high - low > 1) {
       final int mid = (low + high) ~/ 2;
       final double width = _measure(start, mid);
       if (width < availableWidth) {
@@ -1077,7 +1078,7 @@ class Spanometer {
       } else {
         low = high = mid;
       }
-    } while (high - low > 1);
+    }
 
     if (low == start && !allowEmpty) {
       low++;

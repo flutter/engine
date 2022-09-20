@@ -43,7 +43,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
       reason: 'line #$i had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
     );
     if (expectedLine.displayText != null) {
-      final String displayText = line.fragments.map((f) => f.getText(paragraph)).join();
+      final String displayText = line.getText(paragraph);
       expect(
         displayText,
         expectedLine.displayText,

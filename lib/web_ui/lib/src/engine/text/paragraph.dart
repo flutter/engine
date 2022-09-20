@@ -10,6 +10,7 @@ import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../util.dart';
+import 'canvas_paragraph.dart';
 import 'layout_fragmenter.dart';
 import 'ruler.dart';
 
@@ -121,6 +122,7 @@ class ParagraphLine {
     required this.spaceCount,
     required this.widthWithTrailingSpaces,
     required this.fragments,
+    required this.textDirection,
     this.displayText,
   }) : assert(trailingNewlines <= endIndex - startIndex),
        lineMetrics = EngineLineMetrics(
@@ -171,6 +173,9 @@ class ParagraphLine {
   /// The fragments that make up this line.
   final List<LayoutFragment> fragments;
 
+  /// The text direction of this line, which is the same as the paragraph's.
+  final ui.TextDirection textDirection;
+
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
 
@@ -193,6 +198,14 @@ class ParagraphLine {
     return startIndex < this.endIndex && this.startIndex < endIndex;
   }
 
+  String getText(CanvasParagraph paragraph) {
+    final StringBuffer buffer = StringBuffer();
+    for (final LayoutFragment fragment in fragments) {
+      buffer.write(fragment.getText(paragraph));
+    }
+    return buffer.toString();
+  }
+
   @override
   int get hashCode => Object.hash(
         lineMetrics,
@@ -203,6 +216,7 @@ class ParagraphLine {
         spaceCount,
         widthWithTrailingSpaces,
         fragments,
+        textDirection,
         displayText,
       );
 
@@ -223,6 +237,7 @@ class ParagraphLine {
         other.spaceCount == spaceCount &&
         other.widthWithTrailingSpaces == widthWithTrailingSpaces &&
         other.fragments == fragments &&
+        other.textDirection == textDirection &&
         other.displayText == displayText;
   }
 

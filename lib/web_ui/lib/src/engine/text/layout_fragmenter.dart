@@ -296,12 +296,12 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   double get endOffset => startOffset + widthIncludingTrailingSpaces;
 
   /// The distance from the left edge of the line to the left edge of the fragment.
-  double get left => textDirection == ui.TextDirection.ltr
+  double get left => line.textDirection == ui.TextDirection.ltr
       ? startOffset
       : line.width - endOffset;
 
   /// The distance from the left edge of the line to the right edge of the fragment.
-  double get right => textDirection == ui.TextDirection.ltr
+  double get right => line.textDirection == ui.TextDirection.ltr
       ? endOffset
       : line.width - startOffset;
 
@@ -473,14 +473,107 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     );
   }
 
-  /// Returns the text position within this box's range that's closest to the
-  /// given [x] offset.
+  /// Returns the text position within this fragment's range that's closest to
+  /// the given [x] offset.
   ///
-  /// The [x] offset is expected to be relative to the left edge of the line,
-  /// just like the coordinates of this box.
+  /// The [x] offset is expected to be relative to the left edge of the fragment.
   ui.TextPosition getPositionForX(double x) {
     // TODO(mdebbar): Implement this for placeholders & regular fragments.
-    return const ui.TextPosition(offset: 0);
+
+    x = _makeXDirectionAgnostic(x);
+
+    final int startIndex = start;
+    final int endIndex = end - trailingNewlines;
+
+    // Check some special cases to return the result quicker.
+
+    final int length = endIndex - startIndex;
+    if (length == 0) {
+      return ui.TextPosition(offset: startIndex);
+    }
+    if (length == 1) {
+      // Find out if `x` is closer to `startIndex` or `endIndex`.
+      final double distanceFromStart = x;
+      final double distanceFromEnd = widthIncludingTrailingSpaces - x;
+      return distanceFromStart < distanceFromEnd
+          ? ui.TextPosition(offset: startIndex)
+          : ui.TextPosition(offset: endIndex, affinity: ui.TextAffinity.upstream,);
+    }
+
+    _spanometer.currentSpan = span;
+    // The resulting `cutoff` is the index of the character where the `x` offset
+    // falls. We should return the text position of either `cutoff` or
+    // `cutoff + 1` depending on which one `x` is closer to.
+    //
+    //   offset x
+    //      ↓
+    // "A B C D E F"
+    //     ↑
+    //   cutoff
+    final int cutoff = _spanometer.forceBreak(
+      startIndex,
+      endIndex,
+      availableWidth: x,
+      allowEmpty: true,
+    );
+
+    if (cutoff == endIndex) {
+      return ui.TextPosition(
+        offset: cutoff,
+        affinity: ui.TextAffinity.upstream,
+      );
+    }
+
+    final double lowWidth = _spanometer.measureRange(startIndex, cutoff);
+    final double highWidth = _spanometer.measureRange(startIndex, cutoff + 1);
+
+    // See if `x` is closer to `cutoff` or `cutoff + 1`.
+    if (x - lowWidth < highWidth - x) {
+      // The offset is closer to cutoff.
+      return ui.TextPosition(offset: cutoff);
+    } else {
+      // The offset is closer to cutoff + 1.
+      return ui.TextPosition(
+        offset: cutoff + 1,
+        affinity: ui.TextAffinity.upstream,
+      );
+    }
+  }
+
+  /// Transforms the [x] coordinate to be direction-agnostic.
+  ///
+  /// The X (input) is relative to the [left] edge of the fragment, and this
+  /// method returns an X' (output) that's relative to beginning of the text.
+  ///
+  /// Here's how it looks for a fragment with LTR content:
+  ///
+  ///          *------------------------line width------------------*
+  ///                      *-----X (input)
+  ///          ┌───────────┬────────────────────────┬───────────────┐
+  ///          │           │ ---text-direction----> │               │
+  ///          └───────────┴────────────────────────┴───────────────┘
+  ///                      *-----X' (output)
+  ///          *---left----*
+  ///          *---------------right----------------*
+  ///
+  ///
+  /// And here's how it looks for a fragment with RTL content:
+  ///
+  ///          *------------------------line width------------------*
+  ///                      *-----X (input)
+  ///          ┌───────────┬────────────────────────┬───────────────┐
+  ///          │           │ <---text-direction---- │               │
+  ///          └───────────┴────────────────────────┴───────────────┘
+  ///                   (output) X'-----------------*
+  ///          *---left----*
+  ///          *---------------right----------------*
+  ///
+  double _makeXDirectionAgnostic(double x) {
+    // TODO(mdebbar): use `preferredDirection` instead.
+    if (textDirection == ui.TextDirection.rtl) {
+      return widthIncludingTrailingSpaces - x;
+    }
+    return x;
   }
 }
 
