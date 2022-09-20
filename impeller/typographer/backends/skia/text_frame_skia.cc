@@ -41,6 +41,7 @@ TextFrame TextFrameFromTextBlob(sk_sp<SkTextBlob> blob, Scalar scale) {
     TextRun text_run(ToFont(run.font(), scale));
 
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
+    // https://github.com/flutter/flutter/issues/112005
     SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
     SkBulkGlyphMetricsAndPaths paths{strikeSpec};
 

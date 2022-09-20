@@ -26,9 +26,9 @@ void main() {
   float edge_distance = 0.5;
   // Sample the signed-distance field to find distance from this fragment to the glyph outline
   float sample_distance = texture(glyph_atlas_sampler, v_unit_vertex * scale_perspective + offset).a;
-  // // Use local automatic gradients to find anti-aliased anisotropic edge width, cf. Gustavson 2012
+  // Use local automatic gradients to find anti-aliased anisotropic edge width, cf. Gustavson 2012
   float edge_width = length(vec2(dFdx(sample_distance), dFdy(sample_distance)));
-  // // Smooth the glyph edge by interpolating across the boundary in a band with the width determined above
+  // Smooth the glyph edge by interpolating across the boundary in a band with the width determined above
   float insideness = smoothstep(edge_distance - edge_width, edge_distance + edge_width, sample_distance);
   frag_color = frag_info.text_color * insideness;
 }

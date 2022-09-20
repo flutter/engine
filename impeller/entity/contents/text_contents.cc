@@ -4,8 +4,8 @@
 
 #include "impeller/entity/contents/text_contents.h"
 
-#include <iostream>
 #include <optional>
+#include <type_traits>
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -55,7 +55,7 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   return bounds->TransformBounds(entity.GetTransformation());
 }
 
-template <class VS_, class FS_>
+template <class TPipeline>
 static bool CommonRender(const ContentContext& renderer,
                          const Entity& entity,
                          RenderPass& pass,
@@ -63,8 +63,8 @@ static bool CommonRender(const ContentContext& renderer,
                          const TextFrame& frame,
                          std::shared_ptr<GlyphAtlas> atlas,
                          Command& cmd) {
-  using VS = VS_;
-  using FS = FS_;
+  using VS = typename TPipeline::VertexShader;
+  using FS = typename TPipeline::FragmentShader;
 
   // Common vertex uniforms for all glyphs.
   typename VS::FrameInfo frame_info;
@@ -128,7 +128,7 @@ static bool CommonRender(const ContentContext& renderer,
                                             1 / atlas_glyph_pos->size.height};
         vtx.atlas_glyph_size =
             Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
-        if (atlas->GetType() != GlyphAtlas::Type::kSignedDistanceField) {
+        if constexpr (std::is_same<TPipeline, GlyphAtlasPipeline>::value) {
           vtx.color_glyph =
               glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
         }
@@ -166,9 +166,8 @@ bool TextContents::RenderSdf(const ContentContext& renderer,
       renderer.GetGlyphAtlasSdfPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  return CommonRender<GlyphAtlasSdfPipeline::VertexShader,
-                      GlyphAtlasSdfPipeline::FragmentShader>(
-      renderer, entity, pass, color_, frame_, atlas, cmd);
+  return CommonRender<GlyphAtlasSdfPipeline>(renderer, entity, pass, color_,
+                                             frame_, atlas, cmd);
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -195,9 +194,8 @@ bool TextContents::Render(const ContentContext& renderer,
       renderer.GetGlyphAtlasPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  return CommonRender<GlyphAtlasPipeline::VertexShader,
-                      GlyphAtlasPipeline::FragmentShader>(
-      renderer, entity, pass, color_, frame_, atlas, cmd);
+  return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color_,
+                                          frame_, atlas, cmd);
 }
 
 }  // namespace impeller
