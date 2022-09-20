@@ -5,11 +5,6 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../dom.dart';
-import '../platform_dispatcher.dart';
-import '../safe_browser_api.dart';
-import 'semantics.dart';
-
 /// Implements vertical and horizontal scrolling functionality for semantics
 /// objects.
 ///
