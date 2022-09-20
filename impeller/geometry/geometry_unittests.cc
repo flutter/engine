@@ -964,6 +964,26 @@ TEST(GeometryTest, ColorLerp) {
   }
 }
 
+TEST(GeometryTest, ColorMakeRGBA8) {
+  {
+    Color a = Color::MakeRGBA8(0, 0, 0, 0);
+    Color b = Color::BlackTransparent();
+    ASSERT_COLOR_NEAR(a, b);
+  }
+
+  {
+    Color a = Color::MakeRGBA8(255, 255, 255, 255);
+    Color b = Color::White();
+    ASSERT_COLOR_NEAR(a, b);
+  }
+
+  {
+    Color a = Color::MakeRGBA8(63, 127, 191, 127);
+    Color b(0.247059, 0.498039, 0.74902, 0.498039);
+    ASSERT_COLOR_NEAR(a, b);
+  }
+}
+
 TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
   {
     auto deg = Degrees{90.0};
@@ -1432,6 +1452,17 @@ TEST(GeometryTest, Gradient) {
   }
 
   {
+    // Gradient with duplicate stops does not create an empty texture.
+    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
+                                 Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
+    uint32_t texture_size;
+
+    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    ASSERT_EQ(texture_size, 5u);
+  }
+
+  {
     // Simple N color gradient produces color buffer containing exactly those
     // values.
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
@@ -1468,9 +1499,9 @@ TEST(GeometryTest, Gradient) {
     // Gradient size is capped at 1024.
     std::vector<Color> colors = {};
     std::vector<Scalar> stops = {};
-    for (auto i = 0u; i < 2000; i++) {
+    for (auto i = 0u; i < 1025; i++) {
       colors.push_back(Color::Blue());
-      stops.push_back(i / 2000.0);
+      stops.push_back(i / 1025.0);
     }
     stops[1999] = 1.0;
 

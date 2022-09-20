@@ -130,14 +130,19 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
     environment.wasmReleaseOutDir.path,
     'canvaskit.wasm',
   ));
-  final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync() && useLocalCanvasKit;
+  final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
+  if (useLocalCanvasKit && !builtLocalCanvasKit) {
+    throw ArgumentError('Requested to use local CanvasKit but could not find the '
+        'built CanvasKit at ${localCanvasKitWasm.path}. Falling back to '
+        'CanvasKit from CIPD.');
+  }
 
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
     'canvaskit',
   ));
 
-  if (builtLocalCanvasKit) {
+  if (useLocalCanvasKit) {
     final List<io.File> canvasKitFiles = <io.File>[
       localCanvasKitWasm,
       io.File(pathlib.join(
@@ -285,7 +290,6 @@ Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, requir
     '--no-minify',
     '--disable-inlining',
     '--enable-asserts',
-    '--no-sound-null-safety',
 
     // We do not want to auto-select a renderer in tests. As of today, tests
     // are designed to run in one specific mode. So instead, we specify the
