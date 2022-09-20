@@ -95,7 +95,6 @@ static size_t kKnownSignalHandlers[] = {
     SIGSYS,   // non-existent system call invoked
     SIGPIPE,  // write on a pipe with no reader
     SIGALRM,  // real-time timer expired
-
 #endif  // !FML_OS_WIN
 };
 
