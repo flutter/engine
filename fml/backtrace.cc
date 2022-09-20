@@ -27,39 +27,12 @@ namespace fml {
 
 static std::string kKUnknownFrameName = "Unknown";
 
-static std::string DemangleSymbolName(const std::string& mangled) {
-#if FML_OS_WIN
-  return mangled;
-#else
-  if (mangled == kKUnknownFrameName) {
-    return kKUnknownFrameName;
-  }
-
-  int status = 0;
-  size_t length = 0;
-  char* demangled = __cxxabiv1::__cxa_demangle(
-      mangled.data(),  // mangled name
-      nullptr,         // output buffer (malloc-ed if nullptr)
-      &length,         // demangled length
-      &status);
-
-  if (demangled == nullptr || status != 0) {
-    return mangled;
-  }
-
-  auto demangled_string = std::string{demangled, length};
-  free(demangled);
-  return demangled_string;
-#endif  // FML_OS_WIN
-}
-
 static std::string GetSymbolName(void* symbol) {
   char name[1024];
   if (!absl::Symbolize(symbol, name, sizeof(name))) {
     return kKUnknownFrameName;
   }
-
-  return DemangleSymbolName({name});
+  return name;
 }
 
 std::string BacktraceHere(size_t offset) {
