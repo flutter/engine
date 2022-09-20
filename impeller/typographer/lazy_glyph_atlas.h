@@ -4,8 +4,9 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include "flutter/fml/macros.h"
-#include "glyph_atlas.h"
 #include "impeller/renderer/context.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -26,7 +27,8 @@ class LazyGlyphAtlas {
 
  private:
   std::vector<TextFrame> frames_;
-  mutable std::shared_ptr<GlyphAtlas> atlas_;
+  mutable std::unordered_map<GlyphAtlas::Type, std::shared_ptr<GlyphAtlas>>
+      atlas_map_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LazyGlyphAtlas);
 };

@@ -32,14 +32,14 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
   while (auto frame = frame_iterator()) {
     for (const auto& run : frame->GetRuns()) {
       auto font = run.GetFont();
-      switch (type) {
-        case GlyphAtlas::Type::kSignedDistanceField:
-          font = Font(font.GetTypeface(), {.scale = 1.0f, .point_size = 16.0f});
-          break;
-        case GlyphAtlas::Type::kAlphaBitmap:
-        case GlyphAtlas::Type::kColorBitmap:
-          break;
-      }
+      // switch (type) {
+      //   case GlyphAtlas::Type::kSignedDistanceField:
+      //     font = Font(font.GetTypeface(), {.scale = 1.0f, .point_size = 16.0f});
+      //     break;
+      //   case GlyphAtlas::Type::kAlphaBitmap:
+      //   case GlyphAtlas::Type::kColorBitmap:
+      //     break;
+      // }
       for (const auto& glyph_position : run.GetGlyphPositions()) {
         set.insert({font, glyph_position.glyph});
       }

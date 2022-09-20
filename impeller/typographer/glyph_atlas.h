@@ -11,6 +11,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/rect.h"
+#include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/texture.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
@@ -21,19 +22,8 @@ namespace impeller {
 ///             different fonts along with the ability to query the location of
 ///             specific font glyphs within the texture.
 ///
-/// @tparam     VertexShader_    The reflected vertex shader information. Found
-///                              in a generated header file called
-///                              <shader_name>.vert.h.
-/// @tparam     FragmentShader_  The reflected fragment shader information.
-///                              Found in a generated header file called
-///                              <shader_name>.frag.h.
-///
-template <class VertexShader_, class FragmentShader_>
 class GlyphAtlas {
  public:
-  using VS = VertexShader_;
-  using FS = FragmentShader_;
-
   //----------------------------------------------------------------------------
   /// @brief      Describes how the glyphs are represented in the texture.
   enum class Type {
@@ -72,13 +62,6 @@ class GlyphAtlas {
   /// @brief      Describes how the glyphs are represented in the texture.
   ///
   Type GetType() const;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Creates an appropriate render pipeline for this atlas.
-  ///
-  std::shared_ptr<Pipeline<PipelineDescriptor>> CreatePipeline(
-      const ContentContext& context,
-      const ContentContextOptions& options);
 
   //----------------------------------------------------------------------------
   /// @brief      Set the texture for the glyph atlas.

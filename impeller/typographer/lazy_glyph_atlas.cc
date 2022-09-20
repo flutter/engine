@@ -14,15 +14,18 @@ LazyGlyphAtlas::LazyGlyphAtlas() = default;
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
 void LazyGlyphAtlas::AddTextFrame(TextFrame frame) {
-  FML_DCHECK(!atlas_);
+  FML_DCHECK(atlas_map_.empty());
   frames_.emplace_back(std::move(frame));
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     GlyphAtlas::Type type,
     std::shared_ptr<Context> context) const {
-  if (atlas_) {
-    return atlas_;
+  {
+    auto atlas_it = atlas_map_.find(type);
+    if (atlas_it != atlas_map_.end()) {
+      return atlas_it->second;
+    }
   }
 
   auto text_context = TextRenderContext::Create(std::move(context));
@@ -43,8 +46,8 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;
   }
-  atlas_ = std::move(atlas);
-  return atlas_;
+  atlas_map_[type] = atlas;
+  return atlas;
 }
 
 }  // namespace impeller
