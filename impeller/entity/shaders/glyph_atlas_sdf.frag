@@ -12,7 +12,6 @@ uniform FragInfo {
 in vec2 v_unit_vertex;
 in vec2 v_atlas_position;
 in vec2 v_atlas_glyph_size;
-in float v_color_glyph;
 
 out vec4 frag_color;
 

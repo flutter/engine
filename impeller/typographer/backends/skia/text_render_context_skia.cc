@@ -34,8 +34,8 @@ static FontGlyphPair::Set CollectUniqueFontGlyphPairsSet(
       auto font = run.GetFont();
       // switch (type) {
       //   case GlyphAtlas::Type::kSignedDistanceField:
-      //     font = Font(font.GetTypeface(), {.scale = 1.0f, .point_size = 16.0f});
-      //     break;
+      //     font = Font(font.GetTypeface(), {.scale = 1.0f, .point_size
+      //     = 16.0f}); break;
       //   case GlyphAtlas::Type::kAlphaBitmap:
       //   case GlyphAtlas::Type::kColorBitmap:
       //     break;

@@ -108,8 +108,7 @@ static bool CommonRender(const ContentContext& renderer,
     auto glyph_size = ISize::Ceil(font.GetMetrics().GetBoundingBox().size);
     for (const auto& glyph_position : run.GetGlyphPositions()) {
       FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
-      auto color_glyph =
-          glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
+
       for (const auto& point : unit_vertex_points) {
         typename VS::PerVertexData vtx;
         vtx.unit_vertex = point;
@@ -129,7 +128,10 @@ static bool CommonRender(const ContentContext& renderer,
                                             1 / atlas_glyph_pos->size.height};
         vtx.atlas_glyph_size =
             Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
-        vtx.color_glyph = color_glyph;
+        if (atlas->GetType() != GlyphAtlas::Type::kSignedDistanceField) {
+          vtx.color_glyph =
+              glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
+        }
         vertex_builder.AppendVertex(std::move(vtx));
       }
     }
