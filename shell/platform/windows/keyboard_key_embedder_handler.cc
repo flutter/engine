@@ -312,6 +312,10 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   SendEvent(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
             reinterpret_cast<void*>(pending_responses_[response_id].get()));
 
+  // Post-event synchronization. It is useful in cases where the true pressing state
+  // does not match the event type. For example, a CapsLock down event is received
+  // despite that GetKeyState says that CapsLock is not pressed. In such case, post-
+  // event synchronization will synthesize a CapsLock up event after the main event.
   SynchronizeCritialPressedStates(key, physical_key, is_event_down,
                                   event_key_can_be_repeat);
 }
