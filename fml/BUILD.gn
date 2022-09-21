@@ -119,7 +119,7 @@ source_set("fml") {
     # This abseil dependency is only used by backtrace.cc.
     deps += [
       "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
-      "//third_party/abseil-cpp/absl/debugging:symbolize"
+      "//third_party/abseil-cpp/absl/debugging:symbolize",
     ]
   }
 
