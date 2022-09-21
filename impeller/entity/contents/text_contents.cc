@@ -128,7 +128,7 @@ static bool CommonRender(const ContentContext& renderer,
                                             1 / atlas_glyph_pos->size.height};
         vtx.atlas_glyph_size =
             Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
-        if constexpr (std::is_same<TPipeline, GlyphAtlasPipeline>::value) {
+        if constexpr (std::is_same_v<TPipeline, GlyphAtlasPipeline>) {
           vtx.color_glyph =
               glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
         }
