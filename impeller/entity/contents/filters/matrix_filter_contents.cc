@@ -29,10 +29,10 @@ std::optional<Snapshot> MatrixFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  auto transform = GetTransform(entity.GetTransformation()).Invert();
-  transform = matrix_ * transform;
-  transform = GetTransform(entity.GetTransformation()) * transform;
-  snapshot->transform = transform * snapshot->transform;
+  snapshot->transform = entity.GetTransformation() *           //
+                        matrix_ *                              //
+                        entity.GetTransformation().Invert() *  //
+                        snapshot->transform;
   snapshot->sampler_descriptor = sampler_descriptor_;
   return snapshot;
 }
@@ -49,9 +49,10 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
   if (!coverage.has_value()) {
     return std::nullopt;
   }
-  auto transform = inputs[0]->GetTransform(entity).Invert();
-  transform = matrix_ * transform;
-  transform = inputs[0]->GetTransform(entity) * transform;
+
+  auto transform = inputs[0]->GetTransform(entity) *  //
+                   matrix_ *                          //
+                   inputs[0]->GetTransform(entity).Invert();
   return coverage->TransformBounds(transform);
 }
 
