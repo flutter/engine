@@ -190,12 +190,12 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final CkImage imageClone = ckImage.clone();
       expect(imageClone.videoFrame, isNotNull);
 
-      final ByteData? png = await imageClone.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData png = await imageClone.toByteData(format: ui.ImageByteFormat.png);
       expect(png, isNotNull);
 
       // The precise PNG encoding is browser-specific, but we can check the file
       // signature.
-      expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
+      expect(detectContentType(png.buffer.asUint8List()), 'image/png');
       testCollector.collectNow();
     });
 
