@@ -197,8 +197,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       // signature.
       expect(detectContentType(png.buffer.asUint8List()), 'image/png');
       testCollector.collectNow();
-    // TODO(hterkelsen): Firefox does not currently support ImageDecoder.
-    }, skip: isFirefox);
+    // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
+    }, skip: isFirefox || isSafari);
 
     // Regression test for https://github.com/flutter/flutter/issues/72469
     test('CkImage can be resurrected', () {
