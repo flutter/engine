@@ -7,11 +7,14 @@
 #include <optional>
 
 #include "flutter/fml/trace_event.h"
+#include "fml/logging.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -323,6 +326,8 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   pipeline_info.setPVertexInputState(&vertex_input_state);
 
+  FML_LOG(ERROR) << "Creating pipeline: " << desc.GetLabel();
+
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
@@ -330,6 +335,33 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
     auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
+    FML_LOG(ERROR) << desc.GetLabel() << " binding: " << vk_desc_layout.binding;
+
+    switch (vk_desc_layout.descriptorType) {
+      case vk::DescriptorType::eUniformBuffer:
+        FML_LOG(ERROR) << desc.GetLabel() << " uniform buffer";
+        break;
+      case vk::DescriptorType::eCombinedImageSampler:
+        FML_LOG(ERROR) << desc.GetLabel() << " combined image sampler";
+        break;
+      default:
+        FML_LOG(ERROR) << "Unsupported descriptor type";
+        break;
+    }
+
+
+    switch(layout.shader_stage) {
+      case ShaderStage::kVertex:
+        FML_LOG(ERROR) << desc.GetLabel() << " vertex stage";
+        break;
+      case ShaderStage::kFragment:
+        FML_LOG(ERROR) << desc.GetLabel() << " frag stage";
+        break;
+      default:
+        FML_LOG(ERROR) << "Unsupported shader stage";
+        break;
+    }
+
     bindings.push_back(vk_desc_layout);
   }
 
@@ -375,8 +407,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  return std::make_unique<PipelineCreateInfoVK>(std::move(pipeline.value),
-                                                std::move(render_pass.value()));
+  return std::make_unique<PipelineCreateInfoVK>(
+      std::move(pipeline.value), std::move(render_pass.value()),
+      std::move(pipeline_layout.value), std::move(descriptor_set_layout));
 }
 
 }  // namespace impeller

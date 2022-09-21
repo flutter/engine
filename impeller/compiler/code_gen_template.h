@@ -63,15 +63,10 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
 {% for buffer in buffers %}
 
   static constexpr auto kResource{{camel_case(buffer.name)}} = ShaderUniformSlot { // {{buffer.name}}
-<<<<<<< HEAD
     "{{buffer.name}}",     // name
     {{buffer.ext_res_0}}u, // ext_res_0
     {{buffer.set}}u,       // set
     {{buffer.binding}}u,   // binding
-=======
-    "{{buffer.name}}",    // name
-    {{buffer.binding}}u,  // binding
->>>>>>> 89e6c62ace (Fix uniform buffer bindings to point to the right var)
   };
   static ShaderMetadata kMetadata{{camel_case(buffer.name)}};
 {% endfor %}

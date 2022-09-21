@@ -6,10 +6,14 @@
 #include <array>
 
 #include "fml/logging.h"
+#include "impeller/base/validation.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_handles.hpp"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
@@ -204,10 +208,10 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
         return false;
       }
 
+      auto& allocator = *transients_allocator;
       auto vertex_buffer =
-          vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
-      auto index_buffer =
-          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+          vertex_buffer_view.buffer->GetDeviceBuffer(allocator);
+      auto index_buffer = index_buffer_view.buffer->GetDeviceBuffer(allocator);
 
       if (!vertex_buffer || !index_buffer) {
         FML_LOG(ERROR) << "Failed to get device buffers for vertex and index";
@@ -216,9 +220,100 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
         FML_LOG(ERROR) << "got device buffers for vertex and index";
       }
 
+      // descriptor sets
+      vk::PipelineLayout pipeline_layout =
+          pipeline_create_info->GetPipelineLayout();
+
       // bind pipeline
       command_buffer_->bindPipeline(vk::PipelineBindPoint::eGraphics,
                                     pipeline_create_info->GetPipeline());
+
+      const auto& context_vk = ContextVK::Cast(context);
+      const auto& pool = context_vk.GetDescriptorPool();
+
+      vk::DescriptorSetAllocateInfo alloc_info;
+      std::array<vk::DescriptorSetLayout, 1> dsls = {
+          pipeline_create_info->GetDescriptorSetLayout(),
+      };
+
+      alloc_info.setDescriptorPool(pool->GetPool());
+      alloc_info.setSetLayouts(dsls);
+
+      auto desc_sets_res = device_.allocateDescriptorSets(alloc_info);
+      if (desc_sets_res.result != vk::Result::eSuccess) {
+        VALIDATION_LOG << "Failed to allocate descriptor sets: "
+                       << vk::to_string(desc_sets_res.result);
+        return false;
+      }
+
+      for (const auto& [buffer_index, view] : command.vertex_bindings.buffers) {
+        const auto& buffer_view = view.resource.buffer;
+        auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
+        if (!device_buffer) {
+          VALIDATION_LOG << "Failed to get device buffer for vertex binding";
+          return false;
+        }
+        auto buffer = DeviceBufferVK::Cast(*device_buffer).GetAllocation();
+
+        // The Metal call is a void return and we don't want to make it on nil.
+        if (!buffer) {
+          return false;
+        }
+
+        if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
+          continue;
+        }
+
+        uint32_t offset = view.resource.range.offset;
+
+        vk::DescriptorBufferInfo desc_buffer_info;
+        desc_buffer_info.setBuffer(buffer->GetBufferHandle());
+        desc_buffer_info.setOffset(offset);
+        desc_buffer_info.setRange(view.resource.range.length);
+
+        FML_LOG(ERROR) << "[vert] for buffer index: " << buffer_index
+                       << " buffer: " << buffer->GetBufferHandle()
+                       << " offset: " << offset
+                       << " range: " << view.resource.range.length;
+
+        vk::WriteDescriptorSet setWrite;
+        setWrite.setDstSet(desc_sets_res.value[0]);
+        setWrite.setDstBinding(0);
+      }
+
+      for (const auto& [buffer_index, view] :
+           command.fragment_bindings.buffers) {
+        const auto& buffer_view = view.resource.buffer;
+        auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
+        if (!device_buffer) {
+          VALIDATION_LOG << "Failed to get device buffer for vertex binding";
+          return false;
+        }
+        auto buffer = DeviceBufferVK::Cast(*device_buffer).GetAllocation();
+
+        // The Metal call is a void return and we don't want to make it on nil.
+        if (!buffer) {
+          return false;
+        }
+
+        uint32_t offset = view.resource.range.offset;
+
+        vk::DescriptorBufferInfo desc_buffer_info;
+        desc_buffer_info.setBuffer(buffer->GetBufferHandle());
+        desc_buffer_info.setOffset(offset);
+        desc_buffer_info.setRange(view.resource.range.length);
+
+        FML_LOG(ERROR) << "[frag] for buffer index: " << buffer_index
+                       << " buffer: " << buffer->GetBufferHandle()
+                       << " offset: " << offset
+                       << " range: " << view.resource.range.length;
+
+        vk::WriteDescriptorSet setWrite;
+        setWrite.setDstSet(desc_sets_res.value[0]);
+        setWrite.setDstBinding(0);
+      }
+
+      // need to bind fragment bindings as well.
 
       // bind vertex buffer
       auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer)
@@ -236,7 +331,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
                                      ->GetBufferHandle();
       command_buffer_->bindIndexBuffer(index_buffer_handle,
                                        index_buffer_view.range.offset,
-                                       vk::IndexType::eUint32);
+                                       vk::IndexType::eUint16);
 
       // execute draw
       command_buffer_->draw(vertex_buffer_view.range.length, 1, 0, 0);
@@ -247,6 +342,19 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   return const_cast<RenderPassVK*>(this)->EndCommandBuffer(frame_num);
 }
+
+// vk::WriteDescriptorSet write_descriptor_set;
+//       write_descriptor_set.setDstSet(descriptor_sets_[i]);
+//       write_descriptor_set.setDstBinding(0u);
+//       write_descriptor_set.setDstArrayElement(0u);
+//       write_descriptor_set.setDescriptorCount(1u);  // one UBO
+//       write_descriptor_set.setDescriptorType(
+//           vk::DescriptorType::eUniformBuffer);
+
+//       write_descriptor_set.setPBufferInfo(&triangle_ubo_buffer_infos[i]);
+
+//       write_descriptor_sets.push_back(write_descriptor_set);
+
 
 bool RenderPassVK::EndCommandBuffer(uint32_t frame_num) {
   if (command_buffer_) {

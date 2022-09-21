@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/descriptor_set_layout.h"

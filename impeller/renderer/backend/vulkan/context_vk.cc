@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -16,6 +17,7 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/descriptors_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -432,6 +434,7 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   graphics_command_pool_ =
       CommandPoolVK::Create(*device_, graphics_queue->index);
+  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
   is_valid_ = true;
 }
 
@@ -503,6 +506,10 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
 
 bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
+}
+
+std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
+  return descriptor_pool_;
 }
 
 }  // namespace impeller
