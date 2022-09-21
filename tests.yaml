@@ -14,5 +14,3 @@
 tasks:
   - task: ci
     script: deps_parser_tests.py
-  # - task: ci
-  #   script: scan_flattened_deps_tests.py # issues with imports

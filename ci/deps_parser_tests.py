@@ -56,5 +56,10 @@ class TestDepsParserMethods(unittest.TestCase):
                 # all other deps should have an associated upstream URL for vuln scanning purposes
                 self.assertTrue(dep_name in self.upstream_urls, msg = dep_name + " not found in upstream URL list")
 
+    def test_each_upstream_url_has_dep(self):
+        # for each DEP in the deps file, check for an associated upstream URL in deps file
+        for dep in self.upstream_urls:
+            self.assertTrue(dep in self.dep)
+
 if __name__ == '__main__':
     unittest.main()
