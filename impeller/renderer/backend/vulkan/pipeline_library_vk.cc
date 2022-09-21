@@ -18,6 +18,162 @@
 
 namespace impeller {
 
+static vk::Format ReadStageInputFormat(const ShaderStageIOSlot& input) {
+  if (input.columns != 1) {
+    // All matrix types are unsupported as vertex inputs.
+    return vk::Format::eUndefined;
+  }
+
+  switch (input.type) {
+    case ShaderType::kFloat: {
+      if (input.bit_width == 8 * sizeof(float)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR32Sfloat;
+          case 2:
+            return vk::Format::eR32G32Sfloat;
+          case 3:
+            return vk::Format::eR32G32B32Sfloat;
+          case 4:
+            return vk::Format::eR32G32B32A32Sfloat;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kHalfFloat: {
+      if (input.bit_width == 8 * sizeof(float) / 2) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR16Sfloat;
+          case 2:
+            return vk::Format::eR16G16Sfloat;
+          case 3:
+            return vk::Format::eR16G16B16Sfloat;
+          case 4:
+            return vk::Format::eR16G16B16A16Sfloat;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kDouble: {
+      // Unsupported.
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kBoolean: {
+      if (input.bit_width == 8 * sizeof(bool) && input.vec_size == 1) {
+        return vk::Format::eR8Uint;
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kSignedByte: {
+      if (input.bit_width == 8 * sizeof(char)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR8Sint;
+          case 2:
+            return vk::Format::eR8G8Sint;
+          case 3:
+            return vk::Format::eR8G8B8Sint;
+          case 4:
+            return vk::Format::eR8G8B8A8Sint;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kUnsignedByte: {
+      if (input.bit_width == 8 * sizeof(char)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR8Uint;
+          case 2:
+            return vk::Format::eR8G8Uint;
+          case 3:
+            return vk::Format::eR8G8B8Uint;
+          case 4:
+            return vk::Format::eR8G8B8A8Uint;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kSignedShort: {
+      if (input.bit_width == 8 * sizeof(short)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR16Sint;
+          case 2:
+            return vk::Format::eR16G16Sint;
+          case 3:
+            return vk::Format::eR16G16B16Sint;
+          case 4:
+            return vk::Format::eR16G16B16A16Sint;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kUnsignedShort: {
+      if (input.bit_width == 8 * sizeof(ushort)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR16Uint;
+          case 2:
+            return vk::Format::eR16G16Uint;
+          case 3:
+            return vk::Format::eR16G16B16Uint;
+          case 4:
+            return vk::Format::eR16G16B16A16Uint;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kSignedInt: {
+      if (input.bit_width == 8 * sizeof(int32_t)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR32Sint;
+          case 2:
+            return vk::Format::eR32G32Sint;
+          case 3:
+            return vk::Format::eR32G32B32Sint;
+          case 4:
+            return vk::Format::eR32G32B32A32Sint;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kUnsignedInt: {
+      if (input.bit_width == 8 * sizeof(uint32_t)) {
+        switch (input.vec_size) {
+          case 1:
+            return vk::Format::eR32Uint;
+          case 2:
+            return vk::Format::eR32G32Uint;
+          case 3:
+            return vk::Format::eR32G32B32Uint;
+          case 4:
+            return vk::Format::eR32G32B32A32Uint;
+        }
+      }
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kSignedInt64: {
+      // Unsupported.
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kUnsignedInt64: {
+      // Unsupported.
+      return vk::Format::eUndefined;
+    }
+    case ShaderType::kAtomicCounter:
+    case ShaderType::kStruct:
+    case ShaderType::kImage:
+    case ShaderType::kSampledImage:
+    case ShaderType::kUnknown:
+    case ShaderType::kVoid:
+    case ShaderType::kSampler:
+      return vk::Format::eUndefined;
+  }
+}
+
 PipelineLibraryVK::PipelineLibraryVK(
     const vk::Device& device,
     const std::shared_ptr<const fml::Mapping>& pipeline_cache_data,
@@ -314,19 +470,21 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   binding_description.setInputRate(vk::VertexInputRate::eVertex);
 
   std::vector<vk::VertexInputAttributeDescription> attr_descs;
-  uint32_t stride = 0;
+  uint32_t offset = 0;
   const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
   for (const ShaderStageIOSlot& stage_in : stage_inputs) {
     vk::VertexInputAttributeDescription attr_desc;
     attr_desc.setBinding(stage_in.binding);
     attr_desc.setLocation(stage_in.location);
-    attr_desc.setFormat(vk::Format::eR8G8B8A8Unorm);
-    attr_desc.setOffset(stride);
+    const auto fmt = ReadStageInputFormat(stage_in);
+    attr_desc.setFormat(fmt);
+    attr_desc.setOffset(offset);
     attr_descs.push_back(attr_desc);
-    stride += stage_in.bit_width * stage_in.vec_size;
+    uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
+    offset += len;
   }
 
-  binding_description.setStride(stride);
+  binding_description.setStride(offset);
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state;
   vertex_input_state.setVertexAttributeDescriptions(attr_descs);

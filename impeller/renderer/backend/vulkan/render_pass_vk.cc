@@ -273,6 +273,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
       vk::DeviceSize vertex_buffer_offsets[] = {
           vertex_buffer_view.range.offset};
+      FML_LOG(ERROR) << "binding vertex buffer: " << vertex_buffer_handle;
       command_buffer_->bindVertexBuffers(0, 1, vertex_buffers,
                                          vertex_buffer_offsets);
 

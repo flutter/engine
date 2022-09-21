@@ -86,9 +86,8 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
   // docs recommend using `VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT` for image
   // allocations, but setting them to be host visible for now.
-  alloc_create_info.flags =
-      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-      VMA_ALLOCATION_CREATE_MAPPED_BIT;
+  alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                            VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
   auto create_info_native =
       static_cast<vk::ImageCreateInfo::NativeType>(image_create_info);
@@ -120,6 +119,8 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
+  FML_LOG(ERROR) << "creating a device buffer of size: " << desc.size;
+
   // TODO (kaushikiska): consider optimizing  the usage flags based on
   // StorageMode.
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
@@ -135,9 +136,8 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocCreateInfo = {};
   allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-  allocCreateInfo.flags =
-      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-      VMA_ALLOCATION_CREATE_MAPPED_BIT;
+  allocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                          VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
   VkBuffer buffer;
   VmaAllocation buffer_allocation;

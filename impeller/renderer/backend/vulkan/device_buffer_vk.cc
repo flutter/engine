@@ -53,6 +53,8 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   }
 
   if (source) {
+    FML_LOG(ERROR) << "Copying " << source_range.length << " bytes from "
+                   << source << " to " << dest << " at offset " << offset;
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
 
