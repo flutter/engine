@@ -11,11 +11,12 @@
 namespace fml {
 namespace testing {
 
-TEST(BacktraceTest, CanGatherBacktrace) {
+TEST(BacktraceDeathTest, CanGatherBacktrace) {
   if (!IsCrashHandlingSupported()) {
     GTEST_SKIP();
     return;
   }
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   EXPECT_DEATH_IF_SUPPORTED({ std::abort(); }, "SIGABRT");
 }
 
