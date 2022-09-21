@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ffi' as ffi;
 import 'dart:io' as io;
+
 import 'package:path/path.dart' as pathlib;
 
 import 'exceptions.dart';
@@ -14,6 +16,13 @@ Environment get environment {
 
 Environment? _environment;
 
+String get _engineBuildDirectoryName {
+  if(ffi.Abi.current() == ffi.Abi.macosArm64) {
+    return 'host_debug_unopt_arm64';
+  }
+  return 'host_debug_unopt';
+}
+
 /// Contains various environment variables, such as common file paths and command-line options.
 class Environment {
   factory Environment() {
@@ -23,20 +32,20 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory outDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
-    final io.Directory hostDebugUnoptDir =
+    final io.Directory engineBuildDir =
         io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
     final io.Directory wasmReleaseOutDir =
         io.Directory(pathlib.join(outDir.path, 'wasm_release'));
     final io.Directory dartSdkDir =
-        io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
+        io.Directory(pathlib.join(engineBuildDir.path, _engineBuildDirectoryName));
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
 
     for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
-      outDir,
-      hostDebugUnoptDir,
-      dartSdkDir,
+      // outDir,
+      // engineBuildDir,
+      // dartSdkDir,
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
@@ -51,7 +60,7 @@ class Environment {
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
       outDir: outDir,
-      hostDebugUnoptDir: hostDebugUnoptDir,
+      engineBuildDir: engineBuildDir,
       wasmReleaseOutDir: wasmReleaseOutDir,
       dartSdkDir: dartSdkDir,
     );
@@ -63,7 +72,7 @@ class Environment {
     required this.engineSrcDir,
     required this.engineToolsDir,
     required this.outDir,
-    required this.hostDebugUnoptDir,
+    required this.engineBuildDir,
     required this.wasmReleaseOutDir,
     required this.dartSdkDir,
   });
@@ -86,7 +95,7 @@ class Environment {
   final io.Directory outDir;
 
   /// The output directory for the host_debug_unopt build.
-  final io.Directory hostDebugUnoptDir;
+  final io.Directory engineBuildDir;
 
   /// The output directory for the wasm_release build.
   ///

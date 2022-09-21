@@ -43,7 +43,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
       GnPipelineStep(),
-      NinjaPipelineStep(target: environment.hostDebugUnoptDir),
+      NinjaPipelineStep(target: environment.engineBuildDir),
     ];
     if (buildCanvasKit) {
       steps.addAll(<PipelineStep>[
