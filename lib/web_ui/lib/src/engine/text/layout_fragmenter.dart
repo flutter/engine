@@ -97,11 +97,11 @@ class LayoutFragmenter extends TextFragmenter {
 }
 
 abstract class _CombinedFragment extends TextFragment {
-  const _CombinedFragment(
+  _CombinedFragment(
     super.start,
     super.end,
     this.type,
-    this.textDirection,
+    this._textDirection,
     this.span, {
     required this.trailingNewlines,
     required this.trailingSpaces,
@@ -110,13 +110,18 @@ abstract class _CombinedFragment extends TextFragment {
 
   final LineBreakType type;
 
-  final ui.TextDirection textDirection;
+  ui.TextDirection get textDirection => _textDirection;
+  ui.TextDirection _textDirection;
 
   final ParagraphSpan span;
 
   final int trailingNewlines;
 
   final int trailingSpaces;
+
+  void setTextDirection(ui.TextDirection textDirection) {
+    _textDirection = textDirection;
+  }
 
   @override
   int get hashCode => Object.hash(
@@ -242,7 +247,7 @@ mixin _FragmentMetrics on _CombinedFragment {
   /// The total height as calculated from the font and style for this text.
   double get height => ascent + descent;
 
-  double get _widthOfTrailingSpaces => widthIncludingTrailingSpaces - widthExcludingTrailingSpaces;
+  double get widthOfTrailingSpaces => widthIncludingTrailingSpaces - widthExcludingTrailingSpaces;
 
   /// Set measurement values for the fragment.
   void setMetrics(Spanometer spanometer, {
@@ -257,26 +262,6 @@ mixin _FragmentMetrics on _CombinedFragment {
     _widthExcludingTrailingSpaces = widthExcludingTrailingSpaces;
     _widthIncludingTrailingSpaces = widthIncludingTrailingSpaces;
   }
-
-  /// Adjust the width of this fragment for paragraph justification.
-  void justifyTo(double paragraphWidth, ParagraphLine line) {
-    _extraWidthForJustification = 0;
-
-    // Only justify this fragment if it's not a trailing space in the line.
-    if (end > line.endIndex - line.trailingSpaces) {
-      // Don't justify fragments that are part of trailing spaces of the line.
-      return;
-    }
-
-    if (trailingSpaces == 0) {
-      // If this fragment has no spaces, there's nothing to justify.
-      return;
-    }
-
-    final double justificationTotal = paragraphWidth - line.width;
-    final double justificationPerSpace = justificationTotal / line.nonTrailingSpaces;
-    _extraWidthForJustification = justificationPerSpace * trailingSpaces;
-  }
 }
 
 mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
@@ -287,10 +272,6 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   /// The width of the line that contains this fragment.
   ParagraphLine get line => _line;
   late ParagraphLine _line;
-
-  /// The baseline of the fragment relative to the top of the line.
-  double get baseline => _baseline;
-  late double _baseline;
 
   /// The distance from the beginning of the line to the end of the fragment.
   double get endOffset => startOffset + widthIncludingTrailingSpaces;
@@ -307,14 +288,29 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
 
   /// Set the horizontal position of this fragment relative to the [line] that
   /// contains it.
-  void setPosition({ required double startOffset, required ParagraphLine line }) {
+  void setPosition({required double startOffset, required ParagraphLine line}) {
     _startOffset = startOffset;
     _line = line;
   }
 
-  /// Set the baseline of this fragment relative to the line that contains it.
-  void setBaseline(double baseline) {
-    _baseline = baseline;
+  /// Adjust the width of this fragment for paragraph justification.
+  void justifyTo({required double paragraphWidth}) {
+    _extraWidthForJustification = 0;
+
+    // Only justify this fragment if it's not a trailing space in the line.
+    if (end > line.endIndex - line.trailingSpaces) {
+      // Don't justify fragments that are part of trailing spaces of the line.
+      return;
+    }
+
+    if (trailingSpaces == 0) {
+      // If this fragment has no spaces, there's nothing to justify.
+      return;
+    }
+
+    final double justificationTotal = paragraphWidth - line.width;
+    final double justificationPerSpace = justificationTotal / line.nonTrailingSpaces;
+    _extraWidthForJustification = justificationPerSpace * trailingSpaces;
   }
 }
 
@@ -357,8 +353,13 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   double get top => line.baseline - ascent;
   double get bottom => line.baseline + descent;
 
-  late final ui.TextBox _textBoxIncludingTrailingSpaces =
-      ui.TextBox.fromLTRBD(left, top, right, bottom, textDirection);
+  late final ui.TextBox _textBoxIncludingTrailingSpaces = ui.TextBox.fromLTRBD(
+    line.left + left,
+    top,
+    line.left + right,
+    bottom,
+    textDirection,
+  );
 
   /// Whether or not the trailing spaces of this fragment are part of trailing
   /// spaces of the line containing the fragment.
@@ -375,8 +376,20 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     if (_isPartOfTrailingSpacesInLine) {
       // For painting, we exclude the width of trailing spaces from the box.
       return textDirection == ui.TextDirection.ltr
-        ? ui.TextBox.fromLTRBD(left, top, right - _widthOfTrailingSpaces, bottom, textDirection)
-        : ui.TextBox.fromLTRBD(left + _widthOfTrailingSpaces, top, right, bottom, textDirection);
+          ? ui.TextBox.fromLTRBD(
+              line.left + left,
+              top,
+              line.left + right - widthOfTrailingSpaces,
+              bottom,
+              textDirection,
+            )
+          : ui.TextBox.fromLTRBD(
+              line.left + left + widthOfTrailingSpaces,
+              top,
+              line.left + right,
+              bottom,
+              textDirection,
+            );
     }
     return _textBoxIncludingTrailingSpaces;
   }

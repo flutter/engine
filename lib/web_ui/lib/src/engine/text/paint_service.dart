@@ -66,49 +66,58 @@ class TextPaintService {
     LayoutFragment fragment,
   ) {
     // There's no text to paint in placeholder spans.
-    final ParagraphSpan span = fragment.span;
-    if (span is FlatTextSpan) {
-      _applySpanStyleToCanvas(span, canvas);
-      final double x = offset.dx + line.left + fragment.left;
-      final double y = offset.dy + line.baseline;
+    if (fragment.isPlaceholder) {
+      return;
+    }
 
-      // Don't paint the text for space-only boxes. This is just an
-      // optimization, it doesn't have any effect on the output.
-      if (!fragment.isSpaceOnly) {
-        final String text = fragment.getText(paragraph);
-        final double? letterSpacing = span.style.letterSpacing;
-        if (letterSpacing == null || letterSpacing == 0.0) {
-          canvas.drawText(text, x, y,
-              style: span.style.foreground?.style, shadows: span.style.shadows);
-        } else {
-          // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
-          //                https://github.com/flutter/flutter/issues/51234
-          double charX = x;
-          final int len = text.length;
-          for (int i = 0; i < len; i++) {
-            final String char = text[i];
-            canvas.drawText(char, charX.roundToDouble(), y,
-                style: span.style.foreground?.style,
-                shadows: span.style.shadows);
-            charX += letterSpacing + canvas.measureText(char).width!;
-          }
+    _prepareCanvasForFragment(canvas, fragment);
+    final double fragmentX = fragment.textDirection == ui.TextDirection.ltr
+        ? fragment.left
+        : fragment.right;
+
+    final double x = offset.dx + line.left + fragmentX;
+    final double y = offset.dy + line.baseline;
+
+    final EngineTextStyle style = fragment.style;
+
+    // Don't paint the text for space-only boxes. This is just an
+    // optimization, it doesn't have any effect on the output.
+    if (!fragment.isSpaceOnly) {
+      final String text = fragment.getText(paragraph);
+      final double? letterSpacing = style.letterSpacing;
+      if (letterSpacing == null || letterSpacing == 0.0) {
+        canvas.drawText(text, x, y,
+            style: style.foreground?.style, shadows: style.shadows);
+      } else {
+        // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
+        //                https://github.com/flutter/flutter/issues/51234
+        double charX = x;
+        final int len = text.length;
+        for (int i = 0; i < len; i++) {
+          final String char = text[i];
+          canvas.drawText(char, charX.roundToDouble(), y,
+              style: style.foreground?.style,
+              shadows: style.shadows);
+          charX += letterSpacing + canvas.measureText(char).width!;
         }
       }
-
-      canvas.tearDownPaint();
     }
+
+    canvas.tearDownPaint();
   }
 
-  void _applySpanStyleToCanvas(FlatTextSpan span, BitmapCanvas canvas) {
+  void _prepareCanvasForFragment(BitmapCanvas canvas, LayoutFragment fragment) {
+    final EngineTextStyle style = fragment.style;
+
     final SurfacePaint? paint;
-    final ui.Paint? foreground = span.style.foreground;
+    final ui.Paint? foreground = style.foreground;
     if (foreground != null) {
       paint = foreground as SurfacePaint;
     } else {
-      paint = (ui.Paint()..color = span.style.color!) as SurfacePaint;
+      paint = (ui.Paint()..color = style.color!) as SurfacePaint;
     }
 
-    canvas.setCssFont(span.style.cssFontString);
+    canvas.setCssFont(style.cssFontString, fragment.textDirection);
     canvas.setUpPaint(paint.paintData, null);
   }
 }

@@ -237,7 +237,7 @@ class TextLayoutService {
         // The fragment is in the same direction as the paragraph.
         fragment.setPosition(startOffset: cumulativeWidth, line: line);
         if (withJustification) {
-          fragment.justifyTo(width, line);
+          fragment.justifyTo(paragraphWidth: width);
         }
 
         cumulativeWidth += fragment.widthIncludingTrailingSpaces;
@@ -245,51 +245,15 @@ class TextLayoutService {
         continue;
       }
 
-      // At this point, we found a fragment that has the opposite direction to
-      // the paragraph. This could be a sequence of one or more fragments.
-      //
-      // These fragments should flow in the opposite direction. So we need to
-      // position them in reverse order.
-      //
-      // If the last fragment in the sequence is space-only (contains only
-      // whitespace characters), it should be excluded from the sequence.
-      //
-      // Example: an LTR paragraph with the contents:
-      //
-      // "ABC rtl1 rtl2 rtl3 XYZ"
-      //     ^    ^    ^    ^
-      //    SP1  SP2  SP3  SP4
-      //
-      //
-      // box direction:    LTR           RTL               LTR
-      //                |------>|<-----------------------|------>
-      //                +----------------------------------------+
-      //                | ABC | | rtl3 | | rtl2 | | rtl1 | | XYZ |
-      //                +----------------------------------------+
-      //                       ^        ^        ^        ^
-      //                      SP1      SP3      SP2      SP4
-      //
-      // Notice how SP2 and SP3 are flowing in the RTL direction because of the
-      // surrounding RTL words. SP4 is also preceded by an RTL word, but it marks
-      // the end of the RTL sequence, so it goes back to flowing in the paragraph
-      // direction (LTR).
 
       final int first = i;
-      int lastNonSpaceFragment = first;
       i++;
       while (i < fragments.length && fragments[i].textDirection != _paragraphDirection) {
-        final LayoutFragment fragment = fragments[i];
-        if (fragment.isSpaceOnly) {
-          // Do nothing.
-        } else {
-          lastNonSpaceFragment = i;
-        }
         i++;
       }
-      final int last = lastNonSpaceFragment;
-      i = lastNonSpaceFragment + 1;
+      final int last = i - 1;
 
-      // The range (first:last) is the entire sequence of boxes that have the
+      // The range [first:last] is the entire sequence of fragments having the
       // opposite direction to the paragraph.
       final double sequenceWidth = _positionLineBoxesInReverse(
         line,
@@ -327,7 +291,7 @@ class TextLayoutService {
 
       fragment.setPosition(startOffset: startOffset + cumulativeWidth, line: line);
       if (withJustification) {
-        fragment.justifyTo(width, line);
+        fragment.justifyTo(paragraphWidth: width);
       }
 
       cumulativeWidth += fragment.widthIncludingTrailingSpaces;
@@ -531,6 +495,7 @@ class LineBuilder {
   bool get isNotBreakable => !isBreakable;
 
   int _spaceCount = 0;
+  int _trailingSpaces = 0;
 
   bool get isEmpty => _fragments.isEmpty;
   bool get isNotEmpty => _fragments.isNotEmpty;
@@ -584,13 +549,16 @@ class LineBuilder {
   void _updateMetrics(LayoutFragment fragment) {
     _spaceCount += fragment.trailingSpaces;
 
-    if (!fragment.isSpaceOnly) {
+    if (fragment.isSpaceOnly) {
+      _trailingSpaces += fragment.trailingSpaces;
+    } else {
+      _trailingSpaces = fragment.trailingSpaces;
       width = widthIncludingSpace + fragment.widthExcludingTrailingSpaces;
     }
     widthIncludingSpace += fragment.widthIncludingTrailingSpaces;
 
     if (fragment.isPlaceholder) {
-      return _updateHeightForPlaceholder(fragment);
+      _updateHeightForPlaceholder(fragment);
     }
 
     if (fragment.isBreak) {
@@ -645,9 +613,6 @@ class LineBuilder {
         break;
     }
 
-    this.ascent = math.max(this.ascent, ascent);
-    this.descent = math.max(this.descent, descent);
-
     // Update the metrics of the fragment to reflect the calculated ascent and
     // descent.
     fragment.setMetrics(spanometer,
@@ -664,6 +629,7 @@ class LineBuilder {
     ascent = 0;
     descent = 0;
     _spaceCount = 0;
+    _trailingSpaces = 0;
     _breakCount = 0;
     _lastBreakableFragment = -1;
 
@@ -801,15 +767,16 @@ class LineBuilder {
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
     }
 
+    _adjustTextDirections();
+
     final int trailingNewlines = isEmpty ? 0 : _fragments.last.trailingNewlines;
-    final int trailingSpaces = _processTrailingSpaces();
 
     return ParagraphLine(
       lineNumber: lineNumber,
       startIndex: startIndex,
       endIndex: endIndex,
       trailingNewlines: trailingNewlines,
-      trailingSpaces: trailingSpaces,
+      trailingSpaces: _trailingSpaces,
       spaceCount: _spaceCount,
       hardBreak: isHardBreak,
       width: width,
@@ -824,32 +791,85 @@ class LineBuilder {
     );
   }
 
-  int _processTrailingSpaces() {
-    int trailingSpaces = 0;
-    int i;
-    for (i = _fragments.length - 1; i >= 0; i--) {
-      final LayoutFragment fragment = _fragments[i];
-      trailingSpaces += fragment.trailingSpaces;
+  void _adjustTextDirections() {
+    // TODO(mdebbar): Re-phrase.
+    // At this point, we found a fragment that has the opposite direction to
+    // the paragraph. This could be a sequence of one or more fragments.
+    //
+    // These fragments should flow in the opposite direction. So we need to
+    // position them in reverse order.
+    //
+    // If the last fragment in the sequence is space-only (contains only
+    // whitespace characters), it should be excluded from the sequence.
+    //
+    // Example: an LTR paragraph with the contents:
+    //
+    // "ABC rtl1 rtl2 rtl3 XYZ"
+    //     ^    ^    ^    ^
+    //    SP1  SP2  SP3  SP4
+    //
+    //
+    // text direction:    LTR            RTL              LTR
+    //                 |------>|<-----------------------|------>
+    //                 +----------------------------------------+
+    //                 | ABC | | rtl3 | | rtl2 | | rtl1 | | XYZ |
+    //                 +----------------------------------------+
+    //                       ^        ^        ^        ^
+    //                      SP1      SP3      SP2      SP4
+    //
+    // Notice how SP2 and SP3 are flowing in the RTL direction because of the
+    // surrounding RTL words. SP4 is also preceded by an RTL word, but it marks
+    // the end of the RTL sequence, so it goes back to flowing in the paragraph
+    // direction (LTR).
 
-      if (fragment.trailingSpaces > 0 && fragment.textDirection != _paragraphDirection) {
-        _swapDirectionOfTrailingSpaces(i);
+    int j = _fragments.length;
+    while (j > 0) {
+      if (_fragments[j - 1].textDirection == _paragraphDirection) {
+        j--;
+        continue;
       }
 
-      // If we're done with trailing spaces, stop processing.
-      if (!fragment.isSpaceOnly) {
-        break;
+      // `j` now points to the end of a sequence of fragments having the
+      // opposite text direction.
+
+      int i = j - 1;
+      while (i >= 0) {
+        final LayoutFragment fragment = _fragments[i];
+        if (fragment.textDirection == _paragraphDirection) {
+          break;
+        }
+
+        _swapSpaceDirectionInFragment(i);
+        i--;
+
+        if (!fragment.isSpaceOnly) {
+          break;
+        }
       }
+
+      while (i >= 0) {
+        final LayoutFragment fragment = _fragments[i];
+        if (fragment.textDirection == _paragraphDirection) {
+          break;
+        }
+        i--;
+      }
+
+      j = i;
     }
-    return trailingSpaces;
   }
 
-  void _swapDirectionOfTrailingSpaces(int fragmentIndex) {
+  void _swapSpaceDirectionInFragment(int fragmentIndex) {
     final LayoutFragment fragment = _fragments[fragmentIndex];
-    assert(fragment.trailingSpaces > 0);
     assert(fragment.textDirection != _paragraphDirection);
 
+    if (fragment.trailingSpaces == 0) {
+      // The fragment contains no spaces, so there's nothing to do.
+      return;
+    }
+
     if (fragment.isSpaceOnly) {
-      _fragments[fragmentIndex] = _swapTextDirection(fragment, _paragraphDirection);
+      fragment.setTextDirection(_paragraphDirection);
     } else {
       // The fragment contains text and spaces. We need to split them first,
       // then swap the direction of the space-only fragment.
@@ -857,7 +877,9 @@ class LineBuilder {
       final LayoutFragment textFragment = split.first!;
       final LayoutFragment spaceFragment = split.last!;
       _fragments[fragmentIndex] = textFragment;
-      _fragments.insert(fragmentIndex + 1, _swapTextDirection(spaceFragment, _paragraphDirection));
+
+      spaceFragment.setTextDirection(_paragraphDirection);
+      _fragments.insert(fragmentIndex + 1, spaceFragment);
     }
   }
 
@@ -878,30 +900,11 @@ class LineBuilder {
     split.last.setMetrics(spanometer,
       ascent: fragment.ascent,
       descent: fragment.descent,
-      // There's no text anymore, only spaces.
+      // There's no text in this fragment, only spaces.
       widthExcludingTrailingSpaces: 0.0,
-      widthIncludingTrailingSpaces: fragment.widthIncludingTrailingSpaces,
+      widthIncludingTrailingSpaces: fragment.widthOfTrailingSpaces,
     );
     return split;
-  }
-
-  LayoutFragment _swapTextDirection(LayoutFragment fragment, ui.TextDirection newDirection) {
-    assert(fragment.textDirection != newDirection);
-    return LayoutFragment(
-      fragment.start,
-      fragment.end,
-      fragment.type,
-      newDirection,
-      fragment.span,
-      trailingNewlines: fragment.trailingNewlines,
-      trailingSpaces: fragment.trailingSpaces,
-    )..setMetrics(
-        spanometer,
-        ascent: fragment.ascent,
-        descent: fragment.descent,
-        widthExcludingTrailingSpaces: fragment.widthExcludingTrailingSpaces,
-        widthIncludingTrailingSpaces: fragment.widthIncludingTrailingSpaces,
-      );
   }
 
   /// Creates a new [LineBuilder] to build the next line in the paragraph.
