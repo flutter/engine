@@ -304,7 +304,8 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       command_buffer_->setScissor(0, 1, &scissor);
 
       // execute draw
-      command_buffer_->draw(vertex_buffer_view.range.length, 1, 0, 0);
+      command_buffer_->drawIndexed(command.index_count, command.instance_count,
+                                   0, 0, 0);
     }
   }
 
