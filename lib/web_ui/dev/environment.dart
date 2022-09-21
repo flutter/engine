@@ -43,9 +43,6 @@ class Environment {
 
     for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
-      // outDir,
-      // engineBuildDir,
-      // dartSdkDir,
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
