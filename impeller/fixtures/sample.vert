@@ -21,4 +21,3 @@ void main() {
   gl_Position =  ubo.uniforms.projection * ubo.uniforms.view * ubo.uniforms.model * vec4(inPosition22, 1.0) * inAnotherPosition;
   outStuff = texture(world, inPosition);
 }
-
