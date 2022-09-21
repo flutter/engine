@@ -262,6 +262,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
   CkImage clone() {
     assert(_debugCheckIsNotDisposed());
     if (videoFrame != null) {
+      // Clone the videoFrame also, to use in encoding.
       final VideoFrame videoFrameClone = videoFrame!.clone();
       return CkImage.cloneOf(box, videoFrame: videoFrameClone);
     }
