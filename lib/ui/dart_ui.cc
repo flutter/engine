@@ -205,6 +205,7 @@ typedef CanvasPath Path;
   V(Paragraph, height, 1)                              \
   V(Paragraph, ideographicBaseline, 1)                 \
   V(Paragraph, layout, 2)                              \
+  V(Paragraph, layoutAsync, 3)                         \
   V(Paragraph, longestLine, 1)                         \
   V(Paragraph, maxIntrinsicWidth, 1)                   \
   V(Paragraph, minIntrinsicWidth, 1)                   \

@@ -2734,6 +2734,18 @@ class Paragraph extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Double)>('Paragraph::layout', isLeaf: true)
   external void _layout(double width);
 
+  Future<void> layoutAsync(ParagraphConstraints constraints) {
+    final completer = Completer();
+    _layoutAsync(constraints.width, () {
+      print('layout complete');
+      _needsLayout = false;
+      completer.complete();
+    });
+    return completer.future;
+  }
+  @FfiNative<Void Function(Pointer<Void>, Double, Handle)>('Paragraph::layoutAsync')
+  external void _layoutAsync(double width, void Function() callback);
+
   List<TextBox> _decodeTextBoxes(Float32List encoded) {
     final int count = encoded.length ~/ 5;
     final List<TextBox> boxes = <TextBox>[];

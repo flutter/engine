@@ -37,6 +37,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   bool didExceedMaxLines();
 
   void layout(double width);
+  void layoutAsync(double width, Dart_Handle callback_handle);
   void paint(Canvas* canvas, double x, double y);
 
   tonic::Float32List getRectsForRange(unsigned start,
@@ -52,7 +53,8 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   size_t GetAllocationSize() const override;
 
  private:
-  std::unique_ptr<txt::Paragraph> m_paragraph;
+  // std::unique_ptr<txt::Paragraph> m_paragraph;
+  std::shared_ptr<txt::Paragraph> m_paragraph;
 
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 };

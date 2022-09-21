@@ -33,6 +33,7 @@
 #include <hb-icu.h>
 #include <hb-ot.h>
 
+#include <flutter/fml/trace_event.h>
 #include <minikin/Emoji.h>
 #include <minikin/Layout.h>
 #include "FontLanguage.h"
@@ -140,6 +141,7 @@ class LayoutCache : private android::OnEntryRemoved<LayoutCacheKey, Layout*> {
   Layout* get(LayoutCacheKey& key,
               LayoutContext* ctx,
               const std::shared_ptr<FontCollection>& collection) {
+    // TRACE_EVENT0("minikin", "LayoutCache::get");
     Layout* layout = mCache.get(key);
     if (layout == NULL) {
       key.copyText();
@@ -588,6 +590,7 @@ void Layout::doLayout(const uint16_t* buf,
                       const FontStyle& style,
                       const MinikinPaint& paint,
                       const std::shared_ptr<FontCollection>& collection) {
+  // TRACE_EVENT0("minikin", "Layout::doLayout");
   std::scoped_lock _l(gMinikinLock);
 
   LayoutContext ctx;
@@ -636,6 +639,7 @@ float Layout::doLayoutRunCached(
     const std::shared_ptr<FontCollection>& collection,
     Layout* layout,
     float* advances) {
+  // TRACE_EVENT0("minikin", "Layout::doLayoutRunCached");
   const uint32_t originalHyphen = ctx->paint.hyphenEdit.getHyphen();
   float advance = 0;
   if (!isRtl) {
@@ -919,6 +923,7 @@ void Layout::doLayoutRun(const uint16_t* buf,
                          bool isRtl,
                          LayoutContext* ctx,
                          const std::shared_ptr<FontCollection>& collection) {
+  // TRACE_EVENT0("minikin", "Layout::doLayoutRun");
   hb_buffer_t* buffer = LayoutEngine::getInstance().hbBuffer;
   std::vector<FontCollection::Run> items;
   collection->itemize(buf + start, count, ctx->style, &items);
@@ -1022,8 +1027,11 @@ void Layout::doLayoutRun(const uint16_t* buf,
           addToHbBuffer(buffer, buf, start, count, bufSize, scriptRunStart,
                         scriptRunEnd, ctx->paint.hyphenEdit, hbFont);
 
-      hb_shape(hbFont, buffer, features.empty() ? NULL : &features[0],
-               features.size());
+      {
+        // TRACE_EVENT0("minikin", "Layout::doLayout::hb_shape");
+        hb_shape(hbFont, buffer, features.empty() ? NULL : &features[0],
+                 features.size());
+      }
       unsigned int numGlyphs;
       hb_glyph_info_t* info = hb_buffer_get_glyph_infos(buffer, &numGlyphs);
       hb_glyph_position_t* positions =

@@ -19,6 +19,7 @@
 #include <hb.h>
 #include <minikin/Layout.h>
 
+#include <flutter/fml/trace_event.h>
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -665,6 +666,7 @@ void ParagraphTxt::ComputePlaceholder(PlaceholderRun* placeholder_run,
 //   -Calculate line vertical layout (ascent, descent, etc)
 //   -Store per-line metrics
 void ParagraphTxt::Layout(double width) {
+  // TRACE_EVENT0("minikin", "ParagraphTxt::Layout");
   double rounded_width = floor(width);
   // Do not allow calling layout multiple times without changing anything.
   if (!needs_layout_ && rounded_width == width_) {

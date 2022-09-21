@@ -65,6 +65,38 @@ void Paragraph::layout(double width) {
   m_paragraph->Layout(width);
 }
 
+void Paragraph::layoutAsync(double width, Dart_Handle callback_handle) {
+  auto callback =
+      new tonic::DartPersistentValue(UIDartState::Current(), callback_handle);
+  const auto& runners = UIDartState::Current()->GetTaskRunners();
+  const auto run = [paragraph = std::weak_ptr(m_paragraph),
+                    ui_runner = runners.GetUITaskRunner(), width,
+                    dart_callback = callback]() {
+    if (auto p = paragraph.lock()) {
+      FML_DLOG(ERROR) << "layout start...";
+      p->Layout(width);
+      FML_DLOG(ERROR) << "layout end...";
+      // TODO: adjust width
+      fml::TaskRunner::RunNowOrPostTask(ui_runner, [dart_callback] {
+        if (dart_callback->is_empty()) {
+          FML_DLOG(ERROR) << "callback is empty...";
+          return;
+        }
+        const auto dart_state = dart_callback->dart_state().lock();
+        if (!dart_state) {
+          FML_DLOG(ERROR) << "dart state no longer exists...";
+          return;
+        }
+        tonic::DartState::Scope scope(dart_state);
+        FML_DLOG(ERROR) << "invoke dart callback...";
+        tonic::DartInvoke(dart_callback->Release(), {});
+        delete dart_callback;
+      });
+    }
+  };
+  runners.GetIOTaskRunner()->PostTask(run);
+}
+
 void Paragraph::paint(Canvas* canvas, double x, double y) {
   SkCanvas* sk_canvas = canvas->canvas();
   if (!sk_canvas) {

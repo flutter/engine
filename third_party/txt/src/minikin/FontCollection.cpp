@@ -25,6 +25,7 @@
 #include "unicode/unorm2.h"
 #include "unicode/utf16.h"
 
+#include <flutter/fml/trace_event.h>
 #include <minikin/Emoji.h>
 #include <minikin/FontCollection.h>
 #include "FontLanguage.h"
@@ -466,6 +467,7 @@ void FontCollection::itemize(const uint16_t* string,
                              size_t string_size,
                              FontStyle style,
                              vector<Run>* result) const {
+  // TRACE_EVENT0("minikin", "FontCollection::itemize");
   const uint32_t langListId = style.getLanguageListId();
   int variant = style.getVariant();
   const FontFamily* lastFamily = nullptr;
