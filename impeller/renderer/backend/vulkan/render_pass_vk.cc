@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/render_pass_vk.h"
 #include <array>
+#include <vector>
 
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
@@ -13,6 +14,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_handles.hpp"
 #include "vulkan/vulkan_structs.hpp"
 
@@ -136,8 +138,10 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   vk::ClearValue clear_value;
   float flash = abs(sin(color_flash++ / 120.f));
+  // clear_value.color =
+  //     vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, flash, 1.0f});
   clear_value.color =
-      vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, flash, 1.0f});
+      vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0, 0.0f});
 
   std::array<vk::ImageView, 1> fbo_attachments = {
       tex_info.swapchain_image->GetImageView(),
@@ -245,75 +249,22 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
                        << vk::to_string(desc_sets_res.result);
         return false;
       }
-
-      for (const auto& [buffer_index, view] : command.vertex_bindings.buffers) {
-        const auto& buffer_view = view.resource.buffer;
-        auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
-        if (!device_buffer) {
-          VALIDATION_LOG << "Failed to get device buffer for vertex binding";
-          return false;
-        }
-        auto buffer = DeviceBufferVK::Cast(*device_buffer).GetAllocation();
-
-        // The Metal call is a void return and we don't want to make it on nil.
-        if (!buffer) {
-          return false;
-        }
-
-        if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
-          continue;
-        }
-
-        uint32_t offset = view.resource.range.offset;
-
-        vk::DescriptorBufferInfo desc_buffer_info;
-        desc_buffer_info.setBuffer(buffer->GetBufferHandle());
-        desc_buffer_info.setOffset(offset);
-        desc_buffer_info.setRange(view.resource.range.length);
-
-        FML_LOG(ERROR) << "[vert] for buffer index: " << buffer_index
-                       << " buffer: " << buffer->GetBufferHandle()
-                       << " offset: " << offset
-                       << " range: " << view.resource.range.length;
-
-        vk::WriteDescriptorSet setWrite;
-        setWrite.setDstSet(desc_sets_res.value[0]);
-        setWrite.setDstBinding(0);
+      auto desc_sets = desc_sets_res.value;
+      bool update_vertex_descriptors = UpdateDescriptorSets(
+          "vertex_bindings", command.vertex_bindings, allocator, desc_sets[0]);
+      if (!update_vertex_descriptors) {
+        return false;
+      }
+      bool update_frag_descriptors =
+          UpdateDescriptorSets("fragment_bindings", command.fragment_bindings,
+                               allocator, desc_sets[0]);
+      if (!update_frag_descriptors) {
+        return false;
       }
 
-      for (const auto& [buffer_index, view] :
-           command.fragment_bindings.buffers) {
-        const auto& buffer_view = view.resource.buffer;
-        auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
-        if (!device_buffer) {
-          VALIDATION_LOG << "Failed to get device buffer for vertex binding";
-          return false;
-        }
-        auto buffer = DeviceBufferVK::Cast(*device_buffer).GetAllocation();
-
-        // The Metal call is a void return and we don't want to make it on nil.
-        if (!buffer) {
-          return false;
-        }
-
-        uint32_t offset = view.resource.range.offset;
-
-        vk::DescriptorBufferInfo desc_buffer_info;
-        desc_buffer_info.setBuffer(buffer->GetBufferHandle());
-        desc_buffer_info.setOffset(offset);
-        desc_buffer_info.setRange(view.resource.range.length);
-
-        FML_LOG(ERROR) << "[frag] for buffer index: " << buffer_index
-                       << " buffer: " << buffer->GetBufferHandle()
-                       << " offset: " << offset
-                       << " range: " << view.resource.range.length;
-
-        vk::WriteDescriptorSet setWrite;
-        setWrite.setDstSet(desc_sets_res.value[0]);
-        setWrite.setDstBinding(0);
-      }
-
-      // need to bind fragment bindings as well.
+      command_buffer_->bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                          pipeline_layout, 0, desc_sets,
+                                          nullptr);
 
       // bind vertex buffer
       auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer)
@@ -333,6 +284,25 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
                                        index_buffer_view.range.offset,
                                        vk::IndexType::eUint16);
 
+      // set viewport.
+      const auto& vp = command.viewport.value_or<Viewport>(
+          {.rect = Rect::MakeSize(GetRenderTargetSize())});
+      vk::Viewport viewport = vk::Viewport()
+                                  .setWidth(vp.rect.size.width)
+                                  .setHeight(vp.rect.size.height)
+                                  .setMinDepth(0.0f)
+                                  .setMaxDepth(1.0f);
+      command_buffer_->setViewport(0, 1, &viewport);
+
+      // scissor
+      const auto& sc =
+          command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize()));
+      vk::Rect2D scissor =
+          vk::Rect2D()
+              .setOffset(vk::Offset2D(sc.origin.x, sc.origin.y))
+              .setExtent(vk::Extent2D(sc.size.width, sc.size.height));
+      command_buffer_->setScissor(0, 1, &scissor);
+
       // execute draw
       command_buffer_->draw(vertex_buffer_view.range.length, 1, 0, 0);
     }
@@ -342,19 +312,6 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   return const_cast<RenderPassVK*>(this)->EndCommandBuffer(frame_num);
 }
-
-// vk::WriteDescriptorSet write_descriptor_set;
-//       write_descriptor_set.setDstSet(descriptor_sets_[i]);
-//       write_descriptor_set.setDstBinding(0u);
-//       write_descriptor_set.setDstArrayElement(0u);
-//       write_descriptor_set.setDescriptorCount(1u);  // one UBO
-//       write_descriptor_set.setDescriptorType(
-//           vk::DescriptorType::eUniformBuffer);
-
-//       write_descriptor_set.setPBufferInfo(&triangle_ubo_buffer_infos[i]);
-
-//       write_descriptor_sets.push_back(write_descriptor_set);
-
 
 bool RenderPassVK::EndCommandBuffer(uint32_t frame_num) {
   if (command_buffer_) {
@@ -370,6 +327,63 @@ bool RenderPassVK::EndCommandBuffer(uint32_t frame_num) {
                                                  std::move(command_buffer_));
   }
   return false;
+}
+
+bool RenderPassVK::UpdateDescriptorSets(const char* label,
+                                        const Bindings& bindings,
+                                        Allocator& allocator,
+                                        vk::DescriptorSet desc_set) const {
+  std::vector<vk::WriteDescriptorSet> writes;
+  std::vector<vk::DescriptorBufferInfo> buffer_infos;
+  for (const auto& [buffer_index, view] : bindings.buffers) {
+    const auto& buffer_view = view.resource.buffer;
+
+    auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
+    if (!device_buffer) {
+      VALIDATION_LOG << "Failed to get device buffer for vertex binding";
+      return false;
+    }
+
+    auto buffer = DeviceBufferVK::Cast(*device_buffer).GetAllocation();
+    if (!buffer) {
+      return false;
+    }
+
+    if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
+      continue;
+    }
+
+    uint32_t offset = view.resource.range.offset;
+
+    vk::DescriptorBufferInfo desc_buffer_info;
+    desc_buffer_info.setBuffer(buffer->GetBufferHandle());
+    desc_buffer_info.setOffset(offset);
+    desc_buffer_info.setRange(view.resource.range.length);
+    buffer_infos.push_back(desc_buffer_info);
+
+    const ShaderUniformSlot& uniform = bindings.uniforms.at(buffer_index);
+    FML_LOG(ERROR) << label << "; at buffer index: " << buffer_index
+                   << " name: " << uniform.name
+                   << " buffer: " << buffer->GetBufferHandle()
+                   << " offset: " << offset
+                   << " range: " << view.resource.range.length
+                   << " uniform_binding: " << uniform.binding
+                   << " uniform_set: " << uniform.set;
+
+    vk::WriteDescriptorSet setWrite;
+    setWrite.setDstSet(desc_set);
+    setWrite.setDstBinding(uniform.binding);
+    setWrite.setDescriptorCount(1);
+    setWrite.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+    setWrite.setPBufferInfo(&buffer_infos.back());
+
+    writes.push_back(setWrite);
+  }
+
+  std::array<vk::CopyDescriptorSet, 0> copies;
+  device_.updateDescriptorSets(writes, copies);
+
+  return true;
 }
 
 vk::UniqueFramebuffer RenderPassVK::CreateFrameBuffer(

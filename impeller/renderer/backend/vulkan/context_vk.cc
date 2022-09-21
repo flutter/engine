@@ -337,6 +337,10 @@ ContextVK::ContextVK(
     return;
   }
 
+  auto val =
+      physical_device->getProperties().limits.minUniformBufferOffsetAlignment;
+  FML_LOG(ERROR) << "__minUniformBufferOffsetAlignment: " << val << std::endl;
+
   auto graphics_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);
   auto transfer_queue =

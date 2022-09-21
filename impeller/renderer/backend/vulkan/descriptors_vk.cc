@@ -10,7 +10,6 @@
 
 namespace impeller {
 
-
 DescriptorPoolVK::DescriptorPoolVK(vk::Device device) {
   constexpr size_t kPoolSize = 1024;
 

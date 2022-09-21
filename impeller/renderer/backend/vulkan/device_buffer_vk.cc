@@ -20,7 +20,8 @@ DeviceBufferAllocationVK::DeviceBufferAllocationVK(
 
 DeviceBufferAllocationVK::~DeviceBufferAllocationVK() {
   if (buffer_) {
-    vmaDestroyBuffer(allocator_, buffer_, allocation_);
+    FML_LOG(ERROR) << "Destroying buffer " << buffer_;
+    // vmaDestroyBuffer(allocator_, buffer_, allocation_);
   }
 }
 

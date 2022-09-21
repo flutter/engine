@@ -7,10 +7,11 @@
 
 namespace impeller {
 
-PipelineCreateInfoVK::PipelineCreateInfoVK(vk::UniquePipeline pipeline,
-                                           vk::UniqueRenderPass render_pass,
-                                           vk::UniquePipelineLayout layout,
-                                           vk::UniqueDescriptorSetLayout descriptor_set_layout)
+PipelineCreateInfoVK::PipelineCreateInfoVK(
+    vk::UniquePipeline pipeline,
+    vk::UniqueRenderPass render_pass,
+    vk::UniquePipelineLayout layout,
+    vk::UniqueDescriptorSetLayout descriptor_set_layout)
     : pipeline_(std::move(pipeline)),
       render_pass_(std::move(render_pass)),
       pipeline_layout_(std::move(layout)),

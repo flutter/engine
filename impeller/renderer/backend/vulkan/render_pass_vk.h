@@ -4,12 +4,15 @@
 
 #pragma once
 
+#include <vector>
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -46,6 +49,11 @@ class RenderPassVK final : public RenderPass {
   bool OnEncodeCommands(const Context& context) const override;
 
   bool EndCommandBuffer(uint32_t frame_num);
+
+  bool UpdateDescriptorSets(const char* label,
+                            const Bindings& bindings,
+                            Allocator& allocator,
+                            vk::DescriptorSet desc_set) const;
 
   vk::UniqueFramebuffer CreateFrameBuffer(
       const WrappedTextureInfoVK& wrapped_texture_info) const;

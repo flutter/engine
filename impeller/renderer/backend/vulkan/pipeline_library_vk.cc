@@ -104,7 +104,8 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
 
 static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
     vk::Format format,
-    SampleCount sample_count) {
+    SampleCount sample_count,
+    bool is_color) {
   vk::AttachmentDescription desc;
 
   // See
@@ -120,8 +121,14 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   desc.setStoreOp(vk::AttachmentStoreOp::eDontCare);
   desc.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
   desc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-  desc.setInitialLayout(vk::ImageLayout::eGeneral);
-  desc.setFinalLayout(vk::ImageLayout::eGeneral);
+
+  if (!is_color) {
+    desc.setInitialLayout(vk::ImageLayout::eGeneral);
+    desc.setFinalLayout(vk::ImageLayout::eGeneral);
+  } else {
+    desc.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    desc.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+  }
 
   return desc;
 }
@@ -142,8 +149,10 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   std::vector<vk::AttachmentDescription> render_pass_attachments;
   const auto sample_count = desc.GetSampleCount();
   // Set the color attachment.
-  render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-      vk::Format::eR8G8B8A8Unorm, sample_count));
+  auto fmt = vk::Format::eB8G8R8A8Unorm;
+  // auto fmt = vk::Format::eR8G8B8A8Unorm;
+  render_pass_attachments.push_back(
+      CreatePlaceholderAttachmentDescription(fmt, sample_count, true));
 
   std::vector<vk::AttachmentReference> color_attachment_references;
   std::vector<vk::AttachmentReference> resolve_attachment_references;
@@ -156,28 +165,28 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
 
   // Set the resolve attachment if MSAA is enabled.
   if (sample_count != SampleCount::kCount1) {
-    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1));
-    resolve_attachment_references.push_back(vk::AttachmentReference(
-        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
+    // render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+    //     vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1, false));
+    // resolve_attachment_references.push_back(vk::AttachmentReference(
+    //     render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
   }
 
   if (desc.HasStencilAttachmentDescriptors()) {
-    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eS8Uint, sample_count));
-    depth_stencil_attachment_reference = vk::AttachmentReference(
-        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
+    // render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+    //     vk::Format::eS8Uint, sample_count, false));
+    // depth_stencil_attachment_reference = vk::AttachmentReference(
+    //     render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
   }
 
   vk::SubpassDescription subpass_info;
   subpass_info.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
   subpass_info.setColorAttachments(color_attachment_references);
   if (sample_count != SampleCount::kCount1) {
-    subpass_info.setResolveAttachments(resolve_attachment_references);
+    // subpass_info.setResolveAttachments(resolve_attachment_references);
   }
   if (depth_stencil_attachment_reference.has_value()) {
-    subpass_info.setPDepthStencilAttachment(
-        &depth_stencil_attachment_reference.value());
+    // subpass_info.setPDepthStencilAttachment(
+    //     &depth_stencil_attachment_reference.value());
   }
 
   vk::RenderPassCreateInfo render_pass_info;
@@ -349,8 +358,7 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
         break;
     }
 
-
-    switch(layout.shader_stage) {
+    switch (layout.shader_stage) {
       case ShaderStage::kVertex:
         FML_LOG(ERROR) << desc.GetLabel() << " vertex stage";
         break;
