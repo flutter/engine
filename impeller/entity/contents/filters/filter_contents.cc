@@ -20,6 +20,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/filters/linear_to_srgb_filter_contents.h"
+#include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/morphology_filter_contents.h"
 #include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
@@ -180,6 +181,15 @@ std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
     FilterInput::Ref input,
     const Matrix& matrix) {
   auto filter = std::make_shared<MatrixFilterContents>();
+  filter->SetInputs({input});
+  filter->SetMatrix(matrix);
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeLocalMatrixFilter(
+    FilterInput::Ref input,
+    const Matrix& matrix) {
+  auto filter = std::make_shared<LocalMatrixFilterContents>();
   filter->SetInputs({input});
   filter->SetMatrix(matrix);
   return filter;

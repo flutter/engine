@@ -94,6 +94,10 @@ class FilterContents : public Contents {
       FilterInput::Ref input,
       const Matrix& matrix);
 
+  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix);
+
   FilterContents();
 
   ~FilterContents() override;
