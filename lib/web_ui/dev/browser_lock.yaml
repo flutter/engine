@@ -16,7 +16,7 @@ chrome:
   Linux: 1046597
   Mac: 1046592
   Mac_Arm: 1046589
-  Win: 1046592
+  Win: 1046600
   version: '107.0' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
 
 ## Firefox does not use CIPD. To update the version, simply update it in this

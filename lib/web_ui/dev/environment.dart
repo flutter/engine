@@ -33,11 +33,11 @@ class Environment {
     final io.Directory outDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory engineBuildDir =
-        io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
+        io.Directory(pathlib.join(outDir.path, _engineBuildDirectoryName));
     final io.Directory wasmReleaseOutDir =
         io.Directory(pathlib.join(outDir.path, 'wasm_release'));
     final io.Directory dartSdkDir =
-        io.Directory(pathlib.join(engineBuildDir.path, _engineBuildDirectoryName));
+        io.Directory(pathlib.join(engineBuildDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
 
