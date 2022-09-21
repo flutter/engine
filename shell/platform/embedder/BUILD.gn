@@ -221,6 +221,7 @@ if (enable_unittests) {
     include_dirs = [ "." ]
 
     sources = [
+      "platform_view_embedder_unittests.cc",
       "tests/embedder_config_builder.cc",
       "tests/embedder_config_builder.h",
       "tests/embedder_test.cc",
@@ -370,8 +371,12 @@ shared_library("flutter_engine_library") {
 
   output_name = "flutter_engine"
 
+  ldflags = []
   if (is_mac && !embedder_for_target) {
-    ldflags = [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
+    ldflags += [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
+  }
+  if (is_linux) {
+    ldflags += [ "-Wl,--version-script=" + rebase_path("embedder_exports.lst") ]
   }
 
   deps = [ ":embedder" ]

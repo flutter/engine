@@ -1,4 +1,4 @@
-Signature: d6032f485cc836fd32fe7617de7065ca
+Signature: bb0e1229a71873ae05a8621695b42382
 
 UNUSED LICENSES:
 
@@ -811,14 +811,17 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Android_ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Chromebook_GLES.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm64-Debug-Android_FrameworkWorkarounds.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm64-Debug-Android_Graphite_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm64-Debug-Android_HWASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm64-Release-Android_Wuffs.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-ASAN_Graphite_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-AVIF.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-Chromebook_GLES.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-Coverage.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-MSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SK_CPU_LIMIT_SSE41.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SafeStack.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SwiftShader_Graphite.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SwiftShader_MSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-TSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-Tidy.json
@@ -858,6 +861,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Debug-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Release-Dawn.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Release-Direct3D.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Release-Graphite_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Release-Shared.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Release-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Housekeeper-PerCommit-CheckGeneratedFiles.json
@@ -909,6 +913,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.e
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/retry_ios_install_retries_exhausted.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test-win.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_mac.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_all_uploads.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_one_upload.json
@@ -955,6 +960,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench_DDLTotal_9x9.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-NoPatch (tryjob).json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-NoPatch.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Win10-Clang-x86_64-Release-NoDEPS.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel2XL-GPU-Adreno540-arm-Debug-All-Android_ASAN.json
@@ -1228,6 +1234,7 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/gl/BUILD.bazel
+FILE: ../../../third_party/skia/src/gpu/graphite/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/piet/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/vk/BUILD.bazel
