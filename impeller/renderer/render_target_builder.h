@@ -7,7 +7,6 @@
 #include <functional>
 #include <map>
 #include <optional>
-
 #include "context.h"
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/size.h"

@@ -1,5 +1,4 @@
 #include "impeller/renderer/render_target_builder.h"
-
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/allocator.h"
