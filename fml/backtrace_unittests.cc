@@ -16,7 +16,7 @@ TEST(BacktraceTest, CanGatherBacktrace) {
     GTEST_SKIP();
     return;
   }
-  EXPECT_DEATH_IF_SUPPORTED({ std::abort(); }, "raise");
+  EXPECT_DEATH_IF_SUPPORTED({ std::abort(); }, "SIGABRT");
 }
 
 }  // namespace testing
