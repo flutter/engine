@@ -61,6 +61,8 @@ struct Matrix {
             Vector4(m12, m13, m14, m15)} {}
   // clang-format on
 
+  Matrix(const MatrixDecomposition& decomposition);
+
   // clang-format off
   static constexpr Matrix MakeColumn(
                    Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
@@ -87,8 +89,6 @@ struct Matrix {
                   m3,  m7,  m11,  m15);
   }
   // clang-format on
-
-  Matrix(const MatrixDecomposition& decomposition);
 
   static constexpr Matrix MakeTranslation(const Vector3& t) {
     // clang-format off
