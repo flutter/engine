@@ -6,12 +6,6 @@
 
 namespace fml {
 
-static std::string kKUnknownFrameName = "Unknown";
-
-std::string BacktraceHere(size_t offset) {
-  return "";
-}
-
 void InstallCrashHandler() {
   // Not supported.
 }
