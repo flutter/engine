@@ -52,14 +52,22 @@ class TestDepsParserMethods(unittest.TestCase):
             dep_repo = dep.split('@')[0]
             dep_name = dep_repo.split('/')[-1].split('.')[0]
             if dep_name != "vulkan-deps" and dep_name != "khronos":
-                # vulkan-deps and khronos do not have one upstream URL
+                # vulkan-deps and khr`onos do not have one upstream URL
                 # all other deps should have an associated upstream URL for vuln scanning purposes
                 self.assertTrue(dep_name in self.upstream_urls, msg = dep_name + " not found in upstream URL list")
 
     def test_each_upstream_url_has_dep(self):
-        # for each DEP in the deps file, check for an associated upstream URL in deps file
-        for dep in self.upstream_urls:
-            self.assertTrue(dep in self.dep)
+
+        # parse DEPS into dependency names
+        deps_names = []
+        for d in self.deps:
+            dep_repo = d.split('@')[0]
+            dep_name = dep_repo.split('/')[-1].split('.')[0]
+            deps_names.append(dep_name)
+
+        # for each upstream URL dep, check it exists as in DEPS
+        for dep, url in self.upstream_urls.items():
+            self.assertTrue(dep in deps_names, msg = dep + " from upstream list not found in DEPS")
 
 if __name__ == '__main__':
     unittest.main()
