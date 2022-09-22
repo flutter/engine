@@ -117,11 +117,11 @@ def ParseDepsFile(deps_flat_file):
     headers = { 'Content-Type': 'application/json',}
     osv_url = 'https://api.osv.dev/v1/querybatch'
 
-    os.mkdir('clone-test') #clone deps with upstream into temporary dir
+    os.mkdir(CHECKOUT_ROOT + '/clone-test') #clone deps with upstream into temporary dir
 
     # Extract commit hash, save in dictionary
     for line in Lines:
-        os.chdir('clone-test')
+        os.chdir(CHECKOUT_ROOT + '/clone-test')
         dep = line.strip().split('@') # separate fully qualified dep into name + pinned hash
 
         common_commit = getCommonAncestorCommit(dep)
