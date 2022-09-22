@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:ffi' as ffi;
 import 'dart:io' show Directory, Platform;
 
 import 'package:args/command_runner.dart';
@@ -92,13 +91,12 @@ class GnPipelineStep extends ProcessStep {
   Future<ProcessManager> createProcess() {
     print('Running gn for $target...');
     final List<String> gnArgs = <String>[];
-    final bool isMacosArm = ffi.Abi.current() == ffi.Abi.macosArm64;
     if (target == 'engine') {
       gnArgs.addAll(<String>[
         '--unopt',
         if (Platform.isMacOS) '--xcode-symlinks',
         '--full-dart-sdk',
-        if (isMacosArm) '--mac-cpu=arm64',
+        if (environment.isMacosArm) '--mac-cpu=arm64',
       ]);
     } else if (target == 'canvaskit') {
       gnArgs.addAll(<String>[

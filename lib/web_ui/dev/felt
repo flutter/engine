@@ -64,14 +64,11 @@ then
     exit 1
   fi
 
-  echo "Running felt with prebuilt Dart SDK at ${DART_SDK_DIR}..."
 else
   if [ ! -d "$DART_SDK_DIR" ]
   then 
     echo "Explicitly specified dart SDK not found at ${DART_SDK_DIR}."
     exit 1
-  else
-    echo "Running felt with explicitly specified dart SDK at ${DART_SDK_DIR}..."
   fi
 fi
 

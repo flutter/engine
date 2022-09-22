@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ffi' as ffi;
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as path;
@@ -11,6 +10,7 @@ import 'browser.dart';
 import 'browser_lock.dart';
 import 'chrome.dart';
 import 'edge.dart';
+import 'environment.dart';
 import 'firefox.dart';
 import 'safari_macos.dart';
 
@@ -31,7 +31,7 @@ abstract class PlatformBinding {
       return LinuxPlatformBinding();
     }
     if (io.Platform.isMacOS) {
-      if (ffi.Abi.current() == ffi.Abi.macosArm64) {
+      if (environment.isMacosArm) {
         return MacArmPlatformBinding();
       }
       return Macx64PlatformBinding();

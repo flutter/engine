@@ -6,6 +6,7 @@ import 'dart:ffi' as ffi;
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as pathlib;
+import 'package:ui/src/engine.dart';
 
 import 'exceptions.dart';
 
@@ -16,16 +17,10 @@ Environment get environment {
 
 Environment? _environment;
 
-String get _engineBuildDirectoryName {
-  if(ffi.Abi.current() == ffi.Abi.macosArm64) {
-    return 'host_debug_unopt_arm64';
-  }
-  return 'host_debug_unopt';
-}
-
 /// Contains various environment variables, such as common file paths and command-line options.
 class Environment {
   factory Environment() {
+    final bool isMacosArm = ffi.Abi.current() == ffi.Abi.macosArm64;
     final io.File self = io.File.fromUri(io.Platform.script);
     final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
     final io.Directory engineToolsDir =
@@ -33,7 +28,10 @@ class Environment {
     final io.Directory outDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory engineBuildDir =
-        io.Directory(pathlib.join(outDir.path, _engineBuildDirectoryName));
+        io.Directory(pathlib.join(
+          outDir.path, 
+          isMacosArm ? 'host_debug_unopt_arm64' : 'host_debug_unopt'
+        ));
     final io.Directory wasmReleaseOutDir =
         io.Directory(pathlib.join(outDir.path, 'wasm_release'));
     final io.Directory dartSdkDir =
@@ -53,6 +51,7 @@ class Environment {
 
     return Environment._(
       self: self,
+      isMacosArm: isMacosArm,
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
@@ -65,6 +64,7 @@ class Environment {
 
   Environment._({
     required this.self,
+    required this.isMacosArm,
     required this.webUiRootDir,
     required this.engineSrcDir,
     required this.engineToolsDir,
@@ -76,6 +76,9 @@ class Environment {
 
   /// The Dart script that's currently running.
   final io.File self;
+
+  /// Whether the environment is a macOS arm environment.
+  final bool isMacosArm;
 
   /// Path to the "web_ui" package sources.
   final io.Directory webUiRootDir;
