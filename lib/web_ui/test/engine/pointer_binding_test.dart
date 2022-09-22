@@ -1401,6 +1401,79 @@ void testMain() {
   _testEach<_ButtonedEventMixin>(
     <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'does choose scroll vs scale based on ctrlKey',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 120,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 100,
+        ctrlKey: true,
+      ));
+
+      expect(packets, hasLength(2));
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(0));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+      // Because ctrlKey is not pressed, it will be a scroll.
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[0].data[1].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[0].data[1].pointerIdentifier, equals(0));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaX, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaY, equals(120.0));
+
+      // Because ctrlKey is pressed, it will be a scale.
+      expect(packets[1].data, hasLength(1));
+      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scale));
+      expect(
+          packets[1].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[1].data[0].pointerIdentifier, equals(0));
+      expect(packets[1].data[0].synthesized, isFalse);
+      expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[1].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[1].data[0].scale, closeTo(0.60653065971, 1e-10)); // math.exp(-100/200)
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext()
     ],
     'does calculate delta and pointer identifier correctly',
@@ -3108,6 +3181,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     double? wheelDeltaX,
     double? wheelDeltaY,
     int? timeStamp,
+    bool ctrlKey = false,
   }) {
     final DomEvent event = createDomWheelEvent('wheel', <String, Object>{
         if (buttons != null) 'buttons': buttons,
@@ -3117,6 +3191,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         if (deltaY != null) 'deltaY': deltaY,
         if (wheelDeltaX != null) 'wheelDeltaX': wheelDeltaX,
         if (wheelDeltaY != null) 'wheelDeltaY': wheelDeltaY,
+        'ctrlKey': ctrlKey,
     });
     // timeStamp can't be set in the constructor, need to override the getter.
     if (timeStamp != null) {
