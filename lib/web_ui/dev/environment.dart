@@ -28,7 +28,7 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory engineBuildDir =
         io.Directory(pathlib.join(
-          outDir.path, 
+          outDir.path,
           isMacosArm ? 'host_debug_unopt_arm64' : 'host_debug_unopt'
         ));
     final io.Directory wasmReleaseOutDir =
