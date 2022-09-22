@@ -27,6 +27,11 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
+  if (context->has_raster_cache()) {
+    context->SetTransform(
+        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+  }
+
   DiffChildren(context, prev);
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -36,9 +41,11 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
+  SkMatrix child_matrix = matrix;
+  AutoCache cache =
+      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
 
-  ContainerLayer::Preroll(context, matrix);
+  ContainerLayer::Preroll(context, child_matrix);
   // We always use a saveLayer (or a cached rendering), so we
   // can always apply opacity in those cases.
   context->subtree_can_inherit_opacity = true;
@@ -49,6 +56,9 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   if (context.raster_cache) {
+    context.internal_nodes_canvas->setMatrix(
+        RasterCacheUtil::GetIntegralTransCTM(
+            context.leaf_nodes_canvas->getTotalMatrix()));
     AutoCachePaint cache_paint(context);
     if (layer_raster_cache_item_->IsCacheChildren()) {
       cache_paint.setColorFilter(filter_.get());

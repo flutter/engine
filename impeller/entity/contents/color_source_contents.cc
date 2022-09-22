@@ -21,6 +21,14 @@ const Path& ColorSourceContents::GetPath() const {
   return path_;
 }
 
+void ColorSourceContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+Scalar ColorSourceContents::GetAlpha() const {
+  return alpha_;
+}
+
 void ColorSourceContents::SetMatrix(Matrix matrix) {
   inverse_matrix_ = matrix.Invert();
 }
@@ -29,9 +37,26 @@ const Matrix& ColorSourceContents::GetInverseMatrix() const {
   return inverse_matrix_;
 }
 
+void ColorSourceContents::SetCover(bool cover) {
+  cover_ = cover;
+}
+
+bool ColorSourceContents::GetCover() const {
+  return cover_;
+}
+
 std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
+
+bool ColorSourceContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
+  if (!stencil_coverage.has_value()) {
+    return false;
+  }
+  return cover_ || Contents::ShouldRender(entity, stencil_coverage);
+}
 
 }  // namespace impeller

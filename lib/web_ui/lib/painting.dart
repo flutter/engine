@@ -146,7 +146,7 @@ class Color {
 
   static int getAlphaFromOpacity(double opacity) {
     assert(opacity != null);
-    return (opacity.clamp(0.0, 1.0) * 255).round();
+    return (clampDouble(opacity, 0.0, 1.0) * 255).round();
   }
 
   @override
@@ -337,7 +337,12 @@ abstract class Gradient extends Shader {
     matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
+typedef ImageEventCallback = void Function(Image image);
+
 abstract class Image {
+  static ImageEventCallback? onCreate;
+  static ImageEventCallback? onDispose;
+
   int get width;
   int get height;
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
@@ -808,11 +813,6 @@ class FragmentProgram {
   FragmentShader fragmentShader() {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
-
-  Shader shader({
-    Float32List? floatUniforms,
-    List<ImageShader>? samplerUniforms,
-  }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
 }
 
 class FragmentShader extends Shader {

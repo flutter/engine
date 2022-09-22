@@ -178,6 +178,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           toSkStrutStyleProperties(strutStyle, textHeightBehavior);
     }
 
+    properties.replaceTabCharacters = true;
     properties.textStyle = toSkTextStyleProperties(
         fontFamily, fontSize, height, fontWeight, fontStyle);
 
@@ -219,6 +220,7 @@ class CkTextStyle implements ui.TextStyle {
     CkPaint? foreground,
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations,
   }) {
     return CkTextStyle._(
       color,
@@ -241,6 +243,7 @@ class CkTextStyle implements ui.TextStyle {
       foreground,
       shadows,
       fontFeatures,
+      fontVariations,
     );
   }
 
@@ -265,6 +268,7 @@ class CkTextStyle implements ui.TextStyle {
     this.foreground,
     this.shadows,
     this.fontFeatures,
+    this.fontVariations,
   );
 
   final ui.Color? color;
@@ -287,6 +291,7 @@ class CkTextStyle implements ui.TextStyle {
   final CkPaint? foreground;
   final List<ui.Shadow>? shadows;
   final List<ui.FontFeature>? fontFeatures;
+  final List<ui.FontVariation>? fontVariations;
 
   /// Merges this text style with [other] and returns the new text style.
   ///
@@ -314,6 +319,7 @@ class CkTextStyle implements ui.TextStyle {
       foreground: other.foreground ?? foreground,
       shadows: other.shadows ?? shadows,
       fontFeatures: other.fontFeatures ?? fontFeatures,
+      fontVariations: other.fontVariations ?? fontVariations,
     );
   }
 
@@ -344,6 +350,7 @@ class CkTextStyle implements ui.TextStyle {
     final CkPaint? foreground = this.foreground;
     final List<ui.Shadow>? shadows = this.shadows;
     final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+    final List<ui.FontVariation>? fontVariations = this.fontVariations;
 
     final SkTextStyleProperties properties = SkTextStyleProperties();
 
@@ -447,6 +454,17 @@ class CkTextStyle implements ui.TextStyle {
         skFontFeatures.add(skFontFeature);
       }
       properties.fontFeatures = skFontFeatures;
+    }
+
+    if (fontVariations != null) {
+      final List<SkFontVariation> skFontVariations = <SkFontVariation>[];
+      for (final ui.FontVariation fontVariation in fontVariations) {
+        final SkFontVariation skFontVariation = SkFontVariation();
+        skFontVariation.axis = fontVariation.axis;
+        skFontVariation.value = fontVariation.value;
+        skFontVariations.add(skFontVariation);
+      }
+      properties.fontVariations = skFontVariations;
     }
 
     return canvasKit.TextStyle(properties);
@@ -757,7 +775,16 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final SkTextRange skRange = paragraph.getWordBoundary(position.offset);
+    final int characterPosition;
+    switch (position.affinity) {
+      case ui.TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+        break;
+      case ui.TextAffinity.downstream:
+        characterPosition = position.offset;
+        break;
+    }
+    final SkTextRange skRange = paragraph.getWordBoundary(characterPosition);
     return ui.TextRange(start: skRange.start, end: skRange.end);
   }
 

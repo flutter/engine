@@ -541,6 +541,10 @@ public class FlutterActivity extends Activity
   private final OnBackInvokedCallback onBackInvokedCallback =
       Build.VERSION.SDK_INT >= 33
           ? new OnBackInvokedCallback() {
+            // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
+            // a google3 bug where the linter is not properly running against API 33, causing
+            // a failure here. See b/243609613 and https://github.com/flutter/flutter/issues/111295
+            @SuppressWarnings("Override")
             @Override
             public void onBackInvoked() {
               onBackPressed();
