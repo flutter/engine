@@ -60,9 +60,11 @@ if (build_engine_artifacts && !is_android) {
     ]
     if (flutter_runtime_mode == "debug") {
       dll = ".so"
+      lib_prefix = "lib"
       if (host_os == "win") {
         dll = ".dll"
         exe = ".exe"
+        lib_prefix = ""
       } else if (host_os == "mac") {
         dll = ".dylib"
       }
@@ -90,8 +92,8 @@ if (build_engine_artifacts && !is_android) {
           destination = "impellerc$exe"
         },
         {
-          source = "$root_out_dir/libpath_ops$dll"
-          destination = "libpath_ops$dll"
+          source = "$root_out_dir/${lib_prefix}path_ops$dll"
+          destination = "${lib_prefix}path_ops$dll"
         },
         {
           source = "$root_out_dir/libtessellator$dll"
