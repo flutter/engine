@@ -63,9 +63,9 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   auto op_offset = op_offset_;
   op_offset_ = std::vector<size_t>();
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
-                                            nested_bytes, nested_count,
-                                            cull_rect_, std::move(op_offset),compatible));
+  return sk_sp<DisplayList>(new DisplayList(
+      storage_.release(), bytes, count, nested_bytes, nested_count, cull_rect_,
+      std::move(op_offset), compatible));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
