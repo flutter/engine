@@ -54,9 +54,9 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
   auto target = RenderTargetBuilder()
-                    .setSize(size)
-                    .setRenderTargetType(RenderTargetType::Offscreen)
-                    .build(*context.GetContext());
+                    .SetSize(size)
+                    .SetRenderTargetType(RenderTargetType::Offscreen)
+                    .Build(*context.GetContext());
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";
     return nullptr;

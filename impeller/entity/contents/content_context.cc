@@ -251,14 +251,14 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   RenderTarget subpass_target;
   if (context->SupportsOffscreenMSAA()) {
     subpass_target = RenderTargetBuilder()
-                         .setSize(texture_size)
-                         .setRenderTargetType(RenderTargetType::OffscreenMSAA)
-                         .build(*context);
+                         .SetSize(texture_size)
+                         .SetRenderTargetType(RenderTargetType::OffscreenMSAA)
+                         .Build(*context);
   } else {
     subpass_target = RenderTargetBuilder()
-                         .setSize(texture_size)
-                         .setRenderTargetType(RenderTargetType::Offscreen)
-                         .build(*context);
+                         .SetSize(texture_size)
+                         .SetRenderTargetType(RenderTargetType::Offscreen)
+                         .Build(*context);
   }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {

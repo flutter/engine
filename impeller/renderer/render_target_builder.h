@@ -44,57 +44,57 @@ class RenderTargetBuilder {
 
   ~RenderTargetBuilder();
 
-  RenderTargetBuilder& setSize(ISize size) {
+  RenderTargetBuilder& SetSize(ISize size) {
     size_ = size;
     return *this;
   }
 
-  RenderTargetBuilder& setLabel(std::string label) {
+  RenderTargetBuilder& SetLabel(std::string label) {
     label_ = label;
     return *this;
   }
 
-  RenderTargetBuilder& setColorStorageMode(StorageMode mode) {
+  RenderTargetBuilder& SetColorStorageMode(StorageMode mode) {
     color_storage_mode_ = mode;
     return *this;
   }
 
-  RenderTargetBuilder& setColorLoadAction(LoadAction action) {
+  RenderTargetBuilder& SetColorLoadAction(LoadAction action) {
     color_load_action_ = action;
     return *this;
   }
 
-  RenderTargetBuilder& setColorStoreAction(StoreAction action) {
+  RenderTargetBuilder& SetColorStoreAction(StoreAction action) {
     color_store_action_ = action;
     return *this;
   }
 
-  RenderTargetBuilder& setStencilStorageMode(StorageMode mode) {
+  RenderTargetBuilder& SetStencilStorageMode(StorageMode mode) {
     stencil_storage_mode_ = mode;
     return *this;
   }
 
-  RenderTargetBuilder& setStencilLoadAction(LoadAction action) {
+  RenderTargetBuilder& SetStencilLoadAction(LoadAction action) {
     stencil_load_action_ = action;
     return *this;
   }
 
-  RenderTargetBuilder& setStencilStoreAction(StoreAction action) {
+  RenderTargetBuilder& SetStencilStoreAction(StoreAction action) {
     stencil_store_action_ = action;
     return *this;
   }
 
-  RenderTargetBuilder& setColorResolveStorageMode(StorageMode mode) {
+  RenderTargetBuilder& SetColorResolveStorageMode(StorageMode mode) {
     color_resolve_storage_mode_ = mode;
     return *this;
   }
 
-  RenderTargetBuilder& setRenderTargetType(RenderTargetType type) {
+  RenderTargetBuilder& SetRenderTargetType(RenderTargetType type) {
     render_target_type_ = type;
     return *this;
   }
 
-  RenderTarget build(const Context& context);
+  RenderTarget Build(const Context& context);
 };
 
 }  // namespace impeller

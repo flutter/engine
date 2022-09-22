@@ -155,32 +155,32 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
 
   if (context->SupportsOffscreenMSAA()) {
     return RenderTargetBuilder()
-        .setSize(size)
-        .setLabel("EntityPass")
-        .setColorStorageMode(StorageMode::kDeviceTransient)
-        .setColorResolveStorageMode(StorageMode::kDevicePrivate)
-        .setColorLoadAction(LoadAction::kDontCare)
-        .setColorStoreAction(StoreAction::kMultisampleResolve)
-        .setStencilStorageMode(readable ? StorageMode::kDevicePrivate
+        .SetSize(size)
+        .SetLabel("EntityPass")
+        .SetColorStorageMode(StorageMode::kDeviceTransient)
+        .SetColorResolveStorageMode(StorageMode::kDevicePrivate)
+        .SetColorLoadAction(LoadAction::kDontCare)
+        .SetColorStoreAction(StoreAction::kMultisampleResolve)
+        .SetStencilStorageMode(readable ? StorageMode::kDevicePrivate
                                         : StorageMode::kDeviceTransient)
-        .setStencilLoadAction(LoadAction::kDontCare)
-        .setStencilStoreAction(StoreAction::kDontCare)
-        .setRenderTargetType(RenderTargetType::OffscreenMSAA)
-        .build(*context);
+        .SetStencilLoadAction(LoadAction::kDontCare)
+        .SetStencilStoreAction(StoreAction::kDontCare)
+        .SetRenderTargetType(RenderTargetType::OffscreenMSAA)
+        .Build(*context);
   }
 
   return RenderTargetBuilder()
-      .setSize(size)
-      .setLabel("EntityPass")
-      .setColorStorageMode(StorageMode::kDevicePrivate)
-      .setColorLoadAction(LoadAction::kDontCare)
-      .setColorStoreAction(StoreAction::kDontCare)
-      .setStencilStorageMode(readable ? StorageMode::kDevicePrivate
+      .SetSize(size)
+      .SetLabel("EntityPass")
+      .SetColorStorageMode(StorageMode::kDevicePrivate)
+      .SetColorLoadAction(LoadAction::kDontCare)
+      .SetColorStoreAction(StoreAction::kDontCare)
+      .SetStencilStorageMode(readable ? StorageMode::kDevicePrivate
                                       : StorageMode::kDeviceTransient)
-      .setStencilLoadAction(LoadAction::kDontCare)
-      .setStencilStoreAction(StoreAction::kDontCare)
-      .setRenderTargetType(RenderTargetType::Offscreen)
-      .build(*context);
+      .SetStencilLoadAction(LoadAction::kDontCare)
+      .SetStencilStoreAction(StoreAction::kDontCare)
+      .SetRenderTargetType(RenderTargetType::Offscreen)
+      .Build(*context);
 }
 
 bool EntityPass::Render(ContentContext& renderer,

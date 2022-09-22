@@ -11,7 +11,7 @@ RenderTargetBuilder::RenderTargetBuilder() = default;
 
 RenderTargetBuilder::~RenderTargetBuilder() = default;
 
-RenderTarget RenderTargetBuilder::build(const Context& context) {
+RenderTarget RenderTargetBuilder::Build(const Context& context) {
   if (render_target_type_ == RenderTargetType::Offscreen) {
     return CreateOffscreen(context);
   } else if (render_target_type_ == RenderTargetType::OffscreenMSAA) {
