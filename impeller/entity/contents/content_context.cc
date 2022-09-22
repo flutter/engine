@@ -11,6 +11,7 @@
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/render_target_builder.h"
 
 namespace impeller {
 
@@ -207,8 +208,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
-  glyph_atlas_sdf_pipelines_[{}] =
-      CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
   vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 
@@ -247,12 +246,15 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     SubpassCallback subpass_callback) const {
   auto context = GetContext();
 
-  RenderTarget subpass_target;
-  if (context->SupportsOffscreenMSAA()) {
-    subpass_target = RenderTarget::CreateOffscreenMSAA(*context, texture_size);
-  } else {
-    subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
-  }
+  RenderTargetType render_target_type = context->SupportsOffscreenMSAA()
+                                            ? RenderTargetType::kOffscreenMSAA
+                                            : RenderTargetType::kOffscreen;
+
+  RenderTarget subpass_target = RenderTargetBuilder()
+                                    .SetSize(texture_size)
+                                    .SetRenderTargetType(render_target_type)
+                                    .Build(*context);
+
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
     return nullptr;
