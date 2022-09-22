@@ -153,34 +153,27 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
-  if (context->SupportsOffscreenMSAA()) {
-    return RenderTargetBuilder()
-        .SetSize(size)
-        .SetLabel("EntityPass")
-        .SetColorStorageMode(StorageMode::kDeviceTransient)
-        .SetColorResolveStorageMode(StorageMode::kDevicePrivate)
-        .SetColorLoadAction(LoadAction::kDontCare)
-        .SetColorStoreAction(StoreAction::kMultisampleResolve)
-        .SetStencilStorageMode(readable ? StorageMode::kDevicePrivate
-                                        : StorageMode::kDeviceTransient)
-        .SetStencilLoadAction(LoadAction::kDontCare)
-        .SetStencilStoreAction(StoreAction::kDontCare)
-        .SetRenderTargetType(RenderTargetType::OffscreenMSAA)
-        .Build(*context);
-  }
-
-  return RenderTargetBuilder()
-      .SetSize(size)
+  RenderTargetBuilder builder;
+  builder.SetSize(size)
       .SetLabel("EntityPass")
-      .SetColorStorageMode(StorageMode::kDevicePrivate)
+      .SetColorResolveStorageMode(StorageMode::kDevicePrivate)
       .SetColorLoadAction(LoadAction::kDontCare)
-      .SetColorStoreAction(StoreAction::kDontCare)
       .SetStencilStorageMode(readable ? StorageMode::kDevicePrivate
                                       : StorageMode::kDeviceTransient)
       .SetStencilLoadAction(LoadAction::kDontCare)
-      .SetStencilStoreAction(StoreAction::kDontCare)
-      .SetRenderTargetType(RenderTargetType::Offscreen)
-      .Build(*context);
+      .SetStencilStoreAction(StoreAction::kDontCare);
+
+  if (context->SupportsOffscreenMSAA()) {
+    builder.SetRenderTargetType(RenderTargetType::kOffscreenMSAA)
+        .SetColorStoreAction(StoreAction::kMultisampleResolve)
+        .SetColorStorageMode(StorageMode::kDeviceTransient);
+  } else {
+    builder.SetRenderTargetType(RenderTargetType::kOffscreen)
+        .SetColorStorageMode(StorageMode::kDevicePrivate)
+        .SetColorStoreAction(StoreAction::kDontCare);
+  }
+
+  return builder.Build(*context);
 }
 
 bool EntityPass::Render(ContentContext& renderer,

@@ -55,7 +55,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   // features to Image someday.
   auto target = RenderTargetBuilder()
                     .SetSize(size)
-                    .SetRenderTargetType(RenderTargetType::Offscreen)
+                    .SetRenderTargetType(RenderTargetType::kOffscreen)
                     .Build(*context.GetContext());
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";

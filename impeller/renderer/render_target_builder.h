@@ -16,29 +16,9 @@
 
 namespace impeller {
 
-enum class RenderTargetType { Offscreen, OffscreenMSAA, kUnknown };
+enum class RenderTargetType { kOffscreen, kOffscreenMSAA, kUnknown };
 
 class RenderTargetBuilder {
- private:
-  ISize size_;
-  std::string label_;
-
-  StorageMode color_storage_mode_;
-  LoadAction color_load_action_;
-  StoreAction color_store_action_;
-
-  StorageMode stencil_storage_mode_;
-  LoadAction stencil_load_action_;
-  StoreAction stencil_store_action_;
-
-  StorageMode color_resolve_storage_mode_;
-
-  RenderTargetType render_target_type_;
-
-  RenderTarget CreateOffscreen(const Context& context);
-
-  RenderTarget CreateOffscreenMSAA(const Context& context);
-
  public:
   RenderTargetBuilder();
 
@@ -94,7 +74,29 @@ class RenderTargetBuilder {
     return *this;
   }
 
-  RenderTarget Build(const Context& context);
+  RenderTarget Build(const Context& context) const;
+
+ private:
+  ISize size_;
+  std::string label_;
+
+  StorageMode color_storage_mode_ = StorageMode::kDeviceTransient;
+  LoadAction color_load_action_ = LoadAction::kDontCare;
+  StoreAction color_store_action_ = StoreAction::kDontCare;
+
+  StorageMode stencil_storage_mode_ = StorageMode::kDeviceTransient;
+  LoadAction stencil_load_action_ = LoadAction::kDontCare;
+  StoreAction stencil_store_action_ = StoreAction::kDontCare;
+
+  StorageMode color_resolve_storage_mode_ = StorageMode::kDeviceTransient;
+
+  RenderTargetType render_target_type_ = RenderTargetType::kUnknown;
+
+  RenderTarget CreateOffscreen(const Context& context) const;
+
+  RenderTarget CreateOffscreenMSAA(const Context& context) const;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(RenderTargetBuilder);
 };
 
 }  // namespace impeller

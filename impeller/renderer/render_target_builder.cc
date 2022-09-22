@@ -11,17 +11,18 @@ RenderTargetBuilder::RenderTargetBuilder() = default;
 
 RenderTargetBuilder::~RenderTargetBuilder() = default;
 
-RenderTarget RenderTargetBuilder::Build(const Context& context) {
-  if (render_target_type_ == RenderTargetType::Offscreen) {
+RenderTarget RenderTargetBuilder::Build(const Context& context) const {
+  if (render_target_type_ == RenderTargetType::kOffscreen) {
     return CreateOffscreen(context);
-  } else if (render_target_type_ == RenderTargetType::OffscreenMSAA) {
+  } else if (render_target_type_ == RenderTargetType::kOffscreenMSAA) {
     return CreateOffscreenMSAA(context);
   } else {
     return {};
   }
 }
 
-RenderTarget RenderTargetBuilder::CreateOffscreen(const Context& context) {
+RenderTarget RenderTargetBuilder::CreateOffscreen(
+    const Context& context) const {
   if (size_.IsEmpty()) {
     return {};
   }
@@ -72,7 +73,8 @@ RenderTarget RenderTargetBuilder::CreateOffscreen(const Context& context) {
   return target;
 }
 
-RenderTarget RenderTargetBuilder::CreateOffscreenMSAA(const Context& context) {
+RenderTarget RenderTargetBuilder::CreateOffscreenMSAA(
+    const Context& context) const {
   if (size_.IsEmpty()) {
     return {};
   }
