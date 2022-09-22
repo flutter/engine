@@ -37,7 +37,7 @@ class FilterContents : public Contents {
   enum class MorphType { kDilate, kErode };
 
   static std::shared_ptr<FilterContents> MakeBlend(
-      Entity::BlendMode blend_mode,
+      BlendMode blend_mode,
       FilterInput::Vector inputs,
       std::optional<Color> foreground_color = std::nullopt);
 
@@ -82,13 +82,22 @@ class FilterContents : public Contents {
 
   static std::shared_ptr<FilterContents> MakeColorMatrix(
       FilterInput::Ref input,
-      const ColorMatrix& matrix);
+      const ColorMatrix& color_matrix);
 
   static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
       FilterInput::Ref input);
 
   static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
       FilterInput::Ref input);
+
+  static std::shared_ptr<FilterContents> MakeMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix,
+      const SamplerDescriptor& desc);
+
+  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix);
 
   FilterContents();
 
@@ -120,7 +129,7 @@ class FilterContents : public Contents {
   std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
                                            const Entity& entity) const override;
 
-  virtual Matrix GetLocalTransform() const;
+  virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
 
