@@ -23,6 +23,7 @@ DisplayList::DisplayList()
       nested_op_count_(0),
       unique_id_(0),
       bounds_({0, 0, 0, 0}),
+      op_offset_(std::vector<size_t>()),
       bounds_cull_({0, 0, 0, 0}),
       can_apply_group_opacity_(true) {}
 
@@ -32,6 +33,7 @@ DisplayList::DisplayList(uint8_t* ptr,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
                          const SkRect& cull_rect,
+                         std::vector<size_t> op_offset,
                          bool can_apply_group_opacity)
     : storage_(ptr),
       byte_count_(byte_count),
@@ -39,6 +41,7 @@ DisplayList::DisplayList(uint8_t* ptr,
       nested_byte_count_(nested_byte_count),
       nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
+      op_offset_(op_offset),
       bounds_cull_(cull_rect),
       can_apply_group_opacity_(can_apply_group_opacity) {
   static std::atomic<uint32_t> next_id{1};

@@ -431,6 +431,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
 
+  std::vector<size_t> op_offset_;
+
   // This flag indicates whether or not the current rendering attributes
   // are compatible with rendering ops applying an inherited opacity.
   bool current_opacity_compatibility_ = true;

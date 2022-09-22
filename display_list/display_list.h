@@ -281,6 +281,7 @@ class DisplayList : public SkRefCnt {
               size_t nested_byte_count,
               unsigned int nested_op_count,
               const SkRect& cull_rect,
+              std::vector<size_t> op_offset,
               bool can_apply_group_opacity);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
@@ -293,6 +294,7 @@ class DisplayList : public SkRefCnt {
   uint32_t unique_id_;
   SkRect bounds_;
   sk_sp<const DlRTree> rtree_;
+  std::vector<size_t> op_offset_;
 
   // Only used for drawPaint() and drawColor()
   SkRect bounds_cull_;

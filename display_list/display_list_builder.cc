@@ -40,6 +40,7 @@ void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   }
   FML_DCHECK(used_ + size <= allocated_);
   auto op = reinterpret_cast<T*>(storage_.get() + used_);
+  op_offset_.push_back(used_);
   used_ += size;
   new (op) T{std::forward<Args>(args)...};
   op->type = T::kType;
@@ -59,10 +60,12 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   used_ = allocated_ = op_count_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
+  auto op_offset = op_offset_;
+  op_offset_ = std::vector<size_t>();
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
   return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
                                             nested_bytes, nested_count,
-                                            cull_rect_, compatible));
+                                            cull_rect_, std::move(op_offset),compatible));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
