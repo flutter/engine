@@ -328,7 +328,11 @@ using namespace flutter;
 - (instancetype)initWithData:(NSData*)data {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
+<<<<<<< HEAD
   _data = [data copy];
+=======
+  _data = data;
+>>>>>>> 22f31c4ee4 (darwin common arc)
   _range = NSMakeRange(0, 0);
   return self;
 }

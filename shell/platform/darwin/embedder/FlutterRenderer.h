@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Cocoa/Cocoa.h>
-
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+// TODO(cyanglaz embedder api), move this to darwin; upport both macos and ios.
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterPresenter.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterTextureRegistrarDelegate.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Rendering backend agnostic FlutterRendererConfig provider to be used by the embedder API.
@@ -15,14 +16,9 @@
 @protocol FlutterRenderer <FlutterTextureRegistry, FlutterTextureRegistrarDelegate>
 
 /**
- * Intializes the renderer with the given FlutterEngine.
- */
-- (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
-
-/**
  * Sets the FlutterView to render to.
  */
-- (void)setFlutterView:(nullable FlutterView*)view;
+- (void)setFlutterView:(nullable NSObject<FlutterPresenter>*)view;
 
 /**
  * Creates a FlutterRendererConfig that renders using the appropriate backend.
@@ -40,3 +36,5 @@
 - (void)presentWithoutContent;
 
 @end
+
+NS_ASSUME_NONNULL_END

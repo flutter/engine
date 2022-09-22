@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterExternalTextureMetal.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
 

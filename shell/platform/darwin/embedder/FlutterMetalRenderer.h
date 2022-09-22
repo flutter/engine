@@ -2,10 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Cocoa/Cocoa.h>
 #import <Metal/Metal.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderEngine.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterTextureRegistrar.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Provides the renderer config needed to initialize the embedder engine. This is initialized during
@@ -30,9 +33,16 @@
 - (FlutterMetalTexture)createTextureForSize:(CGSize)size;
 
 /**
+ * Presents the texture specified by the texture id.
+ */
+- (BOOL)present:(int64_t)textureID;
+
+/**
  * Populates the texture registry with the provided metalTexture.
  */
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
-                         metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture;
+                         metalTexture:(FlutterMetalExternalTexture*)metalTexture;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -6,7 +6,7 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterBackingStore.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 
 /**

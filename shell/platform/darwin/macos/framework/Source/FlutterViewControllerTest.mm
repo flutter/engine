@@ -7,11 +7,13 @@
 
 #import <OCMock/OCMock.h>
 
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderEngine.h"
+
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #import "flutter/testing/testing.h"
 
@@ -268,9 +270,12 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 
 - (bool)testFlutterViewIsConfigured {
   id engineMock = OCMClassMock([FlutterEngine class]);
+  id embedderEngineMock = OCMClassMock([FlutterEmbedderEngine class]);
 
-  id renderer_ = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engineMock];
+  id renderer_ = [[FlutterMetalRenderer alloc] init];
+  [renderer_ setEmbedderAPIDelegate:embedderEngineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
+  OCMStub([embedderEngineMock renderer]).andReturn(renderer_);
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
@@ -459,9 +464,12 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 
 - (bool)testTrackpadGesturesAreSentToFramework {
   id engineMock = OCMClassMock([FlutterEngine class]);
+  id embedderEngineMock = OCMClassMock([FlutterEmbedderEngine class]);
   // Need to return a real renderer to allow view controller to load.
-  id renderer_ = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engineMock];
+  id renderer_ = [[FlutterMetalRenderer alloc] init];
+  [renderer_ setEmbedderAPIDelegate:embedderEngineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
+  OCMStub([embedderEngineMock renderer]).andReturn(renderer_);
   __block bool called = false;
   __block FlutterPointerEvent last_event;
   OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:FlutterPointerEvent{}])

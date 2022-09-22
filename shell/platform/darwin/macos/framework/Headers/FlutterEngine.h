@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderEngine.h"
+
 #import "FlutterBinaryMessenger.h"
 #import "FlutterDartProject.h"
 #import "FlutterMacros.h"
@@ -21,7 +23,7 @@
  * Coordinates a single instance of execution of a Flutter engine.
  */
 FLUTTER_DARWIN_EXPORT
-@interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
+@interface FlutterEngine : FlutterEmbedderEngine <FlutterTextureRegistry, FlutterPluginRegistry>
 
 /**
  * Initializes an engine with the given project.

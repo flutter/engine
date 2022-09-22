@@ -9,9 +9,9 @@
 #include <memory>
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 
 @interface FlutterEngine ()
 
@@ -19,12 +19,6 @@
  * True if the engine is currently running.
  */
 @property(nonatomic, readonly) BOOL running;
-
-/**
- * Provides the renderer config needed to initialize the engine and also handles external
- * texture management.
- */
-@property(nonatomic, readonly, nullable) id<FlutterRenderer> renderer;
 
 /**
  * Function pointers for interacting with the embedder.h API.
@@ -38,11 +32,6 @@
  * semantics update through the embedder as soon as it is set to YES.
  */
 @property(nonatomic) BOOL semanticsEnabled;
-
-/**
- * The executable name for the current process.
- */
-@property(nonatomic, readonly, nonnull) NSString* executableName;
 
 /**
  * This just returns the NSPasteboard so that it can be mocked in the tests.

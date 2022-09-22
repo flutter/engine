@@ -4,9 +4,9 @@
 
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEmebedderEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -16,7 +16,7 @@
 // MOCK_ENGINE_PROC is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
-@interface TestOpenGLEngine : FlutterEngine
+@interface TestOpenGLEngine : FlutterEmbedderEngine
 
 @property(nonatomic, readwrite) id<FlutterRenderer> renderer;
 
@@ -33,10 +33,8 @@
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  self = [self initWithName:@"test" project:project allowHeadlessExecution:true];
-  if (self) {
-    renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
-  }
+  renderer = [[FlutterOpenGLRenderer alloc] init];
+  self = [self initWithrRenderer:renderer];
   return self;
 }
 
@@ -45,7 +43,7 @@
 namespace flutter::testing {
 
 TEST(FlutterOpenGLRenderer, RegisterExternalTexture) {
-  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
+  FlutterEmebedderEngine** engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
@@ -66,7 +64,7 @@ TEST(FlutterOpenGLRenderer, RegisterExternalTexture) {
 }
 
 TEST(FlutterOpenGLRenderer, UnregisterExternalTexture) {
-  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
+  FlutterEmebedderEngine** engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
@@ -88,7 +86,7 @@ TEST(FlutterOpenGLRenderer, UnregisterExternalTexture) {
 }
 
 TEST(FlutterOpenGLRenderer, MarkExternalTextureFrameAvailable) {
-  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
+  FlutterEmebedderEngine** engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
@@ -110,8 +108,8 @@ TEST(FlutterOpenGLRenderer, MarkExternalTextureFrameAvailable) {
 }
 
 TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
-  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
-  FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
+  FlutterEmebedderEngine** engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
+  FlutterOpenGLRenderer* renderer = engine.renderer;
   id mockFlutterView = OCMClassMock([FlutterView class]);
   [(FlutterView*)[mockFlutterView expect] present];
   [renderer setFlutterView:mockFlutterView];
@@ -120,8 +118,8 @@ TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
 }
 
 TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
-  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
-  FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
+  FlutterEmebedderEngine** engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
+  FlutterOpenGLRenderer* renderer = [engine.renderer;
   id mockFlutterView = OCMClassMock([FlutterView class]);
   FlutterFrameInfo frameInfo;
   frameInfo.struct_size = sizeof(FlutterFrameInfo);

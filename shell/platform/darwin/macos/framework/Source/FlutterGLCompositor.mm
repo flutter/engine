@@ -8,7 +8,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterBackingStore.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"

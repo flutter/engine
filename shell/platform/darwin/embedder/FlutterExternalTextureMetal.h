@@ -5,13 +5,17 @@
 #import <Foundation/Foundation.h>
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
+
+#include "flutter/shell/platform/embedder/embedder.h"
+
+// TODO(cyanglaz embedder api), combine this with |FlutterDarwinExternalTextureMetal|
 
 /**
  * Used to bridge FlutterTexture object and handle the texture copy request the
  * Flutter engine.
  */
-@interface FlutterExternalTextureMetal : NSObject <FlutterMacOSExternalTexture>
+@interface FlutterExternalTextureMetal : NSObject <FlutterExternalTexture>
 
 /**
  * Initializes a texture adapter with |texture|.

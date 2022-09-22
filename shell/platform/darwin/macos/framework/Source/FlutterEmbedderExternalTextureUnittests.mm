@@ -8,9 +8,9 @@
 #include <memory>
 #include <vector>
 
+#import "flutter/shell/platform/darwin/embedder/FlutterExternalTextureMetal.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_metal.h"
 #import "flutter/testing/testing.h"

@@ -3,37 +3,37 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderEngine.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 
 #pragma mark - Static methods for openGL callbacks that require the engine.
 
-static bool OnMakeCurrent(FlutterEngine* engine) {
+static bool OnMakeCurrent(FlutterEmbedderEngine* engine) {
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer makeCurrent];
 }
 
-static bool OnClearCurrent(FlutterEngine* engine) {
+static bool OnClearCurrent(FlutterEmbedderEngine* engine) {
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer clearCurrent];
 }
 
-static bool OnPresent(FlutterEngine* engine) {
+static bool OnPresent(FlutterEmbedderEngine* engine) {
   return [engine.renderer present];
 }
 
-static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
+static uint32_t OnFBO(FlutterEmbedderEngine* engine, const FlutterFrameInfo* info) {
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer fboForFrameInfo:info];
 }
 
-static bool OnMakeResourceCurrent(FlutterEngine* engine) {
+static bool OnMakeResourceCurrent(FlutterEmbedderEngine* engine) {
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer makeResourceCurrent];
 }
 
-static bool OnAcquireExternalTexture(FlutterEngine* engine,
+static bool OnAcquireExternalTexture(FlutterEmbedderEngine* engine,
                                      int64_t textureIdentifier,
                                      size_t width,
                                      size_t height,
@@ -46,7 +46,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterOpenGLRenderer implementation.
 
 @implementation FlutterOpenGLRenderer {
-  FlutterView* _flutterView;
+  NSObject<FlutterPresenter>* _flutterView;
 
   // The context provided to the Flutter engine for rendering to the FlutterView. This is lazily
   // created during initialization of the FlutterView. This is used to render content into the
@@ -57,12 +57,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   NSOpenGLContext* _resourceContext;
 }
 
-- (instancetype)initWithFlutterEngine:(FlutterEngine*)flutterEngine {
-  self = [super initWithDelegate:self engine:flutterEngine];
+- (instancetype)init {
+  self = [super initWithDelegate:self];
   return self;
 }
 
-- (void)setFlutterView:(FlutterView*)view {
+- (void)setFlutterView:(NSObject<FlutterPresenter>*)view {
   _flutterView = view;
   if (!view) {
     _resourceContext = nil;
@@ -133,12 +133,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                         openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
-  id<FlutterMacOSExternalTexture> texture = [self getTextureWithID:textureID];
+  id<FlutterExternalTexture> texture = [self getTextureWithID:textureID];
   FlutterExternalTextureGL* glTexture = reinterpret_cast<FlutterExternalTextureGL*>(texture);
   return [glTexture populateTexture:openGLTexture];
 }
 
-- (id<FlutterMacOSExternalTexture>)onRegisterTexture:(id<FlutterTexture>)texture {
+- (id<FlutterExternalTexture>)onRegisterTexture:(id<FlutterTexture>)texture {
   return [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
 }
 

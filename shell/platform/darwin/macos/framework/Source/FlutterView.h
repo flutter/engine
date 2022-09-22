@@ -4,6 +4,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "flutter/shell/platform/darwin/embedder/FlutterPresenter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
 
 /**
@@ -20,7 +21,7 @@
  * View capable of acting as a rendering target and input source for the Flutter
  * engine.
  */
-@interface FlutterView : NSView
+@interface FlutterView : NSView <FlutterPresenter>
 
 /**
  * Initialize a FlutterView that will be rendered to using Metal rendering apis.
@@ -44,23 +45,6 @@
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect NS_UNAVAILABLE;
 - (nullable instancetype)initWithCoder:(nonnull NSCoder*)coder NS_UNAVAILABLE;
 - (nonnull instancetype)init NS_UNAVAILABLE;
-
-/**
- * Flushes the OpenGL context and flips the surfaces. Expected to be called on raster thread.
- */
-- (void)present;
-
-/**
- * Called when there is no Flutter content available to render. This must be passed to resize
- * synchronizer.
- */
-- (void)presentWithoutContent;
-
-/**
- * Ensures that a backing store with requested size exists and returns the descriptor. Expected to
- * be called on raster thread.
- */
-- (nonnull FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size;
 
 /**
  * Must be called when shutting down. Unblocks raster thread and prevents any further

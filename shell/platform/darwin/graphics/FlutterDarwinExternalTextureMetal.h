@@ -7,6 +7,7 @@
 
 #include "flutter/common/graphics/texture.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 
@@ -26,7 +27,7 @@
 
 @end
 
-@interface FlutterDarwinExternalTextureMetal : NSObject
+@interface FlutterDarwinExternalTextureMetal : NSObject <FlutterExternalTexture>
 
 - (nullable instancetype)initWithTextureCache:(nonnull CVMetalTextureCacheRef)textureCache
                                     textureID:(int64_t)textureID
@@ -45,7 +46,5 @@
 - (void)markNewFrameAvailable;
 
 - (void)onTextureUnregistered;
-
-@property(nonatomic, readonly) int64_t textureID;
 
 @end

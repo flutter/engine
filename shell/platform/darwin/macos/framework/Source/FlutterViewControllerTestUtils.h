@@ -5,7 +5,7 @@
 #import <Foundation/NSString.h>
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/testing/testing.h"
 

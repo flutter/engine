@@ -9,13 +9,13 @@
 #include <iostream>
 #include <vector>
 
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
@@ -100,12 +100,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * time is in the clock used by the Flutter engine.
  */
 - (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime;
-
-/**
- * Loads the AOT snapshots and instructions from the elf bundle (app_elf_snapshot.so) into _aotData,
- * if it is present in the assets directory.
- */
-- (void)loadAOTData:(NSString*)assetsDir;
 
 /**
  * Creates a platform view channel and sets up the method handler.
@@ -236,23 +230,19 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
-  self = [super init];
+  id<FlutterRenderer> renderer = nil;
+  if ([FlutterRenderingBackend renderUsingMetal]) {
+    renderer = [[FlutterMetalRenderer alloc] init];
+  } else {
+    renderer = [[FlutterOpenGLRenderer alloc] init];
+  }
+  self = [super initWithRenderer:renderer];
   NSAssert(self, @"Super init cannot be nil");
 
-  _project = project ?: [[FlutterDartProject alloc] init];
   _messengerHandlers = [[NSMutableDictionary alloc] init];
   _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
-
-  _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
-  FlutterEngineGetProcAddresses(&_embedderAPI);
-
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
-  } else {
-    _renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
-  }
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -267,13 +257,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return self;
 }
 
-- (void)dealloc {
-  [self shutDownEngine];
-  if (_aotData) {
-    _embedderAPI.CollectAOTData(_aotData);
-  }
-}
-
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
   if (self.running) {
     return NO;
@@ -285,91 +268,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   [self addInternalPlugins];
-
-  // The first argument of argv is required to be the executable name.
-  std::vector<const char*> argv = {[self.executableName UTF8String]};
-  std::vector<std::string> switches = _project.switches;
-  std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
-                 [](const std::string& arg) -> const char* { return arg.c_str(); });
-
-  std::vector<const char*> dartEntrypointArgs;
-  for (NSString* argument in [_project dartEntrypointArguments]) {
-    dartEntrypointArgs.push_back([argument UTF8String]);
-  }
-
-  FlutterProjectArgs flutterArguments = {};
-  flutterArguments.struct_size = sizeof(FlutterProjectArgs);
-  flutterArguments.assets_path = _project.assetsPath.UTF8String;
-  flutterArguments.icu_data_path = _project.ICUDataPath.UTF8String;
-  flutterArguments.command_line_argc = static_cast<int>(argv.size());
-  flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
-  flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
-  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
-                                                       void* user_data) {
-    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [engine updateSemanticsNode:node];
-  };
-  flutterArguments.update_semantics_custom_action_callback =
-      [](const FlutterSemanticsCustomAction* action, void* user_data) {
-        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-        [engine updateSemanticsCustomActions:action];
-      };
-  flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
-  flutterArguments.shutdown_dart_vm_when_done = true;
-  flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
-  flutterArguments.dart_entrypoint_argv = dartEntrypointArgs.data();
-  flutterArguments.root_isolate_create_callback = _project.rootIsolateCreateCallback;
-  flutterArguments.log_message_callback = [](const char* tag, const char* message,
-                                             void* user_data) {
-    if (tag && tag[0]) {
-      std::cout << tag << ": ";
-    }
-    std::cout << message << std::endl;
-  };
-
-  static size_t sTaskRunnerIdentifiers = 0;
-  const FlutterTaskRunnerDescription cocoa_task_runner_description = {
-      .struct_size = sizeof(FlutterTaskRunnerDescription),
-      .user_data = (void*)CFBridgingRetain(self),
-      .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
-        return [[NSThread currentThread] isMainThread];
-      },
-      .post_task_callback = [](FlutterTask task, uint64_t target_time_nanos,
-                               void* user_data) -> void {
-        [((__bridge FlutterEngine*)(user_data)) postMainThreadTask:task
-                                           targetTimeInNanoseconds:target_time_nanos];
-      },
-      .identifier = ++sTaskRunnerIdentifiers,
-  };
-  const FlutterCustomTaskRunners custom_task_runners = {
-      .struct_size = sizeof(FlutterCustomTaskRunners),
-      .platform_task_runner = &cocoa_task_runner_description,
-  };
-  flutterArguments.custom_task_runners = &custom_task_runners;
-
-  [self loadAOTData:_project.assetsPath];
-  if (_aotData) {
-    flutterArguments.aot_data = _aotData;
-  }
-
-  flutterArguments.compositor = [self createFlutterCompositor];
-
-  flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
-    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [engine engineCallbackOnPreEngineRestart];
-  };
-
-  FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];
-  FlutterEngineResult result = _embedderAPI.Initialize(
-      FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
-  if (result != kSuccess) {
-    NSLog(@"Failed to initialize Flutter engine: error %d", result);
-    return NO;
-  }
-
-  result = _embedderAPI.RunInitialized(_engine);
-  if (result != kSuccess) {
-    NSLog(@"Failed to run an initialized engine: error %d", result);
+  if (![self prepareEmbedderAPI:entrypoint]) {
     return NO;
   }
 
@@ -380,32 +279,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // to the engine.
   [self sendInitialSettings];
   return YES;
-}
-
-- (void)loadAOTData:(NSString*)assetsDir {
-  if (!_embedderAPI.RunsAOTCompiledDartCode()) {
-    return;
-  }
-
-  BOOL isDirOut = false;  // required for NSFileManager fileExistsAtPath.
-  NSFileManager* fileManager = [NSFileManager defaultManager];
-
-  // This is the location where the test fixture places the snapshot file.
-  // For applications built by Flutter tool, this is in "App.framework".
-  NSString* elfPath = [NSString pathWithComponents:@[ assetsDir, @"app_elf_snapshot.so" ]];
-
-  if (![fileManager fileExistsAtPath:elfPath isDirectory:&isDirOut]) {
-    return;
-  }
-
-  FlutterEngineAOTDataSource source = {};
-  source.type = kFlutterEngineAOTDataSourceTypeElfPath;
-  source.elf_path = [elfPath cStringUsingEncoding:NSUTF8StringEncoding];
-
-  auto result = _embedderAPI.CreateAOTData(&source, &_aotData);
-  if (result != kSuccess) {
-    NSLog(@"Failed to load AOT data from: %@", elfPath);
-  }
 }
 
 - (void)setViewController:(FlutterViewController*)controller {
@@ -514,8 +387,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     display.refresh_rate = round(refreshRate);
 
     std::vector<FlutterEngineDisplay> displays = {display};
-    _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
-                                     displays.data(), displays.size());
+    _embedderEngine.embedderAPI.NotifyDisplayUpdate(
+        _engine, kFlutterEngineDisplaysUpdateTypeStartup, displays.data(), displays.size());
   }
 
   CVDisplayLinkRelease(displayLinkRef);
@@ -544,15 +417,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (FlutterEngineProcTable&)embedderAPI {
-  return _embedderAPI;
+  return _embedderEngine.embedderAPI;
 }
 
 - (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
   return _bridge;
-}
-
-- (nonnull NSString*)executableName {
-  return [[[NSProcessInfo processInfo] arguments] firstObject] ?: @"Flutter";
 }
 
 - (void)updateWindowMetrics {
@@ -572,17 +441,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
   };
-  _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
+  _embedderEngine.embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
-  _embedderAPI.SendPointerEvent(_engine, &event, 1);
+  _embedderEngine.embedderAPI.SendPointerEvent(_engine, &event, 1);
 }
 
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(FlutterKeyEventCallback)callback
             userData:(void*)userData {
-  _embedderAPI.SendKeyEvent(_engine, &event, callback, userData);
+  _embedderEngine.embedderAPI.SendKeyEvent(_engine, &event, callback, userData);
 }
 
 - (void)setSemanticsEnabled:(BOOL)enabled {
@@ -600,13 +469,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     _bridge = std::make_shared<flutter::AccessibilityBridge>(
         std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, self.viewController));
   }
-  _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
+  _embedderEngine.embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
 }
 
 - (void)dispatchSemanticsAction:(FlutterSemanticsAction)action
                        toTarget:(uint16_t)target
                        withData:(fml::MallocMapping)data {
-  _embedderAPI.DispatchSemanticsAction(_engine, target, action, data.GetMapping(), data.GetSize());
+  _embedderEngine.embedderAPI.DispatchSemanticsAction(_engine, target, action, data.GetMapping(),
+                                                      data.GetSize());
 }
 
 - (FlutterPlatformViewController*)platformViewController {
@@ -635,7 +505,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   std::transform(flutterLocales.begin(), flutterLocales.end(),
                  std::back_inserter(flutterLocaleList),
                  [](const auto& arg) -> const auto* { return &arg; });
-  _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
+  _embedderEngine.embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(),
+                                            flutterLocaleList.size());
 }
 
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message {
@@ -650,9 +521,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
     if (responseHandle) {
-      _embedderAPI.SendPlatformMessageResponse(self->_engine, responseHandle,
-                                               static_cast<const uint8_t*>(response.bytes),
-                                               response.length);
+      _embedderEngine.embedderAPI.SendPlatformMessageResponse(
+          self->_engine, responseHandle, static_cast<const uint8_t*>(response.bytes),
+          response.length);
       responseHandle = NULL;
     } else {
       NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
@@ -679,27 +550,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
  * Note: Called from dealloc. Should not use accessors or other methods.
  */
 - (void)shutDownEngine {
-  if (_engine == nullptr) {
-    return;
-  }
+  [super shutDownEngine]
 
-  if (_viewController && _viewController.flutterView) {
+      if (_viewController && _viewController.flutterView) {
     [_viewController.flutterView shutdown];
   }
-
-  FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
-  if (result != kSuccess) {
-    NSLog(@"Could not de-initialize the Flutter engine: error %d", result);
-  }
-
-  // Balancing release for the retain in the task runner dispatch table.
-  CFRelease((CFTypeRef)self);
-
-  result = _embedderAPI.Shutdown(_engine);
-  if (result != kSuccess) {
-    NSLog(@"Failed to shut down Flutter engine: error %d", result);
-  }
-  _engine = nullptr;
 }
 
 - (void)setUpPlatformViewChannel {
@@ -831,8 +686,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       delete captures;
     };
 
-    FlutterEngineResult create_result = _embedderAPI.PlatformMessageCreateResponseHandle(
-        _engine, message_reply, captures.get(), &response_handle);
+    FlutterEngineResult create_result =
+        _embedderEngine.embedderAPI.PlatformMessageCreateResponseHandle(
+            _engine, message_reply, captures.get(), &response_handle);
     if (create_result != kSuccess) {
       NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle (%d)", create_result);
       return;
@@ -848,7 +704,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .response_handle = response_handle,
   };
 
-  FlutterEngineResult message_result = _embedderAPI.SendPlatformMessage(_engine, &platformMessage);
+  FlutterEngineResult message_result =
+      _embedderEngine.embedderAPI.SendPlatformMessage(_engine, &platformMessage);
   if (message_result != kSuccess) {
     NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel,
           message_result);
@@ -856,7 +713,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   if (response_handle != nullptr) {
     FlutterEngineResult release_result =
-        _embedderAPI.PlatformMessageReleaseResponseHandle(_engine, response_handle);
+        _embedderEngine.embedderAPI.PlatformMessageReleaseResponseHandle(_engine, response_handle);
     if (release_result != kSuccess) {
       NSLog(@"Failed to release the response handle (%d).", release_result);
     };
@@ -902,7 +759,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (BOOL)registerTextureWithID:(int64_t)textureId {
-  return _embedderAPI.RegisterExternalTexture(_engine, textureId) == kSuccess;
+  return _embedderEngine.embedderAPI.RegisterExternalTexture(_engine, textureId) == kSuccess;
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
@@ -910,7 +767,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (BOOL)markTextureFrameAvailable:(int64_t)textureID {
-  return _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID) == kSuccess;
+  return _embedderEngine.embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID) ==
+         kSuccess;
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
@@ -918,8 +776,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (BOOL)unregisterTextureWithID:(int64_t)textureID {
-  return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
+  return _embedderEngine.embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
 }
+
+#pragma mark - Semantics
 
 - (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
   NSAssert(_bridge, @"The accessibility bridge must be initialized.");
@@ -958,7 +818,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)runTaskOnEmbedder:(FlutterTask)task {
   if (_engine) {
-    auto result = _embedderAPI.RunTask(_engine, &task);
+    auto result = _embedderEngine.embedderAPI.RunTask(_engine, &task);
     if (result != kSuccess) {
       NSLog(@"Could not post a task to the Flutter engine.");
     }
@@ -971,7 +831,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     [weakSelf runTaskOnEmbedder:task];
   };
 
-  const auto engine_time = _embedderAPI.GetCurrentTime();
+  const auto engine_time = _embedderEngine.embedderAPI.GetCurrentTime();
   if (targetTime <= engine_time) {
     dispatch_async(dispatch_get_main_queue(), worker);
 

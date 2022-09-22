@@ -16,6 +16,7 @@ source_set("graphics") {
     "FlutterDarwinContextMetalSkia.mm",
     "FlutterDarwinExternalTextureMetal.h",
     "FlutterDarwinExternalTextureMetal.mm",
+    "FlutterExternalTexture.h",
   ]
 
   deps = [

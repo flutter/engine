@@ -3,27 +3,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterMetalRenderer.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #pragma mark - Static callbacks that require the engine.
 
-static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
+static FlutterMetalTexture OnGetNextDrawable(FlutterEmbedderEngine* engine,
                                              const FlutterFrameInfo* frameInfo) {
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
   return [metalRenderer createTextureForSize:size];
 }
 
-static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
+static bool OnPresentDrawable(FlutterEmbedderEngine* engine, const FlutterMetalTexture* texture) {
   return [engine.renderer present];
 }
 
-static bool OnAcquireExternalTexture(FlutterEngine* engine,
+static bool OnAcquireExternalTexture(FlutterEmbedderEngine* engine,
                                      int64_t textureIdentifier,
                                      size_t width,
                                      size_t height,
@@ -35,13 +33,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterMetalRenderer implementation
 
 @implementation FlutterMetalRenderer {
-  FlutterView* _flutterView;
+  NSObject<FlutterPresenter>* _flutterView;
 
   FlutterDarwinContextMetalSkia* _darwinMetalContext;
 }
 
-- (instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine {
-  self = [super initWithDelegate:self engine:flutterEngine];
+- (instancetype)init {
+  self = [super initWithDelegate:self];
   if (self) {
     _device = MTLCreateSystemDefaultDevice();
     if (!_device) {
@@ -61,7 +59,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return self;
 }
 
-- (void)setFlutterView:(FlutterView*)view {
+- (void)setFlutterView:(NSObject<FlutterPresenter>*)view {
   _flutterView = view;
 }
 
@@ -113,13 +111,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                          metalTexture:(FlutterMetalExternalTexture*)textureOut {
-  id<FlutterMacOSExternalTexture> texture = [self getTextureWithID:textureID];
+  id<FlutterExternalTexture> texture = [self getTextureWithID:textureID];
   FlutterExternalTextureMetal* metalTexture =
       reinterpret_cast<FlutterExternalTextureMetal*>(texture);
   return [metalTexture populateTexture:textureOut];
 }
 
-- (id<FlutterMacOSExternalTexture>)onRegisterTexture:(id<FlutterTexture>)texture {
+- (id<FlutterExternalTexture>)onRegisterTexture:(id<FlutterTexture>)texture {
   return [[FlutterExternalTextureMetal alloc] initWithFlutterTexture:texture
                                                   darwinMetalContext:_darwinMetalContext];
 }

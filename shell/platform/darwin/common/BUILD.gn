@@ -36,13 +36,18 @@ source_set("framework_shared") {
   sources = [
     "framework/Source/FlutterChannels.mm",
     "framework/Source/FlutterCodecs.mm",
+    "framework/Source/FlutterDartProject.mm",
+    "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterStandardCodec.mm",
     "framework/Source/FlutterStandardCodec_Internal.h",
   ]
 
-  public = framework_shared_headers
+  public = framework_shared_headers +
+           [ "framework/Source/FlutterDartProject_Internal.h" ]
 
   defines = [ "FLUTTER_FRAMEWORK" ]
+
+  deps = [ "//flutter/shell/platform/common:common_cpp_switches" ]
 
   public_configs = [
     "//flutter:config",

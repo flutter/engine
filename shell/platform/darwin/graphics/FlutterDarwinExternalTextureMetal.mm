@@ -25,6 +25,7 @@ FLUTTER_ASSERT_ARC
   OSType _pixelFormat;
   BOOL _enableImpeller;
 }
+@synthesize textureID = _textureID;
 
 - (instancetype)initWithTextureCache:(nonnull CVMetalTextureCacheRef)textureCache
                            textureID:(int64_t)textureID

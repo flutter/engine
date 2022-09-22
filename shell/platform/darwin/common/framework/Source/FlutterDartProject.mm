@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterDartProject_Internal.h"
 
 #include <vector>
 

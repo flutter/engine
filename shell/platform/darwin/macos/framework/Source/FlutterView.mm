@@ -61,6 +61,8 @@
   return self;
 }
 
+#pragma mark FlutterPresenter
+
 - (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
     [_resizableBackingStoreProvider onBackingStoreResized:size];
@@ -75,6 +77,8 @@
 - (void)presentWithoutContent {
   [_resizeSynchronizer noFlutterContent];
 }
+
+#pragma mark--
 
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];

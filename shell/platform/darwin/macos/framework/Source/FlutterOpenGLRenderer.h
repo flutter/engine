@@ -4,7 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterTextureRegistrar.h"
 
 /**
  * Provides the renderer config needed to initialize the embedder engine and also handles external

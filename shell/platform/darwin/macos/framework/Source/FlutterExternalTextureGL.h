@@ -4,13 +4,15 @@
 
 #import <Foundation/Foundation.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
+#import "flutter/shell/platform/embedder/embedder.h"
 
 /**
  * Used to bridge FlutterTexture object and handle the texture copy request the
  * Flutter engine.
  */
-@interface FlutterExternalTextureGL : NSObject <FlutterMacOSExternalTexture>
+@interface FlutterExternalTextureGL : NSObject <FlutterExternalTexture>
 
 /**
  * Initializes a texture adapter with |texture|.

@@ -34,7 +34,7 @@ FLUTTER_DARWIN_EXPORT
  *
  * Deprecated: This function is temporary and will be removed in a future release.
  */
-@property(nonatomic) bool enableMirrors;
+@property(nonatomic, assign) bool enableMirrors;
 
 /**
  * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.
@@ -44,7 +44,7 @@ FLUTTER_DARWIN_EXPORT
  *
  * Set this to nil to pass no arguments to the Dart entrypoint.
  */
-@property(nonatomic, nullable, strong) NSArray<NSString*>* dartEntrypointArguments;
+@property(nonatomic, nullable, copy) NSArray<NSString*>* dartEntrypointArguments;
 
 @end
 

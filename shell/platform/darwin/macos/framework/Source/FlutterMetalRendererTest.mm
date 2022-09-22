@@ -4,10 +4,8 @@
 
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderEngine.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -17,18 +15,15 @@ namespace flutter::testing {
 
 namespace {
 // Returns an engine configured for the test fixture resource configuration.
-FlutterEngine* CreateTestEngine() {
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  return [[FlutterEngine alloc] initWithName:@"test" project:project allowHeadlessExecution:true];
+FlutterEmbedderEngine* CreateTestEngine() {
+  FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] init];
+  return [[FlutterEmbedderEngine alloc] initWithRenderer:renderer];
 }
 }  // namespace
 
 TEST(FlutterMetalRenderer, PresentDelegatesToFlutterView) {
-  FlutterEngine* engine = CreateTestEngine();
-  FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
+  FlutterEmbedderEngine* engine = CreateTestEngine();
+  FlutterMetalRenderer* renderer = (FlutterMetalRenderer*)engine.renderer;
   id mockFlutterView = OCMClassMock([FlutterView class]);
   [(FlutterView*)[mockFlutterView expect] present];
   [renderer setFlutterView:mockFlutterView];
@@ -36,8 +31,8 @@ TEST(FlutterMetalRenderer, PresentDelegatesToFlutterView) {
 }
 
 TEST(FlutterMetalRenderer, TextureReturnedByFlutterView) {
-  FlutterEngine* engine = CreateTestEngine();
-  FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
+  FlutterEmbedderEngine* engine = CreateTestEngine();
+  FlutterMetalRenderer* renderer = (FlutterMetalRenderer*)engine.renderer;
   id mockFlutterView = OCMClassMock([FlutterView class]);
   FlutterFrameInfo frameInfo;
   frameInfo.struct_size = sizeof(FlutterFrameInfo);
