@@ -24,55 +24,25 @@ class RenderTargetBuilder {
 
   ~RenderTargetBuilder();
 
-  RenderTargetBuilder& SetSize(ISize size) {
-    size_ = size;
-    return *this;
-  }
+  RenderTargetBuilder& SetSize(ISize size);
 
-  RenderTargetBuilder& SetLabel(std::string label) {
-    label_ = label;
-    return *this;
-  }
+  RenderTargetBuilder& SetLabel(std::string label);
 
-  RenderTargetBuilder& SetColorStorageMode(StorageMode mode) {
-    color_storage_mode_ = mode;
-    return *this;
-  }
+  RenderTargetBuilder& SetColorStorageMode(StorageMode mode);
 
-  RenderTargetBuilder& SetColorLoadAction(LoadAction action) {
-    color_load_action_ = action;
-    return *this;
-  }
+  RenderTargetBuilder& SetColorLoadAction(LoadAction action);
 
-  RenderTargetBuilder& SetColorStoreAction(StoreAction action) {
-    color_store_action_ = action;
-    return *this;
-  }
+  RenderTargetBuilder& SetColorStoreAction(StoreAction action);
 
-  RenderTargetBuilder& SetStencilStorageMode(StorageMode mode) {
-    stencil_storage_mode_ = mode;
-    return *this;
-  }
+  RenderTargetBuilder& SetStencilStorageMode(StorageMode mode);
 
-  RenderTargetBuilder& SetStencilLoadAction(LoadAction action) {
-    stencil_load_action_ = action;
-    return *this;
-  }
+  RenderTargetBuilder& SetStencilLoadAction(LoadAction action);
 
-  RenderTargetBuilder& SetStencilStoreAction(StoreAction action) {
-    stencil_store_action_ = action;
-    return *this;
-  }
+  RenderTargetBuilder& SetStencilStoreAction(StoreAction action);
 
-  RenderTargetBuilder& SetColorResolveStorageMode(StorageMode mode) {
-    color_resolve_storage_mode_ = mode;
-    return *this;
-  }
+  RenderTargetBuilder& SetColorResolveStorageMode(StorageMode mode);
 
-  RenderTargetBuilder& SetRenderTargetType(RenderTargetType type) {
-    render_target_type_ = type;
-    return *this;
-  }
+  RenderTargetBuilder& SetRenderTargetType(RenderTargetType type);
 
   RenderTarget Build(const Context& context) const;
 

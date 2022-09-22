@@ -156,4 +156,62 @@ RenderTarget RenderTargetBuilder::CreateOffscreenMSAA(
   return target;
 }
 
+RenderTargetBuilder& RenderTargetBuilder::SetSize(ISize size) {
+  size_ = size;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetLabel(std::string label) {
+  label_ = label;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetColorStorageMode(
+    StorageMode mode) {
+  color_storage_mode_ = mode;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetColorLoadAction(
+    LoadAction action) {
+  color_load_action_ = action;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetColorStoreAction(
+    StoreAction action) {
+  color_store_action_ = action;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetStencilStorageMode(
+    StorageMode mode) {
+  stencil_storage_mode_ = mode;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetStencilLoadAction(
+    LoadAction action) {
+  stencil_load_action_ = action;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetStencilStoreAction(
+    StoreAction action) {
+  stencil_store_action_ = action;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetColorResolveStorageMode(
+    StorageMode mode) {
+  color_resolve_storage_mode_ = mode;
+  return *this;
+}
+
+RenderTargetBuilder& RenderTargetBuilder::SetRenderTargetType(
+    RenderTargetType type) {
+  render_target_type_ = type;
+  return *this;
+}
+
 }  // namespace impeller
