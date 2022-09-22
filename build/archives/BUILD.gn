@@ -20,7 +20,7 @@ generated_file("artifacts_entitlement_config") {
   }
 }
 
-if (build_engine_artifacts) {
+if (build_engine_artifacts && !is_android) {
   zip_bundle("artifacts") {
     deps = [
       "//flutter/flutter_frontend_server:frontend_server",
@@ -46,16 +46,20 @@ if (build_engine_artifacts) {
     }
     output = "$prefix/artifacts.zip"
 
+    exe = ""
+    if (host_os == "win") {
+      exe = ".exe"
+    }
+
     # Only include gen_snapshot for all runtime modes.
     files = [
       {
-        source = "$root_out_dir/gen_snapshot"
-        destination = "gen_snapshot"
+        source = "$root_out_dir/gen_snapshot$exe"
+        destination = "gen_snapshot$exe"
       },
     ]
     if (flutter_runtime_mode == "debug") {
       dll = ".so"
-      exe = ""
       if (host_os == "win") {
         dll = ".dll"
         exe = ".exe"
