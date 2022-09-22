@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io;
 import 'dart:ffi' as ffi;
+import 'dart:io' as io;
 
 import 'package:path/path.dart' as path;
 
