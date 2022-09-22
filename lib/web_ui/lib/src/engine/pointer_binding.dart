@@ -340,6 +340,12 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaLine = 0x01;
     const int domDeltaPage = 0x02;
 
+    // Logic from https://stackoverflow.com/a/62415754
+    ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
+    if (event.deltaX % 120 != 0 || event.deltaY % 120 != 0) {
+      kind = ui.PointerDeviceKind.trackpad;
+    }
+
     // Flutter only supports pixel scroll delta. Convert deltaMode values
     // to pixels.
     double deltaX = event.deltaX;
@@ -371,7 +377,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       data,
       change: ui.PointerChange.hover,
       timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
-      kind: ui.PointerDeviceKind.mouse,
+      kind: kind,
       signalKind: ui.PointerSignalKind.scroll,
       device: _mouseDeviceId,
       physicalX: event.clientX * ui.window.devicePixelRatio,
