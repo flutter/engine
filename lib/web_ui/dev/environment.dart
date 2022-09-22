@@ -6,7 +6,6 @@ import 'dart:ffi' as ffi;
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as pathlib;
-import 'package:ui/src/engine.dart';
 
 import 'exceptions.dart';
 
