@@ -12,7 +12,7 @@ class TestDepsParserMethods(unittest.TestCase):
     # extract both mirrored dep names and URLs &
     # upstream names and URLs from DEPs file
     def setUp(self):
-        with open(DEPS,'r', encoding='utf-8') as f:
+        with open(DEPS) as f:
             local_scope_upstream = {}
             global_scope_upstream = {'Var': lambda x: x} # dummy lambda
             # Read the content.
@@ -55,6 +55,19 @@ class TestDepsParserMethods(unittest.TestCase):
                 # vulkan-deps and khronos do not have one upstream URL
                 # all other deps should have an associated upstream URL for vuln scanning purposes
                 self.assertTrue(dep_name in self.upstream_urls, msg = dep_name + " not found in upstream URL list")
+
+    def test_each_upstream_url_has_dep(self):
+
+        # parse DEPS into dependency names
+        deps_names = []
+        for d in self.deps:
+            dep_repo = d.split('@')[0]
+            dep_name = dep_repo.split('/')[-1].split('.')[0]
+            deps_names.append(dep_name)
+
+        # for each upstream URL dep, check it exists as in DEPS
+        for dep, url in self.upstream_urls.items():
+            self.assertTrue(dep in deps_names, msg = dep + " from upstream list not found in DEPS")
 
 if __name__ == '__main__':
     unittest.main()
