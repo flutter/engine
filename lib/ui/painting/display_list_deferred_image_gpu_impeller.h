@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
@@ -37,8 +38,6 @@ class DlDeferredImageGPUImpeller final : public DlImage {
   // |DlImage|
   std::shared_ptr<impeller::Texture> impeller_texture() const override;
 
-  void set_texture(std::shared_ptr<impeller::Texture> texture);
-
   // |DlImage|
   bool isOpaque() const override;
 
@@ -52,10 +51,67 @@ class DlDeferredImageGPUImpeller final : public DlImage {
   size_t GetApproximateByteSize() const override;
 
  private:
-  SkISize size_;
-  std::shared_ptr<impeller::Texture> texture_;
+  class ImageWrapper final : public std::enable_shared_from_this<ImageWrapper>,
+                             public ContextListener {
+   public:
+    ~ImageWrapper();
 
-  explicit DlDeferredImageGPUImpeller(const SkISize& size);
+    static std::shared_ptr<ImageWrapper> Make(
+        sk_sp<DisplayList> display_list,
+        const SkISize& size,
+        fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+        fml::RefPtr<fml::TaskRunner> raster_task_runner);
+
+    static std::shared_ptr<ImageWrapper> Make(
+        std::shared_ptr<LayerTree> layer_tree,
+        const SkISize& size,
+        fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+        fml::RefPtr<fml::TaskRunner> raster_task_runner);
+
+    bool isTextureBacked() const;
+
+    const std::shared_ptr<impeller::Texture> texture() const {
+      return texture_;
+    }
+
+    const SkISize size() const { return size_; }
+
+    std::optional<std::string> get_error();
+
+   private:
+    SkISize size_;
+    sk_sp<DisplayList> display_list_;
+    std::shared_ptr<impeller::Texture> texture_;
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
+    fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+    std::shared_ptr<TextureRegistry> texture_registry_;
+
+    mutable std::mutex error_mutex_;
+    std::optional<std::string> error_;
+
+    ImageWrapper(sk_sp<DisplayList> display_list,
+                 const SkISize& size,
+                 fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+                 fml::RefPtr<fml::TaskRunner> raster_task_runner);
+
+    // If a layer tree is provided, it will be flattened during the raster
+    // thread task spwaned by this method. After being flattened into a display
+    // list, the image wrapper will be updated to hold this display list and the
+    // layer tree can be dropped.
+    void SnapshotDisplayList(std::shared_ptr<LayerTree> layer_tree = nullptr);
+
+    // |ContextListener|
+    void OnGrContextCreated() override;
+
+    // |ContextListener|
+    void OnGrContextDestroyed() override;
+
+    FML_DISALLOW_COPY_AND_ASSIGN(ImageWrapper);
+  };
+
+  const std::shared_ptr<ImageWrapper> wrapper_;
+
+  explicit DlDeferredImageGPUImpeller(std::shared_ptr<ImageWrapper> wrapper);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DlDeferredImageGPUImpeller);
 };
