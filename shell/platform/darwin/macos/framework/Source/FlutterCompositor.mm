@@ -7,10 +7,8 @@
 
 namespace flutter {
 
-FlutterCompositor::FlutterCompositor(FlutterViewController* view_controller) {
-  FML_CHECK(view_controller != nullptr) << "FlutterViewController* cannot be nullptr";
-
-  view_controller_ = view_controller;
+FlutterCompositor::FlutterCompositor(GetViewCallback get_view_callback) {
+  get_view_callback_ = std::move(get_view_callback);
 }
 
 void FlutterCompositor::SetPresentCallback(
@@ -35,6 +33,10 @@ bool FlutterCompositor::EndFrame(bool has_flutter_content) {
   return status;
 }
 
+FlutterView* FlutterCompositor::GetView(uint64_t view_id) {
+  return get_view_callback_(view_id);
+}
+
 void FlutterCompositor::SetFrameStatus(FlutterCompositor::FrameStatus frame_status) {
   frame_status_ = frame_status;
 }
@@ -45,12 +47,16 @@ FlutterCompositor::FrameStatus FlutterCompositor::GetFrameStatus() {
 
 void FlutterCompositor::InsertCALayerForIOSurface(const IOSurfaceRef& io_surface,
                                                   CATransform3D transform) {
+  FlutterView* view = GetView(0);
+  if (!view) {
+    return;
+  }
   // FlutterCompositor manages the lifecycle of CALayers.
   CALayer* content_layer = [[CALayer alloc] init];
   content_layer.transform = transform;
-  content_layer.frame = view_controller_.flutterView.layer.bounds;
+  content_layer.frame = view.layer.bounds;
   [content_layer setContents:(__bridge id)io_surface];
-  [view_controller_.flutterView.layer addSublayer:content_layer];
+  [view.layer addSublayer:content_layer];
 
   active_ca_layers_.push_back(content_layer);
 }

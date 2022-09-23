@@ -11,16 +11,17 @@
 namespace flutter {
 
 FlutterMetalCompositor::FlutterMetalCompositor(
-    FlutterViewController* view_controller,
+    GetViewCallback get_view_callback,
     FlutterPlatformViewController* platform_views_controller,
     id<MTLDevice> mtl_device)
-    : FlutterCompositor(view_controller),
+    : FlutterCompositor(get_view_callback),
       mtl_device_(mtl_device),
       platform_views_controller_(platform_views_controller) {}
 
 bool FlutterMetalCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                                 FlutterBackingStore* backing_store_out) {
-  if (!view_controller_) {
+  FlutterView* view = GetView(0);
+  if (!view) {
     return false;
   }
 
@@ -34,8 +35,7 @@ bool FlutterMetalCompositor::CreateBackingStore(const FlutterBackingStoreConfig*
     // If the backing store is for the first layer, return the MTLTexture for the
     // FlutterView.
     FlutterMetalRenderBackingStore* backingStore =
-        reinterpret_cast<FlutterMetalRenderBackingStore*>(
-            [view_controller_.flutterView backingStoreForSize:size]);
+        reinterpret_cast<FlutterMetalRenderBackingStore*>([view backingStoreForSize:size]);
     backing_store_out->metal.texture.texture =
         (__bridge FlutterMetalTextureHandle)backingStore.texture;
   } else {
@@ -96,16 +96,23 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
         has_flutter_content = true;
         break;
       }
-      case kFlutterLayerContentTypePlatformView:
-        PresentPlatformView(layer, i);
+      case kFlutterLayerContentTypePlatformView: {
+        FlutterView* view = GetView(0);
+        if (!view) {
+          return false;
+        }
+        PresentPlatformView(view, layer, i);
         break;
+      }
     };
   }
 
   return EndFrame(has_flutter_content);
 }
 
-void FlutterMetalCompositor::PresentPlatformView(const FlutterLayer* layer, size_t layer_position) {
+void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_super_view,
+                                                 const FlutterLayer* layer,
+                                                 size_t layer_position) {
   // TODO (https://github.com/flutter/flutter/issues/96668)
   // once the issue is fixed, this check will pass.
   FML_DCHECK([[NSThread currentThread] isMainThread])
@@ -120,7 +127,7 @@ void FlutterMetalCompositor::PresentPlatformView(const FlutterLayer* layer, size
   platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
                                    layer->size.width / scale, layer->size.height / scale);
   if (platform_view.superview == nil) {
-    [view_controller_.flutterView addSubview:platform_view];
+    [default_super_view addSubview:platform_view];
   }
   platform_view.layer.zPosition = layer_position;
 }

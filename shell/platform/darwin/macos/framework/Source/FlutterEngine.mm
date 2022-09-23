@@ -428,16 +428,22 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
-  if (!_viewController) {
+  FlutterViewController* viewController = _viewController;
+  if (!viewController) {
     return nil;
   }
 
   __weak FlutterEngine* weakSelf = self;
 
+  flutter::FlutterCompositor::GetViewCallback get_view_callback =
+      [&viewController](uint64_t view_id) {
+        return viewController == nullptr ? nullptr : viewController.flutterView;
+      };
+
   if ([FlutterRenderingBackend renderUsingMetal]) {
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
     _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-        _viewController, _platformViewController, metalRenderer.device);
+        std::move(get_view_callback), _platformViewController, metalRenderer.device);
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
       FlutterMetalRenderer* metalRenderer =
           reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
@@ -451,7 +457,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else {
     FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
     [openGLRenderer.openGLContext makeCurrentContext];
-    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController,
+    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(std::move(get_view_callback),
                                                                       openGLRenderer.openGLContext);
 
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
@@ -645,9 +651,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Convert to a list of pointers, and send to the engine.
   std::vector<const FlutterLocale*> flutterLocaleList;
   flutterLocaleList.reserve(flutterLocales.size());
-  std::transform(
-      flutterLocales.begin(), flutterLocales.end(), std::back_inserter(flutterLocaleList),
-      [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(flutterLocales.begin(), flutterLocales.end(),
+                 std::back_inserter(flutterLocaleList),
+                 [](const auto& arg) -> const auto* { return &arg; });
   _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
 }
 

@@ -19,13 +19,14 @@
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller,
+FlutterGLCompositor::FlutterGLCompositor(GetViewCallback get_view_callback,
                                          NSOpenGLContext* opengl_context)
-    : FlutterCompositor(view_controller), open_gl_context_(opengl_context) {}
+    : FlutterCompositor(get_view_callback), open_gl_context_(opengl_context) {}
 
 bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                              FlutterBackingStore* backing_store_out) {
-  if (!view_controller_) {
+  FlutterView* view = GetView(0);
+  if (!view) {
     return false;
   }
 
@@ -36,8 +37,7 @@ bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* co
     // If the backing store is for the first layer, return the fbo for the
     // FlutterView.
     FlutterOpenGLRenderBackingStore* backingStore =
-        reinterpret_cast<FlutterOpenGLRenderBackingStore*>(
-            [view_controller_.flutterView backingStoreForSize:size]);
+        reinterpret_cast<FlutterOpenGLRenderBackingStore*>([view backingStoreForSize:size]);
     backing_store_out->open_gl.framebuffer.name = backingStore.frameBufferID;
   } else {
     FlutterFrameBufferProvider* fb_provider =

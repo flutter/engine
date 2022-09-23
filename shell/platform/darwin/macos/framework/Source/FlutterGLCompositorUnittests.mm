@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <Foundation/Foundation.h>
+#import <OCMock/OCMock.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
@@ -11,10 +12,13 @@
 namespace flutter::testing {
 
 TEST(FlutterGLCompositorTest, TestPresent) {
-  id mockViewController = CreateMockViewController();
+  id mock_view = OCMClassMock([FlutterView class]);
+  flutter::FlutterCompositor::GetViewCallback get_view_callback = [&mock_view](uint64_t view_id) {
+    return mock_view;
+  };
 
   std::unique_ptr<flutter::FlutterGLCompositor> macos_compositor =
-      std::make_unique<FlutterGLCompositor>(mockViewController, nullptr);
+      std::make_unique<FlutterGLCompositor>(get_view_callback, nullptr);
 
   bool flag = false;
   macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content) {
