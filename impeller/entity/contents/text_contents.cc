@@ -177,9 +177,16 @@ bool TextContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  auto atlas = ResolveAtlas(frame_.HasColor() ? GlyphAtlas::Type::kColorBitmap
-                                              : GlyphAtlas::Type::kAlphaBitmap,
-                            renderer.GetContext());
+  // This TextContents may be for a frame that doesn't have color, but the
+  // lazy atlas for this scene alraedy does have color.
+  // Benchmarks currently show that creating two atlases per pass regresses
+  // render time. This should get re-evaluated if we start caching atlases
+  // between frames or get significantly faster at creating atlases, because
+  // we're potentially trading memory for time here.
+  auto atlas =
+      ResolveAtlas(lazy_atlas_->HasColor() ? GlyphAtlas::Type::kColorBitmap
+                                           : GlyphAtlas::Type::kAlphaBitmap,
+                   renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";

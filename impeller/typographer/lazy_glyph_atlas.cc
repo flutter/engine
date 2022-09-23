@@ -6,6 +6,7 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/typographer/text_render_context.h"
+#include "lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -15,7 +16,12 @@ LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
 void LazyGlyphAtlas::AddTextFrame(TextFrame frame) {
   FML_DCHECK(atlas_map_.empty());
+  has_color_ |= frame.HasColor();
   frames_.emplace_back(std::move(frame));
+}
+
+bool LazyGlyphAtlas::HasColor() const {
+  return has_color_;
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(

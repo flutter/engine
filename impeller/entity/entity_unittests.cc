@@ -1991,6 +1991,8 @@ TEST_P(EntityTest, SdfText) {
     auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
     lazy_glyph_atlas->AddTextFrame(frame);
 
+    EXPECT_FALSE(lazy_glyph_atlas->HasColor());
+
     auto text_contents = std::make_shared<TextContents>();
     text_contents->SetTextFrame(std::move(frame));
     text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
