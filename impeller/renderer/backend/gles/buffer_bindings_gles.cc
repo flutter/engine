@@ -218,8 +218,9 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                                     member.array_elements > 1);
     const auto location = uniform_locations_.find(member_key);
     if (location == uniform_locations_.end()) {
-      FML_DLOG(WARNING) << "Location for uniform member not known: "
-                        << member_key;
+      // The list of uniform locations only contains "active" uniforms that are
+      // not optimized out. So this situation is expected to happen when unused
+      // uniforms are present in the shader.
       continue;
     }
 
