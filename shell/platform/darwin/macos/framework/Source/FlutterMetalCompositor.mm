@@ -20,6 +20,8 @@ FlutterMetalCompositor::FlutterMetalCompositor(
 
 bool FlutterMetalCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                                 FlutterBackingStore* backing_store_out) {
+  // Always gets the first view, #0. After Flutter supports multi-view, it
+  // should get the view ID from somewhere.
   FlutterView* view = GetView(0);
   if (!view) {
     return false;
@@ -97,6 +99,8 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
         break;
       }
       case kFlutterLayerContentTypePlatformView: {
+        // Always gets the first view, #0. After Flutter supports multi-view, it
+        // should get the view ID from somewhere.
         FlutterView* view = GetView(0);
         if (!view) {
           return false;
