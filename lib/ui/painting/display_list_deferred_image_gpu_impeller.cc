@@ -137,7 +137,7 @@ void DlDeferredImageGPUImpeller::ImageWrapper::OnGrContextCreated() {
 
 void DlDeferredImageGPUImpeller::ImageWrapper::OnGrContextDestroyed() {
   // Impeller textures do not have threading requirements for deletion, and
-  // Impeller keeps the graphics context around in this situation.
+  texture_.reset();
 }
 
 bool DlDeferredImageGPUImpeller::ImageWrapper::isTextureBacked() const {
