@@ -15,6 +15,7 @@ sk_sp<DlDeferredImageGPUImpeller> DlDeferredImageGPUImpeller::Make(
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner, [image, size, layer_tree = std::move(layer_tree),
                            snapshot_delegate = std::move(snapshot_delegate)] {
+        TRACE_EVENT0("flutter", "Rasterize layer tree (impeller)");
         if (!snapshot_delegate) {
           return;
         }
@@ -37,6 +38,7 @@ sk_sp<DlDeferredImageGPUImpeller> DlDeferredImageGPUImpeller::Make(
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner, [image, size, display_list = std::move(display_list),
                            snapshot_delegate = std::move(snapshot_delegate)] {
+        TRACE_EVENT0("flutter", "Rasterize picture (impeller)");
         if (!snapshot_delegate) {
           return;
         }
