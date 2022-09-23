@@ -6,6 +6,8 @@ import("//flutter/impeller/tools/impeller.gni")
 
 impeller_component("display_list") {
   sources = [
+    "display_list_deferred_image_gpu_impeller.cc",
+    "display_list_deferred_image_gpu_impeller.h",
     "display_list_dispatcher.cc",
     "display_list_dispatcher.h",
     "display_list_image_impeller.cc",
