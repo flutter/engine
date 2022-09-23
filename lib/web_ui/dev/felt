@@ -80,10 +80,6 @@ SNAPSHOT_PATH="${DART_TOOL_DIR}/felt.snapshot"
 STAMP_PATH="${DART_TOOL_DIR}/felt.snapshot.stamp"
 SCRIPT_PATH="${DEV_DIR}/felt.dart"
 REVISION="$(cd "$FLUTTER_DIR"; git rev-parse HEAD)"
-if [[ "$FELT_DEBUG" == "true" || "$FELT_DEBUG" == "1" ]]
-then
-  FELT_DEBUG_FLAGS="--enable-vm-service --pause-isolates-on-start"
-fi
 
 if [[ "$FELT_DEBUG" == "true" || "$FELT_DEBUG" == "1" ]]
 then
