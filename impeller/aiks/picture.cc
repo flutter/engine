@@ -52,12 +52,12 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
 
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
-  auto impeller_context = *context.GetContext();
+  auto impeller_context = context.GetContext();
   RenderTarget target;
   if (impeller_context->SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(impeller_context, size);
+    target = RenderTarget::CreateOffscreenMSAA(*impeller_context, size);
   } else {
-    target = RenderTarget::CreateOffscreen(impeller_context, size);
+    target = RenderTarget::CreateOffscreen(*impeller_context, size);
   }
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";
