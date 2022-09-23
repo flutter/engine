@@ -78,8 +78,9 @@ class FlutterCompositor {
   bool EndFrame(bool has_flutter_content);
 
   // Creates a CALayer object which is backed by the supplied IOSurface, and
-  // adds it to the root CALayer for this FlutterViewController's view.
+  // adds it to the root CALayer for the given view.
   void InsertCALayerForIOSurface(
+      FlutterView* view,
       const IOSurfaceRef& io_surface,
       CATransform3D transform = CATransform3DIdentity);
 

@@ -80,6 +80,13 @@ bool FlutterMetalCompositor::CollectBackingStore(const FlutterBackingStore* back
 }
 
 bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  // Always gets the first view, #0. After Flutter supports multi-view, it
+  // should get the view ID from somewhere.
+  FlutterView* view = GetView(0);
+  if (!view) {
+    return false;
+  }
+
   SetFrameStatus(FrameStatus::kPresenting);
 
   bool has_flutter_content = false;
@@ -93,18 +100,12 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
           FlutterIOSurfaceHolder* io_surface_holder =
               (__bridge FlutterIOSurfaceHolder*)backing_store->metal.texture.user_data;
           IOSurfaceRef io_surface = [io_surface_holder ioSurface];
-          InsertCALayerForIOSurface(io_surface);
+          InsertCALayerForIOSurface(view, io_surface);
         }
         has_flutter_content = true;
         break;
       }
       case kFlutterLayerContentTypePlatformView: {
-        // Always gets the first view, #0. After Flutter supports multi-view, it
-        // should get the view ID from somewhere.
-        FlutterView* view = GetView(0);
-        if (!view) {
-          return false;
-        }
         PresentPlatformView(view, layer, i);
         break;
       }

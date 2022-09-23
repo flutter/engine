@@ -45,14 +45,9 @@ FlutterCompositor::FrameStatus FlutterCompositor::GetFrameStatus() {
   return frame_status_;
 }
 
-void FlutterCompositor::InsertCALayerForIOSurface(const IOSurfaceRef& io_surface,
+void FlutterCompositor::InsertCALayerForIOSurface(FlutterView* view,
+                                                  const IOSurfaceRef& io_surface,
                                                   CATransform3D transform) {
-  // Always gets the first view, #0. After Flutter supports multi-view, it
-  // should get the view ID from somewhere.
-  FlutterView* view = GetView(0);
-  if (!view) {
-    return;
-  }
   // FlutterCompositor manages the lifecycle of CALayers.
   CALayer* content_layer = [[CALayer alloc] init];
   content_layer.transform = transform;
