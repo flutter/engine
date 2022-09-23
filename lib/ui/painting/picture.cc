@@ -10,7 +10,9 @@
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#if IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/display_list_deferred_image_gpu_impeller.h"
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -62,6 +64,7 @@ static sk_sp<DlImage> CreateDeferredImage(
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
+#if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
     SkISize size{static_cast<int32_t>(width), static_cast<int32_t>(height)};
     auto image = impeller::DlDeferredImageGPUImpeller::Make(size);
@@ -78,6 +81,7 @@ static sk_sp<DlImage> CreateDeferredImage(
         });
     return image;
   }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
   const SkImageInfo image_info = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
