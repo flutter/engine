@@ -493,10 +493,8 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   @override
-  StreamChannel loadChannel(String path, SuitePlatform platform) {
-    // TODO: implement loadChannel
-    throw UnimplementedError();
-  }
+  StreamChannel<dynamic> loadChannel(String path, SuitePlatform platform) =>
+      throw UnimplementedError();
 
   Future<BrowserManager?>? _browserManager;
   Future<BrowserManager> get browserManager async => (await _browserManager!)!;
