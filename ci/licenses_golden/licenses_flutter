@@ -335,6 +335,7 @@ FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
 FILE: ../../../flutter/fml/platform/linux/paths_linux.cc
 FILE: ../../../flutter/fml/platform/linux/timerfd.cc
 FILE: ../../../flutter/fml/platform/linux/timerfd.h
+FILE: ../../../flutter/fml/platform/posix/command_line_posix.cc
 FILE: ../../../flutter/fml/platform/posix/file_posix.cc
 FILE: ../../../flutter/fml/platform/posix/mapping_posix.cc
 FILE: ../../../flutter/fml/platform/posix/native_library_posix.cc
@@ -342,6 +343,7 @@ FILE: ../../../flutter/fml/platform/posix/paths_posix.cc
 FILE: ../../../flutter/fml/platform/posix/posix_wrappers_posix.cc
 FILE: ../../../flutter/fml/platform/posix/shared_mutex_posix.cc
 FILE: ../../../flutter/fml/platform/posix/shared_mutex_posix.h
+FILE: ../../../flutter/fml/platform/win/command_line_win.cc
 FILE: ../../../flutter/fml/platform/win/errors_win.cc
 FILE: ../../../flutter/fml/platform/win/errors_win.h
 FILE: ../../../flutter/fml/platform/win/file_win.cc
@@ -586,6 +588,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_in
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/local_matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/local_matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.cc
@@ -656,8 +660,6 @@ FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
-FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
-FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
@@ -820,6 +822,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc

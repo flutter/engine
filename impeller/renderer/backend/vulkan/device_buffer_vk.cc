@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
 #include "fml/logging.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -65,6 +66,10 @@ bool DeviceBufferVK::SetLabel(const std::string& label) {
 
 bool DeviceBufferVK::SetLabel(const std::string& label, Range range) {
   return SetLabel(label);
+}
+
+vk::Buffer DeviceBufferVK::GetVKBufferHandle() const {
+  return device_allocation_->GetBufferHandle();
 }
 
 }  // namespace impeller

@@ -49,7 +49,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
       GnPipelineStep(dart2wasm: dart2wasm),
-      NinjaPipelineStep(target: environment.hostDebugUnoptDir),
+      NinjaPipelineStep(target: environment.engineBuildDir),
     ];
     if (buildCanvasKit) {
       steps.addAll(<PipelineStep>[
@@ -104,6 +104,7 @@ class GnPipelineStep extends ProcessStep {
         if (Platform.isMacOS) '--xcode-symlinks',
         '--full-dart-sdk',
         if (dart2wasm) '--dart2wasm',
+        if (environment.isMacosArm) '--mac-cpu=arm64',
       ]);
     } else if (target == 'canvaskit') {
       gnArgs.addAll(<String>[
