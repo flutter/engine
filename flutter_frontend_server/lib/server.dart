@@ -4,7 +4,6 @@
 
 // ignore_for_file: avoid_print
 
-// @dart=2.8
 library flutter_frontend_server;
 
 import 'dart:async';
