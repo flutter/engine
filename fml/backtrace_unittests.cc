@@ -5,6 +5,7 @@
 #include "backtrace.h"
 
 #include "gtest/gtest.h"
+#include "third_party/abseil-cpp/absl/debugging/stacktrace.h"
 
 namespace fml {
 namespace testing {
@@ -20,6 +21,10 @@ TEST(BacktraceTest, CanGatherBacktrace) {
     ASSERT_NE(trace.find("Frame 0"), std::string::npos);
     std::cout << trace << std::endl;
   }
+}
+
+TEST(BacktraceTest, BacktraceEnabled) {
+  ASSERT_EQ(absl::debugging_internal::StackTraceWorksForTest(), true);
 }
 
 }  // namespace testing

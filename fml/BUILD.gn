@@ -361,6 +361,7 @@ if (enable_unittests) {
       "//flutter/runtime",
       "//flutter/runtime:libdart",
       "//flutter/testing",
+      "//third_party/abseil-cpp/absl/debugging:stacktrace",
     ]
 
     # This is needed for //third_party/googletest for linking zircon symbols.
