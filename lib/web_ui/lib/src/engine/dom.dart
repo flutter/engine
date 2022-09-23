@@ -748,7 +748,7 @@ Future<DomXMLHttpRequest> domHttpRequest(String url,
     }
   }));
 
-  xhr.addEventListener('error', allowInterop((event) => completer.completeError(event)));
+  xhr.addEventListener('error', allowInterop((DomEvent event) => completer.completeError(event)));
   xhr.send(sendData);
   return completer.future;
 }
