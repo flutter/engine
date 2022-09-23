@@ -5,9 +5,13 @@
 #ifndef FLUTTER_FML_BACKTRACE_H_
 #define FLUTTER_FML_BACKTRACE_H_
 
+#include <string>
+
 #include "flutter/fml/macros.h"
 
 namespace fml {
+
+std::string BacktraceHere(size_t offset = 0);
 
 void InstallCrashHandler();
 
