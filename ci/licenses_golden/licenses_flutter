@@ -512,8 +512,6 @@ FILE: ../../../flutter/impeller/compiler/types.cc
 FILE: ../../../flutter/impeller/compiler/types.h
 FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
-FILE: ../../../flutter/impeller/display_list/display_list_deferred_image_gpu_impeller.cc
-FILE: ../../../flutter/impeller/display_list/display_list_deferred_image_gpu_impeller.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.cc
@@ -1021,6 +1019,8 @@ FILE: ../../../flutter/lib/ui/painting/codec.cc
 FILE: ../../../flutter/lib/ui/painting/codec.h
 FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h
 FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.cc
 FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.cc

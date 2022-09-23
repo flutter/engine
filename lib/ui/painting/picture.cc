@@ -11,7 +11,7 @@
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #if IMPELLER_SUPPORTS_RENDERING
-#include "impeller/display_list/display_list_deferred_image_gpu_impeller.h"
+#include "flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -66,20 +66,9 @@ static sk_sp<DlImage> CreateDeferredImage(
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
-    SkISize size{static_cast<int32_t>(width), static_cast<int32_t>(height)};
-    auto image = impeller::DlDeferredImageGPUImpeller::Make(size);
-    fml::TaskRunner::RunNowOrPostTask(
-        raster_task_runner,
-        [image, size, display_list = std::move(display_list),
-         snapshot_delegate = std::move(snapshot_delegate)] {
-          if (!snapshot_delegate) {
-            return;
-          }
-          auto snapshot =
-              snapshot_delegate->MakeRasterSnapshot(display_list, size);
-          image->set_texture(snapshot->impeller_texture());
-        });
-    return image;
+    return DlDeferredImageGPUImpeller::Make(
+        std::move(display_list), SkISize::Make(width, height),
+        std::move(snapshot_delegate), std::move(raster_task_runner));
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 

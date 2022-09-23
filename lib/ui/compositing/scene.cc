@@ -12,7 +12,7 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
 #if IMPELLER_SUPPORTS_RENDERING
-#include "impeller/display_list/display_list_deferred_image_gpu_impeller.h"
+#include "flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -100,24 +100,9 @@ static sk_sp<DlImage> CreateDeferredImage(
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
-    SkISize size{static_cast<int32_t>(width), static_cast<int32_t>(height)};
-    auto image = impeller::DlDeferredImageGPUImpeller::Make(size);
-    fml::TaskRunner::RunNowOrPostTask(
-        raster_task_runner, [image, size, layer_tree = std::move(layer_tree),
-                             snapshot_delegate = std::move(snapshot_delegate)] {
-          if (!snapshot_delegate) {
-            return;
-          }
-
-          auto display_list =
-              layer_tree->Flatten(SkRect::MakeWH(size.width(), size.height()),
-                                  snapshot_delegate->GetTextureRegistry(),
-                                  snapshot_delegate->GetGrContext());
-          auto snapshot =
-              snapshot_delegate->MakeRasterSnapshot(display_list, size);
-          image->set_texture(snapshot->impeller_texture());
-        });
-    return image;
+    return DlDeferredImageGPUImpeller::Make(
+        std::move(layer_tree), SkISize::Make(width, height),
+        std::move(snapshot_delegate), std::move(raster_task_runner));
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 

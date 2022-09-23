@@ -5,14 +5,28 @@
 #pragma once
 
 #include "flutter/display_list/display_list_image.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/task_runner.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 #include "impeller/renderer/texture.h"
 
-namespace impeller {
+namespace flutter {
 
-class DlDeferredImageGPUImpeller final : public flutter::DlImage {
+class DlDeferredImageGPUImpeller final : public DlImage {
  public:
-  static sk_sp<DlDeferredImageGPUImpeller> Make(const SkISize& size);
+  static sk_sp<DlDeferredImageGPUImpeller> Make(
+      std::shared_ptr<LayerTree> layer_tree,
+      const SkISize& size,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::RefPtr<fml::TaskRunner> raster_task_runner);
+
+  static sk_sp<DlDeferredImageGPUImpeller> Make(
+      sk_sp<DisplayList> display_list,
+      const SkISize& size,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
   // |DlImage|
   ~DlDeferredImageGPUImpeller() override;
@@ -39,11 +53,11 @@ class DlDeferredImageGPUImpeller final : public flutter::DlImage {
 
  private:
   SkISize size_;
-  std::shared_ptr<Texture> texture_;
+  std::shared_ptr<impeller::Texture> texture_;
 
   explicit DlDeferredImageGPUImpeller(const SkISize& size);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DlDeferredImageGPUImpeller);
 };
 
-}  // namespace impeller
+}  // namespace flutter
