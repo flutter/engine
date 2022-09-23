@@ -25,9 +25,9 @@ import 'package:path/path.dart' as path;
 /// version for testing.
 Future<int> starter(
   List<String> args, {
-  frontend.CompilerInterface compiler,
-  Stream<List<int>> input,
-  StringSink output,
+  frontend.CompilerInterface? compiler,
+  Stream<List<int>>? input,
+  StringSink? output,
 }) async {
   ArgResults options;
   try {
