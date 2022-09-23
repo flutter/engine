@@ -111,7 +111,7 @@
 }
 
 - (void)cursorUpdate:(NSEvent*)event {
-  // When adding/removing views AppKit will schedule call to current hittest view
+  // When adding/removing views AppKit will schedule call to current hit-test view
   // cursorUpdate: at the end of frame to determine possible cursor change. If
   // the view doesn't implement cursorUpdate: AppKit will set the default (arrow) cursor
   // instead. This would replace the cursor set by FlutterMouseCursorPlugin.
