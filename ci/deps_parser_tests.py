@@ -6,6 +6,7 @@ from deps_parser import VarImpl
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
+UPSTREAM_PREFIX = 'upstream_'
 
 class TestDepsParserMethods(unittest.TestCase):
 
@@ -23,7 +24,10 @@ class TestDepsParserMethods(unittest.TestCase):
             exec(deps_content, global_scope_upstream, local_scope_upstream)
 
             # Extract the upstream URLs
-            self.upstream_urls = local_scope_upstream.get('vars').get('upstream_urls')
+            # vars contains more than just upstream URLs
+            # however the upstream URLs are prefixed with 'upstream_'
+            upstream = local_scope_upstream.get('vars')
+            self.upstream_urls = upstream
 
             local_scope_mirror = {}
             var = VarImpl(local_scope_mirror)
@@ -51,10 +55,11 @@ class TestDepsParserMethods(unittest.TestCase):
         for dep in self.deps:
             dep_repo = dep.split('@')[0]
             dep_name = dep_repo.split('/')[-1].split('.')[0]
+            # vulkan-deps and khronos do not have one upstream URL
+            # all other deps should have an associated upstream URL for vuln scanning purposes
             if dep_name != "vulkan-deps" and dep_name != "khronos":
-                # vulkan-deps and khronos do not have one upstream URL
-                # all other deps should have an associated upstream URL for vuln scanning purposes
-                self.assertTrue(dep_name in self.upstream_urls, msg = dep_name + " not found in upstream URL list")
+                # add the prefix on the dep name when searching for the upstream entry
+                self.assertTrue(UPSTREAM_PREFIX + dep_name in self.upstream_urls, msg = dep_name + ' not found in upstream URL list')
 
     def test_each_upstream_url_has_dep(self):
 
@@ -66,8 +71,11 @@ class TestDepsParserMethods(unittest.TestCase):
             deps_names.append(dep_name)
 
         # for each upstream URL dep, check it exists as in DEPS
-        for dep, url in self.upstream_urls.items():
-            self.assertTrue(dep in deps_names, msg = dep + " from upstream list not found in DEPS")
+        for dep in self.upstream_urls:
+            # only test on upstream deps in vars section which start with the upstream prefix
+            if dep.startswith(UPSTREAM_PREFIX):
+                # strip the prefix to check that it has a corresponding dependency in the DEPS file
+                self.assertTrue(dep[len(UPSTREAM_PREFIX):] in deps_names, msg = dep + " from upstream list not found in DEPS")
 
 if __name__ == '__main__':
     unittest.main()

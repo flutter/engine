@@ -22,6 +22,7 @@ import time
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
+UPSTREAM_PREFIX = 'upstream_'
 
 HELP_STR = "To find complete information on this vulnerability, navigate to "
 # TODO -- use prefix matching for this rather than always to OSV
@@ -179,12 +180,12 @@ def getCommonAncestorCommit(dep):
       exec(deps_content, global_scope, local_scope)
 
       # Extract the deps and filter.
-      deps = local_scope.get('vars').get('upstream_urls')
+      deps = local_scope.get('vars')
 
-      if(dep_name in deps):
+      if(UPSTREAM_PREFIX + dep_name in deps):
         try:
           # get the upstream URL from the mapping in DEPS file
-          upstream = deps.get(dep_name)
+          upstream = deps.get(UPSTREAM_PREFIX + dep_name)
           # clone dependency from mirror
           # print(f'attempting: git clone --quiet {dep_name}')
           # os.system(f'git clone {dep[0]} --quiet {dep_name}')
