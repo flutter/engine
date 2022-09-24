@@ -108,9 +108,9 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
       return current_size;
     } else if (remaining_pairs < std::ceil(total_pairs / 2)) {
       current_size = ISize::MakeWH(
-          std::min(current_size.width, current_size.height),
+          std::max(current_size.width, current_size.height),
           Allocation::NextPowerOfTwoSize(
-              std::max(current_size.width, current_size.height) + 1));
+              std::min(current_size.width, current_size.height) + 1));
     } else {
       current_size = ISize::MakeWH(
           Allocation::NextPowerOfTwoSize(current_size.width + 1),
