@@ -77,6 +77,13 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
 }
 
 bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  // Always gets the first view, #0. After Flutter supports multi-view, it
+  // should get the view ID from somewhere.
+  FlutterView* view = GetView(0);
+  if (!view) {
+    return false;
+  }
+
   SetFrameStatus(FrameStatus::kPresenting);
 
   bool has_flutter_content = false;
@@ -95,7 +102,7 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
 
           // The surface is an OpenGL texture, which means it has origin in bottom left corner
           // and needs to be flipped vertically
-          InsertCALayerForIOSurface(io_surface, CATransform3DMakeScale(1, -1, 1));
+          InsertCALayerForIOSurface(view, io_surface, CATransform3DMakeScale(1, -1, 1));
         }
         has_flutter_content = true;
         break;
