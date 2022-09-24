@@ -476,11 +476,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
         backing_store);
   };
 
-  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           void* user_data               //
-                                        ) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(layers, layers_count);
+  _compositor.present_layers_surface_callback = [](uint64_t surface_id,          //
+                                                   const FlutterLayer** layers,  //
+                                                   size_t layers_count,          //
+                                                   void* user_data               //
+                                                ) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(surface_id, layers,
+                                                                             layers_count);
   };
 
   _compositor.avoid_backing_store_cache = true;

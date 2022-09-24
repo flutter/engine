@@ -44,7 +44,9 @@ class FlutterGLCompositor : public FlutterCompositor {
   // Presents the FlutterLayers by updating FlutterView(s) using the
   // layer content.
   // Present sets frame_started_ to false.
-  bool Present(const FlutterLayer** layers, size_t layers_count) override;
+  bool Present(uint64_t surface_id,
+               const FlutterLayer** layers,
+               size_t layers_count) override;
 
  private:
   const NSOpenGLContext* open_gl_context_;

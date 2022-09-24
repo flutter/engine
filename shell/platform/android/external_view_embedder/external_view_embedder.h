@@ -55,6 +55,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
+                   uint64_t frame_view_id,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|

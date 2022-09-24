@@ -99,6 +99,7 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    uint64_t frame_view_id,
     std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 

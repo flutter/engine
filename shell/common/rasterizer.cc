@@ -488,6 +488,9 @@ RasterStatus Rasterizer::DrawToSurface(
 RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
+  // Always gets the first surface, #0. After Flutter supports multi-view, it
+  // should get the surface ID from layer_tree.
+  uint64_t surface_id = 0;
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
@@ -594,7 +597,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
+      external_view_embedder_->SubmitFrame(surface_->GetContext(), surface_id,
                                            std::move(frame));
     } else {
       frame->Submit();

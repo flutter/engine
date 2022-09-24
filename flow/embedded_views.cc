@@ -70,6 +70,7 @@ void DisplayListEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
 }
 
 void ExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
+                                       uint64_t frame_view_id,
                                        std::unique_ptr<SurfaceFrame> frame) {
   frame->Submit();
 };

@@ -106,6 +106,7 @@ EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    uint64_t frame_view_id,
     std::unique_ptr<SurfaceFrame> frame) {
   if (!frame) {
     return;

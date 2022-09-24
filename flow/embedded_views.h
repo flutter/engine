@@ -405,6 +405,7 @@ class ExternalViewEmbedder {
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
   virtual void SubmitFrame(GrDirectContext* context,
+                           uint64_t frame_view_id,
                            std::unique_ptr<SurfaceFrame> frame);
 
   // This method provides the embedder a way to do additional tasks after

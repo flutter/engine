@@ -42,7 +42,9 @@ class FlutterMetalCompositor : public FlutterCompositor {
 
   // Composites the provided FlutterLayer objects and presents the composited
   // frame to the FlutterView(s).
-  bool Present(const FlutterLayer** layers, size_t layers_count) override;
+  bool Present(uint64_t surface_id,
+               const FlutterLayer** layers,
+               size_t layers_count) override;
 
  private:
   // Presents the platform view layer represented by `layer`. `layer_index` is

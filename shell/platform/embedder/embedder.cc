@@ -1034,7 +1034,7 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor) {
   auto c_collect_callback =
       SAFE_ACCESS(compositor, collect_backing_store_callback, nullptr);
   auto c_present_callback =
-      SAFE_ACCESS(compositor, present_layers_callback, nullptr);
+      SAFE_ACCESS(compositor, present_layers_surface_callback, nullptr);
   bool avoid_backing_store_cache =
       SAFE_ACCESS(compositor, avoid_backing_store_cache, false);
 
@@ -1054,12 +1054,12 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor) {
           };
 
   flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback =
-      [c_present_callback,
-       user_data = compositor->user_data](const auto& layers) {
+      [c_present_callback, user_data = compositor->user_data](
+          uint64_t surface_id, const auto& layers) {
         TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
         return c_present_callback(
-            const_cast<const FlutterLayer**>(layers.data()), layers.size(),
-            user_data);
+            surface_id, const_cast<const FlutterLayer**>(layers.data()),
+            layers.size(), user_data);
       };
 
   return {std::make_unique<flutter::EmbedderExternalViewEmbedder>(

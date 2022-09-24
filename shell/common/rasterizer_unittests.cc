@@ -69,8 +69,9 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
   MOCK_METHOD0(GetCurrentCanvases, std::vector<SkCanvas*>());
   MOCK_METHOD0(GetCurrentBuilders, std::vector<DisplayListBuilder*>());
   MOCK_METHOD1(CompositeEmbeddedView, EmbedderPaintContext(int view_id));
-  MOCK_METHOD2(SubmitFrame,
+  MOCK_METHOD3(SubmitFrame,
                void(GrDirectContext* context,
+                    uint64_t frame_view_id,
                     std::unique_ptr<SurfaceFrame> frame));
   MOCK_METHOD2(EndFrame,
                void(bool should_resubmit_frame,

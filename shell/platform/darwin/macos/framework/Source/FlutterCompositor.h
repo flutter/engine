@@ -46,7 +46,9 @@ class FlutterCompositor {
   // Presents the FlutterLayers by updating FlutterView(s) using the
   // layer content.
   // Present sets frame_started_ to false.
-  virtual bool Present(const FlutterLayer** layers, size_t layers_count) = 0;
+  virtual bool Present(uint64_t surface_id,
+                       const FlutterLayer** layers,
+                       size_t layers_count) = 0;
 
   using PresentCallback = std::function<bool(bool has_flutter_content)>;
 
@@ -64,7 +66,7 @@ class FlutterCompositor {
   typedef enum { kStarted, kPresenting, kEnded } FrameStatus;
 
  protected:
-  FlutterView* GetView(uint64_t view_id);
+  FlutterView* GetView(uint64_t surface_id);
 
   // Gets and sets the FrameStatus for the current frame.
   void SetFrameStatus(FrameStatus frame_status);

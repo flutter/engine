@@ -1371,6 +1371,8 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
+  /// Indicates the view that owns the layer this store is backing.
+  uint64_t surface_id;
 } FlutterBackingStoreConfig;
 
 typedef enum {
@@ -1414,6 +1416,10 @@ typedef bool (*FlutterBackingStoreCollectCallback)(
 typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
                                              void* user_data);
+typedef bool (*FlutterLayersPresentSurfaceCallback)(uint64_t surface_id,
+                                                    const FlutterLayer** layers,
+                                                    size_t layers_count,
+                                                    void* user_data);
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
@@ -1421,7 +1427,7 @@ typedef struct {
   /// A baton that in not interpreted by the engine in any way. If it passed
   /// back to the embedder in `FlutterCompositor.create_backing_store_callback`,
   /// `FlutterCompositor.collect_backing_store_callback` and
-  /// `FlutterCompositor.present_layers_callback`
+  /// `FlutterCompositor.present_layers_surface_callback`
   void* user_data;
   /// A callback invoked by the engine to obtain a backing store for a specific
   /// `FlutterLayer`.
@@ -1434,11 +1440,13 @@ typedef struct {
   /// A callback invoked by the engine to release the backing store. The
   /// embedder may collect any resources associated with the backing store.
   FlutterBackingStoreCollectCallback collect_backing_store_callback;
-  /// Callback invoked by the engine to composite the contents of each layer
-  /// onto the screen.
-  FlutterLayersPresentCallback present_layers_callback;
+  /// A deprecated callback. It is not used and should not be set.
+  void* _deprecated_present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
+  /// Callback invoked by the engine to composite the contents of each layer
+  /// onto the screen.
+  FlutterLayersPresentSurfaceCallback present_layers_surface_callback;
 } FlutterCompositor;
 
 typedef struct {
