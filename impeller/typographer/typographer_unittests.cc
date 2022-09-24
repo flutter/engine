@@ -93,5 +93,22 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   ASSERT_TRUE(lazy_atlas.HasColor());
 }
 
+TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
+  auto context = TextRenderContext::Create(GetContext());
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font;
+  auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas = context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap,
+                                         TextFrameFromTextBlob(blob));
+  ASSERT_NE(atlas, nullptr);
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+
+  // The 3 unique glyphs should not evenly fit into a square texture, so we
+  // should have a rectangular one.
+  ASSERT_NE(atlas->GetTexture()->GetSize().width,
+            atlas->GetTexture()->GetSize().height);
+}
+
 }  // namespace testing
 }  // namespace impeller
