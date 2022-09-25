@@ -18,12 +18,7 @@ TEST(BacktraceTest, CanGatherBacktrace) {
   {
     auto trace = BacktraceHere(0);
     ASSERT_GT(trace.size(), 0u);
-
-    auto first_line_end = trace.find("\n");
-    ASSERT_GT(first_line_end, 0u);
-    ASSERT_NE(trace.rfind("Frame 0", first_line_end), std::string::npos);
-    ASSERT_NE(trace.rfind("CanGatherBacktrace", first_line_end),
-              std::string::npos);
+    ASSERT_NE(trace.find("Frame 0"), std::string::npos);
   }
 
   {
@@ -37,6 +32,22 @@ TEST(BacktraceTest, CanGatherBacktrace) {
     ASSERT_GT(trace.size(), 0u);
     ASSERT_NE(trace.find("Frame 0"), std::string::npos);
   }
+}
+
+TEST(BacktraceTest, BacktraceStartsWithCallerName) {
+  auto trace = BacktraceHere(0);
+  ASSERT_GT(trace.size(), 0u);
+
+  auto first_line_end = trace.find("\n");
+  ASSERT_GT(first_line_end, 0u);
+
+  if (trace.rfind("Unknown", first_line_end) != std::string::npos) {
+    GTEST_SKIP() << "The symbols has been stripped from the executable.";
+    return;
+  }
+
+  ASSERT_NE(trace.rfind("Frame 0", first_line_end), std::string::npos);
+  ASSERT_NE(trace.rfind(__FUNCTION__, first_line_end), std::string::npos);
 }
 
 }  // namespace testing
