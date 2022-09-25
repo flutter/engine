@@ -36,6 +36,11 @@ TEST(BacktraceTest, CanGatherBacktrace) {
 }
 
 TEST(BacktraceTest, BacktraceStartsWithCallerFunction) {
+  if (!IsCrashHandlingSupported()) {
+    GTEST_SKIP();
+    return;
+  }
+
   auto trace = BacktraceHere(0);
   ASSERT_GT(trace.size(), 0u);
 
