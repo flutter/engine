@@ -5,6 +5,7 @@
 #include "backtrace.h"
 
 #include "gtest/gtest.h"
+#include "logging.h"
 
 namespace fml {
 namespace testing {
@@ -16,6 +17,20 @@ TEST(BacktraceTest, CanGatherBacktrace) {
   }
   {
     auto trace = BacktraceHere(0);
+    ASSERT_GT(trace.size(), 0u);
+    ASSERT_NE(trace.find("Frame 0"), std::string::npos);
+    std::cout << trace << std::endl;
+  }
+
+  {
+    auto trace = BacktraceHere(1);
+    ASSERT_GT(trace.size(), 0u);
+    ASSERT_NE(trace.find("Frame 0"), std::string::npos);
+    std::cout << trace << std::endl;
+  }
+
+  {
+    auto trace = BacktraceHere(2);
     ASSERT_GT(trace.size(), 0u);
     ASSERT_NE(trace.find("Frame 0"), std::string::npos);
     std::cout << trace << std::endl;
