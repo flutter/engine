@@ -55,7 +55,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   // features to Image someday.
   RenderTargetType target_type = context.GetContext()->SupportsOffscreenMSAA()
                                      ? RenderTargetType::kOffscreenMSAA
-                                     : RenderTargetType::kOffscreenMSAA;
+                                     : RenderTargetType::kOffscreen;
   auto target = RenderTargetBuilder()
                     .SetSize(size)
                     .SetRenderTargetType(target_type)
