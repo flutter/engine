@@ -49,11 +49,11 @@ std::string BacktraceHere(size_t offset) {
   }
 
   // Exclude here.
-  offset++;
+  offset += 2;
 
   std::stringstream stream;
-  for (int i = 1 + offset; i < available_frames; ++i) {
-    stream << "Frame " << i - 1 - offset << ": " << symbols[i] << " "
+  for (int i = offset; i < available_frames; ++i) {
+    stream << "Frame " << i - offset << ": " << symbols[i] << " "
            << GetSymbolName(symbols[i]) << std::endl;
   }
   return stream.str();
