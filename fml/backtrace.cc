@@ -17,7 +17,6 @@
 #include <crtdbg.h>
 #include <debugapi.h>
 #else  // FML_OS_WIN
-#include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
 #endif  // FML_OS_WIN
@@ -26,39 +25,12 @@ namespace fml {
 
 static std::string kKUnknownFrameName = "Unknown";
 
-static std::string DemangleSymbolName(const std::string& mangled) {
-#if FML_OS_WIN
-  return mangled;
-#else
-  if (mangled == kKUnknownFrameName) {
-    return kKUnknownFrameName;
-  }
-
-  int status = 0;
-  size_t length = 0;
-  char* demangled = __cxxabiv1::__cxa_demangle(
-      mangled.data(),  // mangled name
-      nullptr,         // output buffer (malloc-ed if nullptr)
-      &length,         // demangled length
-      &status);
-
-  if (demangled == nullptr || status != 0) {
-    return mangled;
-  }
-
-  auto demangled_string = std::string{demangled, length};
-  free(demangled);
-  return demangled_string;
-#endif  // FML_OS_WIN
-}
-
 static std::string GetSymbolName(void* symbol) {
   char name[1024];
   if (!absl::Symbolize(symbol, name, sizeof(name))) {
     return kKUnknownFrameName;
   }
-
-  return DemangleSymbolName({name});
+  return name;
 }
 
 static int Backtrace(void** symbols, int size) {
@@ -76,6 +48,9 @@ std::string BacktraceHere(size_t offset) {
   if (available_frames <= 0) {
     return "";
   }
+
+  // Exclude here.
+  offset++;
 
   std::stringstream stream;
   for (int i = 1 + offset; i < available_frames; ++i) {
@@ -95,7 +70,7 @@ static size_t kKnownSignalHandlers[] = {
     SIGSYS,   // non-existent system call invoked
     SIGPIPE,  // write on a pipe with no reader
     SIGALRM,  // real-time timer expired
-#endif  // !FML_OS_WIN
+#endif        // !FML_OS_WIN
 };
 
 static std::string SignalNameToString(int signal) {
