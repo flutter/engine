@@ -18,7 +18,12 @@ TEST(BacktraceTest, CanGatherBacktrace) {
   {
     auto trace = BacktraceHere(0);
     ASSERT_GT(trace.size(), 0u);
-    ASSERT_NE(trace.find("Frame 0"), std::string::npos);
+
+    auto first_line_end = trace.find("\n");
+    ASSERT_GT(first_line_end, 0u);
+    ASSERT_NE(trace.rfind("Frame 0", first_line_end), std::string::npos);
+    ASSERT_NE(trace.rfind("CanGatherBacktrace", first_line_end),
+              std::string::npos);
   }
 
   {
