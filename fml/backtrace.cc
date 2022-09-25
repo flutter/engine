@@ -17,7 +17,6 @@
 #include <crtdbg.h>
 #include <debugapi.h>
 #else  // FML_OS_WIN
-#include <dlfcn.h>
 #include <execinfo.h>
 #endif  // FML_OS_WIN
 
