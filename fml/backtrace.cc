@@ -32,7 +32,8 @@ static std::string GetSymbolName(void* symbol) {
   return name;
 }
 
-static int Backtrace(void** symbols, int size) {
+// Using force inlining to always exclude this function from the backtrace.
+ABSL_ATTRIBUTE_ALWAYS_INLINE int Backtrace(void** symbols, int size) {
 #if FML_OS_WIN
   return CaptureStackBackTrace(0, size, symbols, NULL);
 #else
@@ -49,7 +50,7 @@ std::string BacktraceHere(size_t offset) {
   }
 
   // Exclude here.
-  offset += 2;
+  offset += 1;
 
   std::stringstream stream;
   for (int i = offset; i < available_frames; ++i) {
