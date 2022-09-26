@@ -190,6 +190,8 @@ class TextLayoutService {
       }
     }
 
+    lines.forEach(_positionLineFragments);
+
     // ******************************** //
     // *** MAX/MIN INTRINSIC WIDTHS *** //
     // ******************************** //
@@ -222,6 +224,123 @@ class TextLayoutService {
           break;
       }
     }
+  }
+
+  ui.TextDirection get _paragraphDirection =>
+      paragraph.paragraphStyle.effectiveTextDirection;
+
+  /// Positions the fragments taking into account their directions and the
+  /// paragraph's direction.
+  void _positionLineFragments(ParagraphLine line) {
+    ui.TextDirection previousDirection = _paragraphDirection;
+
+    double startOffset = 0.0;
+    int? sandwichStart;
+    int sequenceStart = 0;
+
+    for (int i = 0; i <= line.fragments.length; i++) {
+      if (i < line.fragments.length) {
+        final LayoutFragment fragment = line.fragments[i];
+
+        if (fragment.fragmentFlow == FragmentFlow.previous) {
+          sandwichStart = null;
+          continue;
+        }
+        if (fragment.fragmentFlow == FragmentFlow.sandwich) {
+          sandwichStart ??= i;
+          continue;
+        }
+
+
+        assert(fragment.fragmentFlow == FragmentFlow.own);
+
+        final ui.TextDirection textDirection = fragment.textDirection!;
+
+        if (textDirection == previousDirection) {
+          sandwichStart = null;
+          continue;
+        }
+      }
+
+      // We've reached a fragment that'll flip the text direction. Let's
+      // position the sequence that we've been traversing.
+
+      if (sandwichStart == null) {
+        // Position fragments in range [sequenceStart:i)
+        startOffset += _positionFragmentRange(
+          line: line,
+          start: sequenceStart,
+          end: i,
+          direction: previousDirection,
+          startOffset: startOffset,
+        );
+      } else {
+        // Position fragments in range [sequenceStart:sandwichStart)
+        startOffset += _positionFragmentRange(
+          line: line,
+          start: sequenceStart,
+          end: sandwichStart,
+          direction: previousDirection,
+          startOffset: startOffset,
+        );
+        // Position fragments in range [sandwichStart:i)
+        startOffset += _positionFragmentRange(
+          line: line,
+          start: sandwichStart,
+          end: i,
+          direction: _paragraphDirection,
+          startOffset: startOffset,
+        );
+      }
+
+      sequenceStart = i;
+      sandwichStart = null;
+
+      if (i < line.fragments.length){
+        previousDirection = line.fragments[i].textDirection!;
+      }
+    }
+  }
+
+  double _positionFragmentRange({
+    required ParagraphLine line,
+    required int start,
+    required int end,
+    required ui.TextDirection direction,
+    required double startOffset,
+  }) {
+    assert(start <= end);
+
+    double cumulativeWidth = 0.0;
+
+    // The bodies of the two for loops below must remain identical. The only
+    // difference is the looping direction. One goes from start to end, while
+    // the other goes from end to start.
+
+    if (direction == _paragraphDirection) {
+      for (int i = start; i < end; i++) {
+        cumulativeWidth +=
+            _positionOneFragment(line, i, startOffset + cumulativeWidth, direction);
+      }
+    } else {
+      for (int i = end - 1; i >= start; i--) {
+        cumulativeWidth +=
+            _positionOneFragment(line, i, startOffset + cumulativeWidth, direction);
+      }
+    }
+
+    return cumulativeWidth;
+  }
+
+  double _positionOneFragment(
+    ParagraphLine line,
+    int i,
+    double startOffset,
+    ui.TextDirection direction,
+  ) {
+    final LayoutFragment fragment = line.fragments[i];
+    fragment.setPosition(startOffset: startOffset, textDirection: direction);
+    return fragment.widthIncludingTrailingSpaces;
   }
 
   List<ui.TextBox> getBoxesForPlaceholders() {
@@ -741,117 +860,12 @@ class LineBuilder {
       fragments: _fragments,
       textDirection: _paragraphDirection,
     );
-    _positionFragments(line);
+
+    for (final LayoutFragment fragment in _fragments) {
+      fragment.line = line;
+    }
+
     return line;
-  }
-
-  /// Positions the fragments taking into account their directions and the
-  /// paragraph's direction.
-  void _positionFragments(ParagraphLine line) {
-    ui.TextDirection previousDirection = _paragraphDirection;
-
-    double startOffset = 0.0;
-    int? sandwichStart;
-    int sequenceStart = 0;
-
-    for (int i = 0; i <= _fragments.length; i++) {
-      if (i < _fragments.length) {
-        final LayoutFragment fragment = _fragments[i];
-
-        if (fragment.fragmentFlow == FragmentFlow.previous) {
-          sandwichStart = null;
-          continue;
-        }
-        if (fragment.fragmentFlow == FragmentFlow.sandwich) {
-          sandwichStart ??= i;
-          continue;
-        }
-
-
-        assert(fragment.fragmentFlow == FragmentFlow.own);
-
-        final ui.TextDirection textDirection = fragment.textDirection!;
-
-        if (textDirection == previousDirection) {
-          sandwichStart = null;
-          continue;
-        }
-      }
-
-      // We've reached a fragment that'll flip the text direction. Let's
-      // position the sequence that we've been traversing.
-
-      if (sandwichStart == null) {
-        // Position fragments in range [sequenceStart:i)
-        startOffset += _positionFragmentRange(
-          line: line,
-          start: sequenceStart,
-          end: i,
-          direction: previousDirection,
-          startOffset: startOffset,
-        );
-      } else {
-        // Position fragments in range [sequenceStart:sandwichStart)
-        startOffset += _positionFragmentRange(
-          line: line,
-          start: sequenceStart,
-          end: sandwichStart,
-          direction: previousDirection,
-          startOffset: startOffset,
-        );
-        // Position fragments in range [sandwichStart:i)
-        startOffset += _positionFragmentRange(
-          line: line,
-          start: sandwichStart,
-          end: i,
-          direction: _paragraphDirection,
-          startOffset: startOffset,
-        );
-      }
-
-      sequenceStart = i;
-      sandwichStart = null;
-
-      if (i < _fragments.length){
-        previousDirection = _fragments[i].textDirection!;
-      }
-    }
-  }
-
-  double _positionFragmentRange({
-    required ParagraphLine line,
-    required int start,
-    required int end,
-    required ui.TextDirection direction,
-    required double startOffset,
-  }) {
-    assert(start <= end);
-
-    double cumulativeWidth = 0.0;
-
-    if (direction == _paragraphDirection) {
-      for (int i = start; i < end; i++) {
-        cumulativeWidth +=
-            _positionOneFragment(line, _fragments[i], startOffset + cumulativeWidth, direction);
-      }
-    } else {
-      for (int i = end - 1; i >= start; i--) {
-        cumulativeWidth +=
-            _positionOneFragment(line, _fragments[i], startOffset + cumulativeWidth, direction);
-      }
-    }
-
-    return cumulativeWidth;
-  }
-
-  double _positionOneFragment(
-    ParagraphLine line,
-    LayoutFragment fragment,
-    double startOffset,
-    ui.TextDirection direction,
-  ) {
-    fragment.setPosition(startOffset: startOffset, line: line, textDirection: direction);
-    return fragment.widthIncludingTrailingSpaces;
   }
 
   /// Creates a new [LineBuilder] to build the next line in the paragraph.
@@ -974,7 +988,7 @@ class Spanometer {
         widthIncludingTrailingSpaces: placeholder.width,
       );
     } else {
-      currentSpan = fragment.span as FlatTextSpan;
+      currentSpan = fragment.span;
       final double widthExcludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingSpaces);
       final double widthIncludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingNewlines);
       fragment.setMetrics(this,
@@ -1006,11 +1020,9 @@ class Spanometer {
   }) {
     assert(_currentSpan != null);
 
-    final FlatTextSpan span = currentSpan as FlatTextSpan;
-
     // Make sure the range is within the current span.
-    assert(start >= span.start && start <= span.end);
-    assert(end >= span.start && end <= span.end);
+    assert(start >= currentSpan.start && start <= currentSpan.end);
+    assert(end >= currentSpan.start && end <= currentSpan.end);
 
     if (availableWidth <= 0.0) {
       return allowEmpty ? start : start + 1;
@@ -1038,11 +1050,9 @@ class Spanometer {
 
   double _measure(int start, int end) {
     assert(_currentSpan != null);
-    final FlatTextSpan span = currentSpan as FlatTextSpan;
-
     // Make sure the range is within the current span.
-    assert(start >= span.start && start <= span.end);
-    assert(end >= span.start && end <= span.end);
+    assert(start >= currentSpan.start && start <= currentSpan.end);
+    assert(end >= currentSpan.start && end <= currentSpan.end);
 
     final String text = paragraph.toPlainText();
     return measureSubstring(

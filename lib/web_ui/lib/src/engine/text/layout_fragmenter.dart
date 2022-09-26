@@ -275,8 +275,7 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   late double _startOffset;
 
   /// The width of the line that contains this fragment.
-  ParagraphLine get line => _line;
-  late ParagraphLine _line;
+  late ParagraphLine line;
 
   /// The distance from the beginning of the line to the end of the fragment.
   double get endOffset => startOffset + widthIncludingTrailingSpaces;
@@ -295,18 +294,14 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   /// contains it.
   void setPosition({
     required double startOffset,
-    required ParagraphLine line,
     required ui.TextDirection textDirection,
   }) {
     _startOffset = startOffset;
-    _line = line;
     _textDirection ??= textDirection;
   }
 
   /// Adjust the width of this fragment for paragraph justification.
   void justifyTo({required double paragraphWidth}) {
-    _extraWidthForJustification = 0;
-
     // Only justify this fragment if it's not a trailing space in the line.
     if (end > line.endIndex - line.trailingSpaces) {
       // Don't justify fragments that are part of trailing spaces of the line.
