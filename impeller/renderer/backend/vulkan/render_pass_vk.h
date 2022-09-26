@@ -64,7 +64,7 @@ class RenderPassVK final : public RenderPass {
 
   void SetViewportAndScissor(const Command& command) const;
 
-  vk::UniqueFramebuffer CreateFrameBuffer(
+  vk::Framebuffer CreateFrameBuffer(
       const WrappedTextureInfoVK& wrapped_texture_info) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);

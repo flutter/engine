@@ -83,7 +83,6 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
   }
   auto color0 = render_target_.GetColorAttachments().find(0)->second;
 
-
   command_buffer_->SetLabel(
       "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
       " Count=" + std::to_string(pass_count_));
