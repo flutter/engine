@@ -253,14 +253,14 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
     ASSERT_POINT_NEAR(result, expected);
   }
 
-  // Resolves to infinity on singularity.
+  // Resolves to 0 on perspective singularity.
   {
     auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100);
     auto point = Point(3, 3);
 
     Point result = matrix * point;
-    ASSERT_TRUE(isinf(result.x));
-    ASSERT_TRUE(isinf(result.y));
+    auto expected = Point(0, 0);
+    ASSERT_POINT_NEAR(result, expected);
   }
 }
 
