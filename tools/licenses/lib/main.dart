@@ -1022,6 +1022,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
            !entry.fullName.endsWith('third_party/gradle') &&
            !entry.fullName.endsWith('third_party/imgui') &&
            !entry.fullName.endsWith('third_party/tinygltf') &&
+           !entry.fullName.endsWith('third_party/json/docs') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
             entry.name != '.git' &&
@@ -1029,7 +1030,6 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.gitignore' &&
             entry.name != '.reuse' &&
             entry.name != '.vscode' &&
-            entry.name != 'docs' &&
             entry.name != 'javatests' &&
             entry.name != 'fixtures' &&
             entry.name != 'playground' &&
