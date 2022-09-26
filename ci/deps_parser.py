@@ -11,7 +11,6 @@
 # are pinned to a hash.
 
 import argparse
-from gzip import READ
 import os
 import sys
 import re
@@ -25,49 +24,48 @@ CHROMIUM = 'https://chromium.googlesource.com/chromium/src'
 
 # Used in parsing the DEPS file.
 class VarImpl:
- _env_vars = {
-   'host_cpu': 'x64',
-   'host_os': 'linux',
- }
+  _env_vars = {
+    'host_cpu': 'x64',
+    'host_os': 'linux',
+  }
 
- def __init__(self, local_scope):
-  self._local_scope = local_scope
+  def __init__(self, local_scope):
+    self._local_scope = local_scope
 
- def lookup(self, var_name):
-  """Implements the Var syntax."""
-  if var_name in self._local_scope.get('vars', {}):
-   return self._local_scope['vars'][var_name]
-  # Inject default values for env variables
-  if var_name in self._env_vars:
-   return self._env_vars[var_name]
-  raise Exception('Var is not defined: %s' % var_name)
+  def lookup(self, var_name):
+    """Implements the Var syntax."""
+    if var_name in self._local_scope.get('vars', {}):
+      return self._local_scope['vars'][var_name]
+    # Inject default values for env variables
+    if var_name in self._env_vars:
+      return self._env_vars[var_name]
+    raise Exception('Var is not defined: %s' % var_name)
 
 
 def parse_deps_file(deps_file):
- local_scope = {}
- var = VarImpl(local_scope)
- global_scope = {
-   'Var': var.lookup,
-   'deps_os': {},
- }
- # Read the content.
- with open(deps_file, 'r') as file:
-  deps_content = file.read()
+  local_scope = {}
+  var = VarImpl(local_scope)
+  global_scope = {
+    'Var': var.lookup,
+    'deps_os': {},
+  }
+  # Read the content.
+  with open(deps_file, 'r') as file:
+    deps_content = file.read()
 
- # Eval the content.
- exec(deps_content, global_scope, local_scope)
+  # Eval the content.
+  exec(deps_content, global_scope, local_scope)
 
- # Extract the deps and filter.
- deps = local_scope.get('deps', {})
- filtered_deps = []
- for k, v in deps.items():
-  # We currently do not support packages or cipd which are represented
-  # as dictionaries.
-  if isinstance(v, str):
-    print(v)
-    filtered_deps.append(v)
-
- return filtered_deps
+  # Extract the deps and filter.
+  deps = local_scope.get('deps', {})
+  filtered_deps = []
+  for _, dep in deps.items():
+    # We currently do not support packages or cipd which are represented
+    # as dictionaries.
+    if isinstance(dep, str):
+      print(dep)
+      filtered_deps.append(dep)
+  return filtered_deps
 
 def parse_readme(deps):
   """
@@ -80,52 +78,52 @@ def parse_readme(deps):
   # read the content of the file opened
   content = file.readlines()
   commit_line = content[CHROMIUM_README_COMMIT_LINE]
-  print("commit line: " + commit_line)
-  commit = re.search(r"(?<=\[).*(?=\])", commit_line)
-  print(CHROMIUM + "@" + commit.group())
-  deps.append(CHROMIUM + "@" + commit.group())
+  print('commit line: ' + commit_line)
+  commit = re.search(r'(?<=\[).*(?=\])', commit_line)
+  print(CHROMIUM + '@' + commit.group())
+  deps.append(CHROMIUM + '@' + commit.group())
   return deps
 
 
 
 
 def write_manifest(deps, manifest_file):
- print('\n'.join(sorted(deps)))
- with open(manifest_file, 'w') as manifest:
-  manifest.write('\n'.join(sorted(deps)))
+  print('\n'.join(sorted(deps)))
+  with open(manifest_file, 'w') as manifest:
+    manifest.write('\n'.join(sorted(deps)))
 
 
 def parse_args(args):
- args = args[1:]
- parser = argparse.ArgumentParser(
-   description='A script to flatten a gclient DEPS file.'
- )
+  args = args[1:]
+  parser = argparse.ArgumentParser(
+    description='A script to flatten a gclient DEPS file.'
+  )
 
- parser.add_argument(
-   '--deps',
-   '-d',
-   type=str,
-   help='Input DEPS file.',
-   default=os.path.join(CHECKOUT_ROOT, 'DEPS')
- )
- parser.add_argument(
-   '--output',
-   '-o',
-   type=str,
-   help='Output flattened deps file.',
-   default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt')
- )
+  parser.add_argument(
+    '--deps',
+    '-d',
+    type=str,
+    help='Input DEPS file.',
+    default=os.path.join(CHECKOUT_ROOT, 'DEPS')
+  )
+  parser.add_argument(
+    '--output',
+    '-o',
+    type=str,
+    help='Output flattened deps file.',
+    default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt')
+  )
 
- return parser.parse_args(args)
+  return parser.parse_args(args)
 
 
 def main(argv):
- args = parse_args(argv)
- deps = parse_deps_file(args.deps)
- deps = parse_readme(deps)
- write_manifest(deps, args.output)
- return 0
+  args = parse_args(argv)
+  deps = parse_deps_file(args.deps)
+  deps = parse_readme(deps)
+  write_manifest(deps, args.output)
+  return 0
 
 
 if __name__ == '__main__':
- sys.exit(main(sys.argv))
+  sys.exit(main(sys.argv))
