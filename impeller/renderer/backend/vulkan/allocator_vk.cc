@@ -121,7 +121,9 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   // StorageMode.
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
       vk::BufferCreateInfo()
-          .setUsage(vk::BufferUsageFlagBits::eStorageBuffer |
+          .setUsage(vk::BufferUsageFlagBits::eVertexBuffer |
+                    vk::BufferUsageFlagBits::eIndexBuffer |
+                    vk::BufferUsageFlagBits::eUniformBuffer |
                     vk::BufferUsageFlagBits::eTransferSrc |
                     vk::BufferUsageFlagBits::eTransferDst)
           .setSize(desc.size)

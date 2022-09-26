@@ -18,6 +18,7 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/render_target_builder.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
@@ -386,7 +387,6 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -457,7 +457,6 @@ TEST_P(AiksTest, CanRenderLinearGradientWayManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -520,7 +519,6 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -640,7 +638,6 @@ TEST_P(AiksTest, CanRenderRadialGradientManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -764,7 +761,6 @@ TEST_P(AiksTest, CanRenderSweepGradientManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -1156,8 +1152,12 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+#if FML_OS_MACOSX
+                                 "Apple Color Emoji.ttc"));
+#else
                                  "NotoColorEmoji.ttf"));
+#endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1645,6 +1645,31 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
   draw_image_layer(effect_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, RenderTargetBuilderTest) {
+  std::shared_ptr<Context> context = GetContext();
+  RenderTarget render_target_ =
+      RenderTargetBuilder()
+          .SetSize(ISize(100, 100))
+          .SetRenderTargetType(RenderTargetType::kOffscreen)
+          .Build(*context);
+
+  std::map<size_t, ColorAttachment> color_attachments =
+      render_target_.GetColorAttachments();
+  ColorAttachment color0 = color_attachments.find(0)->second;
+  EXPECT_TRUE(color0.load_action == LoadAction::kClear);
+  EXPECT_TRUE(color0.store_action == StoreAction::kStore);
+  EXPECT_TRUE(color0.texture->GetTextureDescriptor().storage_mode ==
+              StorageMode::kDevicePrivate);
+
+  std::optional<StencilAttachment> stencil_attachement =
+      render_target_.GetStencilAttachment();
+  EXPECT_TRUE(stencil_attachement->load_action == LoadAction::kClear);
+  EXPECT_TRUE(stencil_attachement->store_action == StoreAction::kDontCare);
+  EXPECT_TRUE(
+      stencil_attachement->texture->GetTextureDescriptor().storage_mode ==
+      StorageMode::kDeviceTransient);
 }
 
 }  // namespace testing
