@@ -513,6 +513,9 @@ deps = {
   'src/third_party/tinygltf':
   Var('github_git') + '/syoyo/tinygltf.git' + '@' + '9bb5806df4055ac973b970ba5b3e27ce27d98148',
 
+  'src/third_party/json':
+  Var('github_git') + '/nlohmann/json.git' + '@' + '17d9eacd248f58b73f4d1be518ef649fe2295642',
+
   'src/third_party/gradle': {
     'packages': [
       {
