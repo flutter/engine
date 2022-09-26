@@ -1,4 +1,4 @@
-// Copyright 2022 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,12 +12,15 @@
 #include "flutter/fml/logging.h"
 #include "gtest/gtest.h"
 
-using namespace component_testing;
-
-namespace dart_jit_runner::testing {
+namespace dart_jit_runner_testing::testing {
 namespace {
 
+using component_testing::ChildRef;
+using component_testing::ParentRef;
+using component_testing::Protocol;
+using component_testing::RealmBuilder;
 using component_testing::RealmRoot;
+using component_testing::Route;
 
 class RealmBuilderTest : public ::loop_fixture::RealLoop,
                          public ::testing::Test {
@@ -53,4 +56,4 @@ TEST_F(RealmBuilderTest, DartRunnerStartsUp) {
 }
 
 }  // namespace
-}  // namespace dart_jit_runner::testing
+}  // namespace dart_jit_runner_testing::testing

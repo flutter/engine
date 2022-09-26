@@ -25,7 +25,7 @@ dart_library("lib") {
   ]
 }
 
-# Dart component that launches a simple "Hello World" application using JIT
+# Dart component that serves the test Echo FIDL protocol, built using the Dart JIT runner
 dart_component("component") {
   testonly = true
   null_safe = true
