@@ -92,6 +92,11 @@ class FilterContents : public Contents {
 
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
       FilterInput::Ref input,
+      const Matrix& matrix,
+      const SamplerDescriptor& desc);
+
+  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
+      FilterInput::Ref input,
       const Matrix& matrix);
 
   FilterContents();

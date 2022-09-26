@@ -57,20 +57,11 @@ TEST_P(CompilerTest, MustFailDueToExceedingResourcesLimit) {
 }
 
 TEST_P(CompilerTest, MustFailDueToMultipleLocationPerStructMember) {
-  if (GetParam() == TargetPlatform::kFlutterSPIRV) {
-    // This is a failure of reflection which this target doesn't perform.
-    GTEST_SKIP();
-  }
   ScopedValidationDisable disable_validation;
   ASSERT_FALSE(CanCompileAndReflect("struct_def_bug.vert"));
 }
 
 TEST_P(CompilerTest, BindingBaseForFragShader) {
-  if (GetParam() == TargetPlatform::kFlutterSPIRV) {
-    // This is a failure of reflection which this target doesn't perform.
-    GTEST_SKIP();
-  }
-
 #ifndef IMPELLER_ENABLE_VULKAN
   GTEST_SKIP();
 #endif
@@ -90,13 +81,38 @@ TEST_P(CompilerTest, BindingBaseForFragShader) {
   ASSERT_GT(frag_uniform_binding, vert_uniform_binding);
 }
 
+TEST_P(CompilerTest, UniformsHaveBindingAndSet) {
+  ASSERT_TRUE(CanCompileAndReflect("sample_with_binding.vert",
+                                   SourceType::kVertexShader));
+  ASSERT_TRUE(CanCompileAndReflect("sample.frag", SourceType::kFragmentShader));
+
+  struct binding_and_set {
+    uint32_t binding;
+    uint32_t set;
+  };
+
+  auto get_binding = [&](const char* fixture) -> binding_and_set {
+    auto json_fd = GetReflectionJson(fixture);
+    nlohmann::json shader_json = nlohmann::json::parse(json_fd->GetMapping());
+    uint32_t binding = shader_json["buffers"][0]["binding"].get<uint32_t>();
+    uint32_t set = shader_json["buffers"][0]["set"].get<uint32_t>();
+    return {binding, set};
+  };
+
+  auto vert_uniform_binding = get_binding("sample_with_binding.vert");
+  auto frag_uniform_binding = get_binding("sample.frag");
+
+  ASSERT_EQ(frag_uniform_binding.set, 0u);
+  ASSERT_EQ(vert_uniform_binding.set, 3u);
+  ASSERT_EQ(vert_uniform_binding.binding, 17u);
+}
+
 #define INSTANTIATE_TARGET_PLATFORM_TEST_SUITE_P(suite_name)              \
   INSTANTIATE_TEST_SUITE_P(                                               \
       suite_name, CompilerTest,                                           \
       ::testing::Values(                                                  \
           TargetPlatform::kOpenGLES, TargetPlatform::kOpenGLDesktop,      \
-          TargetPlatform::kMetalDesktop, TargetPlatform::kMetalIOS,       \
-          TargetPlatform::kFlutterSPIRV),                                 \
+          TargetPlatform::kMetalDesktop, TargetPlatform::kMetalIOS),      \
       [](const ::testing::TestParamInfo<CompilerTest::ParamType>& info) { \
         return TargetPlatformToString(info.param);                        \
       });
