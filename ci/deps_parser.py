@@ -19,14 +19,15 @@ SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 
 CHROMIUM_README_FILE = 'third_party/accessibility/README.md'
-CHROMIUM_README_COMMIT_LINE = 4 # the fifth line will always contain the commit hash
+CHROMIUM_README_COMMIT_LINE = 4  # the fifth line will always contain the commit hash
 CHROMIUM = 'https://chromium.googlesource.com/chromium/src'
+
 
 # Used in parsing the DEPS file.
 class VarImpl:
   _env_vars = {
-    'host_cpu': 'x64',
-    'host_os': 'linux',
+      'host_cpu': 'x64',
+      'host_os': 'linux',
   }
 
   def __init__(self, local_scope):
@@ -46,8 +47,8 @@ def parse_deps_file(deps_file):
   local_scope = {}
   var = VarImpl(local_scope)
   global_scope = {
-    'Var': var.lookup,
-    'deps_os': {},
+      'Var': var.lookup,
+      'deps_os': {},
   }
   # Read the content.
   with open(deps_file, 'r') as file:
@@ -67,6 +68,7 @@ def parse_deps_file(deps_file):
       filtered_deps.append(dep)
   return filtered_deps
 
+
 def parse_readme(deps):
   """
   Opens the Flutter Accessibility Library README and uses the commit hash
@@ -85,8 +87,6 @@ def parse_readme(deps):
   return deps
 
 
-
-
 def write_manifest(deps, manifest_file):
   print('\n'.join(sorted(deps)))
   with open(manifest_file, 'w') as manifest:
@@ -96,22 +96,22 @@ def write_manifest(deps, manifest_file):
 def parse_args(args):
   args = args[1:]
   parser = argparse.ArgumentParser(
-    description='A script to flatten a gclient DEPS file.'
+      description='A script to flatten a gclient DEPS file.'
   )
 
   parser.add_argument(
-    '--deps',
-    '-d',
-    type=str,
-    help='Input DEPS file.',
-    default=os.path.join(CHECKOUT_ROOT, 'DEPS')
+      '--deps',
+      '-d',
+      type=str,
+      help='Input DEPS file.',
+      default=os.path.join(CHECKOUT_ROOT, 'DEPS')
   )
   parser.add_argument(
-    '--output',
-    '-o',
-    type=str,
-    help='Output flattened deps file.',
-    default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt')
+      '--output',
+      '-o',
+      type=str,
+      help='Output flattened deps file.',
+      default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt')
   )
 
   return parser.parse_args(args)

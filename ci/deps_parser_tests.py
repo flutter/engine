@@ -8,6 +8,7 @@ CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
 UPSTREAM_PREFIX = 'upstream_'
 
+
 class TestDepsParserMethods(unittest.TestCase):
 
   # extract both mirrored dep names and URLs &
@@ -15,7 +16,7 @@ class TestDepsParserMethods(unittest.TestCase):
   def setUp(self):
     with open(DEPS) as file:
       local_scope_upstream = {}
-      global_scope_upstream = {'Var': lambda x: x} # dummy lambda
+      global_scope_upstream = {'Var': lambda x: x}  # dummy lambda
       # Read the content.
       with open(DEPS, 'r') as file:
         deps_content = file.read()
@@ -32,8 +33,8 @@ class TestDepsParserMethods(unittest.TestCase):
       local_scope_mirror = {}
       var = VarImpl(local_scope_mirror)
       global_scope_mirror = {
-        'Var': var.lookup,
-        'deps_os': {},
+          'Var': var.lookup,
+          'deps_os': {},
       }
 
       # Eval the content.
@@ -59,8 +60,10 @@ class TestDepsParserMethods(unittest.TestCase):
       # all other deps should have an associated upstream URL for vuln scanning purposes
       if dep_name not in ('vulkan-deps', 'khronos'):
         # add the prefix on the dep name when searching for the upstream entry
-        self.assertTrue(UPSTREAM_PREFIX + dep_name in self.upstream_urls,
-          msg = dep_name + ' not found in upstream URL list')
+        self.assertTrue(
+            UPSTREAM_PREFIX + dep_name in self.upstream_urls,
+            msg=dep_name + ' not found in upstream URL list'
+        )
 
   def test_each_upstream_url_has_dep(self):
 
@@ -76,8 +79,11 @@ class TestDepsParserMethods(unittest.TestCase):
       # only test on upstream deps in vars section which start with the upstream prefix
       if upsream_dep.startswith(UPSTREAM_PREFIX):
         # strip the prefix to check that it has a corresponding dependency in the DEPS file
-        self.assertTrue(upsream_dep[len(UPSTREAM_PREFIX):] in deps_names,
-          msg = upsream_dep + ' from upstream list not found in DEPS')
+        self.assertTrue(
+            upsream_dep[len(UPSTREAM_PREFIX):] in deps_names,
+            msg=upsream_dep + ' from upstream list not found in DEPS'
+        )
+
 
 if __name__ == '__main__':
   unittest.main()
