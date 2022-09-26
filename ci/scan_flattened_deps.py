@@ -37,7 +37,7 @@ sarif_log = {
                 'tool': {'driver': {'name': 'OSV Scan', 'rules': []}},
                 'results': []
             }]
- }
+}
 
 
 def sarif_result():
@@ -55,7 +55,7 @@ def sarif_result():
                   'region': {'startLine': 1, 'startColumn': 1, 'endColumn': 1}
               }
           }]
-   }
+  }
 
 
 def sarif_rule():
@@ -74,7 +74,7 @@ def sarif_rule():
           'problem.severity': 'error', 'security-severity': '9.8',
           'tags': ['supply-chain', 'dependency']
       }
-   }
+  }
 
 def parse_deps_file(deps_flat_file):
   """
@@ -185,7 +185,7 @@ def get_common_ancestor_commit(dep):
             'git clone {depUrl} --quiet {dep_name}'.format(
                 depUrl=dep[0], dep_name=dep_name
             )
-        )        # os.chdir(f'./{dep_name}')
+        )
         os.chdir('./{dep_name}'.format(dep_name=dep_name))
 
         # check how old pinned commit is
