@@ -1028,6 +1028,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.github' &&
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
+            entry.name != 'docs' &&
             entry.name != 'javatests' &&
             entry.name != 'fixtures' &&
             entry.name != 'playground' &&
