@@ -76,6 +76,7 @@ def sarif_rule():
       }
   }
 
+
 def parse_deps_file(deps_flat_file):
   """
   Takes input of fully qualified dependencies,
