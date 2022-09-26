@@ -2,7 +2,6 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/fml/command_line.h"
 #include "flutter/shell/common/switches.h"
 
 #include "gtest/gtest.h"
@@ -14,10 +13,10 @@ namespace testing {
 
 class TestVsyncWaiter : public VsyncWaiter {
  public:
-  explicit TestVsyncWaiter(TaskRunners task_runners)
-      : VsyncWaiter(std::move(task_runners)) {}
+  explicit TestVsyncWaiter(const TaskRunners& task_runners)
+      : VsyncWaiter(task_runners) {}
 
-  int await_vsync_call_count_;
+  int await_vsync_call_count_ = 0;
 
  protected:
   void AwaitVSync() override { await_vsync_call_count_++; }
@@ -28,19 +27,10 @@ TEST(VsyncWaiterTest, NoUnneededAwaitVsync) {
   std::string prefix = "vsync_waiter_test";
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
-  auto platform_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
 
-  ThreadHost thread_host =
-      ThreadHost(prefix, flutter::ThreadHost::Type::RASTER |
-                             flutter::ThreadHost::Type::UI |
-                             flutter::ThreadHost::Type::IO);
-  const flutter::TaskRunners task_runners(
-      prefix,                                      // Dart thread labels
-      platform_task_runner,                        // platform
-      thread_host.raster_thread->GetTaskRunner(),  // raster
-      thread_host.ui_thread->GetTaskRunner(),      // ui
-      thread_host.io_thread->GetTaskRunner()       // io
-  );
+  const flutter::TaskRunners task_runners(prefix, task_runner, task_runner,
+                                          task_runner, task_runner);
 
   TestVsyncWaiter vsync_waiter(task_runners);
 
