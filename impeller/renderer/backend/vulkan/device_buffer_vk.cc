@@ -21,7 +21,8 @@ DeviceBufferAllocationVK::DeviceBufferAllocationVK(
 
 DeviceBufferAllocationVK::~DeviceBufferAllocationVK() {
   if (buffer_) {
-    FML_LOG(ERROR) << "Destroying buffer " << buffer_;
+    // https://github.com/flutter/flutter/issues/112387
+    // This buffer can be freed once the command buffer is disposed.
     // vmaDestroyBuffer(allocator_, buffer_, allocation_);
   }
 }
@@ -54,8 +55,6 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   }
 
   if (source) {
-    FML_LOG(ERROR) << "Copying " << source_range.length << " bytes from "
-                   << source << " to " << dest << " at offset " << offset;
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
 

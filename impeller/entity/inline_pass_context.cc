@@ -83,12 +83,6 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
   }
   auto color0 = render_target_.GetColorAttachments().find(0)->second;
 
-  // auto stencil = render_target_.GetStencilAttachment();
-  // if (!stencil.has_value()) {
-  //   VALIDATION_LOG << "Stencil attachment unexpectedly missing from the "
-  //                     "EntityPass render target.";
-  //   return {};
-  // }
 
   command_buffer_->SetLabel(
       "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
@@ -109,20 +103,31 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     color0.store_action = StoreAction::kStore;
   }
 
+#ifndef IMPELLER_ENABLE_VULKAN
+  auto stencil = render_target_.GetStencilAttachment();
+  if (!stencil.has_value()) {
+    VALIDATION_LOG << "Stencil attachment unexpectedly missing from the "
+                      "EntityPass render target.";
+    return {};
+  }
+
   // Only clear the stencil if this is the very first pass of the
   // layer.
-  // stencil->load_action =
-  //     pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
+  stencil->load_action =
+      pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
   // If we're on the last pass of the layer, there's no need to store the
   // stencil because nothing needs to read it.
-  // stencil->store_action = pass_count_ == total_pass_reads_
-  //                             ? StoreAction::kDontCare
-  //                             : StoreAction::kStore;
-
+  stencil->store_action = pass_count_ == total_pass_reads_
+                              ? StoreAction::kDontCare
+                              : StoreAction::kStore;
+  render_target_.SetStencilAttachment(stencil.value());
+#else
+  // Touch this variable to avoid a compiler warnings.
+  // This will go away once stencil support is added for vulkan.
   total_pass_reads_ = 1;
+#endif
 
   render_target_.SetColorAttachment(color0, 0);
-  // render_target_.SetStencilAttachment(stencil.value());
 
   pass_ = command_buffer_->CreateRenderPass(render_target_);
   if (!pass_) {

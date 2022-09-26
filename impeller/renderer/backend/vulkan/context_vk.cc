@@ -5,7 +5,6 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
-#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -335,10 +334,6 @@ ContextVK::ContextVK(
     VALIDATION_LOG << "No valid Vulkan device found.";
     return;
   }
-
-  auto val =
-      physical_device->getProperties().limits.minUniformBufferOffsetAlignment;
-  FML_LOG(ERROR) << "__minUniformBufferOffsetAlignment: " << val << std::endl;
 
   auto graphics_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);

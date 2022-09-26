@@ -63,7 +63,10 @@ bool CommandBufferVK::IsValid() const {
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  // todo fix this.
+  // TODO(https://github.com/flutter/flutter/issues/112387)
+  // This needs to be the place where the command buffer, renderpass,
+  // and the various descriptor sets in use by the command buffer are
+  // disposed of.
 
   if (callback) {
     callback(CommandBuffer::Status::kCompleted);
@@ -74,10 +77,6 @@ bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
     RenderTarget target) {
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__
-                 << ": w, h = " << target.GetRenderTargetSize().width << ", "
-                 << target.GetRenderTargetSize().height;
-
   std::vector<vk::AttachmentDescription> color_attachments;
   for (const auto& [k, attachment] : target.GetColorAttachments()) {
     const TextureDescriptor& tex_desc =
@@ -105,7 +104,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
 
   vk::SubpassDescription subpass_desc;
   subpass_desc.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-  subpass_desc.setColorAttachmentCount(1);
+  subpass_desc.setColorAttachmentCount(color_attachments.size());
   subpass_desc.setPColorAttachments(&color_attachment_ref);
 
   vk::RenderPassCreateInfo render_pass_create;

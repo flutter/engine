@@ -10,7 +10,6 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/pipeline.h"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 

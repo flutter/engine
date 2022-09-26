@@ -24,8 +24,8 @@ class Renderer {
 
   using RenderCallback = std::function<bool(RenderTarget& render_target)>;
 
-  explicit Renderer(std::shared_ptr<Context> context,
-                    size_t max_frames_in_flight = kDefaultMaxFramesInFlight);
+  Renderer(std::shared_ptr<Context> context,
+           size_t max_frames_in_flight = kDefaultMaxFramesInFlight);
 
   ~Renderer();
 

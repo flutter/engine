@@ -6,11 +6,9 @@
 
 #include <array>
 
-#include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -20,7 +18,7 @@ std::unique_ptr<SurfaceProducerVK> SurfaceProducerVK::Create(
   auto surface_producer =
       std::make_unique<SurfaceProducerVK>(context, create_info);
   if (!surface_producer->SetupSyncObjects()) {
-    FML_LOG(ERROR) << "Failed to setup sync objects.";
+    VALIDATION_LOG << "Failed to setup sync objects.";
     return nullptr;
   }
 
@@ -36,8 +34,6 @@ SurfaceProducerVK::~SurfaceProducerVK() = default;
 
 std::unique_ptr<Surface> SurfaceProducerVK::AcquireSurface(
     size_t current_frame) {
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " " << current_frame;
-
   current_frame = current_frame % kMaxFramesInFlight;
   const auto& sync_objects = sync_objects_[current_frame];
 
@@ -79,9 +75,6 @@ std::unique_ptr<Surface> SurfaceProducerVK::AcquireSurface(
 
   if (auto context = context_.lock()) {
     ContextVK* context_vk = reinterpret_cast<ContextVK*>(context.get());
-
-    FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " DONE!";
-
     return SurfaceVK::WrapSwapchainImage(
         current_frame, create_info_.swapchain->GetSwapchainImage(image_index),
         context_vk, std::move(swap_callback));
@@ -134,19 +127,17 @@ std::unique_ptr<SurfaceSyncObjectsVK> SurfaceSyncObjectsVK::Create(
 
 bool SurfaceProducerVK::SetupSyncObjects() {
   for (size_t i = 0; i < kMaxFramesInFlight; i++) {
-    auto tmp = SurfaceSyncObjectsVK::Create(create_info_.device);
-    if (!tmp) {
+    auto sync_objects = SurfaceSyncObjectsVK::Create(create_info_.device);
+    if (!sync_objects) {
       return false;
     }
-    sync_objects_[i] = std::move(tmp);
+    sync_objects_[i] = std::move(sync_objects);
   }
   return true;
 }
 
 bool SurfaceProducerVK::QueueCommandBuffer(uint32_t frame_num,
                                            vk::UniqueCommandBuffer buffer) {
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " " << frame_num
-                 << " buf:" << *buffer;
   command_buffers_[frame_num].push_back(std::move(buffer));
   return true;
 }
@@ -175,26 +166,22 @@ bool SurfaceProducerVK::Submit(uint32_t frame_num) {
   auto graphics_submit_res = create_info_.graphics_queue.submit(
       {submit_info}, *sync_objects->in_flight_fence);
   if (graphics_submit_res != vk::Result::eSuccess) {
-    FML_LOG(ERROR) << "Failed to submit graphics queue: "
+    VALIDATION_LOG << "Failed to submit graphics queue: "
                    << vk::to_string(graphics_submit_res);
     return false;
   }
 
   auto idle_wait_res = create_info_.graphics_queue.waitIdle();
   if (idle_wait_res != vk::Result::eSuccess) {
-    FML_LOG(ERROR) << "Failed to wait for graphics queue idle: "
+    VALIDATION_LOG << "Failed to wait for graphics queue idle: "
                    << vk::to_string(idle_wait_res);
     return false;
   }
 
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " DONE!";
   return true;
 }
 
 bool SurfaceProducerVK::Present(size_t frame_num, uint32_t image_index) {
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " " << frame_num << ", "
-                 << image_index;
-
   Submit(frame_num);
 
   auto& sync_objects = sync_objects_[frame_num];
@@ -212,24 +199,16 @@ bool SurfaceProducerVK::Present(size_t frame_num, uint32_t image_index) {
   std::array<uint32_t, 1> image_indices = {image_index};
   present_info.setImageIndices(image_indices);
 
-  FML_LOG(ERROR) << "presenting: "
-                 << create_info_.swapchain->GetSwapchainImage(image_index);
-
   auto present_res = create_info_.present_queue.presentKHR(present_info);
   if ((present_res != vk::Result::eSuccess) &&
       (present_res != vk::Result::eSuboptimalKHR)) {
-    FML_LOG(ERROR) << "Failed to present: " << vk::to_string(present_res);
-
     command_buffers_[frame_num].clear();
     stash_rp_[frame_num].clear();
-
     return false;
   }
 
   command_buffers_[frame_num].clear();
   stash_rp_[frame_num].clear();
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " DONE!";
-
   return true;
 }
 

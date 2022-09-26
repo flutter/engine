@@ -7,7 +7,6 @@
 #include <optional>
 
 #include "flutter/fml/trace_event.h"
-#include "fml/logging.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -148,10 +147,8 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   std::vector<vk::AttachmentDescription> render_pass_attachments;
   const auto sample_count = desc.GetSampleCount();
   // Set the color attachment.
-  auto fmt = vk::Format::eB8G8R8A8Unorm;
-  // auto fmt = vk::Format::eR8G8B8A8Unorm;
-  render_pass_attachments.push_back(
-      CreatePlaceholderAttachmentDescription(fmt, sample_count, true));
+  render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+      vk::Format::eB8G8R8A8Unorm, sample_count, true));
 
   std::vector<vk::AttachmentReference> color_attachment_references;
   std::vector<vk::AttachmentReference> resolve_attachment_references;
@@ -162,31 +159,38 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   color_attachment_references.push_back(vk::AttachmentReference(
       render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
 
+#if false
+  // see: https://github.com/flutter/flutter/issues/112388
   // Set the resolve attachment if MSAA is enabled.
   if (sample_count != SampleCount::kCount1) {
-    // render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-    //     vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1, false));
-    // resolve_attachment_references.push_back(vk::AttachmentReference(
-    //     render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
+    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1, false));
+    resolve_attachment_references.push_back(vk::AttachmentReference(
+        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
   }
 
   if (desc.HasStencilAttachmentDescriptors()) {
-    // render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-    //     vk::Format::eS8Uint, sample_count, false));
-    // depth_stencil_attachment_reference = vk::AttachmentReference(
-    //     render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
+    render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
+        vk::Format::eS8Uint, sample_count, false));
+    depth_stencil_attachment_reference = vk::AttachmentReference(
+        render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
   }
+#endif
 
   vk::SubpassDescription subpass_info;
   subpass_info.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
   subpass_info.setColorAttachments(color_attachment_references);
+
+#if false
+  // see: https://github.com/flutter/flutter/issues/112388
   if (sample_count != SampleCount::kCount1) {
-    // subpass_info.setResolveAttachments(resolve_attachment_references);
+    subpass_info.setResolveAttachments(resolve_attachment_references);
   }
   if (depth_stencil_attachment_reference.has_value()) {
-    // subpass_info.setPDepthStencilAttachment(
-    //     &depth_stencil_attachment_reference.value());
+    subpass_info.setPDepthStencilAttachment(
+        &depth_stencil_attachment_reference.value());
   }
+#endif
 
   vk::RenderPassCreateInfo render_pass_info;
   render_pass_info.setSubpasses(subpass_info);
@@ -335,8 +339,6 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   pipeline_info.setPVertexInputState(&vertex_input_state);
 
-  FML_LOG(ERROR) << "Creating pipeline: " << desc.GetLabel();
-
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
@@ -344,32 +346,6 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
     auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
-    FML_LOG(ERROR) << desc.GetLabel() << " binding: " << vk_desc_layout.binding;
-
-    switch (vk_desc_layout.descriptorType) {
-      case vk::DescriptorType::eUniformBuffer:
-        FML_LOG(ERROR) << desc.GetLabel() << " uniform buffer";
-        break;
-      case vk::DescriptorType::eCombinedImageSampler:
-        FML_LOG(ERROR) << desc.GetLabel() << " combined image sampler";
-        break;
-      default:
-        FML_LOG(ERROR) << "Unsupported descriptor type";
-        break;
-    }
-
-    switch (layout.shader_stage) {
-      case ShaderStage::kVertex:
-        FML_LOG(ERROR) << desc.GetLabel() << " vertex stage";
-        break;
-      case ShaderStage::kFragment:
-        FML_LOG(ERROR) << desc.GetLabel() << " frag stage";
-        break;
-      default:
-        FML_LOG(ERROR) << "Unsupported shader stage";
-        break;
-    }
-
     bindings.push_back(vk_desc_layout);
   }
 

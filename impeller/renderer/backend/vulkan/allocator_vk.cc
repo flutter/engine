@@ -62,9 +62,6 @@ bool AllocatorVK::IsValid() const {
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << "w, h: " << desc.size.width << ", "
-                 << desc.size.height;
-
   auto image_create_info = vk::ImageCreateInfo{};
   image_create_info.imageType = vk::ImageType::e2D;
   image_create_info.format = ToVKImageFormat(desc.format);
@@ -119,8 +116,6 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
-  FML_LOG(ERROR) << "creating a device buffer of size: " << desc.size;
-
   // TODO (kaushikiska): consider optimizing  the usage flags based on
   // StorageMode.
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(

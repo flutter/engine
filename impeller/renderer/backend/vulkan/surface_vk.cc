@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 
-#include "fml/logging.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/surface.h"
 
@@ -14,9 +13,6 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
     SwapchainImageVK* swapchain_image,
     ContextVK* context,
     SwapCallback swap_callback) {
-  FML_LOG(ERROR) << __PRETTY_FUNCTION__ << " " << frame_num
-                 << ", swapchain_image: " << swapchain_image;
-
   if (!swapchain_image) {
     return nullptr;
   }
