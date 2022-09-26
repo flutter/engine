@@ -23,7 +23,7 @@ SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 UPSTREAM_PREFIX = 'upstream_'
 
-HELP_STR = "To find complete information on this vulnerability, navigate to "
+HELP_STR = 'To find complete information on this vulnerability, navigate to '
 # TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
