@@ -46,6 +46,8 @@ LicenseType convertLicenseNameToType(String? name) {
       return LicenseType.mpl;
     case 'COPYRIGHT.vulkan':
       return LicenseType.vulkan;
+    case 'LICENSE.MIT':
+      return LicenseType.mit;
     // common file names that don't say what the type is
     case 'COPYING':
     case 'COPYING.txt':
