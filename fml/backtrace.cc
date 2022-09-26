@@ -32,19 +32,21 @@ static std::string GetSymbolName(void* symbol) {
   return name;
 }
 
-// Using force inlining to always exclude this function from the backtrace.
-ABSL_ATTRIBUTE_ALWAYS_INLINE int Backtrace(void** symbols, int size) {
-#if FML_OS_WIN
-  return CaptureStackBackTrace(0, size, symbols, NULL);
-#else
-  return ::backtrace(symbols, size);
-#endif  // FML_OS_WIN
-}
-
 std::string BacktraceHere(size_t offset) {
   constexpr size_t kMaxFrames = 256;
   void* symbols[kMaxFrames];
-  const auto available_frames = Backtrace(symbols, kMaxFrames);
+
+// A function isn't always inlined though the `inline` keyword present, and
+// inlining behavior can be different between compilers.
+// Therefore, calling this function directly instead of splitting into another
+// function, and always enable to exclude here from stack.
+#if FML_OS_WIN
+  const auto available_frames =
+      CaptureStackBackTrace(0, kMaxFrames, symbols, NULL);
+#else
+  const auto available_frames = ::backtrace(symbols, kMaxFrames);
+#endif  // FML_OS_WIN
+
   if (available_frames <= 0) {
     return "";
   }
