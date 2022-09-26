@@ -1,4 +1,4 @@
-Signature: 0315e4659d0d98573b07acf731383250
+Signature: edfa2583b7e4711f76c64c08c1bc685b
 
 UNUSED LICENSES:
 
@@ -913,6 +913,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.e
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/retry_ios_install_retries_exhausted.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test-win.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_mac.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_all_uploads.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_one_upload.json
@@ -959,6 +960,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench_DDLTotal_9x9.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-NoPatch (tryjob).json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-NoPatch.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Win10-Clang-x86_64-Release-NoDEPS.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel2XL-GPU-Adreno540-arm-Debug-All-Android_ASAN.json
@@ -1233,6 +1235,7 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/text/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/gl/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/graphite/BUILD.bazel
+FILE: ../../../third_party/skia/src/gpu/mtl/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/piet/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/vk/BUILD.bazel
@@ -2569,6 +2572,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTexture.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTexture.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTypesPriv.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlUtils.h
+FILE: ../../../third_party/skia/src/gpu/mtl/MtlMemoryAllocatorImpl.h
+FILE: ../../../third_party/skia/src/gpu/mtl/MtlMemoryAllocatorImpl.mm
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
@@ -3476,6 +3481,7 @@ FILE: ../../../third_party/skia/src/core/SkRectPriv.h
 FILE: ../../../third_party/skia/src/core/SkSafeRange.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.cpp
 FILE: ../../../third_party/skia/src/core/SkSurfaceCharacterization.cpp
+FILE: ../../../third_party/skia/src/core/SkTDArray.cpp
 FILE: ../../../third_party/skia/src/core/SkTextBlobPriv.h
 FILE: ../../../third_party/skia/src/core/SkTypeface_remote.cpp
 FILE: ../../../third_party/skia/src/core/SkTypeface_remote.h
@@ -6537,6 +6543,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
+FILE: ../../../third_party/skia/include/gpu/mtl/MtlMemoryAllocator.h
 FILE: ../../../third_party/skia/modules/skottie/src/BlendModes.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.h

@@ -147,6 +147,7 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
  public:
   MOCK_METHOD1(HandlePlatformMessage,
                void(std::unique_ptr<PlatformMessage> message));
+  MOCK_CONST_METHOD0(DoesHandlePlatformMessageOnPlatformThread, bool());
   MOCK_METHOD2(InvokePlatformMessageResponseCallback,
                void(int response_id, std::unique_ptr<fml::Mapping> mapping));
   MOCK_METHOD1(InvokePlatformMessageEmptyResponseCallback,
@@ -524,6 +525,10 @@ TEST_F(ShellTest, LastEntrypointArgs) {
 }
 
 TEST_F(ShellTest, DisallowedDartVMFlag) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "This test flakes on Fuchsia. https://fxbug.dev/110006 ";
+#endif  // OS_FUCHSIA
+
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -774,6 +779,11 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
 }
 
 TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
+#endif
+
   auto settings = CreateSettingsForFixture();
 
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
@@ -840,12 +850,12 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
+       ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
 #if defined(OS_FUCHSIA)
-       DISABLED_ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit
-#else
-       ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   bool end_frame_called = false;
@@ -889,15 +899,12 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest,
+TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
 #if defined(OS_FUCHSIA)
-       // TODO(dworsham): https://github.com/flutter/flutter/issues/59816
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_OnPlatformViewDestroyDisablesThreadMerger
-#else
-       OnPlatformViewDestroyDisablesThreadMerger
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   auto settings = CreateSettingsForFixture();
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
   auto end_frame_callback =
@@ -947,14 +954,12 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
-TEST_F(ShellTest,
+TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 #if defined(OS_FUCHSIA)
-       DISABLED_OnPlatformViewDestroyAfterMergingThreads
-#else
-       OnPlatformViewDestroyAfterMergingThreads
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   const int ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -1023,14 +1028,12 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
-TEST_F(ShellTest,
+TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 #if defined(OS_FUCHSIA)
-       DISABLED_OnPlatformViewDestroyWhenThreadsAreMerging
-#else
-       OnPlatformViewDestroyWhenThreadsAreMerging
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   const int kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -1100,14 +1103,13 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
+       OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged) {
 #if defined(OS_FUCHSIA)
-       DISABLED_OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged
-#else
-       OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -1202,13 +1204,12 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
 }
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
-TEST_F(ShellTest,
+TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
 #if defined(OS_FUCHSIA)
-       DISABLED_OnPlatformViewDestroyWithStaticThreadMerging
-#else
-       OnPlatformViewDestroyWithStaticThreadMerging
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -1305,16 +1306,14 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 // TODO(https://github.com/flutter/flutter/issues/66056): Deflake on all other
 // platforms
-TEST_F(ShellTest,
+TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
 #if defined(OS_FUCHSIA)
-       DISABLED_SkipAndSubmitFrame
-#else
-       DISABLED_SkipAndSubmitFrame
+  GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
+                  "https://github.com/flutter/flutter/issues/59816 ";
 #endif
-) {
+
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;

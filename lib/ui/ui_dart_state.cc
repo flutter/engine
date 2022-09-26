@@ -37,16 +37,18 @@ UIDartState::Context::Context(
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+    bool enable_impeller)
     : task_runners(task_runners),
-      snapshot_delegate(std::move(snapshot_delegate)),
-      io_manager(std::move(io_manager)),
-      unref_queue(std::move(unref_queue)),
-      image_decoder(std::move(image_decoder)),
-      image_generator_registry(std::move(image_generator_registry)),
-      advisory_script_uri(std::move(advisory_script_uri)),
-      advisory_script_entrypoint(std::move(advisory_script_entrypoint)),
-      volatile_path_tracker(std::move(volatile_path_tracker)) {}
+      snapshot_delegate(snapshot_delegate),
+      io_manager(io_manager),
+      unref_queue(unref_queue),
+      image_decoder(image_decoder),
+      image_generator_registry(image_generator_registry),
+      advisory_script_uri(advisory_script_uri),
+      advisory_script_entrypoint(advisory_script_entrypoint),
+      volatile_path_tracker(volatile_path_tracker),
+      enable_impeller(enable_impeller) {}
 
 UIDartState::UIDartState(
     TaskObserverAdd add_callback,
@@ -76,6 +78,10 @@ UIDartState::~UIDartState() {
 
 const std::string& UIDartState::GetAdvisoryScriptURI() const {
   return context_.advisory_script_uri;
+}
+
+bool UIDartState::IsImpellerEnabled() const {
+  return context_.enable_impeller;
 }
 
 void UIDartState::DidSetIsolate() {

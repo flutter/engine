@@ -55,7 +55,7 @@ class Compiler {
 
   std::string GetSourcePrefix() const;
 
-  std::string GetDependencyNames(std::string separator) const;
+  std::string GetDependencyNames(const std::string& separator) const;
 
   void SetBindingBase(shaderc::CompileOptions& compiler_opts) const;
 

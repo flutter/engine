@@ -37,7 +37,7 @@ class FilterContents : public Contents {
   enum class MorphType { kDilate, kErode };
 
   static std::shared_ptr<FilterContents> MakeBlend(
-      Entity::BlendMode blend_mode,
+      BlendMode blend_mode,
       FilterInput::Vector inputs,
       std::optional<Color> foreground_color = std::nullopt);
 
@@ -91,6 +91,11 @@ class FilterContents : public Contents {
       FilterInput::Ref input);
 
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix,
+      const SamplerDescriptor& desc);
+
+  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
       FilterInput::Ref input,
       const Matrix& matrix);
 

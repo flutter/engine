@@ -17,9 +17,9 @@ std::shared_ptr<ContextGLES> ContextGLES::Create(
       new ContextGLES(std::move(gl), std::move(shader_libraries)));
 }
 
-ContextGLES::ContextGLES(
-    std::unique_ptr<ProcTableGLES> gl,
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_mappings) {
+ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
+                         const std::vector<std::shared_ptr<fml::Mapping>>&
+                             shader_libraries_mappings) {
   reactor_ = std::make_shared<ReactorGLES>(std::move(gl));
   if (!reactor_->IsValid()) {
     VALIDATION_LOG << "Could not create valid reactor.";
@@ -29,7 +29,7 @@ ContextGLES::ContextGLES(
   // Create the shader library.
   {
     auto library = std::shared_ptr<ShaderLibraryGLES>(
-        new ShaderLibraryGLES(std::move(shader_libraries_mappings)));
+        new ShaderLibraryGLES(shader_libraries_mappings));
     if (!library->IsValid()) {
       VALIDATION_LOG << "Could not create valid shader library.";
       return;

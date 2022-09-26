@@ -496,10 +496,10 @@ static std::string JoinStrings(std::vector<std::string> items,
   return stream.str();
 }
 
-std::string Compiler::GetDependencyNames(std::string separator) const {
+std::string Compiler::GetDependencyNames(const std::string& separator) const {
   std::vector<std::string> dependencies = included_file_names_;
   dependencies.push_back(options_.file_name);
-  return JoinStrings(dependencies, std::move(separator));
+  return JoinStrings(dependencies, separator);
 }
 
 std::unique_ptr<fml::Mapping> Compiler::CreateDepfileContents(

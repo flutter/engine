@@ -18,6 +18,7 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/render_target_builder.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
@@ -386,7 +387,6 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -457,7 +457,6 @@ TEST_P(AiksTest, CanRenderLinearGradientWayManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -520,7 +519,6 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -640,7 +638,6 @@ TEST_P(AiksTest, CanRenderRadialGradientManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -764,7 +761,6 @@ TEST_P(AiksTest, CanRenderSweepGradientManyColors) {
         0, 0, 0, 1   //
     };
     std::string label = "##1";
-    label.c_str();
     for (int i = 0; i < 4; i++) {
       ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
                           4, NULL, NULL, "%.2f", 0);
@@ -882,13 +878,13 @@ TEST_P(AiksTest, BlendModeShouldCoverWholeScreen) {
   paint.color = Color::Red();
   canvas.DrawPaint(paint);
 
-  paint.blend_mode = Entity::BlendMode::kSourceOver;
+  paint.blend_mode = BlendMode::kSourceOver;
   canvas.SaveLayer(paint);
 
   paint.color = Color::White();
   canvas.DrawRect({100, 100, 400, 400}, paint);
 
-  paint.blend_mode = Entity::BlendMode::kSource;
+  paint.blend_mode = BlendMode::kSource;
   canvas.SaveLayer(paint);
 
   paint.color = Color::Blue();
@@ -1156,8 +1152,12 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+#if FML_OS_MACOSX
+                                 "Apple Color Emoji.ttc"));
+#else
                                  "NotoColorEmoji.ttf"));
+#endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1168,7 +1168,7 @@ TEST_P(AiksTest, CanRenderTextInSaveLayer) {
   canvas.Scale(Vector2{0.5, 0.5});
 
   // Blend the layer with the parent pass using kClear to expose the coverage.
-  canvas.SaveLayer({.blend_mode = Entity::BlendMode::kClear});
+  canvas.SaveLayer({.blend_mode = BlendMode::kClear});
   ASSERT_TRUE(RenderTextInCanvas(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -1199,7 +1199,7 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   paint.color = Color(0, 1, 0, 0.5);
   canvas.DrawCircle(Point(250, 200), 100, paint);
 
-  paint.blend_mode = Entity::BlendMode::kPlus;
+  paint.blend_mode = BlendMode::kPlus;
   paint.color = Color::Red();
   canvas.DrawCircle(Point(450, 250), 100, paint);
   paint.color = Color::Green();
@@ -1213,43 +1213,43 @@ TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
   std::vector<const char*> blend_mode_names;
-  std::vector<Entity::BlendMode> blend_mode_values;
+  std::vector<BlendMode> blend_mode_values;
   {
-    const std::vector<std::tuple<const char*, Entity::BlendMode>> blends = {
+    const std::vector<std::tuple<const char*, BlendMode>> blends = {
         // Pipeline blends (Porter-Duff alpha compositing)
-        {"Clear", Entity::BlendMode::kClear},
-        {"Source", Entity::BlendMode::kSource},
-        {"Destination", Entity::BlendMode::kDestination},
-        {"SourceOver", Entity::BlendMode::kSourceOver},
-        {"DestinationOver", Entity::BlendMode::kDestinationOver},
-        {"SourceIn", Entity::BlendMode::kSourceIn},
-        {"DestinationIn", Entity::BlendMode::kDestinationIn},
-        {"SourceOut", Entity::BlendMode::kSourceOut},
-        {"DestinationOut", Entity::BlendMode::kDestinationOut},
-        {"SourceATop", Entity::BlendMode::kSourceATop},
-        {"DestinationATop", Entity::BlendMode::kDestinationATop},
-        {"Xor", Entity::BlendMode::kXor},
-        {"Plus", Entity::BlendMode::kPlus},
-        {"Modulate", Entity::BlendMode::kModulate},
+        {"Clear", BlendMode::kClear},
+        {"Source", BlendMode::kSource},
+        {"Destination", BlendMode::kDestination},
+        {"SourceOver", BlendMode::kSourceOver},
+        {"DestinationOver", BlendMode::kDestinationOver},
+        {"SourceIn", BlendMode::kSourceIn},
+        {"DestinationIn", BlendMode::kDestinationIn},
+        {"SourceOut", BlendMode::kSourceOut},
+        {"DestinationOut", BlendMode::kDestinationOut},
+        {"SourceATop", BlendMode::kSourceATop},
+        {"DestinationATop", BlendMode::kDestinationATop},
+        {"Xor", BlendMode::kXor},
+        {"Plus", BlendMode::kPlus},
+        {"Modulate", BlendMode::kModulate},
         // Advanced blends (color component blends)
-        {"Screen", Entity::BlendMode::kScreen},
-        {"Overlay", Entity::BlendMode::kOverlay},
-        {"Darken", Entity::BlendMode::kDarken},
-        {"Lighten", Entity::BlendMode::kLighten},
-        {"ColorDodge", Entity::BlendMode::kColorDodge},
-        {"ColorBurn", Entity::BlendMode::kColorBurn},
-        {"HardLight", Entity::BlendMode::kHardLight},
-        {"SoftLight", Entity::BlendMode::kSoftLight},
-        {"Difference", Entity::BlendMode::kDifference},
-        {"Exclusion", Entity::BlendMode::kExclusion},
-        {"Multiply", Entity::BlendMode::kMultiply},
-        {"Hue", Entity::BlendMode::kHue},
-        {"Saturation", Entity::BlendMode::kSaturation},
-        {"Color", Entity::BlendMode::kColor},
-        {"Luminosity", Entity::BlendMode::kLuminosity},
+        {"Screen", BlendMode::kScreen},
+        {"Overlay", BlendMode::kOverlay},
+        {"Darken", BlendMode::kDarken},
+        {"Lighten", BlendMode::kLighten},
+        {"ColorDodge", BlendMode::kColorDodge},
+        {"ColorBurn", BlendMode::kColorBurn},
+        {"HardLight", BlendMode::kHardLight},
+        {"SoftLight", BlendMode::kSoftLight},
+        {"Difference", BlendMode::kDifference},
+        {"Exclusion", BlendMode::kExclusion},
+        {"Multiply", BlendMode::kMultiply},
+        {"Hue", BlendMode::kHue},
+        {"Saturation", BlendMode::kSaturation},
+        {"Color", BlendMode::kColor},
+        {"Luminosity", BlendMode::kLuminosity},
     };
     assert(blends.size() ==
-           static_cast<size_t>(Entity::BlendMode::kLastAdvancedBlendMode) + 1);
+           static_cast<size_t>(Entity::kLastAdvancedBlendMode) + 1);
     for (const auto& [name, mode] : blends) {
       blend_mode_names.push_back(name);
       blend_mode_values.push_back(mode);
@@ -1274,7 +1274,7 @@ TEST_P(AiksTest, ColorWheel) {
     };
 
     Paint paint;
-    paint.blend_mode = Entity::BlendMode::kSourceOver;
+    paint.blend_mode = BlendMode::kSourceOver;
 
     // Draw a fancy color wheel for the backdrop.
     // https://www.desmos.com/calculator/xw7kafthwd
@@ -1363,7 +1363,7 @@ TEST_P(AiksTest, ColorWheel) {
                       .blend_mode = blend_mode_values[current_blend_index]});
     {
       Paint paint;
-      paint.blend_mode = Entity::BlendMode::kPlus;
+      paint.blend_mode = BlendMode::kPlus;
       const Scalar x = std::sin(k2Pi / 3);
       const Scalar y = -std::cos(k2Pi / 3);
       paint.color = color0;
@@ -1615,7 +1615,7 @@ TEST_P(AiksTest, CanRenderClippedLayers) {
     // collapsed into the parent pass.
     canvas.DrawRect(
         Rect::MakeSize(Size{400, 400}),
-        {.color = Color::Green(), .blend_mode = Entity::BlendMode::kColorBurn});
+        {.color = Color::Green(), .blend_mode = BlendMode::kColorBurn});
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -1645,6 +1645,31 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
   draw_image_layer(effect_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, RenderTargetBuilderTest) {
+  std::shared_ptr<Context> context = GetContext();
+  RenderTarget render_target_ =
+      RenderTargetBuilder()
+          .SetSize(ISize(100, 100))
+          .SetRenderTargetType(RenderTargetType::kOffscreen)
+          .Build(*context);
+
+  std::map<size_t, ColorAttachment> color_attachments =
+      render_target_.GetColorAttachments();
+  ColorAttachment color0 = color_attachments.find(0)->second;
+  EXPECT_TRUE(color0.load_action == LoadAction::kClear);
+  EXPECT_TRUE(color0.store_action == StoreAction::kStore);
+  EXPECT_TRUE(color0.texture->GetTextureDescriptor().storage_mode ==
+              StorageMode::kDevicePrivate);
+
+  std::optional<StencilAttachment> stencil_attachement =
+      render_target_.GetStencilAttachment();
+  EXPECT_TRUE(stencil_attachement->load_action == LoadAction::kClear);
+  EXPECT_TRUE(stencil_attachement->store_action == StoreAction::kDontCare);
+  EXPECT_TRUE(
+      stencil_attachement->texture->GetTextureDescriptor().storage_mode ==
+      StorageMode::kDeviceTransient);
 }
 
 }  // namespace testing

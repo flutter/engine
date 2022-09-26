@@ -45,10 +45,12 @@ bool Command::BindResource(ShaderStage stage,
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.buffers[slot.binding] = {&metadata, view};
+      vertex_bindings.uniforms[slot.ext_res_0] = slot;
+      vertex_bindings.buffers[slot.ext_res_0] = {&metadata, view};
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.buffers[slot.binding] = {&metadata, view};
+      fragment_bindings.uniforms[slot.ext_res_0] = slot;
+      fragment_bindings.buffers[slot.ext_res_0] = {&metadata, view};
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
@@ -124,10 +126,10 @@ bool Command::BindResource(ShaderStage stage,
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
                            const ShaderMetadata& metadata,
-                           std::shared_ptr<const Texture> texture,
-                           std::shared_ptr<const Sampler> sampler) {
-  return BindResource(stage, slot, metadata, std::move(texture)) &&
-         BindResource(stage, slot, metadata, std::move(sampler));
+                           const std::shared_ptr<const Texture>& texture,
+                           const std::shared_ptr<const Sampler>& sampler) {
+  return BindResource(stage, slot, metadata, texture) &&
+         BindResource(stage, slot, metadata, sampler);
 }
 
 }  // namespace impeller
