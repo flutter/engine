@@ -39,6 +39,7 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
   contents->SetTexture(target);
   contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
+  contents->SetDeferApplyingOpacity(true);
 
   return paint_.WithFilters(std::move(contents), false, effect_transform);
 }

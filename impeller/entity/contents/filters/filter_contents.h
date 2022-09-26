@@ -39,7 +39,8 @@ class FilterContents : public Contents {
   static std::shared_ptr<FilterContents> MakeBlend(
       BlendMode blend_mode,
       FilterInput::Vector inputs,
-      std::optional<Color> foreground_color = std::nullopt);
+      std::optional<Color> foreground_color = std::nullopt,
+      bool need_absorb_opacity = true);
 
   static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
       FilterInput::Ref input,
@@ -82,13 +83,16 @@ class FilterContents : public Contents {
 
   static std::shared_ptr<FilterContents> MakeColorMatrix(
       FilterInput::Ref input,
-      const ColorMatrix& color_matrix);
+      const ColorMatrix& color_matrix,
+      bool need_absorb_opacity = true);
 
   static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
-      FilterInput::Ref input);
+      FilterInput::Ref input,
+      bool need_absorb_opacity = true);
 
   static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
-      FilterInput::Ref input);
+      FilterInput::Ref input,
+      bool need_absorb_opacity = true);
 
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
       FilterInput::Ref input,
@@ -133,6 +137,10 @@ class FilterContents : public Contents {
 
   Matrix GetTransform(const Matrix& parent_transform) const;
 
+  void SetNeedAbsorbOpacity(bool need_absorb_opacity);
+
+  bool GetNeedAbsorbOpacity() const;
+
  private:
   virtual std::optional<Rect> GetFilterCoverage(
       const FilterInput::Vector& inputs,
@@ -152,6 +160,7 @@ class FilterContents : public Contents {
   FilterInput::Vector inputs_;
   std::optional<Rect> coverage_crop_;
   Matrix effect_transform_;
+  bool need_absorb_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FilterContents);
 };

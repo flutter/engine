@@ -419,7 +419,8 @@ void DisplayListDispatcher::setColorSource(
 }
 
 static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
-    const flutter::DlColorFilter* filter) {
+    const flutter::DlColorFilter* filter,
+    bool need_absorb_opacity = true) {
   if (filter == nullptr) {
     return std::nullopt;
   }
@@ -428,25 +429,29 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       auto dl_blend = filter->asBlend();
       auto blend_mode = ToBlendMode(dl_blend->mode());
       auto color = ToColor(dl_blend->color());
-      return [blend_mode, color](FilterInput::Ref input) {
-        return FilterContents::MakeBlend(blend_mode, {input}, color);
+      return [blend_mode, color, need_absorb_opacity](FilterInput::Ref input) {
+        return FilterContents::MakeBlend(blend_mode, {input}, color,
+                                         need_absorb_opacity);
       };
     }
     case flutter::DlColorFilterType::kMatrix: {
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
       impeller::FilterContents::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
-      return [color_matrix](FilterInput::Ref input) {
-        return FilterContents::MakeColorMatrix({input}, color_matrix);
+      return [color_matrix, need_absorb_opacity](FilterInput::Ref input) {
+        return FilterContents::MakeColorMatrix({input}, color_matrix,
+                                               need_absorb_opacity);
       };
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      return [](FilterInput::Ref input) {
-        return FilterContents::MakeSrgbToLinearFilter({input});
+      return [need_absorb_opacity](FilterInput::Ref input) {
+        return FilterContents::MakeSrgbToLinearFilter({input},
+                                                      need_absorb_opacity);
       };
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      return [](FilterInput::Ref input) {
-        return FilterContents::MakeLinearToSrgbFilter({input});
+      return [need_absorb_opacity](FilterInput::Ref input) {
+        return FilterContents::MakeLinearToSrgbFilter({input},
+                                                      need_absorb_opacity);
       };
     case flutter::DlColorFilterType::kUnknown:
       FML_LOG(ERROR) << "requested DlColorFilterType::kUnknown";
@@ -612,7 +617,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto color_filter_image_filter = filter->asColorFilter();
       FML_DCHECK(color_filter_image_filter);
       auto color_filter_proc =
-          ToColorFilterProc(color_filter_image_filter->color_filter().get());
+          ToColorFilterProc(color_filter_image_filter->color_filter().get(),
+                            /*need_absorb_opacity=*/false);
       if (!color_filter_proc.has_value()) {
         return std::nullopt;
       }

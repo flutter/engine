@@ -87,6 +87,8 @@ std::optional<Snapshot> ColorMatrixFilterContents::RenderFilter(
         matrix[3], matrix[8], matrix[13], matrix[18]
     );
     // clang-format on
+    frag_info.input_alpha =
+        GetNeedAbsorbOpacity() ? input_snapshot->opacity : 1.0f;
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
@@ -103,9 +105,11 @@ std::optional<Snapshot> ColorMatrixFilterContents::RenderFilter(
   }
   out_texture->SetLabel("ColorMatrixFilter Texture");
 
-  return Snapshot{.texture = out_texture,
-                  .transform = input_snapshot->transform,
-                  .sampler_descriptor = input_snapshot->sampler_descriptor};
+  return Snapshot{
+      .texture = out_texture,
+      .transform = input_snapshot->transform,
+      .sampler_descriptor = input_snapshot->sampler_descriptor,
+      .opacity = GetNeedAbsorbOpacity() ? 1.0f : input_snapshot->opacity};
 }
 
 }  // namespace impeller
