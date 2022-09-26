@@ -100,6 +100,7 @@ Engine::Engine(Delegate& delegate,
           settings_.advisory_script_uri,           // advisory script uri
           settings_.advisory_script_entrypoint,    // advisory script entrypoint
           std::move(volatile_path_tracker),        // volatile path tracker
+          settings_.enable_impeller,               // enable impeller
       });
 }
 
@@ -538,6 +539,11 @@ const std::vector<std::string>& Engine::GetLastEntrypointArgs() const {
 // |RuntimeDelegate|
 void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return delegate_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
+std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
+    const {
+  return delegate_.GetPlatformMessageHandler();
 }
 
 void Engine::LoadDartDeferredLibrary(

@@ -66,7 +66,7 @@ class FrameDamage {
 
   // Adds additional damage (accumulated for double / triple buffering).
   // This is area that will be repainted alongside any changed part.
-  void AddAdditonalDamage(const SkIRect& damage) {
+  void AddAdditionalDamage(const SkIRect& damage) {
     additional_damage_.join(damage);
   }
 
@@ -81,7 +81,8 @@ class FrameDamage {
   // If previous layer tree is not specified, clip rect will be nullopt,
   // but the paint region of layer_tree will be calculated so that it can be
   // used for diffing of subsequent frames.
-  std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree);
+  std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree,
+                                        bool has_raster_cache);
 
   // See Damage::frame_damage.
   std::optional<SkIRect> GetFrameDamage() const {

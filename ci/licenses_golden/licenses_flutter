@@ -335,6 +335,7 @@ FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
 FILE: ../../../flutter/fml/platform/linux/paths_linux.cc
 FILE: ../../../flutter/fml/platform/linux/timerfd.cc
 FILE: ../../../flutter/fml/platform/linux/timerfd.h
+FILE: ../../../flutter/fml/platform/posix/command_line_posix.cc
 FILE: ../../../flutter/fml/platform/posix/file_posix.cc
 FILE: ../../../flutter/fml/platform/posix/mapping_posix.cc
 FILE: ../../../flutter/fml/platform/posix/native_library_posix.cc
@@ -342,6 +343,7 @@ FILE: ../../../flutter/fml/platform/posix/paths_posix.cc
 FILE: ../../../flutter/fml/platform/posix/posix_wrappers_posix.cc
 FILE: ../../../flutter/fml/platform/posix/shared_mutex_posix.cc
 FILE: ../../../flutter/fml/platform/posix/shared_mutex_posix.h
+FILE: ../../../flutter/fml/platform/win/command_line_win.cc
 FILE: ../../../flutter/fml/platform/win/errors_win.cc
 FILE: ../../../flutter/fml/platform/win/errors_win.h
 FILE: ../../../flutter/fml/platform/win/file_win.cc
@@ -586,10 +588,16 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_in
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/linear_to_srgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/local_matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/local_matrix_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
+FILE: ../../../flutter/impeller/entity/contents/gradient_generator.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
@@ -598,6 +606,8 @@ FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
+FILE: ../../../flutter/impeller/entity/contents/solid_fill_utils.cc
+FILE: ../../../flutter/impeller/entity/contents/solid_fill_utils.h
 FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.h
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.cc
@@ -650,6 +660,8 @@ FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
+FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
+FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
@@ -678,6 +690,8 @@ FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
+FILE: ../../../flutter/impeller/geometry/gradient.cc
+FILE: ../../../flutter/impeller/geometry/gradient.h
 FILE: ../../../flutter/impeller/geometry/matrix.cc
 FILE: ../../../flutter/impeller/geometry/matrix.h
 FILE: ../../../flutter/impeller/geometry/matrix_decomposition.cc
@@ -810,6 +824,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
@@ -861,6 +877,7 @@ FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.h
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h
+FILE: ../../../flutter/impeller/renderer/compute_unittests.cc
 FILE: ../../../flutter/impeller/renderer/context.cc
 FILE: ../../../flutter/impeller/renderer/context.h
 FILE: ../../../flutter/impeller/renderer/descriptor_set_layout.h
@@ -890,6 +907,8 @@ FILE: ../../../flutter/impeller/renderer/render_pass.cc
 FILE: ../../../flutter/impeller/renderer/render_pass.h
 FILE: ../../../flutter/impeller/renderer/render_target.cc
 FILE: ../../../flutter/impeller/renderer/render_target.h
+FILE: ../../../flutter/impeller/renderer/render_target_builder.cc
+FILE: ../../../flutter/impeller/renderer/render_target_builder.h
 FILE: ../../../flutter/impeller/renderer/renderer.cc
 FILE: ../../../flutter/impeller/renderer/renderer.h
 FILE: ../../../flutter/impeller/renderer/renderer_unittests.cc
@@ -999,6 +1018,7 @@ FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h
 FILE: ../../../flutter/lib/ui/key.dart
 FILE: ../../../flutter/lib/ui/lerp.dart
+FILE: ../../../flutter/lib/ui/math.dart
 FILE: ../../../flutter/lib/ui/natives.dart
 FILE: ../../../flutter/lib/ui/painting.dart
 FILE: ../../../flutter/lib/ui/painting/canvas.cc
@@ -1007,8 +1027,10 @@ FILE: ../../../flutter/lib/ui/painting/codec.cc
 FILE: ../../../flutter/lib/ui/painting/codec.h
 FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
-FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu.cc
-FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu.h
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.cc
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
@@ -1070,7 +1092,6 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
-FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
 FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
@@ -1120,6 +1141,9 @@ FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.cc
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port.h
+FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_port_unittests.cc
 FILE: ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
@@ -1141,6 +1165,7 @@ FILE: ../../../flutter/lib/web_ui/lib/hash_codes.dart
 FILE: ../../../flutter/lib/web_ui/lib/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/key.dart
 FILE: ../../../flutter/lib/web_ui/lib/lerp.dart
+FILE: ../../../flutter/lib/web_ui/lib/math.dart
 FILE: ../../../flutter/lib/web_ui/lib/natives.dart
 FILE: ../../../flutter/lib/web_ui/lib/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/path.dart
@@ -2020,6 +2045,7 @@ FILE: ../../../flutter/shell/platform/embedder/embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_exports.lst
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_metal.h
@@ -2059,6 +2085,7 @@ FILE: ../../../flutter/shell/platform/embedder/pixel_formats.cc
 FILE: ../../../flutter/shell/platform/embedder/pixel_formats.h
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
+FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder_unittests.cc
 FILE: ../../../flutter/shell/platform/embedder/test_utils/key_codes.g.h
 FILE: ../../../flutter/shell/platform/embedder/test_utils/proc_table_replacement.h
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
@@ -2101,12 +2128,10 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.h
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.cc
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.h
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_test_component_controller_v2.cc
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_test_component_controller_v2.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_test_component_controller.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_test_component_controller.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/builtin.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/script_runner_snapshot.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/shim.dart
@@ -2116,19 +2141,11 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/snapshot.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.json
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/logging.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/main.cc
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/aot_product_runtime
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/aot_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/common.shard.cml
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_aot_product_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_aot_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_aot_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_aot_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_jit_product_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_jit_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_jit_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_jit_runner.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/jit_product_runtime
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/jit_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart

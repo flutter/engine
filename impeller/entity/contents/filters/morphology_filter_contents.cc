@@ -88,9 +88,9 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-
-    auto transformed_radius = entity.GetTransformation().TransformDirection(
-        direction_ * radius_.radius);
+    auto transform = entity.GetTransformation() * effect_transform;
+    auto transformed_radius =
+        transform.TransformDirection(direction_ * radius_.radius);
     auto transformed_texture_vertices =
         Rect(Size(input_snapshot->texture->GetSize()))
             .GetTransformedPoints(input_snapshot->transform);
@@ -115,7 +115,7 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
     Command cmd;
     cmd.label = "Morphology Filter";
     auto options = OptionsFromPass(pass);
-    options.blend_mode = Entity::BlendMode::kSource;
+    options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
     cmd.BindVertices(vtx_buffer);
 
@@ -156,14 +156,26 @@ std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
   if (!coverage.has_value()) {
     return std::nullopt;
   }
+  auto transform = inputs[0]->GetTransform(entity) * effect_transform;
+  auto transformed_vector =
+      transform.TransformDirection(direction_ * radius_.radius).Abs();
 
-  auto transformed_vector = inputs[0]
-                                ->GetTransform(entity)
-                                .TransformDirection(direction_ * radius_.radius)
-                                .Abs();
-
-  auto extent = coverage->size + transformed_vector * 2;
-  return Rect(coverage->origin - transformed_vector, Size(extent.x, extent.y));
+  auto origin = coverage->origin;
+  auto size = Vector2(coverage->size);
+  switch (morph_type_) {
+    case FilterContents::MorphType::kDilate:
+      origin -= transformed_vector;
+      size += transformed_vector * 2;
+      break;
+    case FilterContents::MorphType::kErode:
+      origin += transformed_vector;
+      size -= transformed_vector * 2;
+      break;
+  }
+  if (size.x < 0 || size.y < 0) {
+    return Rect::MakeSize(Size(0, 0));
+  }
+  return Rect(origin, Size(size.x, size.y));
 }
 
 }  // namespace impeller

@@ -5,19 +5,20 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
+#include "impeller/fixtures/array.frag.h"
+#include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
 #include "impeller/fixtures/colors.frag.h"
 #include "impeller/fixtures/colors.vert.h"
 #include "impeller/fixtures/impeller.frag.h"
 #include "impeller/fixtures/impeller.vert.h"
+#include "impeller/fixtures/inactive_uniforms.frag.h"
+#include "impeller/fixtures/inactive_uniforms.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
-#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
-#include "impeller/fixtures/sample.comp.h"
-#endif
 #include "impeller/fixtures/test_texture.frag.h"
 #include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
@@ -739,50 +740,106 @@ TEST_P(RendererTest, TheImpeller) {
   OpenPlaygroundHere(callback);
 }
 
-#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
-TEST_P(RendererTest, CanCreateComputePass) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Compute is not supported on GL.");
-  }
-  if (GetParam() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Compute is not supported on Vulkan yet.");
-  }
+TEST_P(RendererTest, ArrayUniforms) {
+  using VS = ArrayVertexShader;
+  using FS = ArrayFragmentShader;
 
-  using CS = SampleComputeShader;
   auto context = GetContext();
-  ASSERT_TRUE(context);
-  using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
-  auto pipeline_desc =
-      SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
-  ASSERT_TRUE(pipeline_desc.has_value());
-  auto compute_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
-  ASSERT_TRUE(compute_pipeline);
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
 
-  auto cmd_buffer = context->CreateCommandBuffer();
-  auto pass = cmd_buffer->CreateComputePass();
-  ASSERT_TRUE(pass && pass->IsValid());
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
 
-  ComputeCommand cmd;
-  cmd.label = "Compute";
-  cmd.pipeline = compute_pipeline;
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Google Dots";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-  std::vector<CS::Input0> input_0;
-  std::vector<CS::Input1> input_1;
-  input_0.push_back(CS::Input0{Vector4(2.0, 3.0, 4.0, 5.0)});
-  input_1.push_back(CS::Input1{Vector4(6.0, 7.0, 8.0, 9.0)});
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
 
-  std::vector<CS::Output> output(5);
-  CS::BindInput0(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(output));
+    auto time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    auto y_pos = [&time](float x) {
+      return 400 + 10 * std::cos(time * 5 + x / 6);
+    };
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
-  ASSERT_TRUE(pass->EncodeCommands());
+    FS::FragInfo fs_uniform = {
+        .circle_positions = {Point(430, y_pos(0)), Point(480, y_pos(1)),
+                             Point(530, y_pos(2)), Point(580, y_pos(3))},
+        .colors = {Color::MakeRGBA8(66, 133, 244, 255),
+                   Color::MakeRGBA8(219, 68, 55, 255),
+                   Color::MakeRGBA8(244, 180, 0, 255),
+                   Color::MakeRGBA8(15, 157, 88, 255)},
+    };
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
 }
-#endif
+
+TEST_P(RendererTest, InactiveUniforms) {
+  using VS = InactiveUniformsVertexShader;
+  using FS = InactiveUniformsFragmentShader;
+
+  auto context = GetContext();
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
+
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Inactive Uniform";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+
+    FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
+                               .color = Color::Green()};
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
 
 }  // namespace testing
 }  // namespace impeller

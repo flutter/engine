@@ -1,4 +1,4 @@
-Signature: 11b0a72ed10e9281c4a3d1225c62a130
+Signature: 5411ec3d5169d0f2122aa17cb214bd89
 
 UNUSED LICENSES:
 
@@ -471,6 +471,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.gpu.agis/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
@@ -1224,6 +1225,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.gpu.agis/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
@@ -1874,6 +1876,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.gpu.agis/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
@@ -2305,6 +2308,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/component.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/log_settings.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/realm.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_provider_controller.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.gpu.agis/agis.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/signal_processing.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/codec_connector.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai_connector.fidl
@@ -3360,13 +3364,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
-ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/hw/usb/audio.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/hw/usb/hid.h + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/assert.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/compiler.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/hw/usb.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/hw/usb/audio.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/hw/usb/hid.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/hw/usb/ums.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/listnode.h
@@ -3388,7 +3391,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/assert.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/compiler.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/hw/usb.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/hw/usb/audio.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/hw/usb/hid.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/hw/usb/ums.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/listnode.h
@@ -3617,6 +3619,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.perfetto/consumer.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.perfetto/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.perfetto/producer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/overview.fidl
@@ -3633,6 +3636,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/media_buttons.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/mouse.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/registry.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/text.fidl
@@ -3657,7 +3661,10 @@ FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/sequence_id.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/transaction_header.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/transport_err.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/wire_format_metadata.h
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/internal/unknown_interactions_table.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/unknown_interactions_hlcpp.h
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/unknown_interactions_table.c
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/unknown_interactions_hlcpp.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml

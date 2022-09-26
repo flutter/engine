@@ -9,7 +9,23 @@ on:
 permissions: read-all
 
 jobs:
-  analysis:
+  vuln-scan:
+    name: Vulnerability scanning
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'flutter/engine' }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        with:
+          persist-credentials: false
+      - name: "setup python"
+        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
+        with:
+          python-version: '3.7.7' # install the python version needed
+      - name: "execute py script"
+        run: python ci/deps_parser.py
+
+  scorecards:
     name: Scorecards analysis
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'flutter/engine' }}
@@ -18,23 +34,15 @@ jobs:
       security-events: write
       actions: read
       contents: read
-
+      # Needed to access OIDC token.
+      id-token: write
     steps:
       - name: "Checkout code"
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
         with:
           persist-credentials: false
-
-      - name: setup python
-        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
-        with:
-          python-version: '3.7.7' # install the python version needed
-
-      - name: execute py script
-        run: python ci/deps_parser.py
-
       - name: "Run analysis"
-        uses: ossf/scorecard-action@ce330fde6b1a5c9c75b417e7efc510b822a35564
+        uses: ossf/scorecard-action@865b4092859256271290c77adbd10a43f4779972
         with:
           results_file: results.sarif
           results_format: sarif
@@ -57,6 +65,6 @@ jobs:
 
       # Upload the results to GitHub's code scanning dashboard.
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@b398f525a5587552e573b247ac661067fafa920b
+        uses: github/codeql-action/upload-sarif@86f3159a697a097a813ad9bfa0002412d97690a4
         with:
           sarif_file: results.sarif

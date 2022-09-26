@@ -40,6 +40,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
+#include "impeller/entity/glyph_atlas_sdf.frag.h"
+#include "impeller/entity/glyph_atlas_sdf.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
@@ -144,6 +146,8 @@ using SolidStrokePipeline =
     RenderPipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
+using GlyphAtlasSdfPipeline =
+    RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
 using VerticesPipeline =
     RenderPipelineT<VerticesVertexShader, VerticesFragmentShader>;
 using AtlasPipeline =
@@ -155,7 +159,7 @@ using ClipPipeline =
 
 struct ContentContextOptions {
   SampleCount sample_count = SampleCount::kCount1;
-  Entity::BlendMode blend_mode = Entity::BlendMode::kSourceOver;
+  BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
 
@@ -196,6 +200,7 @@ class ContentContext {
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
   }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRRectBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(rrect_blur_pipelines_, opts);
@@ -269,6 +274,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasSdfPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(glyph_atlas_sdf_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetVerticesPipeline(
@@ -398,6 +408,7 @@ class ContentContext {
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
+  mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
   mutable Variants<VerticesPipeline> vertices_pipelines_;
   mutable Variants<AtlasPipeline> atlas_pipelines_;
   // Advanced blends.

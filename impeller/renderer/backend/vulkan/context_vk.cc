@@ -432,6 +432,7 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   graphics_command_pool_ =
       CommandPoolVK::Create(*device_, graphics_queue->index);
+  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
   is_valid_ = true;
 }
 
@@ -472,8 +473,8 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-std::unique_ptr<Surface> ContextVK::AcquireSurface() {
-  return surface_producer_->AcquireSurface();
+std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
+  return surface_producer_->AcquireSurface(current_frame);
 }
 
 void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
@@ -503,6 +504,10 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
 
 bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
+}
+
+std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
+  return descriptor_pool_;
 }
 
 }  // namespace impeller

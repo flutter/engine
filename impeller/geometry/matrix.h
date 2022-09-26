@@ -63,6 +63,33 @@ struct Matrix {
 
   Matrix(const MatrixDecomposition& decomposition);
 
+  // clang-format off
+  static constexpr Matrix MakeColumn(
+                   Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
+                   Scalar m4,  Scalar m5,  Scalar m6,  Scalar m7,
+                   Scalar m8,  Scalar m9,  Scalar m10, Scalar m11,
+                   Scalar m12, Scalar m13, Scalar m14, Scalar m15){
+    return Matrix(m0,  m1,  m2,  m3,
+                  m4,  m5,  m6,  m7,
+                  m8,  m9,  m10, m11,
+                  m12, m13, m14, m15);
+
+  }
+  // clang-format on
+
+  // clang-format off
+  static constexpr Matrix MakeRow(
+                   Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
+                   Scalar m4,  Scalar m5,  Scalar m6,  Scalar m7,
+                   Scalar m8,  Scalar m9,  Scalar m10, Scalar m11,
+                   Scalar m12, Scalar m13, Scalar m14, Scalar m15){
+    return Matrix(m0,  m4,  m8,   m12,
+                  m1,  m5,  m9,   m13,
+                  m2,  m6,  m10,  m14,
+                  m3,  m7,  m11,  m15);
+  }
+  // clang-format on
+
   static constexpr Matrix MakeTranslation(const Vector3& t) {
     // clang-format off
     return Matrix(1.0, 0.0, 0.0, 0.0,
@@ -256,6 +283,31 @@ struct Matrix {
   constexpr bool IsAffine() const {
     return (m[2] == 0 && m[3] == 0 && m[6] == 0 && m[7] == 0 && m[8] == 0 &&
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
+  }
+
+  constexpr bool IsAligned(Scalar tolerance = 0) const {
+    int v[] = {!ScalarNearlyZero(m[0], tolerance),  //
+               !ScalarNearlyZero(m[1], tolerance),  //
+               !ScalarNearlyZero(m[2], tolerance),  //
+               !ScalarNearlyZero(m[4], tolerance),  //
+               !ScalarNearlyZero(m[5], tolerance),  //
+               !ScalarNearlyZero(m[6], tolerance),  //
+               !ScalarNearlyZero(m[8], tolerance),  //
+               !ScalarNearlyZero(m[9], tolerance),  //
+               !ScalarNearlyZero(m[10], tolerance)};
+    // Check if all three basis vectors are aligned to an axis.
+    if (v[0] + v[1] + v[2] != 1 ||  //
+        v[3] + v[4] + v[5] != 1 ||  //
+        v[6] + v[7] + v[8] != 1) {
+      return false;
+    }
+    // Ensure that none of the basis vectors overlap.
+    if (v[0] + v[3] + v[6] != 1 ||  //
+        v[1] + v[4] + v[7] != 1 ||  //
+        v[2] + v[5] + v[8] != 1) {
+      return false;
+    }
+    return true;
   }
 
   constexpr bool IsIdentity() const {

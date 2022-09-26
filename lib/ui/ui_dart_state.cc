@@ -36,7 +36,8 @@ UIDartState::Context::Context(
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+    bool enable_impeller)
     : task_runners(task_runners),
       snapshot_delegate(snapshot_delegate),
       io_manager(io_manager),
@@ -45,7 +46,8 @@ UIDartState::Context::Context(
       image_generator_registry(image_generator_registry),
       advisory_script_uri(advisory_script_uri),
       advisory_script_entrypoint(advisory_script_entrypoint),
-      volatile_path_tracker(volatile_path_tracker) {}
+      volatile_path_tracker(volatile_path_tracker),
+      enable_impeller(enable_impeller) {}
 
 UIDartState::UIDartState(
     TaskObserverAdd add_callback,
@@ -75,6 +77,10 @@ UIDartState::~UIDartState() {
 
 const std::string& UIDartState::GetAdvisoryScriptURI() const {
   return context_.advisory_script_uri;
+}
+
+bool UIDartState::IsImpellerEnabled() const {
+  return context_.enable_impeller;
 }
 
 void UIDartState::DidSetIsolate() {
@@ -107,11 +113,18 @@ UIDartState* UIDartState::Current() {
 
 void UIDartState::SetPlatformConfiguration(
     std::unique_ptr<PlatformConfiguration> platform_configuration) {
+  FML_DCHECK(IsRootIsolate());
   platform_configuration_ = std::move(platform_configuration);
   if (platform_configuration_) {
     platform_configuration_->client()->UpdateIsolateDescription(debug_name_,
                                                                 main_port_);
   }
+}
+
+void UIDartState::SetPlatformMessageHandler(
+    std::weak_ptr<PlatformMessageHandler> handler) {
+  FML_DCHECK(!IsRootIsolate());
+  platform_message_handler_ = handler;
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
@@ -212,6 +225,29 @@ void UIDartState::LogMessage(const std::string& tag,
 
 bool UIDartState::enable_skparagraph() const {
   return enable_skparagraph_;
+}
+
+Dart_Handle UIDartState::HandlePlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  if (platform_configuration_) {
+    platform_configuration_->client()->HandlePlatformMessage(
+        std::move(message));
+  } else {
+    std::shared_ptr<PlatformMessageHandler> handler =
+        platform_message_handler_.lock();
+    if (handler) {
+      handler->HandlePlatformMessage(std::move(message));
+    } else {
+      return tonic::ToDart(
+          "No platform channel handler registered for background isolate.");
+    }
+  }
+
+  return Dart_Null();
+}
+
+int64_t UIDartState::GetRootIsolateToken() const {
+  return IsRootIsolate() ? reinterpret_cast<int64_t>(this) : 0;
 }
 
 }  // namespace flutter

@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/isolate_configuration.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
@@ -53,12 +54,16 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const {
-  UIDartState::Context spawned_context{
-      context_.task_runners,         std::move(snapshot_delegate),
-      std::move(io_manager),         context_.unref_queue,
-      std::move(image_decoder),      std::move(image_generator_registry),
-      advisory_script_uri,           advisory_script_entrypoint,
-      context_.volatile_path_tracker};
+  UIDartState::Context spawned_context{context_.task_runners,
+                                       std::move(snapshot_delegate),
+                                       std::move(io_manager),
+                                       context_.unref_queue,
+                                       std::move(image_decoder),
+                                       std::move(image_generator_registry),
+                                       advisory_script_uri,
+                                       advisory_script_entrypoint,
+                                       context_.volatile_path_tracker,
+                                       context_.enable_impeller};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -386,6 +391,11 @@ bool RuntimeController::LaunchRootIsolate(
     FML_LOG(ERROR) << "Could not create root isolate.";
     return false;
   }
+
+  // Enable platform channels for background isolates.
+  strong_root_isolate->GetIsolateGroupData().SetPlatformMessageHandler(
+      strong_root_isolate->GetRootIsolateToken(),
+      client_.GetPlatformMessageHandler());
 
   // The root isolate ivar is weak.
   root_isolate_ = strong_root_isolate;

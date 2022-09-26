@@ -6,12 +6,16 @@
 
 namespace impeller {
 
-GlyphAtlas::GlyphAtlas() = default;
+GlyphAtlas::GlyphAtlas(Type type) : type_(type) {}
 
 GlyphAtlas::~GlyphAtlas() = default;
 
 bool GlyphAtlas::IsValid() const {
   return !!texture_;
+}
+
+GlyphAtlas::Type GlyphAtlas::GetType() const {
+  return type_;
 }
 
 const std::shared_ptr<Texture>& GlyphAtlas::GetTexture() const {

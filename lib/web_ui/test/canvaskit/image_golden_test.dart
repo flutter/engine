@@ -178,6 +178,28 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       testCollector.collectNow();
     });
 
+    test('CkImage.clone also clones the VideoFrame', () async {
+      final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+        data: kAnimatedGif,
+        debugSource: 'test',
+      );
+      final ui.FrameInfo frame = await image.getNextFrame();
+      final CkImage ckImage = frame.image as CkImage;
+      expect(ckImage.videoFrame, isNotNull);
+
+      final CkImage imageClone = ckImage.clone();
+      expect(imageClone.videoFrame, isNotNull);
+
+      final ByteData png = await imageClone.toByteData(format: ui.ImageByteFormat.png);
+      expect(png, isNotNull);
+
+      // The precise PNG encoding is browser-specific, but we can check the file
+      // signature.
+      expect(detectContentType(png.buffer.asUint8List()), 'image/png');
+      testCollector.collectNow();
+    // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
+    }, skip: isFirefox || isSafari);
+
     // Regression test for https://github.com/flutter/flutter/issues/72469
     test('CkImage can be resurrected', () {
       browserSupportsFinalizationRegistry = false;
@@ -514,7 +536,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         await matchGoldenFile(
           'canvaskit_read_back_decoded_image_$mode.png',
           region: const ui.Rect.fromLTRB(0, 0, 150, 150),
-          maxDiffRatePercent: 0,
         );
       }
 
@@ -566,7 +587,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       await matchGoldenFile(
         'canvaskit_cross_gl_context_image_$mode.png',
         region: const ui.Rect.fromLTRB(0, 0, 100, 100),
-        maxDiffRatePercent: 0,
       );
 
       await disposePlatformView(0);
@@ -611,7 +631,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       await matchGoldenFile(
         'canvaskit_picture_texture_toimage',
         region: const ui.Rect.fromLTRB(0, 0, 128, 128),
-        maxDiffRatePercent: 0,
       );
       mandrill.dispose();
       codec.dispose();

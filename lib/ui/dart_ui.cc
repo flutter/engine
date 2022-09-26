@@ -100,6 +100,9 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::ComputePlatformResolvedLocale, 1) \
   V(PlatformConfigurationNativeApi::SendPlatformMessage, 3)           \
   V(PlatformConfigurationNativeApi::RespondToPlatformMessage, 2)      \
+  V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
+  V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
+  V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
@@ -169,7 +172,6 @@ typedef CanvasPath Path;
   V(ColorFilter, initSrgbToLinearGamma, 1)             \
   V(EngineLayer, dispose, 1)                           \
   V(FragmentProgram, initFromAsset, 2)                 \
-  V(FragmentProgram, shader, 4)                        \
   V(ReusableFragmentShader, Dispose, 1)                \
   V(ReusableFragmentShader, SetSampler, 3)             \
   V(Gradient, initLinear, 6)                           \
