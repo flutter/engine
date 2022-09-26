@@ -32,27 +32,24 @@ static std::string GetSymbolName(void* symbol) {
   return name;
 }
 
+static int Backtrace(void** symbols, int size) {
+#if FML_OS_WIN
+  return CaptureStackBackTrace(0, size, symbols, NULL);
+#else
+  return ::backtrace(symbols, size);
+#endif  // FML_OS_WIN
+}
+
 std::string BacktraceHere(size_t offset) {
   constexpr size_t kMaxFrames = 256;
   void* symbols[kMaxFrames];
-
-// A function isn't always inlined though the `inline` keyword present, and
-// inlining behavior can be different between compilers.
-// Therefore, calling this function directly instead of splitting into another
-// function, and always enable to exclude here from stack.
-#if FML_OS_WIN
-  const auto available_frames =
-      CaptureStackBackTrace(0, kMaxFrames, symbols, NULL);
-#else
-  const auto available_frames = ::backtrace(symbols, kMaxFrames);
-#endif  // FML_OS_WIN
-
+  const auto available_frames = Backtrace(symbols, kMaxFrames);
   if (available_frames <= 0) {
     return "";
   }
 
   // Exclude here.
-  offset += 1;
+  offset += 2;
 
   std::stringstream stream;
   for (int i = offset; i < available_frames; ++i) {
