@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'bdb042b664e9d6cd30404634188efdcb51adf475',
+  'skia_revision': '56c606cac39ece14dd9cb66fad4985bc6903b08c',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -509,6 +509,12 @@ deps = {
 
   'src/third_party/imgui':
   Var('github_git') + '/ocornut/imgui.git' + '@' + '29d462ebce0275345a6ce4621d8fff0ded57c9e5',
+
+  'src/third_party/tinygltf':
+  Var('github_git') + '/syoyo/tinygltf.git' + '@' + '9bb5806df4055ac973b970ba5b3e27ce27d98148',
+
+  'src/third_party/json':
+  Var('github_git') + '/nlohmann/json.git' + '@' + '17d9eacd248f58b73f4d1be518ef649fe2295642',
 
   'src/third_party/gradle': {
     'packages': [
