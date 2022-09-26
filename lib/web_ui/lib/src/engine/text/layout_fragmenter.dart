@@ -28,7 +28,7 @@ class LayoutFragmenter extends TextFragmenter {
     int fragmentStart = 0;
 
     final Iterator<LineBreakFragment> lineBreakFragments = LineBreakFragmenter(paragraphText).fragment().iterator..moveNext();
-    final Iterator<BidiFragment> bidiFragments = BidiFragmenter(paragraphText, textDirection).fragment().iterator..moveNext();
+    final Iterator<BidiFragment> bidiFragments = BidiFragmenter(paragraphText).fragment().iterator..moveNext();
     final Iterator<ParagraphSpan> spans = paragraphSpans.iterator..moveNext();
 
     LineBreakFragment currentLineBreakFragment = lineBreakFragments.current;
@@ -59,6 +59,7 @@ class LayoutFragmenter extends TextFragmenter {
         fragmentEnd,
         lineBreakType,
         currentBidiFragment.textDirection,
+        currentBidiFragment.fragmentFlow,
         currentSpan,
         trailingNewlines: clampInt(trailingNewlines, 0, fragmentLength),
         trailingSpaces: clampInt(trailingSpaces, 0, fragmentLength),
@@ -102,6 +103,7 @@ abstract class _CombinedFragment extends TextFragment {
     super.end,
     this.type,
     this._textDirection,
+    this.fragmentFlow,
     this.span, {
     required this.trailingNewlines,
     required this.trailingSpaces,
@@ -110,8 +112,10 @@ abstract class _CombinedFragment extends TextFragment {
 
   final LineBreakType type;
 
-  ui.TextDirection get textDirection => _textDirection;
-  ui.TextDirection _textDirection;
+  ui.TextDirection? get textDirection => _textDirection;
+  ui.TextDirection? _textDirection;
+
+  final FragmentFlow fragmentFlow;
 
   final ParagraphSpan span;
 
@@ -119,16 +123,13 @@ abstract class _CombinedFragment extends TextFragment {
 
   final int trailingSpaces;
 
-  void setTextDirection(ui.TextDirection textDirection) {
-    _textDirection = textDirection;
-  }
-
   @override
   int get hashCode => Object.hash(
     start,
     end,
     type,
     textDirection,
+    fragmentFlow,
     span,
     trailingNewlines,
     trailingSpaces,
@@ -141,6 +142,7 @@ abstract class _CombinedFragment extends TextFragment {
         other.end == end &&
         other.type == type &&
         other.textDirection == textDirection &&
+        other.fragmentFlow == fragmentFlow &&
         other.span == span &&
         other.trailingNewlines == trailingNewlines &&
         other.trailingSpaces == trailingSpaces;
@@ -153,6 +155,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
     super.end,
     super.type,
     super.textDirection,
+    super.fragmentFlow,
     super.span, {
     required super.trailingNewlines,
     required super.trailingSpaces,
@@ -201,6 +204,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         index,
         LineBreakType.prohibited,
         textDirection,
+        fragmentFlow,
         span,
         trailingNewlines: trailingNewlines - secondTrailingNewlines,
         trailingSpaces: trailingSpaces - secondTrailingSpaces,
@@ -210,6 +214,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         end,
         type,
         textDirection,
+        fragmentFlow,
         span,
         trailingNewlines: secondTrailingNewlines,
         trailingSpaces: secondTrailingSpaces,
@@ -288,9 +293,14 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
 
   /// Set the horizontal position of this fragment relative to the [line] that
   /// contains it.
-  void setPosition({required double startOffset, required ParagraphLine line}) {
+  void setPosition({
+    required double startOffset,
+    required ParagraphLine line,
+    required ui.TextDirection textDirection,
+  }) {
     _startOffset = startOffset;
     _line = line;
+    _textDirection ??= textDirection;
   }
 
   /// Adjust the width of this fragment for paragraph justification.
@@ -358,7 +368,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     top,
     line.left + right,
     bottom,
-    textDirection,
+    textDirection!,
   );
 
   /// Whether or not the trailing spaces of this fragment are part of trailing
@@ -375,20 +385,20 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   ui.TextBox toPaintingTextBox() {
     if (_isPartOfTrailingSpacesInLine) {
       // For painting, we exclude the width of trailing spaces from the box.
-      return textDirection == ui.TextDirection.ltr
+      return textDirection! == ui.TextDirection.ltr
           ? ui.TextBox.fromLTRBD(
               line.left + left,
               top,
               line.left + right - widthOfTrailingSpaces,
               bottom,
-              textDirection,
+              textDirection!,
             )
           : ui.TextBox.fromLTRBD(
               line.left + left + widthOfTrailingSpaces,
               top,
               line.left + right,
               bottom,
-              textDirection,
+              textDirection!,
             );
     }
     return _textBoxIncludingTrailingSpaces;
@@ -440,8 +450,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     }
 
     final double left, right;
-    // TODO(mdebbar): Use `preferredDirection` instead.
-    if (textDirection == ui.TextDirection.ltr) {
+    if (textDirection! == ui.TextDirection.ltr) {
       // Example: let's say the text is "Loremipsum" and we want to get the box
       // for "rem". In this case, `before` is the width of "Lo", and `after`
       // is the width of "ipsum".
@@ -482,7 +491,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
       top,
       line.left + right,
       bottom,
-      textDirection,
+      textDirection!,
     );
   }
 
@@ -491,8 +500,6 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   ///
   /// The [x] offset is expected to be relative to the left edge of the fragment.
   ui.TextPosition getPositionForX(double x) {
-    // TODO(mdebbar): Implement this for placeholders & regular fragments.
-
     x = _makeXDirectionAgnostic(x);
 
     final int startIndex = start;
@@ -582,7 +589,6 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   ///          *---------------right----------------*
   ///
   double _makeXDirectionAgnostic(double x) {
-    // TODO(mdebbar): use `preferredDirection` instead.
     if (textDirection == ui.TextDirection.rtl) {
       return widthIncludingTrailingSpaces - x;
     }
@@ -593,13 +599,15 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
 class EllipsisFragment extends LayoutFragment {
   EllipsisFragment(
     int index,
-    ui.TextDirection textDirection,
     ParagraphSpan span,
   ) : super(
           index,
           index,
           LineBreakType.endOfText,
-          textDirection,
+          null,
+          // The ellipsis is always at the end of the line, so it can't be
+          // sandwiched. This means it'll always follow the paragraph direction.
+          FragmentFlow.sandwich,
           span,
           trailingNewlines: 0,
           trailingSpaces: 0,

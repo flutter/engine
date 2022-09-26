@@ -174,19 +174,25 @@ class CanvasParagraph implements ui.Paragraph {
     for (int i = 0; i < lines.length; i++) {
       final ParagraphLine line = lines[i];
       for (final LayoutFragment fragment in line.fragments) {
-        if (!fragment.isPlaceholder) {
-          final DomHTMLElement spanElement =
-              domDocument.createElement('flt-span') as DomHTMLElement;
-          applyTextStyleToElement(
-            element: spanElement,
-            style: fragment.style,
-            isSpan: true,
-          );
-          _positionSpanElement(spanElement, line, fragment);
-
-          spanElement.appendText(fragment.getText(this));
-          rootElement.append(spanElement);
+        if (fragment.isPlaceholder) {
+          continue;
         }
+
+        final String text = fragment.getText(this);
+        if (text.isEmpty) {
+          continue;
+        }
+
+        final DomHTMLElement spanElement = domDocument.createElement('flt-span') as DomHTMLElement;
+        applyTextStyleToElement(
+          element: spanElement,
+          style: fragment.style,
+          isSpan: true,
+        );
+        _positionSpanElement(spanElement, line, fragment);
+
+        spanElement.appendText(text);
+        rootElement.append(spanElement);
       }
     }
 

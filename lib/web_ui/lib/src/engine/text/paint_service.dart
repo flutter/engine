@@ -71,7 +71,7 @@ class TextPaintService {
     }
 
     _prepareCanvasForFragment(canvas, fragment);
-    final double fragmentX = fragment.textDirection == ui.TextDirection.ltr
+    final double fragmentX = fragment.textDirection! == ui.TextDirection.ltr
         ? fragment.left
         : fragment.right;
 
@@ -117,7 +117,7 @@ class TextPaintService {
       paint = (ui.Paint()..color = style.color!) as SurfacePaint;
     }
 
-    canvas.setCssFont(style.cssFontString, fragment.textDirection);
+    canvas.setCssFont(style.cssFontString, fragment.textDirection!);
     canvas.setUpPaint(paint.paintData, null);
   }
 }

@@ -14,6 +14,10 @@ const LineBreakType endOfText = LineBreakType.endOfText;
 const TextDirection ltr = TextDirection.ltr;
 const TextDirection rtl = TextDirection.rtl;
 
+const FragmentFlow own = FragmentFlow.own;
+const FragmentFlow previous = FragmentFlow.previous;
+const FragmentFlow sandwich = FragmentFlow.sandwich;
+
 const String rtlWord1 = 'واحدة';
 const String rtlWord2 = 'ثنتان';
 

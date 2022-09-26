@@ -7,32 +7,52 @@ import 'package:ui/ui.dart' as ui;
 import 'fragmenter.dart';
 import 'unicode_range.dart';
 
+enum FragmentFlow {
+  /// The fragment flows the same as its own text direction regardless of its
+  /// surroundings.
+  own,
+  /// The fragment flows the same as the previous fragment.
+  ///
+  /// If it's the first fragment in a line, then it flows the same as the
+  /// paragraph direction.
+  ///
+  /// E.g. digits.
+  previous,
+  /// If the previous and next fragments flow in the same direction, then this
+  /// fragment flows in that same direction. Otherwise, it flows the same as the
+  /// paragraph direction.
+  ///
+  /// E.g. spaces, symbols.
+  sandwich,
+}
+
 class BidiFragmenter extends TextFragmenter {
-  const BidiFragmenter(this.paragraphText, this.textDirection);
+  const BidiFragmenter(this.paragraphText);
 
   final String paragraphText;
-  final ui.TextDirection textDirection;
 
   @override
   List<BidiFragment> fragment() {
-    return _computeBidiFragments(paragraphText, textDirection);
+    return _computeBidiFragments(paragraphText);
   }
 }
 
 class BidiFragment extends TextFragment {
-  const BidiFragment(super.start, super.end, this.textDirection);
+  const BidiFragment(super.start, super.end, this.textDirection, this.fragmentFlow);
 
-  final ui.TextDirection textDirection;
+  final ui.TextDirection? textDirection;
+  final FragmentFlow fragmentFlow;
 
   @override
-  int get hashCode => Object.hash(start, end, textDirection);
+  int get hashCode => Object.hash(start, end, textDirection, fragmentFlow);
 
   @override
   bool operator ==(Object other) {
     return other is BidiFragment &&
         other.start == start &&
         other.end == end &&
-        other.textDirection == textDirection;
+        other.textDirection == textDirection &&
+        other.fragmentFlow == fragmentFlow;
   }
 
   @override
@@ -84,22 +104,68 @@ final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePro
   null,
 );
 
-List<BidiFragment> _computeBidiFragments(String text, ui.TextDirection baseDirection) {
+List<BidiFragment> _computeBidiFragments(String text) {
   final List<BidiFragment> fragments = <BidiFragment>[];
 
   int fragmentStart = 0;
-  ui.TextDirection fragmentDirection = _textDirectionLookup.find(text, 0) ?? baseDirection;
+  ui.TextDirection? textDirection = _getTextDirection(text, 0);
+  FragmentFlow fragmentFlow = _getFragmentFlow(text, 0);
 
   for (int i = 1; i < text.length; i++) {
-    final ui.TextDirection charDirection = _textDirectionLookup.find(text, i) ?? fragmentDirection;
-    if (charDirection != fragmentDirection) {
+    final ui.TextDirection? charTextDirection = _getTextDirection(text, i);
+
+    if (charTextDirection != textDirection) {
       // We've reached the end of a text direction fragment.
-      fragments.add(BidiFragment(fragmentStart, i, fragmentDirection));
+      fragments.add(BidiFragment(fragmentStart, i, textDirection, fragmentFlow));
       fragmentStart = i;
-      fragmentDirection = charDirection;
+      textDirection = charTextDirection;
+
+      fragmentFlow = _getFragmentFlow(text, i);
+    } else {
+      // This code handles the case of a sequence of digits followed by a sequence
+      // of LTR characters with no space in between.
+      if (fragmentFlow == FragmentFlow.previous) {
+        fragmentFlow = _getFragmentFlow(text, i);
+      }
     }
   }
 
-  fragments.add(BidiFragment(fragmentStart, text.length, fragmentDirection));
+  fragments.add(BidiFragment(fragmentStart, text.length, textDirection, fragmentFlow));
   return fragments;
+}
+
+ui.TextDirection? _getTextDirection(String text, int i) {
+  final ui.TextDirection? textDirection = _textDirectionLookup.find(text, i);
+  if (textDirection != null) {
+    return textDirection;
+  }
+
+  final int codeUnit = text.codeUnitAt(i);
+  // No matter what box direction it ends up being, a sequence of digits is
+  // always flows from left to right.
+  if (_isDigit(codeUnit)) {
+    return ui.TextDirection.ltr;
+  }
+  return null;
+}
+
+FragmentFlow _getFragmentFlow(String text, int i) {
+  final ui.TextDirection? textDirection = _textDirectionLookup.find(text, i);
+
+  switch (textDirection) {
+    case ui.TextDirection.ltr:
+    case ui.TextDirection.rtl:
+      return FragmentFlow.own;
+
+    case null:
+      final int codeUnit = text.codeUnitAt(i);
+      if (_isDigit(codeUnit)) {
+        return FragmentFlow.previous;
+      }
+      return FragmentFlow.sandwich;
+  }
+}
+
+bool _isDigit(int codeUnit) {
+  return codeUnit >= kChar_0 && codeUnit <= kChar_9;
 }

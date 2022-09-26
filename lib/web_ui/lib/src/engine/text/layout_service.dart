@@ -14,6 +14,7 @@ import 'line_breaker.dart';
 import 'measurement.dart';
 import 'paragraph.dart';
 import 'ruler.dart';
+import 'text_direction.dart';
 
 /// Performs layout on a [CanvasParagraph].
 ///
@@ -98,7 +99,9 @@ class TextLayoutService {
         layoutFragmenter.fragment()..forEach(spanometer.measureFragment);
 
     outerLoop:
-    for (final LayoutFragment fragment in fragments) {
+    for (int i = 0; i < fragments.length; i++) {
+      final LayoutFragment fragment = fragments[i];
+
       currentLine.addFragment(fragment);
 
       while (currentLine.isOverflowing) {
@@ -117,6 +120,8 @@ class TextLayoutService {
           // the line to overflow) needs to be force-broken.
           currentLine.forceBreakLastFragment();
         }
+
+        i += currentLine.appendZeroWidthFragments(fragments, startFrom: i + 1);
         lines.add(currentLine.build());
         currentLine = currentLine.nextLine();
       }
@@ -167,20 +172,21 @@ class TextLayoutService {
       height,
     );
 
-    // ************************** //
-    // *** POSITION FRAGMENTS *** //
-    // ************************** //
+    // ******************************* //
+    // *** PARAGRAPH JUSTIFICATION *** //
+    // ******************************* //
 
     if (lines.isNotEmpty) {
-      final ParagraphLine lastLine = lines.last;
       final bool shouldJustifyParagraph = width.isFinite &&
           paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
 
-      for (final ParagraphLine line in lines) {
+      if (shouldJustifyParagraph) {
         // Don't apply justification to the last line.
-        final bool shouldJustifyLine =
-            shouldJustifyParagraph && line != lastLine;
-        _positionLineFragments(line, withJustification: shouldJustifyLine);
+        for (int i = 0; i < lines.length - 1; i++) {
+          for (final LayoutFragment fragment in lines[i].fragments) {
+            fragment.justifyTo(paragraphWidth: width);
+          }
+        }
       }
     }
 
@@ -216,87 +222,6 @@ class TextLayoutService {
           break;
       }
     }
-  }
-
-  ui.TextDirection get _paragraphDirection =>
-      paragraph.paragraphStyle.effectiveTextDirection;
-
-  /// Positions the fragments in the given [line] and takes into account their
-  /// directions, the paragraph's direction, and alignment justification.
-  void _positionLineFragments(
-    ParagraphLine line, {
-    required bool withJustification,
-  }) {
-    final List<LayoutFragment> fragments = line.fragments;
-
-    int i = 0;
-    double cumulativeWidth = 0.0;
-    while (i < fragments.length) {
-      final LayoutFragment fragment = fragments[i];
-      if (fragment.textDirection == _paragraphDirection) {
-        // The fragment is in the same direction as the paragraph.
-        fragment.setPosition(startOffset: cumulativeWidth, line: line);
-        if (withJustification) {
-          fragment.justifyTo(paragraphWidth: width);
-        }
-
-        cumulativeWidth += fragment.widthIncludingTrailingSpaces;
-        i++;
-        continue;
-      }
-
-
-      final int first = i;
-      i++;
-      while (i < fragments.length && fragments[i].textDirection != _paragraphDirection) {
-        i++;
-      }
-      final int last = i - 1;
-
-      // The range [first:last] is the entire sequence of fragments having the
-      // opposite direction to the paragraph.
-      final double sequenceWidth = _positionLineBoxesInReverse(
-        line,
-        first,
-        last,
-        startOffset: cumulativeWidth,
-        withJustification: withJustification,
-      );
-      cumulativeWidth += sequenceWidth;
-    }
-  }
-
-  /// Positions a sequence of boxes in the direction opposite to the paragraph
-  /// text direction.
-  ///
-  /// This is needed when a right-to-left sequence appears in the middle of a
-  /// left-to-right paragraph, or vice versa.
-  ///
-  /// Returns the total width of all the positioned boxes in the sequence.
-  ///
-  /// [first] and [last] are expected to be inclusive.
-  double _positionLineBoxesInReverse(
-    ParagraphLine line,
-    int first,
-    int last, {
-    required double startOffset,
-    required bool withJustification,
-  }) {
-    final List<LayoutFragment> fragments = line.fragments;
-    double cumulativeWidth = 0.0;
-    for (int i = last; i >= first; i--) {
-      // Update the visual position of each fragment.
-      final LayoutFragment fragment = fragments[i];
-      assert(fragment.textDirection != _paragraphDirection);
-
-      fragment.setPosition(startOffset: startOffset + cumulativeWidth, line: line);
-      if (withJustification) {
-        fragment.justifyTo(paragraphWidth: width);
-      }
-
-      cumulativeWidth += fragment.widthIncludingTrailingSpaces;
-    }
-    return cumulativeWidth;
   }
 
   List<ui.TextBox> getBoxesForPlaceholders() {
@@ -532,6 +457,21 @@ class LineBuilder {
     return (maxLines == null) || (maxLines == lineNumber + 1);
   }
 
+  bool get _canAppendEmptyFragments {
+    if (isHardBreak) {
+      // Can't append more fragments to this line if it has a hard break.
+      return false;
+    }
+
+    if (_fragmentsForNextLine?.isNotEmpty ?? false) {
+      // If we already have fragments prepared for the next line, then we can't
+      // append more fragments to this line.
+      return false;
+    }
+
+    return true;
+  }
+
   ui.TextDirection get _paragraphDirection =>
       paragraph.paragraphStyle.effectiveTextDirection;
 
@@ -558,7 +498,7 @@ class LineBuilder {
     widthIncludingSpace += fragment.widthIncludingTrailingSpaces;
 
     if (fragment.isPlaceholder) {
-      _updateHeightForPlaceholder(fragment);
+      _adjustPlaceholderAscentDescent(fragment);
     }
 
     if (fragment.isBreak) {
@@ -569,7 +509,7 @@ class LineBuilder {
     descent = math.max(descent, fragment.descent);
   }
 
-  void _updateHeightForPlaceholder(LayoutFragment fragment) {
+  void _adjustPlaceholderAscentDescent(LayoutFragment fragment) {
     final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
 
     final double ascent, descent;
@@ -654,50 +594,52 @@ class LineBuilder {
     final bool hasOtherFragments = _fragments.length > 1;
     final bool allowLastFragmentToBeEmpty = hasOtherFragments || allowEmptyLine;
 
-    final LayoutFragment lastFragment = _fragments.removeLast();
+    final LayoutFragment lastFragment = _fragments.last;
+
+    if (lastFragment.isPlaceholder) {
+      // Placeholder can't be force-broken. Either keep all of it in the line or
+      // move it to the next line.
+
+      // TODO(mdebbar): Add test for the case of a single placeholder that
+      //                doesn't fit in one line.
+      if (allowLastFragmentToBeEmpty) {
+        _fragmentsForNextLine!.insert(0, _fragments.removeLast());
+        _recalculateMetrics();
+      }
+      return;
+    }
+
+    spanometer.currentSpan = lastFragment.span;
+    final double availableWidthForFragment = availableWidth - widthIncludingSpace + lastFragment.widthIncludingTrailingSpaces;
+    final int forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
+
+    final int breakingPoint = spanometer.forceBreak(
+      lastFragment.start,
+      forceBreakEnd,
+      availableWidth: availableWidthForFragment,
+      allowEmpty: allowLastFragmentToBeEmpty,
+    );
+
+    if (breakingPoint == forceBreakEnd) {
+      // The entire fragment remained intact. Let's keep everything as is.
+      return;
+    }
+
+    _fragments.removeLast();
     _recalculateMetrics();
 
-    final ParagraphSpan span = lastFragment.span;
-    if (span is FlatTextSpan) {
-      spanometer.currentSpan = span;
-      final double availableWidthForFragment = availableWidth - widthIncludingSpace;
-      final int forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
+    final List<LayoutFragment?> split = lastFragment.split(breakingPoint);
 
-      final int breakingPoint = spanometer.forceBreak(
-        lastFragment.start,
-        forceBreakEnd,
-        availableWidth: availableWidthForFragment,
-        allowEmpty: allowLastFragmentToBeEmpty,
-      );
+    final LayoutFragment? first = split.first;
+    if (first != null) {
+      spanometer.measureFragment(first);
+      addFragment(first);
+    }
 
-      if (breakingPoint == forceBreakEnd) {
-        // The entire fragment remained intact. Let's put it back without any
-        // changes.
-        addFragment(lastFragment);
-        return;
-      }
-
-      final List<LayoutFragment?> split = lastFragment.split(breakingPoint);
-      final LayoutFragment? first = split.first;
-      final LayoutFragment? second = split.last;
-      if (first != null) {
-        spanometer.measureFragment(first);
-        addFragment(first);
-      }
-      if (second != null) {
-        spanometer.measureFragment(second);
-        _fragmentsForNextLine!.insert(0, second);
-      }
-    } else {
-      // This is a placeholder and we can't force-break a placeholder.
-
-      if (allowLastFragmentToBeEmpty) {
-        _fragmentsForNextLine!.insert(0, lastFragment);
-      } else {
-        // TODO(mdebbar): Add test for the case of a single placeholder that
-        //                doesn't fit in one line.
-        addFragment(lastFragment);
-      }
+    final LayoutFragment? second = split.last;
+    if (second != null) {
+      spanometer.measureFragment(second);
+      _fragmentsForNextLine!.insert(0, second);
     }
   }
 
@@ -727,7 +669,6 @@ class LineBuilder {
 
     final EllipsisFragment ellipsisFragment = EllipsisFragment(
       endIndex,
-      lastFragment.textDirection,
       lastFragment.span,
     );
     ellipsisFragment.setMetrics(spanometer,
@@ -760,6 +701,20 @@ class LineBuilder {
     _recalculateMetrics();
   }
 
+  /// Appends as many zero-width fragments as this line allows.
+  ///
+  /// Returns the number of fragments that were appended.
+  int appendZeroWidthFragments(List<LayoutFragment> fragments, {required int startFrom}) {
+    int i = startFrom;
+    while (_canAppendEmptyFragments &&
+        i < fragments.length &&
+        fragments[i].widthExcludingTrailingSpaces == 0) {
+      addFragment(fragments[i]);
+      i++;
+    }
+    return i - startFrom;
+  }
+
   /// Builds the [ParagraphLine] instance that represents this line.
   ParagraphLine build() {
     if (_fragmentsForNextLine == null) {
@@ -767,11 +722,8 @@ class LineBuilder {
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
     }
 
-    _adjustTextDirections();
-
     final int trailingNewlines = isEmpty ? 0 : _fragments.last.trailingNewlines;
-
-    return ParagraphLine(
+    final ParagraphLine line = ParagraphLine(
       lineNumber: lineNumber,
       startIndex: startIndex,
       endIndex: endIndex,
@@ -789,122 +741,117 @@ class LineBuilder {
       fragments: _fragments,
       textDirection: _paragraphDirection,
     );
+    _positionFragments(line);
+    return line;
   }
 
-  void _adjustTextDirections() {
-    // TODO(mdebbar): Re-phrase.
-    // At this point, we found a fragment that has the opposite direction to
-    // the paragraph. This could be a sequence of one or more fragments.
-    //
-    // These fragments should flow in the opposite direction. So we need to
-    // position them in reverse order.
-    //
-    // If the last fragment in the sequence is space-only (contains only
-    // whitespace characters), it should be excluded from the sequence.
-    //
-    // Example: an LTR paragraph with the contents:
-    //
-    // "ABC rtl1 rtl2 rtl3 XYZ"
-    //     ^    ^    ^    ^
-    //    SP1  SP2  SP3  SP4
-    //
-    //
-    // text direction:    LTR            RTL              LTR
-    //                 |------>|<-----------------------|------>
-    //                 +----------------------------------------+
-    //                 | ABC | | rtl3 | | rtl2 | | rtl1 | | XYZ |
-    //                 +----------------------------------------+
-    //                       ^        ^        ^        ^
-    //                      SP1      SP3      SP2      SP4
-    //
-    // Notice how SP2 and SP3 are flowing in the RTL direction because of the
-    // surrounding RTL words. SP4 is also preceded by an RTL word, but it marks
-    // the end of the RTL sequence, so it goes back to flowing in the paragraph
-    // direction (LTR).
+  /// Positions the fragments taking into account their directions and the
+  /// paragraph's direction.
+  void _positionFragments(ParagraphLine line) {
+    ui.TextDirection previousDirection = _paragraphDirection;
 
-    int j = _fragments.length;
-    while (j > 0) {
-      if (_fragments[j - 1].textDirection == _paragraphDirection) {
-        j--;
-        continue;
-      }
+    double startOffset = 0.0;
+    int? sandwichStart;
+    int sequenceStart = 0;
 
-      // `j` now points to the end of a sequence of fragments having the
-      // opposite text direction.
-
-      int i = j - 1;
-      while (i >= 0) {
+    for (int i = 0; i <= _fragments.length; i++) {
+      if (i < _fragments.length) {
         final LayoutFragment fragment = _fragments[i];
-        if (fragment.textDirection == _paragraphDirection) {
-          break;
+
+        if (fragment.fragmentFlow == FragmentFlow.previous) {
+          sandwichStart = null;
+          continue;
+        }
+        if (fragment.fragmentFlow == FragmentFlow.sandwich) {
+          sandwichStart ??= i;
+          continue;
         }
 
-        _swapSpaceDirectionInFragment(i);
-        i--;
 
-        if (!fragment.isSpaceOnly) {
-          break;
+        assert(fragment.fragmentFlow == FragmentFlow.own);
+
+        final ui.TextDirection textDirection = fragment.textDirection!;
+
+        if (textDirection == previousDirection) {
+          sandwichStart = null;
+          continue;
         }
       }
 
-      while (i >= 0) {
-        final LayoutFragment fragment = _fragments[i];
-        if (fragment.textDirection == _paragraphDirection) {
-          break;
-        }
-        i--;
+      // We've reached a fragment that'll flip the text direction. Let's
+      // position the sequence that we've been traversing.
+
+      if (sandwichStart == null) {
+        // Position fragments in range [sequenceStart:i)
+        startOffset += _positionFragmentRange(
+          line: line,
+          start: sequenceStart,
+          end: i,
+          direction: previousDirection,
+          startOffset: startOffset,
+        );
+      } else {
+        // Position fragments in range [sequenceStart:sandwichStart)
+        startOffset += _positionFragmentRange(
+          line: line,
+          start: sequenceStart,
+          end: sandwichStart,
+          direction: previousDirection,
+          startOffset: startOffset,
+        );
+        // Position fragments in range [sandwichStart:i)
+        startOffset += _positionFragmentRange(
+          line: line,
+          start: sandwichStart,
+          end: i,
+          direction: _paragraphDirection,
+          startOffset: startOffset,
+        );
       }
 
-      j = i;
+      sequenceStart = i;
+      sandwichStart = null;
+
+      if (i < _fragments.length){
+        previousDirection = _fragments[i].textDirection!;
+      }
     }
   }
 
-  void _swapSpaceDirectionInFragment(int fragmentIndex) {
-    final LayoutFragment fragment = _fragments[fragmentIndex];
-    assert(fragment.textDirection != _paragraphDirection);
+  double _positionFragmentRange({
+    required ParagraphLine line,
+    required int start,
+    required int end,
+    required ui.TextDirection direction,
+    required double startOffset,
+  }) {
+    assert(start <= end);
 
-    if (fragment.trailingSpaces == 0) {
-      // The fragment contains no spaces, so there's nothing to do.
-      return;
-    }
+    double cumulativeWidth = 0.0;
 
-    if (fragment.isSpaceOnly) {
-      fragment.setTextDirection(_paragraphDirection);
+    if (direction == _paragraphDirection) {
+      for (int i = start; i < end; i++) {
+        cumulativeWidth +=
+            _positionOneFragment(line, _fragments[i], startOffset + cumulativeWidth, direction);
+      }
     } else {
-      // The fragment contains text and spaces. We need to split them first,
-      // then swap the direction of the space-only fragment.
-      final List<LayoutFragment?> split = _splitTrailingSpaces(fragment);
-      final LayoutFragment textFragment = split.first!;
-      final LayoutFragment spaceFragment = split.last!;
-      _fragments[fragmentIndex] = textFragment;
-
-      spaceFragment.setTextDirection(_paragraphDirection);
-      _fragments.insert(fragmentIndex + 1, spaceFragment);
+      for (int i = end - 1; i >= start; i--) {
+        cumulativeWidth +=
+            _positionOneFragment(line, _fragments[i], startOffset + cumulativeWidth, direction);
+      }
     }
+
+    return cumulativeWidth;
   }
 
-  List<LayoutFragment> _splitTrailingSpaces(LayoutFragment fragment) {
-    // The fragment has to contain text AND spaces.
-    assert(fragment.trailingSpaces > 0);
-    assert(!fragment.isSpaceOnly);
-
-    final List<LayoutFragment> split = fragment.split(fragment.end - fragment.trailingSpaces) as List<LayoutFragment>;
-    // We can reuse existing metrics with some adjustments instead of measuring again.
-    split.first.setMetrics(spanometer,
-      ascent: fragment.ascent,
-      descent: fragment.descent,
-      widthExcludingTrailingSpaces: fragment.widthExcludingTrailingSpaces,
-      // There's no trailing spaces anymore.
-      widthIncludingTrailingSpaces: fragment.widthExcludingTrailingSpaces,
-    );
-    split.last.setMetrics(spanometer,
-      ascent: fragment.ascent,
-      descent: fragment.descent,
-      // There's no text in this fragment, only spaces.
-      widthExcludingTrailingSpaces: 0.0,
-      widthIncludingTrailingSpaces: fragment.widthOfTrailingSpaces,
-    );
-    return split;
+  double _positionOneFragment(
+    ParagraphLine line,
+    LayoutFragment fragment,
+    double startOffset,
+    ui.TextDirection direction,
+  ) {
+    fragment.setPosition(startOffset: startOffset, line: line, textDirection: direction);
+    return fragment.widthIncludingTrailingSpaces;
   }
 
   /// Creates a new [LineBuilder] to build the next line in the paragraph.
