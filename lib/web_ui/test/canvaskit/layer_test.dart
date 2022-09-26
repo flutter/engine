@@ -52,5 +52,15 @@ void testMain() {
       recorder.beginRecording(ui.Rect.zero);
       LayerSceneBuilder().addPicture(ui.Offset.zero, recorder.endRecording());
     });
+
+    test('null ViewEmbedder with PlatformView', () async {
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      await createPlatformView(0, 'test-platform-view');
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(0, width: 10, height: 10);
+      sb.pushOffset(0, 0);
+      final LayerScene layerScene = sb.build();
+      await layerScene.toImage(100, 100);
+    });
   });
 }

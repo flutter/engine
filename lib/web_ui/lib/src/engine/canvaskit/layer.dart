@@ -591,7 +591,7 @@ class PlatformViewLayer extends Layer {
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-    prerollContext.viewEmbedder!.prerollCompositeEmbeddedView(
+    prerollContext.viewEmbedder?.prerollCompositeEmbeddedView(
       viewId,
       EmbeddedViewParams(
         offset,
@@ -604,7 +604,7 @@ class PlatformViewLayer extends Layer {
   @override
   void paint(PaintContext paintContext) {
     final CkCanvas? canvas =
-        paintContext.viewEmbedder!.compositeEmbeddedView(viewId);
+        paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
     if (canvas != null) {
       paintContext.leafNodesCanvas = canvas;
     }
