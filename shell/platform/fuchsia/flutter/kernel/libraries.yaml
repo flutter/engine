@@ -15,14 +15,6 @@ flutter_runner:
   include:
     - {path: "../../../../../../third_party/dart/sdk/lib/libraries.json", target: vm_common}
   libraries:
-    wasm:
-      uri: "../../../../../../third_party/dart/sdk/lib/wasm/wasm.dart"
-      patches:
-        - "../../../../../../third_party/dart/sdk/lib/_internal/vm/lib/wasm_patch.dart"
-
-    profiler:
-      uri: "../../../../../../third_party/dart/sdk/lib/profiler/profiler.dart"
-
     fuchsia.builtin:
       uri: "../../dart_runner/embedder/builtin.dart"
 
@@ -34,9 +26,6 @@ flutter_runner:
 
     fuchsia:
       uri: "../../dart-pkg/fuchsia/lib/fuchsia.dart"
-
-    _spirv:
-      uri: "../../../../../lib/spirv/lib/spirv.dart"
 
     ui:
       uri: "../../../../../lib/ui/ui.dart"
