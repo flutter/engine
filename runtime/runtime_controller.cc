@@ -56,16 +56,12 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const {
-  UIDartState::Context spawned_context{context_.task_runners,
-                                       std::move(snapshot_delegate),
-                                       std::move(io_manager),
-                                       context_.unref_queue,
-                                       std::move(image_decoder),
-                                       std::move(image_generator_registry),
-                                       advisory_script_uri,
-                                       advisory_script_entrypoint,
-                                       context_.volatile_path_tracker,
-                                       context_.enable_impeller};
+  UIDartState::Context spawned_context{
+      context_.task_runners,          std::move(snapshot_delegate),
+      std::move(io_manager),          context_.unref_queue,
+      std::move(image_decoder),       std::move(image_generator_registry),
+      std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
+      context_.volatile_path_tracker, context_.enable_impeller};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -362,7 +358,7 @@ tonic::DartErrorHandleType RuntimeController::GetLastError() {
 
 bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
-    fml::closure root_isolate_create_callback,
+    const fml::closure& root_isolate_create_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     const std::vector<std::string>& dart_entrypoint_args,
@@ -378,7 +374,7 @@ bool RuntimeController::LaunchRootIsolate(
           isolate_snapshot_,                              //
           std::make_unique<PlatformConfiguration>(this),  //
           DartIsolate::Flags{},                           //
-          std::move(root_isolate_create_callback),        //
+          root_isolate_create_callback,                   //
           isolate_create_callback_,                       //
           isolate_shutdown_callback_,                     //
           std::move(dart_entrypoint),                     //

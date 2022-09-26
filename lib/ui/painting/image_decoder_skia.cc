@@ -90,8 +90,8 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     return image->makeRasterImage();
   }
 
-  return ResizeRasterImage(std::move(image),
-                           SkISize::Make(target_width, target_height), flow);
+  return ResizeRasterImage(image, SkISize::Make(target_width, target_height),
+                           flow);
 }
 
 sk_sp<SkImage> ImageDecoderSkia::ImageFromCompressedData(
@@ -144,8 +144,7 @@ sk_sp<SkImage> ImageDecoderSkia::ImageFromCompressedData(
             << "Could not create a scaled image from a scaled bitmap.";
         return nullptr;
       }
-      return ResizeRasterImage(std::move(decoded_image), resized_dimensions,
-                               flow);
+      return ResizeRasterImage(decoded_image, resized_dimensions, flow);
     }
   }
 
@@ -154,7 +153,7 @@ sk_sp<SkImage> ImageDecoderSkia::ImageFromCompressedData(
     return nullptr;
   }
 
-  return ResizeRasterImage(std::move(image), resized_dimensions, flow);
+  return ResizeRasterImage(image, resized_dimensions, flow);
 }
 
 static SkiaGPUObject<SkImage> UploadRasterImage(

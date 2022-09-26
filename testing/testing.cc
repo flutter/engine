@@ -56,8 +56,9 @@ fml::UniqueFD OpenFixture(const std::string& fixture_name) {
   return fixture_fd;
 }
 
-std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(std::string fixture_name) {
-  return fml::FileMapping::CreateReadOnly(OpenFixture(std::move(fixture_name)));
+std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(
+    const std::string& fixture_name) {
+  return fml::FileMapping::CreateReadOnly(OpenFixture(fixture_name));
 }
 
 bool MemsetPatternSetOrCheck(uint8_t* buffer, size_t size, MemsetPatternOp op) {

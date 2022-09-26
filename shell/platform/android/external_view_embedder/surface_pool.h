@@ -66,7 +66,7 @@ class SurfacePool {
   void RecycleLayers();
 
   // Destroys all the layers in the pool.
-  void DestroyLayers(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  void DestroyLayers(const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
 
   // Sets the frame size used by the layers in the pool.
   // If the current layers in the pool have a different frame size,

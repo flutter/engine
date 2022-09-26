@@ -2552,8 +2552,7 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   document.AddMember("args", args, allocator);
 
-  return DispatchJSONPlatformMessage(engine, std::move(document),
-                                     "flutter/localization")
+  return DispatchJSONPlatformMessage(engine, document, "flutterlocalization")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,
                                   "Could not send message to update locale of "
@@ -2703,8 +2702,7 @@ FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
   document.SetObject();
   document.AddMember("type", "memoryPressure", allocator);
 
-  return DispatchJSONPlatformMessage(raw_engine, std::move(document),
-                                     "flutter/system")
+  return DispatchJSONPlatformMessage(raw_engine, document, "flutter/system")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(
                    kInternalInconsistency,

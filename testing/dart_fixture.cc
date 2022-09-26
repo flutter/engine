@@ -72,13 +72,14 @@ void DartFixture::SetSnapshotsAndAssets(Settings& settings) {
   }
 }
 
-void DartFixture::AddNativeCallback(std::string name,
+void DartFixture::AddNativeCallback(const std::string& name,
                                     Dart_NativeFunction callback) {
-  native_resolver_->AddNativeCallback(std::move(name), callback);
+  native_resolver_->AddNativeCallback(name, callback);
 }
 
-void DartFixture::AddFfiNativeCallback(std::string name, void* callback_ptr) {
-  native_resolver_->AddFfiNativeCallback(std::move(name), callback_ptr);
+void DartFixture::AddFfiNativeCallback(const std::string& name,
+                                       void* callback_ptr) {
+  native_resolver_->AddFfiNativeCallback(name, callback_ptr);
 }
 
 }  // namespace flutter::testing

@@ -213,14 +213,14 @@ sk_sp<SkData> EncodeImage(const sk_sp<SkImage>& raster_image,
 }
 
 void EncodeImageAndInvokeDataCallback(
-    sk_sp<DlImage> image,
+    const sk_sp<DlImage>& image,
     std::unique_ptr<DartPersistentValue> callback,
     ImageByteFormat format,
     const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner,
-    fml::RefPtr<fml::TaskRunner> io_task_runner,
-    fml::WeakPtr<GrDirectContext> resource_context,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
+    const fml::RefPtr<fml::TaskRunner>& io_task_runner,
+    const fml::WeakPtr<GrDirectContext>& resource_context,
+    const fml::WeakPtr<SnapshotDelegate>& snapshot_delegate,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   auto callback_task = fml::MakeCopyable(
       [callback = std::move(callback)](sk_sp<SkData> encoded) mutable {
@@ -230,8 +230,8 @@ void EncodeImageAndInvokeDataCallback(
   // EncodeImage.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   auto encode_task = [callback_task = std::move(callback_task), format,
-                      ui_task_runner](sk_sp<SkImage> raster_image) {
-    sk_sp<SkData> encoded = EncodeImage(std::move(raster_image), format);
+                      ui_task_runner](const sk_sp<SkImage>& raster_image) {
+    sk_sp<SkData> encoded = EncodeImage(raster_image, format);
     ui_task_runner->PostTask([callback_task = callback_task,
                               encoded = std::move(encoded)]() mutable {
       callback_task(std::move(encoded));
@@ -239,10 +239,9 @@ void EncodeImageAndInvokeDataCallback(
   };
 
   FML_DCHECK(image);
-  ConvertImageToRaster(
-      std::move(image), encode_task, std::move(raster_task_runner),
-      std::move(io_task_runner), std::move(resource_context),
-      std::move(snapshot_delegate), is_gpu_disabled_sync_switch);
+  ConvertImageToRaster(image, encode_task, raster_task_runner, io_task_runner,
+                       resource_context, snapshot_delegate,
+                       is_gpu_disabled_sync_switch);
 }
 
 }  // namespace
@@ -276,10 +275,9 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
        snapshot_delegate =
            UIDartState::Current()->GetSnapshotDelegate()]() mutable {
         EncodeImageAndInvokeDataCallback(
-            std::move(image), std::move(callback), image_format,
-            std::move(ui_task_runner), std::move(raster_task_runner),
-            std::move(io_task_runner), io_manager->GetResourceContext(),
-            std::move(snapshot_delegate),
+            std::move(image), std::move(callback), image_format, ui_task_runner,
+            std::move(raster_task_runner), std::move(io_task_runner),
+            io_manager->GetResourceContext(), std::move(snapshot_delegate),
             io_manager->GetIsGpuDisabledSyncSwitch());
       }));
 

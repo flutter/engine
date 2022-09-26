@@ -796,8 +796,9 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
-        if (end_frame_called)
+        if (end_frame_called) {
           return;
+        }
         ASSERT_TRUE(raster_thread_merger.get() == nullptr);
         ASSERT_FALSE(should_resubmit_frame);
         end_frame_called = true;

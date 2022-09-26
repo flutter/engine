@@ -32,7 +32,7 @@ EmbedderEngine::EmbedderEngine(
     : thread_host_(std::move(thread_host)),
       task_runners_(task_runners),
       run_configuration_(std::move(run_configuration)),
-      shell_args_(std::make_unique<ShellArgs>(std::move(settings),
+      shell_args_(std::make_unique<ShellArgs>(settings,
                                               on_create_platform_view,
                                               on_create_rasterizer)),
       external_texture_resolver_(std::move(external_texture_resolver)) {}

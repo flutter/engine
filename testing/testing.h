@@ -70,7 +70,8 @@ fml::UniqueFD OpenFixture(const std::string& fixture_name);
 /// @return     A mapping to the contents of fixture or null if the fixture does
 ///             not exist or its contents cannot be mapped in.
 ///
-std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(std::string fixture_name);
+std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(
+    const std::string& fixture_name);
 
 //------------------------------------------------------------------------------
 /// @brief      Gets the name of the currently running test. This is useful in

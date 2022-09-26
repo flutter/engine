@@ -47,7 +47,7 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                    uint32_t height,
                                    Dart_Handle raw_image_handle);
 
-  static Dart_Handle RasterizeToImage(sk_sp<DisplayList> display_list,
+  static Dart_Handle RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback);

@@ -299,20 +299,20 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&result, &image_info, &display_list] {
-            result = MakeBitmapImage(std::move(display_list), image_info);
+            result = MakeBitmapImage(display_list, image_info);
           })
           .SetIfFalse([&result, &image_info, &display_list,
                        surface = surface_.get(),
                        gpu_image_behavior = gpu_image_behavior_] {
             if (!surface ||
                 gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
-              result = MakeBitmapImage(std::move(display_list), image_info);
+              result = MakeBitmapImage(display_list, image_info);
               return;
             }
 
             auto* context = surface->GetContext();
             if (!context) {
-              result = MakeBitmapImage(std::move(display_list), image_info);
+              result = MakeBitmapImage(display_list, image_info);
               return;
             }
 

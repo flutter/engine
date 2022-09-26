@@ -176,8 +176,7 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
   ui_task_runner->PostTask(fml::MakeCopyable([callback = std::move(callback),
                                               image = std::move(image),
                                               duration, trace_id]() mutable {
-    InvokeNextFrameCallback(std::move(image), duration, std::move(callback),
-                            trace_id);
+    InvokeNextFrameCallback(image, duration, std::move(callback), trace_id);
   }));
 }
 
@@ -217,7 +216,7 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
           return;
         }
         state->GetNextFrameAndInvokeCallback(
-            std::move(callback), std::move(ui_task_runner),
+            std::move(callback), ui_task_runner,
             io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),
             io_manager->GetIsGpuDisabledSyncSwitch(), trace_id);
       }));

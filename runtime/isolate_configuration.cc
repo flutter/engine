@@ -251,8 +251,8 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
       return nullptr;
     }
     auto kernel_pieces_paths = ParseKernelListPaths(std::move(kernel_list));
-    auto kernel_mappings = PrepareKernelMappings(std::move(kernel_pieces_paths),
-                                                 asset_manager, io_worker);
+    auto kernel_mappings =
+        PrepareKernelMappings(kernel_pieces_paths, asset_manager, io_worker);
     return CreateForKernelList(std::move(kernel_mappings));
   }
 

@@ -146,7 +146,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   [[nodiscard]] bool LaunchRootIsolate(
       const Settings& settings,
-      fml::closure root_isolate_create_callback,
+      const fml::closure& root_isolate_create_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       const std::vector<std::string>& dart_entrypoint_args,

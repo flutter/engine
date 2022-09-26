@@ -30,7 +30,7 @@ bool TextFrame::AddTextRun(const TextRun& run) {
     return false;
   }
   has_color_ |= run.HasColor();
-  runs_.emplace_back(std::move(run));
+  runs_.emplace_back(run);
   return true;
 }
 

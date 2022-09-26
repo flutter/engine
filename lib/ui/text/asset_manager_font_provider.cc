@@ -51,7 +51,7 @@ SkFontStyleSet* AssetManagerFontProvider::MatchFamily(
 }
 
 void AssetManagerFontProvider::RegisterAsset(const std::string& family_name,
-                                             std::string asset) {
+                                             const std::string& asset) {
   std::string canonical_name = CanonicalFamilyName(family_name);
   auto family_it = registered_families_.find(canonical_name);
 
@@ -63,7 +63,7 @@ void AssetManagerFontProvider::RegisterAsset(const std::string& family_name,
     family_it = registered_families_.emplace(value).first;
   }
 
-  family_it->second->registerAsset(std::move(asset));
+  family_it->second->registerAsset(asset);
 }
 
 AssetManagerFontStyleSet::AssetManagerFontStyleSet(

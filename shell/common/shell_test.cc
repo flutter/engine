@@ -353,7 +353,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
       return ShellTestPlatformView::Create(shell,                             //
                                            shell.GetTaskRunners(),            //
                                            vsync_clock,                       //
-                                           std::move(create_vsync_waiter),    //
+                                           create_vsync_waiter,               //
                                            rendering_backend,                 //
                                            shell_test_external_view_embedder  //
       );

@@ -64,7 +64,7 @@ Dart_NativeFunction TestDartNativeResolver::DartNativeEntryResolverCallback(
   }
 
   if (auto resolver = found->second.lock()) {
-    return resolver->ResolveCallback(std::move(name));
+    return resolver->ResolveCallback(name);
   } else {
     gIsolateResolvers.erase(found);
   }

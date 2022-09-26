@@ -77,7 +77,7 @@ static sk_sp<DlImage> CreateDeferredImage(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   return DlDeferredImageGPUSkia::Make(
       image_info, std::move(display_list), std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue));
+      raster_task_runner, std::move(unref_queue));
 }
 
 // static
@@ -95,7 +95,7 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
 
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
-      dart_state->IsImpellerEnabled(), display_list, width, height,
+      dart_state->IsImpellerEnabled(), std::move(display_list), width, height,
       std::move(snapshot_delegate), std::move(raster_task_runner),
       std::move(unref_queue));
   image->set_image(dl_image);
@@ -115,11 +115,11 @@ size_t Picture::GetAllocationSize() const {
   }
 }
 
-Dart_Handle Picture::RasterizeToImage(sk_sp<DisplayList> display_list,
+Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
-  return RasterizeToImage(std::move(display_list), nullptr, width, height,
+  return RasterizeToImage(display_list, nullptr, width, height,
                           raw_image_callback);
 }
 

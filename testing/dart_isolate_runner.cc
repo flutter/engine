@@ -165,7 +165,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
       task_runners.GetUITaskRunner(), fml::MakeCopyable([&]() mutable {
         result = RunDartCodeInIsolateOnUITaskRunner(
             vm_ref, settings, task_runners, entrypoint, args, kernel_file_path,
-            io_manager, std::move(volatile_path_tracker));
+            io_manager, volatile_path_tracker);
         latch.Signal();
       }));
   latch.Wait();

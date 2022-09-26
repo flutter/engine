@@ -65,7 +65,7 @@ class AssetManagerFontProvider : public txt::FontAssetProvider {
 
   ~AssetManagerFontProvider() override;
 
-  void RegisterAsset(const std::string& family_name, std::string asset);
+  void RegisterAsset(const std::string& family_name, const std::string& asset);
 
   // |FontAssetProvider|
   size_t GetFamilyCount() const override;

@@ -86,9 +86,9 @@ bool SurfacePool::HasLayers() {
 }
 
 void SurfacePool::DestroyLayers(
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
   std::lock_guard lock(mutex_);
-  DestroyLayersLocked(std::move(jni_facade));
+  DestroyLayersLocked(jni_facade);
 }
 
 void SurfacePool::DestroyLayersLocked(

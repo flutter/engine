@@ -998,7 +998,7 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     isolate_data.release();
     // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
-    success = InitializeIsolate(std::move(embedder_isolate), isolate, error);
+    success = InitializeIsolate(embedder_isolate, isolate, error);
   }
   if (!success) {
     Dart_ShutdownIsolate();

@@ -20,14 +20,14 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Make(
 #if IMPELLER_SUPPORTS_RENDERING
   if (settings.enable_impeller) {
     return std::make_unique<ImageDecoderImpeller>(
-        std::move(runners),                 //
+        runners,                            //
         std::move(concurrent_task_runner),  //
         std::move(io_manager)               //
     );
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
   return std::make_unique<ImageDecoderSkia>(
-      std::move(runners),                 //
+      runners,                            //
       std::move(concurrent_task_runner),  //
       std::move(io_manager)               //
   );

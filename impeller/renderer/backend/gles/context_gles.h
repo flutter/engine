@@ -21,7 +21,7 @@ class ContextGLES final : public Context,
  public:
   static std::shared_ptr<ContextGLES> Create(
       std::unique_ptr<ProcTableGLES> gl,
-      std::vector<std::shared_ptr<fml::Mapping>> shader_libraries);
+      const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries);
 
   // |Context|
   ~ContextGLES() override;

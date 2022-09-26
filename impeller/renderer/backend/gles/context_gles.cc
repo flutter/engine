@@ -12,9 +12,9 @@ namespace impeller {
 
 std::shared_ptr<ContextGLES> ContextGLES::Create(
     std::unique_ptr<ProcTableGLES> gl,
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries) {
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries) {
   return std::shared_ptr<ContextGLES>(
-      new ContextGLES(std::move(gl), std::move(shader_libraries)));
+      new ContextGLES(std::move(gl), shader_libraries));
 }
 
 ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,

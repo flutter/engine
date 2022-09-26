@@ -531,7 +531,7 @@ std::unique_ptr<Shell> Shell::Spawn(
           const fml::RefPtr<const DartSnapshot>& isolate_snapshot,
           const TaskRunners& task_runners, const PlatformData& platform_data,
           const Settings& settings, std::unique_ptr<Animator> animator,
-          fml::WeakPtr<IOManager> io_manager,
+          const fml::WeakPtr<IOManager>& io_manager,
           const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
           fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
           const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
@@ -541,7 +541,7 @@ std::unique_ptr<Shell> Shell::Spawn(
             /*settings=*/settings,
             /*animator=*/std::move(animator),
             /*initial_route=*/initial_route,
-            /*io_manager=*/std::move(io_manager),
+            /*io_manager=*/io_manager,
             /*snapshot_delegate=*/std::move(snapshot_delegate));
       },
       is_gpu_disabled);
@@ -1168,7 +1168,7 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
         if (rasterizer) {
           std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
-            rasterizer->Draw(std::move(pipeline), std::move(discard_callback));
+            rasterizer->Draw(pipeline, std::move(discard_callback));
           }
 
           if (waiting_for_first_frame.load()) {
@@ -1823,7 +1823,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
     }
   }
 
-  if (engine_->UpdateAssetManager(std::move(asset_manager))) {
+  if (engine_->UpdateAssetManager(asset_manager)) {
     response->AddMember("type", "Success", allocator);
     auto new_description = GetServiceProtocolDescription();
     rapidjson::Value view(rapidjson::kObjectType);

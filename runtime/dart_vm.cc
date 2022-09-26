@@ -271,7 +271,7 @@ std::shared_ptr<DartVM> DartVM::Create(
 
   // Note: std::make_shared unviable due to hidden constructor.
   return std::shared_ptr<DartVM>(
-      new DartVM(std::move(vm_data), std::move(isolate_name_server)));
+      new DartVM(vm_data, std::move(isolate_name_server)));
 }
 
 static std::atomic_size_t gVMLaunchCount;
