@@ -3162,7 +3162,7 @@ class ColorFilter implements ImageFilter {
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.
   ///
-  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// Every pixel's color value, represented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
   ///     | R' |   | a00 a01 a02 a03 a04 |   | R |
