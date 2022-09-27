@@ -67,8 +67,8 @@ TEST(LayerStateStack, Opacity) {
         state_stack.set_builder_delegate(nullptr);
 
         DisplayListBuilder expected;
-        DlPaint save_paint = DlPaint().setOpacity(
-            state_stack.outstanding_opacity());
+        DlPaint save_paint =
+            DlPaint().setOpacity(state_stack.outstanding_opacity());
         expected.saveLayer(&rect, &save_paint);
         expected.drawRect(rect, DlPaint());
         expected.restore();

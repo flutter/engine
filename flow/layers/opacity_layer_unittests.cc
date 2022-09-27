@@ -676,12 +676,8 @@ TEST_F(OpacityLayerTest, FullyOpaqueWithFractionalValues) {
        MockCanvas::DrawCall{
            1, MockCanvas::SetMatrixData{SkM44(
                   RasterCacheUtil::GetIntegralTransCTM(layer_transform))}},
-       MockCanvas::DrawCall{
-           1, MockCanvas::SaveLayerData{opacity_bounds, opacity_paint, nullptr,
-                                        2}},
-       MockCanvas::DrawCall{2,
+       MockCanvas::DrawCall{1,
                             MockCanvas::DrawPathData{child_path, child_paint}},
-       MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
