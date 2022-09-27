@@ -40,5 +40,5 @@
 - test_command: run-test-suite fuchsia-pkg://fuchsia.com/dart-jit-runner-integration-test#meta/dart-jit-runner-integration-test.cm
   packages:
     - dart-jit-runner-integration-test-0.far
-    - dart-jit-runner-0.far
+    - dart_jit_runner_0.far
     - gen/flutter/shell/platform/fuchsia/dart_runner/tests/startup_integration_test/dart_jit_runner/dart_jit_echo_server/dart_jit_echo_server/dart_jit_echo_server.far
