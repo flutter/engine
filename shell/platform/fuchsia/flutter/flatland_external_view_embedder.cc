@@ -175,7 +175,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
     // First re-scale everything according to the DPR.
     const float inv_dpr = 1.0f / frame_dpr_;
-    flatland_->flatland()->SetScale(root_transform_id_, {inv_dpr, inv_dpr)});
+    flatland_->flatland()->SetScale(root_transform_id_, {inv_dpr, inv_dpr});
 
     size_t flatland_layer_index = 0;
     for (const auto& layer_id : frame_composition_order_) {
