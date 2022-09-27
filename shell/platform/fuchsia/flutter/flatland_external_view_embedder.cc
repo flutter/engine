@@ -96,6 +96,7 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   // Reset for new frame.
   Reset();
   frame_size_ = frame_size;
+  frame_dpr_ = device_pixel_ratio;
 
   // TODO(fxbug.dev/94000): Handle device pixel ratio.
 
@@ -454,6 +455,7 @@ void FlatlandExternalViewEmbedder::Reset() {
   frame_layers_.clear();
   frame_composition_order_.clear();
   frame_size_ = SkISize::Make(0, 0);
+  frame_dpr_ = 1.f;
 
   // Clear all children from root.
   for (const auto& transform : child_transforms_) {
