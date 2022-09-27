@@ -3,8 +3,7 @@ on:
   # Only the default branch is supported.
   branch_protection_rule:
   push:
-    # branches: [ main ]
-    branches: [ osv-scan ] # @jseales TODO -- allow for testing
+    branches: [ main ]
 
 # Declare default permissions as read only.
 permissions: read-all
