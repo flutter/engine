@@ -1,0 +1,30 @@
+#pragma once
+
+#include <emscripten/html5_webgl.h>
+#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkSurface.h"
+
+namespace Skwasm {
+
+struct SurfaceWrapper {
+  EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context;
+  sk_sp<GrDirectContext> grContext;
+  sk_sp<SkSurface> surface;
+};
+
+struct CanvasWrapper {
+  EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context;
+  SkCanvas* canvas;
+};
+
+inline void makeCurrent(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE handle) {
+  if (!handle)
+    return;
+
+  int result = emscripten_webgl_make_context_current(handle);
+  if (result != EMSCRIPTEN_RESULT_SUCCESS) {
+    printf("make_context failed: %d", result);
+  }
+}
+
+}  // namespace Skwasm
