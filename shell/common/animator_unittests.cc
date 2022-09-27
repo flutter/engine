@@ -248,6 +248,72 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
   PostTaskSync(task_runners.GetUITaskRunner(), [&] { animator.reset(); });
 }
 
+TEST_F(ShellTest, AnimatorAllowsRenderMultipleTimes) {
+  FakeAnimatorDelegate delegate;
+  TaskRunners task_runners = {
+      "test",
+      CreateNewThread(),  // platform
+      CreateNewThread(),  // raster
+      CreateNewThread(),  // ui
+      CreateNewThread()   // io
+  };
+
+  auto clock = std::make_shared<ShellTestVsyncClock>();
+  std::shared_ptr<Animator> animator;
+
+  auto flush_vsync_task = [&] {
+    fml::AutoResetWaitableEvent ui_latch;
+    task_runners.GetUITaskRunner()->PostTask([&] { ui_latch.Signal(); });
+    do {
+      clock->SimulateVSync();
+    } while (ui_latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1)));
+  };
+
+  // Create the animator on the UI task runner.
+  PostTaskSync(task_runners.GetUITaskRunner(), [&] {
+    auto vsync_waiter = static_cast<std::unique_ptr<VsyncWaiter>>(
+        std::make_unique<ShellTestVsyncWaiter>(task_runners, clock));
+    animator = std::make_unique<Animator>(delegate, task_runners,
+                                          std::move(vsync_waiter));
+  });
+
+  fml::AutoResetWaitableEvent begin_frame_latch;
+  EXPECT_CALL(delegate, OnAnimatorBeginFrame)
+      .WillRepeatedly(
+          [&](fml::TimePoint frame_target_time, uint64_t frame_number) {
+            begin_frame_latch.Signal();
+          });
+  // It will be called twice, because we allow multiple `Render` to be
+  // called within single frame.
+  EXPECT_CALL(delegate, OnAnimatorDraw)
+      .WillRepeatedly([&](std::shared_ptr<LayerTreePipeline> pipeline) {
+        LayerTreePipeline::Consumer consumer =
+            [&](std::unique_ptr<LayerTreeItem> item) {};
+        PipelineConsumeResult consume_result = pipeline->Consume(consumer);
+        // TODO expect consume_result
+      })
+      .Times(2);
+
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    animator->RequestFrame();
+    task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
+  });
+  begin_frame_latch.Wait();
+
+  PostTaskSync(task_runners.GetUITaskRunner(), [&] {
+    auto layer_tree = std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
+    animator->Render(std::move(layer_tree));
+  });
+
+  // Render again
+  PostTaskSync(task_runners.GetUITaskRunner(), [&] {
+    auto layer_tree = std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
+    animator->Render(std::move(layer_tree));
+  });
+
+  PostTaskSync(task_runners.GetUITaskRunner(), [&] { animator.reset(); });
+}
+
 }  // namespace testing
 }  // namespace flutter
 
