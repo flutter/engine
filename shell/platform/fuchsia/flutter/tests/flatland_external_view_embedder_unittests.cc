@@ -524,7 +524,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
 
   const int kOpacity = 200;
   const float kOpacityFloat = 200 / 255.0f;
-  const fuchsia::math::VecF kScale{0.5f, 0.9f};
+  const fuchsia::math::VecF kScale{3.0f, 4.0f};
 
   auto matrix = SkMatrix::I();
   matrix.setScaleX(kScale.x);
@@ -550,13 +550,19 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
       child_view_id, child_view_occlusion_hint, /*hit_testable=*/false,
       /*focusable=*/false);
 
+ 
+  // We must take into account the effect of DPR on the view scale.
+  const float kDPR = 2.0f;
+  const float kInvDPR = 1.f / kDPR;
+  const fuchsia::math::VecF kFinalViewScale = kInvDPR * kScale; 
+
   // Draw the scene. The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
   const fuchsia::math::SizeU frame_size{
       static_cast<uint32_t>(frame_size_signed.width()),
       static_cast<uint32_t>(frame_size_signed.height())};
   DrawFrameWithView(
-      external_view_embedder, frame_size_signed, 1.f, child_view_id,
+      external_view_embedder, frame_size_signed, kDPR, child_view_id,
       child_view_params,
       [](SkCanvas* canvas) {
         const SkSize canvas_size = SkSize::Make(canvas->imageInfo().width(),
@@ -594,7 +600,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
-                           {0, 0}, kScale, kOpacityFloat),
+                           {0, 0}, kFinalScale, kOpacityFloat),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
@@ -606,7 +612,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
-                           {0, 0}, kScale, kOpacityFloat),
+                           {0, 0}, kFinalScale, kOpacityFloat),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
@@ -628,7 +634,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
-                           {0, 0}, kScale, kOpacityFloat),
+                           {0, 0}, kFinalScale, kOpacityFloat),
            IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
