@@ -163,6 +163,10 @@ void Animator::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
+  if (!producer_continuation_) {
+    producer_continuation_ = layer_tree_pipeline_->Produce();
+  }
+
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), std::move(frame_timings_recorder_));
   // Commit the pending continuation.
