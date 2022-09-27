@@ -33,9 +33,9 @@ class EngineColorFilter implements ui.ColorFilter {
   ///
   /// ```text
   /// | R' |   | a00 a01 a02 a03 a04 |   | R |
-  /// | G' |   | a10 a11 a22 a33 a44 |   | G |
-  /// | B' | = | a20 a21 a22 a33 a44 | * | B |
-  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
+  /// | G' |   | a10 a11 a12 a13 a14 |   | G |
+  /// | B' | = | a20 a21 a22 a23 a24 | * | B |
+  /// | A' |   | a30 a31 a32 a33 a34 |   | A |
   /// | 1  |   |  0   0   0   0   1  |   | 1 |
   /// ```
   ///
