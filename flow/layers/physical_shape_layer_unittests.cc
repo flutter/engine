@@ -426,9 +426,9 @@ TEST_F(PhysicalShapeLayerTest, OpacityInheritance) {
                                            layer_path, Clip::none);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
+  context->renderable_state_flags = 0;
   layer->Preroll(context, SkMatrix());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
 using PhysicalShapeLayerDiffTest = DiffContextTest;

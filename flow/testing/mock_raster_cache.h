@@ -67,6 +67,7 @@ class MockRasterCache : public RasterCache {
   void AddMockPicture(int width, int height);
 
  private:
+  LayerStateStack state_stack_;
   MockCanvas mock_canvas_;
   SkColorSpace* color_space_ = mock_canvas_.imageInfo().colorSpace();
   MutatorsStack mutators_stack_;
@@ -85,7 +86,6 @@ class MockRasterCache : public RasterCache {
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,
       .texture_registry              = texture_registry_,
-      .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = 1.0f,
       .has_platform_view             = false,
       .has_texture_layer             = false,
@@ -95,18 +95,16 @@ class MockRasterCache : public RasterCache {
 
   PaintContext paint_context_ = {
       // clang-format off
-          .internal_nodes_canvas         = nullptr,
-          .leaf_nodes_canvas             = nullptr,
-          .gr_context                    = nullptr,
-          .dst_color_space               = color_space_,
-          .view_embedder                 = nullptr,
-          .raster_time                   = raster_time_,
-          .ui_time                       = ui_time_,
-          .texture_registry              = texture_registry_,
-          .raster_cache                  = nullptr,
-          .checkerboard_offscreen_layers = false,
-          .frame_device_pixel_ratio      = 1.0f,
-          .inherited_opacity             = SK_Scalar1,
+      .state_stack                   = state_stack_,
+      .canvas                        = nullptr,
+      .gr_context                    = nullptr,
+      .dst_color_space               = color_space_,
+      .view_embedder                 = nullptr,
+      .raster_time                   = raster_time_,
+      .ui_time                       = ui_time_,
+      .texture_registry              = texture_registry_,
+      .raster_cache                  = nullptr,
+      .frame_device_pixel_ratio      = 1.0f,
       // clang-format on
   };
 };
@@ -128,6 +126,7 @@ PrerollContextHolder GetSamplePrerollContextHolder(
     MutatorsStack* mutators_stack);
 
 PaintContextHolder GetSamplePaintContextHolder(
+    LayerStateStack& state_stack,
     RasterCache* raster_cache,
     FixedRefreshRateStopwatch* raster_time,
     FixedRefreshRateStopwatch* ui_time);

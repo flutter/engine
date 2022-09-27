@@ -113,7 +113,8 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   if (!visible || accesses <= raster_cache->access_threshold()) {
     cache_state_ = kNone;
   } else {
-    context->subtree_can_inherit_opacity = true;
+    context->renderable_state_flags |=
+        LayerStateStack::CALLER_CAN_APPLY_OPACITY;
     cache_state_ = kCurrent;
   }
   return;
@@ -121,7 +122,7 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
                                       const SkPaint* paint) const {
-  return Draw(context, context.leaf_nodes_canvas, paint);
+  return Draw(context, context.canvas, paint);
 }
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,

@@ -83,14 +83,13 @@ TEST_F(MockLayerTest, OpacityInheritance) {
   PrerollContext* context = preroll_context();
 
   auto mock1 = std::make_shared<MockLayer>(path1);
-  context->subtree_can_inherit_opacity = false;
   mock1->Preroll(context, SkMatrix::I());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   auto mock2 = MockLayer::MakeOpacityCompatible(path1);
-  context->subtree_can_inherit_opacity = false;
   mock2->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 }
 
 TEST_F(MockLayerTest, FlagGetSet) {

@@ -61,10 +61,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     OnMutatorsStackPushClipShape(context->mutators_stack);
 
-    // Collect inheritance information on our children in Preroll so that
-    // we can pass it along by default.
-    context->subtree_can_inherit_opacity = true;
-
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
     if (child_paint_bounds.intersect(clip_shape_bounds())) {
@@ -74,7 +70,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     // If we use a SaveLayer then we can accept opacity on behalf
     // of our children and apply it in the saveLayer.
     if (uses_save_layer) {
-      context->subtree_can_inherit_opacity = true;
+      context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
     }
 
     context->mutators_stack.Pop();
@@ -84,26 +80,27 @@ class ClipShapeLayer : public CacheableContainerLayer {
   void Paint(PaintContext& context) const override {
     FML_DCHECK(needs_painting(context));
 
-    SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
-    OnCanvasClipShape(context.internal_nodes_canvas);
+    auto mutator = context.state_stack.save();
+    OnCanvasClipShape(mutator);
 
     if (!UsesSaveLayer()) {
       PaintChildren(context);
       return;
     }
 
-    AutoCachePaint cache_paint(context);
     if (context.raster_cache) {
-      context.internal_nodes_canvas->setMatrix(
-          RasterCacheUtil::GetIntegralTransCTM(
-              context.leaf_nodes_canvas->getTotalMatrix()));
-      if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+      mutator.integralTransform();
+      auto restore_apply = context.state_stack.applyState(
+          paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+
+      SkPaint paint;
+      if (layer_raster_cache_item_->Draw(context,
+                                         context.state_stack.fill(paint))) {
         return;
       }
     }
 
-    Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-        context, paint_bounds(), cache_paint.sk_paint());
+    mutator.saveLayer(paint_bounds());
     PaintChildren(context);
   }
 
@@ -114,7 +111,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
  protected:
   virtual const SkRect& clip_shape_bounds() const = 0;
   virtual void OnMutatorsStackPushClipShape(MutatorsStack& mutators_stack) = 0;
-  virtual void OnCanvasClipShape(SkCanvas* canvas) const = 0;
+  virtual void OnCanvasClipShape(
+      LayerStateStack::MutatorContext& mutator) const = 0;
   virtual ~ClipShapeLayer() = default;
 
   const ClipShape& clip_shape() const { return clip_shape_; }

@@ -2433,13 +2433,14 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         auto* compositor_context = shell->GetRasterizer()->compositor_context();
         auto& raster_cache = compositor_context->raster_cache();
 
+        LayerStateStack state_stack;
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
         MutatorsStack mutators_stack;
         PaintContext paint_context = {
             // clang-format off
-            .internal_nodes_canvas         = nullptr,
-            .leaf_nodes_canvas             = nullptr,
+            .state_stack                   = state_stack,
+            .canvas                        = nullptr,
             .gr_context                    = nullptr,
             .dst_color_space               = nullptr,
             .view_embedder                 = nullptr,
@@ -2447,9 +2448,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
-            .inherited_opacity             = SK_Scalar1,
             // clang-format on
         };
 
@@ -2465,7 +2464,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .has_texture_layer             = false,

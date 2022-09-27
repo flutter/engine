@@ -32,7 +32,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   EXPECT_FALSE(layer->subtree_has_platform_view());
 
   layer->Paint(paint_context());
-  EXPECT_EQ(paint_context().leaf_nodes_canvas, &mock_canvas());
+  EXPECT_EQ(paint_context().canvas, &mock_canvas());
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 
@@ -67,7 +67,7 @@ TEST_F(PlatformViewLayerTest, ClippedPlatformViewPrerollsAndPaintsNothing) {
   EXPECT_TRUE(parent_clip_layer->subtree_has_platform_view());
 
   parent_clip_layer->Paint(paint_context());
-  EXPECT_EQ(paint_context().leaf_nodes_canvas, &mock_canvas());
+  EXPECT_EQ(paint_context().canvas, &mock_canvas());
   EXPECT_EQ(
       mock_canvas().draw_calls(),
       std::vector(
@@ -91,9 +91,8 @@ TEST_F(PlatformViewLayerTest, OpacityInheritance) {
       std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
 }  // namespace testing

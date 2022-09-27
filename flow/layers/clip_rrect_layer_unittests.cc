@@ -77,7 +77,8 @@ TEST_F(ClipRRectLayerTest, PaintingCulledLayerDies) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_rrect)}));
 
-  paint_context().internal_nodes_canvas->clipRect(distant_bounds, false);
+  auto mutator = paint_context().state_stack.save();
+  mutator.clipRect(distant_bounds, false);
   EXPECT_FALSE(mock_layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->needs_painting(paint_context()));
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -279,9 +280,9 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
 
   // ClipRectLayer will pass through compatibility from a compatible child
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   clip_rrect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
@@ -289,9 +290,9 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
 
   // ClipRectLayer will pass through compatibility from multiple
   // non-overlapping compatible children
-  context->subtree_can_inherit_opacity = false;
   clip_rrect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
   auto mock3 = MockLayer::MakeOpacityCompatible(path3);
@@ -299,9 +300,8 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
 
   // ClipRectLayer will not pass through compatibility from multiple
   // overlapping children even if they are individually compatible
-  context->subtree_can_inherit_opacity = false;
   clip_rrect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   {
     // ClipRectLayer(aa with saveLayer) will always be compatible
@@ -311,15 +311,13 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
     clip_rrect_savelayer->Add(mock2);
 
     // Double check first two children are compatible and non-overlapping
-    context->subtree_can_inherit_opacity = false;
     clip_rrect_savelayer->Preroll(context, SkMatrix::I());
-    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
     // Now add the overlapping child and test again, should still be compatible
     clip_rrect_savelayer->Add(mock3);
-    context->subtree_can_inherit_opacity = false;
     clip_rrect_savelayer->Preroll(context, SkMatrix::I());
-    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
   }
 
   // An incompatible, but non-overlapping child for the following tests
@@ -334,17 +332,16 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
     clip_rrect_bad_child->Add(mock2);
 
     // Double check first two children are compatible and non-overlapping
-    context->subtree_can_inherit_opacity = false;
     clip_rrect_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+    EXPECT_EQ(context->renderable_state_flags,
+              LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
     clip_rrect_bad_child->Add(mock4);
 
     // The third child is non-overlapping, but not compatible so the
     // TransformLayer should end up incompatible
-    context->subtree_can_inherit_opacity = false;
     clip_rrect_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_FALSE(context->subtree_can_inherit_opacity);
+    EXPECT_EQ(context->renderable_state_flags, 0);
   }
 
   {
@@ -355,15 +352,13 @@ TEST_F(ClipRRectLayerTest, OpacityInheritance) {
     clip_rrect_savelayer_bad_child->Add(mock2);
 
     // Double check first two children are compatible and non-overlapping
-    context->subtree_can_inherit_opacity = false;
     clip_rrect_savelayer_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
     // Now add the incompatible child and test again, should still be compatible
     clip_rrect_savelayer_bad_child->Add(mock4);
-    context->subtree_can_inherit_opacity = false;
     clip_rrect_savelayer_bad_child->Preroll(context, SkMatrix::I());
-    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+    EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
   }
 }
 
@@ -382,15 +377,14 @@ TEST_F(ClipRRectLayerTest, OpacityInheritancePainting) {
   // ClipRectLayer will pass through compatibility from multiple
   // non-overlapping compatible children
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   clip_rect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(clip_rect_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
@@ -403,22 +397,10 @@ TEST_F(ClipRRectLayerTest, OpacityInheritancePainting) {
         expected_builder.save();
         expected_builder.clipRRect(clip_rrect, SkClipOp::kIntersect, true);
         /* child layer1 paint */ {
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&path1.getBounds(), true);
-          {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(path1);
-          }
-          expected_builder.restore();
+          expected_builder.drawPath(path1, DlPaint().setAlpha(opacity_alpha));
         }
         /* child layer2 paint */ {
-          expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&path2.getBounds(), true);
-          {
-            expected_builder.setColor(0xFF000000);
-            expected_builder.drawPath(path2);
-          }
-          expected_builder.restore();
+          expected_builder.drawPath(path2, DlPaint().setAlpha(opacity_alpha));
         }
         expected_builder.restore();
       }
@@ -447,15 +429,13 @@ TEST_F(ClipRRectLayerTest, OpacityInheritanceSaveLayerPainting) {
   // ClipRectLayer will pass through compatibility from multiple
   // non-overlapping compatible children
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   clip_rrect_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, Layer::SAVE_LAYER_RENDER_FLAGS);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(clip_rrect_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 

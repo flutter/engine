@@ -45,22 +45,16 @@ void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     context->surface_needs_readback = true;
   }
   if (fake_opacity_compatible()) {
-    context->subtree_can_inherit_opacity = true;
+    context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
   }
 }
 
 void MockLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
-  if (context.inherited_opacity < SK_Scalar1) {
-    SkPaint p;
-    p.setAlphaf(context.inherited_opacity);
-    context.leaf_nodes_canvas->saveLayer(fake_paint_path_.getBounds(), &p);
-  }
-  context.leaf_nodes_canvas->drawPath(fake_paint_path_, fake_paint_);
-  if (context.inherited_opacity < SK_Scalar1) {
-    context.leaf_nodes_canvas->restore();
-  }
+  SkPaint sk_paint = fake_paint_;
+  context.state_stack.fill(sk_paint);
+  context.canvas->drawPath(fake_paint_path_, sk_paint);
 }
 
 void MockCacheableContainerLayer::Preroll(PrerollContext* context,

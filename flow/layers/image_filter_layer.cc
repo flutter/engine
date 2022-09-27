@@ -59,14 +59,17 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   PrerollChildren(context, child_matrix, &child_bounds);
 
-  // We always paint with a saveLayer (or a cached rendering),
-  // so we can always apply opacity in any of those cases.
-  context->subtree_can_inherit_opacity = true;
-
   if (!filter_) {
     set_paint_bounds(child_bounds);
     return;
   }
+
+  // Our saveLayer would apply any outstanding opacity or any outstanding
+  // color filter after it applies our image filter. So we can apply either
+  // of those attributes with our saveLayer.
+  context->renderable_state_flags =
+      (LayerStateStack::CALLER_CAN_APPLY_OPACITY |
+       LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER);
 
   const SkIRect filter_in_bounds = child_bounds.roundOut();
   SkIRect filter_out_bounds;
@@ -89,35 +92,37 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
-  AutoCachePaint cache_paint(context);
+  auto mutator = context.state_stack.save();
+
   if (context.raster_cache) {
-    context.internal_nodes_canvas->setMatrix(
-        RasterCacheUtil::GetIntegralTransCTM(
-            context.leaf_nodes_canvas->getTotalMatrix()));
-    if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setImageFilter(transformed_filter_.get());
+    // Always apply the integral transform in the presence of a raster cache
+    // whether or not we will draw from the cache
+    mutator.integralTransform();
+
+    // Try drawing the layer cache item from the cache before applying the
+    // image filter if it was cached with the filter applied.
+    if (!layer_raster_cache_item_->IsCacheChildren()) {
+      SkPaint sk_paint;
+      if (layer_raster_cache_item_->Draw(context,
+                                         context.state_stack.fill(sk_paint))) {
+        return;
+      }
     }
-    if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+  }
+
+  // Now apply the image filter and then try rendering children either from
+  // cache or directly.
+  mutator.applyImageFilter(child_paint_bounds(), filter_);
+
+  if (context.raster_cache && layer_raster_cache_item_->IsCacheChildren()) {
+    SkPaint sk_paint;
+    if (layer_raster_cache_item_->Draw(context,
+                                       context.state_stack.fill(sk_paint))) {
       return;
     }
   }
 
-  cache_paint.setImageFilter(filter_.get());
-  if (context.leaf_nodes_builder) {
-    FML_DCHECK(context.builder_multiplexer);
-    context.builder_multiplexer->saveLayer(&child_paint_bounds(),
-                                           cache_paint.dl_paint());
-    PaintChildren(context);
-    context.builder_multiplexer->restore();
-  } else {
-    // Normally a save_layer is sized to the current layer bounds, but in this
-    // case the bounds of the child may not be the same as the filtered version
-    // so we use the bounds of the child container which do not include any
-    // modifications that the filter might apply.
-    Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-        context, child_paint_bounds(), cache_paint.sk_paint());
-    PaintChildren(context);
-  }
+  PaintChildren(context);
 }
 
 }  // namespace flutter

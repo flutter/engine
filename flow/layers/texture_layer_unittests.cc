@@ -128,10 +128,10 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
 
   // The texture layer always reports opacity compatibility.
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   context->texture_registry->RegisterTexture(mock_texture);
   layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   // MockTexture has no actual textur to render into the
   // PaintContext canvas so we have no way to verify its

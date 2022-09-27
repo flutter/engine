@@ -58,17 +58,17 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   ASSERT_TRUE(surface != nullptr);
 
+  LayerStateStack state_stack;
   flutter::PaintContext paint_context = {
       // clang-format off
-      .internal_nodes_canvas         = nullptr,
-      .leaf_nodes_canvas             = surface->getCanvas(),
+      .state_stack                   = state_stack,
+      .canvas                        = surface->getCanvas(),
       .gr_context                    = nullptr,
       .view_embedder                 = nullptr,
       .raster_time                   = mock_stopwatch,
       .ui_time                       = mock_stopwatch,
       .texture_registry              = nullptr,
       .raster_cache                  = nullptr,
-      .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = 1.0f,
       // clang-format on
   };

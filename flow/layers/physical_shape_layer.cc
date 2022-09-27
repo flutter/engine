@@ -57,6 +57,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
+  context->renderable_state_flags =
+      UsesSaveLayer() ? Layer::SAVE_LAYER_RENDER_FLAGS : 0;
 
   SkRect paint_bounds;
   if (elevation_ == 0) {
@@ -80,7 +82,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
 
   if (elevation_ != 0) {
     DisplayListCanvasDispatcher::DrawShadow(
-        context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
+        context.canvas, path_, shadow_color_, elevation_,
         SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
@@ -89,21 +91,21 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   paint.setColor(color_);
   paint.setAntiAlias(true);
   if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
-    context.leaf_nodes_canvas->drawPath(path_, paint);
+    context.canvas->drawPath(path_, paint);
   }
 
-  int save_count = context.internal_nodes_canvas->save();
+  auto mutator = context.state_stack.save();
   switch (clip_behavior_) {
     case Clip::hardEdge:
-      context.internal_nodes_canvas->clipPath(path_, false);
+      mutator.clipPath(path_, false);
       break;
     case Clip::antiAlias:
-      context.internal_nodes_canvas->clipPath(path_, true);
+      mutator.clipPath(path_, true);
       break;
     case Clip::antiAliasWithSaveLayer: {
       TRACE_EVENT0("flutter", "Canvas::saveLayer");
-      context.internal_nodes_canvas->clipPath(path_, true);
-      context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
+      mutator.clipPath(path_, true);
+      mutator.saveLayer(paint_bounds());
     } break;
     case Clip::none:
       break;
@@ -114,18 +116,10 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
     // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
     // using saveLayer, we have to call drawPaint instead of drawPath as
     // anti-aliased drawPath will always have such artifacts.
-    context.leaf_nodes_canvas->drawPaint(paint);
+    context.canvas->drawPaint(paint);
   }
 
   PaintChildren(context);
-
-  context.internal_nodes_canvas->restoreToCount(save_count);
-
-  if (UsesSaveLayer()) {
-    if (context.checkerboard_offscreen_layers) {
-      DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
-    }
-  }
 }
 
 }  // namespace flutter

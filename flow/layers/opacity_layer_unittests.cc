@@ -180,7 +180,6 @@ TEST_F(OpacityLayerTest, ShouldNotCacheChildren) {
   opacity_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
 
   use_mock_raster_cache();
 
@@ -195,7 +194,8 @@ TEST_F(OpacityLayerTest, ShouldNotCacheChildren) {
 
   opacity_layer->Preroll(preroll_context(), SkMatrix::I());
 
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
@@ -237,11 +237,7 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
                    MockCanvas::DrawCall{
                        1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
                    MockCanvas::DrawCall{
-                       1, MockCanvas::SaveLayerData{opacity_bounds,
-                                                    opacity_paint, nullptr, 2}},
-                   MockCanvas::DrawCall{
-                       2, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                       1, MockCanvas::DrawPathData{child_path, child_paint}},
                    MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
@@ -396,11 +392,10 @@ TEST_F(OpacityLayerTest, Nested) {
   opacity1_paint.setAlphaf(alpha1 * (1.0 / SK_AlphaOPAQUE));
   SkPaint opacity2_paint;
   opacity2_paint.setAlphaf(alpha2 * (1.0 / SK_AlphaOPAQUE));
-  SkRect opacity1_bounds, opacity2_bounds;
-  expected_layer1_bounds.makeOffset(-layer1_offset.fX, -layer1_offset.fY)
-      .roundOut(&opacity1_bounds);
-  expected_layer2_bounds.makeOffset(-layer2_offset.fX, -layer2_offset.fY)
-      .roundOut(&opacity2_bounds);
+  SkRect opacity1_bounds =
+      expected_layer1_bounds.makeOffset(-layer1_offset.fX, -layer1_offset.fY);
+  SkRect opacity2_bounds =
+      expected_layer2_bounds.makeOffset(-layer2_offset.fX, -layer2_offset.fY);
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
        MockCanvas::DrawCall{
@@ -467,9 +462,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceCompatibleChild) {
   opacity_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 }
 
@@ -480,9 +475,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceIncompatibleChild) {
   opacity_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_FALSE(opacity_layer->children_can_accept_opacity());
 }
 
@@ -495,14 +490,10 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughContainer) {
   opacity_layer->Add(container_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
-  // By default a container layer will not pass opacity through to
-  // its children - specific subclasses will have to enable this
-  // pass through by setting the flag to true themselves before
-  // calling their super method ContainerLayer::Preroll().
-  EXPECT_FALSE(opacity_layer->children_can_accept_opacity());
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+  EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
@@ -514,9 +505,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
   opacity_layer->Add(transformLayer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 }
 
@@ -530,9 +521,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughImageFilter) {
   opacity_layer->Add(filter_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 }
 
@@ -547,9 +538,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithCompatibleChild) {
   opacity_layer_1->Add(opacity_layer_2);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer_1->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacity_layer_1->children_can_accept_opacity());
   EXPECT_TRUE(opacity_layer_2->children_can_accept_opacity());
 
@@ -568,13 +559,8 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithCompatibleChild) {
         {
           expected_builder.translate(offset2.fX, offset2.fY);
           /* mock_layer::Paint */ {
-            expected_builder.setColor(savelayer_paint.getAlpha() << 24);
-            expected_builder.saveLayer(&mock_path.getBounds(), true);
-            {
-              expected_builder.setColor(0xFF000000);
-              expected_builder.drawPath(mock_path);
-            }
-            expected_builder.restore();
+            expected_builder.drawPath(mock_path,
+                                      DlPaint().setOpacity(inherited_opacity));
           }
         }
         expected_builder.restore();
@@ -598,9 +584,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNestedWithIncompatibleChild) {
   opacity_layer_1->Add(opacity_layer_2);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   opacity_layer_1->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
   EXPECT_TRUE(opacity_layer_1->children_can_accept_opacity());
   EXPECT_FALSE(opacity_layer_2->children_can_accept_opacity());
 

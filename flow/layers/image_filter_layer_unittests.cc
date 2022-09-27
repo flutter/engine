@@ -69,11 +69,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
                 MockCanvas::DrawCall{
-                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                 nullptr, 1}},
-                MockCanvas::DrawCall{
-                    1, MockCanvas::DrawPathData{child_path, child_paint}},
-                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
+                    0, MockCanvas::DrawPathData{child_path, child_paint}},
             }));
 }
 
@@ -446,17 +442,17 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   image_filter_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   image_filter_layer->Preroll(preroll_context(), initial_transform);
   // ImageFilterLayers can always inherit opacity whether or not their
   // children are compatible.
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY |
+                LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(image_filter_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 

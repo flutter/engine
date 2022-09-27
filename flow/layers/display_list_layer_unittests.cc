@@ -109,16 +109,15 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 
   auto context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   display_list_layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
@@ -126,8 +125,6 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   child_builder.drawRect(picture_bounds);
   auto child_display_list = child_builder.Build();
 
-  auto save_layer_bounds =
-      picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.save();
@@ -138,7 +135,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
         {
           expected_builder.translate(layer_offset.fX, layer_offset.fY);
           expected_builder.setColor(opacity_alpha << 24);
-          expected_builder.saveLayer(&save_layer_bounds, true);
+          expected_builder.saveLayer(&picture_bounds, true);
           /* display_list contents */ {  //
             expected_builder.drawDisplayList(child_display_list);
           }
@@ -152,7 +149,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
 
   opacity_layer->Paint(display_list_paint_context());
   EXPECT_TRUE(
-      DisplayListsEQ_Verbose(expected_builder.Build(), this->display_list()));
+      DisplayListsEQ_Verbose(this->display_list(), expected_builder.Build()));
 }
 
 TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
@@ -168,16 +165,14 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   EXPECT_FALSE(display_list->can_apply_group_opacity());
 
   auto context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   display_list_layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_FALSE(opacity_layer->children_can_accept_opacity());
 
@@ -190,7 +185,6 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   display_list_bounds.join(picture2_bounds);
   auto save_layer_bounds =
       display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
-  save_layer_bounds.roundOut(&save_layer_bounds);
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.save();
@@ -215,7 +209,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
 
   opacity_layer->Paint(display_list_paint_context());
   EXPECT_TRUE(
-      DisplayListsEQ_Verbose(expected_builder.Build(), this->display_list()));
+      DisplayListsEQ_Verbose(this->display_list(), expected_builder.Build()));
 }
 
 TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
@@ -233,9 +227,8 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   use_skia_raster_cache();
 
   auto context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   display_list_layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 
   // Pump the DisplayListLayer until it is ready to cache its DL
   display_list_layer->Preroll(preroll_context(), SkMatrix());
@@ -247,7 +240,6 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
-  context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 

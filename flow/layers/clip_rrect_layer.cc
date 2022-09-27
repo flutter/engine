@@ -26,8 +26,9 @@ void ClipRRectLayer::OnMutatorsStackPushClipShape(
   mutators_stack.PushClipRRect(clip_shape());
 }
 
-void ClipRRectLayer::OnCanvasClipShape(SkCanvas* canvas) const {
-  canvas->clipRRect(clip_shape(), clip_behavior() != Clip::hardEdge);
+void ClipRRectLayer::OnCanvasClipShape(
+    LayerStateStack::MutatorContext& mutator) const {
+  mutator.clipRRect(clip_shape(), clip_behavior() != Clip::hardEdge);
 }
 
 }  // namespace flutter

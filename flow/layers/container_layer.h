@@ -33,6 +33,16 @@ class ContainerLayer : public Layer {
   const ContainerLayer* as_container_layer() const override { return this; }
 
   const SkRect& child_paint_bounds() const { return child_paint_bounds_; }
+  void set_child_paint_bounds(const SkRect& bounds) {
+    child_paint_bounds_ = bounds;
+  }
+
+  int children_renderable_state_flags() const {
+    return children_renderable_state_flags_;
+  }
+  void set_children_renderable_state_flags(int flags) {
+    children_renderable_state_flags_ = flags;
+  }
 
  protected:
   void PrerollChildren(PrerollContext* context,
@@ -42,6 +52,7 @@ class ContainerLayer : public Layer {
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
   SkRect child_paint_bounds_;
+  int children_renderable_state_flags_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };
