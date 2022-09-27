@@ -283,16 +283,17 @@ TEST_F(ShellTest, AnimatorAllowsRenderMultipleTimes) {
           [&](fml::TimePoint frame_target_time, uint64_t frame_number) {
             begin_frame_latch.Signal();
           });
+  EXPECT_CALL(delegate, OnAnimatorUpdateLatestFrameTargetTime).Times(2);
   // It will be called twice, because we allow multiple `Render` to be
   // called within single frame.
   EXPECT_CALL(delegate, OnAnimatorDraw)
+      .Times(2)
       .WillRepeatedly([&](std::shared_ptr<LayerTreePipeline> pipeline) {
         LayerTreePipeline::Consumer consumer =
             [&](std::unique_ptr<LayerTreeItem> item) {};
         PipelineConsumeResult consume_result = pipeline->Consume(consumer);
-        // TODO expect consume_result
-      })
-      .Times(2);
+        EXPECT_EQ(consume_result, PipelineConsumeResult::Done);
+      });
 
   task_runners.GetUITaskRunner()->PostTask([&] {
     animator->RequestFrame();
