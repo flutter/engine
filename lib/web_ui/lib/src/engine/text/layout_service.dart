@@ -729,7 +729,8 @@ class LineBuilder {
     }
 
     spanometer.currentSpan = lastFragment.span;
-    final double availableWidthForFragment = availableWidth - widthIncludingSpace + lastFragment.widthIncludingTrailingSpaces;
+    final double lineWidthWithoutLastFragment = widthIncludingSpace - lastFragment.widthIncludingTrailingSpaces;
+    final double availableWidthForFragment = availableWidth - lineWidthWithoutLastFragment;
     final int forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
 
     final int breakingPoint = spanometer.forceBreak(
