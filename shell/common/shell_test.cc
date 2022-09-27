@@ -167,13 +167,15 @@ void ShellTest::NotifyIdle(Shell* shell, fml::TimePoint deadline) {
 void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
-                             LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22}, std::move(builder));
+                             LayerTreeBuilder builder,
+                             bool render) {
+  PumpOneFrame(shell, {1.0, width, height, 22}, std::move(builder), render);
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
                              flutter::ViewportMetrics viewport_metrics,
-                             LayerTreeBuilder builder) {
+                             LayerTreeBuilder builder,
+                             bool render) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
@@ -192,26 +194,28 @@ void ShellTest::PumpOneFrame(Shell* shell,
       });
   latch.Wait();
 
-  latch.Reset();
-  // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
-  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate, &builder, viewport_metrics]() {
-        auto layer_tree = std::make_shared<LayerTree>(
-            SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.device_pixel_ratio));
-        SkMatrix identity;
-        identity.setIdentity();
-        auto root_layer = std::make_shared<TransformLayer>(identity);
-        layer_tree->set_root_layer(root_layer);
-        if (builder) {
-          builder(root_layer);
-        }
-        runtime_delegate->Render(std::move(layer_tree));
-        latch.Signal();
-      });
-  latch.Wait();
+  if (render) {
+    latch.Reset();
+    // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
+    fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
+    shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+        [&latch, runtime_delegate, &builder, viewport_metrics]() {
+          auto layer_tree = std::make_shared<LayerTree>(
+              SkISize::Make(viewport_metrics.physical_width,
+                            viewport_metrics.physical_height),
+              static_cast<float>(viewport_metrics.device_pixel_ratio));
+          SkMatrix identity;
+          identity.setIdentity();
+          auto root_layer = std::make_shared<TransformLayer>(identity);
+          layer_tree->set_root_layer(root_layer);
+          if (builder) {
+            builder(root_layer);
+          }
+          runtime_delegate->Render(std::move(layer_tree));
+          latch.Signal();
+        });
+    latch.Wait();
+  }
 }
 
 void ShellTest::DispatchFakePointerData(Shell* shell) {

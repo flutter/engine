@@ -2533,7 +2533,9 @@ TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
   configuration.SetEntrypoint("scene_with_red_box");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get());
+  // render=false, because the "scene_with_red_box" dart code has already
+  // called render
+  PumpOneFrame(shell.get(), 1, 1, {}, false);
 
   ServiceProtocol::Handler::ServiceProtocolMap empty_params;
   rapidjson::Document document;

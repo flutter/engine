@@ -78,10 +78,12 @@ class ShellTest : public FixtureTest {
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,
-                           LayerTreeBuilder = {});
+                           LayerTreeBuilder = {},
+                           bool render = true);
   static void PumpOneFrame(Shell* shell,
                            flutter::ViewportMetrics viewport_metrics,
-                           LayerTreeBuilder = {});
+                           LayerTreeBuilder = {},
+                           bool render = true);
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
