@@ -1,3 +1,5 @@
+#define FML_USED_ON_EMBEDDER
+
 #include <initializer_list>
 
 #include "flutter/common/settings.h"
