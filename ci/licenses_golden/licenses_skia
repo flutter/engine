@@ -1,4 +1,4 @@
-Signature: 4a8897adcd087580d8a28b7b2ece26cf
+Signature: d63829ecd31743a592927756ec45044f
 
 UNUSED LICENSES:
 
@@ -913,6 +913,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.e
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/retry_ios_install_retries_exhausted.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test-win.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expected/test.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_mac.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gold_upload/examples/full.expected/upload_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_all_uploads.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_one_upload.json
@@ -1234,6 +1235,7 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/text/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/gl/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/graphite/BUILD.bazel
+FILE: ../../../third_party/skia/src/gpu/mtl/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/piet/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 FILE: ../../../third_party/skia/src/gpu/vk/BUILD.bazel
@@ -1253,14 +1255,23 @@ FILE: ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_vert.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_vert.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_shared.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_shared.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
@@ -2570,6 +2581,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTexture.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTexture.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlTypesPriv.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlUtils.h
+FILE: ../../../third_party/skia/src/gpu/mtl/MtlMemoryAllocatorImpl.h
+FILE: ../../../third_party/skia/src/gpu/mtl/MtlMemoryAllocatorImpl.mm
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
@@ -3477,6 +3490,7 @@ FILE: ../../../third_party/skia/src/core/SkRectPriv.h
 FILE: ../../../third_party/skia/src/core/SkSafeRange.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.cpp
 FILE: ../../../third_party/skia/src/core/SkSurfaceCharacterization.cpp
+FILE: ../../../third_party/skia/src/core/SkTDArray.cpp
 FILE: ../../../third_party/skia/src/core/SkTextBlobPriv.h
 FILE: ../../../third_party/skia/src/core/SkTypeface_remote.cpp
 FILE: ../../../third_party/skia/src/core/SkTypeface_remote.h
@@ -6538,6 +6552,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
+FILE: ../../../third_party/skia/include/gpu/mtl/MtlMemoryAllocator.h
 FILE: ../../../third_party/skia/modules/skottie/src/BlendModes.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.h

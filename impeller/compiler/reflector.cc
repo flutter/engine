@@ -440,6 +440,8 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
       resource.id, spv::Decoration::DecorationDescriptorSet);
   result["binding"] = compiler_->get_decoration(
       resource.id, spv::Decoration::DecorationBinding);
+  result["set"] = compiler_->get_decoration(
+      resource.id, spv::Decoration::DecorationDescriptorSet);
   result["location"] = compiler_->get_decoration(
       resource.id, spv::Decoration::DecorationLocation);
   result["index"] =
@@ -731,7 +733,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           size,                                  // size
           stride * array_elements,               // byte_length
           array_elements,                        // array_elements
-          0,                                     // element_padding
+          element_padding,                       // element_padding
       });
       current_byte_offset += stride * array_elements;
       continue;

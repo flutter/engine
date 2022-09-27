@@ -41,7 +41,7 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
     cmd.label = "sRGB to Linear Filter";
 
     auto options = OptionsFromPass(pass);
-    options.blend_mode = Entity::BlendMode::kSource;
+    options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetSrgbToLinearFilterPipeline(options);
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
@@ -61,9 +61,13 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
 
+    FS::FragInfo frag_info;
+    frag_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
+
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
-
+    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
     return pass.AddCommand(std::move(cmd));

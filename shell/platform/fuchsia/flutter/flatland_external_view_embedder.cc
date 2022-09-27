@@ -10,6 +10,14 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter_runner {
+namespace {
+
+// Since the flatland hit-region can be transformed (rotated, scaled or
+// translated), we must ensure that the size of the hit-region will not cause
+// overflows on operations (like FLT_MAX would).
+constexpr float kMaxHitRegionSize = 1'000'000.f;
+
+}  // namespace
 
 FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
     fuchsia::ui::views::ViewCreationToken view_creation_token,
@@ -213,20 +221,28 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
           }
         }
 
-        // TODO(fxbug.dev/64201): Handle clips.
-
         // Set transform for the viewport.
-        // TODO(fxbug.dev/94000): Handle scaling.
         if (view_mutators.transform != viewport.mutators.transform) {
           flatland_->flatland()->SetTranslation(
               viewport.transform_id,
               {static_cast<int32_t>(view_mutators.transform.getTranslateX()),
                static_cast<int32_t>(view_mutators.transform.getTranslateY())});
+
+          flatland_->flatland()->SetScale(
+              viewport.transform_id, {view_mutators.transform.getScaleX(),
+                                      view_mutators.transform.getScaleY()});
           viewport.mutators.transform = view_mutators.transform;
         }
 
         // TODO(fxbug.dev/94000): Set HitTestBehavior.
-        // TODO(fxbug.dev/94000): Set opacity.
+        // TODO(fxbug.dev/94000): Set ClipRegions.
+
+        // Set opacity.
+        if (view_mutators.opacity != viewport.mutators.opacity) {
+          flatland_->flatland()->SetOpacity(viewport.transform_id,
+                                            view_mutators.opacity);
+          viewport.mutators.opacity = view_mutators.opacity;
+        }
 
         // Set size and occlusion hint.
         if (view_size != viewport.size ||
@@ -304,11 +320,12 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         child_transforms_.emplace_back(
             flatland_layers_[flatland_layer_index].transform_id);
 
-        // Attach full-screen hit testing shield.
+        // Attach full-screen hit testing shield. Note that since the hit-region
+        // may be transformed (translated, rotated), we do not want to set
+        // width/height to FLT_MAX. This will cause a numeric overflow.
         flatland_->flatland()->SetHitRegions(
             flatland_layers_[flatland_layer_index].transform_id,
-            {{{0, 0, std::numeric_limits<float>::max(),
-               std::numeric_limits<float>::max()},
+            {{{0, 0, kMaxHitRegionSize, kMaxHitRegionSize},
               fuchsia::ui::composition::HitTestInteraction::
                   SEMANTICALLY_INVISIBLE}});
       }

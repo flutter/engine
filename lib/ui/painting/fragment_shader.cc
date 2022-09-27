@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <iostream>
+#include <utility>
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
@@ -18,43 +19,13 @@
 
 namespace flutter {
 
-// Since _FragmentShader is a private class, we can't use
-// IMPLEMENT_WRAPPERTYPEINFO
-static const tonic::DartWrapperInfo kDartWrapperInfoUIFragmentShader = {
-    "ui",
-    "_FragmentShader",
-};
-const tonic::DartWrapperInfo& FragmentShader::dart_wrapper_info_ =
-    kDartWrapperInfoUIFragmentShader;
-
-std::shared_ptr<DlColorSource> FragmentShader::shader(
-    DlImageSampling sampling) {
-  // Sampling options are ignored, since sampling options don't make sense for
-  // generative shaders.
-  return source_;
-}
-
-fml::RefPtr<FragmentShader> FragmentShader::Create(
-    Dart_Handle dart_handle,
-    std::shared_ptr<DlRuntimeEffectColorSource> shader) {
-  auto fragment_shader = fml::MakeRefCounted<FragmentShader>(std::move(shader));
-  fragment_shader->AssociateWithDartWrapper(dart_handle);
-  return fragment_shader;
-}
-
-FragmentShader::FragmentShader(
-    std::shared_ptr<DlRuntimeEffectColorSource> shader)
-    : source_(std::move(shader)) {}
-
-FragmentShader::~FragmentShader() = default;
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ReusableFragmentShader);
 
 ReusableFragmentShader::ReusableFragmentShader(
     fml::RefPtr<FragmentProgram> program,
     uint64_t float_count,
     uint64_t sampler_count)
-    : program_(program),
+    : program_(std::move(program)),
       uniform_data_(SkData::MakeUninitialized(
           (float_count + 2 * sampler_count) * sizeof(float))),
       samplers_(sampler_count),
