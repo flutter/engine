@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import '../util.dart';
 import 'fragmenter.dart';
 import 'line_break_properties.dart';
 import 'unicode_range.dart';
@@ -62,101 +61,6 @@ class LineBreakFragment extends TextFragment {
   @override
   String toString() {
     return 'LineBreakFragment($start, $end, $type)';
-  }
-}
-
-/// Acts as a tuple that encapsulates information about a line break.
-///
-/// It contains multiple indices that are helpful when it comes to measuring the
-/// width of a line of text.
-///
-/// [indexWithoutTrailingSpaces] <= [indexWithoutTrailingNewlines] <= [index]
-///
-/// Example: for the string "foo \nbar " here are the indices:
-/// ```
-///   f   o   o       \n  b   a   r
-/// ^   ^   ^   ^   ^   ^   ^   ^   ^   ^
-/// 0   1   2   3   4   5   6   7   8   9
-/// ```
-/// It contains two line breaks:
-/// ```
-/// // The first line break:
-/// LineBreakResult(5, 1, 2, LineBreakType.mandatory)
-///
-/// // Second line break:
-/// LineBreakResult(9, 0, 1, LineBreakType.mandatory)
-/// ```
-class LineBreakResult {
-  const LineBreakResult(
-    this.index,
-    int trailingNewlines,
-    int trailingSpaces,
-    this.type,
-  )   : assert(trailingNewlines <= trailingSpaces),
-        assert(trailingNewlines <= index),
-        indexWithoutTrailingNewlines = index - trailingNewlines,
-        indexWithoutTrailingSpaces = index - trailingSpaces;
-
-  /// Creates a [LineBreakResult] where all indices are the same (i.e. there are
-  /// no trailing spaces or new lines).
-  const LineBreakResult.sameIndex(this.index, this.type)
-      : indexWithoutTrailingNewlines = index,
-        indexWithoutTrailingSpaces = index;
-
-  /// The true index at which the line break should occur, including all spaces
-  /// and new lines.
-  final int index;
-
-  /// The index of the line break excluding any trailing new lines.
-  final int indexWithoutTrailingNewlines;
-
-  /// The index of the line break excluding any trailing spaces.
-  final int indexWithoutTrailingSpaces;
-
-  /// The type of line break is useful to determine the behavior in text
-  /// measurement.
-  ///
-  /// For example, a mandatory line break always causes a line break regardless
-  /// of width constraints. But a line break opportunity requires further checks
-  /// to decide whether to take the line break or not.
-  final LineBreakType type;
-
-  bool get isHard =>
-      type == LineBreakType.mandatory || type == LineBreakType.endOfText;
-
-  @override
-  int get hashCode => Object.hash(
-        index,
-        indexWithoutTrailingNewlines,
-        indexWithoutTrailingSpaces,
-        type,
-      );
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is LineBreakResult &&
-        other.index == index &&
-        other.indexWithoutTrailingNewlines == indexWithoutTrailingNewlines &&
-        other.indexWithoutTrailingSpaces == indexWithoutTrailingSpaces &&
-        other.type == type;
-  }
-
-  @override
-  String toString() {
-    if (assertionsEnabled) {
-      return 'LineBreakResult(index: $index, '
-          'without new lines: $indexWithoutTrailingNewlines, '
-          'without spaces: $indexWithoutTrailingSpaces, '
-          'type: $type)';
-    } else {
-      return super.toString();
-    }
   }
 }
 
