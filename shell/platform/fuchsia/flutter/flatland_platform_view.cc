@@ -72,7 +72,6 @@ FlatlandPlatformView::~FlatlandPlatformView() = default;
 
 void FlatlandPlatformView::OnGetLayout(
     fuchsia::ui::composition::LayoutInfo info) {
-  
   view_pixel_ratio_ = info.device_pixel_ratio().x;
   view_logical_size_ = {static_cast<float>(info.logical_size().width),
                         static_cast<float>(info.logical_size().height)};
