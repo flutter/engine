@@ -350,11 +350,6 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   texture_descriptor.format = format;
   texture_descriptor.size = atlas_size;
 
-  if (pixmap.rowBytes() * pixmap.height() !=
-      texture_descriptor.GetByteSizeOfBaseMipLevel()) {
-    return nullptr;
-  }
-
   auto texture = allocator->CreateTexture(
       texture_descriptor, pixmap.writable_addr(),
       pixmap.rowBytes() * pixmap.height(), pixmap.rowBytes());
