@@ -61,7 +61,7 @@ void testMain() {
       sb.addPlatformView(0, width: 10, height: 10);
       sb.pushOffset(0, 0);
       final LayerScene layerScene = sb.build();
-      final testImage = await layerScene.toImage(100, 100);
+      final ui.Image testImage = await layerScene.toImage(100, 100);
 
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
