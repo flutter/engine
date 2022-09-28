@@ -243,7 +243,8 @@ abstract class FlutterView {
   /// If this function is called a second time during a single
   /// [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
   /// callback sequence or called outside the scope of those callbacks, the call
-  /// will be ignored.
+  /// will still be processed and rendered to screen. However, it will be a
+  /// waste if it is called too frequently (e.g. more than once per frame).
   ///
   /// To record graphical operations, first create a [PictureRecorder], then
   /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
