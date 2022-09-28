@@ -201,6 +201,41 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
   return std::make_shared<TextureMTL>(desc, texture);
 }
 
+std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
+    const TextureDescriptor& desc,
+    void* buffer,
+    size_t length,
+    uint16_t row_bytes) {
+  if (!IsValid()) {
+    return nullptr;
+  }
+
+  auto mtl_texture_desc = ToMTLTextureDescriptor(desc);
+
+  if (!mtl_texture_desc) {
+    VALIDATION_LOG << "Texture descriptor was invalid.";
+    return nullptr;
+  }
+
+  mtl_texture_desc.storageMode = MTLStorageModeShared;
+
+  auto mtl_buffer =
+      [device_ newBufferWithBytesNoCopy:buffer
+                                 length:length
+                                options:MTLResourceStorageModeShared
+                            deallocator:^(void* pointer, NSUInteger length) {
+                              free(pointer);
+                            }];
+
+  auto texture = [mtl_buffer newTextureWithDescriptor:mtl_texture_desc
+                                               offset:0
+                                          bytesPerRow:row_bytes];
+  if (!texture) {
+    return nullptr;
+  }
+  return std::make_shared<TextureMTL>(desc, texture);
+}
+
 ISize AllocatorMTL::GetMaxTextureSizeSupported() const {
   return max_texture_supported_;
 }

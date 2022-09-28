@@ -31,6 +31,11 @@ class Allocator {
 
   std::shared_ptr<Texture> CreateTexture(const TextureDescriptor& desc);
 
+  std::shared_ptr<Texture> CreateTexture(const TextureDescriptor& desc,
+                                         void* buffer,
+                                         size_t length,
+                                         uint16_t row_bytes);
+
   std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(const uint8_t* buffer,
                                                      size_t length);
 
@@ -47,6 +52,12 @@ class Allocator {
 
   virtual std::shared_ptr<Texture> OnCreateTexture(
       const TextureDescriptor& desc) = 0;
+
+  virtual std::shared_ptr<Texture> OnCreateTexture(
+      const TextureDescriptor& desc,
+      void* buffer,
+      size_t length,
+      uint16_t row_bytes);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);

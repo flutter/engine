@@ -4,6 +4,7 @@
 
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 
+#include <stdlib.h>
 #include <utility>
 
 #include "flutter/fml/logging.h"
@@ -238,6 +239,26 @@ static void ConvertBitmapToSignedDistanceField(uint8_t* pixels,
 #undef nearestpt
 }
 
+struct FreeDeleter {
+  void operator()(void* ptr) { free(ptr); }
+};
+
+static std::unique_ptr<void, FreeDeleter> AllocatePixels(size_t size) {
+// On Metal, this must be page agligned memory.
+// Windows doesn't have posix_memalign, and it doesn't matter there anyway.
+#if FML_OS_WIN
+  return std::unique_ptr<void, FreeDeleter>(calloc(size, sizeof(uint8_t)));
+#else
+  void* pixels = nullptr;
+  auto page_size = getpagesize();
+  if (posix_memalign(&pixels, page_size, size)) {
+    return nullptr;
+  }
+  memset(pixels, 0, size);
+  return std::unique_ptr<void, FreeDeleter>(pixels);
+#endif
+}
+
 static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
                                                    const ISize& atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -255,7 +276,13 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
       break;
   }
 
-  if (!bitmap->tryAllocPixels(image_info)) {
+  auto pixels = AllocatePixels(image_info.computeMinByteSize());
+  if (!pixels) {
+    return nullptr;
+  }
+
+  if (!bitmap->installPixels(image_info, pixels.get(),
+                             image_info.minRowBytes())) {
     return nullptr;
   }
   auto surface = SkSurface::MakeRasterDirect(bitmap->pixmap());
@@ -294,6 +321,8 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     return true;
   });
 
+  // Pixels will get freed in the backend.
+  pixels.release();
   return bitmap;
 }
 
@@ -320,21 +349,15 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     return nullptr;
   }
 
-  auto texture = allocator->CreateTexture(texture_descriptor);
+  auto texture =
+      allocator->CreateTexture(texture_descriptor, pixmap.writable_addr(),
+                               pixmap.computeByteSize(), pixmap.rowBytes());
   if (!texture || !texture->IsValid()) {
+    free(pixmap.writable_addr());
     return nullptr;
   }
   texture->SetLabel("GlyphAtlas");
 
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
-      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
-  );
-
-  if (!texture->SetContents(mapping)) {
-    return nullptr;
-  }
   return texture;
 }
 
