@@ -444,12 +444,14 @@ def main():
       'and copy two debug builds, one with ASAN and one without.'
   )
 
+  # TODO(http://fxb/110639): Deprecate this in favor of multiple runtime parameters
   parser.add_argument(
       '--skip-remove-buckets',
       action='store_true',
       default=False,
-      help='If set, will skip over the removal of existing artifacts in the '
-      'default bucket directory (which is the default behavior).'
+      help='This allows for multiple runtimes to exist in the default bucket directory. If '
+      'set, will skip over the removal of existing artifacts in the bucket directory '
+      '(which is the default behavior).'
   )
 
   args = parser.parse_args()
