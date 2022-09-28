@@ -84,6 +84,8 @@ class CanvasParagraph implements ui.Paragraph {
   /// The bounds that contain the text painted inside this paragraph.
   ui.Rect get paintBounds => _layoutService.paintBounds;
 
+  bool get isEmpty => plainText.isEmpty;
+
   /// Whether this paragraph has been laid out or not.
   bool isLaidOut = false;
 

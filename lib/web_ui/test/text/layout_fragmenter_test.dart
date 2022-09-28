@@ -24,6 +24,15 @@ void main() {
 
 Future<void> testMain() async {
   group('$LayoutFragmenter', () {
+    test('empty string', () {
+      expect(split(plain(EngineParagraphStyle(), '')), <_Fragment>[]);
+
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (CanvasParagraphBuilder builder) {
+        builder.addText('');
+      });
+      expect(split(paragraph), <_Fragment>[]);
+    });
+
     test('single span', () {
       final CanvasParagraph paragraph =
           plain(EngineParagraphStyle(), 'Lorem 12 $rtlWord1   ipsum34');

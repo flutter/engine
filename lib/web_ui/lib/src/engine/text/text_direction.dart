@@ -107,6 +107,10 @@ final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePro
 List<BidiFragment> _computeBidiFragments(String text) {
   final List<BidiFragment> fragments = <BidiFragment>[];
 
+  if (text.isEmpty) {
+    return fragments;
+  }
+
   int fragmentStart = 0;
   ui.TextDirection? textDirection = _getTextDirection(text, 0);
   FragmentFlow fragmentFlow = _getFragmentFlow(text, 0);

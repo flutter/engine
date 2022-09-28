@@ -15,6 +15,10 @@ void main() {
 
 Future<void> testMain() async {
   group('$BidiFragmenter', () {
+    test('empty string', () {
+      expect(split(''), <_Bidi>[]);
+    });
+
     test('basic cases', () {
       expect(split('Lorem 11 $rtlWord1  22 ipsum'), <_Bidi>[
         _Bidi('Lorem', ltr, own),

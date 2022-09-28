@@ -76,8 +76,6 @@ class TextLayoutService {
   /// 2. Enough lines have been computed to satisfy [maxLines].
   /// 3. An ellipsis is appended because of an overflow.
   void performLayout(ui.ParagraphConstraints constraints) {
-    final int spanCount = paragraph.spans.length;
-
     // Reset results from previous layout.
     width = constraints.width;
     height = 0.0;
@@ -87,8 +85,7 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
-    // TODO(mdebbar): if (paragraph.isEmpty) { ... }
-    if (spanCount == 0) {
+    if (paragraph.isEmpty) {
       return;
     }
 

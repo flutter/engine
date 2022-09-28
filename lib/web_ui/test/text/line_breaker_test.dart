@@ -18,6 +18,12 @@ void main() {
 
 void testMain() {
   group('$LineBreakFragmenter', () {
+    test('empty string', () {
+      expect(split(''), <Line>[
+        Line('', endOfText),
+      ]);
+    });
+
     test('whitespace', () {
       expect(split('foo bar'), <Line>[
         Line('foo ', opportunity),
@@ -252,6 +258,21 @@ void testMain() {
         Line('dolor', opportunity),
         Line('$placeholderChar\n', mandatory),
         Line('sit', opportunity),
+        Line(placeholderChar, endOfText),
+      ]);
+    });
+
+    test('single placeholder', () {
+      final CanvasParagraph paragraph = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        },
+      );
+
+      final String placeholderChar = String.fromCharCode(0xFFFC);
+
+      expect(splitParagraph(paragraph), <Line>[
         Line(placeholderChar, endOfText),
       ]);
     });
