@@ -219,9 +219,14 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
 
   mtl_texture_desc.storageMode = MTLStorageModeShared;
 
+  auto page_size = getpagesize();
+  auto aligned_length = static_cast<size_t>(page_size);
+  while (aligned_length < length) {
+    aligned_length += page_size;
+  }
   auto mtl_buffer =
       [device_ newBufferWithBytesNoCopy:buffer
-                                 length:length
+                                 length:aligned_length
                                 options:MTLResourceStorageModeShared
                             deallocator:^(void* pointer, NSUInteger length) {
                               free(pointer);
@@ -234,6 +239,11 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
     return nullptr;
   }
   return std::make_shared<TextureMTL>(desc, texture);
+}
+
+uint16_t AllocatorMTL::MinimumBytesPerRow(PixelFormat format) const {
+  return static_cast<uint16_t>([device_
+      minimumLinearTextureAlignmentForPixelFormat:ToMTLPixelFormat(format)]);
 }
 
 ISize AllocatorMTL::GetMaxTextureSizeSupported() const {

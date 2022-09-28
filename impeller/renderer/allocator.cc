@@ -73,6 +73,10 @@ std::shared_ptr<Texture> Allocator::CreateTexture(const TextureDescriptor& desc,
   return OnCreateTexture(desc, buffer, length, row_bytes);
 }
 
+uint16_t Allocator::MinimumBytesPerRow(PixelFormat format) const {
+  return BytesPerPixelForPixelFormat(format);
+}
+
 std::shared_ptr<Texture> Allocator::OnCreateTexture(
     const TextureDescriptor& desc,
     void* buffer,

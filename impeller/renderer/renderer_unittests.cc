@@ -843,29 +843,39 @@ TEST_P(RendererTest, InactiveUniforms) {
 
 TEST_P(RendererTest, CanCreateCPUBackedTexture) {
   auto context = GetContext();
+  auto allocator = context->GetResourceAllocator();
+  size_t dimension = 2;
 
-  constexpr size_t size = 512 * 512 * 4;
+  do {
+    ISize size(dimension, dimension);
+    TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
+    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+    texture_descriptor.size = size;
+    auto row_bytes =
+        std::max(static_cast<uint16_t>(size.width * 4),
+                 allocator->MinimumBytesPerRow(texture_descriptor.format));
+    auto buffer_size = size.height * row_bytes;
 
 #if FML_OS_WIN
-  void* pixels = calloc(size, sizeof(uint8_t));
+    void* pixels = calloc(buffer_size, sizeof(uint8_t));
 #else
-  void* pixels = nullptr;
-  auto page_size = getpagesize();
-  ASSERT_FALSE(posix_memalign(&pixels, page_size, size));
-  memset(pixels, 0, size);
+    void* pixels = nullptr;
+    auto page_size = getpagesize();
+    ASSERT_FALSE(posix_memalign(&pixels, page_size, buffer_size));
+    memset(pixels, 0, buffer_size);
 #endif
 
-  ASSERT_TRUE(pixels);
+    ASSERT_TRUE(pixels);
 
-  TextureDescriptor texture_descriptor;
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
-  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-  texture_descriptor.size = ISize(512, 512);
-  auto texture = context->GetResourceAllocator()->CreateTexture(
-      texture_descriptor, pixels, size, 512 * 4);
+    auto texture = allocator->CreateTexture(texture_descriptor, pixels,
+                                            buffer_size, row_bytes);
 
-  ASSERT_TRUE(texture);
-  ASSERT_TRUE(texture->IsValid());
+    ASSERT_TRUE(texture);
+    ASSERT_TRUE(texture->IsValid());
+
+    dimension *= 2;
+  } while (dimension <= 8192);
 }
 
 }  // namespace testing

@@ -259,8 +259,11 @@ static std::unique_ptr<void, FreeDeleter> AllocatePixels(size_t size) {
 #endif
 }
 
-static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
-                                                   const ISize& atlas_size) {
+static std::shared_ptr<SkBitmap> CreateAtlasBitmap(
+    const std::shared_ptr<Allocator>& allocator,
+    PixelFormat format,
+    const GlyphAtlas& atlas,
+    const ISize& atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
   SkImageInfo image_info;
@@ -276,13 +279,16 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
       break;
   }
 
-  auto pixels = AllocatePixels(image_info.computeMinByteSize());
+  auto row_bytes =
+      std::max(static_cast<uint16_t>(image_info.minRowBytes()),
+               static_cast<uint16_t>(allocator->MinimumBytesPerRow(format)));
+
+  auto pixels = AllocatePixels(image_info.computeByteSize(row_bytes));
   if (!pixels) {
     return nullptr;
   }
 
-  if (!bitmap->installPixels(image_info, pixels.get(),
-                             image_info.minRowBytes())) {
+  if (!bitmap->installPixels(image_info, pixels.get(), row_bytes)) {
     return nullptr;
   }
   auto surface = SkSurface::MakeRasterDirect(bitmap->pixmap());
@@ -349,9 +355,10 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     return nullptr;
   }
 
-  auto texture =
-      allocator->CreateTexture(texture_descriptor, pixmap.writable_addr(),
-                               pixmap.computeByteSize(), pixmap.rowBytes());
+  auto texture = allocator->CreateTexture(
+      texture_descriptor, pixmap.writable_addr(),
+      pixmap.rowBytes() * pixmap.height(), pixmap.rowBytes());
+
   if (!texture || !texture->IsValid()) {
     return nullptr;
   }
@@ -410,20 +417,9 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   // Step 5: Draw font-glyph pairs in the correct spot in the atlas.
   // ---------------------------------------------------------------------------
-  auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size);
-  if (!bitmap) {
-    return nullptr;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 6: Upload the atlas as a texture.
-  // ---------------------------------------------------------------------------
   PixelFormat format;
   switch (type) {
     case GlyphAtlas::Type::kSignedDistanceField:
-      ConvertBitmapToSignedDistanceField(
-          reinterpret_cast<uint8_t*>(bitmap->getPixels()), atlas_size.width,
-          atlas_size.height);
     case GlyphAtlas::Type::kAlphaBitmap:
       format = PixelFormat::kA8UNormInt;
       break;
@@ -431,6 +427,23 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
       format = PixelFormat::kR8G8B8A8UNormInt;
       break;
   }
+
+  auto bitmap = CreateAtlasBitmap(GetContext()->GetResourceAllocator(), format,
+                                  *glyph_atlas, atlas_size);
+
+  if (!bitmap) {
+    return nullptr;
+  }
+
+  if (type == GlyphAtlas::Type::kSignedDistanceField) {
+    ConvertBitmapToSignedDistanceField(
+        reinterpret_cast<uint8_t*>(bitmap->getPixels()), atlas_size.width,
+        atlas_size.height);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Step 6: Upload the atlas as a texture.
+  // ---------------------------------------------------------------------------
   auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
                                          bitmap, atlas_size, format);
   if (!texture) {
