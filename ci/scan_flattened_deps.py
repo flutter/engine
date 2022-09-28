@@ -283,8 +283,8 @@ def write_sarif(responses, manifest_file):
         new_rule = create_rule_entry(vuln)
         data['runs'][0]['tool']['driver']['rules'].append(new_rule)
         data['runs'][0]['results'].append(create_result_entry(vuln))
-  with open(manifest_file, 'w') as out:
-    json.dump(data, out)
+    with open(manifest_file, 'w') as out:
+      json.dump(data, out)
 
 
 def create_rule_entry(vuln):
