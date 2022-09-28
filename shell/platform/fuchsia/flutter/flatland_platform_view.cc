@@ -75,10 +75,11 @@ void FlatlandPlatformView::OnGetLayout(
   view_logical_size_ = {static_cast<float>(info.logical_size().width),
                         static_cast<float>(info.logical_size().height)};
 
-  // TODO(fxbug.dev/94000): Set device pixel ratio.
+  view_pixel_ratio_ = info.device_pixel_ratio();
+  const float pixel_ratio - view_pixel_ratio_*;
 
   SetViewportMetrics({
-      1,                              // device_pixel_ratio
+      pixel_ratio,                    // device_pixel_ratio
       view_logical_size_.value()[0],  // physical_width
       view_logical_size_.value()[1],  // physical_height
       0.0f,                           // physical_padding_top

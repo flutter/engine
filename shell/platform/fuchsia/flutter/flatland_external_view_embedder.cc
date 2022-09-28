@@ -98,8 +98,6 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   frame_size_ = frame_size;
   frame_dpr_ = device_pixel_ratio;
 
-  // TODO(fxbug.dev/94000): Handle device pixel ratio.
-
   // Create the root layer.
   frame_layers_.emplace(
       std::make_pair(kRootLayerId, EmbedderLayer(frame_size, std::nullopt)));
