@@ -851,7 +851,6 @@ TEST_P(RendererTest, CanCreateCPUBackedTexture) {
 #else
   void* pixels = nullptr;
   auto page_size = getpagesize();
-  FML_LOG(ERROR) << "page size is " << page_size;
   ASSERT_FALSE(posix_memalign(&pixels, page_size, size));
   memset(pixels, 0, size);
 #endif
@@ -861,9 +860,9 @@ TEST_P(RendererTest, CanCreateCPUBackedTexture) {
   TextureDescriptor texture_descriptor;
   texture_descriptor.storage_mode = StorageMode::kHostVisible;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-  texture_descriptor.size = ISize(4, 4);
+  texture_descriptor.size = ISize(512, 512);
   auto texture = context->GetResourceAllocator()->CreateTexture(
-      texture_descriptor, pixels, size, 4 * 4);
+      texture_descriptor, pixels, size, 512 * 4);
 
   ASSERT_TRUE(texture);
   ASSERT_TRUE(texture->IsValid());
