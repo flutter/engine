@@ -4,8 +4,8 @@
 
 #include <algorithm>
 
-#include "impeller/geometry/gradient.h"
 #include "flutter/fml/logging.h"
+#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
