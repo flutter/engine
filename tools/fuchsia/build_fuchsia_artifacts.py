@@ -25,8 +25,6 @@ _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
 
-print('OUT DIR: ', _out_dir)
-
 
 def IsLinux():
   return platform.system() == 'Linux'
