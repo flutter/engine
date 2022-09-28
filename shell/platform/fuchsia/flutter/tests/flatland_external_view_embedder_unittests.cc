@@ -554,7 +554,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   // We must take into account the effect of DPR on the view scale.
   const float kDPR = 2.0f;
   const float kInvDPR = 1.f / kDPR;
-  const fuchsia::math::VecF kFinalViewScale = kInvDPR * kScale; 
+  const fuchsia::math::VecF kFinalViewScale = kInvDPR * kScale;
 
   // Draw the scene. The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
