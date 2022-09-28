@@ -20,8 +20,7 @@ static bool OnClearCurrent(FlutterEngine* engine) {
 }
 
 static bool OnPresent(FlutterEngine* engine) {
-  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
-  return [openGLRenderer glPresent];
+  return [engine.renderer present];
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
@@ -88,15 +87,18 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return true;
 }
 
-- (BOOL)glPresent {
-  if (!_openGLContext) {
-    return false;
+- (BOOL)present {
+  if (!_openGLContext || !_flutterView) {
+    return NO;
   }
   [_flutterView present];
-  return true;
+  return YES;
 }
 
 - (void)presentWithoutContent {
+  if (!_flutterView) {
+    return;
+  }
   [_flutterView presentWithoutContent];
 }
 
