@@ -232,6 +232,36 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
     auto expected = Point(60, 120);
     ASSERT_POINT_NEAR(result, expected);
   }
+
+  // Matrix Vector ops should respect perspective transforms.
+  {
+    auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100);
+    auto vector = Vector3(3, 3, -3);
+
+    Vector3 result = matrix * vector;
+    auto expected = Vector3(1, 1, 0.673401);
+    ASSERT_VECTOR3_NEAR(result, expected);
+  }
+
+  {
+    auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100) *
+                  Matrix::MakeTranslation(Vector3(0, 0, -3));
+    auto point = Point(3, 3);
+
+    Point result = matrix * point;
+    auto expected = Point(1, 1);
+    ASSERT_POINT_NEAR(result, expected);
+  }
+
+  // Resolves to 0 on perspective singularity.
+  {
+    auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100);
+    auto point = Point(3, 3);
+
+    Point result = matrix * point;
+    auto expected = Point(0, 0);
+    ASSERT_POINT_NEAR(result, expected);
+  }
 }
 
 TEST(GeometryTest, MatrixTransformDirection) {
@@ -935,6 +965,27 @@ TEST(GeometryTest, PointAngleTo) {
   }
 }
 
+TEST(GeometryTest, PointLerp) {
+  Point p(1, 2);
+  Point result = p.Lerp({5, 10}, 0.75);
+  Point expected(4, 8);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Lerp) {
+  Vector3 p(1, 2, 3);
+  Vector3 result = p.Lerp({5, 10, 15}, 0.75);
+  Vector3 expected(4, 8, 12);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Lerp) {
+  Vector4 p(1, 2, 3, 4);
+  Vector4 result = p.Lerp({5, 10, 15, 20}, 0.75);
+  Vector4 expected(4, 8, 12, 16);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
   {
     Vector3 p(1, 2, 4);
@@ -1599,12 +1650,11 @@ TEST(GeometryTest, Gradient) {
     // values.
     std::vector<Color> colors = {Color::Red(), Color::Blue()};
     std::vector<Scalar> stops = {0.0, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
-    ASSERT_EQ(texture_size, 2u);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, colors);
+    ASSERT_EQ(gradient.texture_size, 2u);
   }
 
   {
@@ -1612,10 +1662,9 @@ TEST(GeometryTest, Gradient) {
     std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
                                  Color::Blue()};
     std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
-    ASSERT_EQ(texture_size, 5u);
+    auto gradient = CreateGradientBuffer(colors, stops);
+    ASSERT_EQ(gradient.texture_size, 5u);
   }
 
   {
@@ -1624,21 +1673,19 @@ TEST(GeometryTest, Gradient) {
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
                                  Color::White()};
     std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
-    ASSERT_EQ(texture_size, 4u);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, colors);
+    ASSERT_EQ(gradient.texture_size, 4u);
   }
 
   {
     // Gradient with color stops will lerp and scale buffer.
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
     std::vector<Scalar> stops = {0.0, 0.25, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
     std::vector<Color> lerped_colors = {
         Color::Red(),
@@ -1647,8 +1694,8 @@ TEST(GeometryTest, Gradient) {
         Color::lerp(Color::Blue(), Color::Green(), 0.6666),
         Color::Green(),
     };
-    ASSERT_COLOR_BUFFER_NEAR(gradient, lerped_colors);
-    ASSERT_EQ(texture_size, 5u);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, lerped_colors);
+    ASSERT_EQ(gradient.texture_size, 5u);
   }
 
   {
@@ -1660,10 +1707,9 @@ TEST(GeometryTest, Gradient) {
       stops.push_back(i / 1025.0);
     }
 
-    uint32_t texture_size;
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_EQ(texture_size, 1024u);
+    ASSERT_EQ(gradient.texture_size, 1024u);
   }
 }
 

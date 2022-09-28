@@ -9,23 +9,56 @@ import("//flutter/lib/ui/dart_ui.gni")
 import("//flutter/sky/tools/macos_snapshots.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
+# Generates the Dart/Flutter core platform files and tools.
+#
+# This target generates the platform-specific snapshots and snapshot-related
+# tooling for a given target CPU.
+#
+# Outputs:
+#   * Core platform compiled to kernel bytecode
+#   * Core platform compiled to target_cpu-specific binary snapshot
+#   * target_cpu-specific gen_snapshot
+#   * target_cpu-specific analyze_snapshot
 group("generate_snapshot_bins") {
   deps = [
     ":generate_snapshot_bin",
     ":kernel_platform_files",
   ]
-  if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
-    deps += [ ":create_arm_gen_snapshot" ]
-  }
+
+  # Build gen_snapshot for the currently specified target_cpu.
+  #
+  # For macOS target builds: needed for both target CPUs (arm64, x64).
+  # For iOS, Android target builds: all AOT target CPUs are arm/arm64.
   if (host_os == "mac" && target_os == "mac") {
     deps += [ ":create_macos_gen_snapshots" ]
+  } else if (host_os == "mac" &&
+             (target_cpu == "arm" || target_cpu == "arm64")) {
+    deps += [ ":create_arm_gen_snapshot" ]
   }
+
+  # Build analyze_snapshot for for 64-bit target CPUs.
   if (target_cpu == "x64" || target_cpu == "arm64") {
     deps +=
         [ "//third_party/dart/runtime/bin:analyze_snapshot($host_toolchain)" ]
   }
 }
 
+# Compiles a binary snapshot of the core Dart/Flutter platform.
+#
+# Inputs:
+#   * platform_strong.dill
+#
+# Tools:
+#   * gen_snapshot
+#
+# Outputs:
+#   * vm_snapshot_data.bin
+#   * vm_snapshot_instructions.bin
+#   * isolate_snapshot_data.bin
+#   * isolate_snapshot_instructions.bin
+#
+# See: `bin_to_linkable` rules below that build these outputs into linkable form
+# See: https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
 compiled_action("generate_snapshot_bin") {
   if (target_cpu == "x86" && host_os == "linux") {
     # By default Dart will create a 32-bit gen_snapshot host binary if the target
@@ -157,6 +190,9 @@ template("bin_to_coff") {
   }
 }
 
+# Generates a linkable output file defining the specified symbol with the bytes
+# from the binary file. Emits a COFF object file when targeting Windows,
+# otherwise assembly.
 template("bin_to_linkable") {
   assert(defined(invoker.deps), "Must define deps")
   assert(defined(invoker.input), "Must define input binary file")
@@ -207,6 +243,11 @@ bin_to_linkable("platform_strong_dill_linkable") {
   executable = false
 }
 
+# Creates a `gen_snapshot` binary suffixed with the target platform.
+#
+# Builds gen_snapshot using the host toolchain then copies the resulting binary
+# to `gen_snapshot_armv7` or `gen_snapshot_arm64` depending on the target
+# platform.
 if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
   action("create_arm_gen_snapshot") {
     host_output_dir = get_label_info(
@@ -261,6 +302,7 @@ source_set("snapshot") {
             get_target_outputs(":platform_strong_dill_linkable")
 }
 
+# Compiles the Dart/Flutter core libraries to kernel bytecode.
 compile_platform("strong_platform") {
   single_root_scheme = "org-dartlang-sdk"
   single_root_base = rebase_path("../../../")
