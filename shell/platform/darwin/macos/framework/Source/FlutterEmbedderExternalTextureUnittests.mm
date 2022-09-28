@@ -111,7 +111,11 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestTextureResolution) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   SkSamplingOptions sampling = SkSamplingOptions(SkFilterMode::kNearest);
-  texture->Paint(*gpuSurface->getCanvas(), bounds, /*freeze=*/false, grContext, sampling);
+  flutter::Texture::PaintContext context{
+      .canvas = gpuSurface->getCanvas(),
+      .gr_context = grContext,
+  };
+  texture->Paint(context, bounds, /*freeze=*/false, sampling);
 
   ASSERT_TRUE(mtlTexture != nil);
 
@@ -161,7 +165,11 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestPopulateExternalTexture) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   SkSamplingOptions sampling = SkSamplingOptions(SkFilterMode::kNearest);
-  texture->Paint(*gpuSurface->getCanvas(), bounds, /*freeze=*/false, grContext, sampling);
+  flutter::Texture::PaintContext context{
+      .canvas = gpuSurface->getCanvas(),
+      .gr_context = grContext,
+  };
+  texture->Paint(context, bounds, /*freeze=*/false, sampling);
 
   gpuSurface->makeImageSnapshot();
 }
@@ -209,7 +217,11 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestPopulateExternalTextureYUVA) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   SkSamplingOptions sampling = SkSamplingOptions(SkFilterMode::kNearest);
-  texture->Paint(*gpuSurface->getCanvas(), bounds, /*freeze=*/false, grContext, sampling);
+  flutter::Texture::PaintContext context{
+      .canvas = gpuSurface->getCanvas(),
+      .gr_context = grContext,
+  };
+  texture->Paint(context, bounds, /*freeze=*/false, sampling);
 
   gpuSurface->makeImageSnapshot();
 }
@@ -257,7 +269,11 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestPopulateExternalTextureYUVA2) 
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   SkSamplingOptions sampling = SkSamplingOptions(SkFilterMode::kNearest);
-  texture->Paint(*gpuSurface->getCanvas(), bounds, /*freeze=*/false, grContext, sampling);
+  flutter::Texture::PaintContext context{
+      .canvas = gpuSurface->getCanvas(),
+      .gr_context = grContext,
+  };
+  texture->Paint(context, bounds, /*freeze=*/false, sampling);
 
   gpuSurface->makeImageSnapshot();
 }
