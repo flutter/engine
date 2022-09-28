@@ -549,7 +549,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   external_view_embedder.SetViewProperties(
       child_view_id, child_view_occlusion_hint, /*hit_testable=*/false,
       /*focusable=*/false);
- 
+
   // We must take into account the effect of DPR on the view scale.
   const float kDPR = 2.0f;
   const float kInvDPR = 1.f / kDPR;
