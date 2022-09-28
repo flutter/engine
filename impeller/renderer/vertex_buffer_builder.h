@@ -43,12 +43,19 @@ class VertexBufferBuilder {
 
   void Reserve(size_t count) { return vertices_.reserve(count); }
 
+  void ReserveIndices(size_t count) { return indices_.reserve(count); }
+
   bool HasVertices() const { return !vertices_.empty(); }
 
   size_t GetVertexCount() const { return vertices_.size(); }
 
   VertexBufferBuilder& AppendVertex(VertexType_ vertex) {
     vertices_.emplace_back(std::move(vertex));
+    return *this;
+  }
+
+  VertexBufferBuilder& AppendIndex(IndexType_ index) {
+    indices_.emplace_back(index);
     return *this;
   }
 
@@ -84,6 +91,7 @@ class VertexBufferBuilder {
   // This is a placeholder till vertex de-duplication can be implemented. The
   // current implementation is a very dumb placeholder.
   std::vector<VertexType> vertices_;
+  std::vector<IndexType> indices_;
   std::string label_;
 
   BufferView CreateVertexBufferView(HostBuffer& buffer) const {
@@ -106,6 +114,9 @@ class VertexBufferBuilder {
   }
 
   std::vector<IndexType> CreateIndexBuffer() const {
+    if (indices_.size() != 0) {
+      return indices_;
+    }
     // So dumb! We don't actually need an index buffer right now. But we will
     // once de-duplication is done. So assume this is always done.
     std::vector<IndexType> index_buffer;
@@ -136,7 +147,9 @@ class VertexBufferBuilder {
     return buffer->AsBufferView();
   }
 
-  size_t GetIndexCount() const { return vertices_.size(); }
+  size_t GetIndexCount() const {
+    return indices_.size() == 0 ? vertices_.size() : indices_.size();
+  }
 };
 
 }  // namespace impeller

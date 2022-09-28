@@ -71,7 +71,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       GetCover()
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : GetPath(),
-      pass.GetTransientsBuffer()));
+      GetVertices(), pass.GetTransientsBuffer()));
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,

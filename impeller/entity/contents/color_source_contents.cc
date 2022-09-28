@@ -14,11 +14,19 @@ ColorSourceContents::ColorSourceContents() = default;
 ColorSourceContents::~ColorSourceContents() = default;
 
 void ColorSourceContents::SetPath(Path path) {
-  path_ = path;
+  path_ = std::move(path);
 }
 
-const Path& ColorSourceContents::GetPath() const {
+const std::optional<Path>& ColorSourceContents::GetPath() const {
   return path_;
+}
+
+void ColorSourceContents::SetVertices(Vertices vertices) {
+  vertices_ = std::move(vertices);
+}
+
+const std::optional<Vertices>& ColorSourceContents::GetVertices() const {
+  return vertices_;
 }
 
 void ColorSourceContents::SetAlpha(Scalar alpha) {
@@ -47,7 +55,10 @@ bool ColorSourceContents::GetCover() const {
 
 std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
+  if (path_.has_value()) {
+    return path_->GetTransformedBoundingBox(entity.GetTransformation());
+  }
+  return vertices_->GetTransformedBoundingBox(entity.GetTransformation());
 };
 
 bool ColorSourceContents::ShouldRender(

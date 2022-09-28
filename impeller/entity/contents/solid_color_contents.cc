@@ -66,7 +66,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
       cover_
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : path_,
-      pass.GetTransientsBuffer()));
+      std::nullopt, pass.GetTransientsBuffer()));
 
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

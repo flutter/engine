@@ -8,6 +8,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
+#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -18,6 +19,8 @@ class ColorSourceContents : public Contents {
   ~ColorSourceContents() override;
 
   void SetPath(Path path);
+
+  void SetVertices(Vertices vertices);
 
   void SetMatrix(Matrix matrix);
 
@@ -33,7 +36,9 @@ class ColorSourceContents : public Contents {
                     const std::optional<Rect>& stencil_coverage) const override;
 
  protected:
-  const Path& GetPath() const;
+  const std::optional<Path>& GetPath() const;
+
+  const std::optional<Vertices>& GetVertices() const;
 
   const Matrix& GetInverseMatrix() const;
 
@@ -42,7 +47,8 @@ class ColorSourceContents : public Contents {
   bool GetCover() const;
 
  private:
-  Path path_;
+  std::optional<Path> path_;
+  std::optional<Vertices> vertices_;
   Matrix inverse_matrix_;
   Scalar alpha_ = 1.0;
   bool cover_ = false;

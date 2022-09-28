@@ -81,6 +81,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
       GetCover()
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : GetPath(),
+      GetVertices(),
       pass.GetTransientsBuffer()));
   cmd.primitive_type = PrimitiveType::kTriangle;
   FS::BindGradientInfo(
