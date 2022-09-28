@@ -447,11 +447,11 @@ def main():
   )
 
   parser.add_argument(
-    '--skip-remove-buckets',
-    action='store_true',
-    default=False,
-    help='If set, will skip over the removal of existing artifacts in the '
-    'default bucket directory (which is the default behavior).'
+      '--skip-remove-buckets',
+      action='store_true',
+      default=False,
+      help='If set, will skip over the removal of existing artifacts in the '
+      'default bucket directory (which is the default behavior).'
   )
 
   args = parser.parse_args()
