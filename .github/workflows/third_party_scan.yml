@@ -47,8 +47,6 @@ jobs:
           if test -f "osvReport.sarif"; then
             echo "file_exists=true" >> $GITHUB_ENV
           fi
-        with:
-          files: "osvReport.sarif"
 
       - name: File exists
         if: ${{ env.file_exists }} == 'true'
