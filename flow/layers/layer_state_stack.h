@@ -70,7 +70,7 @@ class LayerStateStack {
     // outstanding attributes.
     // (Currently only opacity is recorded for batching)
     void applyImageFilter(const SkRect& bounds,
-                          const std::shared_ptr<const DlImageFilter> filter);
+                          const std::shared_ptr<const DlImageFilter>& filter);
 
     // Records the color filter for application at the next call to
     // saveLayer or applyState. A saveLayer may be executed at
@@ -78,7 +78,7 @@ class LayerStateStack {
     // outstanding attributes.
     // (Currently only opacity is recorded for batching)
     void applyColorFilter(const SkRect& bounds,
-                          const std::shared_ptr<const DlColorFilter> filter);
+                          const std::shared_ptr<const DlColorFilter>& filter);
 
     // Saves the state stack and immediately executes a saveLayer
     // with the indicated backdrop filter and any outstanding
@@ -89,7 +89,7 @@ class LayerStateStack {
     // subsequent canvas or builder objects that are made delegates
     // will only see a saveLayer with the indicated blend_mode.
     void applyBackdropFilter(const SkRect& bounds,
-                             const std::shared_ptr<const DlImageFilter> filter,
+                             const std::shared_ptr<const DlImageFilter>& filter,
                              DlBlendMode blend_mode);
 
     void translate(SkScalar tx, SkScalar ty);
@@ -122,11 +122,11 @@ class LayerStateStack {
 
   SkScalar outstanding_opacity() { return outstanding_.opacity; }
 
-  const std::shared_ptr<const DlColorFilter> outstanding_color_filter() {
+  std::shared_ptr<const DlColorFilter> outstanding_color_filter() {
     return outstanding_.color_filter;
   }
 
-  const std::shared_ptr<const DlImageFilter> outstanding_image_filter() {
+  std::shared_ptr<const DlImageFilter> outstanding_image_filter() {
     return outstanding_.image_filter;
   }
 
@@ -165,11 +165,11 @@ class LayerStateStack {
   void push_attributes();
   void push_opacity(const SkRect& rect, SkScalar opacity);
   void push_color_filter(const SkRect& bounds,
-                         const std::shared_ptr<const DlColorFilter> filter);
+                         const std::shared_ptr<const DlColorFilter>& filter);
   void push_image_filter(const SkRect& bounds,
-                         const std::shared_ptr<const DlImageFilter> filter);
+                         const std::shared_ptr<const DlImageFilter>& filter);
   void push_backdrop(const SkRect& bounds,
-                     const std::shared_ptr<const DlImageFilter> filter,
+                     const std::shared_ptr<const DlImageFilter>& filter,
                      DlBlendMode blend_mode);
 
   void push_translate(SkScalar tx, SkScalar ty);
@@ -194,16 +194,9 @@ class LayerStateStack {
   void maybe_save_layer_for_clip();
   void maybe_save_layer(int apply_flags);
   void maybe_save_layer(SkScalar opacity);
-  void maybe_save_layer(const std::shared_ptr<const DlColorFilter> filter);
-  void maybe_save_layer(const std::shared_ptr<const DlImageFilter> filter);
+  void maybe_save_layer(const std::shared_ptr<const DlColorFilter>& filter);
+  void maybe_save_layer(const std::shared_ptr<const DlImageFilter>& filter);
   // ---------------------
-
-  static std::optional<SkRect> OptionalBounds(const SkRect* bounds) {
-    return bounds ? std::make_optional<SkRect>(*bounds) : std::nullopt;
-  }
-  static const SkRect* BoundsPtr(const std::optional<SkRect>& bounds) {
-    return bounds.has_value() ? &bounds.value() : nullptr;
-  }
 
   struct RenderingAttributes {
     // We need to record the last bounds we received for the last
@@ -322,7 +315,7 @@ class LayerStateStack {
   class ImageFilterEntry : public StateEntry {
    public:
     ImageFilterEntry(const SkRect& bounds,
-                     const std::shared_ptr<const DlImageFilter> filter)
+                     const std::shared_ptr<const DlImageFilter>& filter)
         : bounds_(bounds), filter_(filter) {}
     ~ImageFilterEntry() override = default;
 
@@ -338,7 +331,7 @@ class LayerStateStack {
   class ColorFilterEntry : public StateEntry {
    public:
     ColorFilterEntry(const SkRect& bounds,
-                     const std::shared_ptr<const DlColorFilter> filter)
+                     const std::shared_ptr<const DlColorFilter>& filter)
         : bounds_(bounds), filter_(filter) {}
     ~ColorFilterEntry() override = default;
 
@@ -354,7 +347,7 @@ class LayerStateStack {
   class BackdropFilterEntry : public SaveLayerEntry {
    public:
     BackdropFilterEntry(const SkRect& bounds,
-                        const std::shared_ptr<const DlImageFilter> filter,
+                        const std::shared_ptr<const DlImageFilter>& filter,
                         DlBlendMode blend_mode,
                         bool checkerboard)
         : SaveLayerEntry(bounds, blend_mode, checkerboard), filter_(filter) {}

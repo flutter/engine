@@ -138,7 +138,7 @@ void MutatorContext::applyOpacity(const SkRect& bounds, SkScalar opacity) {
 
 void MutatorContext::applyImageFilter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlImageFilter> filter) {
+    const std::shared_ptr<const DlImageFilter>& filter) {
   if (filter) {
     layer_state_stack_->push_attributes();
     layer_state_stack_->maybe_save_layer(filter);
@@ -148,7 +148,7 @@ void MutatorContext::applyImageFilter(
 
 void MutatorContext::applyColorFilter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlColorFilter> filter) {
+    const std::shared_ptr<const DlColorFilter>& filter) {
   if (filter) {
     layer_state_stack_->push_attributes();
     layer_state_stack_->maybe_save_layer(filter);
@@ -158,7 +158,7 @@ void MutatorContext::applyColorFilter(
 
 void MutatorContext::applyBackdropFilter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlImageFilter> filter,
+    const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode) {
   layer_state_stack_->push_backdrop(bounds, filter, blend_mode);
 }
@@ -222,21 +222,21 @@ void LayerStateStack::push_opacity(const SkRect& bounds, SkScalar opacity) {
 
 void LayerStateStack::push_color_filter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlColorFilter> filter) {
+    const std::shared_ptr<const DlColorFilter>& filter) {
   state_stack_.emplace_back(std::make_unique<ColorFilterEntry>(bounds, filter));
   apply_last_entry();
 }
 
 void LayerStateStack::push_image_filter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlImageFilter> filter) {
+    const std::shared_ptr<const DlImageFilter>& filter) {
   state_stack_.emplace_back(std::make_unique<ImageFilterEntry>(bounds, filter));
   apply_last_entry();
 }
 
 void LayerStateStack::push_backdrop(
     const SkRect& bounds,
-    const std::shared_ptr<const DlImageFilter> filter,
+    const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode) {
   state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
       bounds, filter, blend_mode, do_checkerboard_));
@@ -329,7 +329,7 @@ void LayerStateStack::maybe_save_layer(SkScalar opacity) {
 }
 
 void LayerStateStack::maybe_save_layer(
-    const std::shared_ptr<const DlColorFilter> filter) {
+    const std::shared_ptr<const DlColorFilter>& filter) {
   if (outstanding_.color_filter || outstanding_.image_filter ||
       (outstanding_.opacity < SK_Scalar1 &&
        !filter->can_commute_with_alpha())) {
@@ -339,7 +339,7 @@ void LayerStateStack::maybe_save_layer(
 }
 
 void LayerStateStack::maybe_save_layer(
-    const std::shared_ptr<const DlImageFilter> filter) {
+    const std::shared_ptr<const DlImageFilter>& filter) {
   if (outstanding_.image_filter) {
     // TBD: compose the 2 image filters together.
     save_layer(outstanding_.save_layer_bounds);
@@ -505,7 +505,7 @@ void LayerStateStack::IntegralTransformEntry::apply(
     canvas->setMatrix(matrix);
   }
   if (builder != nullptr) {
-    auto matrix = canvas->getTotalMatrix();
+    auto matrix = builder->getTransform();
     matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
     builder->transformReset();
     builder->transform(matrix);
