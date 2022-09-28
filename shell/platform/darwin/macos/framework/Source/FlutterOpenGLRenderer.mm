@@ -55,15 +55,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   // The context provided to the Flutter engine for resource loading.
   NSOpenGLContext* _resourceContext;
-
-  __weak FlutterEngine* _flutterEngine;
 }
 
 - (instancetype)initWithFlutterEngine:(FlutterEngine*)flutterEngine {
   self = [super initWithDelegate:self engine:flutterEngine];
-  if (self) {
-    _flutterEngine = flutterEngine;
-  }
   return self;
 }
 
