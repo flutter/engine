@@ -78,7 +78,7 @@ class GitRepo {
         'diff-tree',
         '--no-commit-id',
         '--name-only',
-        '--diff-filter=ACMRT', # Added, copied, modified, renamed, or type-changed.
+        '--diff-filter=ACMRT', // Added, copied, modified, renamed, or type-changed.
         '-r',
         'HEAD',
       ],
