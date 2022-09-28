@@ -353,7 +353,6 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
       allocator->CreateTexture(texture_descriptor, pixmap.writable_addr(),
                                pixmap.computeByteSize(), pixmap.rowBytes());
   if (!texture || !texture->IsValid()) {
-    free(pixmap.writable_addr());
     return nullptr;
   }
   texture->SetLabel("GlyphAtlas");

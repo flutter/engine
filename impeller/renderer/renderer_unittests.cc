@@ -841,5 +841,33 @@ TEST_P(RendererTest, InactiveUniforms) {
   OpenPlaygroundHere(callback);
 }
 
+TEST_P(RendererTest, CanCreateCPUBackedTexture) {
+  auto context = GetContext();
+
+  constexpr size_t size = 512 * 512 * 4;
+
+#if FML_OS_WIN
+  void* pixels = calloc(size, sizeof(uint8_t));
+#else
+  void* pixels = nullptr;
+  auto page_size = getpagesize();
+  FML_LOG(ERROR) << "page size is " << page_size;
+  ASSERT_FALSE(posix_memalign(&pixels, page_size, size));
+  memset(pixels, 0, size);
+#endif
+
+  ASSERT_TRUE(pixels);
+
+  TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_descriptor.size = ISize(4, 4);
+  auto texture = context->GetResourceAllocator()->CreateTexture(
+      texture_descriptor, pixels, size, 4 * 4);
+
+  ASSERT_TRUE(texture);
+  ASSERT_TRUE(texture->IsValid());
+}
+
 }  // namespace testing
 }  // namespace impeller
