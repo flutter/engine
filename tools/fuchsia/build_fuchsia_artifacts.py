@@ -25,6 +25,8 @@ _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
 
+print('OUT DIR: ', _out_dir)
+
 
 def IsLinux():
   return platform.system() == 'Linux'
@@ -444,9 +446,18 @@ def main():
       'and copy two debug builds, one with ASAN and one without.'
   )
 
+  parser.add_argument(
+    '--skip-remove-buckets',
+    action='store_true',
+    default=False,
+    help='If set, will skip over the removal of existing artifacts in the '
+    'default bucket directory (which is the default behavior).'
+  )
+
   args = parser.parse_args()
-  RemoveDirectoryIfExists(_bucket_directory)
   build_mode = args.runtime_mode
+  if (not args.skip_remove_buckets):
+    RemoveDirectoryIfExists(_bucket_directory)
 
   archs = ['x64', 'arm64'] if args.archs == 'all' else [args.archs]
   runtime_modes = ['debug', 'profile', 'release']
