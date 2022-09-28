@@ -428,22 +428,21 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
-  FlutterViewController* viewController = _viewController;
-  if (!viewController) {
+  if (!_viewController) {
     return nil;
   }
 
   __weak FlutterEngine* weakSelf = self;
 
-  flutter::FlutterCompositor::GetViewCallback get_view_callback =
-      [&viewController](uint64_t view_id) {
-        return viewController == nullptr ? nullptr : viewController.flutterView;
+  flutter::FlutterCompositor::GetViewCallback getViewCallback =
+      [weakSelf](uint64_t view_id) {
+        return weakSelf.viewController == nullptr ? nullptr : weakSelf.viewController.flutterView;
       };
 
   if ([FlutterRenderingBackend renderUsingMetal]) {
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
     _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-        std::move(get_view_callback), _platformViewController, metalRenderer.device);
+        std::move(getViewCallback), _platformViewController, metalRenderer.device);
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
       FlutterMetalRenderer* metalRenderer =
           reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
@@ -457,7 +456,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else {
     FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
     [openGLRenderer.openGLContext makeCurrentContext];
-    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(std::move(get_view_callback),
+    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(std::move(getViewCallback),
                                                                       openGLRenderer.openGLContext);
 
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
