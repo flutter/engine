@@ -45,6 +45,7 @@ TEST(DisplayList, SingleOpSizes) {
       sk_sp<DisplayList> dl = invocation.Build();
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
       ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
+      ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
     }
   }
 }
@@ -216,6 +217,7 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
     }
   }
   EXPECT_EQ(dl->op_count(false), op_count) << name;
+  EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
   return dl;
 }
 

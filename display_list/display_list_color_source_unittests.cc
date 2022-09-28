@@ -66,11 +66,6 @@ static constexpr float kTestStops[kTestStopCount] = {
     0.7f,
     1.0f,
 };
-static constexpr float kGeneratedTestStops[kTestStopCount] = {
-    0.0f,
-    0.5f,
-    1.0f,
-};
 static constexpr float kTestStops2[kTestStopCount] = {
     0.0f,
     0.3f,
@@ -438,24 +433,6 @@ TEST(DisplayListColorSource, LinearGradientContents) {
   ASSERT_EQ(source->asLinearGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asLinearGradient()->matrix(), kTestMatrix1);
   ASSERT_EQ(source->is_opaque(), true);
-  ASSERT_FALSE(source->asLinearGradient()->generated_stops());
-}
-
-TEST(DisplayListColorSource, LinearGradientContentsWithGeneratedStops) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
-      kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, nullptr,
-      DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_EQ(source->asLinearGradient()->start_point(), kTestPoints[0]);
-  ASSERT_EQ(source->asLinearGradient()->end_point(), kTestPoints[1]);
-  ASSERT_EQ(source->asLinearGradient()->stop_count(), kTestStopCount);
-  for (int i = 0; i < kTestStopCount; i++) {
-    ASSERT_EQ(source->asLinearGradient()->colors()[i], kTestColors[i]);
-    ASSERT_EQ(source->asLinearGradient()->stops()[i], kGeneratedTestStops[i]);
-  }
-  ASSERT_EQ(source->asLinearGradient()->tile_mode(), DlTileMode::kClamp);
-  ASSERT_EQ(source->asLinearGradient()->matrix(), kTestMatrix1);
-  ASSERT_EQ(source->is_opaque(), true);
-  ASSERT_TRUE(source->asLinearGradient()->generated_stops());
 }
 
 TEST(DisplayListColorSource, AlphaLinearGradientContents) {
@@ -575,24 +552,6 @@ TEST(DisplayListColorSource, RadialGradientContents) {
   ASSERT_EQ(source->asRadialGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asRadialGradient()->matrix(), kTestMatrix1);
   ASSERT_EQ(source->is_opaque(), true);
-  ASSERT_FALSE(source->asRadialGradient()->generated_stops());
-}
-
-TEST(DisplayListColorSource, RadialGradientContentsWithGeneratedStops) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, nullptr,
-      DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_EQ(source->asRadialGradient()->center(), kTestPoints[0]);
-  ASSERT_EQ(source->asRadialGradient()->radius(), 10.0);
-  ASSERT_EQ(source->asRadialGradient()->stop_count(), kTestStopCount);
-  for (int i = 0; i < kTestStopCount; i++) {
-    ASSERT_EQ(source->asRadialGradient()->colors()[i], kTestColors[i]);
-    ASSERT_EQ(source->asRadialGradient()->stops()[i], kGeneratedTestStops[i]);
-  }
-  ASSERT_EQ(source->asRadialGradient()->tile_mode(), DlTileMode::kClamp);
-  ASSERT_EQ(source->asRadialGradient()->matrix(), kTestMatrix1);
-  ASSERT_EQ(source->is_opaque(), true);
-  ASSERT_TRUE(source->asRadialGradient()->generated_stops());
 }
 
 TEST(DisplayListColorSource, AlphaRadialGradientContents) {
@@ -714,26 +673,6 @@ TEST(DisplayListColorSource, ConicalGradientContents) {
   ASSERT_EQ(source->asConicalGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asConicalGradient()->matrix(), kTestMatrix1);
   ASSERT_EQ(source->is_opaque(), true);
-  ASSERT_FALSE(source->asConicalGradient()->generated_stops());
-}
-
-TEST(DisplayListColorSource, ConicalGradientContentsGeneratedStops) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
-      kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
-      nullptr, DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_EQ(source->asConicalGradient()->start_center(), kTestPoints[0]);
-  ASSERT_EQ(source->asConicalGradient()->start_radius(), 10.0);
-  ASSERT_EQ(source->asConicalGradient()->end_center(), kTestPoints[1]);
-  ASSERT_EQ(source->asConicalGradient()->end_radius(), 20.0);
-  ASSERT_EQ(source->asConicalGradient()->stop_count(), kTestStopCount);
-  for (int i = 0; i < kTestStopCount; i++) {
-    ASSERT_EQ(source->asConicalGradient()->colors()[i], kTestColors[i]);
-    ASSERT_EQ(source->asConicalGradient()->stops()[i], kGeneratedTestStops[i]);
-  }
-  ASSERT_EQ(source->asConicalGradient()->tile_mode(), DlTileMode::kClamp);
-  ASSERT_EQ(source->asConicalGradient()->matrix(), kTestMatrix1);
-  ASSERT_EQ(source->is_opaque(), true);
-  ASSERT_TRUE(source->asConicalGradient()->generated_stops());
 }
 
 TEST(DisplayListColorSource, AlphaConicalGradientContents) {

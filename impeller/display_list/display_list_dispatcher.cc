@@ -291,9 +291,7 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
 }
 
 // Convert display list colors + stops into impeller colors and stops, taking
-// care to ensure that the stops always start with 0.0 and end with 1.0. If
-// the color stops were generated, only pass through the colors. This signals
-// that the colors are intended to be evenly space.d
+// care to ensure that the stops always start with 0.0 and end with 1.0.
 template <typename T>
 static void ConvertStops(T* gradient,
                          std::vector<Color>* colors,
@@ -301,13 +299,6 @@ static void ConvertStops(T* gradient,
   FML_DCHECK(gradient->stop_count() >= 2);
 
   auto* dl_colors = gradient->colors();
-  if (gradient->generated_stops()) {
-    for (auto i = 0; i < gradient->stop_count(); i++) {
-      colors->emplace_back(ToColor(dl_colors[i]));
-    }
-    return;
-  }
-
   auto* dl_stops = gradient->stops();
   if (dl_stops[0] != 0.0) {
     colors->emplace_back(ToColor(dl_colors[0]));

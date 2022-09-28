@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "impeller/geometry/gradient.h"
+#include "flutter/fml/logging.h"
 
 namespace impeller {
 
@@ -18,18 +19,10 @@ static void AppendColor(const Color& color, std::vector<uint8_t>* colors) {
 
 GradientData CreateGradientBuffer(const std::vector<Color>& colors,
                                   const std::vector<Scalar>& stops) {
-  // check for gradients that are invalid due to either not enough colors or
-  // mismatched colors and stops
-  if (colors.size() < 2 ||
-      (stops.size() != 0 && stops.size() != colors.size())) {
-    return GradientData{
-        .color_bytes = {},
-        .texture_size = 0,
-    };
-  }
+  FML_DCHECK(stops.size() == colors.size());
 
   uint32_t texture_size;
-  if (stops.size() == 0) {
+  if (stops.size() == 2) {
     texture_size = colors.size();
   } else {
     auto minimum_delta = 1.0;
@@ -66,7 +59,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
     AppendColor(previous_color, &color_stop_channels);
 
     for (auto i = 1u; i < texture_size - 1; i++) {
-      auto scaled_i = i / (texture_size * 1.0 - 1.0);
+      auto scaled_i = i / (texture_size - 1.0);
       Color next_color = colors[previous_color_index + 1];
       auto next_stop = stops[previous_color_index + 1];
       // We're almost exactly equal to the next stop.

@@ -1722,36 +1722,6 @@ TEST(GeometryTest, Gradient) {
 
     ASSERT_EQ(gradient.texture_size, 1024u);
   }
-
-  {
-    // Returns empty gradient for single color.
-    std::vector<Color> colors = {Color::Red()};
-    std::vector<Scalar> stops = {0.0, 1.0};
-
-    auto gradient = CreateGradientBuffer(colors, stops);
-
-    ASSERT_EQ(gradient.texture_size, 0u);
-  }
-
-  {
-    // Returns empty gradient for no colors.
-    std::vector<Color> colors = {};
-    std::vector<Scalar> stops = {0.0, 1.0};
-
-    auto gradient = CreateGradientBuffer(colors, stops);
-
-    ASSERT_EQ(gradient.texture_size, 0u);
-  }
-
-  {
-    // Returns empty gradient for mismatched colors and stops.
-    std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue()};
-    std::vector<Scalar> stops = {0.0, 1.0};
-
-    auto gradient = CreateGradientBuffer(colors, stops);
-
-    ASSERT_EQ(gradient.texture_size, 0u);
-  }
 }
 
 }  // namespace testing
