@@ -80,8 +80,7 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
       GetCover()
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : GetPath(),
-      GetVertices(),
-      pass.GetTransientsBuffer()));
+      GetVertices(), pass.GetTransientsBuffer()));
   cmd.primitive_type = PrimitiveType::kTriangle;
   FS::BindGradientInfo(
       cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
