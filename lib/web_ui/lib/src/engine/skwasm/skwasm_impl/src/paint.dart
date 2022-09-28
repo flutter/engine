@@ -23,6 +23,7 @@ class SkwasmPaint implements ui.Paint {
   @override
   set blendMode(ui.BlendMode blendMode) {
     if (_cachedBlendMode != blendMode) {
+      _cachedBlendMode = blendMode;
       paint_setBlendMode(_handle, blendMode.index.toWasmI32());
     }
   }
