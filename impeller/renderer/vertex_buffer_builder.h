@@ -68,6 +68,14 @@ class VertexBufferBuilder {
     return *this;
   }
 
+  VertexBufferBuilder& AddIndices(std::initializer_list<IndexType_> indices) {
+    indices_.reserve(indices.size());
+    for (auto index : indices) {
+      indices_.emplace_back(index);
+    }
+    return *this;
+  }
+
   VertexBuffer CreateVertexBuffer(HostBuffer& host_buffer) const {
     VertexBuffer buffer;
     buffer.vertex_buffer = CreateVertexBufferView(host_buffer);

@@ -17,6 +17,7 @@
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
@@ -1212,6 +1213,33 @@ TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
       std::make_shared<VerticesContents>(vertices);
   contents->SetBlendMode(BlendMode::kSourceOver);
   contents->SetColor(Color::Red().WithAlpha(0.5));
+
+  Entity e;
+  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(e));
+}
+
+TEST_P(EntityTest, DrawVerticesGradientTrianglesWithoutIndices) {
+  std::vector<Point> positions = {Point(100, 300), Point(200, 100),
+                                  Point(300, 300)};
+
+  Vertices vertices = Vertices(positions, {} /* indices */, {} /* colors */,
+                               VertexMode::kTriangle, Rect(100, 100, 300, 300));
+
+  std::shared_ptr<LinearGradientContents> contents =
+      std::make_shared<LinearGradientContents>();
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+  contents->SetVertices(vertices);
+  contents->SetColors(colors);
+  contents->SetStops(stops);
+  contents->SetCover(false);
+  contents->SetAlpha(1.0);
+  contents->SetEndPoints({100, 100}, {300, 300});
+  contents->SetTileMode(Entity::TileMode::kClamp);
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));

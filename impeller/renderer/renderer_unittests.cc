@@ -841,5 +841,71 @@ TEST_P(RendererTest, InactiveUniforms) {
   OpenPlaygroundHere(callback);
 }
 
+TEST_P(RendererTest, BoxPrimitiveWithSpecifiedIndices) {
+  using VS = BoxFadeVertexShader;
+  using FS = BoxFadeFragmentShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  using BoxPipelineBuilder = PipelineBuilder<VS, FS>;
+  auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto box_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+  ASSERT_TRUE(box_pipeline);
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  vertex_builder.AddIndices({0, 1, 2, 0, 2, 3});
+
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(bridge && boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    Command cmd;
+    cmd.label = "Box";
+    cmd.pipeline = box_pipeline;
+
+    cmd.BindVertices(vertex_buffer);
+
+    VS::UniformBuffer uniforms;
+    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   Matrix::MakeScale(GetContentScale());
+    VS::BindUniformBuffer(cmd,
+                          pass.GetTransientsBuffer().EmplaceUniform(uniforms));
+
+    FS::FrameInfo frame_info;
+    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.cursor_position = GetCursorPosition();
+    frame_info.window_size.x = GetWindowSize().width;
+    frame_info.window_size.y = GetWindowSize().height;
+
+    FS::BindFrameInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    FS::BindContents1(cmd, boston, sampler);
+    FS::BindContents2(cmd, bridge, sampler);
+
+    cmd.primitive_type = PrimitiveType::kTriangle;
+    if (!pass.AddCommand(std::move(cmd))) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
 }  // namespace testing
 }  // namespace impeller
