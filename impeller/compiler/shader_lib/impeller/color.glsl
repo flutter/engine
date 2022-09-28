@@ -18,4 +18,12 @@ vec4 IPUnpremultiply(vec4 color) {
   return vec4(color.rgb / color.a, color.a);
 }
 
+/// Convert a unpremultiplied color (a color which has its color components
+/// devided with its alpha value) to an premultiplied color.
+///
+/// Returns (0, 0, 0, 0) if the alpha component is 0.
+vec4 IPPremultiply(vec4 color) {
+  return vec4(color.rgb * color.a, color.a);
+}
+
 #endif
