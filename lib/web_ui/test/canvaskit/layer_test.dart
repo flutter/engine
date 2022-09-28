@@ -65,7 +65,6 @@ void testMain() {
 
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
-  
       canvas.drawImage(testImage as CkImage, ui.Offset.zero, CkPaint());
       await matchPictureGolden(
         'canvaskit_picture.png',
