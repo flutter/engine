@@ -38,10 +38,21 @@ jobs:
       - name: parse deps_parser output.txt
         run: python ci/scan_flattened_deps.py 
 
+      - name: Check file existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "osvReport.sarif"
+
+      - name: File exists
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: echo "Sarif was created"
+
       # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
       # format to the repository Actions tab.
       - name: "Upload artifact"
-        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
+        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535
+        if: steps.check_files.outputs.files_exists == 'true'
         with:
           name: SARIF file
           path: osvReport.sarif
@@ -50,5 +61,6 @@ jobs:
       # Upload the results to GitHub's code scanning dashboard.
       - name: "Upload to code-scanning"
         uses: github/codeql-action/upload-sarif@a3a6c128d771b6b9bdebb1c9d0583ebd2728a108
+        if: steps.check_files.outputs.files_exists == 'true'
         with:
           sarif_file: osvReport.sarif
