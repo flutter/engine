@@ -220,7 +220,7 @@ Matcher<FakeGraph> IsFlutterGraph(
       /*content_map*/ _, /*transform_map*/ _,
       Pointee(FieldsAre(
           /*id*/ _, FakeTransform::kDefaultTranslation,
-          FakeTransform::kDefaultScale, FakeTransform::kDefaultOrientation,
+          /*scale*/_, FakeTransform::kDefaultOrientation,
           /*clip_bounds*/ _, FakeTransform::kDefaultOpacity,
           /*children*/ ElementsAreArray(layer_matchers),
           /*content*/ Eq(nullptr), /*num_hit_regions*/ _)),
