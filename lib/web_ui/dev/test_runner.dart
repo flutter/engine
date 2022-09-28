@@ -144,8 +144,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     try {
       await testPipeline.run();
-      print('');
-      print('Initial test succeeded!');
+      if (isWatchMode) {
+        print('');
+        print('Initial test succeeded!');
+      }
     } catch(error, stackTrace) {
       if (isWatchMode) {
         // The error is printed but not rethrown in watch mode because
