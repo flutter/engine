@@ -55,12 +55,23 @@ void testMain() {
 
     test('null ViewEmbedder with PlatformView', () async {
       final LayerSceneBuilder sb = LayerSceneBuilder();
+      const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 200, 200);
       await createPlatformView(0, 'test-platform-view');
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       sb.pushOffset(0, 0);
       final LayerScene layerScene = sb.build();
-      await layerScene.toImage(100, 100);
+      final testImage = await layerScene.toImage(100, 100);
+
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+  
+      canvas.drawImage(testImage as CkImage, ui.Offset.zero, CkPaint());
+      await matchPictureGolden(
+        'canvaskit_picture.png',
+        recorder.endRecording(),
+        region: kDefaultRegion,
+      );
     });
   });
 }

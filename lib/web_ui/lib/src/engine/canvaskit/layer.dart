@@ -591,6 +591,9 @@ class PlatformViewLayer extends Layer {
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
+
+    /// ViewEmbedder is set to null when screenshotting. Therefore, skip 
+    /// rendering
     prerollContext.viewEmbedder?.prerollCompositeEmbeddedView(
       viewId,
       EmbeddedViewParams(
