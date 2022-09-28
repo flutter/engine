@@ -164,7 +164,7 @@ void MutatorContext::applyBackdropFilter(
 }
 
 void MutatorContext::translate(SkScalar tx, SkScalar ty) {
-  if (!(tx == 0 || ty == 0)) {
+  if (!(tx == 0 && ty == 0)) {
     layer_state_stack_->maybe_save_layer_for_transform();
     layer_state_stack_->push_translate(tx, ty);
   }
