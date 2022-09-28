@@ -44,8 +44,11 @@ jobs:
       - name: Check file existence
         id: check_files
         run: |
+          echo "file_exists=false" >> $GITHUB_ENV \
+          echo ${{ env.file_exists }} \
           if test -f "osvReport.sarif"; then
-            echo "file_exists=true" >> $GITHUB_ENV
+            echo "file_exists=true" >> $GITHUB_ENV \
+            echo ${{ env.file_exists }}
           fi
 
       - name: File exists
