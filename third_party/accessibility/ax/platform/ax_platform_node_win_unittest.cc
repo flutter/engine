@@ -446,8 +446,7 @@ TEST_F(AXPlatformNodeWinTest, IAccessibleDetachedObject) {
   EXPECT_EQ(E_FAIL, root_obj->get_accName(SELF, name2.Receive()));
 }
 
-// TODO(cbracken): Flaky https://github.com/flutter/flutter/issues/98302
-TEST_F(AXPlatformNodeWinTest, DISABLED_IAccessibleHitTest) {
+TEST_F(AXPlatformNodeWinTest, IAccessibleHitTest) {
   AXNodeData root;
   root.id = 1;
   root.relative_bounds.bounds = gfx::RectF(0, 0, 40, 40);
