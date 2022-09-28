@@ -21,12 +21,14 @@ void main() {
   vec4 input_color = IPSample(input_texture, v_position,
                               frag_info.texture_sampler_y_coord_scale);
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 3; i++) {
+    input_color[i] = input_color[i] / input_color[3];
     if (input_color[i] <= 0.04045) {
       input_color[i] = input_color[i] / 12.92;
     } else {
       input_color[i] = pow((input_color[i] + 0.055) / 1.055, 2.4);
     }
+    input_color[i] = input_color[i] * input_color[3];
   }
 
   frag_color = input_color;
