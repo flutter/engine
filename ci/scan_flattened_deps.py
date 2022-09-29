@@ -272,19 +272,15 @@ def write_sarif(responses, manifest_file):
   may contain several vulnerabilities
 
   Combines a rule with a result in order to construct the report
-
-  If an empty vulnerability response is passed to this method
-  do not produce any SARIF report
   """
-  if responses != {}:
-    data = sarif_log
-    for response in responses:
-      for vuln in response['vulns']:
-        new_rule = create_rule_entry(vuln)
-        data['runs'][0]['tool']['driver']['rules'].append(new_rule)
-        data['runs'][0]['results'].append(create_result_entry(vuln))
-    with open(manifest_file, 'w') as out:
-      json.dump(data, out)
+  data = sarif_log
+  for response in responses:
+    for vuln in response['vulns']:
+      new_rule = create_rule_entry(vuln)
+      data['runs'][0]['tool']['driver']['rules'].append(new_rule)
+      data['runs'][0]['results'].append(create_result_entry(vuln))
+  with open(manifest_file, 'w') as out:
+    json.dump(data, out)
 
 
 def create_rule_entry(vuln):
@@ -295,7 +291,7 @@ def create_rule_entry(vuln):
   rule = sarif_rule()
   rule['id'] = vuln['id']
   rule['shortDescription']['text'] = vuln['id']
-  rule['help']['text'].join(vuln['id'])
+  rule['help']['text'] += vuln['id']
   return rule
 
 

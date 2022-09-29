@@ -41,23 +41,10 @@ jobs:
       - name: parse deps_parser output.txt
         run: python ci/scan_flattened_deps.py 
 
-      - name: Check file existence
-        id: check_files
-        run: |
-          echo "file_exists=false" >> $GITHUB_ENV
-          echo ${{ env.file_exists }}
-          test -f "osvReport.sarif" && "file_exists=true" >> $GITHUB_ENV
-          echo ${{ env.file_exists }}
-
-      - name: File exists
-        if: ${{ env.file_exists }} == 'true'
-        run: echo "Sarif was created"
-
       # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
       # format to the repository Actions tab.
       - name: "Upload artifact"
         uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535
-        if: ${{ env.file_exists }} == 'true'
         with:
           name: SARIF file
           path: osvReport.sarif
@@ -66,6 +53,5 @@ jobs:
       # Upload the results to GitHub's code scanning dashboard.
       - name: "Upload to code-scanning"
         uses: github/codeql-action/upload-sarif@a3a6c128d771b6b9bdebb1c9d0583ebd2728a108
-        if: ${{ env.file_exists }} == 'true'
         with:
           sarif_file: osvReport.sarif
