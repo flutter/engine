@@ -48,6 +48,16 @@
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
+// Applies blur backdrop filters to the ChildClippingView with blur radius values from
+// blurRadii. Returns NO if Apple's API has changed and blurred backdrop filters cannot
+// be applied, otherwise returns YES.
+- (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
+
+// The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
+// initalized with UIBlurEffect to extract the correct filter. Made a public property
+// for custom unit tests.
+@property(nonatomic, retain) UIView* blurEffectView;
+
 @end
 
 namespace flutter {
@@ -164,6 +174,8 @@ class FlutterPlatformViewsController {
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
   std::vector<SkCanvas*> GetCurrentCanvases();
+
+  std::vector<DisplayListBuilder*> GetCurrentBuilders();
 
   EmbedderPaintContext CompositeEmbeddedView(int view_id);
 
@@ -314,6 +326,14 @@ class FlutterPlatformViewsController {
 
   // WeakPtrFactory must be the last member.
   std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
+
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  // A set to keep track of embedded views that does not have (0, 0) origin.
+  // An insertion triggers a warning message about non-zero origin logged on the debug console.
+  // See https://github.com/flutter/flutter/issues/109700 for details.
+  std::unordered_set<int64_t> non_zero_origin_views_;
+#endif
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 

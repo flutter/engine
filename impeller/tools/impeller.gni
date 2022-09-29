@@ -14,7 +14,7 @@ declare_args() {
   impeller_enable_metal = is_mac || is_ios
 
   # Whether the OpenGLES backend is enabled.
-  impeller_enable_opengles = is_mac || is_linux || is_android
+  impeller_enable_opengles = is_mac || is_linux || is_win || is_android
 
   # Whether the Vulkan backend is enabled.
   impeller_enable_vulkan = false
@@ -562,7 +562,11 @@ template("impeller_shaders") {
     gles_shaders = "gles_$target_name"
     impeller_shaders_gles(gles_shaders) {
       name = invoker.name
-      shaders = invoker.shaders
+      if (defined(invoker.gles_exclusions)) {
+        shaders = invoker.shaders - invoker.gles_exclusions
+      } else {
+        shaders = invoker.shaders
+      }
     }
   }
 

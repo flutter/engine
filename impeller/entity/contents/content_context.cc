@@ -6,6 +6,7 @@
 
 #include <sstream>
 
+#include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
@@ -16,10 +17,10 @@ namespace impeller {
 void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
-  if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
+  if (blend_mode > Entity::kLastPipelineBlendMode) {
     VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
                    << " as a pipeline blend.";
-    pipeline_blend = Entity::BlendMode::kSourceOver;
+    pipeline_blend = BlendMode::kSourceOver;
   }
 
   desc.SetSampleCount(sample_count);
@@ -28,89 +29,86 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
 
-  static_assert(Entity::BlendMode::kLastPipelineBlendMode ==
-                Entity::BlendMode::kModulate);
-
   switch (pipeline_blend) {
-    case Entity::BlendMode::kClear:
+    case BlendMode::kClear:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSource:
+    case BlendMode::kSource:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
-    case Entity::BlendMode::kDestination:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+    case BlendMode::kDestination:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSourceOver:
+    case BlendMode::kSourceOver:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
-    case Entity::BlendMode::kDestinationOver:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+    case BlendMode::kDestinationOver:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kSourceIn:
+    case BlendMode::kSourceIn:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
       break;
-    case Entity::BlendMode::kDestinationIn:
+    case BlendMode::kDestinationIn:
       color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSourceOut:
+    case BlendMode::kSourceOut:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kDestinationOut:
+    case BlendMode::kDestinationOut:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSourceATop:
+    case BlendMode::kSourceATop:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
       break;
-    case Entity::BlendMode::kDestinationATop:
+    case BlendMode::kDestinationATop:
       color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kXor:
+    case BlendMode::kXor:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kPlus:
+    case BlendMode::kPlus:
       color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
-    case Entity::BlendMode::kModulate:
+    case BlendMode::kModulate:
       // kSourceColor and kDestinationColor override the alpha blend factor.
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kSourceColor;
@@ -149,10 +147,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
 
-  gradient_fill_pipelines_[{}] =
-      CreateDefaultPipeline<GradientFillPipeline>(*context_);
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
+  linear_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
   sweep_gradient_fill_pipelines_[{}] =
@@ -197,12 +195,20 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
+  morphology_filter_pipelines_[{}] =
+      CreateDefaultPipeline<MorphologyFilterPipeline>(*context_);
   color_matrix_color_filter_pipelines_[{}] =
       CreateDefaultPipeline<ColorMatrixColorFilterPipeline>(*context_);
+  linear_to_srgb_filter_pipelines_[{}] =
+      CreateDefaultPipeline<LinearToSrgbFilterPipeline>(*context_);
+  srgb_to_linear_filter_pipelines_[{}] =
+      CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
   solid_stroke_pipelines_[{}] =
       CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
+  glyph_atlas_sdf_pipelines_[{}] =
+      CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
   vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 
@@ -241,7 +247,12 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     SubpassCallback subpass_callback) const {
   auto context = GetContext();
 
-  auto subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+  RenderTarget subpass_target;
+  if (context->SupportsOffscreenMSAA()) {
+    subpass_target = RenderTarget::CreateOffscreenMSAA(*context, texture_size);
+  } else {
+    subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+  }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
     return nullptr;

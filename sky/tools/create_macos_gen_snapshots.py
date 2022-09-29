@@ -24,6 +24,7 @@ def main():
   parser.add_argument('--x64-out-dir', type=str)
   parser.add_argument('--arm64-out-dir', type=str)
   parser.add_argument('--armv7-out-dir', type=str)
+  parser.add_argument('--zip', action="store_true", default=False)
 
   args = parser.parse_args()
 
@@ -31,6 +32,10 @@ def main():
       args.dst
       if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
   )
+
+  # if dst folder does not exist create it.
+  if not os.path.exists(dst):
+    os.makedirs(dst)
 
   if args.x64_out_dir:
     x64_out_dir = (
@@ -58,6 +63,17 @@ def main():
         os.path.join(armv7_out_dir, args.clang_dir),
         os.path.join(dst, 'gen_snapshot_armv7')
     )
+  if args.zip:
+    zip_archive(dst)
+
+
+def zip_archive(dst):
+  subprocess.check_call([
+      'zip',
+      '-r',
+      'gen_snapshot.zip',
+      '.',
+  ], cwd=dst)
 
 
 def generate_gen_snapshot(directory, destination):

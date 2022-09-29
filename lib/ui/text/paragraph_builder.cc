@@ -239,11 +239,13 @@ ParagraphBuilder::ParagraphBuilder(
     mask = encoded[0];
 
     if (mask & kPSTextAlignMask) {
-      style.text_align = txt::TextAlign(encoded[kPSTextAlignIndex]);
+      style.text_align =
+          static_cast<txt::TextAlign>(encoded[kPSTextAlignIndex]);
     }
 
     if (mask & kPSTextDirectionMask) {
-      style.text_direction = txt::TextDirection(encoded[kPSTextDirectionIndex]);
+      style.text_direction =
+          static_cast<txt::TextDirection>(encoded[kPSTextDirectionIndex]);
     }
 
     if (mask & kPSFontWeightMask) {
@@ -528,22 +530,22 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   return Dart_Null();
 }
 
-Dart_Handle ParagraphBuilder::addPlaceholder(double width,
-                                             double height,
-                                             unsigned alignment,
-                                             double baseline_offset,
-                                             unsigned baseline) {
+void ParagraphBuilder::addPlaceholder(double width,
+                                      double height,
+                                      unsigned alignment,
+                                      double baseline_offset,
+                                      unsigned baseline) {
   txt::PlaceholderRun placeholder_run(
       width, height, static_cast<txt::PlaceholderAlignment>(alignment),
       static_cast<txt::TextBaseline>(baseline), baseline_offset);
 
   m_paragraphBuilder->AddPlaceholder(placeholder_run);
-
-  return Dart_Null();
 }
 
 void ParagraphBuilder::build(Dart_Handle paragraph_handle) {
   Paragraph::Create(paragraph_handle, m_paragraphBuilder->Build());
+  m_paragraphBuilder.reset();
+  ClearDartWrapper();
 }
 
 }  // namespace flutter

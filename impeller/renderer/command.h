@@ -41,6 +41,7 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
 
 struct Bindings {
+  std::map<size_t, ShaderUniformSlot> uniforms;
   std::map<size_t, BufferResource> buffers;
   std::map<size_t, TextureResource> textures;
   std::map<size_t, SamplerResource> samplers;
@@ -65,7 +66,7 @@ struct Command {
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
   ///
-  std::shared_ptr<Pipeline> pipeline;
+  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
   //----------------------------------------------------------------------------
   /// The buffer, texture, and sampler bindings used by the vertex pipeline
   /// stage.
@@ -153,23 +154,23 @@ struct Command {
   bool BindResource(ShaderStage stage,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
-                    BufferView view);
+                    const BufferView& view);
 
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture);
+                    const std::shared_ptr<const Texture>& texture);
 
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Sampler> sampler);
+                    const std::shared_ptr<const Sampler>& sampler);
 
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler);
+                    const std::shared_ptr<const Texture>& texture,
+                    const std::shared_ptr<const Sampler>& sampler);
 
   BufferView GetVertexBuffer() const;
 

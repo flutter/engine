@@ -5,6 +5,7 @@
 #include "flutter/flow/skia_gpu_object.h"
 
 #include <future>
+#include <utility>
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -20,7 +21,7 @@ class TestSkObject : public SkRefCnt {
  public:
   TestSkObject(std::shared_ptr<fml::AutoResetWaitableEvent> latch,
                fml::TaskQueueId* dtor_task_queue_id)
-      : latch_(latch), dtor_task_queue_id_(dtor_task_queue_id) {}
+      : latch_(std::move(latch)), dtor_task_queue_id_(dtor_task_queue_id) {}
 
   virtual ~TestSkObject() {
     if (dtor_task_queue_id_) {
@@ -38,10 +39,10 @@ class TestResourceContext : public TestSkObject {
  public:
   TestResourceContext(std::shared_ptr<fml::AutoResetWaitableEvent> latch,
                       fml::TaskQueueId* dtor_task_queue_id)
-      : TestSkObject(latch, dtor_task_queue_id) {}
+      : TestSkObject(std::move(latch), dtor_task_queue_id) {}
   ~TestResourceContext() = default;
   void performDeferredCleanup(std::chrono::milliseconds msNotUsed) {}
-  void deleteBackendTexture(GrBackendTexture texture) {}
+  void deleteBackendTexture(const GrBackendTexture& texture) {}
 };
 
 class SkiaGpuObjectTest : public ThreadTest {
@@ -57,15 +58,15 @@ class SkiaGpuObjectTest : public ThreadTest {
     // The unref queues must be created in the same thread of the
     // unref_task_runner so the queue can access the same-thread-only WeakPtr of
     // the GrContext constructed during the creation.
-    std::promise<bool> queuesCreated;
-    unref_task_runner_->PostTask([this, &queuesCreated]() {
+    std::promise<bool> queues_created;
+    unref_task_runner_->PostTask([this, &queues_created]() {
       unref_queue_ = fml::MakeRefCounted<SkiaUnrefQueue>(
           unref_task_runner(), fml::TimeDelta::FromSeconds(0));
       delayed_unref_queue_ = fml::MakeRefCounted<SkiaUnrefQueue>(
           unref_task_runner(), fml::TimeDelta::FromSeconds(3));
-      queuesCreated.set_value(true);
+      queues_created.set_value(true);
     });
-    queuesCreated.get_future().wait();
+    queues_created.get_future().wait();
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
 

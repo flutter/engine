@@ -23,7 +23,7 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentProgram);
 
-std::string FragmentProgram::initFromAsset(std::string asset_name) {
+std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   FML_TRACE_EVENT("flutter", "FragmentProgram::initFromAsset", "asset",
                   asset_name);
   std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
@@ -95,40 +95,11 @@ std::string FragmentProgram::initFromAsset(std::string asset_name) {
   return "";
 }
 
-fml::RefPtr<FragmentShader> FragmentProgram::shader(Dart_Handle shader,
-                                                    Dart_Handle uniforms_handle,
-                                                    Dart_Handle samplers) {
-  auto sampler_shaders =
-      tonic::DartConverter<std::vector<ImageShader*>>::FromDart(samplers);
-  tonic::Float32List uniforms(uniforms_handle);
-  size_t uniform_count = uniforms.num_elements();
-  size_t uniform_data_size =
-      (uniform_count + 2 * sampler_shaders.size()) * sizeof(float);
-  sk_sp<SkData> uniform_data = SkData::MakeUninitialized(uniform_data_size);
-  // uniform_floats must only be referenced BEFORE the call to makeShader below.
-  auto* uniform_floats =
-      reinterpret_cast<float*>(uniform_data->writable_data());
-  for (size_t i = 0; i < uniform_count; i++) {
-    uniform_floats[i] = uniforms[i];
-  }
-  uniforms.Release();
-  std::vector<sk_sp<SkShader>> sk_samplers(sampler_shaders.size());
-  for (size_t i = 0; i < sampler_shaders.size(); i++) {
-    DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-    ImageShader* image_shader = sampler_shaders[i];
-    // ImageShaders can hold a preferred value for sampling options and
-    // developers are encouraged to use that value or the value will be supplied
-    // by "the environment where it is used". The environment here does not
-    // contain a value to be used if the developer did not specify a preference
-    // when they constructed the ImageShader, so we will use kNearest which is
-    // the default filterQuality in a Paint object.
-    sk_samplers[i] = image_shader->shader(sampling)->skia_object();
-    uniform_floats[uniform_count + 2 * i] = image_shader->width();
-    uniform_floats[uniform_count + 2 * i + 1] = image_shader->height();
-  }
-  auto sk_shader = runtime_effect_->makeShader(
-      std::move(uniform_data), sk_samplers.data(), sk_samplers.size());
-  return FragmentShader::Create(shader, std::move(sk_shader));
+std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
+    sk_sp<SkData> float_uniforms,
+    const std::vector<std::shared_ptr<DlColorSource>>& children) {
+  return DlColorSource::MakeRuntimeEffect(runtime_effect_, children,
+                                          std::move(float_uniforms));
 }
 
 void FragmentProgram::Create(Dart_Handle wrapper) {

@@ -8,6 +8,7 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../util.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -40,7 +41,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  final String plainText;
+  late String plainText;
 
   /// The number of placeholders in this paragraph.
   final int placeholderCount;
@@ -253,6 +254,24 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    // TODO(dnfield): It should be possible to clear resources here, but would
+    // need refcounting done on any surfaces/pictures holding references to this
+    // object.
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Paragraph.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }
 

@@ -126,7 +126,7 @@ void DartServiceIsolate::Shutdown(Dart_NativeArguments args) {
   // NO-OP.
 }
 
-bool DartServiceIsolate::Startup(std::string server_ip,
+bool DartServiceIsolate::Startup(const std::string& server_ip,
                                  intptr_t server_port,
                                  Dart_LibraryTagHandler embedder_tag_handler,
                                  bool disable_origin_check,
@@ -156,18 +156,6 @@ bool DartServiceIsolate::Startup(std::string server_ip,
   SHUTDOWN_ON_ERROR(result);
   result = Dart_SetNativeResolver(library, GetNativeFunction, GetSymbol);
   SHUTDOWN_ON_ERROR(result);
-
-  // Make runnable.
-  Dart_ExitScope();
-  Dart_ExitIsolate();
-  *error = Dart_IsolateMakeRunnable(isolate);
-  if (*error) {
-    Dart_EnterIsolate(isolate);
-    Dart_ShutdownIsolate();
-    return false;
-  }
-  Dart_EnterIsolate(isolate);
-  Dart_EnterScope();
 
   library = Dart_RootLibrary();
   SHUTDOWN_ON_ERROR(library);
@@ -202,6 +190,19 @@ bool DartServiceIsolate::Startup(std::string server_ip,
       library, Dart_NewStringFromCString("_enableServicePortFallback"),
       Dart_NewBoolean(enable_service_port_fallback));
   SHUTDOWN_ON_ERROR(result);
+
+  // Make runnable.
+  Dart_ExitScope();
+  Dart_ExitIsolate();
+  *error = Dart_IsolateMakeRunnable(isolate);
+  if (*error) {
+    Dart_EnterIsolate(isolate);
+    Dart_ShutdownIsolate();
+    return false;
+  }
+  Dart_EnterIsolate(isolate);
+  Dart_EnterScope();
+
   return true;
 }
 

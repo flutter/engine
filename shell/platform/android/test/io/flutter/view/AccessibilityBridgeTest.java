@@ -25,6 +25,8 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -122,6 +124,44 @@ public class AccessibilityBridgeTest {
     nodeInfo.getBoundsInScreen(outBoundsInScreen);
     assertEquals(position, outBoundsInScreen.left);
     assertEquals(position, outBoundsInScreen.top);
+  }
+
+  @Test
+  public void itSetsAccessibleNavigation() {
+    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+    AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityManager mockManager = mock(AccessibilityManager.class);
+    View mockRootView = mock(View.class);
+    Context context = mock(Context.class);
+    when(mockRootView.getContext()).thenReturn(context);
+    when(context.getPackageName()).thenReturn("test");
+    when(mockManager.isTouchExplorationEnabled()).thenReturn(false);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            /*rootAccessibilityView=*/ mockRootView,
+            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityManager=*/ mockManager,
+            /*contentResolver=*/ null,
+            /*accessibilityViewEmbedder=*/ mockViewEmbedder,
+            /*platformViewsAccessibilityDelegate=*/ null);
+    ArgumentCaptor<AccessibilityManager.TouchExplorationStateChangeListener> listenerCaptor =
+        ArgumentCaptor.forClass(AccessibilityManager.TouchExplorationStateChangeListener.class);
+    verify(mockManager).addTouchExplorationStateChangeListener(listenerCaptor.capture());
+
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), false);
+    verify(mockChannel).setAccessibilityFeatures(0);
+    reset(mockChannel);
+
+    // Simulate assistive technology accessing accessibility tree.
+    accessibilityBridge.createAccessibilityNodeInfo(0);
+    verify(mockChannel).setAccessibilityFeatures(1);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), true);
+
+    // Simulate turning off TalkBack.
+    reset(mockChannel);
+    listenerCaptor.getValue().onTouchExplorationStateChanged(false);
+    verify(mockChannel).setAccessibilityFeatures(0);
+    assertEquals(accessibilityBridge.getAccessibleNavigation(), false);
   }
 
   @Test
@@ -991,6 +1031,34 @@ public class AccessibilityBridgeTest {
     assertFalse(node1Info.isFocusable());
     AccessibilityNodeInfo node2Info = accessibilityBridge.createAccessibilityNodeInfo(2);
     assertTrue(node2Info.isFocusable());
+  }
+
+  @TargetApi(31)
+  @Test
+  public void itSetsBoldTextFlagCorrectly() {
+    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+    AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityManager mockManager = mock(AccessibilityManager.class);
+    View mockRootView = mock(View.class);
+    Context context = mock(Context.class);
+    Resources resource = mock(Resources.class);
+    Configuration config = new Configuration();
+    config.fontWeightAdjustment = 300;
+
+    when(mockRootView.getContext()).thenReturn(context);
+    when(mockRootView.getResources()).thenReturn(resource);
+    when(resource.getConfiguration()).thenReturn(config);
+
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            /*rootAccessibilityView=*/ mockRootView,
+            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityManager=*/ mockManager,
+            /*contentResolver=*/ null,
+            /*accessibilityViewEmbedder=*/ mockViewEmbedder,
+            /*platformViewsAccessibilityDelegate=*/ null);
+
+    verify(mockChannel).setAccessibilityFeatures(1 << 3);
   }
 
   @Test

@@ -15,6 +15,7 @@
 #include "impeller/base/work_queue_common.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -271,7 +272,7 @@ ContextVK::ContextVK(
 
   vk::ApplicationInfo application_info;
   application_info.setApplicationVersion(VK_API_VERSION_1_0);
-  application_info.setApiVersion(VK_API_VERSION_1_0);
+  application_info.setApiVersion(VK_API_VERSION_1_1);
   application_info.setEngineVersion(VK_API_VERSION_1_0);
   application_info.setPEngineName("Impeller");
   application_info.setPApplicationName("Impeller");
@@ -431,6 +432,7 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   graphics_command_pool_ =
       CommandPoolVK::Create(*device_, graphics_queue->index);
+  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
   is_valid_ = true;
 }
 
@@ -462,16 +464,22 @@ std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  FML_UNREACHABLE();
+  return CommandBufferVK::Create(weak_from_this(), *device_,
+                                 graphics_command_pool_->Get(),
+                                 surface_producer_.get());
 }
 
 vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
+std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
+  return surface_producer_->AcquireSurface(current_frame);
+}
+
 void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
   surface_ = std::move(surface);
-  auto present_queue_out = PickPresentQueue(physical_device_, *surface);
+  auto present_queue_out = PickPresentQueue(physical_device_, *surface_);
   if (!present_queue_out.has_value()) {
     return;
   }
@@ -479,11 +487,11 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
       device_->getQueue(present_queue_out->family, present_queue_out->index);
 
   auto swapchain_details =
-      SwapchainDetailsVK::Create(physical_device_, *surface);
+      SwapchainDetailsVK::Create(physical_device_, *surface_);
   if (!swapchain_details) {
     return;
   }
-  swapchain_ = SwapchainVK::Create(*device_, *surface, *swapchain_details);
+  swapchain_ = SwapchainVK::Create(*device_, *surface_, *swapchain_details);
   auto weak_this = weak_from_this();
   surface_producer_ = SurfaceProducerVK::Create(
       weak_this, {
@@ -492,6 +500,14 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
                      .present_queue = present_queue_,
                      .swapchain = swapchain_.get(),
                  });
+}
+
+bool ContextVK::SupportsOffscreenMSAA() const {
+  return true;
+}
+
+std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
+  return descriptor_pool_;
 }
 
 }  // namespace impeller

@@ -5,11 +5,11 @@
 #include "solid_color_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/solid_fill_utils.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -41,25 +41,13 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
 
-bool SolidColorContents::ShouldRender(const Entity& entity,
-                                      const ISize& target_size) const {
-  return cover_ || Contents::ShouldRender(entity, target_size);
-}
-
-VertexBuffer SolidColorContents::CreateSolidFillVertices(const Path& path,
-                                                         HostBuffer& buffer) {
-  using VS = SolidFillPipeline::VertexShader;
-
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-
-  auto tesselation_result = Tessellator{}.Tessellate(
-      path.GetFillType(), path.CreatePolyline(),
-      [&vtx_builder](auto point) { vtx_builder.AppendVertex({point}); });
-  if (tesselation_result != Tessellator::Result::kSuccess) {
-    return {};
+bool SolidColorContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
+  if (!stencil_coverage.has_value()) {
+    return false;
   }
-
-  return vtx_builder.CreateVertexBuffer(buffer);
+  return cover_ || Contents::ShouldRender(entity, stencil_coverage);
 }
 
 bool SolidColorContents::Render(const ContentContext& renderer,
@@ -74,7 +62,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
       renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  cmd.BindVertices(CreateSolidFillVertices(
+  cmd.BindVertices(CreateSolidFillVertices<VS::PerVertexData>(
       cover_
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : path_,

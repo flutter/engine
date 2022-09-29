@@ -12,7 +12,7 @@ import 'package:ui/ui.dart' hide TextStyle;
 import 'package:web_engine_tester/golden_tester.dart';
 
 import '../matchers.dart';
-import 'paragraph/text_scuba.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -32,8 +32,7 @@ Future<void> testMain() async {
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> checkScreenshot(RecordingCanvas rc, String fileName,
-      { Rect region = const Rect.fromLTWH(0, 0, 500, 500),
-        bool write = false }) async {
+      { Rect region = const Rect.fromLTWH(0, 0, 500, 500) }) async {
 
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
         RenderStrategy());
@@ -63,8 +62,7 @@ Future<void> testMain() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       domDocument.body!.append(sceneElement);
-      await matchGoldenFile('paint_bounds_for_$fileName.png', region: region,
-        write: write);
+      await matchGoldenFile('paint_bounds_for_$fileName.png', region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -481,6 +479,31 @@ Future<void> testMain() async {
     await checkScreenshot(rc, 'line_rotated');
   });
 
+  // Regression test for https://github.com/flutter/flutter/issues/46339.
+  test('Should draw a Rect for straight line when strokeWidth is zero.', () async {
+    final RecordingCanvas rc = RecordingCanvas(screenRect);
+
+    final Path path = Path();
+    final SurfacePaint paint = SurfacePaint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.0
+      ..color = const Color(0xFFFF0000);
+    path.moveTo(10, 10);
+    path.lineTo(90, 10);
+    rc.drawPath(path, paint);
+    rc.endRecording();
+    // Should draw a Rect
+    final List<PaintCommand> commands = rc.debugPaintCommands;
+    expect(commands.length, 1);
+    expect(commands.first, isA<PaintDrawRect>());
+    // Should inflate picture bounds
+    expect(
+      rc.pictureBounds,
+      within(distance: 0.1, from: const Rect.fromLTRB(10, 10, 90, 11)),
+    );
+    await checkScreenshot(rc, 'path_straight_line_with_zero_stroke_width');
+  });
+
   test('Should support reusing path and reset when drawing into canvas.',
       () async {
     final RecordingCanvas rc =
@@ -534,7 +557,7 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/64371.
   test('Should draw line following a polygon without closing path.', () async {
     final RecordingCanvas rc =
-    RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
     rc.save();
     rc.translate(50.0, 100.0);
     final Path path = Path();
@@ -703,8 +726,6 @@ Future<void> testMain() async {
       await matchGoldenFile(
         'paint_spread_bounds.png',
         region: const Rect.fromLTRB(0, 0, 250, 600),
-        maxDiffRatePercent: 0.21,
-        pixelComparison: PixelComparison.precise,
       );
     } finally {
       sceneElement.remove();

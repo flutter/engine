@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
@@ -153,7 +154,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
-  void PushBackdropFilter(std::shared_ptr<const DlImageFilter> filter);
+  void PushBackdropFilter(const std::shared_ptr<const DlImageFilter>& filter);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.
@@ -393,6 +394,7 @@ class ExternalViewEmbedder {
   }
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
+  virtual std::vector<DisplayListBuilder*> GetCurrentBuilders() = 0;
 
   // Must be called on the UI thread.
   virtual EmbedderPaintContext CompositeEmbeddedView(int view_id) = 0;

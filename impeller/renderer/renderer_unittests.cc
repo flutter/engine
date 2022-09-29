@@ -5,12 +5,16 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
+#include "impeller/fixtures/array.frag.h"
+#include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
 #include "impeller/fixtures/colors.frag.h"
 #include "impeller/fixtures/colors.vert.h"
 #include "impeller/fixtures/impeller.frag.h"
 #include "impeller/fixtures/impeller.vert.h"
+#include "impeller/fixtures/inactive_uniforms.frag.h"
+#include "impeller/fixtures/inactive_uniforms.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
@@ -51,7 +55,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -117,7 +121,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(pipeline);
 
   struct Cube {
@@ -215,7 +219,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -288,7 +292,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(pipeline_desc).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -322,15 +326,16 @@ TEST_P(RendererTest, CanRenderToTexture) {
     ASSERT_NE(pipeline_desc->GetColorAttachmentDescriptor(0u), nullptr);
     texture_descriptor.format =
         pipeline_desc->GetColorAttachmentDescriptor(0u)->format;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
     texture_descriptor.size = {400, 400};
     texture_descriptor.mip_count = 1u;
     texture_descriptor.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
 
-    color0.texture = context->GetResourceAllocator()->CreateTexture(
-        StorageMode::kHostVisible, texture_descriptor);
+    color0.texture =
+        context->GetResourceAllocator()->CreateTexture(texture_descriptor);
 
-    ASSERT_TRUE(color0);
+    ASSERT_TRUE(color0.IsValid());
 
     color0.texture->SetLabel("r2t_target");
 
@@ -338,12 +343,13 @@ TEST_P(RendererTest, CanRenderToTexture) {
     stencil0.load_action = LoadAction::kClear;
     stencil0.store_action = StoreAction::kDontCare;
     TextureDescriptor stencil_texture_desc;
+    stencil_texture_desc.storage_mode = StorageMode::kDeviceTransient;
     stencil_texture_desc.size = texture_descriptor.size;
     stencil_texture_desc.format = PixelFormat::kS8UInt;
     stencil_texture_desc.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
-    stencil0.texture = context->GetResourceAllocator()->CreateTexture(
-        StorageMode::kDeviceTransient, stencil_texture_desc);
+    stencil0.texture =
+        context->GetResourceAllocator()->CreateTexture(stencil_texture_desc);
 
     RenderTarget r2t_desc;
     r2t_desc.SetColorAttachment(color0, 0u);
@@ -408,10 +414,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   auto pipeline =
       GetContext()
           ->GetPipelineLibrary()
-          ->GetRenderPipeline(
-              PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
-                  *GetContext())
-                  ->SetSampleCount(SampleCount::kCount4))
+          ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
+                            *GetContext())
+                            ->SetSampleCount(SampleCount::kCount4))
           .get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
@@ -454,18 +459,18 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   TextureDescriptor texture_desc;
+  texture_desc.storage_mode = StorageMode::kHostVisible;
   texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_desc.size = {800, 600};
   texture_desc.mip_count = 1u;
   texture_desc.usage =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
       static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
-  auto texture = context->GetResourceAllocator()->CreateTexture(
-      StorageMode::kHostVisible, texture_desc);
+  auto texture = context->GetResourceAllocator()->CreateTexture(texture_desc);
   ASSERT_TRUE(texture);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
@@ -564,7 +569,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto boston = CreateTextureForFixture("boston.jpg", true);
@@ -684,9 +689,8 @@ TEST_P(RendererTest, TheImpeller) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  auto pipeline = context->GetPipelineLibrary()
-                      ->GetRenderPipeline(pipeline_descriptor)
-                      .get();
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   auto blue_noise = CreateTextureForFixture("blue_noise.png");
@@ -729,6 +733,107 @@ TEST_P(RendererTest, TheImpeller) {
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
     FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, ArrayUniforms) {
+  using VS = ArrayVertexShader;
+  using FS = ArrayFragmentShader;
+
+  auto context = GetContext();
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
+
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Google Dots";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+
+    auto time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    auto y_pos = [&time](float x) {
+      return 400 + 10 * std::cos(time * 5 + x / 6);
+    };
+
+    FS::FragInfo fs_uniform = {
+        .circle_positions = {Point(430, y_pos(0)), Point(480, y_pos(1)),
+                             Point(530, y_pos(2)), Point(580, y_pos(3))},
+        .colors = {Color::MakeRGBA8(66, 133, 244, 255),
+                   Color::MakeRGBA8(219, 68, 55, 255),
+                   Color::MakeRGBA8(244, 180, 0, 255),
+                   Color::MakeRGBA8(15, 157, 88, 255)},
+    };
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, InactiveUniforms) {
+  using VS = InactiveUniformsVertexShader;
+  using FS = InactiveUniformsFragmentShader;
+
+  auto context = GetContext();
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
+
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Inactive Uniform";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+
+    FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
+                               .color = Color::Green()};
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
 
     pass.AddCommand(cmd);
     return true;

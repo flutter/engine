@@ -227,6 +227,8 @@ typedef enum {
   kFlutterSemanticsFlagIsSlider = 1 << 23,
   /// Whether the semantics node represents a keyboard key.
   kFlutterSemanticsFlagIsKeyboardKey = 1 << 24,
+  /// Whether the semantics node represents a tristate checkbox in mixed state.
+  kFlutterSemanticsFlagIsCheckStateMixed = 1 << 25,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -873,6 +875,7 @@ typedef enum {
   kFlutterPointerSignalKindNone,
   kFlutterPointerSignalKindScroll,
   kFlutterPointerSignalKindScrollInertiaCancel,
+  kFlutterPointerSignalKindScale,
 } FlutterPointerSignalKind;
 
 typedef struct {

@@ -95,7 +95,7 @@ class DlImageFilter
   }
 
   virtual std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix);
+      const SkMatrix& matrix) const;
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -634,7 +634,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
 
   std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix) override {
+      const SkMatrix& matrix) const override {
     return shared();
   }
 
@@ -668,6 +668,10 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   size_t size() const override { return sizeof(*this); }
 
   const SkMatrix& matrix() const { return matrix_; }
+
+  const std::shared_ptr<DlImageFilter> image_filter() const {
+    return image_filter_;
+  }
 
   const DlLocalMatrixImageFilter* asLocalMatrix() const override {
     return this;
@@ -712,7 +716,11 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
     if (!image_filter_) {
       return nullptr;
     }
-    return image_filter_->skia_object()->makeWithLocalMatrix(matrix_);
+    sk_sp<SkImageFilter> skia_object = image_filter_->skia_object();
+    if (!skia_object) {
+      return nullptr;
+    }
+    return skia_object->makeWithLocalMatrix(matrix_);
   }
 
  protected:
@@ -764,7 +772,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
     }
@@ -775,7 +783,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       output_bounds = input_bounds;
       return nullptr;
     }
@@ -787,7 +795,7 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    if (modifies_transparent_black()) {
+    if (!sk_filter_ || modifies_transparent_black()) {
       input_bounds = output_bounds;
       return nullptr;
     }

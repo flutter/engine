@@ -34,7 +34,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       const AndroidContext& android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       std::shared_ptr<AndroidSurfaceFactory> surface_factory,
-      TaskRunners task_runners);
+      const TaskRunners& task_runners);
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -46,6 +46,12 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
+
+  // |ExternalViewEmbedder|
+  // Similar call to GetCurrentCanvases but will return the array of
+  // builders being used by PlatformViews on platforms that provide
+  // optional DisplayListBuilder objects for rendering.
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,

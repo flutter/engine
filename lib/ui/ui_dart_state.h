@@ -20,6 +20,7 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -30,6 +31,7 @@ namespace flutter {
 class FontSelector;
 class ImageGeneratorRegistry;
 class PlatformConfiguration;
+class PlatformMessage;
 
 class UIDartState : public tonic::DartState {
  public:
@@ -51,7 +53,8 @@ class UIDartState : public tonic::DartState {
             fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
             std::string advisory_script_uri,
             std::string advisory_script_entrypoint,
-            std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+            std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+            bool enable_impeller);
 
     /// The task runners used by the shell hosting this runtime controller. This
     /// may be used by the isolate to scheduled asynchronous texture uploads or
@@ -89,6 +92,9 @@ class UIDartState : public tonic::DartState {
 
     /// Cache for tracking path volatility.
     std::shared_ptr<VolatilePathTracker> volatile_path_tracker;
+
+    /// Whether Impeller is enabled or not.
+    bool enable_impeller = false;
   };
 
   Dart_Port main_port() const { return main_port_; }
@@ -96,7 +102,7 @@ class UIDartState : public tonic::DartState {
   bool IsRootIsolate() const { return is_root_isolate_; }
   static void ThrowIfUIOperationsProhibited();
 
-  void SetDebugName(const std::string name);
+  void SetDebugName(const std::string& name);
 
   const std::string& debug_name() const { return debug_name_; }
 
@@ -105,6 +111,10 @@ class UIDartState : public tonic::DartState {
   PlatformConfiguration* platform_configuration() const {
     return platform_configuration_.get();
   }
+
+  void SetPlatformMessageHandler(std::weak_ptr<PlatformMessageHandler> handler);
+
+  Dart_Handle HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   const TaskRunners& GetTaskRunners() const;
 
@@ -153,6 +163,13 @@ class UIDartState : public tonic::DartState {
     return unhandled_exception_callback_;
   }
 
+  /// Returns a enumeration that that uniquely represents this root isolate.
+  /// Returns `0` if called from a non-root isolate.
+  int64_t GetRootIsolateToken() const;
+
+  /// Whether Impeller is enabled for this application.
+  bool IsImpellerEnabled() const;
+
  protected:
   UIDartState(TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
@@ -181,6 +198,7 @@ class UIDartState : public tonic::DartState {
   const bool is_root_isolate_;
   std::string debug_name_;
   std::unique_ptr<PlatformConfiguration> platform_configuration_;
+  std::weak_ptr<PlatformMessageHandler> platform_message_handler_;
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;

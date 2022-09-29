@@ -34,6 +34,8 @@ class Playground {
 
   static constexpr bool is_enabled() { return is_enabled_; }
 
+  static bool ShouldOpenNewPlaygrounds();
+
   void SetupWindow(PlaygroundBackend backend);
 
   void TeardownWindow();
@@ -46,7 +48,7 @@ class Playground {
 
   std::shared_ptr<Context> GetContext() const;
 
-  bool OpenPlaygroundHere(Renderer::RenderCallback render_callback);
+  bool OpenPlaygroundHere(const Renderer::RenderCallback& render_callback);
 
   bool OpenPlaygroundHere(SinglePassCallback pass_callback);
 

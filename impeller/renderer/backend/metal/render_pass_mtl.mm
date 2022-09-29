@@ -22,17 +22,19 @@ namespace impeller {
 static bool ConfigureResolveTextureAttachment(
     const Attachment& desc,
     MTLRenderPassAttachmentDescriptor* attachment) {
-  if (desc.store_action == StoreAction::kMultisampleResolve &&
-      !desc.resolve_texture) {
+  bool needs_resolve =
+      desc.store_action == StoreAction::kMultisampleResolve ||
+      desc.store_action == StoreAction::kStoreAndMultisampleResolve;
+
+  if (needs_resolve && !desc.resolve_texture) {
     VALIDATION_LOG << "Resolve store action specified on attachment but no "
                       "resolve texture was specified.";
     return false;
   }
 
-  if (desc.resolve_texture &&
-      desc.store_action != StoreAction::kMultisampleResolve) {
-    VALIDATION_LOG << "Resolve store action specified but there was no "
-                      "resolve attachment.";
+  if (desc.resolve_texture && !needs_resolve) {
+    VALIDATION_LOG << "A resolve texture was specified even though the store "
+                      "action doesn't require it.";
     return false;
   }
 
@@ -129,9 +131,9 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
 }
 
 RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
-                             RenderTarget target,
+                             const RenderTarget& target,
                              id<MTLCommandBuffer> buffer)
-    : RenderPass(std::move(context), std::move(target)),
+    : RenderPass(std::move(context), target),
       buffer_(buffer),
       desc_(ToMTLRenderPassDescriptor(GetRenderTarget())) {
   if (!buffer_ || !desc_ || !render_target_.IsValid()) {
@@ -491,18 +493,31 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     if (!mtl_index_buffer) {
       return false;
     }
+
     FML_DCHECK(command.index_count *
                    (command.index_type == IndexType::k16bit ? 2 : 4) ==
                command.index_buffer.range.length);
-    // Returns void. All error checking must be done by this point.
-    [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
-                        indexCount:command.index_count
-                         indexType:ToMTLIndexType(command.index_type)
-                       indexBuffer:mtl_index_buffer
-                 indexBufferOffset:command.index_buffer.range.offset
-                     instanceCount:command.instance_count
-                        baseVertex:command.base_vertex
-                      baseInstance:0u];
+
+    if (command.instance_count != 1u) {
+#if TARGET_OS_SIMULATOR
+      VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
+      return false;
+#endif
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
+                          indexCount:command.index_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset
+                       instanceCount:command.instance_count
+                          baseVertex:command.base_vertex
+                        baseInstance:0u];
+    } else {
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
+                          indexCount:command.index_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset];
+    }
   }
   return true;
 }

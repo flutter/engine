@@ -318,8 +318,9 @@ targets:
       runtime_versions: >-
         [
           "ios-13-0",
-          "ios-15-0"
+          "ios-16-0_14a5294e"
         ]
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac clang-tidy
@@ -327,11 +328,13 @@ targets:
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac iOS Engine
     recipe: engine/engine
     properties:
+      add_recipes_cq: "true"
       build_ios: "true"
       ios_debug: "true"
       jazzy_version: "0.14.1"
@@ -433,22 +436,26 @@ targets:
       - web_sdk/**
 
   - name: Mac iOS Engine Profile
-    presubmit: false
     recipe: engine/engine
     properties:
       build_ios: "true"
       ios_profile: "true"
       jazzy_version: "0.14.1"
     timeout: 90
+    runIf:
+      - DEPS
+      - .ci.yaml
 
   - name: Mac iOS Engine Release
-    presubmit: false
     recipe: engine/engine
     properties:
       build_ios: "true"
       ios_release: "true"
       jazzy_version: "0.14.1"
     timeout: 90
+    runIf:
+      - DEPS
+      - .ci.yaml
 
   - name: Linux ci_yaml engine roller
     bringup: true

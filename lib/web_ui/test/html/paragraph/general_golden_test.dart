@@ -10,8 +10,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
+import '../screenshot.dart';
 import 'helper.dart';
-import 'text_scuba.dart';
 
 typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
@@ -150,7 +150,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, offset);
     offset = offset.translate(0, paragraph.height + 10);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom', maxDiffRatePercent: 0.3);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom');
   });
 
   void testAlignAndTransform(EngineCanvas canvas) {

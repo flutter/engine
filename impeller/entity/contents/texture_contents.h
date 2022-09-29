@@ -23,6 +23,13 @@ class TextureContents final : public Contents {
 
   ~TextureContents() override;
 
+  /// @brief  A common case factory that marks the texture contents as having a
+  ///         destination rectangle. In this situation, a subpass can be avoided
+  ///         when image filters are applied.
+  static std::shared_ptr<TextureContents> MakeRect(Rect destination);
+
+  void SetLabel(std::string label);
+
   void SetPath(Path path);
 
   void SetTexture(std::shared_ptr<Texture> texture);
@@ -39,16 +46,26 @@ class TextureContents final : public Contents {
 
   void SetOpacity(Scalar opacity);
 
+  void SetStencilEnabled(bool enabled);
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |Contents|
+  std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
+                                           const Entity& entity) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
 
- public:
+ private:
+  std::string label_;
+
   Path path_;
+  bool is_rect_ = false;
+  bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};

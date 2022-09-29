@@ -5,6 +5,7 @@
 #include "tests/embedder_test_context.h"
 #define FML_USED_ON_EMBEDDER
 
+#include <atomic>
 #include <string>
 #include <vector>
 
@@ -2030,8 +2031,7 @@ TEST_F(EmbedderTest,
 
   constexpr size_t frames_expected = 10;
   fml::CountDownLatch frame_latch(frames_expected);
-  static size_t frames_seen;
-  frames_seen = 0;
+  std::atomic_size_t frames_seen = 0;
   context.AddNativeCallback("SignalNativeTest",
                             CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
                               frames_seen++;
@@ -2039,7 +2039,7 @@ TEST_F(EmbedderTest,
                             }));
   frame_latch.Wait();
 
-  ASSERT_EQ(frames_expected, frames_seen);
+  ASSERT_GE(frames_seen, frames_expected);
 
   FlutterEngineShutdown(engine.release());
 }
@@ -2071,8 +2071,7 @@ TEST_F(EmbedderTest,
 
   constexpr size_t frames_expected = 10;
   fml::CountDownLatch frame_latch(frames_expected);
-  static size_t frames_seen;
-  frames_seen = 0;
+  std::atomic_size_t frames_seen = 0;
   context.AddNativeCallback("SignalNativeTest",
                             CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
                               frames_seen++;
@@ -2080,7 +2079,7 @@ TEST_F(EmbedderTest,
                             }));
   frame_latch.Wait();
 
-  ASSERT_EQ(frames_expected, frames_seen);
+  ASSERT_GE(frames_seen, frames_expected);
 
   FlutterEngineShutdown(engine.release());
 }
@@ -4064,6 +4063,26 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
                   context.get(), SkSamplingOptions(SkFilterMode::kLinear));
 
   EXPECT_TRUE(resolve_called);
+}
+
+TEST_F(EmbedderTest,
+       PresentInfoReceivesNoDamageWhenPopulateExistingDamageIsUndefined) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetDartEntrypoint("render_gradient");
+  builder.GetRendererConfig().open_gl.populate_existing_damage = nullptr;
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // No damage should be passed.
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [](FlutterPresentInfo present_info) {
+        ASSERT_EQ(present_info.frame_damage.damage, nullptr);
+        ASSERT_EQ(present_info.buffer_damage.damage, nullptr);
+      });
 }
 
 INSTANTIATE_TEST_SUITE_P(

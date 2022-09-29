@@ -68,7 +68,7 @@ GPUSurfaceGLSkia::GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate,
   context_owner_ = true;
 }
 
-GPUSurfaceGLSkia::GPUSurfaceGLSkia(sk_sp<GrDirectContext> gr_context,
+GPUSurfaceGLSkia::GPUSurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
                                    GPUSurfaceGLDelegate* delegate,
                                    bool render_to_surface)
     : delegate_(delegate),
@@ -196,7 +196,6 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
 
   onscreen_surface_ = std::move(onscreen_surface);
   fbo_id_ = fbo_info.fbo_id;
-  supports_partial_repaint_ = fbo_info.partial_repaint_enabled;
   existing_damage_ = fbo_info.existing_damage;
 
   return true;
@@ -227,10 +226,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   if (!render_to_surface_) {
     framebuffer_info.supports_readback = true;
     return std::make_unique<SurfaceFrame>(
-        nullptr, std::move(framebuffer_info),
+        nullptr, framebuffer_info,
         [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
-        });
+        },
+        size);
   }
 
   const auto root_surface_transformation = GetRootTransformation();
@@ -250,11 +250,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
       };
 
   framebuffer_info = delegate_->GLContextFramebufferInfo();
-  // Partial repaint is enabled by default
-  framebuffer_info.supports_partial_repaint = supports_partial_repaint_;
-  framebuffer_info.existing_damage = existing_damage_;
-  return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
-                                        submit_callback,
+  if (!framebuffer_info.existing_damage.has_value()) {
+    framebuffer_info.existing_damage = existing_damage_;
+  }
+  return std::make_unique<SurfaceFrame>(surface, framebuffer_info,
+                                        submit_callback, size,
                                         std::move(context_switch));
 }
 
@@ -303,7 +303,6 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
 
     onscreen_surface_ = std::move(new_onscreen_surface);
     fbo_id_ = fbo_info.fbo_id;
-    supports_partial_repaint_ = fbo_info.partial_repaint_enabled;
     existing_damage_ = fbo_info.existing_damage;
   }
 

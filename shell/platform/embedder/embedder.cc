@@ -132,12 +132,6 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
     return false;
   }
 
-  if (!SAFE_EXISTS(open_gl_config, populate_existing_damage)) {
-    FML_LOG(INFO) << "populate_existing_damage was not defined, disabling "
-                     "partial repaint. If you wish to enable partial repaint, "
-                     "please define this callback.";
-  }
-
   return true;
 }
 
@@ -254,7 +248,7 @@ static inline flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -453,7 +447,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferMetalPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -523,7 +517,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferVulkanPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -606,7 +600,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -643,7 +637,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -1196,6 +1190,14 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
         reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
         true);
   }
+
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  settings.dart_library_sources_kernel = []() {
+    return std::make_unique<fml::NonOwnedMapping>(kPlatformStrongDill,
+                                                  kPlatformStrongDillSize);
+  };
+#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
+        // FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 void PopulateAOTSnapshotMappingCallbacks(
@@ -1245,12 +1247,6 @@ void PopulateAOTSnapshotMappingCallbacks(
         args->isolate_snapshot_instructions,
         SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
   }
-
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-  settings.dart_library_sources_kernel =
-      make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
-        // FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 FlutterEngineResult FlutterEngineRun(size_t version,
@@ -1375,8 +1371,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
   }
 
-  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
-    fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
+  settings.task_observer_add = [](intptr_t key, const fml::closure& callback) {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(key, callback);
   };
   settings.task_observer_remove = [](intptr_t key) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
@@ -1400,88 +1396,110 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.log_tag = SAFE_ACCESS(args, log_tag, nullptr);
   }
 
-  flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
-      update_semantics_nodes_callback = nullptr;
+  FlutterUpdateSemanticsNodeCallback update_semantics_node_callback = nullptr;
   if (SAFE_ACCESS(args, update_semantics_node_callback, nullptr) != nullptr) {
-    update_semantics_nodes_callback =
-        [ptr = args->update_semantics_node_callback,
-         user_data](flutter::SemanticsNodeUpdates update) {
-          for (const auto& value : update) {
-            const auto& node = value.second;
-            SkMatrix transform = node.transform.asM33();
-            FlutterTransformation flutter_transform{
-                transform.get(SkMatrix::kMScaleX),
-                transform.get(SkMatrix::kMSkewX),
-                transform.get(SkMatrix::kMTransX),
-                transform.get(SkMatrix::kMSkewY),
-                transform.get(SkMatrix::kMScaleY),
-                transform.get(SkMatrix::kMTransY),
-                transform.get(SkMatrix::kMPersp0),
-                transform.get(SkMatrix::kMPersp1),
-                transform.get(SkMatrix::kMPersp2)};
-            const FlutterSemanticsNode embedder_node{
-                sizeof(FlutterSemanticsNode),
-                node.id,
-                static_cast<FlutterSemanticsFlag>(node.flags),
-                static_cast<FlutterSemanticsAction>(node.actions),
-                node.textSelectionBase,
-                node.textSelectionExtent,
-                node.scrollChildren,
-                node.scrollIndex,
-                node.scrollPosition,
-                node.scrollExtentMax,
-                node.scrollExtentMin,
-                node.elevation,
-                node.thickness,
-                node.label.c_str(),
-                node.hint.c_str(),
-                node.value.c_str(),
-                node.increasedValue.c_str(),
-                node.decreasedValue.c_str(),
-                static_cast<FlutterTextDirection>(node.textDirection),
-                FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
-                            node.rect.fBottom},
-                flutter_transform,
-                node.childrenInTraversalOrder.size(),
-                node.childrenInTraversalOrder.data(),
-                node.childrenInHitTestOrder.data(),
-                node.customAccessibilityActions.size(),
-                node.customAccessibilityActions.data(),
-                node.platformViewId,
-            };
-            ptr(&embedder_node, user_data);
-          }
-          const FlutterSemanticsNode batch_end_sentinel = {
-              sizeof(FlutterSemanticsNode),
-              kFlutterSemanticsNodeIdBatchEnd,
-          };
-          ptr(&batch_end_sentinel, user_data);
-        };
+    update_semantics_node_callback = args->update_semantics_node_callback;
   }
 
-  flutter::PlatformViewEmbedder::UpdateSemanticsCustomActionsCallback
-      update_semantics_custom_actions_callback = nullptr;
+  FlutterUpdateSemanticsCustomActionCallback
+      update_semantics_custom_action_callback = nullptr;
   if (SAFE_ACCESS(args, update_semantics_custom_action_callback, nullptr) !=
       nullptr) {
-    update_semantics_custom_actions_callback =
-        [ptr = args->update_semantics_custom_action_callback,
-         user_data](flutter::CustomAccessibilityActionUpdates actions) {
-          for (const auto& value : actions) {
-            const auto& action = value.second;
-            const FlutterSemanticsCustomAction embedder_action = {
-                sizeof(FlutterSemanticsCustomAction),
-                action.id,
-                static_cast<FlutterSemanticsAction>(action.overrideId),
-                action.label.c_str(),
-                action.hint.c_str(),
-            };
-            ptr(&embedder_action, user_data);
+    update_semantics_custom_action_callback =
+        args->update_semantics_custom_action_callback;
+  }
+
+  flutter::PlatformViewEmbedder::UpdateSemanticsCallback
+      update_semantics_callback = nullptr;
+  if (update_semantics_node_callback != nullptr ||
+      update_semantics_custom_action_callback != nullptr) {
+    update_semantics_callback =
+        [update_semantics_node_callback,
+         update_semantics_custom_action_callback,
+         user_data](const flutter::SemanticsNodeUpdates& update,
+                    const flutter::CustomAccessibilityActionUpdates& actions) {
+          // First, queue all node and custom action updates.
+          if (update_semantics_node_callback != nullptr) {
+            for (const auto& value : update) {
+              const auto& node = value.second;
+              SkMatrix transform = node.transform.asM33();
+              FlutterTransformation flutter_transform{
+                  transform.get(SkMatrix::kMScaleX),
+                  transform.get(SkMatrix::kMSkewX),
+                  transform.get(SkMatrix::kMTransX),
+                  transform.get(SkMatrix::kMSkewY),
+                  transform.get(SkMatrix::kMScaleY),
+                  transform.get(SkMatrix::kMTransY),
+                  transform.get(SkMatrix::kMPersp0),
+                  transform.get(SkMatrix::kMPersp1),
+                  transform.get(SkMatrix::kMPersp2)};
+              const FlutterSemanticsNode embedder_node{
+                  sizeof(FlutterSemanticsNode),
+                  node.id,
+                  static_cast<FlutterSemanticsFlag>(node.flags),
+                  static_cast<FlutterSemanticsAction>(node.actions),
+                  node.textSelectionBase,
+                  node.textSelectionExtent,
+                  node.scrollChildren,
+                  node.scrollIndex,
+                  node.scrollPosition,
+                  node.scrollExtentMax,
+                  node.scrollExtentMin,
+                  node.elevation,
+                  node.thickness,
+                  node.label.c_str(),
+                  node.hint.c_str(),
+                  node.value.c_str(),
+                  node.increasedValue.c_str(),
+                  node.decreasedValue.c_str(),
+                  static_cast<FlutterTextDirection>(node.textDirection),
+                  FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
+                              node.rect.fBottom},
+                  flutter_transform,
+                  node.childrenInTraversalOrder.size(),
+                  node.childrenInTraversalOrder.data(),
+                  node.childrenInHitTestOrder.data(),
+                  node.customAccessibilityActions.size(),
+                  node.customAccessibilityActions.data(),
+                  node.platformViewId,
+              };
+              update_semantics_node_callback(&embedder_node, user_data);
+            }
           }
-          const FlutterSemanticsCustomAction batch_end_sentinel = {
-              sizeof(FlutterSemanticsCustomAction),
-              kFlutterSemanticsCustomActionIdBatchEnd,
-          };
-          ptr(&batch_end_sentinel, user_data);
+
+          if (update_semantics_custom_action_callback != nullptr) {
+            for (const auto& value : actions) {
+              const auto& action = value.second;
+              const FlutterSemanticsCustomAction embedder_action = {
+                  sizeof(FlutterSemanticsCustomAction),
+                  action.id,
+                  static_cast<FlutterSemanticsAction>(action.overrideId),
+                  action.label.c_str(),
+                  action.hint.c_str(),
+              };
+              update_semantics_custom_action_callback(&embedder_action,
+                                                      user_data);
+            }
+          }
+
+          // Second, mark node and action batches completed now that all
+          // updates are queued.
+          if (update_semantics_node_callback != nullptr) {
+            const FlutterSemanticsNode batch_end_sentinel = {
+                sizeof(FlutterSemanticsNode),
+                kFlutterSemanticsNodeIdBatchEnd,
+            };
+            update_semantics_node_callback(&batch_end_sentinel, user_data);
+          }
+
+          if (update_semantics_custom_action_callback != nullptr) {
+            const FlutterSemanticsCustomAction batch_end_sentinel = {
+                sizeof(FlutterSemanticsCustomAction),
+                kFlutterSemanticsCustomActionIdBatchEnd,
+            };
+            update_semantics_custom_action_callback(&batch_end_sentinel,
+                                                    user_data);
+          }
         };
   }
 
@@ -1576,8 +1594,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
-          update_semantics_nodes_callback,            //
-          update_semantics_custom_actions_callback,   //
+          update_semantics_callback,                  //
           platform_message_response_callback,         //
           vsync_callback,                             //
           compute_platform_resolved_locale_callback,  //
@@ -1845,7 +1862,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   }
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
-             std::move(metrics))
+             metrics)
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Viewport metrics were invalid.");
@@ -1907,6 +1924,8 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
       return flutter::PointerData::SignalKind::kScroll;
     case kFlutterPointerSignalKindScrollInertiaCancel:
       return flutter::PointerData::SignalKind::kScrollInertiaCancel;
+    case kFlutterPointerSignalKindScale:
+      return flutter::PointerData::SignalKind::kScale;
   }
   return flutter::PointerData::SignalKind::kNone;
 }
@@ -2453,7 +2472,7 @@ FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
 
 static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                             engine,
-                                        rapidjson::Document document,
+                                        const rapidjson::Document& document,
                                         const std::string& channel_name) {
   if (channel_name.empty()) {
     return false;
@@ -2535,8 +2554,7 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   document.AddMember("args", args, allocator);
 
-  return DispatchJSONPlatformMessage(engine, std::move(document),
-                                     "flutter/localization")
+  return DispatchJSONPlatformMessage(engine, document, "flutter/localization")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,
                                   "Could not send message to update locale of "
@@ -2686,8 +2704,7 @@ FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
   document.SetObject();
   document.AddMember("type", "memoryPressure", allocator);
 
-  return DispatchJSONPlatformMessage(raw_engine, std::move(document),
-                                     "flutter/system")
+  return DispatchJSONPlatformMessage(raw_engine, document, "flutter/system")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(
                    kInternalInconsistency,

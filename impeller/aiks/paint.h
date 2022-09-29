@@ -19,13 +19,16 @@
 namespace impeller {
 
 struct Paint {
-  using ImageFilterProc =
+  using ImageFilterProc = std::function<std::shared_ptr<FilterContents>(
+      FilterInput::Ref,
+      const Matrix& effect_transform)>;
+  using ColorFilterProc =
       std::function<std::shared_ptr<FilterContents>(FilterInput::Ref)>;
-  using ColorFilterProc = ImageFilterProc;
-  using MaskFilterProc =
-      std::function<std::shared_ptr<FilterContents>(FilterInput::Ref,
-                                                    bool is_solid_color)>;
-  using ColorSourceProc = std::function<std::shared_ptr<PathContents>()>;
+  using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
+      FilterInput::Ref,
+      bool is_solid_color,
+      const Matrix& effect_transform)>;
+  using ColorSourceProc = std::function<std::shared_ptr<ColorSourceContents>()>;
 
   enum class Style {
     kFill,
@@ -36,8 +39,10 @@ struct Paint {
     FilterContents::BlurStyle style;
     Sigma sigma;
 
-    std::shared_ptr<FilterContents> CreateMaskBlur(FilterInput::Ref input,
-                                                   bool is_solid_color) const;
+    std::shared_ptr<FilterContents> CreateMaskBlur(
+        FilterInput::Ref input,
+        bool is_solid_color,
+        const Matrix& effect_matrix) const;
   };
 
   Color color = Color::Black();
@@ -48,7 +53,7 @@ struct Paint {
   SolidStrokeContents::Join stroke_join = SolidStrokeContents::Join::kMiter;
   Scalar stroke_miter = 4.0;
   Style style = Style::kFill;
-  Entity::BlendMode blend_mode = Entity::BlendMode::kSourceOver;
+  BlendMode blend_mode = BlendMode::kSourceOver;
 
   std::optional<ImageFilterProc> image_filter;
   std::optional<ColorFilterProc> color_filter;
@@ -67,7 +72,8 @@ struct Paint {
   ///             original contents is returned.
   std::shared_ptr<Contents> WithFilters(
       std::shared_ptr<Contents> input,
-      std::optional<bool> is_solid_color = std::nullopt) const;
+      std::optional<bool> is_solid_color = std::nullopt,
+      const Matrix& effect_transform = Matrix()) const;
 
   std::shared_ptr<Contents> CreateContentsForEntity(Path path = {},
                                                     bool cover = false) const;

@@ -40,12 +40,12 @@ bool CommandBufferGLES::OnSubmitCommands(CompletionCallback callback) {
 
 // |CommandBuffer|
 std::shared_ptr<RenderPass> CommandBufferGLES::OnCreateRenderPass(
-    RenderTarget target) const {
+    RenderTarget target) {
   if (!IsValid()) {
     return nullptr;
   }
   auto pass = std::shared_ptr<RenderPassGLES>(
-      new RenderPassGLES(context_, std::move(target), reactor_));
+      new RenderPassGLES(context_, target, reactor_));
   if (!pass->IsValid()) {
     return nullptr;
   }
@@ -62,6 +62,13 @@ std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() const {
     return nullptr;
   }
   return pass;
+}
+
+// |CommandBuffer|
+std::shared_ptr<ComputePass> CommandBufferGLES::OnCreateComputePass() const {
+  // Compute passes aren't supported until GLES 3.2, at which point Vulkan is
+  // available anyway.
+  return nullptr;
 }
 
 }  // namespace impeller
