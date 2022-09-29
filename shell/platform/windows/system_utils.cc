@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/system_utils.h"
 
 #include <Windows.h>
+#include <winreg.h>
 
 #include <sstream>
 
@@ -25,20 +26,35 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
 
 std::vector<std::wstring> GetPreferredLanguages() {
   std::vector<std::wstring> languages;
+  BOOL languages_from_registry = TRUE;
+  ULONG buffer_size = 0;
+  ULONG count = 0;
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
 
-  // Get buffer length.
-  ULONG count = 0;
-  ULONG buffer_size = 0;
-  if (!::GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
-    return languages;
+  // Determine where languages are defined and get buffer length
+  if(RegGetValueA(HKEY_CURRENT_USER, "Control panel\\International\\User Profile", "Languages", RRF_RT_REG_MULTI_SZ, NULL, NULL, &buffer_size) != S_OK) {
+    languages_from_registry = FALSE;
+    if (!::GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
+      return languages;
+    }
   }
 
-  // Get the list of null-separated languages.
+  // Initialize the buffer
   std::wstring buffer(buffer_size, '\0');
-  if (!::GetThreadPreferredUILanguages(flags, &count, buffer.data(),
-                                       &buffer_size)) {
-    return languages;
+  if (languages_from_registry) {
+    std::string str_buffer(buffer_size, '\0');
+    if(RegGetValueA(HKEY_CURRENT_USER, "Control panel\\International\\User Profile", "Languages", RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(), &buffer_size) != S_OK) {
+      return languages;
+    }
+    for (int i = 0; i < buffer_size; i++) {
+      buffer[i] = str_buffer[i];
+    }
+  }
+  else {
+    if (!::GetThreadPreferredUILanguages(flags, &count, buffer.data(),
+                                         &buffer_size)) {
+      return languages;
+    }
   }
 
   // Extract the individual languages from the buffer.
