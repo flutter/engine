@@ -85,10 +85,6 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
-    if (paragraph.isEmpty) {
-      return;
-    }
-
     LineBuilder currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 

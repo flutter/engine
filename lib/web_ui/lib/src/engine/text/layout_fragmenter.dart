@@ -25,10 +25,6 @@ class LayoutFragmenter extends TextFragmenter {
   List<LayoutFragment> fragment() {
     final List<LayoutFragment> fragments = <LayoutFragment>[];
 
-    if (paragraphText.isEmpty) {
-      return fragments;
-    }
-
     int fragmentStart = 0;
 
     final Iterator<LineBreakFragment> lineBreakFragments = LineBreakFragmenter(paragraphText).fragment().iterator..moveNext();

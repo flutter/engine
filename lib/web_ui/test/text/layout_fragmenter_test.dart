@@ -24,13 +24,35 @@ void main() {
 
 Future<void> testMain() async {
   group('$LayoutFragmenter', () {
-    test('empty string', () {
-      expect(split(plain(EngineParagraphStyle(), '')), <_Fragment>[]);
+    test('empty paragraph', () {
+      final CanvasParagraph paragraph1 = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {},
+      );
+      expect(split(paragraph1), <_Fragment>[
+        _Fragment('', endOfText, null, previous, defaultStyle),
+      ]);
 
-      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (CanvasParagraphBuilder builder) {
-        builder.addText('');
-      });
-      expect(split(paragraph), <_Fragment>[]);
+      final CanvasParagraph paragraph2 = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.addText('');
+        },
+      );
+      expect(split(paragraph2), <_Fragment>[
+        _Fragment('', endOfText, null, previous, defaultStyle),
+      ]);
+
+      final CanvasParagraph paragraph3 = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.pushStyle(style1);
+          builder.addText('');
+        },
+      );
+      expect(split(paragraph3), <_Fragment>[
+        _Fragment('', endOfText, null, previous, style1),
+      ]);
     });
 
     test('single span', () {

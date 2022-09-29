@@ -16,7 +16,9 @@ void main() {
 Future<void> testMain() async {
   group('$BidiFragmenter', () {
     test('empty string', () {
-      expect(split(''), <_Bidi>[]);
+      expect(split(''), <_Bidi>[
+        _Bidi('', null, previous),
+      ]);
     });
 
     test('basic cases', () {

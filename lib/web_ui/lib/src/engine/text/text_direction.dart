@@ -108,6 +108,7 @@ List<BidiFragment> _computeBidiFragments(String text) {
   final List<BidiFragment> fragments = <BidiFragment>[];
 
   if (text.isEmpty) {
+    fragments.add(const BidiFragment(0, 0, null, FragmentFlow.previous));
     return fragments;
   }
 

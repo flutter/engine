@@ -7,6 +7,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../html/paragraph/helper.dart';
+
 bool get isIosSafari =>
     browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs;
@@ -34,6 +36,28 @@ void main() {
 
 Future<void> testMain() async {
   await initializeTestFlutterViewEmbedder();
+
+  test('empty paragraph', () {
+    final CanvasParagraph paragraph1 = rich(
+      EngineParagraphStyle(),
+      (CanvasParagraphBuilder builder) {},
+    );
+    expect(paragraph1.plainText, '');
+    expect(paragraph1.spans, hasLength(1));
+    expect(paragraph1.spans.single.start, 0);
+    expect(paragraph1.spans.single.end, 0);
+
+    final CanvasParagraph paragraph2 = rich(
+      EngineParagraphStyle(),
+      (CanvasParagraphBuilder builder) {
+        builder.addText('');
+      },
+    );
+    expect(paragraph2.plainText, '');
+    expect(paragraph2.spans, hasLength(1));
+    expect(paragraph2.spans.single.start, 0);
+    expect(paragraph2.spans.single.end, 0);
+  });
 
   test('Builds a text-only canvas paragraph', () {
     final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);

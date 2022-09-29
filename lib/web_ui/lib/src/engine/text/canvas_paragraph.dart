@@ -35,7 +35,7 @@ class CanvasParagraph implements ui.Paragraph {
     required this.plainText,
     required this.placeholderCount,
     required this.canDrawOnCanvas,
-  });
+  }) : assert(spans.isNotEmpty);
 
   /// The flat list of spans that make up this paragraph.
   final List<ParagraphSpan> spans;
@@ -83,8 +83,6 @@ class CanvasParagraph implements ui.Paragraph {
 
   /// The bounds that contain the text painted inside this paragraph.
   ui.Rect get paintBounds => _layoutService.paintBounds;
-
-  bool get isEmpty => plainText.isEmpty;
 
   /// Whether this paragraph has been laid out or not.
   bool isLaidOut = false;
@@ -696,6 +694,15 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   CanvasParagraph build() {
+    if (_spans.isEmpty) {
+      // In case `addText` and `addPlaceholder` were never called.
+      _spans.add(FlatTextSpan(
+        style: _rootStyleNode.resolveStyle(),
+        start: 0,
+        end: 0,
+      ));
+    }
+
     return CanvasParagraph(
       _spans,
       paragraphStyle: _paragraphStyle,
