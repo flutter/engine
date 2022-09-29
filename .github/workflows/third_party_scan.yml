@@ -32,7 +32,7 @@ jobs:
           python-version: '3.7.7' # install the python version needed
 
       - name: install dependency
-        run: pip install requests
+        run: pip install git+https://github.com/psf/requests.git@4d394574f5555a8ddcc38f707e0c9f57f55d9a3b
 
       - name: execute py script
         run: python ci/deps_parser.py 
