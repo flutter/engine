@@ -237,4 +237,40 @@ bool ContextMTL::SupportsOffscreenMSAA() const {
   return true;
 }
 
+// |Context|
+bool ContextMTL::StartCapturingFrames() const {
+  if (!device_ || !command_queue_) {
+    return false;
+  }
+
+  MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+  if (captureManager.isCapturing) {
+    return false;
+  }
+
+  if (@available(iOS 13.0, macOS 10.15, *)) {
+    MTLCaptureDescriptor* desc = [[MTLCaptureDescriptor alloc] init];
+    desc.captureObject = device_;
+    return [captureManager startCaptureWithDescriptor:desc error:nil];
+  }
+
+  [captureManager startCaptureWithDevice:device_];
+  return captureManager.isCapturing;
+}
+
+// |Context|
+bool ContextMTL::StopCapturingFrames() const {
+  if (!device_ || !command_queue_) {
+    return false;
+  }
+
+  MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+  if (!captureManager.isCapturing) {
+    return false;
+  }
+
+  [captureManager stopCapture];
+  return !captureManager.isCapturing;
+}
+
 }  // namespace impeller

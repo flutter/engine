@@ -41,6 +41,22 @@ std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectConte
   );
 }
 
+// |IOSSurface|
+bool IOSSurfaceMetalImpeller::StartCapturingFrames() const {
+  if (!IsValid()) {
+    return false;
+  }
+  return impeller_context_->StartCapturingFrames();
+}
+
+// |IOSSurface|
+bool IOSSurfaceMetalImpeller::StopCapturingFrames() const {
+  if (!IsValid()) {
+    return false;
+  }
+  return impeller_context_->StopCapturingFrames();
+}
+
 // |GPUSurfaceMetalDelegate|
 GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& frame_info) const {
   CAMetalLayer* layer = layer_.get();

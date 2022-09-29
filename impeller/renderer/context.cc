@@ -14,4 +14,12 @@ bool Context::HasThreadingRestrictions() const {
   return false;
 }
 
+bool Context::StartCapturingFrames() const {
+  return false;
+}
+
+bool Context::StopCapturingFrames() const {
+  return false;
+}
+
 }  // namespace impeller

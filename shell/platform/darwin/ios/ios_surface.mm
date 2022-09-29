@@ -58,4 +58,12 @@ std::shared_ptr<IOSContext> IOSSurface::GetContext() const {
   return ios_context_;
 }
 
+bool IOSSurface::StartCapturingFrames() const {
+  return false;
+}
+
+bool IOSSurface::StopCapturingFrames() const {
+  return false;
+}
+
 }  // namespace flutter
