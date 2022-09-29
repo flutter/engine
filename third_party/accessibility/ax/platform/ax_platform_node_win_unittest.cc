@@ -271,6 +271,7 @@ void AXPlatformNodeWinTest::TearDown() {
   ax_fragment_root_.reset(nullptr);
   DestroyTree();
   TestAXNodeWrapper::SetGlobalIsWebContent(false);
+  TestAXNodeWrapper::ClearHitTestResult();
   ASSERT_EQ(0U, AXPlatformNodeBase::GetInstanceCountForTesting());
 }
 
