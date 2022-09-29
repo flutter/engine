@@ -1,104 +1,99 @@
 import 'dart:ffi';
-import 'dart:wasm';
 
 import 'raw_geometry.dart';
-import 'raw_memory.dart';
 import 'raw_paint.dart';
 import 'raw_path.dart';
 import 'raw_picture.dart';
 
 class CanvasWrapper extends Opaque {}
-
 typedef CanvasHandle = Pointer<CanvasWrapper>;
 
-typedef RawClipOp = WasmI32;
+@FfiNative<Void Function(CanvasHandle)>('skwasm.canvas_destroy', isLeaf: true)
+external void canvasDestroy(CanvasHandle canvas);
 
-@pragma('wasm:import', 'skwasm.canvas_destroy')
-external void canvas_destroy(CanvasHandle canvas);
+@FfiNative<Void Function(CanvasHandle)>('skwasm.canvas_save', isLeaf: true)
+external void canvasSave(CanvasHandle canvas);
 
-@pragma('wasm:import', 'skwasm.canvas_save')
-external void canvas_save(CanvasHandle canvas);
-
-@pragma('wasm:import', 'skwasm.canvas_saveLayer')
-external void canvas_saveLayer(
+@FfiNative<Void Function(CanvasHandle, RawRect, PaintHandle)>('skwasm.canvas_saveLayer', isLeaf: true)
+external void canvasSaveLayer(
     CanvasHandle canvas, RawRect rect, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_restore')
-external void canvas_restore(CanvasHandle canvas);
+@FfiNative<Void Function(CanvasHandle)>('skwasm.canvas_restore', isLeaf: true)
+external void canvasRestore(CanvasHandle canvas);
 
-@pragma('wasm:import', 'skwasm.canvas_getSaveCount')
-external RawSize canvas_getSaveCount(CanvasHandle canvas);
+@FfiNative<Int Function(CanvasHandle)>('skwasm.canvas_getSaveCount', isLeaf: true)
+external int canvasGetSaveCount(CanvasHandle canvas);
 
-@pragma('wasm:import', 'skwasm.canvas_translate')
-external void canvas_translate(CanvasHandle canvas, RawScalar dx, RawScalar dy);
+@FfiNative<Void Function(CanvasHandle, Float, Float)>('skwasm.canvas_translate', isLeaf: true)
+external void canvasTranslate(CanvasHandle canvas, double dx, double dy);
 
-@pragma('wasm:import', 'skwasm.canvas_scale')
-external void canvas_scale(CanvasHandle canvas, RawScalar sx, RawScalar sy);
+@FfiNative<Void Function(CanvasHandle, Float, Float)>('skwasm.canvas_scale', isLeaf: true)
+external void canvasScale(CanvasHandle canvas, double sx, double sy);
 
-@pragma('wasm:import', 'skwasm.canvas_rotate')
-external void canvas_rotate(CanvasHandle canvas, RawScalar degrees);
+@FfiNative<Void Function(CanvasHandle, Float)>('skwasm.canvas_rotate', isLeaf: true)
+external void canvasRotate(CanvasHandle canvas, double degrees);
 
-@pragma('wasm:import', 'skwasm.canvas_skew')
-external void canvas_skew(CanvasHandle canvas, RawScalar sx, RawScalar sy);
+@FfiNative<Void Function(CanvasHandle, Float, Float)>('skwasm.canvas_skew', isLeaf: true)
+external void canvasSkew(CanvasHandle canvas, double sx, double sy);
 
-@pragma('wasm:import', 'skwasm.canvas_transform')
-external void canvas_transform(CanvasHandle canvas, RawMatrix44 matrix);
+@FfiNative<Void Function(CanvasHandle, RawMatrix44)>('skwasm.canvas_transform', isLeaf: true)
+external void canvasTransform(CanvasHandle canvas, RawMatrix44 matrix);
 
-@pragma('wasm:import', 'skwasm.canvas_clipRect')
-external void canvas_clipRect(
-    CanvasHandle canvas, RawRect rect, RawClipOp op, RawBool antialias);
+@FfiNative<Void Function(CanvasHandle, RawRect, Int, Bool)>('skwasm.canvas_clipRect', isLeaf: true)
+external void canvasClipRect(
+    CanvasHandle canvas, RawRect rect, int op, bool antialias);
 
-@pragma('wasm:import', 'skwasm.canvas_clipRRect')
-external void canvas_clipRRect(
-    CanvasHandle canvas, RawRRect rrect, RawBool antialias);
+@FfiNative<Void Function(CanvasHandle, RawRRect, Bool)>('skwasm.canvas_clipRRect', isLeaf: true)
+external void canvasClipRRect(
+    CanvasHandle canvas, RawRRect rrect, bool antialias);
 
-@pragma('wasm:import', 'skwasm.canvas_clipPath')
-external void canvas_clipPath(
-    CanvasHandle canvas, PathHandle path, RawBool antialias);
+@FfiNative<Void Function(CanvasHandle, PathHandle, Bool)>('skwasm.canvas_clipPath', isLeaf: true)
+external void canvasClipPath(
+    CanvasHandle canvas, PathHandle path, bool antialias);
 
-@pragma('wasm:import', 'skwasm.canvas_drawColor')
-external void canvas_drawColor(
-    CanvasHandle canvas, RawColor color, RawBlendMode blendMode);
+@FfiNative<Void Function(CanvasHandle, Int32, Int)>('skwasm.canvas_drawColor', isLeaf: true)
+external void canvasDrawColor(
+    CanvasHandle canvas, int color, int blendMode);
 
-@pragma('wasm:import', 'skwasm.canvas_drawLine')
-external void canvas_drawLine(CanvasHandle canvas, RawScalar x1, RawScalar y1,
-    RawScalar x2, RawScalar y2, PaintHandle paint);
+@FfiNative<Void Function(CanvasHandle, Float, Float, Float, Float, PaintHandle)>('skwasm.canvas_drawLine', isLeaf: true)
+external void canvasDrawLine(CanvasHandle canvas, double x1, double y1,
+    double x2, double y2, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawPaint')
-external void canvas_drawPaint(CanvasHandle canvas, PaintHandle paint);
+@FfiNative<Void Function(CanvasHandle, PaintHandle)>('skwasm.canvas_drawPaint', isLeaf: true)
+external void canvasDrawPaint(CanvasHandle canvas, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawRect')
-external void canvas_drawRect(
+@FfiNative<Void Function(CanvasHandle, RawRect, PaintHandle)>('skwasm.canvas_drawRect', isLeaf: true)
+external void canvasDrawRect(
     CanvasHandle canvas, RawRect rect, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawRRect')
-external void canvas_drawRRect(
+@FfiNative<Void Function(CanvasHandle, RawRRect, PaintHandle)>('skwasm.canvas_drawRRect', isLeaf: true)
+external void canvasDrawRRect(
     CanvasHandle canvas, RawRRect rrect, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawDRRect')
-external void canvas_drawDRRect(
+@FfiNative<Void Function(CanvasHandle, RawRRect, RawRRect, PaintHandle)>('skwasm.canvas_drawDRRect', isLeaf: true)
+external void canvasDrawDRRect(
     CanvasHandle canvas, RawRRect outer, RawRRect inner, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawOval')
-external void canvas_drawOval(
+@FfiNative<Void Function(CanvasHandle, RawRect, PaintHandle)>('skwasm.canvas_drawOval', isLeaf: true)
+external void canvasDrawOval(
     CanvasHandle canvas, RawRect oval, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawCircle')
-external void canvas_drawCircle(CanvasHandle canvas, RawScalar x, RawScalar y,
-    RawScalar radius, PaintHandle paint);
+@FfiNative<Void Function(CanvasHandle, Float, Float, Float, PaintHandle)>('skwasm.canvas_drawCircle', isLeaf: true)
+external void canvasDrawCircle(CanvasHandle canvas, double x, double y,
+    double radius, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawArc')
-external void canvas_drawArc(
+@FfiNative<Void Function(CanvasHandle, RawRect, Float, Float, Bool, PaintHandle)>('skwasm.canvas_drawCircle', isLeaf: true)
+external void canvasDrawArc(
     CanvasHandle canvas,
     RawRect rect,
-    RawScalar startAngleDegrees,
-    RawScalar sweepAngleDegrees,
-    RawBool useCenter,
+    double startAngleDegrees,
+    double sweepAngleDegrees,
+    bool useCenter,
     PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawPath')
-external void canvas_drawPath(
+@FfiNative<Void Function(CanvasHandle, PathHandle, PaintHandle)>('skwasm.canvas_drawPath', isLeaf: true)
+external void canvasDrawPath(
     CanvasHandle canvas, PathHandle path, PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.canvas_drawPicture')
-external void canvas_drawPicture(CanvasHandle canvas, PictureHandle picture);
+@FfiNative<Void Function(CanvasHandle, PictureHandle)>('skwasm.canvas_drawPicture', isLeaf: true)
+external void canvasDrawPicture(CanvasHandle canvas, PictureHandle picture);

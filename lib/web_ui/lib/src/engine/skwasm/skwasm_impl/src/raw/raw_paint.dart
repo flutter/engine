@@ -1,64 +1,56 @@
 import 'dart:ffi';
-import 'dart:wasm';
-import 'raw_memory.dart';
 
 class RawPaint extends Opaque {}
 
 typedef PaintHandle = Pointer<RawPaint>;
 
-typedef RawBlendMode = WasmI32;
-typedef RawPaintStyle = WasmI32;
-typedef RawStrokeCap = WasmI32;
-typedef RawStrokeJoin = WasmI32;
-typedef RawColor = WasmI32;
+@FfiNative<PaintHandle Function()>('skwasm.paint_create', isLeaf: true)
+external PaintHandle paintCreate();
 
-@pragma('wasm:import', 'skwasm.paint_create')
-external PaintHandle paint_create();
+@FfiNative<Void Function(PaintHandle)>('skwasm.paint_destroy', isLeaf: true)
+external void paintDestroy(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_destroy')
-external void paint_destroy(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setBlendMode', isLeaf: true)
+external void paintSetBlendMode(PaintHandle paint, int blendMode);
 
-@pragma('wasm:import', 'skwasm.paint_setBlendMode')
-external void paint_setBlendMode(PaintHandle paint, RawBlendMode blendMode);
+@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setPaintStyle', isLeaf: true)
+external void paintSetPaintStyle(PaintHandle paint, int paintStyle);
 
-@pragma('wasm:import', 'skwasm.paint_setStyle')
-external void paint_setPaintStyle(PaintHandle paint, RawPaintStyle paintStyle);
+@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getPaintStyle', isLeaf: true)
+external int paintGetPaintStyle(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_getStyle')
-external RawPaintStyle paint_getPaintStyle(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Float)>('skwasm.paint_setStrokeWidth', isLeaf: true)
+external void paintSetStrokeWidth(PaintHandle paint, double strokeWidth);
 
-@pragma('wasm:import', 'skwasm.paint_setStrokeWidth')
-external void paint_setStrokeWidth(PaintHandle paint, RawScalar strokeWidth);
+@FfiNative<Float Function(PaintHandle)>('skwasm.paint_getStrokeWidth', isLeaf: true)
+external double paintGetStrokeWidth(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_getStrokeWidth')
-external RawScalar paint_getStrokeWidth(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setStrokeCap', isLeaf: true)
+external void paintSetStrokeCap(PaintHandle paint, int cap);
 
-@pragma('wasm:import', 'skwasm.paint_setStrokeCap')
-external void paint_setStrokeCap(PaintHandle paint, RawStrokeCap cap);
+@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getStrokeCap', isLeaf: true)
+external int paintGetStrokeCap(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_getStrokeCap')
-external RawStrokeCap paint_getStrokeCap(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setStrokeJoin', isLeaf: true)
+external void paintSetStrokeJoin(PaintHandle paint, int join);
 
-@pragma('wasm:import', 'skwasm.paint_setStrokeJoin')
-external void paint_setStrokeJoin(PaintHandle paint, RawStrokeJoin join);
+@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getStrokeJoin', isLeaf: true)
+external int paintGetStrokeJoin(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_getStrokeJoin')
-external RawStrokeJoin paint_getStrokeJoin(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Bool)>('skwasm.paint_setAntiAlias', isLeaf: true)
+external void paintSetAntiAlias(PaintHandle paint, bool antiAlias);
 
-@pragma('wasm:import', 'skwasm.paint_setAntiAlias')
-external void paint_setAntiAlias(PaintHandle paint, RawBool antiAlias);
+@FfiNative<Bool Function(PaintHandle)>('skwasm.paint_getAntiAlias', isLeaf: true)
+external bool paintGetAntiAlias(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_getAntiAlias')
-external RawBool paint_getAntiAlias(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Uint32)>('skwasm.paint_setColorInt', isLeaf: true)
+external void paintSetColorInt(PaintHandle paint, int color);
 
-@pragma('wasm:import', 'skwasm.paint_setColorInt')
-external void paint_setColorInt(PaintHandle paint, RawColor color);
+@FfiNative<Uint32 Function(PaintHandle)>('skwasm.paint_getColorInt', isLeaf: true)
+external int paintGetColorInt(PaintHandle paint);
 
-@pragma('wasm:import', 'skwasm.paint_getColorInt')
-external RawColor paint_getColorInt(PaintHandle paint);
+@FfiNative<Void Function(PaintHandle, Float)>('skwasm.paint_setMiterLimit', isLeaf: true)
+external void paintSetMiterLimit(PaintHandle paint, double miterLimit);
 
-@pragma('wasm:import', 'skwasm.paint_setMiterLimit')
-external void paint_setMiterLimit(PaintHandle paint, RawScalar miterLimit);
-
-@pragma('wasm:import', 'skwasm.paint_getMiterLimit')
-external RawScalar paint_getMiterLimit(PaintHandle paint);
+@FfiNative<Float Function(PaintHandle)>('skwasm.paint_getMiterLimit', isLeaf: true)
+external double paintGetMiterLimit(PaintHandle paint);

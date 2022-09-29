@@ -1,6 +1,6 @@
-import 'image.dart';
-import 'raw/raw_picture.dart';
 import 'package:ui/ui.dart' as ui;
+
+import 'raw/raw_picture.dart';
 
 class SkwasmPicture implements ui.Picture {
   SkwasmPicture.fromHandle(this._handle);
@@ -8,17 +8,16 @@ class SkwasmPicture implements ui.Picture {
 
   PictureHandle get handle => _handle;
 
+  @override
   Future<ui.Image> toImage(int width, int height) {
     throw UnimplementedError();
   }
 
-  void dispose() {
-    picture_dispose(_handle);
-  }
+  @override
+  void dispose() => pictureDispose(_handle);
 
-  int get approximateBytesUsed {
-    return picture_approxmateBytesUsed(_handle).toIntSigned();
-  }
+  @override
+  int get approximateBytesUsed => pictureApproximateBytesUsed(_handle);
   
   @override
   // TODO: implement debugDisposed
@@ -32,20 +31,21 @@ class SkwasmPicture implements ui.Picture {
 }
 
 class SkwasmPictureRecorder implements ui.PictureRecorder {
-  factory SkwasmPictureRecorder() {
-    return SkwasmPictureRecorder._fromHandle(pictureRecorder_create());
-  }
+  factory SkwasmPictureRecorder() => 
+    SkwasmPictureRecorder._fromHandle(pictureRecorderCreate());
 
   SkwasmPictureRecorder._fromHandle(this._handle);
   final PictureRecorderHandle _handle;
 
   PictureRecorderHandle get handle => _handle;
 
-  void delete() {
-    pictureRecorder_destroy(_handle);
-  }
+  void delete() => pictureRecorderDestroy(_handle);
 
-  SkwasmPicture endRecording() {
-    return SkwasmPicture.fromHandle(pictureRecorder_endRecording(_handle));
-  }
+  @override
+  SkwasmPicture endRecording() => 
+    SkwasmPicture.fromHandle(pictureRecorderEndRecording(_handle));
+
+  @override
+  // TODO: implement isRecording
+  bool get isRecording => throw UnimplementedError();
 }

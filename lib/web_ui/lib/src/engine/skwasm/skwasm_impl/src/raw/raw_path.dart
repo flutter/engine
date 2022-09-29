@@ -1,132 +1,196 @@
 import 'dart:ffi';
-import 'dart:wasm';
 
 import 'raw_geometry.dart';
-import 'raw_memory.dart';
 
 class RawPath extends Opaque {}
 
 typedef PathHandle = Pointer<RawPath>;
 
-typedef RawPathFillType = WasmI32;
-typedef RawPathDirection = WasmI32;
-typedef RawArcSize = WasmI32;
-typedef RawPathOperation = WasmI32;
+@FfiNative<PathHandle Function()>('skwasm.path_create', isLeaf: true)
+external PathHandle pathCreate();
 
-@pragma('wasm:import', 'skwasm.path_create')
-external PathHandle path_create();
+@FfiNative<Void Function(PathHandle)>('skwasm.path_destroy', isLeaf: true)
+external void pathDestroy(PathHandle path);
 
-@pragma('wasm:import', 'skwasm.path_destroy')
-external void path_destroy(PathHandle path);
+@FfiNative<PathHandle Function(PathHandle)>('skwasm.path_copy', isLeaf: true)
+external PathHandle pathCopy(PathHandle path);
 
-@pragma('wasm:import', 'skwasm.path_copy')
-external PathHandle path_copy(PathHandle path);
+@FfiNative<Void Function(PathHandle, Int)>('skwasm.path_setFillType', isLeaf: true)
+external void pathSetFillType(PathHandle path, int fillType);
 
-@pragma('wasm:import', 'skwasm.path_setFillType')
-external void path_setFillType(PathHandle path, RawPathFillType fillType);
+@FfiNative<Int Function(PathHandle)>('skwasm.path_getFillType', isLeaf: true)
+external int pathGetFillType(PathHandle path);
 
-@pragma('wasm:import', 'skwasm.path_getFillType')
-external RawPathFillType path_getFillType(PathHandle path);
+@FfiNative<Void Function(PathHandle, Float, Float)>('skwasm.path_moveTo', isLeaf: true)
+external void pathMoveTo(PathHandle path, double x, double y);
 
-@pragma('wasm:import', 'skwasm.path_moveTo')
-external void path_moveTo(PathHandle path, RawScalar x, RawScalar y);
+@FfiNative<Void Function(PathHandle, Float, Float)>('skwasm.path_relativeMoveTo', isLeaf: true)
+external void pathRelativeMoveTo(PathHandle path, double x, double y);
 
-@pragma('wasm:import', 'skwasm.path_relativeMoveTo')
-external void path_relativeMoveTo(PathHandle path, RawScalar x, RawScalar y);
+@FfiNative<Void Function(PathHandle, Float, Float)>('skwasm.path_lineTo', isLeaf: true)
+external void pathLineTo(PathHandle path, double x, double y);
 
-@pragma('wasm:import', 'skwasm.path_lineTo')
-external void path_lineTo(PathHandle path, RawScalar x, RawScalar y);
+@FfiNative<Void Function(PathHandle, Float, Float)>(
+  'skwasm.path_relativeLineTo',
+  isLeaf: true)
+external void pathRelativeLineTo(PathHandle path, double x, double y);
 
-@pragma('wasm:import', 'skwasm.path_lineTo')
-external void path_relativeLineTo(PathHandle path, RawScalar x, RawScalar y);
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Float)>(
+  'skwasm.path_quadraticBezierTo',
+  isLeaf: true)
+external void pathQuadraticBezierTo(
+    PathHandle path, double x1, double y1, double x2, double y2);
 
-@pragma('wasm:import', 'skwasm.path_quadraticBezierTo')
-external void path_quadraticBezierTo(
-    PathHandle path, RawScalar x1, RawScalar y1, RawScalar x2, RawScalar y2);
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Float)>(
+  'skwasm.path_relativeQuadraticBezierTo',
+  isLeaf: true)
+external void pathRelativeQuadraticBezierTo(
+    PathHandle path, double x1, double y1, double x2, double y2);
 
-@pragma('wasm:import', 'skwasm.path_relativeQuadraticBezierTo')
-external void path_relativeQuadraticBezierTo(
-    PathHandle path, RawScalar x1, RawScalar y1, RawScalar x2, RawScalar y2);
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float, Float)>(
+  'skwasm.path_cubicTo',
+  isLeaf: true)
+external void pathCubicTo(
+  PathHandle path, 
+  double x1,
+  double y1,
+  double x2,
+  double y2,
+  double x3,
+  double y3
+);
 
-@pragma('wasm:import', 'skwasm.path_cubicTo')
-external void path_cubicTo(PathHandle path, RawScalar x1, RawScalar y1,
-    RawScalar x2, RawScalar y2, RawScalar x3, RawScalar y3);
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float, Float)>(
+  'skwasm.path_relativeCubicTo', 
+  isLeaf: true)
+external void pathRelativeCubicTo(
+  PathHandle path,
+  double x1,
+  double y1,
+  double x2,
+  double y2,
+  double x3,
+  double y3
+);
 
-@pragma('wasm:import', 'skwasm.path_relativeCubicTo')
-external void path_relativeCubicTo(PathHandle path, RawScalar x1, RawScalar y1,
-    RawScalar x2, RawScalar y2, RawScalar x3, RawScalar y3);
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float)>(
+  'skwasm.path_conicTo', 
+  isLeaf: true)
+external void pathConicTo(
+  PathHandle path,
+  double x1,
+  double y1,
+  double x2,
+  double y2,
+  double w
+);
 
-@pragma('wasm:import', 'skwasm.path_conicTo')
-external void path_conicTo(PathHandle path, RawScalar x1, RawScalar y1,
-    RawScalar x2, RawScalar y2, RawScalar w);
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float)>(
+  'skwasm.path_relativeConicTo', 
+  isLeaf: true)
+external void pathRelativeConicTo(
+  PathHandle path,
+  double x1,
+  double y1,
+  double x2,
+  double y2,
+  double w
+);
 
-@pragma('wasm:import', 'skwasm.path_relativeConicTo')
-external void path_relativeConicTo(PathHandle path, RawScalar x1, RawScalar y1,
-    RawScalar x2, RawScalar y2, RawScalar w);
+@FfiNative<Void Function(PathHandle, RawRect, Float, Float, Bool)>(
+  'skwasm.path_arcToOval', 
+  isLeaf: true)
+external void pathArcToOval(
+  PathHandle path,
+  RawRect rect,
+  double startAngle,
+  double sweepAngle,
+  bool forceMoveto
+);
 
-@pragma('wasm:import', 'skwasm.path_arcToOval')
-external void path_arcToOval(PathHandle path, Pointer<Float> rect,
-    RawScalar startAngle, RawScalar sweepAngle, RawBool forceMoveto);
-
-@pragma('wasm:import', 'skwasm.path_arcToRotated')
-external void path_arcToRotated(
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Int, Int, Float, Float)>(
+  'skwasm.path_arcToRotated', 
+  isLeaf: true)
+external void pathArcToRotated(
     PathHandle path,
-    RawScalar rx,
-    RawScalar ry,
-    RawScalar xAxisRotate,
-    RawArcSize arcSize,
-    RawPathDirection pathDirection,
-    RawScalar x,
-    RawScalar y);
+    double rx,
+    double ry,
+    double xAxisRotate,
+    int arcSize,
+    int pathDirection,
+    double x,
+    double y
+);
 
-@pragma('wasm:import', 'skwasm.path_relativeArcToRotated')
-external void path_relativeArcToRotated(
+@FfiNative<Void Function(PathHandle, Float, Float, Float, Int, Int, Float, Float)>(
+  'skwasm.path_relativeArcToRotated', 
+  isLeaf: true)
+external void pathRelativeArcToRotated(
     PathHandle path,
-    RawScalar rx,
-    RawScalar ry,
-    RawScalar xAxisRotate,
-    RawArcSize arcSize,
-    RawPathDirection pathDirection,
-    RawScalar x,
-    RawScalar y);
+    double rx,
+    double ry,
+    double xAxisRotate,
+    int arcSize,
+    int pathDirection,
+    double x,
+    double y
+);
 
-@pragma('wasm:import', 'skwasm.path_addRect')
-external void path_addRect(PathHandle path, RawRect oval);
+@FfiNative<Void Function(PathHandle, RawRect)>('skwasm.path_addRect', isLeaf: true)
+external void pathAddRect(PathHandle path, RawRect oval);
 
-@pragma('wasm:import', 'skwasm.path_addOval')
-external void path_addOval(PathHandle path, RawRect oval);
+@FfiNative<Void Function(PathHandle, RawRect)>('skwasm.path_addOval', isLeaf: true)
+external void pathAddOval(PathHandle path, RawRect oval);
 
-@pragma('wasm:import', 'skwasm.path_addArc')
-external void path_addArc(PathHandle path, RawRect ovalRect,
-    RawScalar startAngleDegrees, RawScalar sweepAngleDegrees);
+@FfiNative<Void Function(PathHandle, RawRect, Float, Float)>(
+  'skwasm.path_addArc',
+  isLeaf: true)
+external void pathAddArc(
+  PathHandle path,
+  RawRect ovalRect,
+  double startAngleDegrees,
+  double sweepAngleDegrees
+);
 
-@pragma('wasm:import', 'skwasm.path_addPolygon')
-external void path_addPolygon(
-    PathHandle path, RawPointArray points, RawSize pointCount, RawBool close);
+@FfiNative<Void Function(PathHandle, RawPointArray, Int, Bool)>(
+  'skwasm.path_addPolygon',
+  isLeaf: true)
+external void pathAddPolygon(
+  PathHandle path,
+  RawPointArray points,
+  int pointCount,
+  bool close
+);
 
-@pragma('wasm:import', 'skwasm.path_addRRect')
-external void path_addRRect(
-    PathHandle path, RawRRect rrectValues);
+@FfiNative<Void Function(PathHandle, RawRRect)>('skwasm.path_addRRect', isLeaf: true)
+external void pathAddRRect(PathHandle path, RawRRect rrectValues);
 
-@pragma('wasm:import', 'skwasm.path_addPath')
-external void path_addPath(PathHandle path, PathHandle other,
-    RawMatrix33 matrix33, RawBool extendPath);
+@FfiNative<Void Function(PathHandle, PathHandle, RawMatrix33, Bool)>(
+  'skwasm.path_addPath',
+  isLeaf: true)
+external void pathAddPath(
+  PathHandle path,
+  PathHandle other,
+  RawMatrix33 matrix33,
+  bool extendPath
+);
 
-@pragma('wasm:import', 'skwasm.path_close')
-external void path_close(PathHandle path);
+@FfiNative<Void Function(PathHandle)>('skwasm.path_close', isLeaf: true)
+external void pathClose(PathHandle path);
 
-@pragma('wasm:import', 'skwasm.path_reset')
-external void path_reset(PathHandle path);
+@FfiNative<Void Function(PathHandle)>('skwasm.path_reset', isLeaf: true)
+external void pathReset(PathHandle path);
 
-@pragma('wasm:import', 'skwasm.path_contains')
-external RawBool path_contains(PathHandle path, RawScalar x, RawScalar y);
+@FfiNative<Bool Function(PathHandle, Float, Float)>('skwasm.path_contains', isLeaf: true)
+external bool pathContains(PathHandle path, double x, double y);
 
-@pragma('wasm:import', 'skwasm.path_transform')
-external void path_transform(PathHandle path, RawMatrix33 matrix33);
+@FfiNative<Void Function(PathHandle, RawMatrix33)>('skwasm.path_transform', isLeaf: true)
+external void pathTransform(PathHandle path, RawMatrix33 matrix33);
 
-@pragma('wasm:import', 'skwasm.path_getBounds')
-external void path_getBounds(PathHandle path, RawRect outRect);
+@FfiNative<Void Function(PathHandle, RawRect)>('skwasm.path_getBounds', isLeaf: true)
+external void pathGetBounds(PathHandle path, RawRect outRect);
 
-@pragma('wasm:import', 'skwasm.path_combine')
-external PathHandle path_combine(
-    RawPathOperation operation, PathHandle path1, PathHandle path2);
+@FfiNative<PathHandle Function(Int, PathHandle, PathHandle)>(
+  'skwasm.path_getBounds',
+  isLeaf: true)
+external PathHandle pathCombine(int operation, PathHandle path1, PathHandle path2);

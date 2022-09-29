@@ -1,37 +1,31 @@
 import 'dart:ffi';
 import 'dart:typed_data';
-import 'dart:wasm';
 
 import 'package:ui/ui.dart' as ui;
 
-import 'image.dart';
 import 'paint.dart';
-import 'paragraph.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'raw/raw_canvas.dart';
 import 'raw/raw_memory.dart';
 import 'raw/raw_picture.dart';
-import 'vertices.dart';
 
 class SkwasmCanvas implements ui.Canvas {
-  factory SkwasmCanvas(SkwasmPictureRecorder recorder, [ui.Rect cullRect = ui.Rect.largest]) {
-    return SkwasmCanvas.fromHandle(withStackScope((StackScope s) {
-      return pictureRecorder_beginRecording(
-          recorder.handle, s.convertRect(cullRect));
-    }));
-  }
+  factory SkwasmCanvas(SkwasmPictureRecorder recorder, [ui.Rect cullRect = ui.Rect.largest]) =>
+    SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
+      pictureRecorderBeginRecording(recorder.handle, s.convertRect(cullRect))
+    ));
 
   SkwasmCanvas.fromHandle(this._handle);
   CanvasHandle _handle;
 
   void delete() {
-    canvas_destroy(_handle);
+    canvasDestroy(_handle);
   }
 
   @override
   void save() {
-    canvas_save(_handle);
+    canvasSave(_handle);
   }
 
   @override
@@ -40,47 +34,37 @@ class SkwasmCanvas implements ui.Canvas {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvas_saveLayer(_handle, s.convertRect(bounds), paint.handle);
+        canvasSaveLayer(_handle, s.convertRect(bounds), paint.handle);
       });
     } else {
-      canvas_saveLayer(_handle, nullptr, paint.handle);
+      canvasSaveLayer(_handle, nullptr, paint.handle);
     }
   }
 
   @override
   void restore() {
-    canvas_restore(_handle);
+    canvasRestore(_handle);
   }
 
   @override
-  int getSaveCount() {
-    return canvas_getSaveCount(_handle).toIntSigned();
-  }
+  int getSaveCount() => canvasGetSaveCount(_handle);
 
   @override
-  void translate(double dx, double dy) {
-    canvas_translate(_handle, dx.toWasmF32(), dy.toWasmF32());
-  }
+  void translate(double dx, double dy) => canvasTranslate(_handle, dx, dy);
 
   @override
-  void scale(double sx, [double? sy]) {
-    canvas_scale(_handle, sx.toWasmF32(), (sy ?? sx).toWasmF32());
-  }
+  void scale(double sx, [double? sy]) => canvasScale(_handle, sx, sy ?? sx);
 
   @override
-  void rotate(double radians) {
-    canvas_rotate(_handle, ui.toDegrees(radians).toWasmF32());
-  }
+  void rotate(double radians) => canvasRotate(_handle, ui.toDegrees(radians));
 
   @override
-  void skew(double sx, double sy) {
-    canvas_skew(_handle, sx.toWasmF32(), sy.toWasmF32());
-  }
+  void skew(double sx, double sy) => canvasSkew(_handle, sx, sy);
 
   @override
   void transform(Float64List matrix4) {
     withStackScope((StackScope s) {
-      canvas_transform(_handle, s.convertMatrix4toSkM44(matrix4));
+      canvasTransform(_handle, s.convertMatrix4toSkM44(matrix4));
     });
   }
 
@@ -88,15 +72,14 @@ class SkwasmCanvas implements ui.Canvas {
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     withStackScope((StackScope s) {
-      canvas_clipRect(_handle, s.convertRect(rect), clipOp.index.toWasmI32(),
-          doAntiAlias.toWasmI32());
+      canvasClipRect(_handle, s.convertRect(rect), clipOp.index, doAntiAlias);
     });
   }
 
   @override
-  void clipRRect(ui.RRect rrect, {bool doAntialias = true}) {
+  void clipRRect(ui.RRect rrect, {bool doAntiAlias = true}) {
     withStackScope((StackScope s) {
-      canvas_clipRRect(_handle, s.convertRRect(rrect), doAntialias.toWasmI32());
+      canvasClipRRect(_handle, s.convertRRect(rrect), doAntiAlias);
     });
   }
 
@@ -104,33 +87,30 @@ class SkwasmCanvas implements ui.Canvas {
   void clipPath(ui.Path uiPath, {bool doAntiAlias = true}) {
     assert(uiPath is SkwasmPath);
     final SkwasmPath path = uiPath as SkwasmPath;
-    canvas_clipPath(_handle, path.handle, doAntiAlias.toWasmI32());
+    canvasClipPath(_handle, path.handle, doAntiAlias);
   }
 
   @override
-  void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    canvas_drawColor(
-        _handle, color.value.toWasmI32(), blendMode.index.toWasmI32());
-  }
+  void drawColor(ui.Color color, ui.BlendMode blendMode) => 
+    canvasDrawColor(_handle, color.value, blendMode.index);
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
-    canvas_drawLine(_handle, p1.dx.toWasmF32(), p1.dy.toWasmF32(),
-        p2.dx.toWasmF32(), p2.dy.toWasmF32(), paint.handle);
+    canvasDrawLine(_handle, p1.dx, p1.dy, p2.dx, p2.dy, paint.handle);
   }
 
   @override
   void drawPaint(ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
-    canvas_drawPaint(_handle, paint.handle);
+    canvasDrawPaint(_handle, paint.handle);
   }
 
   @override
   void drawRect(ui.Rect rect, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvas_drawRect(_handle, s.convertRect(rect), paint.handle);
+      canvasDrawRect(_handle, s.convertRect(rect), paint.handle);
     });
   }
 
@@ -138,7 +118,7 @@ class SkwasmCanvas implements ui.Canvas {
   void drawRRect(ui.RRect rrect, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvas_drawRRect(_handle, s.convertRRect(rrect), paint.handle);
+      canvasDrawRRect(_handle, s.convertRRect(rrect), paint.handle);
     });
   }
 
@@ -146,7 +126,7 @@ class SkwasmCanvas implements ui.Canvas {
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvas_drawDRRect(
+      canvasDrawDRRect(
           _handle, s.convertRRect(outer), s.convertRRect(inner), paint.handle);
     });
   }
@@ -155,15 +135,14 @@ class SkwasmCanvas implements ui.Canvas {
   void drawOval(ui.Rect rect, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvas_drawOval(_handle, s.convertRect(rect), paint.handle);
+      canvasDrawOval(_handle, s.convertRect(rect), paint.handle);
     });
   }
 
   @override
   void drawCircle(ui.Offset center, double radius, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
-    canvas_drawCircle(_handle, center.dx.toWasmF32(), center.dy.toWasmF32(),
-        radius.toWasmF32(), paint.handle);
+    canvasDrawCircle(_handle, center.dx, center.dy, radius, paint.handle);
   }
 
   @override
@@ -171,12 +150,12 @@ class SkwasmCanvas implements ui.Canvas {
       ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvas_drawArc(
+      canvasDrawArc(
           _handle,
           s.convertRect(rect),
-          ui.toDegrees(startAngle).toWasmF32(),
-          ui.toDegrees(sweepAngle).toWasmF32(),
-          useCenter.toWasmI32(),
+          ui.toDegrees(startAngle),
+          ui.toDegrees(sweepAngle),
+          useCenter,
           paint.handle);
     });
   }
@@ -185,7 +164,7 @@ class SkwasmCanvas implements ui.Canvas {
   void drawPath(ui.Path uiPath, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     final SkwasmPath path = uiPath as SkwasmPath;
-    canvas_drawPath(_handle, path.handle, paint.handle);
+    canvasDrawPath(_handle, path.handle, paint.handle);
   }
 
   @override
@@ -205,7 +184,7 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void drawPicture(ui.Picture picture) {
-    canvas_drawPicture(_handle, (picture as SkwasmPicture).handle);
+    canvasDrawPicture(_handle, (picture as SkwasmPicture).handle);
   }
 
   @override
