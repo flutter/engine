@@ -601,7 +601,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
                            {0, 0}, kScale, kOpacityFloat),
-           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}, {kInvDPR, kInvDPR}));
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},
+          {kInvDPR, kInvDPR}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
   external_view_embedder.DestroyView(
@@ -613,7 +614,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
                            {0, 0}, kScale, kOpacityFloat),
-           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},  {kInvDPR, kInvDPR}));
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},
+          {kInvDPR, kInvDPR}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
   DrawSimpleFrame(
@@ -635,7 +637,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
                            {0, 0}, kScale, kOpacityFloat),
-           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},  {kInvDPR, kInvDPR}));
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},
+          {kInvDPR, kInvDPR}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
