@@ -97,6 +97,7 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   Reset();
   frame_size_ = frame_size;
   frame_dpr_ = device_pixel_ratio;
+  FML_LOG(ERROR) << "SET FRAME DPR: " << device_pixel_ratio << ", " << frame_dpr_;
 
   // Create the root layer.
   frame_layers_.emplace(
@@ -173,6 +174,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
     // First re-scale everything according to the DPR.
     const float inv_dpr = 1.0f / frame_dpr_;
+    FML_LOG(WARNING) << "INV DPR: " << inv_dpr;
     flatland_->flatland()->SetScale(root_transform_id_, {inv_dpr, inv_dpr});
 
     size_t flatland_layer_index = 0;

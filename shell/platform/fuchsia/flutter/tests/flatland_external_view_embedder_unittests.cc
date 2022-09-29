@@ -211,7 +211,8 @@ Matcher<FakeGraph> IsFlutterGraph(
         parent_viewport_watcher,
     const fuchsia::ui::views::ViewportCreationToken& viewport_creation_token,
     const fuchsia::ui::views::ViewRef& view_ref,
-    std::vector<Matcher<std::shared_ptr<FakeTransform>>> layer_matchers = {}) {
+    std::vector<Matcher<std::shared_ptr<FakeTransform>>> layer_matchers = {},
+    fuchsia::math::VecF scale = FakeTransform::kDefaultScale) {
   auto viewport_token_koids = GetKoids(viewport_creation_token);
   auto view_ref_koids = GetKoids(view_ref);
   auto watcher_koids = GetKoids(parent_viewport_watcher);
@@ -220,7 +221,7 @@ Matcher<FakeGraph> IsFlutterGraph(
       /*content_map*/ _, /*transform_map*/ _,
       Pointee(FieldsAre(
           /*id*/ _, FakeTransform::kDefaultTranslation,
-          /*scale*/ _, FakeTransform::kDefaultOrientation,
+          /*scale*/ scale, FakeTransform::kDefaultOrientation,
           /*clip_bounds*/ _, FakeTransform::kDefaultOpacity,
           /*children*/ ElementsAreArray(layer_matchers),
           /*content*/ Eq(nullptr), /*num_hit_regions*/ _)),
@@ -552,9 +553,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
 
   // We must take into account the effect of DPR on the view scale.
   const float kDPR = 2.0f;
-  //   const float kInvDPR = 1.f / kDPR;
-  //   const fuchsia::math::VecF kFinalViewScale{kInvDPR * kScale.x,
-  //                                             kInvDPR * kScale.y};
+  const float kInvDPR = 1.f / kDPR;
 
   // Draw the scene. The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
@@ -594,6 +593,9 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   loop().RunUntilIdle();
   fake_flatland().FireOnNextFrameBeginEvent(WithPresentCredits(1u));
   loop().RunUntilIdle();
+
+ FML_LOG(WARNING) << "ROOT NODE TEST: " << fake_flatland().graph().root_transform->scale.x << ", " << fake_flatland().graph().root_transform->scale.y;
+
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
@@ -601,7 +603,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
                            {0, 0}, kScale, kOpacityFloat),
-           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}, {kInvDPR, kInvDPR}));
 
   // Destroy the view.  The scene graph shouldn't change yet.
   external_view_embedder.DestroyView(
@@ -613,7 +615,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
                            {0, 0}, kScale, kOpacityFloat),
-           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},  {kInvDPR, kInvDPR}));
 
   // Draw another frame without the view.  The scene graph shouldn't change yet.
   DrawSimpleFrame(
@@ -635,7 +637,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
           {IsImageLayer(frame_size, kFirstLayerBlendMode, 1),
            IsViewportLayer(child_view_token, child_view_size, child_view_inset,
                            {0, 0}, kScale, kOpacityFloat),
-           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)}));
+           IsImageLayer(frame_size, kUpperLayerBlendMode, 1)},  {kInvDPR, kInvDPR}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
