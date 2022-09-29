@@ -94,7 +94,8 @@ FLUTTER_ASSERT_ARC
                                 texture:(NSObject<FlutterTexture>*)texture {
   return [[FlutterDarwinExternalTextureMetal alloc] initWithTextureCache:_textureCache
                                                                textureID:textureID
-                                                                 texture:texture];
+                                                                 texture:texture
+                                                          enableImpeller:NO];
 }
 
 @end

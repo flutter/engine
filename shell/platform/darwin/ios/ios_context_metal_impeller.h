@@ -7,6 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
 #include "flutter/shell/platform/darwin/ios/ios_context.h"
 
 namespace impeller {
@@ -33,7 +34,7 @@ class IOSContextMetalImpeller final : public IOSContext {
   sk_sp<GrDirectContext> GetResourceContext() const;
 
  private:
-  std::shared_ptr<impeller::Context> context_;
+  fml::scoped_nsobject<FlutterDarwinContextMetalImpeller> darwin_context_metal_impeller_;
 
   // |IOSContext|
   sk_sp<GrDirectContext> CreateResourceContext() override;

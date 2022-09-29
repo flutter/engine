@@ -5,6 +5,7 @@
 assert(is_ios || is_mac)
 
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 
 source_set("graphics") {
   cflags_objc = flutter_cflags_objc_arc
@@ -19,10 +20,19 @@ source_set("graphics") {
 
   deps = [
     "//flutter/common/graphics",
+    "//flutter/display_list",
     "//flutter/fml",
     "//flutter/shell/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
   ]
+
+  if (impeller_supports_rendering) {
+    sources += [
+      "FlutterDarwinContextMetalImpeller.h",
+      "FlutterDarwinContextMetalImpeller.mm",
+    ]
+    deps += [ "//flutter/impeller" ]
+  }
 
   frameworks = [ "CoreVideo.framework" ]
 

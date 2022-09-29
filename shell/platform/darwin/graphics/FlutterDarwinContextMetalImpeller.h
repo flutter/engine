@@ -1,0 +1,54 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_IMPELLER_H_
+#define SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_IMPELLER_H_
+
+#import <CoreVideo/CVMetalTextureCache.h>
+#import <Foundation/Foundation.h>
+#import <Metal/Metal.h>
+
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
+#include "flutter/impeller/renderer/backend/metal/context_mtl.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ * Provides skia GrContexts that are shared between iOS and macOS embeddings.
+ */
+@interface FlutterDarwinContextMetalImpeller : NSObject
+
+/**
+ * Initializes a FlutterDarwinContextMetalImpeller.
+ */
+- (instancetype)init;
+
+/**
+ * Creates an external texture with the specified ID and contents.
+ */
+- (FlutterDarwinExternalTextureMetal*)
+    createExternalTextureWithIdentifier:(int64_t)textureID
+                                texture:(NSObject<FlutterTexture>*)texture;
+
+/**
+ * MTLDevice that is backing this context.s
+ */
+@property(nonatomic, readonly) id<MTLDevice> device;
+
+/**
+ * Impeller context;
+*/
+@property(nonatomic, readonly) std::shared_ptr<impeller::Context> context;
+
+/*
+ * Texture cache for external textures.
+ */
+@property(nonatomic, readonly) CVMetalTextureCacheRef textureCache;
+
+@end
+
+NS_ASSUME_NONNULL_END
+
+#endif  // SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_IMPELLER_H_

@@ -18,12 +18,10 @@ void IOSExternalTextureMetal::Paint(PaintContext& context,
                                     const SkRect& bounds,
                                     bool freeze,
                                     const SkSamplingOptions& sampling) {
-  [darwin_external_texture_metal_ canvas:*context.canvas
-                                  bounds:bounds
-                                  freeze:freeze
-                               grContext:context.gr_context
-                                sampling:sampling
-                                   paint:context.sk_paint];
+  [darwin_external_texture_metal_ paintContext:context
+                                        bounds:bounds
+                                        freeze:freeze
+                                      sampling:sampling];
 }
 
 void IOSExternalTextureMetal::OnGrContextCreated() {

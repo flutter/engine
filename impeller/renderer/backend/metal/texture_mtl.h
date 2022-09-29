@@ -19,7 +19,8 @@ class TextureMTL final : public Texture,
              id<MTLTexture> texture,
              bool wrapped = false);
 
-  static TextureMTL Wrapper(TextureDescriptor desc, id<MTLTexture> texture);
+  static std::shared_ptr<TextureMTL> Wrapper(TextureDescriptor desc,
+                                             id<MTLTexture> texture);
 
   // |Texture|
   ~TextureMTL() override;

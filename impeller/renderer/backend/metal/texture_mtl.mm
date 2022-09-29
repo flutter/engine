@@ -28,8 +28,9 @@ TextureMTL::TextureMTL(TextureDescriptor p_desc,
   is_valid_ = true;
 }
 
-TextureMTL TextureMTL::Wrapper(TextureDescriptor desc, id<MTLTexture> texture) {
-  return TextureMTL(desc, texture, true);
+std::shared_ptr<TextureMTL> TextureMTL::Wrapper(TextureDescriptor desc,
+                                                id<MTLTexture> texture) {
+  return std::make_shared<TextureMTL>(desc, texture, true);
 }
 
 TextureMTL::~TextureMTL() = default;
