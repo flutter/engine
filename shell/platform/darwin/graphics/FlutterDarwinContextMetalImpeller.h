@@ -9,9 +9,9 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
+#include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
-#include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Impeller context;
-*/
+ */
 @property(nonatomic, readonly) std::shared_ptr<impeller::Context> context;
 
 /*

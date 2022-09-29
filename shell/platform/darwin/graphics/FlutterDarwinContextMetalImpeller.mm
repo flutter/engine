@@ -6,10 +6,10 @@
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
-#include "flutter/shell/common/context_options.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #include "flutter/impeller/entity/mtl/entity_shaders.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
+#include "flutter/shell/common/context_options.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -24,7 +24,7 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext() {
     return nullptr;
   }
   FML_LOG(ERROR) << "Using the Impeller rendering backend.";
-    
+
   return context;
 }
 

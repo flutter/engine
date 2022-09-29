@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/ios_context_metal_impeller.h"
-#import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 #include "flutter/impeller/entity/mtl/entity_shaders.h"
+#import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 
 namespace flutter {
 
