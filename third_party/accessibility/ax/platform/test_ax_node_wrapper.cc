@@ -120,7 +120,7 @@ void TestAXNodeWrapper::SetHitTestResult(AXNode::AXID src_node_id,
 }
 
 // static
-void TestAXNodeWrapper::ClearHitTestResult() {
+void TestAXNodeWrapper::ClearHitTestResults() {
   g_hit_test_result.clear();
 }
 
