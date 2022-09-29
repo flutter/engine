@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 #
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
 # Usage: scan_flattened_deps.py --flat-deps <flat DEPS file> --output <vulnerability report>
 #
 # This script parses the flattened, fully qualified dependencies,
@@ -9,10 +13,10 @@
 import argparse
 import json
 import os
-import sys
-import subprocess
-import time
 import requests
+import subprocess
+import sys
+import time
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
