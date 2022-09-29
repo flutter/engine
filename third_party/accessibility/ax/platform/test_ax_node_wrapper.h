@@ -55,7 +55,9 @@ class TestAXNodeWrapper : public AXPlatformNodeDelegateBase {
   // the result.
   static void SetHitTestResult(AXNode::AXID src_node_id,
                                AXNode::AXID dst_node_id);
-  static void ClearHitTestResult();
+
+  // Remove all hit test overrides added by SetHitTestResult.
+  static void ClearHitTestResults();
 
   ~TestAXNodeWrapper() override;
 
