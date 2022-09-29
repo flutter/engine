@@ -15,8 +15,9 @@ IOSContextMetalImpeller::IOSContextMetalImpeller()
 
 IOSContextMetalImpeller::~IOSContextMetalImpeller() = default;
 
-fml::scoped_nsobject<FlutterDarwinContextMetal> IOSContextMetalImpeller::GetDarwinContext() const {
-  return fml::scoped_nsobject<FlutterDarwinContextMetal>{};
+fml::scoped_nsobject<FlutterDarwinContextMetalSkia> IOSContextMetalImpeller::GetDarwinContext()
+    const {
+  return fml::scoped_nsobject<FlutterDarwinContextMetalSkia>{};
 }
 
 IOSRenderingBackend IOSContextMetalImpeller::GetBackend() const {

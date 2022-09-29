@@ -40,7 +40,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   FlutterView* _flutterView;
 
-  FlutterDarwinContextMetal* _darwinMetalContext;
+  FlutterDarwinContextMetalSkia* _darwinMetalContext;
 }
 
 - (instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine {
@@ -60,8 +60,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       return nil;
     }
 
-    _darwinMetalContext = [[FlutterDarwinContextMetal alloc] initWithMTLDevice:_device
-                                                                  commandQueue:_commandQueue];
+    _darwinMetalContext = [[FlutterDarwinContextMetalSkia alloc] initWithMTLDevice:_device
+                                                                      commandQueue:_commandQueue];
   }
   return self;
 }
