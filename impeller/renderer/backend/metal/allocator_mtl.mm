@@ -201,46 +201,6 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
   return std::make_shared<TextureMTL>(desc, texture);
 }
 
-std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
-    const TextureDescriptor& desc,
-    void* buffer,
-    size_t length,
-    uint16_t row_bytes) {
-  if (!IsValid()) {
-    return nullptr;
-  }
-
-  auto mtl_texture_desc = ToMTLTextureDescriptor(desc);
-
-  if (!mtl_texture_desc) {
-    VALIDATION_LOG << "Texture descriptor was invalid.";
-    return nullptr;
-  }
-
-  mtl_texture_desc.storageMode = MTLStorageModeShared;
-
-  auto page_size = getpagesize();
-  auto aligned_length = static_cast<size_t>(page_size);
-  while (aligned_length < length) {
-    aligned_length += page_size;
-  }
-  auto mtl_buffer =
-      [device_ newBufferWithBytesNoCopy:buffer
-                                 length:aligned_length
-                                options:MTLResourceStorageModeShared
-                            deallocator:^(void* pointer, NSUInteger length) {
-                              free(pointer);
-                            }];
-
-  auto texture = [mtl_buffer newTextureWithDescriptor:mtl_texture_desc
-                                               offset:0
-                                          bytesPerRow:row_bytes];
-  if (!texture) {
-    return nullptr;
-  }
-  return std::make_shared<TextureMTL>(desc, texture);
-}
-
 uint16_t AllocatorMTL::MinimumBytesPerRow(PixelFormat format) const {
   return static_cast<uint16_t>([device_
       minimumLinearTextureAlignmentForPixelFormat:ToMTLPixelFormat(format)]);

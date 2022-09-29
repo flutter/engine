@@ -42,12 +42,6 @@ class AllocatorMTL final : public Allocator {
       const TextureDescriptor& desc) override;
 
   // |Allocator|
-  std::shared_ptr<Texture> OnCreateTexture(const TextureDescriptor& desc,
-                                           void* buffer,
-                                           size_t length,
-                                           uint16_t row_bytes) override;
-
-  // |Allocator|
   uint16_t MinimumBytesPerRow(PixelFormat format) const override;
 
   // |Allocator|

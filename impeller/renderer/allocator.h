@@ -31,13 +31,8 @@ class Allocator {
 
   std::shared_ptr<Texture> CreateTexture(const TextureDescriptor& desc);
 
-  std::shared_ptr<Texture> CreateTexture(const TextureDescriptor& desc,
-                                         void* buffer,
-                                         size_t length,
-                                         uint16_t row_bytes);
-
   //------------------------------------------------------------------------------
-  /// @brief      Minimum value for `row_bytes` on `CreateTexture`. The row
+  /// @brief      Minimum value for `row_bytes` on a Texture. The row
   ///             bytes parameter of that method must be aligned to this value.
   ///
   virtual uint16_t MinimumBytesPerRow(PixelFormat format) const;
@@ -58,12 +53,6 @@ class Allocator {
 
   virtual std::shared_ptr<Texture> OnCreateTexture(
       const TextureDescriptor& desc) = 0;
-
-  virtual std::shared_ptr<Texture> OnCreateTexture(
-      const TextureDescriptor& desc,
-      void* buffer,
-      size_t length,
-      uint16_t row_bytes);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);

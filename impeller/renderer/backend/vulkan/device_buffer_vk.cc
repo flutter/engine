@@ -45,6 +45,10 @@ DeviceBufferVK::DeviceBufferVK(
 
 DeviceBufferVK::~DeviceBufferVK() = default;
 
+uint8_t* DeviceBufferVK::OnGetContents() const {
+  return reinterpret_cast<uint8_t*>(allocation_info_.pMappedData);
+}
+
 bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
                                       Range source_range,
                                       size_t offset) {

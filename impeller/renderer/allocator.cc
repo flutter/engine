@@ -58,43 +58,8 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
   return OnCreateTexture(desc);
 }
 
-std::shared_ptr<Texture> Allocator::CreateTexture(const TextureDescriptor& desc,
-                                                  void* buffer,
-                                                  size_t length,
-                                                  uint16_t row_bytes) {
-  const auto max_size = GetMaxTextureSizeSupported();
-  if (desc.size.width > max_size.width || desc.size.height > max_size.height) {
-    VALIDATION_LOG
-        << "Requested texture size exceeds maximum supported size of "
-        << desc.size;
-    return nullptr;
-  }
-
-  return OnCreateTexture(desc, buffer, length, row_bytes);
-}
-
 uint16_t Allocator::MinimumBytesPerRow(PixelFormat format) const {
   return BytesPerPixelForPixelFormat(format);
-}
-
-std::shared_ptr<Texture> Allocator::OnCreateTexture(
-    const TextureDescriptor& desc,
-    void* buffer,
-    size_t length,
-    uint16_t row_bytes) {
-  auto texture = OnCreateTexture(desc);
-  if (!texture) {
-    free(buffer);
-    return nullptr;
-  }
-
-  bool success =
-      texture->SetContents(reinterpret_cast<uint8_t*>(buffer), length);
-  free(buffer);
-  if (!success) {
-    return nullptr;
-  }
-  return texture;
 }
 
 }  // namespace impeller

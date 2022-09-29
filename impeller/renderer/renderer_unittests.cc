@@ -842,6 +842,10 @@ TEST_P(RendererTest, InactiveUniforms) {
 }
 
 TEST_P(RendererTest, CanCreateCPUBackedTexture) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  }
+
   auto context = GetContext();
   auto allocator = context->GetResourceAllocator();
   size_t dimension = 2;
@@ -857,19 +861,15 @@ TEST_P(RendererTest, CanCreateCPUBackedTexture) {
                  allocator->MinimumBytesPerRow(texture_descriptor.format));
     auto buffer_size = size.height * row_bytes;
 
-#if FML_OS_WIN
-    void* pixels = calloc(buffer_size, sizeof(uint8_t));
-#else
-    void* pixels = nullptr;
-    auto page_size = getpagesize();
-    ASSERT_FALSE(posix_memalign(&pixels, page_size, buffer_size));
-    memset(pixels, 0, buffer_size);
-#endif
+    DeviceBufferDescriptor buffer_descriptor;
+    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
+    buffer_descriptor.size = buffer_size;
 
-    ASSERT_TRUE(pixels);
+    auto buffer = allocator->CreateBuffer(buffer_descriptor);
 
-    auto texture = allocator->CreateTexture(texture_descriptor, pixels,
-                                            buffer_size, row_bytes);
+    ASSERT_TRUE(buffer);
+
+    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
 
     ASSERT_TRUE(texture);
     ASSERT_TRUE(texture->IsValid());

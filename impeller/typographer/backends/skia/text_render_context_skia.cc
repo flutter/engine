@@ -11,6 +11,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/renderer/allocator.h"
+#include "impeller/renderer/device_buffer.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -239,41 +240,23 @@ static void ConvertBitmapToSignedDistanceField(uint8_t* pixels,
 #undef nearestpt
 }
 
-struct FreeDeleter {
-  void operator()(void* ptr) { free(ptr); }
-};
-
-static std::unique_ptr<void, FreeDeleter> AllocatePixels(size_t size) {
-// On Metal, this must be page agligned memory.
-// Windows doesn't have posix_memalign, and it doesn't matter there anyway.
-#if FML_OS_WIN
-  return std::unique_ptr<void, FreeDeleter>(calloc(size, sizeof(uint8_t)));
-#else
-  void* pixels = nullptr;
-  auto page_size = getpagesize();
-  if (posix_memalign(&pixels, page_size, size)) {
-    return nullptr;
-  }
-  memset(pixels, 0, size);
-  return std::unique_ptr<void, FreeDeleter>(pixels);
-#endif
-}
-
-static std::shared_ptr<SkBitmap> CreateAtlasBitmap(
+static std::shared_ptr<Texture> CreateAtlasTexture(
     const std::shared_ptr<Allocator>& allocator,
-    PixelFormat format,
     const GlyphAtlas& atlas,
     const ISize& atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto bitmap = std::make_shared<SkBitmap>();
   SkImageInfo image_info;
+  PixelFormat format;
 
   switch (atlas.GetType()) {
     case GlyphAtlas::Type::kSignedDistanceField:
     case GlyphAtlas::Type::kAlphaBitmap:
+      format = PixelFormat::kA8UNormInt;
       image_info = SkImageInfo::MakeA8(atlas_size.width, atlas_size.height);
       break;
     case GlyphAtlas::Type::kColorBitmap:
+      format = PixelFormat::kR8G8B8A8UNormInt;
       image_info =
           SkImageInfo::MakeN32Premul(atlas_size.width, atlas_size.height);
       break;
@@ -283,20 +266,33 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(
       std::max(static_cast<uint16_t>(image_info.minRowBytes()),
                static_cast<uint16_t>(allocator->MinimumBytesPerRow(format)));
 
-  auto pixels = AllocatePixels(image_info.computeByteSize(row_bytes));
-  if (!pixels) {
+  DeviceBufferDescriptor buffer_descriptor;
+  buffer_descriptor.storage_mode = StorageMode::kHostVisible;
+  buffer_descriptor.size = image_info.computeByteSize(row_bytes);
+
+  auto buffer = allocator->CreateBuffer(buffer_descriptor);
+  if (!buffer) {
     return nullptr;
   }
 
-  if (!bitmap->installPixels(image_info, pixels.get(), row_bytes)) {
+  auto pixels = reinterpret_cast<void*>(buffer->AsBufferView().contents);
+  if (!pixels) {
+    FML_LOG(ERROR) << "No pixels";
+    return nullptr;
+  }
+
+  if (!bitmap->installPixels(image_info, pixels, row_bytes)) {
+    FML_LOG(ERROR) << "No install pixels";
     return nullptr;
   }
   auto surface = SkSurface::MakeRasterDirect(bitmap->pixmap());
   if (!surface) {
+    FML_LOG(ERROR) << "No surf";
     return nullptr;
   }
   auto canvas = surface->getCanvas();
   if (!canvas) {
+    FML_LOG(ERROR) << "No canv";
     return nullptr;
   }
 
@@ -327,39 +323,20 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(
     return true;
   });
 
-  // Pixels will get freed in the backend.
-  pixels.release();
-  return bitmap;
-}
-
-static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
-    const std::shared_ptr<Allocator>& allocator,
-    std::shared_ptr<SkBitmap> bitmap,
-    const ISize& atlas_size,
-    PixelFormat format) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!allocator) {
-    return nullptr;
+  if (atlas.GetType() == GlyphAtlas::Type::kSignedDistanceField) {
+    ConvertBitmapToSignedDistanceField(
+        reinterpret_cast<uint8_t*>(bitmap->getPixels()), atlas_size.width,
+        atlas_size.height);
   }
 
-  FML_DCHECK(bitmap != nullptr);
-  const auto& pixmap = bitmap->pixmap();
-
-  TextureDescriptor texture_descriptor;
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
-  texture_descriptor.format = format;
-  texture_descriptor.size = atlas_size;
-
-  auto texture = allocator->CreateTexture(
-      texture_descriptor, pixmap.writable_addr(),
-      pixmap.rowBytes() * pixmap.height(), pixmap.rowBytes());
-
-  if (!texture || !texture->IsValid()) {
-    return nullptr;
+  {
+    TRACE_EVENT0("impeller", "Texture Creation/Upload");
+    TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
+    texture_descriptor.format = format;
+    texture_descriptor.size = atlas_size;
+    return buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
   }
-  texture->SetLabel("GlyphAtlas");
-
-  return texture;
 }
 
 std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
@@ -410,43 +387,19 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   }
 
   // ---------------------------------------------------------------------------
-  // Step 5: Draw font-glyph pairs in the correct spot in the atlas.
+  // Step 5: Create a texture and draw font-glyph pairs in the correct spot in
+  // the atlas.
   // ---------------------------------------------------------------------------
-  PixelFormat format;
-  switch (type) {
-    case GlyphAtlas::Type::kSignedDistanceField:
-    case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
-      break;
-    case GlyphAtlas::Type::kColorBitmap:
-      format = PixelFormat::kR8G8B8A8UNormInt;
-      break;
-  }
 
-  auto bitmap = CreateAtlasBitmap(GetContext()->GetResourceAllocator(), format,
-                                  *glyph_atlas, atlas_size);
+  auto texture = CreateAtlasTexture(GetContext()->GetResourceAllocator(),
+                                    *glyph_atlas, atlas_size);
 
-  if (!bitmap) {
-    return nullptr;
-  }
-
-  if (type == GlyphAtlas::Type::kSignedDistanceField) {
-    ConvertBitmapToSignedDistanceField(
-        reinterpret_cast<uint8_t*>(bitmap->getPixels()), atlas_size.width,
-        atlas_size.height);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 6: Upload the atlas as a texture.
-  // ---------------------------------------------------------------------------
-  auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
-                                         bitmap, atlas_size, format);
   if (!texture) {
     return nullptr;
   }
 
   // ---------------------------------------------------------------------------
-  // Step 7: Record the texture in the glyph atlas.
+  // Step 6: Record the texture in the glyph atlas.
   // ---------------------------------------------------------------------------
   glyph_atlas->SetTexture(std::move(texture));
 
