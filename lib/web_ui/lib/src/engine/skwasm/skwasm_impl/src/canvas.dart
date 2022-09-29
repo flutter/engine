@@ -11,7 +11,7 @@ import 'raw/raw_memory.dart';
 import 'raw/raw_picture.dart';
 
 class SkwasmCanvas implements ui.Canvas {
-  factory SkwasmCanvas(SkwasmPictureRecorder recorder, [ui.Rect cullRect = ui.Rect.largest]) =>
+  factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>
     SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
       pictureRecorderBeginRecording(recorder.handle, s.convertRect(cullRect))
     ));

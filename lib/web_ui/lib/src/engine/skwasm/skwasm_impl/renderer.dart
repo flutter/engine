@@ -6,18 +6,25 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/skwasm/skwasm_impl/src/canvas.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl/src/paint.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl/src/picture.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl/src/vertices.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../embedder.dart';
 import '../../fonts.dart';
 import '../../html_image_codec.dart';
 import '../../renderer.dart';
+import 'src/path.dart';
 
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
-    throw UnimplementedError('Not yet implemented');
+    assert(path1 is SkwasmPath);
+    assert(path2 is SkwasmPath);
+    return SkwasmPath.combine(op, path1 as SkwasmPath, path2 as SkwasmPath);
   }
 
   @override
@@ -27,7 +34,8 @@ class SkwasmRenderer implements Renderer {
 
   @override
   ui.Path copyPath(ui.Path src) {
-    throw UnimplementedError('Not yet implemented');
+    assert(src is SkwasmPath);
+    return SkwasmPath.from(src as SkwasmPath);
   }
 
   @override
@@ -37,7 +45,8 @@ class SkwasmRenderer implements Renderer {
 
   @override
   ui.Canvas createCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) {
-    throw UnimplementedError('Not yet implemented');
+    assert(recorder is SkwasmPictureRecorder);
+    return SkwasmCanvas(recorder as SkwasmPictureRecorder, cullRect ?? ui.Rect.largest);
   }
 
   @override
@@ -71,9 +80,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Paint createPaint() {
-    throw UnimplementedError('Not yet implemented');
-  }
+  ui.Paint createPaint() => SkwasmPaint();
 
   @override
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) {
@@ -86,14 +93,10 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Path createPath() {
-    throw UnimplementedError('Not yet implemented');
-  }
+  ui.Path createPath() => SkwasmPath();
 
   @override
-  ui.PictureRecorder createPictureRecorder() {
-    throw UnimplementedError('Not yet implemented');
-  }
+  ui.PictureRecorder createPictureRecorder() => SkwasmPictureRecorder();
 
   @override
   ui.Gradient createRadialGradient(ui.Offset center, double radius, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
@@ -121,14 +124,38 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Vertices createVertices(ui.VertexMode mode, List<ui.Offset> positions, {List<ui.Offset>? textureCoordinates, List<ui.Color>? colors, List<int>? indices}) {
-    throw UnimplementedError('Not yet implemented');
-  }
+  ui.Vertices createVertices(
+    ui.VertexMode mode,
+    List<ui.Offset> positions,
+    {
+      List<ui.Offset>? textureCoordinates,
+      List<ui.Color>? colors,
+      List<int>? indices
+    }) =>
+    SkwasmVertices(
+      mode, 
+      positions,
+      textureCoordinates: textureCoordinates,
+      colors: colors,
+      indices: indices
+    );
 
   @override
-  ui.Vertices createVerticesRaw(ui.VertexMode mode, Float32List positions, {Float32List? textureCoordinates, Int32List? colors, Uint16List? indices}) {
-    throw UnimplementedError('Not yet implemented');
-  }
+  ui.Vertices createVerticesRaw(
+    ui.VertexMode mode,
+    Float32List positions,
+    {
+      Float32List? textureCoordinates,
+      Int32List? colors,
+      Uint16List? indices
+    }) =>
+    SkwasmVertices.raw(
+      mode,
+      positions,
+      textureCoordinates: textureCoordinates,
+      colors: colors,
+      indices: indices
+    );
 
   @override
   void decodeImageFromPixels(Uint8List pixels, int width, int height, ui.PixelFormat format, ui.ImageDecoderCallback callback, {int? rowBytes, int? targetWidth, int? targetHeight, bool allowUpscaling = true}) {
