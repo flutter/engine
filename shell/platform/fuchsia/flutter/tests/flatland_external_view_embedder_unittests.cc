@@ -594,8 +594,6 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   fake_flatland().FireOnNextFrameBeginEvent(WithPresentCredits(1u));
   loop().RunUntilIdle();
 
- FML_LOG(WARNING) << "ROOT NODE TEST: " << fake_flatland().graph().root_transform->scale.x << ", " << fake_flatland().graph().root_transform->scale.y;
-
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
