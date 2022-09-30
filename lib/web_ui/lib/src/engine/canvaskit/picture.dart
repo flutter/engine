@@ -101,10 +101,9 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   @override
   ui.Image toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
-    final DomCanvasElement tempCanvas =
-        createDomCanvasElement(width: width, height: height);
-    final SkSurface skSurface = canvasKit.MakeWebGLCanvasSurface(tempCanvas);
-    final SkCanvas skCanvas = skSurface.getCanvas();
+    final Surface tempSurface = Surface();
+    tempSurface.createOrUpdateSurface(ui.Size(width, height));
+    final SkCanvas skCanvas = tempSurface.getCanvas();
     skCanvas.drawPicture(skiaObject);
     final SkImage skImage = skSurface.makeImageSnapshot();
     final SkImageInfo imageInfo = SkImageInfo(
@@ -116,8 +115,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     );
     final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
     final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, 4 * width);
-    skSurface.dispose();
-    tempCanvas.remove();
+    tempSurface.dispose();
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');
     }
