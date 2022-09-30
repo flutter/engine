@@ -43,7 +43,9 @@ std::vector<std::wstring> GetPreferredLanguages() {
   }
 
   // Mutli-string must be at least 3-long if non-empty,
-  // as a mulit-string is terminated with 2 nulls.
+  // as a multi-string is terminated with 2 nulls.
+  //
+  // See: https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types
   if (buffer_size < 3) {
     languages_from_registry = FALSE;
   }
