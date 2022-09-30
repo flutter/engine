@@ -13,10 +13,11 @@
 import argparse
 import json
 import os
-import requests
 import subprocess
 import sys
 import time
+
+import requests
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))

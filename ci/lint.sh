@@ -46,7 +46,7 @@ cd "$SCRIPT_DIR"
   "$@"
 
 cd "$FLUTTER_DIR"
-pylint-2.7 --rcfile=.pylintrc \
+./pylint-2.7 --rcfile=.pylintrc \
   "build/" \
   "ci/" \
   "impeller/" \
