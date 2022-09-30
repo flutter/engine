@@ -44,6 +44,7 @@ def main(argv):
   # resolve the config file location on load.
   from pylint import lint  # pylint: disable=bad-option-value,import-outside-toplevel
   lint.Run(argv)
+
   
 if __name__ == '__main__':
   sys.exit(main(sys.argv[1:]))
