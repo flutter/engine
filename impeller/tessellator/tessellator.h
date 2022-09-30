@@ -13,6 +13,8 @@
 
 namespace impeller {
 
+class TessellatorContext;
+
 enum class WindingOrder {
   kClockwise,
   kCounterClockwise,
@@ -36,6 +38,12 @@ class Tessellator {
 
   ~Tessellator();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Create the native tessellator object. This will allocate
+  /// memory
+  ///             upfront that is reused across tessellation.
+  static std::shared_ptr<TessellatorContext> CreateTessellatorContext();
+
   using VertexCallback = std::function<void(Point)>;
   //----------------------------------------------------------------------------
   /// @brief      Generates filled triangles from the polyline. A callback is
@@ -47,7 +55,8 @@ class Tessellator {
   ///
   /// @return The result status of the tessellation.
   ///
-  Tessellator::Result Tessellate(FillType fill_type,
+  Tessellator::Result Tessellate(std::shared_ptr<TessellatorContext> context,
+                                 FillType fill_type,
                                  const Path::Polyline& polyline,
                                  const VertexCallback& callback) const;
 
