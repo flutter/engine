@@ -55,10 +55,11 @@ class Tessellator {
   ///
   /// @return The result status of the tessellation.
   ///
-  Tessellator::Result Tessellate(std::shared_ptr<TessellatorContext> context,
-                                 FillType fill_type,
-                                 const Path::Polyline& polyline,
-                                 const VertexCallback& callback) const;
+  Tessellator::Result Tessellate(
+      const std::shared_ptr<TessellatorContext>& context,
+      FillType fill_type,
+      const Path::Polyline& polyline,
+      const VertexCallback& callback) const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Tessellator);

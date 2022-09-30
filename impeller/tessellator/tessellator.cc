@@ -51,7 +51,7 @@ class TessellatorContext {
 };
 
 Tessellator::Result Tessellator::Tessellate(
-    std::shared_ptr<TessellatorContext> context,
+    const std::shared_ptr<TessellatorContext>& context,
     FillType fill_type,
     const Path::Polyline& polyline,
     const VertexCallback& callback) const {
