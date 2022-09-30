@@ -329,15 +329,14 @@ static void CommonInit(FlutterViewController* controller) {
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
+  NSAssert(engine.viewController == nil,
+           @"The supplied FlutterEngine is already used with FlutterViewController "
+            "instance. One instance of the FlutterEngine can only be attached to one "
+            "FlutterViewController at a time. Set FlutterEngine.viewController "
+            "to nil before attaching it to another FlutterViewController.");
+
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    if (engine.viewController) {
-      NSLog(@"The supplied FlutterEngine %@ is already used with FlutterViewController "
-             "instance %@. One instance of the FlutterEngine can only be attached to one "
-             "FlutterViewController at a time. Set FlutterEngine.viewController "
-             "to nil before attaching it to another FlutterViewController.",
-            [engine description], [engine.viewController description]);
-    }
     _engine = engine;
     CommonInit(self);
     if (engine.running) {
