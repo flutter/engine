@@ -13,7 +13,7 @@ namespace flutter::testing {
 
 TEST(FlutterGLCompositorTest, TestPresent) {
   id mock_view = OCMClassMock([FlutterView class]);
-  flutter::FlutterCompositor::GetViewCallback get_view_callback = [&mock_view](uint64_t view_id) {
+  flutter::FlutterCompositor::ViewProvider get_view_callback = [&mock_view](uint64_t view_id) {
     return mock_view;
   };
 

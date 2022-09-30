@@ -19,7 +19,7 @@
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(GetViewCallback get_view_callback,
+FlutterGLCompositor::FlutterGLCompositor(ViewProvider get_view_callback,
                                          NSOpenGLContext* opengl_context)
     : FlutterCompositor(get_view_callback), open_gl_context_(opengl_context) {}
 

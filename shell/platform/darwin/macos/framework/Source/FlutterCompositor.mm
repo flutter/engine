@@ -7,7 +7,7 @@
 
 namespace flutter {
 
-FlutterCompositor::FlutterCompositor(GetViewCallback get_view_callback) {
+FlutterCompositor::FlutterCompositor(ViewProvider get_view_callback) {
   get_view_callback_ = std::move(get_view_callback);
 }
 

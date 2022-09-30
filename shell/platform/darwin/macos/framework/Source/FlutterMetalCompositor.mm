@@ -11,7 +11,7 @@
 namespace flutter {
 
 FlutterMetalCompositor::FlutterMetalCompositor(
-    GetViewCallback get_view_callback,
+    ViewProvider get_view_callback,
     FlutterPlatformViewController* platform_views_controller,
     id<MTLDevice> mtl_device)
     : FlutterCompositor(get_view_callback),

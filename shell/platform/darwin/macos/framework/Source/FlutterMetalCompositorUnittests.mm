@@ -11,7 +11,7 @@
 
 namespace flutter::testing {
 
-flutter::FlutterCompositor::GetViewCallback MockGetViewCallback() {
+flutter::FlutterCompositor::ViewProvider MockGetViewCallback() {
   FlutterView* viewMock = OCMClassMock([FlutterView class]);
   FlutterMetalRenderBackingStore* backingStoreMock =
       OCMClassMock([FlutterMetalRenderBackingStore class]);

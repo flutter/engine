@@ -434,7 +434,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  flutter::FlutterCompositor::GetViewCallback getViewCallback = [weakSelf](uint64_t view_id) {
+  flutter::FlutterCompositor::ViewProvider getViewCallback = [weakSelf](uint64_t view_id) {
     return weakSelf.viewController == nullptr ? nullptr : weakSelf.viewController.flutterView;
   };
 

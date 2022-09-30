@@ -19,9 +19,9 @@ namespace flutter {
 // Platform views are not yet supported.
 class FlutterCompositor {
  public:
-  using GetViewCallback = std::function<FlutterView*(uint64_t view_id)>;
+  using ViewProvider = std::function<FlutterView*(uint64_t view_id)>;
 
-  explicit FlutterCompositor(GetViewCallback get_view_callback);
+  explicit FlutterCompositor(ViewProvider get_view_callback);
 
   virtual ~FlutterCompositor() = default;
 
@@ -88,7 +88,7 @@ class FlutterCompositor {
   // A list of the active CALayer objects for the frame that need to be removed.
   std::list<CALayer*> active_ca_layers_;
 
-  GetViewCallback get_view_callback_;
+  ViewProvider get_view_callback_;
 
   // Callback set by the embedder to be called when the layer tree has been
   // correctly set up for this frame.
