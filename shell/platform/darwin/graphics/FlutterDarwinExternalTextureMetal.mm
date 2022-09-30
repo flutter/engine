@@ -71,11 +71,11 @@ FLUTTER_ASSERT_ARC
 #if IMPELLER_SUPPORTS_RENDERING
     if (_enableImpeller) {
       context.builder->drawImageRect(
-          _externalImage,                          // image
-          SkRect::Make(_externalImage->bounds()),  // source rect
-          bounds,                                  // destination rect
-          flutter::ToDl(sampling),                 // sampling
-          context.dl_paint,
+          _externalImage,                                       // image
+          SkRect::Make(_externalImage->bounds()),               // source rect
+          bounds,                                               // destination rect
+          flutter::ToDl(sampling),                              // sampling
+          context.dl_paint,                                     // paint
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
       );
       return;
