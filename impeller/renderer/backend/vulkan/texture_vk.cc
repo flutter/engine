@@ -60,6 +60,8 @@ bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
 
 bool TextureVK::IsValid() const {
   switch (texture_info_->backing_type) {
+    case TextureBackingTypeVK::kUnknownType:
+      return false;
     case TextureBackingTypeVK::kAllocatedTexture:
       return texture_info_->allocated_texture.image;
     case TextureBackingTypeVK::kWrappedTexture:
@@ -71,12 +73,18 @@ ISize TextureVK::GetSize() const {
   return GetTextureDescriptor().size;
 }
 
+TextureInfoVK* TextureVK::GetTextureInfo() const {
+  return texture_info_.get();
+}
+
 bool TextureVK::IsWrapped() const {
   return texture_info_->backing_type == TextureBackingTypeVK::kWrappedTexture;
 }
 
 vk::Image TextureVK::GetImage() const {
   switch (texture_info_->backing_type) {
+    case TextureBackingTypeVK::kUnknownType:
+      FML_CHECK(false) << "Unknown texture backing type";
     case TextureBackingTypeVK::kAllocatedTexture:
       return texture_info_->allocated_texture.image;
     case TextureBackingTypeVK::kWrappedTexture:

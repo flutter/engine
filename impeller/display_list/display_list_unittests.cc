@@ -328,6 +328,37 @@ TEST_P(DisplayListTest, CanDrawWithComposeImageFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanClampTheResultingColorOfColorMatrixFilter) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  const float inner_color_matrix[20] = {
+      1, 0, 0, 0, 0,  //
+      0, 1, 0, 0, 0,  //
+      0, 0, 1, 0, 0,  //
+      0, 0, 0, 2, 0,  //
+  };
+  const float outer_color_matrix[20] = {
+      1, 0, 0, 0,   0,  //
+      0, 1, 0, 0,   0,  //
+      0, 0, 1, 0,   0,  //
+      0, 0, 0, 0.5, 0,  //
+  };
+  auto inner_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(inner_color_matrix);
+  auto outer_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(outer_color_matrix);
+  auto inner =
+      std::make_shared<flutter::DlColorFilterImageFilter>(inner_color_filter);
+  auto outer =
+      std::make_shared<flutter::DlColorFilterImageFilter>(outer_color_filter);
+  auto compose = std::make_shared<flutter::DlComposeImageFilter>(outer, inner);
+
+  flutter::DisplayListBuilder builder;
+  builder.setImageFilter(compose.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawBackdropFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
 
@@ -732,6 +763,20 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(DisplayListTest, CanDrawRectWithLinearToSrgbColorFilter) {
+  flutter::DlPaint paint;
+  paint.setColor(flutter::DlColor(0xFF2196F3).withAlpha(128));
+  flutter::DisplayListBuilder builder;
+  paint.setColorFilter(flutter::DlLinearToSrgbGammaColorFilter::instance.get());
+  builder.drawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
+  builder.translate(0, 200);
+
+  paint.setColorFilter(flutter::DlSrgbToLinearGammaColorFilter::instance.get());
+  builder.drawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
   const flutter::DlColor colors[2] = {
       flutter::DlColor(0xFFF44336),
@@ -780,6 +825,57 @@ TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
   paint.setColorSource(image);
   builder.drawPaint(paint);
   builder.restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
+  flutter::DisplayListBuilder builder;
+
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(100, 100);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kRed());
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    paint.setBlendMode(flutter::DlBlendMode::kSrcOver);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(300, 100);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kRed());
+    paint.setBlendMode(flutter::DlBlendMode::kDstOver);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(100, 300);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kRed());
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    paint.setBlendMode(flutter::DlBlendMode::kSrc);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(300, 300);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kRed());
+    paint.setBlendMode(flutter::DlBlendMode::kDst);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

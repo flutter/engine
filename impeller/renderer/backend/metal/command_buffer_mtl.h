@@ -21,7 +21,7 @@ class CommandBufferMTL final : public CommandBuffer {
 
   id<MTLCommandBuffer> buffer_ = nullptr;
 
-  CommandBufferMTL(const std::weak_ptr<const Context> context,
+  CommandBufferMTL(const std::weak_ptr<const Context>& context,
                    id<MTLCommandQueue> queue);
 
   // |CommandBuffer|
@@ -34,8 +34,7 @@ class CommandBufferMTL final : public CommandBuffer {
   bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget target) const override;
+  std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
 
   // |CommandBuffer|
   std::shared_ptr<BlitPass> OnCreateBlitPass() const override;

@@ -43,7 +43,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestination:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -55,7 +55,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestinationOver:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
@@ -207,6 +207,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
+  glyph_atlas_sdf_pipelines_[{}] =
+      CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
   vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 

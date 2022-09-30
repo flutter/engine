@@ -660,6 +660,8 @@ FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
+FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
+FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
@@ -822,6 +824,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
@@ -1021,8 +1025,10 @@ FILE: ../../../flutter/lib/ui/painting/codec.cc
 FILE: ../../../flutter/lib/ui/painting/codec.h
 FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
-FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu.cc
-FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu.h
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.cc
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc

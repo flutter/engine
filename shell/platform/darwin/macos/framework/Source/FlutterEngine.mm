@@ -439,11 +439,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
         _viewController, _platformViewController, metalRenderer.device);
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+      FlutterMetalRenderer* metalRenderer =
+          reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
       if (has_flutter_content) {
-        FlutterMetalRenderer* metalRenderer =
-            reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
         return [metalRenderer present:0 /*=textureID*/] == YES;
       } else {
+        [metalRenderer presentWithoutContent];
         return true;
       }
     });
@@ -454,11 +455,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                                       openGLRenderer.openGLContext);
 
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+      FlutterOpenGLRenderer* openGLRenderer =
+          reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
       if (has_flutter_content) {
-        FlutterOpenGLRenderer* openGLRenderer =
-            reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
         return [openGLRenderer glPresent] == YES;
       } else {
+        [openGLRenderer presentWithoutContent];
         return true;
       }
     });
@@ -643,9 +645,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Convert to a list of pointers, and send to the engine.
   std::vector<const FlutterLocale*> flutterLocaleList;
   flutterLocaleList.reserve(flutterLocales.size());
-  std::transform(
-      flutterLocales.begin(), flutterLocales.end(), std::back_inserter(flutterLocaleList),
-      [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(flutterLocales.begin(), flutterLocales.end(),
+                 std::back_inserter(flutterLocaleList),
+                 [](const auto& arg) -> const auto* { return &arg; });
   _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
 }
 
