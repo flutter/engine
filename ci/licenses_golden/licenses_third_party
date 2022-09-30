@@ -1,4 +1,4 @@
-Signature: fa51649775d7520a0f11c82403adedb1
+Signature: 31449ab2a9663640ef2954da8cbe9859
 
 UNUSED LICENSES:
 
@@ -12881,6 +12881,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.h
 FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.h
+FILE: ../../../third_party/dart/runtime/vm/heap/page.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/page.h
 FILE: ../../../third_party/dart/runtime/vm/instructions.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
