@@ -2,16 +2,20 @@
 # Copyright 2019 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
 """Chromium wrapper for pylint for passing args via stdin.
 This will be executed by vpython with the right pylint versions.
 """
 from __future__ import print_function
 import os
 import sys
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PYLINT = os.path.join(HERE, 'pylint_main.py')
 RC_FILE = os.path.join(HERE, 'pylintrc')
 ARGS_ON_STDIN = '--args-on-stdin'
+
+
 def main(argv):
   """Our main wrapper."""
   # Add support for a custom mode where arguments are fed line by line on
@@ -40,5 +44,7 @@ def main(argv):
   # resolve the config file location on load.
   from pylint import lint  # pylint: disable=bad-option-value,import-outside-toplevel
   lint.Run(argv)
+
+  
 if __name__ == '__main__':
   sys.exit(main(sys.argv[1:]))
