@@ -290,7 +290,9 @@ class MockParentViewportWatcher
     }
   }
 
-  void SetLayout(uint32_t logical_size_x, uint32_t logical_size_y, float DPR = 1.0) {
+  void SetLayout(uint32_t logical_size_x,
+                 uint32_t logical_size_y,
+                 float DPR = 1.0) {
     ::fuchsia::math::SizeU logical_size;
     logical_size.width = logical_size_x;
     logical_size.height = logical_size_y;
