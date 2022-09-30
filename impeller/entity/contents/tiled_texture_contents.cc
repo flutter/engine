@@ -68,7 +68,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       renderer.GetTiledTexturePipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(CreateSolidFillVertices<VS::PerVertexData>(
-      pass.GetTessellatorContext(),
+      renderer.GetTessellator(),
       GetCover()
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : GetPath(),

@@ -11,9 +11,14 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 
+struct TESStesselator;
+
 namespace impeller {
 
-class TessellatorContext;
+void DestroyTessellator(TESStesselator* tessellator);
+
+using CTessellator =
+    std::unique_ptr<TESStesselator, decltype(&DestroyTessellator)>;
 
 enum class WindingOrder {
   kClockwise,
@@ -38,12 +43,6 @@ class Tessellator {
 
   ~Tessellator();
 
-  //----------------------------------------------------------------------------
-  /// @brief      Create the native tessellator object. This will allocate
-  /// memory
-  ///             upfront that is reused across tessellation.
-  static std::shared_ptr<TessellatorContext> CreateTessellatorContext();
-
   using VertexCallback = std::function<void(Point)>;
   //----------------------------------------------------------------------------
   /// @brief      Generates filled triangles from the polyline. A callback is
@@ -55,13 +54,13 @@ class Tessellator {
   ///
   /// @return The result status of the tessellation.
   ///
-  Tessellator::Result Tessellate(
-      const std::shared_ptr<TessellatorContext>& context,
-      FillType fill_type,
-      const Path::Polyline& polyline,
-      const VertexCallback& callback) const;
+  Tessellator::Result Tessellate(FillType fill_type,
+                                 const Path::Polyline& polyline,
+                                 const VertexCallback& callback) const;
 
  private:
+  CTessellator c_tessellator_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(Tessellator);
 };
 

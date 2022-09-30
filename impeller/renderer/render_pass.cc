@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/render_pass.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -11,8 +10,7 @@ RenderPass::RenderPass(std::weak_ptr<const Context> context,
                        const RenderTarget& target)
     : context_(std::move(context)),
       render_target_(target),
-      transients_buffer_(HostBuffer::Create()),
-      tessellator_(Tessellator::CreateTessellatorContext()) {}
+      transients_buffer_(HostBuffer::Create()) {}
 
 RenderPass::~RenderPass() = default;
 
@@ -34,10 +32,6 @@ void RenderPass::SetLabel(std::string label) {
   }
   transients_buffer_->SetLabel(SPrintF("%s Transients", label.c_str()));
   OnSetLabel(std::move(label));
-}
-
-std::shared_ptr<TessellatorContext> RenderPass::GetTessellatorContext() const {
-  return tessellator_;
 }
 
 bool RenderPass::AddCommand(Command command) {

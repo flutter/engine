@@ -8,16 +8,31 @@
 
 namespace impeller {
 
-static void DestroyTessellator(TESStesselator* tessellator) {
-  if (tessellator != nullptr) {
-    ::tessDeleteTess(tessellator);
-  }
+static void* heapAlloc(void* userData, unsigned int size) {
+  return malloc(size);
 }
 
-using CTessellator =
-    std::unique_ptr<TESStesselator, decltype(&DestroyTessellator)>;
+static void* heapRealloc(void* userData, void* ptr, unsigned int size) {
+  return realloc(ptr, size);
+}
 
-Tessellator::Tessellator() = default;
+static void heapFree(void* userData, void* ptr) {
+  free(ptr);
+}
+
+// Note: these units are "number of entities" for bucket size and not in KB.
+static TESSalloc alloc = {
+    heapAlloc, heapRealloc, heapFree, 0, /* =userData */
+    16,                                  /* =meshEdgeBucketSize */
+    16,                                  /* =meshVertexBucketSize */
+    16,                                  /* =meshFaceBucketSize */
+    16,                                  /* =dictNodeBucketSize */
+    16,                                  /* =regionBucketSize */
+    0                                    /* =extraVertices */
+};
+
+Tessellator::Tessellator()
+    : c_tessellator_(::tessNewTess(&alloc), &DestroyTessellator) {}
 
 Tessellator::~Tessellator() = default;
 
@@ -37,21 +52,7 @@ static int ToTessWindingRule(FillType fill_type) {
   return TESS_WINDING_ODD;
 }
 
-class TessellatorContext {
- public:
-  explicit TessellatorContext(CTessellator c_tessellator)
-      : c_tessellator_(std::move(c_tessellator)) {}
-
-  ~TessellatorContext() { c_tessellator_.reset(); }
-
-  TESStesselator* tessellator() { return c_tessellator_.get(); }
-
- private:
-  CTessellator c_tessellator_;
-};
-
 Tessellator::Result Tessellator::Tessellate(
-    const std::shared_ptr<TessellatorContext>& context,
     FillType fill_type,
     const Path::Polyline& polyline,
     const VertexCallback& callback) const {
@@ -63,7 +64,7 @@ Tessellator::Result Tessellator::Tessellate(
     return Result::kInputError;
   }
 
-  auto tessellator = context->tessellator();
+  auto tessellator = c_tessellator_.get();
   if (!tessellator) {
     return Result::kTessellationError;
   }
@@ -127,34 +128,10 @@ Tessellator::Result Tessellator::Tessellate(
   return Result::kSuccess;
 }
 
-static void* heapAlloc(void* userData, unsigned int size) {
-  return malloc(size);
-}
-
-static void* heapRealloc(void* userData, void* ptr, unsigned int size) {
-  return realloc(ptr, size);
-}
-
-static void heapFree(void* userData, void* ptr) {
-  free(ptr);
-}
-
-static TESSalloc alloc = {
-    heapAlloc, heapRealloc, heapFree, 0, /* =userData */
-    16,                                  /* =meshEdgeBucketSize */
-    16,                                  /* =meshVertexBucketSize */
-    16,                                  /* =meshFaceBucketSize */
-    16,                                  /* =dictNodeBucketSize */
-    16,                                  /* =regionBucketSize */
-    0                                    /* =extraVertices */
-};
-
-// static
-
-std::shared_ptr<TessellatorContext> Tessellator::CreateTessellatorContext() {
-  CTessellator tessellator(::tessNewTess(&alloc), DestroyTessellator);
-
-  return std::make_shared<TessellatorContext>(std::move(tessellator));
+void DestroyTessellator(TESStesselator* tessellator) {
+  if (tessellator != nullptr) {
+    ::tessDeleteTess(tessellator);
+  }
 }
 
 }  // namespace impeller

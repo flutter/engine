@@ -38,8 +38,6 @@ class RenderPass {
 
   HostBuffer& GetTransientsBuffer();
 
-  std::shared_ptr<TessellatorContext> GetTessellatorContext() const;
-
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
   ///             command buffer. No work is encoded into the command buffer at
@@ -63,7 +61,6 @@ class RenderPass {
   const std::weak_ptr<const Context> context_;
   const RenderTarget render_target_;
   std::shared_ptr<HostBuffer> transients_buffer_;
-  std::shared_ptr<TessellatorContext> tessellator_;
   std::vector<Command> commands_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);

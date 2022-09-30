@@ -396,11 +396,10 @@ TEST_P(RendererTest, CanRenderInstanced) {
   using FS = InstancedDrawFragmentShader;
 
   VertexBufferBuilder<VS::PerVertexData> builder;
-  auto context = Tessellator::CreateTessellatorContext();
 
   ASSERT_EQ(
       Tessellator::Result::kSuccess,
-      Tessellator{}.Tessellate(context, FillType::kPositive,
+      Tessellator{}.Tessellate(FillType::kPositive,
                                PathBuilder{}
                                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
                                    .TakePath()

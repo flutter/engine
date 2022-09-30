@@ -116,9 +116,8 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   {
-    const auto tess_result = Tessellator{}.Tessellate(
-        pass.GetTessellatorContext(), path_.GetFillType(),
-        path_.CreatePolyline(),
+    const auto tess_result = renderer.GetTessellator()->Tessellate(
+        path_.GetFillType(), path_.CreatePolyline(),
         [this, &vertex_builder, &coverage_rect, &texture_size](Point vtx) {
           VS::PerVertexData data;
           data.position = vtx;
