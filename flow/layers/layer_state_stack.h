@@ -140,9 +140,17 @@ class LayerStateStack {
   // Fill the provided paint object with any oustanding attributes and
   // return a pointer to it, or return a nullptr if there were no
   // outstanding attributes to paint with.
-  DlPaint* fill(DlPaint& paint) { return outstanding_.fill(paint); }
+  DlPaint* fill(DlPaint& paint) const { return outstanding_.fill(paint); }
 
-  bool needs_painting() { return outstanding_.opacity > 0; }
+  // Tests if painting content with the current outstanding attributes
+  // will produce any content.
+  bool needs_painting() const { return outstanding_.opacity > 0; }
+
+  // Tests if painting content with the given bounds will produce any output.
+  // This method also tests whether the outstanding attributes will allow
+  // output to be produced, but then goes on to test if the supplied bounds
+  // will fall within the current clip bounds based on the transform.
+  bool needs_painting(const SkRect& bounds) const;
 
   // Saves the current state of the state stack and returns a
   // MutatorContext which can be used to manipulate the state.
@@ -214,10 +222,12 @@ class LayerStateStack {
     std::shared_ptr<const DlColorFilter> color_filter;
     std::shared_ptr<const DlImageFilter> image_filter;
 
-    SkPaint* fill(SkPaint& paint, DlBlendMode mode = DlBlendMode::kSrcOver);
-    DlPaint* fill(DlPaint& paint, DlBlendMode mode = DlBlendMode::kSrcOver);
+    SkPaint* fill(SkPaint& paint,
+                  DlBlendMode mode = DlBlendMode::kSrcOver) const;
+    DlPaint* fill(DlPaint& paint,
+                  DlBlendMode mode = DlBlendMode::kSrcOver) const;
 
-    bool operator==(const RenderingAttributes& other) {
+    bool operator==(const RenderingAttributes& other) const {
       return save_layer_bounds == other.save_layer_bounds &&
              opacity == other.opacity &&
              Equals(color_filter, other.color_filter) &&

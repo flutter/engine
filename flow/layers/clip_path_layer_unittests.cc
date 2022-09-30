@@ -370,7 +370,7 @@ TEST_F(ClipPathLayerTest, OpacityInheritancePainting) {
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
   auto layer_clip = SkPath()
                         .addRect(SkRect::MakeLTRB(5, 5, 25, 25))
-                        .addOval(SkRect::MakeLTRB(20, 20, 40, 50));
+                        .addOval(SkRect::MakeLTRB(45, 45, 55, 55));
   auto clip_path_layer =
       std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAlias);
   clip_path_layer->Add(mock1);

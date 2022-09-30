@@ -240,15 +240,7 @@ class Layer {
       // See https://github.com/flutter/flutter/issues/81419
       return true;
     }
-    if (!context.state_stack.needs_painting()) {
-      return false;
-    }
-    // Workaround for Skia bug (quickReject does not reject empty bounds).
-    // https://bugs.chromium.org/p/skia/issues/detail?id=10951
-    if (paint_bounds_.isEmpty()) {
-      return false;
-    }
-    return !context.canvas->quickReject(paint_bounds_);
+    return context.state_stack.needs_painting(paint_bounds_);
   }
 
   // Propagated unique_id of the first layer in "chain" of replacement layers

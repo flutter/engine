@@ -66,7 +66,7 @@ AutoRestore LayerStateStack::applyState(const SkRect& bounds,
 }
 
 SkPaint* LayerStateStack::RenderingAttributes::fill(SkPaint& paint,
-                                                    DlBlendMode mode) {
+                                                    DlBlendMode mode) const {
   SkPaint* ret = nullptr;
   if (opacity < SK_Scalar1) {
     paint.setAlphaf(std::max(opacity, 0.0f));
@@ -94,7 +94,7 @@ SkPaint* LayerStateStack::RenderingAttributes::fill(SkPaint& paint,
 }
 
 DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint,
-                                                    DlBlendMode mode) {
+                                                    DlBlendMode mode) const {
   DlPaint* ret = nullptr;
   if (opacity < SK_Scalar1) {
     paint.setOpacity(std::max(opacity, 0.0f));
@@ -115,6 +115,27 @@ DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint,
     ret = &paint;
   }
   return ret;
+}
+
+bool LayerStateStack::needs_painting(const SkRect& bounds) const {
+  if (!needs_painting()) {
+    // Answer based on outstanding attributes...
+    return false;
+  }
+  if (canvas_) {
+    // Workaround for Skia bug (quickReject does not reject empty bounds).
+    // https://bugs.chromium.org/p/skia/issues/detail?id=10951
+    if (bounds.isEmpty()) {
+      return false;
+    }
+    return !canvas_->quickReject(bounds);
+  }
+  if (builder_) {
+    return !builder_->quickReject(bounds);
+  }
+  // We could track the attributes ourselves, but this method is
+  // unlikely to be called without a canvas or builder to back it up.
+  return true;
 }
 
 MutatorContext LayerStateStack::save() {
