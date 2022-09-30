@@ -13,6 +13,7 @@ import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
 import 'skia_object_cache.dart';
+import 'surface.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
 ///
@@ -101,11 +102,12 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   @override
   ui.Image toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
-    final Surface tempSurface = Surface();
-    tempSurface.createOrUpdateSurface(ui.Size(width, height));
-    final SkCanvas skCanvas = tempSurface.getCanvas();
-    skCanvas.drawPicture(skiaObject);
-    final SkImage skImage = skSurface.makeImageSnapshot();
+    final Surface skSurface = Surface();
+    final CkSurface ckSurface =
+      skSurface.createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.drawPicture(this);
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
     final SkImageInfo imageInfo = SkImageInfo(
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
@@ -115,7 +117,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     );
     final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
     final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, 4 * width);
-    tempSurface.dispose();
+    skSurface.dispose();
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');
     }
