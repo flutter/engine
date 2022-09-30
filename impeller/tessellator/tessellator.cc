@@ -39,15 +39,15 @@ static int ToTessWindingRule(FillType fill_type) {
 
 class TessellatorContext {
  public:
-  TessellatorContext(CTessellator cTessellator)
-      : cTessellator_(std::move(cTessellator)) {}
+  explicit TessellatorContext(CTessellator c_tessellator)
+      : c_tessellator_(std::move(c_tessellator)) {}
 
-  ~TessellatorContext() { cTessellator_.reset(); }
+  ~TessellatorContext() { c_tessellator_.reset(); }
 
-  TESStesselator* tessellator() { return cTessellator_.get(); }
+  TESStesselator* tessellator() { return c_tessellator_.get(); }
 
  private:
-  CTessellator cTessellator_;
+  CTessellator c_tessellator_;
 };
 
 Tessellator::Result Tessellator::Tessellate(
