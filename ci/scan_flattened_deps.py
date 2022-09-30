@@ -265,7 +265,7 @@ def get_common_ancestor_commit(dep):
       except SyntaxError as syntax_error:
         print("SyntaxError '{0}' occured.".format(syntax_error.text))
       except Exception as error:
-        print("Error '{0}' occured.".format(str(error)))
+        print("Error '{0}' occured.  Type: {1}".format(str(error), type(error)))
     else:
       print('did not find dep: ' + dep_name)
     return {}
