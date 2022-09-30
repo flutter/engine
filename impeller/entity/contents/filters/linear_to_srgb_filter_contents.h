@@ -15,6 +15,8 @@ class LinearToSrgbFilterContents final : public FilterContents {
 
   ~LinearToSrgbFilterContents() override;
 
+  void SetAbsorbOpacity(bool absorb_opacity);
+
  private:
   // |FilterContents|
   std::optional<Snapshot> RenderFilter(
@@ -23,6 +25,8 @@ class LinearToSrgbFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform,
       const Rect& coverage) const override;
+
+  bool absorb_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LinearToSrgbFilterContents);
 };

@@ -17,6 +17,10 @@ SrgbToLinearFilterContents::SrgbToLinearFilterContents() = default;
 
 SrgbToLinearFilterContents::~SrgbToLinearFilterContents() = default;
 
+void SrgbToLinearFilterContents::SetAbsorbOpacity(bool absorb_opacity) {
+  absorb_opacity_ = absorb_opacity;
+}
+
 std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
@@ -64,8 +68,7 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
     FS::FragInfo frag_info;
     frag_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
-    frag_info.input_alpha =
-        GetNeedAbsorbOpacity() ? input_snapshot->opacity : 1.0f;
+    frag_info.input_alpha = absorb_opacity_ ? input_snapshot->opacity : 1.0f;
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
@@ -82,11 +85,10 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
   }
   out_texture->SetLabel("SrgbToLinear Texture");
 
-  return Snapshot{
-      .texture = out_texture,
-      .transform = input_snapshot->transform,
-      .sampler_descriptor = input_snapshot->sampler_descriptor,
-      .opacity = GetNeedAbsorbOpacity() ? 1.0f : input_snapshot->opacity};
+  return Snapshot{.texture = out_texture,
+                  .transform = input_snapshot->transform,
+                  .sampler_descriptor = input_snapshot->sampler_descriptor,
+                  .opacity = absorb_opacity_ ? 1.0f : input_snapshot->opacity};
 }
 
 }  // namespace impeller

@@ -22,6 +22,8 @@ class ColorMatrixFilterContents final : public FilterContents {
 
   void SetMatrix(const ColorMatrix& matrix);
 
+  void SetAbsorbOpacity(bool absorb_opacity);
+
  private:
   // |FilterContents|
   std::optional<Snapshot> RenderFilter(
@@ -32,6 +34,7 @@ class ColorMatrixFilterContents final : public FilterContents {
       const Rect& coverage) const override;
 
   ColorMatrix matrix_;
+  bool absorb_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorMatrixFilterContents);
 };

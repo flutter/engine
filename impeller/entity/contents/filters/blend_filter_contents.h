@@ -17,7 +17,7 @@ class BlendFilterContents : public FilterContents {
       const Entity& entity,
       const Rect& coverage,
       std::optional<Color> foreground_color,
-      bool need_absorb_opacity)>;
+      bool absorb_opacity)>;
 
   BlendFilterContents();
 
@@ -28,6 +28,8 @@ class BlendFilterContents : public FilterContents {
   /// @brief  Sets a source color which is blended after all of the inputs have
   ///         been blended.
   void SetForegroundColor(std::optional<Color> color);
+
+  void SetAbsorbOpacity(bool absorb_opacity);
 
  private:
   // |FilterContents|
@@ -40,6 +42,7 @@ class BlendFilterContents : public FilterContents {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   AdvancedBlendProc advanced_blend_proc_;
   std::optional<Color> foreground_color_;
+  bool absorb_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlendFilterContents);
 };

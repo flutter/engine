@@ -37,7 +37,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeBlend(
     BlendMode blend_mode,
     FilterInput::Vector inputs,
     std::optional<Color> foreground_color,
-    bool need_absorb_opacity) {
+    bool absorb_opacity) {
   if (blend_mode > Entity::kLastAdvancedBlendMode) {
     VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
                    << " passed to FilterContents::MakeBlend.";
@@ -50,7 +50,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeBlend(
     blend->SetInputs(inputs);
     blend->SetBlendMode(blend_mode);
     blend->SetForegroundColor(foreground_color);
-    blend->SetNeedAbsorbOpacity(need_absorb_opacity);
+    blend->SetAbsorbOpacity(absorb_opacity);
     return blend;
   }
 
@@ -60,7 +60,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeBlend(
     new_blend = std::make_shared<BlendFilterContents>();
     new_blend->SetInputs({*in_i, blend_input});
     new_blend->SetBlendMode(blend_mode);
-    new_blend->SetNeedAbsorbOpacity(need_absorb_opacity);
+    new_blend->SetAbsorbOpacity(absorb_opacity);
     if (in_i < inputs.end() - 1 || foreground_color.has_value()) {
       blend_input = FilterInput::Make(
           std::static_pointer_cast<FilterContents>(new_blend));
@@ -72,7 +72,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeBlend(
     new_blend->SetInputs({blend_input});
     new_blend->SetBlendMode(blend_mode);
     new_blend->SetForegroundColor(foreground_color);
-    new_blend->SetNeedAbsorbOpacity(need_absorb_opacity);
+    new_blend->SetAbsorbOpacity(absorb_opacity);
   }
 
   return new_blend;
@@ -161,29 +161,29 @@ std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
 std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(
     FilterInput::Ref input,
     const ColorMatrix& color_matrix,
-    bool need_absorb_opacity) {
+    bool absorb_opacity) {
   auto filter = std::make_shared<ColorMatrixFilterContents>();
   filter->SetInputs({input});
   filter->SetMatrix(color_matrix);
-  filter->SetNeedAbsorbOpacity(need_absorb_opacity);
+  filter->SetAbsorbOpacity(absorb_opacity);
   return filter;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeLinearToSrgbFilter(
     FilterInput::Ref input,
-    bool need_absorb_opacity) {
+    bool absorb_opacity) {
   auto filter = std::make_shared<LinearToSrgbFilterContents>();
   filter->SetInputs({input});
-  filter->SetNeedAbsorbOpacity(need_absorb_opacity);
+  filter->SetAbsorbOpacity(absorb_opacity);
   return filter;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeSrgbToLinearFilter(
     FilterInput::Ref input,
-    bool need_absorb_opacity) {
+    bool absorb_opacity) {
   auto filter = std::make_shared<SrgbToLinearFilterContents>();
   filter->SetInputs({input});
-  filter->SetNeedAbsorbOpacity(need_absorb_opacity);
+  filter->SetAbsorbOpacity(absorb_opacity);
   return filter;
 }
 
@@ -322,14 +322,6 @@ Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
   return parent_transform * GetLocalTransform(parent_transform);
-}
-
-void FilterContents::SetNeedAbsorbOpacity(bool need_absorb_opacity) {
-  need_absorb_opacity_ = need_absorb_opacity;
-}
-
-bool FilterContents::GetNeedAbsorbOpacity() const {
-  return need_absorb_opacity_;
 }
 
 }  // namespace impeller
