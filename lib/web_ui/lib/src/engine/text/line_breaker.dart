@@ -125,8 +125,8 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
   LineCharProperty? prev2;
   LineCharProperty? prev1;
 
-  final int? firstCodePoint = getCodePoint(text, 0);
-  LineCharProperty? curr = lineLookup.findForChar(firstCodePoint);
+  int? codePoint = getCodePoint(text, 0);
+  LineCharProperty? curr = lineLookup.findForChar(codePoint);
 
   // When there's a sequence of spaces, this variable contains the base property
   // i.e. the property of the character preceding the sequence.
@@ -186,13 +186,6 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
   // Skip index 0 because a line break can't exist at the start of text.
   index++;
 
-  if (_isSurrogatePair(firstCodePoint)) {
-    // Can't break in the middle of a surrogate pair.
-    setBreak(LineBreakType.prohibited, -1);
-    // Advance `index` one extra step when handling a surrogate pair.
-    index++;
-  }
-
   int regionalIndicatorCount = 0;
 
   // We need to go until `text.length` in order to handle the case where the
@@ -202,7 +195,14 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     prev2 = prev1;
     prev1 = curr;
 
-    final int? codePoint = getCodePoint(text, index);
+    if (_isSurrogatePair(codePoint)) {
+      // Can't break in the middle of a surrogate pair.
+      setBreak(LineBreakType.prohibited, -1);
+      // Advance `index` one extra step to skip the tail of the surrogate pair.
+      index++;
+    }
+
+    codePoint = getCodePoint(text, index);
     curr = lineLookup.findForChar(codePoint);
 
     // Keep count of the RI (regional indicator) sequence.
@@ -210,12 +210,6 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
       regionalIndicatorCount++;
     } else {
       regionalIndicatorCount = 0;
-    }
-
-    if (_isSurrogatePair(codePoint)) {
-      // Can't break in the middle of a surrogate pair.
-      // Advance `index` one extra step when handling a surrogate pair.
-      index++;
     }
 
     // Always break after hard line breaks.

@@ -304,6 +304,41 @@ void testMain() {
       );
     });
 
+    test('surrogates', () {
+      expect(
+        const LineBreakFragmenter('A\u{1F600}').fragment(),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 1, opportunity, trailingNewlines: 0, trailingSpaces: 0),
+          LineBreakFragment(1, 3, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+        ],
+      );
+
+      expect(
+        const LineBreakFragmenter('\u{1F600}A').fragment(),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 0),
+          LineBreakFragment(2, 3, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+        ],
+      );
+
+      expect(
+        const LineBreakFragmenter('\u{1F600}\u{1F600}').fragment(),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 0),
+          LineBreakFragment(2, 4, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+        ],
+      );
+
+      expect(
+        const LineBreakFragmenter('A \u{1F600} \u{1F600}').fragment(),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 1),
+          LineBreakFragment(2, 5, opportunity, trailingNewlines: 0, trailingSpaces: 1),
+          LineBreakFragment(5, 7, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+        ],
+      );
+    });
+
     test('comprehensive test', () {
       final List<TestCase> testCollection =
           parseRawTestData(rawLineBreakTestData);
@@ -321,23 +356,8 @@ void testMain() {
         // `s` is the index in the `testCase.signs` list.
         for (int s = 0; s < testCase.signs.length - 1; s++) {
           // `i` is the index in the `text`.
-          int i = s + surrogateCount;
-
+          final int i = s + surrogateCount;
           final Sign sign = testCase.signs[s];
-
-          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
-            surrogateCount++;
-            expect(
-              currentFragment.end,
-              greaterThan(i),
-              reason: 'Failed at test case number $t:\n'
-                  '$testCase\n'
-                  '"$text"\n'
-                  '\nFragment ended in the middle of a surrogate pair at {${currentFragment.end}}.',
-            );
-          }
-
-          i = s + surrogateCount;
 
           if (sign.isBreakOpportunity) {
             expect(
@@ -358,6 +378,10 @@ void testMain() {
                   '"$text"\n'
                   '\nFragment ended in early at {${currentFragment.end}}.',
             );
+          }
+
+          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
+            surrogateCount++;
           }
         }
 

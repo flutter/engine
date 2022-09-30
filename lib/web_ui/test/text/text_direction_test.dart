@@ -125,6 +125,13 @@ Future<void> testMain() async {
         _Bidi(' \n', null, sandwich),
       ]);
     });
+
+    test('surrogates', () {
+      expect(split('A\u{1F600}'), <_Bidi>[
+        _Bidi('A', ltr, own),
+        _Bidi('\u{1F600}', null, sandwich),
+      ]);
+    });
   });
 }
 

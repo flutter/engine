@@ -46,8 +46,10 @@ Future<void> testMain() async {
 
     expect(paragraph.maxIntrinsicWidth, 0);
     expect(paragraph.minIntrinsicWidth, 0);
-    expect(paragraph.height, 0);
-    expect(paragraph.computeLineMetrics(), isEmpty);
+    expect(paragraph.height, 10);
+    expectLines(paragraph, <TestLine>[
+      l('', 0, 0, width: 0.0, height: 10.0, baseline: 8.0),
+    ]);
   });
 
   test('preserves whitespace when measuring', () {
