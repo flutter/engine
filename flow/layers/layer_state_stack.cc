@@ -11,30 +11,30 @@ namespace flutter {
 using AutoRestore = LayerStateStack::AutoRestore;
 using MutatorContext = LayerStateStack::MutatorContext;
 
-void LayerStateStack::clear_delegates() {
+void LayerStateStack::clear_delegate() {
   if (canvas_) {
-    canvas_->restoreToCount(canvas_restore_count_);
+    canvas_->restoreToCount(restore_count_);
     canvas_ = nullptr;
   }
   if (builder_) {
-    builder_->restoreToCount(builder_restore_count_);
+    builder_->restoreToCount(restore_count_);
     builder_ = nullptr;
   }
 }
 
-void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
-  clear_delegates();
+void LayerStateStack::set_delegate(SkCanvas* canvas) {
+  clear_delegate();
   if (canvas) {
-    canvas_restore_count_ = canvas->getSaveCount();
+    restore_count_ = canvas->getSaveCount();
     canvas_ = canvas;
     reapply_all(canvas, nullptr);
   }
 }
 
-void LayerStateStack::set_builder_delegate(DisplayListBuilder* builder) {
-  clear_delegates();
+void LayerStateStack::set_delegate(DisplayListBuilder* builder) {
+  clear_delegate();
   if (builder) {
-    builder_restore_count_ = builder->getSaveCount();
+    restore_count_ = builder->getSaveCount();
     builder_ = builder;
     reapply_all(nullptr, builder);
   }
@@ -358,7 +358,7 @@ void LayerStateStack::maybe_save_layer(
     const std::shared_ptr<const DlColorFilter>& filter) {
   if (outstanding_.color_filter || outstanding_.image_filter ||
       (outstanding_.opacity < SK_Scalar1 &&
-       !filter->can_commute_with_alpha())) {
+       !filter->can_commute_with_opacity())) {
     // TBD: compose the 2 color filters together.
     save_layer(outstanding_.save_layer_bounds);
   }

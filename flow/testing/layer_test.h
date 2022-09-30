@@ -105,10 +105,9 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         } {
     use_null_raster_cache();
-    display_list_state_stack_.set_builder_delegate(
-        display_list_recorder_.builder());
-    state_stack_.set_canvas_delegate(&TestT::mock_canvas());
-    checkerboard_state_stack_.set_canvas_delegate(&TestT::mock_canvas());
+    display_list_state_stack_.set_delegate(display_list_recorder_);
+    state_stack_.set_delegate(&TestT::mock_canvas());
+    checkerboard_state_stack_.set_delegate(&TestT::mock_canvas());
     checkerboard_state_stack_.set_checkerboard_save_layers(true);
   }
 

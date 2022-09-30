@@ -20,24 +20,35 @@ class LayerStateStack {
   }
 
   // Clears out any old delegate to make room for a new one.
-  void clear_delegates();
+  void clear_delegate();
 
+  // Return the SkCanvas delegate if the state stack has such a delegate.
+  // The state stack will only have either an SkCanvas or a Builder
+  // delegate at any given time.
+  // See also |builder_delegate|.
   SkCanvas* canvas_delegate() { return canvas_; }
+
+  // Return the DisplayListBuilder delegate if the state stack has such a
+  // delegate.
+  // The state stack will only have either an SkCanvas or a Builder
+  // delegate at any given time.
+  // See also |builder_delegate|.
+  DisplayListBuilder* builder_delegate() { return builder_; }
+
   // Clears the old delegate and sets the canvas delegate to the indicated
   // canvas (if not nullptr). This ensures that only one delegate - either
   // a canvas or a builder - is present at any one time.
-  void set_canvas_delegate(SkCanvas* canvas);
+  void set_delegate(SkCanvas* canvas);
 
-  DisplayListBuilder* builder_delegate() { return builder_; }
   // Clears the old delegate and sets the builder delegate to the indicated
   // buider (if not nullptr). This ensures that only one delegate - either
   // a canvas or a builder - is present at any one time.
-  void set_builder_delegate(DisplayListBuilder* builder);
-  void set_builder_delegate(sk_sp<DisplayListBuilder> builder) {
-    set_builder_delegate(builder.get());
+  void set_delegate(DisplayListBuilder* builder);
+  void set_delegate(sk_sp<DisplayListBuilder> builder) {
+    set_delegate(builder.get());
   }
-  void set_builder_delegate(DisplayListCanvasRecorder& recorder) {
-    set_builder_delegate(recorder.builder().get());
+  void set_delegate(DisplayListCanvasRecorder& recorder) {
+    set_delegate(recorder.builder().get());
   }
 
   class AutoRestore {
@@ -484,9 +495,8 @@ class LayerStateStack {
   friend class MutatorContext;
 
   SkCanvas* canvas_ = nullptr;
-  int canvas_restore_count_ = 0.0;
+  int restore_count_ = 0;
   DisplayListBuilder* builder_ = nullptr;
-  int builder_restore_count_ = 0.0;
   RenderingAttributes outstanding_;
 
   bool do_checkerboard_ = false;

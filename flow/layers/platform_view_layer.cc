@@ -43,9 +43,9 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   context.canvas = embedder_context.canvas;
   context.builder = embedder_context.builder;
   if (context.builder) {
-    context.state_stack.set_builder_delegate(context.builder);
+    context.state_stack.set_delegate(context.builder);
   } else {
-    context.state_stack.set_canvas_delegate(context.canvas);
+    context.state_stack.set_delegate(context.canvas);
   }
 }
 

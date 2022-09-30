@@ -33,27 +33,37 @@ TEST(LayerStateStack, Defaults) {
   ASSERT_EQ(dl_paint, DlPaint());
 }
 
-TEST(LayerStateStack, OneDelegateAtATime) {
+TEST(LayerStateStack, SingularDelegate) {
   LayerStateStack state_stack;
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
   ASSERT_EQ(state_stack.builder_delegate(), nullptr);
 
   DisplayListBuilder builder;
-  state_stack.set_builder_delegate(&builder);
+  MockCanvas canvas;
+
+  // no delegate -> builder delegate
+  state_stack.set_delegate(&builder);
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
   ASSERT_EQ(state_stack.builder_delegate(), &builder);
 
-  MockCanvas canvas;
-  state_stack.set_canvas_delegate(&canvas);
+  // builder delegate -> canvas delegate
+  state_stack.set_delegate(&canvas);
   ASSERT_EQ(state_stack.canvas_delegate(), &canvas);
   ASSERT_EQ(state_stack.builder_delegate(), nullptr);
 
-  state_stack.clear_delegates();
+  // canvas delegate -> builder delegate
+  state_stack.set_delegate(&builder);
+  ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
+  ASSERT_EQ(state_stack.builder_delegate(), &builder);
+
+  // builder delegate -> no delegate
+  state_stack.clear_delegate();
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
   ASSERT_EQ(state_stack.builder_delegate(), nullptr);
 
-  state_stack.set_builder_delegate(&builder);
-  state_stack.clear_delegates();
+  // canvas delegate -> no delegate
+  state_stack.set_delegate(&canvas);
+  state_stack.clear_delegate();
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
   ASSERT_EQ(state_stack.builder_delegate(), nullptr);
 }
@@ -80,7 +90,7 @@ TEST(LayerStateStack, Opacity) {
       // Verify output with applyState that does not accept opacity
       {
         DisplayListBuilder builder;
-        state_stack.set_builder_delegate(&builder);
+        state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(rect, 0);
           ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
@@ -90,7 +100,7 @@ TEST(LayerStateStack, Opacity) {
           state_stack.fill(paint);
           builder.drawRect(rect, paint);
         }
-        state_stack.set_builder_delegate(nullptr);
+        state_stack.clear_delegate();
 
         DisplayListBuilder expected;
         DlPaint save_paint =
@@ -104,7 +114,7 @@ TEST(LayerStateStack, Opacity) {
       // Verify output with applyState that accepts opacity
       {
         DisplayListBuilder builder;
-        state_stack.set_builder_delegate(&builder);
+        state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(
               rect, LayerStateStack::CALLER_CAN_APPLY_OPACITY);
@@ -115,7 +125,7 @@ TEST(LayerStateStack, Opacity) {
           state_stack.fill(paint);
           builder.drawRect(rect, paint);
         }
-        state_stack.set_builder_delegate(nullptr);
+        state_stack.clear_delegate();
 
         DisplayListBuilder expected;
         expected.drawRect(rect, DlPaint().setOpacity(0.25f));
@@ -157,7 +167,7 @@ TEST(LayerStateStack, ColorFilter) {
       // Verify output with applyState that does not accept color filters
       {
         DisplayListBuilder builder;
-        state_stack.set_builder_delegate(&builder);
+        state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(rect, 0);
           ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
@@ -166,7 +176,7 @@ TEST(LayerStateStack, ColorFilter) {
           state_stack.fill(paint);
           builder.drawRect(rect, paint);
         }
-        state_stack.set_builder_delegate(nullptr);
+        state_stack.clear_delegate();
 
         DisplayListBuilder expected;
         DlPaint outer_save_paint = DlPaint().setColorFilter(outer_filter);
@@ -183,7 +193,7 @@ TEST(LayerStateStack, ColorFilter) {
       {
         SkRect rect = {10, 10, 20, 20};
         DisplayListBuilder builder;
-        state_stack.set_builder_delegate(&builder);
+        state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(
               rect, LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER);
@@ -193,7 +203,7 @@ TEST(LayerStateStack, ColorFilter) {
           state_stack.fill(paint);
           builder.drawRect(rect, paint);
         }
-        state_stack.set_builder_delegate(nullptr);
+        state_stack.clear_delegate();
 
         DisplayListBuilder expected;
         DlPaint save_paint = DlPaint().setColorFilter(outer_filter);
@@ -238,7 +248,7 @@ TEST(LayerStateStack, ImageFilter) {
       // Verify output with applyState that does not accept color filters
       {
         DisplayListBuilder builder;
-        state_stack.set_builder_delegate(&builder);
+        state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(rect, 0);
           ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
@@ -247,7 +257,7 @@ TEST(LayerStateStack, ImageFilter) {
           state_stack.fill(paint);
           builder.drawRect(rect, paint);
         }
-        state_stack.set_builder_delegate(nullptr);
+        state_stack.clear_delegate();
 
         DisplayListBuilder expected;
         DlPaint outer_save_paint = DlPaint().setImageFilter(outer_filter);
@@ -264,7 +274,7 @@ TEST(LayerStateStack, ImageFilter) {
       {
         SkRect rect = {10, 10, 20, 20};
         DisplayListBuilder builder;
-        state_stack.set_builder_delegate(&builder);
+        state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(
               rect, LayerStateStack::CALLER_CAN_APPLY_IMAGE_FILTER);
@@ -274,7 +284,7 @@ TEST(LayerStateStack, ImageFilter) {
           state_stack.fill(paint);
           builder.drawRect(rect, paint);
         }
-        state_stack.set_builder_delegate(nullptr);
+        state_stack.clear_delegate();
 
         DisplayListBuilder expected;
         DlPaint save_paint = DlPaint().setImageFilter(outer_filter);
@@ -289,6 +299,187 @@ TEST(LayerStateStack, ImageFilter) {
   }
 
   ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+}
+
+TEST(LayerStateStack, OpacityAndColorFilterInteraction) {
+  SkRect rect = {10, 10, 20, 20};
+  std::shared_ptr<DlBlendColorFilter> color_filter =
+      std::make_shared<DlBlendColorFilter>(DlColor::kYellow(),
+                                           DlBlendMode::kColorBurn);
+
+  LayerStateStack state_stack;
+  DisplayListBuilder builder;
+  state_stack.set_delegate(&builder);
+  ASSERT_EQ(builder.getSaveCount(), 1);
+
+  {
+    auto mutator1 = state_stack.save();
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    mutator1.applyOpacity(rect, 0.5f);
+    ASSERT_EQ(builder.getSaveCount(), 2);
+
+    {
+      auto mutator2 = state_stack.save();
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      mutator2.applyColorFilter(rect, color_filter);
+
+      // The opacity will have been resolved by a saveLayer
+      ASSERT_EQ(builder.getSaveCount(), 4);
+      ASSERT_EQ(state_stack.outstanding_color_filter(), color_filter);
+      ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+    }
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
+    ASSERT_EQ(state_stack.outstanding_opacity(), 0.5f);
+  }
+  ASSERT_EQ(builder.getSaveCount(), 1);
+  ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
+  ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+
+  {
+    auto mutator1 = state_stack.save();
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    mutator1.applyColorFilter(rect, color_filter);
+    ASSERT_EQ(builder.getSaveCount(), 2);
+
+    {
+      auto mutator2 = state_stack.save();
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      mutator2.applyOpacity(rect, 0.5f);
+
+      // color filter applied to opacity can be applied together
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      ASSERT_EQ(state_stack.outstanding_color_filter(), color_filter);
+      ASSERT_EQ(state_stack.outstanding_opacity(), 0.5f);
+    }
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    ASSERT_EQ(state_stack.outstanding_color_filter(), color_filter);
+    ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+  }
+  ASSERT_EQ(builder.getSaveCount(), 1);
+  ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
+  ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+}
+
+TEST(LayerStateStack, OpacityAndImageFilterInteraction) {
+  SkRect rect = {10, 10, 20, 20};
+  std::shared_ptr<DlBlurImageFilter> image_filter =
+      std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
+
+  LayerStateStack state_stack;
+  DisplayListBuilder builder;
+  state_stack.set_delegate(&builder);
+  ASSERT_EQ(builder.getSaveCount(), 1);
+
+  {
+    auto mutator1 = state_stack.save();
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    mutator1.applyOpacity(rect, 0.5f);
+    ASSERT_EQ(builder.getSaveCount(), 2);
+
+    {
+      auto mutator2 = state_stack.save();
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      mutator2.applyImageFilter(rect, image_filter);
+
+      // opacity applied to image filter can be applied together
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      ASSERT_EQ(state_stack.outstanding_image_filter(), image_filter);
+      ASSERT_EQ(state_stack.outstanding_opacity(), 0.5f);
+    }
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+    ASSERT_EQ(state_stack.outstanding_opacity(), 0.5f);
+  }
+  ASSERT_EQ(builder.getSaveCount(), 1);
+  ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+  ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+
+  {
+    auto mutator1 = state_stack.save();
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    mutator1.applyImageFilter(rect, image_filter);
+    ASSERT_EQ(builder.getSaveCount(), 2);
+
+    {
+      auto mutator2 = state_stack.save();
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      mutator2.applyOpacity(rect, 0.5f);
+
+      // The image filter will have been resolved by a saveLayer
+      ASSERT_EQ(builder.getSaveCount(), 4);
+      ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+      ASSERT_EQ(state_stack.outstanding_opacity(), 0.5f);
+    }
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    ASSERT_EQ(state_stack.outstanding_image_filter(), image_filter);
+    ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+  }
+  ASSERT_EQ(builder.getSaveCount(), 1);
+  ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+  ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
+}
+
+TEST(LayerStateStack, ColorFilterAndImageFilterInteraction) {
+  SkRect rect = {10, 10, 20, 20};
+  std::shared_ptr<DlBlendColorFilter> color_filter =
+      std::make_shared<DlBlendColorFilter>(DlColor::kYellow(),
+                                           DlBlendMode::kColorBurn);
+  std::shared_ptr<DlBlurImageFilter> image_filter =
+      std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
+
+  LayerStateStack state_stack;
+  DisplayListBuilder builder;
+  state_stack.set_delegate(&builder);
+  ASSERT_EQ(builder.getSaveCount(), 1);
+
+  {
+    auto mutator1 = state_stack.save();
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    mutator1.applyColorFilter(rect, color_filter);
+    ASSERT_EQ(builder.getSaveCount(), 2);
+
+    {
+      auto mutator2 = state_stack.save();
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      mutator2.applyImageFilter(rect, image_filter);
+
+      // color filter applied to image filter can be applied together
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      ASSERT_EQ(state_stack.outstanding_image_filter(), image_filter);
+      ASSERT_EQ(state_stack.outstanding_color_filter(), color_filter);
+    }
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+    ASSERT_EQ(state_stack.outstanding_color_filter(), color_filter);
+  }
+  ASSERT_EQ(builder.getSaveCount(), 1);
+  ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+  ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
+
+  {
+    auto mutator1 = state_stack.save();
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    mutator1.applyImageFilter(rect, image_filter);
+    ASSERT_EQ(builder.getSaveCount(), 2);
+
+    {
+      auto mutator2 = state_stack.save();
+      ASSERT_EQ(builder.getSaveCount(), 3);
+      mutator2.applyColorFilter(rect, color_filter);
+
+      // The image filter will have been resolved by a saveLayer
+      ASSERT_EQ(builder.getSaveCount(), 4);
+      ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+      ASSERT_EQ(state_stack.outstanding_color_filter(), color_filter);
+    }
+    ASSERT_EQ(builder.getSaveCount(), 2);
+    ASSERT_EQ(state_stack.outstanding_image_filter(), image_filter);
+    ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
+  }
+  ASSERT_EQ(builder.getSaveCount(), 1);
+  ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
+  ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
 }
 
 }  // namespace testing

@@ -55,9 +55,13 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   // However, some color filters can commute themselves with an opacity
   // modulation so in that case we can apply the opacity on behalf of our
   // ancestors - otherwise we can apply no attributes.
-  if (filter_ && filter_->can_commute_with_alpha()) {
-    context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  if (filter_) {
+    context->renderable_state_flags =
+        filter_->can_commute_with_opacity()
+            ? LayerStateStack::CALLER_CAN_APPLY_OPACITY
+            : 0;
   }
+  // else - we can apply whatever our children can apply.
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
