@@ -2,9 +2,10 @@ name: Third party dependency scan
 on:
   # Only the default branch is supported.
   branch_protection_rule:
-    branches: [ main ]
-    schedule:
-      - cron: "0 8 * * *" # runs daily at 08:00
+  push:
+    branches: [ main, osv-scan ]
+    # schedule:
+    #   - cron: "0 8 * * *" # runs daily at 08:00
 
 
 # Declare default permissions as read only.
