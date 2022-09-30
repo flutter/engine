@@ -24,9 +24,6 @@ FILE: ../../../flutter/benchmarking/benchmarking.cc
 FILE: ../../../flutter/benchmarking/benchmarking.h
 FILE: ../../../flutter/benchmarking/library.cc
 FILE: ../../../flutter/benchmarking/library.h
-FILE: ../../../flutter/ci/deps_parser.py
-FILE: ../../../flutter/ci/deps_parser_tests.py
-FILE: ../../../flutter/ci/scan_flattened_deps.py
 FILE: ../../../flutter/common/constants.h
 FILE: ../../../flutter/common/exported_symbols.sym
 FILE: ../../../flutter/common/exported_symbols_mac.sym
