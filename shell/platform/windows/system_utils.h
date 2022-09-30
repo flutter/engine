@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "flutter/shell/platform/windows/windows_registry.h"
+
 namespace flutter {
 
 // Components of a system language/locale.

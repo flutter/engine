@@ -154,7 +154,8 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
-      aot_data_(nullptr, nullptr) {
+      aot_data_(nullptr, nullptr),
+      windows_registry_(std::make_unique<WindowsRegistry>()) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -654,6 +655,10 @@ int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
   // As more accessibility features are enabled for Windows,
   // the corresponding checks and flags should be added here.
   return flags;
+}
+
+void FlutterWindowsEngine::SetWindowsRegistry(const WindowsRegistry& windows_registry) {
+  windows_registry_ = std::make_unique<WindowsRegistry>(windows_registry);
 }
 
 }  // namespace flutter

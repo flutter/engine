@@ -10,7 +10,28 @@
 namespace flutter {
 namespace testing {
 
+class MockWindowsRegistry : public WindowsRegistry {
+  public:
+    virtual ~MockWindowsRegistry() {}
+
+    virtual LSTATUS GetRegistryValue(HKEY hkey, LPCSTR key, LPCSTR value, DWORD flags, LPDWORD type, PVOID data, LPDWORD sizeData) const {
+      static const char* locales = "en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0";
+      static DWORD locales_len = 35;
+      if (data != NULL) {
+        if (*sizeData < locales_len) {
+          return ERROR_MORE_DATA;
+        }
+        memcpy(data, locales, locales_len);
+        *sizeData = locales_len;
+      } else if (sizeData != NULL) {
+        *sizeData = locales_len;
+      }
+      return ERROR_SUCCESS;
+    }
+};
+
 TEST(SystemUtils, GetPreferredLanguageInfo) {
+  WindowsRegistry registry;
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);
@@ -19,6 +40,7 @@ TEST(SystemUtils, GetPreferredLanguageInfo) {
 }
 
 TEST(SystemUtils, GetPreferredLanguages) {
+  WindowsRegistry registry;
   std::vector<std::wstring> languages = GetPreferredLanguages();
   // There should be at least one language.
   ASSERT_GE(languages.size(), 1);

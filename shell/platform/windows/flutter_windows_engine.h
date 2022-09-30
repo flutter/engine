@@ -27,6 +27,7 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
@@ -238,6 +239,9 @@ class FlutterWindowsEngine {
   // Updates accessibility, e.g. switch to high contrast mode
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
+  // Allow setting the Windows Registry
+  void SetWindowsRegistry(const WindowsRegistry& windows_registry);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -320,6 +324,9 @@ class FlutterWindowsEngine {
 
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
+
+  // A handle to a registry for registry values
+  std::unique_ptr<WindowsRegistry> windows_registry_;
 };
 
 }  // namespace flutter

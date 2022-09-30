@@ -5,11 +5,11 @@
 #include "flutter/shell/platform/windows/system_utils.h"
 
 #include <Windows.h>
-#include <winreg.h>
 
 #include <sstream>
 
 #include "flutter/fml/platform/win/wstring_conversion.h"
+#include "flutter/fml/logging.h"
 
 namespace flutter {
 
@@ -45,7 +45,8 @@ std::vector<std::wstring> GetPreferredLanguages() {
   // Mutli-string must be at least 3-long if non-empty,
   // as a multi-string is terminated with 2 nulls.
   //
-  // See: https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types
+  // See:
+  // https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types
   if (buffer_size < 3) {
     languages_from_registry = FALSE;
   }
@@ -86,6 +87,7 @@ std::vector<std::wstring> GetPreferredLanguages() {
     // Skip past that language and its terminating null in the buffer.
     start += language.size() + 1;
   }
+  FML_LOG(ERROR) << "Leaving func";
   return languages;
 }
 

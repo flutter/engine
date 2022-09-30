@@ -4,10 +4,13 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <string>
+
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
+#include "flutter/shell/platform/windows/windows_registry.h"
 #include "gtest/gtest.h"
 
 // winbase.h defines GetCurrentTime as a macro.
@@ -17,6 +20,7 @@ namespace flutter {
 namespace testing {
 
 namespace {
+
 // Returns an engine instance configured with dummy project path values.
 std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   FlutterDesktopEngineProperties properties = {};
