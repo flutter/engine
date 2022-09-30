@@ -13,7 +13,6 @@ namespace impeller {
 
 class HostBuffer;
 class Allocator;
-class TessellatorContext;
 
 //------------------------------------------------------------------------------
 /// @brief      Render passes encode render commands directed as one specific
