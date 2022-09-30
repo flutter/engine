@@ -8,21 +8,21 @@
 
 namespace impeller {
 
-static void* heapAlloc(void* userData, unsigned int size) {
+static void* HeapAlloc(void* userData, unsigned int size) {
   return malloc(size);
 }
 
-static void* heapRealloc(void* userData, void* ptr, unsigned int size) {
+static void* HeapRealloc(void* userData, void* ptr, unsigned int size) {
   return realloc(ptr, size);
 }
 
-static void heapFree(void* userData, void* ptr) {
+static void HeapFree(void* userData, void* ptr) {
   free(ptr);
 }
 
 // Note: these units are "number of entities" for bucket size and not in KB.
 static TESSalloc alloc = {
-    heapAlloc, heapRealloc, heapFree, 0, /* =userData */
+    HeapAlloc, HeapRealloc, HeapFree, 0, /* =userData */
     16,                                  /* =meshEdgeBucketSize */
     16,                                  /* =meshVertexBucketSize */
     16,                                  /* =meshFaceBucketSize */
