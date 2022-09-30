@@ -32,18 +32,32 @@ std::vector<std::wstring> GetPreferredLanguages() {
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
 
   // Determine where languages are defined and get buffer length
-  if(RegGetValueA(HKEY_CURRENT_USER, "Control panel\\International\\User Profile", "Languages", RRF_RT_REG_MULTI_SZ, NULL, NULL, &buffer_size) != S_OK) {
+  if(RegGetValueA(HKEY_CURRENT_USER,
+      "Control panel\\International\\User Profile",
+      "Languages", RRF_RT_REG_MULTI_SZ, NULL,
+      NULL, &buffer_size) != S_OK) {
     languages_from_registry = FALSE;
-    if (!::GetThreadPreferredUILanguages(flags, &count, nullptr, &buffer_size)) {
+    if (!::GetThreadPreferredUILanguages(flags, &count,
+        nullptr, &buffer_size)) {
       return languages;
     }
+  }
+
+  // Mutli-string must be at least 3-long if non-empty,
+  // as a mulit-string is terminated with 2 nulls.
+  if (buffer_size < 3) {
+    languages_from_registry = FALSE;
   }
 
   // Initialize the buffer
   std::wstring buffer(buffer_size, '\0');
   if (languages_from_registry) {
     std::string str_buffer(buffer_size, '\0');
-    if(RegGetValueA(HKEY_CURRENT_USER, "Control panel\\International\\User Profile", "Languages", RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(), &buffer_size) != S_OK) {
+    if(RegGetValueA(HKEY_CURRENT_USER,
+        "Control panel\\International\\User Profile",
+        "Languages",
+        RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(),
+        &buffer_size) != S_OK) {
       return languages;
     }
     for (int i = 0; i < buffer_size; i++) {
