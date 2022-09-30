@@ -55,7 +55,7 @@ std::vector<std::wstring> GetPreferredLanguages() {
     if (RegGetValueA(HKEY_CURRENT_USER,
                      "Control panel\\International\\User Profile", "Languages",
                      RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(),
-                    &buffer_size) != S_OK) {
+                     &buffer_size) != S_OK) {
       return languages;
     }
     for (int i = 0; i < buffer_size; i++) {
