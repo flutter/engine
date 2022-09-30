@@ -22,8 +22,7 @@ void testMain() {
     final ui.Image image = await _createImage();
     expect(image.runtimeType.toString(), equals('CkImage'));
     image.dispose();
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 
   test('Image constructor invokes onCreate once', () async {
     int onCreateInvokedCount = 0;
@@ -44,8 +43,7 @@ void testMain() {
     expect(createdImage, image2);
 
     ui.Image.onCreate = null;
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 
   test('dispose() invokes onDispose once', () async {
     int onDisposeInvokedCount = 0;
@@ -66,8 +64,7 @@ void testMain() {
     expect(disposedImage, image2);
 
     ui.Image.onDispose = null;
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 Future<ui.Image> _createImage() => _createPicture().toImage(10, 10);
