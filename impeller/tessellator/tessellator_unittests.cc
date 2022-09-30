@@ -57,7 +57,7 @@ TEST(TessellatorTest, TessellatorReturnsCorrectResultStatus) {
     Tessellator::Result result =
         t.Tessellate(FillType::kPositive, polyline, [](Point point) {});
 
-    ASSERT_EQ(polyline.points.size(), 1000u);
+    ASSERT_EQ(polyline.points.size(), 2000u);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 }
