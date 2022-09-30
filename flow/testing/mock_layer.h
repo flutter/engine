@@ -102,12 +102,17 @@ class MockLayer : public Layer {
     return *this;
   }
 
+  void set_expected_paint_matrix(const SkMatrix& matrix) {
+    expected_paint_matrix_ = matrix;
+  }
+
  private:
   MutatorsStack parent_mutators_;
   SkMatrix parent_matrix_;
   SkRect parent_cull_rect_ = SkRect::MakeEmpty();
   SkPath fake_paint_path_;
   SkPaint fake_paint_;
+  std::optional<SkMatrix> expected_paint_matrix_;
 
   static constexpr int kParentHasPlatformView = 1 << 0;
   static constexpr int kParentHasTextureLayer = 1 << 1;

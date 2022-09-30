@@ -11,11 +11,19 @@ namespace flutter {
 using AutoRestore = LayerStateStack::AutoRestore;
 using MutatorContext = LayerStateStack::MutatorContext;
 
-void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
+void LayerStateStack::clear_delegates() {
   if (canvas_) {
     canvas_->restoreToCount(canvas_restore_count_);
     canvas_ = nullptr;
   }
+  if (builder_) {
+    builder_->restoreToCount(builder_restore_count_);
+    builder_ = nullptr;
+  }
+}
+
+void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
+  clear_delegates();
   if (canvas) {
     canvas_restore_count_ = canvas->getSaveCount();
     canvas_ = canvas;
@@ -24,10 +32,7 @@ void LayerStateStack::set_canvas_delegate(SkCanvas* canvas) {
 }
 
 void LayerStateStack::set_builder_delegate(DisplayListBuilder* builder) {
-  if (builder_) {
-    builder_->restoreToCount(builder_restore_count_);
-    builder_ = nullptr;
-  }
+  clear_delegates();
   if (builder) {
     builder_restore_count_ = builder->getSaveCount();
     builder_ = builder;

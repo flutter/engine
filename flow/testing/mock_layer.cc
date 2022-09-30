@@ -52,6 +52,13 @@ void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void MockLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
+  if (expected_paint_matrix_.has_value()) {
+    SkMatrix matrix = context.builder ? context.builder->getTransform()
+                                      : context.canvas->getTotalMatrix();
+
+    ASSERT_EQ(matrix, expected_paint_matrix_.value());
+  }
+
   SkPaint sk_paint = fake_paint_;
   context.state_stack.fill(sk_paint);
   context.canvas->drawPath(fake_paint_path_, sk_paint);

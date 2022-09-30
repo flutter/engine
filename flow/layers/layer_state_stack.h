@@ -19,14 +19,23 @@ class LayerStateStack {
     do_checkerboard_ = checkerboard;
   }
 
+  // Clears out any old delegate to make room for a new one.
+  void clear_delegates();
+
   SkCanvas* canvas_delegate() { return canvas_; }
+  // Clears the old delegate and sets the canvas delegate to the indicated
+  // canvas (if not nullptr). This ensures that only one delegate - either
+  // a canvas or a builder - is present at any one time.
   void set_canvas_delegate(SkCanvas* canvas);
+
+  DisplayListBuilder* builder_delegate() { return builder_; }
+  // Clears the old delegate and sets the builder delegate to the indicated
+  // buider (if not nullptr). This ensures that only one delegate - either
+  // a canvas or a builder - is present at any one time.
+  void set_builder_delegate(DisplayListBuilder* builder);
   void set_builder_delegate(sk_sp<DisplayListBuilder> builder) {
     set_builder_delegate(builder.get());
   }
-
-  DisplayListBuilder* builder_delegate() { return builder_; }
-  void set_builder_delegate(DisplayListBuilder* builder);
   void set_builder_delegate(DisplayListCanvasRecorder& recorder) {
     set_builder_delegate(recorder.builder().get());
   }

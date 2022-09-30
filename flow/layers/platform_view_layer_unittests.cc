@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/platform_view_layer.h"
+#include "flutter/flow/layers/transform_layer.h"
 
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_embedder.h"
@@ -93,6 +94,47 @@ TEST_F(PlatformViewLayerTest, OpacityInheritance) {
   PrerollContext* context = preroll_context();
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(context->renderable_state_flags, 0);
+}
+
+TEST_F(PlatformViewLayerTest, StateTransfer) {
+  const SkMatrix transform1 = SkMatrix::Translate(5, 5);
+  const SkMatrix transform2 = SkMatrix::Translate(15, 15);
+  const SkMatrix combined_transform = SkMatrix::Translate(20, 20);
+  const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
+  const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
+  const int64_t view_id = 0;
+  const SkPath path1 = SkPath().addOval({10, 10, 20, 20});
+  const SkPath path2 = SkPath().addOval({15, 15, 30, 30});
+
+  // transform_layer1
+  //   |- child1
+  //   |- platform_layer
+  //   |- transform_layer2
+  //        |- child2
+  auto transform_layer1 = std::make_shared<TransformLayer>(transform1);
+  auto transform_layer2 = std::make_shared<TransformLayer>(transform2);
+  auto platform_layer =
+      std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
+  auto child1 = std::make_shared<MockLayer>(path1);
+  child1->set_expected_paint_matrix(transform1);
+  auto child2 = std::make_shared<MockLayer>(path2);
+  child2->set_expected_paint_matrix(combined_transform);
+  transform_layer1->Add(child1);
+  transform_layer1->Add(platform_layer);
+  transform_layer1->Add(transform_layer2);
+  transform_layer2->Add(child2);
+
+  auto embedder = MockViewEmbedder();
+  DisplayListCanvasRecorder recorder({0, 0, 500, 500});
+  embedder.AddRecorder(&recorder);
+
+  PrerollContext* preroll_ctx = preroll_context();
+  preroll_ctx->view_embedder = &embedder;
+  transform_layer1->Preroll(preroll_ctx, SkMatrix());
+
+  PaintContext& paint_ctx = paint_context();
+  paint_ctx.view_embedder = &embedder;
+  transform_layer1->Paint(paint_ctx);
 }
 
 }  // namespace testing

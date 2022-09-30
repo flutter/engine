@@ -8,6 +8,7 @@
 #include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/testing/display_list_testing.h"
+#include "flutter/testing/mock_canvas.h"
 
 namespace flutter {
 namespace testing {
@@ -30,6 +31,31 @@ TEST(LayerStateStack, Defaults) {
   DlPaint dl_paint;
   state_stack.fill(dl_paint);
   ASSERT_EQ(dl_paint, DlPaint());
+}
+
+TEST(LayerStateStack, OneDelegateAtATime) {
+  LayerStateStack state_stack;
+  ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
+  ASSERT_EQ(state_stack.builder_delegate(), nullptr);
+
+  DisplayListBuilder builder;
+  state_stack.set_builder_delegate(&builder);
+  ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
+  ASSERT_EQ(state_stack.builder_delegate(), &builder);
+
+  MockCanvas canvas;
+  state_stack.set_canvas_delegate(&canvas);
+  ASSERT_EQ(state_stack.canvas_delegate(), &canvas);
+  ASSERT_EQ(state_stack.builder_delegate(), nullptr);
+
+  state_stack.clear_delegates();
+  ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
+  ASSERT_EQ(state_stack.builder_delegate(), nullptr);
+
+  state_stack.set_builder_delegate(&builder);
+  state_stack.clear_delegates();
+  ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
+  ASSERT_EQ(state_stack.builder_delegate(), nullptr);
 }
 
 TEST(LayerStateStack, Opacity) {

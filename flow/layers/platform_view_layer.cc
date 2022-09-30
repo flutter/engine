@@ -41,9 +41,12 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   EmbedderPaintContext embedder_context =
       context.view_embedder->CompositeEmbeddedView(view_id_);
   context.canvas = embedder_context.canvas;
-  context.state_stack.set_canvas_delegate(context.canvas);
   context.builder = embedder_context.builder;
-  context.state_stack.set_builder_delegate(context.builder);
+  if (context.builder) {
+    context.state_stack.set_builder_delegate(context.builder);
+  } else {
+    context.state_stack.set_canvas_delegate(context.canvas);
+  }
 }
 
 }  // namespace flutter
