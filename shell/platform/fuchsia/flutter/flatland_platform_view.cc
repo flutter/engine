@@ -77,6 +77,8 @@ void FlatlandPlatformView::OnGetLayout(
 
   float pixel_ratio = 1.0f;
   if (info.has_device_pixel_ratio()) {
+    // Flatland returns a Vec2 for DPR but both values should be identical.
+    FML_DCHECK(info.device_pixel_ratio().x == info.device_pixel_ratio().y);
     view_pixel_ratio_ = info.device_pixel_ratio().x;
     pixel_ratio = *view_pixel_ratio_;
   }
