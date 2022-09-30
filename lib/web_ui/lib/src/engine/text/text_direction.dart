@@ -27,13 +27,11 @@ enum FragmentFlow {
 }
 
 class BidiFragmenter extends TextFragmenter {
-  const BidiFragmenter(this.paragraphText);
-
-  final String paragraphText;
+  const BidiFragmenter(super.text);
 
   @override
   List<BidiFragment> fragment() {
-    return _computeBidiFragments(paragraphText);
+    return _computeBidiFragments(text);
   }
 }
 

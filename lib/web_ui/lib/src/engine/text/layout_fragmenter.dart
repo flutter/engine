@@ -15,9 +15,8 @@ import 'paragraph.dart';
 import 'text_direction.dart';
 
 class LayoutFragmenter extends TextFragmenter {
-  const LayoutFragmenter(this.paragraphText, this.textDirection, this.paragraphSpans);
+  const LayoutFragmenter(super.text, this.textDirection, this.paragraphSpans);
 
-  final String paragraphText;
   final ui.TextDirection textDirection;
   final List<ParagraphSpan> paragraphSpans;
 
@@ -27,8 +26,8 @@ class LayoutFragmenter extends TextFragmenter {
 
     int fragmentStart = 0;
 
-    final Iterator<LineBreakFragment> lineBreakFragments = LineBreakFragmenter(paragraphText).fragment().iterator..moveNext();
-    final Iterator<BidiFragment> bidiFragments = BidiFragmenter(paragraphText).fragment().iterator..moveNext();
+    final Iterator<LineBreakFragment> lineBreakFragments = LineBreakFragmenter(text).fragment().iterator..moveNext();
+    final Iterator<BidiFragment> bidiFragments = BidiFragmenter(text).fragment().iterator..moveNext();
     final Iterator<ParagraphSpan> spans = paragraphSpans.iterator..moveNext();
 
     LineBreakFragment currentLineBreakFragment = lineBreakFragments.current;

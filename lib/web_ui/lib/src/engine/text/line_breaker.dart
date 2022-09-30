@@ -25,13 +25,11 @@ enum LineBreakType {
 }
 
 class LineBreakFragmenter extends TextFragmenter {
-  const LineBreakFragmenter(this.paragraphText);
-
-  final String paragraphText;
+  const LineBreakFragmenter(super.text);
 
   @override
   List<LineBreakFragment> fragment() {
-    return _computeLineBreakFragments(paragraphText);
+    return _computeLineBreakFragments(text);
   }
 }
 

@@ -18,24 +18,15 @@ class TextPaintService {
   final CanvasParagraph paragraph;
 
   void paint(BitmapCanvas canvas, ui.Offset offset) {
-    // Loop through all the lines, for each line, loop through all the boxes and
-    // paint them. The boxes have enough information so they can be painted
+    // Loop through all the lines, for each line, loop through all fragments and
+    // paint them. The fragment objects have enough information to be painted
     // individually.
     final List<ParagraphLine> lines = paragraph.lines;
 
-    if (lines.isEmpty) {
-      return;
-    }
-
     for (final ParagraphLine line in lines) {
-      final List<LayoutFragment> fragments = line.fragments;
-      if (fragments.isEmpty) {
-        continue;
-      }
-
-      for (int i = 0; i < fragments.length; i++) {
-        _paintBackground(canvas, offset, line, fragments[i]);
-        _paintText(canvas, offset, line, fragments[i]);
+      for (final LayoutFragment fragment in line.fragments) {
+        _paintBackground(canvas, offset, fragment);
+        _paintText(canvas, offset, line, fragment);
       }
     }
   }
@@ -43,7 +34,6 @@ class TextPaintService {
   void _paintBackground(
     BitmapCanvas canvas,
     ui.Offset offset,
-    ParagraphLine line,
     LayoutFragment fragment,
   ) {
     final ParagraphSpan span = fragment.span;
