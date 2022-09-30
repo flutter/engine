@@ -33,12 +33,11 @@ std::vector<std::wstring> GetPreferredLanguages() {
 
   // Determine where languages are defined and get buffer length
   if(RegGetValueA(HKEY_CURRENT_USER,
-      "Control panel\\International\\User Profile",
-      "Languages", RRF_RT_REG_MULTI_SZ, NULL,
-      NULL, &buffer_size) != S_OK) {
+                  "Control panel\\International\\User Profile", "Languages",
+                  RRF_RT_REG_MULTI_SZ, NULL, NULL, &buffer_size) != S_OK) {
     languages_from_registry = FALSE;
-    if (!::GetThreadPreferredUILanguages(flags, &count,
-        nullptr, &buffer_size)) {
+    if (!::GetThreadPreferredUILanguages(flags, &count, nullptr,
+                                         &buffer_size)) {
       return languages;
     }
   }
@@ -54,17 +53,15 @@ std::vector<std::wstring> GetPreferredLanguages() {
   if (languages_from_registry) {
     std::string str_buffer(buffer_size, '\0');
     if(RegGetValueA(HKEY_CURRENT_USER,
-        "Control panel\\International\\User Profile",
-        "Languages",
-        RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(),
-        &buffer_size) != S_OK) {
+                    "Control panel\\International\\User Profile", "Languages",
+                    RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(),
+                    &buffer_size) != S_OK) {
       return languages;
     }
     for (int i = 0; i < buffer_size; i++) {
       buffer[i] = str_buffer[i];
     }
-  }
-  else {
+  } else {
     if (!::GetThreadPreferredUILanguages(flags, &count, buffer.data(),
                                          &buffer_size)) {
       return languages;
