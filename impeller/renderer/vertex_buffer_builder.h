@@ -43,8 +43,6 @@ class VertexBufferBuilder {
 
   void Reserve(size_t count) { return vertices_.reserve(count); }
 
-  void ReserveIndices(size_t count) { return indices_.reserve(count); }
-
   bool HasVertices() const { return !vertices_.empty(); }
 
   size_t GetVertexCount() const { return vertices_.size(); }
@@ -54,24 +52,11 @@ class VertexBufferBuilder {
     return *this;
   }
 
-  VertexBufferBuilder& AppendIndex(IndexType_ index) {
-    indices_.emplace_back(index);
-    return *this;
-  }
-
   VertexBufferBuilder& AddVertices(
       std::initializer_list<VertexType_> vertices) {
     vertices_.reserve(vertices.size());
     for (auto& vertex : vertices) {
       vertices_.emplace_back(std::move(vertex));
-    }
-    return *this;
-  }
-
-  VertexBufferBuilder& AddIndices(std::initializer_list<IndexType_> indices) {
-    indices_.reserve(indices.size());
-    for (auto index : indices) {
-      indices_.emplace_back(index);
     }
     return *this;
   }
@@ -96,8 +81,9 @@ class VertexBufferBuilder {
   };
 
  private:
+  // This is a placeholder till vertex de-duplication can be implemented. The
+  // current implementation is a very dumb placeholder.
   std::vector<VertexType> vertices_;
-  std::vector<IndexType> indices_;
   std::string label_;
 
   BufferView CreateVertexBufferView(HostBuffer& buffer) const {
@@ -120,9 +106,8 @@ class VertexBufferBuilder {
   }
 
   std::vector<IndexType> CreateIndexBuffer() const {
-    if (indices_.size() != 0) {
-      return indices_;
-    }
+    // So dumb! We don't actually need an index buffer right now. But we will
+    // once de-duplication is done. So assume this is always done.
     std::vector<IndexType> index_buffer;
     for (size_t i = 0; i < vertices_.size(); i++) {
       index_buffer.push_back(i);
@@ -151,9 +136,7 @@ class VertexBufferBuilder {
     return buffer->AsBufferView();
   }
 
-  size_t GetIndexCount() const {
-    return indices_.size() == 0 ? vertices_.size() : indices_.size();
-  }
+  size_t GetIndexCount() const { return vertices_.size(); }
 };
 
 }  // namespace impeller
