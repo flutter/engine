@@ -121,12 +121,9 @@ bool ClipContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetClipPipeline(options);
 
   auto& host_buffer = pass.GetTransientsBuffer();
-  VertexBuffer vertex_buffer_out;
-  if (!CreateSolidFillVertices(renderer.GetTessellator(), path_, host_buffer,
-                               &vertex_buffer_out)) {
-    return false;
-  }
-  cmd.BindVertices(vertex_buffer_out);
+  auto vertex_buffer =
+      CreateSolidFillVertices(renderer.GetTessellator(), path_, host_buffer);
+  cmd.BindVertices(vertex_buffer);
 
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
              entity.GetTransformation();

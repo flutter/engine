@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/contents/solid_fill_utils.h"
-#include <iostream>
+
 #include "impeller/geometry/path.h"
 #include "impeller/renderer/device_buffer.h"
 #include "impeller/renderer/host_buffer.h"
@@ -11,23 +11,28 @@
 
 namespace impeller {
 
-bool CreateSolidFillVertices(std::shared_ptr<Tessellator> tessellator,
-                             const Path& path,
-                             HostBuffer& buffer,
-                             VertexBuffer* out_buffer) {
+VertexBuffer CreateSolidFillVertices(std::shared_ptr<Tessellator> tessellator,
+                                     const Path& path,
+                                     HostBuffer& buffer) {
+  VertexBuffer vertex_buffer;
+  VertexBuffer* vertex_buffer_out = &vertex_buffer;
   auto tesselation_result = tessellator->TessellateBuilder(
       path.GetFillType(), path.CreatePolyline(),
-      [&out_buffer, &buffer](const float* vertices, size_t vertices_count,
-                             const uint16_t* indices, size_t indices_count) {
-        out_buffer->vertex_buffer = buffer.Emplace(
+      [&vertex_buffer_out, &buffer](
+          const float* vertices, size_t vertices_count, const uint16_t* indices,
+          size_t indices_count) {
+        vertex_buffer_out->vertex_buffer = buffer.Emplace(
             vertices, vertices_count * sizeof(float), alignof(float));
-        out_buffer->index_buffer = buffer.Emplace(
+        vertex_buffer_out->index_buffer = buffer.Emplace(
             indices, indices_count * sizeof(uint16_t), alignof(uint16_t));
-        out_buffer->index_count = indices_count;
-        out_buffer->index_type = IndexType::k16bit;
+        vertex_buffer_out->index_count = indices_count;
+        vertex_buffer_out->index_type = IndexType::k16bit;
         return true;
       });
-  return tesselation_result == Tessellator::Result::kSuccess;
+  if (tesselation_result != Tessellator::Result::kSuccess) {
+    return {};
+  }
+  return vertex_buffer;
 }
 
 }  // namespace impeller

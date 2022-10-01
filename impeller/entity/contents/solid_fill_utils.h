@@ -22,9 +22,8 @@ class HostBuffer;
  * @return true       Tessellation was successful.
  * @return false      Tessellation failed.
  */
-bool CreateSolidFillVertices(std::shared_ptr<Tessellator> tessellator,
-                             const Path& path,
-                             HostBuffer& buffer,
-                             VertexBuffer* out_buffer);
+VertexBuffer CreateSolidFillVertices(std::shared_ptr<Tessellator> tessellator,
+                                     const Path& path,
+                                     HostBuffer& buffer);
 
 }  // namespace impeller
