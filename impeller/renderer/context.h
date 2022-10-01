@@ -16,6 +16,7 @@ class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 class Allocator;
+class FrameCaptor;
 class WorkQueue;
 
 class Context : public std::enable_shared_from_this<Context> {
@@ -38,6 +39,11 @@ class Context : public std::enable_shared_from_this<Context> {
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
   virtual std::shared_ptr<WorkQueue> GetWorkQueue() const = 0;
+
+  //----------------------------------------------------------------------------
+  /// @return A frame captor for offline frame analysis during development.
+  ///
+  virtual std::shared_ptr<FrameCaptor> GetFrameCaptor() const = 0;
 
   virtual bool HasThreadingRestrictions() const;
 

@@ -82,6 +82,12 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
+  // Setup the frame captor
+  {
+    frame_captor_ =
+        std::shared_ptr<FrameCaptorMTL>(new FrameCaptorMTL(device_));
+  }
+
   is_valid_ = true;
 }
 
@@ -208,6 +214,10 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
 // |Context|
 std::shared_ptr<WorkQueue> ContextMTL::GetWorkQueue() const {
   return work_queue_;
+}
+
+std::shared_ptr<FrameCaptor> ContextMTL::GetFrameCaptor() const {
+  return frame_captor_;
 }
 
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
