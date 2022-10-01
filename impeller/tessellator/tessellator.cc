@@ -193,7 +193,7 @@ Tessellator::Result Tessellator::TessellateBuilder(
     indices.emplace_back((uint16_t)elements[i]);
   }
   if (!callback(vertices, vertexItemCount, indices.data(), elementItemCount)) {
-    return Result::kTessellationError;
+    return Result::kInputError;
   }
 
   return Result::kSuccess;
