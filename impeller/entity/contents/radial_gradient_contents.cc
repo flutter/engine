@@ -76,7 +76,6 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetRadialGradientFillPipeline(
       OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
-
   cmd.BindVertices(CreateSolidFillVertices(
       renderer.GetTessellator(),
       GetCover()
