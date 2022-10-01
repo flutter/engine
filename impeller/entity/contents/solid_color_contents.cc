@@ -62,14 +62,12 @@ bool SolidColorContents::Render(const ContentContext& renderer,
       renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto vertex_buffer = CreateSolidFillVertices(
+  cmd.BindVertices(CreateSolidFillVertices(
       renderer.GetTessellator(),
       cover_
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : path_,
-      host_buffer);
-  cmd.BindVertices(vertex_buffer);
+      pass.GetTransientsBuffer()));
 
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

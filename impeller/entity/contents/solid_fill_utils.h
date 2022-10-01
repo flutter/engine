@@ -12,15 +12,14 @@ class Path;
 class HostBuffer;
 
 /**
- * @brief Populate VertexBuffer with solid fill vertices created by tessellating
- * an input path.
+ * @brief Populate a VertexBuffer with solid fill vertices created by
+ * tessellating an input path.
  *
- * @param tessellator The tessellator
- * @param path        The path to be tessellated
- * @param buffer      The transient buffer
- * @param out_buffer  The populated vertex buffer
- * @return true       Tessellation was successful.
- * @return false      Tessellation failed.
+ * @param tessellator    The tessellator
+ * @param path           The path to be tessellated
+ * @param buffer         The transient buffer
+ * @return VertexBuffer  A populated vertex buffer if successful, otherwise
+ * empty.
  */
 VertexBuffer CreateSolidFillVertices(std::shared_ptr<Tessellator> tessellator,
                                      const Path& path,

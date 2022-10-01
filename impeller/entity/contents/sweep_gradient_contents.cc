@@ -83,15 +83,12 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetSweepGradientFillPipeline(
       OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
-
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto vertex_buffer = CreateSolidFillVertices(
+  cmd.BindVertices(CreateSolidFillVertices(
       renderer.GetTessellator(),
       GetCover()
           ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
           : GetPath(),
-      host_buffer);
-  cmd.BindVertices(vertex_buffer);
+      pass.GetTransientsBuffer()));
   cmd.primitive_type = PrimitiveType::kTriangle;
   FS::BindGradientInfo(
       cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
