@@ -58,7 +58,7 @@ std::shared_ptr<IOSContext> IOSSurface::GetContext() const {
   return ios_context_;
 }
 
-bool IOSSurface::StartCapturingFrames() const {
+bool IOSSurface::StartCapturingFrames(bool saveLocally) const {
   return false;
 }
 

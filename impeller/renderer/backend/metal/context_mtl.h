@@ -72,7 +72,7 @@ class ContextMTL final : public Context,
   bool SupportsOffscreenMSAA() const override;
 
   // |Context|
-  bool StartCapturingFrames() const override;
+  bool StartCapturingFrames(bool saveLocally) const override;
 
   // |Context|
   bool StopCapturingFrames() const override;

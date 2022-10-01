@@ -42,11 +42,11 @@ std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectConte
 }
 
 // |IOSSurface|
-bool IOSSurfaceMetalImpeller::StartCapturingFrames() const {
+bool IOSSurfaceMetalImpeller::StartCapturingFrames(bool saveLocally) const {
   if (!IsValid()) {
     return false;
   }
-  return impeller_context_->StartCapturingFrames();
+  return impeller_context_->StartCapturingFrames(saveLocally);
 }
 
 // |IOSSurface|

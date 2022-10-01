@@ -42,14 +42,19 @@ class IOSSurface {
   // If a GrDirectContext is supplied, creates a secondary surface.
   virtual std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) = 0;
 
-  // Programmatically invoke frame captures.
+  // Programmatically invoke metal frame captures on iOS devices.
   // This method will start capturing frames during rendering.
   // See |IOSSurface::StopCapturingFrames| to stop capturing
-  // frames. This method should only be called when debugging
-  // for frame analysis.
+  // frames. This method can be used for debugging and offline
+  // frame analysis.
+  //
+  // On iOS 13 and above version, if saveLocally is true, a .gputrace file
+  // will be saved locally on device.
+  // Under the iOS 13, or saveLocally is false, Xcode will open automatically to
+  // show the trace result when capture finishes.
   //
   // @return The operation is success or not.
-  virtual bool StartCapturingFrames() const;
+  virtual bool StartCapturingFrames(bool saveLocally) const;
 
   // This method will stop capturing rendering frames.
   // See |IOSSurface::StartCapturingFrames| to start capturing
