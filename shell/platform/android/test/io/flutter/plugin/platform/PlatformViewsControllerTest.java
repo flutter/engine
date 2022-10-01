@@ -460,7 +460,8 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
+  @Config(
+      shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
   public void onDetachedFromJNI_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -491,7 +492,8 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
+  @Config(
+      shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
   public void onPreEngineRestart_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -1380,9 +1382,9 @@ public class PlatformViewsControllerTest {
 
   /**
    * The shadow class of {@link Presentation} to simulate Presentation showing logic.
-   * 
-   * <p> Robolectric doesn't support VirtualDisplay creating correctly now, so this shadow
-   * class is used to simulate custom logic for Presentation.
+   *
+   * <p>Robolectric doesn't support VirtualDisplay creating correctly now, so this shadow class is
+   * used to simulate custom logic for Presentation.
    */
   @Implements(Presentation.class)
   public static class ShadowPresentation extends ShadowDialog {
@@ -1392,7 +1394,7 @@ public class PlatformViewsControllerTest {
 
     @Implementation
     protected void show() {
-      isShowing = true;  
+      isShowing = true;
     }
 
     @Implementation
