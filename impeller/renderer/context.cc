@@ -14,7 +14,7 @@ bool Context::HasThreadingRestrictions() const {
   return false;
 }
 
-bool Context::StartCapturingFrames(bool saveLocally) const {
+bool Context::StartCapturingFrames() const {
   return false;
 }
 

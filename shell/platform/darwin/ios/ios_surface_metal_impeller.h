@@ -42,7 +42,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalImpeller final
   std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context) override;
 
   // |IOSSurface|
-  bool StartCapturingFrames(bool saveLocally) const override;
+  bool StartCapturingFrames() const override;
 
   // |IOSSurface|
   bool StopCapturingFrames() const override;

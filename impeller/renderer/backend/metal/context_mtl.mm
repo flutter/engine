@@ -238,7 +238,7 @@ bool ContextMTL::SupportsOffscreenMSAA() const {
 }
 
 // |Context|
-bool ContextMTL::StartCapturingFrames(bool saveLocally) const {
+bool ContextMTL::StartCapturingFrames() const {
   if (!device_ || !command_queue_) {
     return false;
   }
