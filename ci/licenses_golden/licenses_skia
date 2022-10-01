@@ -1,4 +1,4 @@
-Signature: 6223c06bd44adb11ddbf678e0b02c26e
+Signature: 39a8ccc7ab30ca17defe0d0a74420d23
 
 UNUSED LICENSES:
 
@@ -1255,14 +1255,23 @@ FILE: ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_vert.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_vert.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_shared.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_shared.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.minified.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.unoptimized.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
@@ -5552,10 +5561,13 @@ FILE: ../../../third_party/skia/src/gpu/graphite/text/AtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/text/AtlasManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCaps.h
+FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCommandBuffer.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCommandBuffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanSharedContext.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanSharedContext.h
+FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanUtils.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/LinearTolerances.h
@@ -6553,6 +6565,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputeCommandEncoder.h
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_hmtx.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLLiteral.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h
 FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
 FILE: ../../../third_party/skia/src/utils/SkBlitterTraceCommon.h

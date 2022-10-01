@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "solid_color_contents.h"
+#include <iostream>
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/solid_fill_utils.h"
@@ -62,11 +63,18 @@ bool SolidColorContents::Render(const ContentContext& renderer,
       renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  cmd.BindVertices(CreateSolidFillVertices<VS::PerVertexData>(
-      cover_
-          ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
-          : path_,
-      pass.GetTransientsBuffer()));
+  auto& host_buffer = pass.GetTransientsBuffer();
+  VertexBuffer vertex_buffer_out;
+  if (!CreateSolidFillVertices(
+          renderer.GetTessellator(),
+          cover_ ? PathBuilder{}
+                       .AddRect(Size(pass.GetRenderTargetSize()))
+                       .TakePath()
+                 : path_,
+          host_buffer, &vertex_buffer_out)) {
+    return false;
+  }
+  cmd.BindVertices(vertex_buffer_out);
 
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
