@@ -340,9 +340,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaLine = 0x01;
     const int domDeltaPage = 0x02;
 
-    // Logic from https://stackoverflow.com/a/62415754
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
     if (event.deltaX % 120 != 0 || event.deltaY % 120 != 0) {
+      // While not standardized, all major browsers use a delta of 120 to
+      // represent one mouse wheel turn. If either dimension of the delta
+      // is not divisible by 120, this event must not be from a mouse wheel.
       kind = ui.PointerDeviceKind.trackpad;
     }
 
