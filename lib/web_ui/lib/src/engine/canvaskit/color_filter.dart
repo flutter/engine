@@ -81,8 +81,27 @@ class CkBlendModeColorFilter extends CkColorFilter {
   final ui.Color color;
   final ui.BlendMode blendMode;
 
+  Float32List get _identityMatrix {
+    final Float32List result = Float32List(20);
+    const List<int> translationIndices = <int>[0, 6, 12, 18];
+    for (int i = 0; i < 20; i++) {
+      if (translationIndices.contains(i)) {
+        result[i] = 1;
+      } else {
+        result[i] = 0;
+      }
+    }
+    return result;
+  }
+
   @override
   SkColorFilter _initRawColorFilter() {
+
+    /// Return the identity matrix when the color opacity is 0. Mimics behavior
+    /// of a color filter with an "invisible" color 
+    if (color.opacity == 0) {
+      return canvasKit.ColorFilter.MakeMatrix(_identityMatrix);
+    }
     final SkColorFilter? filter = canvasKit.ColorFilter.MakeBlend(
       toSharedSkColor1(color),
       toSkBlendMode(blendMode),
