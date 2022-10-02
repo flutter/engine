@@ -11,6 +11,7 @@
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -43,7 +44,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestination:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -55,7 +56,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestinationOver:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
@@ -142,7 +143,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 }
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
-    : context_(std::move(context)) {
+    : context_(std::move(context)),
+      tessellator_(std::make_shared<Tessellator>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -283,6 +285,10 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   }
 
   return subpass_texture;
+}
+
+std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
+  return tessellator_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {
