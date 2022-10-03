@@ -81,7 +81,7 @@ class CkBlendModeColorFilter extends CkColorFilter {
   final ui.Color color;
   final ui.BlendMode blendMode;
 
-  Float32List get _identityMatrix {
+  static Float32List get _identityMatrix {
     final Float32List result = Float32List(20);
     const List<int> translationIndices = <int>[0, 6, 12, 18];
     for (int i = 0; i < 20; i++) {
