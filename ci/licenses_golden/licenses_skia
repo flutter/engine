@@ -1,4 +1,4 @@
-Signature: 8d8d94d17bb901f28a94c37e5f3293c8
+Signature: f4f07193fdd081ae7feb48d1504e4b8c
 
 UNUSED LICENSES:
 
@@ -1969,8 +1969,6 @@ FILE: ../../../third_party/skia/samplecode/SamplePathOverstroke.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSVGFile.cpp
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.cpp
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.h
-FILE: ../../../third_party/skia/src/codec/SkStreamBuffer.cpp
-FILE: ../../../third_party/skia/src/codec/SkStreamBuffer.h
 FILE: ../../../third_party/skia/src/core/SkATrace.cpp
 FILE: ../../../third_party/skia/src/core/SkATrace.h
 FILE: ../../../third_party/skia/src/core/SkAnnotationKeys.h
@@ -2643,6 +2641,7 @@ FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateDeadGlobalVariab
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateDeadLocalVariables.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateUnreachableCode.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLProgramWriter.h
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLReplaceConstVarsWithLiterals.cpp
 FILE: ../../../third_party/skia/src/text/gpu/Slug.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SubRunAllocator.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SubRunAllocator.h
