@@ -96,9 +96,8 @@ class CkBlendModeColorFilter extends CkColorFilter {
 
   @override
   SkColorFilter _initRawColorFilter() {
-
-    /// Return the identity matrix when the color opacity is 0. Mimics behavior
-    /// of a color filter with an "invisible" color 
+    /// Return the identity matrix when the color opacity is 0. Replicates
+    /// effect of applying no filter
     if (color.opacity == 0) {
       return canvasKit.ColorFilter.MakeMatrix(_identityMatrix);
     }

@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
@@ -104,6 +105,15 @@ class _CkBlurImageFilter extends CkImageFilter {
 
   @override
   SkImageFilter _initSkiaObject() {
+    /// Return the identity matrix when both sigmaX and sigmaY are 0. Replicates
+    /// effect of applying no filter
+    if (sigmaX == 0 && sigmaY == 0) {
+      return canvasKit.ImageFilter.MakeMatrixTransform(
+        toSkMatrixFromFloat64(Matrix4.identity().toFloat64()),
+        toSkFilterOptions(ui.FilterQuality.none),
+        null
+        );
+      }
     return canvasKit.ImageFilter.MakeBlur(
       sigmaX,
       sigmaY,
