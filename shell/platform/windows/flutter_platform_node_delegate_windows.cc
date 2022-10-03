@@ -14,8 +14,8 @@ namespace flutter {
 
 FlutterPlatformNodeDelegateWindows::FlutterPlatformNodeDelegateWindows(
     FlutterWindowsView* view,
-    AccessibilityBridge* bridge)
-    : view_(view) {}
+    std::weak_ptr<AccessibilityBridge> bridge)
+    : view_(view), bridge_(bridge) {}
 
 FlutterPlatformNodeDelegateWindows::~FlutterPlatformNodeDelegateWindows() {
   if (ax_platform_node_) {
@@ -52,10 +52,14 @@ gfx::NativeViewAccessible FlutterPlatformNodeDelegateWindows::HitTestSync(
   }
 
   // If any child in this node's subtree contains the point, return that child.
+  auto bridge = bridge_.lock();
+  if (!bridge) {
+    return nullptr;
+  }
   for (const ui::AXNode* child : GetAXNode()->children()) {
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
         std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
-            bridge_->GetFlutterPlatformNodeDelegateFromID(child->id()).lock());
+            bridge->GetFlutterPlatformNodeDelegateFromID(child->id()).lock());
     assert(win_delegate);
     auto hit_view = win_delegate->HitTestSync(screen_physical_pixel_x,
                                               screen_physical_pixel_y);

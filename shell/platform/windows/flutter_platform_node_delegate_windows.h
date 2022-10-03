@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_PLATFORM_NODE_DELEGATE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_PLATFORM_NODE_DELEGATE_H_
 
+#include <memory>
+
 #include "flutter/shell/platform/common/flutter_platform_node_delegate.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node.h"
@@ -53,6 +55,7 @@ class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
  private:
   ui::AXPlatformNode* ax_platform_node_;
   FlutterWindowsView* view_;
+  std::weak_ptr<AccessibilityBridge> bridge_;
 };
 
 }  // namespace flutter

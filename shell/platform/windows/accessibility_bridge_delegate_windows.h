@@ -25,6 +25,7 @@ class AccessibilityBridgeDelegateWindows
     : public AccessibilityBridge::AccessibilityBridgeDelegate {
  public:
   AccessibilityBridgeDelegateWindows(FlutterWindowsEngine* engine,
+                                     FlutterWindowsView* view,
                                      std::weak_ptr<AccessibilityBridge> bridge);
   virtual ~AccessibilityBridgeDelegateWindows() = default;
 
