@@ -14,7 +14,7 @@
 
 // Registry key for user-preferred languages.
 constexpr const wchar_t kGetPreferredLanguageRegKey[] =
-  L"Control panel\\International\\User Profile";
+    L"Control panel\\International\\User Profile";
 constexpr const wchar_t kGetPreferredLanguageRegValue[] = L"Languages";
 
 namespace flutter {
