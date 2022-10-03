@@ -33,8 +33,8 @@ std::vector<std::wstring> GetPreferredLanguages(
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
 
   // Determine where languages are defined and get buffer length
-  if (registry.GetRegistryValue(HKEY_CURRENT_USER, WIN_REG_I18N_PROFILE,
-                                WIN_REG_LANGUAGES, RRF_RT_REG_MULTI_SZ, NULL,
+  if (registry.GetRegistryValue(HKEY_CURRENT_USER, kGetPreferredLanguageRegKey,
+                                kGetPreferredLanguageRegValue, RRF_RT_REG_MULTI_SZ, NULL,
                                 NULL, &buffer_size) != ERROR_SUCCESS) {
     languages_from_registry = FALSE;
     if (!::GetThreadPreferredUILanguages(flags, &count, nullptr,
@@ -55,8 +55,8 @@ std::vector<std::wstring> GetPreferredLanguages(
   // Initialize the buffer
   std::wstring buffer(buffer_size, '\0');
   if (languages_from_registry) {
-    if (registry.GetRegistryValue(HKEY_CURRENT_USER, WIN_REG_I18N_PROFILE,
-                                  WIN_REG_LANGUAGES, RRF_RT_REG_MULTI_SZ, NULL,
+    if (registry.GetRegistryValue(HKEY_CURRENT_USER, kGetPreferredLanguageRegKey,
+                                  kGetPreferredLanguageRegValue, RRF_RT_REG_MULTI_SZ, NULL,
                                   buffer.data(),
                                   &buffer_size) != ERROR_SUCCESS) {
       return languages;
