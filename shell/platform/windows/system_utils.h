@@ -12,6 +12,9 @@
 
 #include "flutter/shell/platform/windows/windows_registry.h"
 
+#define WIN_REG_I18N_PROFILE L"Control panel\\International\\User Profile"
+#define WIN_REG_LANGUAGES L"Languages"
+
 namespace flutter {
 
 // Components of a system language/locale.
