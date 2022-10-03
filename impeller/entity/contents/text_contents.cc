@@ -108,13 +108,13 @@ static bool CommonRender(const ContentContext& renderer,
   for (const auto& run : frame.GetRuns()) {
     count += run.GetGlyphPositions().size();
   }
-  
+
   vertex_builder.Reserve(count * 4);
   vertex_builder.ReserveIndices(count * 6);
 
   uint32_t offset = 0u;
   for (auto i = 0u; i < count; i++) {
-    for (const auto& index: indices) {
+    for (const auto& index : indices) {
       vertex_builder.AppendIndex(index + offset);
     }
     offset += 4;
