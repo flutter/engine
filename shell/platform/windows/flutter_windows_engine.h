@@ -239,9 +239,6 @@ class FlutterWindowsEngine {
   // Updates accessibility, e.g. switch to high contrast mode
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
-  // Allow setting the Windows Registry
-  void SetWindowsRegistry(const WindowsRegistry& windows_registry);
-
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;

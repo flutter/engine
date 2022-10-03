@@ -6,6 +6,8 @@
 
 namespace flutter {
 
+WindowsRegistry::WindowsRegistry() {}
+
 LSTATUS WindowsRegistry::GetRegistryValue(HKEY hkey,
                                           LPCWSTR key,
                                           LPCWSTR value,

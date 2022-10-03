@@ -58,7 +58,8 @@ TEST(SystemUtils, GetPreferredLanguages) {
   EXPECT_EQ(languages[0].size(), wcslen(languages[0].c_str()));
 
   // Test mock results
-  languages = GetPreferredLanguages(MockWindowsRegistry());
+  MockWindowsRegistry mock_registry;
+  languages = GetPreferredLanguages(mock_registry);
   ASSERT_EQ(languages.size(), 5);
   ASSERT_EQ(languages[0], std::wstring(L"en-US"));
   ASSERT_EQ(languages[1], std::wstring(L"zh-Hans-CN"));

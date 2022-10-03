@@ -7,13 +7,13 @@
 
 #include <Windows.h>
 
-#include <string>
-#include <vector>
+#include "flutter/fml/macros.h"
 
 namespace flutter {
 
 class WindowsRegistry {
  public:
+  explicit WindowsRegistry();
   virtual ~WindowsRegistry();
 
   virtual LSTATUS GetRegistryValue(HKEY hkey,
@@ -25,6 +25,7 @@ class WindowsRegistry {
                                    LPDWORD sizeData) const;
 
  private:
+  FML_DISALLOW_COPY_AND_ASSIGN(WindowsRegistry);
 };
 
 }  // namespace flutter

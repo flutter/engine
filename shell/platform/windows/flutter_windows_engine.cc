@@ -658,9 +658,4 @@ int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
   return flags;
 }
 
-void FlutterWindowsEngine::SetWindowsRegistry(
-    const WindowsRegistry& windows_registry) {
-  windows_registry_ = std::make_unique<WindowsRegistry>(windows_registry);
-}
-
 }  // namespace flutter
