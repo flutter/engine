@@ -187,10 +187,9 @@ Tessellator::Result Tessellator::TessellateBuilder(
   auto elements = tessGetElements(tessellator);
   // libtess uses an int index internally due to usage of -1 as a sentinel
   // value.
-  std::vector<uint16_t> indices;
-  indices.reserve(elementItemCount);
+  std::vector<uint16_t> indices(elementItemCount);
   for (int i = 0; i < elementItemCount; i++) {
-    indices.emplace_back((uint16_t)elements[i]);
+    indices[i] = static_cast<uint16_t>(elements[i]);
   }
   if (!callback(vertices, vertexItemCount, indices.data(), elementItemCount)) {
     return Result::kInputError;
