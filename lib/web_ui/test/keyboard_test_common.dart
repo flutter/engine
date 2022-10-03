@@ -28,7 +28,9 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
           if (shiftKey) 'Shift',
           if (metaKey) 'Meta',
           if (altGrKey) 'AltGraph',
-        };
+        } {
+    _lastEvent = this;
+  }
 
   @override
   String type;
@@ -77,4 +79,7 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
   @override
   bool get defaultPrevented => _defaultPrevented;
   bool _defaultPrevented = false;
+
+  static bool get lastDefaultPrevented => _lastEvent?.defaultPrevented ?? false;
+  static MockKeyboardEvent? _lastEvent;
 }

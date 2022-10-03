@@ -86,10 +86,8 @@ void testMain() {
       // Only handle down events
       return key.type == ui.KeyEventType.down;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('KeyA', 'a')..timeStamp = 1;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 1);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1),
       type: ui.KeyEventType.down,
@@ -97,10 +95,9 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
-    event = keyRepeatedDownEvent('KeyA', 'a')..timeStamp = 1.5;
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')..timeStamp = 1.5);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1, microseconds: 500),
       type: ui.KeyEventType.repeat,
@@ -108,10 +105,9 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    event = keyRepeatedDownEvent('KeyA', 'a')..timeStamp = 1500;
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')..timeStamp = 1500);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(seconds: 1, milliseconds: 500),
       type: ui.KeyEventType.repeat,
@@ -119,10 +115,9 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    event = keyUpEvent('KeyA', 'a')..timeStamp = 2000.5;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2000.5);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(seconds: 2, microseconds: 500),
       type: ui.KeyEventType.up,
@@ -130,7 +125,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: null,
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
   });
 
   test('Release modifier during a repeated sequence', () {
@@ -140,77 +135,69 @@ void testMain() {
       // Only handle down events
       return key.type == ui.KeyEventType.down;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
-    event = keyDownEvent('KeyA', 'A', kShift);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'A',
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
-    event = keyRepeatedDownEvent('KeyA', 'A', kShift);
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'A',
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    event = keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    event = keyRepeatedDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    event = keyRepeatedDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    event = keyUpEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
     );
-    expect(event.defaultPrevented, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
   });
 
   test('Distinguish between left and right modifiers', () {
@@ -219,10 +206,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
@@ -230,8 +215,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftRight,
@@ -239,8 +223,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
@@ -248,8 +231,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalShiftRight,
@@ -264,10 +246,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('', 'Shift', kShift);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalEmptyCode,
@@ -275,8 +255,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('', 'Shift', kShift);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalEmptyCode,
@@ -284,8 +263,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('', 'Control', kCtrl);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('', 'Control', kCtrl));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalEmptyCode,
@@ -293,8 +271,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('', 'Control', kCtrl);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('', 'Control', kCtrl));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalEmptyCode,
@@ -302,8 +279,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('', 'Alt', kAlt);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('', 'Alt', kAlt));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalEmptyCode,
@@ -311,8 +287,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('', 'Alt', kAlt);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('', 'Alt', kAlt));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalEmptyCode,
@@ -320,8 +295,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('', 'Meta', kMeta);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('', 'Meta', kMeta));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalEmptyCode,
@@ -329,8 +303,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('', 'Meta', kMeta);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('', 'Meta', kMeta));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalEmptyCode,
@@ -345,10 +318,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('Digit1', '1');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('Digit1', '1'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalDigit1,
@@ -356,8 +327,7 @@ void testMain() {
       character: '1',
     );
 
-    event = keyDownEvent('Numpad1', '1', 0, kLocationNumpad);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('Numpad1', '1', 0, kLocationNumpad));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalNumpad1,
@@ -365,8 +335,7 @@ void testMain() {
       character: '1',
     );
 
-    event = keyUpEvent('Digit1', '1');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('Digit1', '1'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalDigit1,
@@ -374,8 +343,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('Numpad1', '1', 0, kLocationNumpad);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('Numpad1', '1', 0, kLocationNumpad));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalNumpad1,
@@ -390,7 +358,6 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
     // The absolute values of the following logical keys are not guaranteed.
     const int kLogicalAltE = 0x1740070008;
@@ -400,11 +367,9 @@ void testMain() {
     expect(kLogicalAltE, isNot(equals(kLogicalAltU)));
     expect(kLogicalAltE, isNot(equals(kLogicalAltShiftE)));
 
-    event = keyDownEvent('AltLeft', 'Alt', kAlt, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('AltLeft', 'Alt', kAlt, kLocationLeft));
 
-    event = keyDownEvent('KeyE', 'Dead', kAlt);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyE,
@@ -412,8 +377,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('KeyE', 'Dead', kAlt);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyE,
@@ -421,8 +385,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('KeyU', 'Dead', kAlt);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyU', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyU,
@@ -430,8 +393,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('KeyU', 'Dead', kAlt);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyU', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyU,
@@ -439,13 +401,11 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('ShiftLeft', 'Shift', kAlt | kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kAlt | kShift, kLocationLeft));
 
     // This does not actually produce a Dead key on macOS (US layout); just for
     // testing.
-    event = keyDownEvent('KeyE', 'Dead', kAlt | kShift);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt | kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyE,
@@ -453,11 +413,9 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('AltLeft', 'Alt', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('AltLeft', 'Alt', kShift, kLocationLeft));
 
-    event = keyUpEvent('KeyE', 'e', kShift);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyE', 'e', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyE,
@@ -465,8 +423,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
   });
 
   test('Duplicate down is preceded with synthesized up', () {
@@ -475,16 +432,13 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
-    expect(event.defaultPrevented, isTrue);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     // A KeyUp of ShiftLeft is missed.
 
     keyDataList.clear();
-    event = keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expect(keyDataList, hasLength(2));
     expectKeyData(keyDataList.first,
       type: ui.KeyEventType.up,
@@ -499,11 +453,10 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
     keyDataList.clear();
-    event = keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
@@ -511,7 +464,7 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
   });
 
   test('Duplicate ups are skipped', () {
@@ -520,15 +473,13 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
-    event = keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight));
     expect(keyDataList, hasLength(1));
     expect(keyDataList[0].physical, 0);
     expect(keyDataList[0].logical, 0);
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
   });
 
   test('Conflict from multiple keyboards do not crash', () {
@@ -537,32 +488,22 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
     // Same layout
-    event = keyDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
-    event = keyDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
-    event = keyUpEvent('KeyA', 'a');
-    converter.handleEvent(event);
-    event = keyUpEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
 
     // Different layout
-    event = keyDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
-    event = keyDownEvent('KeyA', 'u');
-    converter.handleEvent(event);
-    event = keyUpEvent('KeyA', 'u');
-    converter.handleEvent(event);
-    event = keyUpEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    converter.handleEvent(keyDownEvent('KeyA', 'u'));
+    converter.handleEvent(keyUpEvent('KeyA', 'u'));
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
 
     // Passes if there's no crash, and states are reset after everything is released.
     keyDataList.clear();
-    event = keyDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
@@ -570,8 +511,7 @@ void testMain() {
       character: 'a',
     );
 
-    event = keyDownEvent('KeyU', 'u');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyU', 'u'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyU,
@@ -586,11 +526,9 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }, onMacOs: true);
-    MockKeyboardEvent event;
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
-    event = keyDownEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
@@ -598,7 +536,7 @@ void testMain() {
       logical: kLogicalCapsLock,
       character: null,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     keyDataList.clear();
 
     async.elapse(const Duration(microseconds: 1));
@@ -610,11 +548,10 @@ void testMain() {
       character: null,
       synthesized: true,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     keyDataList.clear();
 
-    event = keyUpEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
@@ -622,7 +559,7 @@ void testMain() {
       logical: kLogicalCapsLock,
       character: null,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     keyDataList.clear();
 
     async.elapse(const Duration(microseconds: 1));
@@ -634,12 +571,11 @@ void testMain() {
       character: null,
       synthesized: true,
     );
-    expect(event.defaultPrevented, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     keyDataList.clear();
 
     // Another key down works
-    event = keyDownEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
@@ -662,10 +598,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }); // onMacOs: false
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
@@ -678,8 +612,7 @@ void testMain() {
     async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
-    event = keyUpEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
@@ -692,8 +625,7 @@ void testMain() {
     async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
-    event = keyDownEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalCapsLock,
@@ -701,8 +633,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('CapsLock', 'CapsLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalCapsLock,
@@ -717,14 +648,11 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }, onMacOs: true);
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
       type: ui.KeyEventType.down,
@@ -747,8 +675,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    event = keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2700),
       type: ui.KeyEventType.up,
@@ -759,8 +686,7 @@ void testMain() {
     async.elapse(const Duration(milliseconds: 100));
 
     // Key A states are cleared
-    event = keyDownEvent('KeyA', 'a')..timeStamp = 2800;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2800),
       type: ui.KeyEventType.down,
@@ -770,8 +696,7 @@ void testMain() {
     );
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyUpEvent('KeyA', 'a')..timeStamp = 2900;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2900),
       type: ui.KeyEventType.up,
@@ -787,24 +712,18 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }, onMacOs: true);
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
     async.elapse(const Duration(milliseconds: 400));
 
-    event = keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 600;
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 600);
     async.elapse(const Duration(milliseconds: 50));
-    event = keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 650;
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 650);
     async.elapse(const Duration(milliseconds: 50));
-    event = keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700;
-    converter.handleEvent(event);
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700);
 
     // Keyup of KeyA is omitted due to being a shortcut.
 
@@ -819,8 +738,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    event = keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 3200;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 3200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3200),
       type: ui.KeyEventType.up,
@@ -831,8 +749,7 @@ void testMain() {
     async.elapse(const Duration(milliseconds: 100));
 
     // Key A states are cleared
-    event = keyDownEvent('KeyA', 'a')..timeStamp = 3300;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 3300);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3300),
       type: ui.KeyEventType.down,
@@ -842,8 +759,7 @@ void testMain() {
     );
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyUpEvent('KeyA', 'a')..timeStamp = 3400;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 3400);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3400),
       type: ui.KeyEventType.up,
@@ -859,14 +775,11 @@ void testMain() {
       keyDataList.add(key);
       return true;
     });
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 200;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
       type: ui.KeyEventType.down,
@@ -877,12 +790,10 @@ void testMain() {
     keyDataList.clear();
     async.elapse(const Duration(milliseconds: 500));
 
-    event = keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 700;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 700);
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyUpEvent('KeyA', 'a')..timeStamp = 800;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 800);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 800),
       type: ui.KeyEventType.up,
@@ -895,8 +806,7 @@ void testMain() {
     expect(keyDataList, isEmpty);
 
     // Key A states are cleared
-    event = keyDownEvent('KeyA', 'a')..timeStamp = 2800;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2800),
       type: ui.KeyEventType.down,
@@ -906,8 +816,7 @@ void testMain() {
     );
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyUpEvent('KeyA', 'a')..timeStamp = 2900;
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2900),
       type: ui.KeyEventType.up,
@@ -923,14 +832,11 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }); // onMacOs: false
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
 
-    event = keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200;
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
       type: ui.KeyEventType.down,
@@ -950,10 +856,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }); // onMacOs: false
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('ScrollLock', 'ScrollLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
@@ -966,8 +870,7 @@ void testMain() {
     async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
-    event = keyUpEvent('ScrollLock', 'ScrollLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
@@ -977,8 +880,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    event = keyDownEvent('ScrollLock', 'ScrollLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalScrollLock,
@@ -986,8 +888,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyUpEvent('ScrollLock', 'ScrollLock');
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalScrollLock,
@@ -1002,10 +903,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }); // onMacOs: false
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftRight,
@@ -1013,8 +912,7 @@ void testMain() {
       character: null,
     );
 
-    event = keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
@@ -1025,8 +923,7 @@ void testMain() {
 
     // The release of the shift keys are omitted
 
-    event = keyDownEvent('KeyA', 'a');
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
     expect(keyDataList, hasLength(3));
     expectKeyData(keyDataList[0],
       type: ui.KeyEventType.up,
@@ -1062,10 +959,8 @@ void testMain() {
       keyDataList.add(key);
       return true;
     }); // onMacOs: false
-    MockKeyboardEvent event;
 
-    event = keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
@@ -1074,8 +969,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    event = keyDownEvent('MetaLeft', 'Meta', kShift /* No kMeta here! */, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kShift /* No kMeta here! */, kLocationLeft));
     // Only a MetaLeft down event, no synthesized MetaLeft up events.
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.first,
@@ -1086,8 +980,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    event = keyUpEvent('MetaLeft', 'Meta', kShift | kMeta /* Yes, kMeta here! */, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', kShift | kMeta /* Yes, kMeta here! */, kLocationLeft));
     // Only a MetaLeft down event, no synthesized MetaLeft up events.
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.first,
@@ -1098,8 +991,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    event = keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft);
-    converter.handleEvent(event);
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
