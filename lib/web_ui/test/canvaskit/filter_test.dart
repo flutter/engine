@@ -94,7 +94,7 @@ void testMain() {
       expect(imageFilter, isNotNull);
 
       const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
-      
+
       final LayerSceneBuilder builder = LayerSceneBuilder();
       builder.pushOffset(0,0);
       final CkPictureRecorder recorder = CkPictureRecorder();
