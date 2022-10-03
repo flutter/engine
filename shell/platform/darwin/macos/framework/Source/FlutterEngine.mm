@@ -598,9 +598,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     _bridge.reset();
   } else if (_semanticsEnabled && !_bridge) {
     _bridge = std::make_shared<flutter::AccessibilityBridge>();
-    auto bridge_delegate = std::make_unique<flutter::AccessibilityBridgeMacDelegate>(
-        self, self.viewController, _bridge);
-    _bridge->UpdateDelegate(std::move(bridge_delegate));
+    _bridge->UpdateDelegate(std::make_unique<flutter::AccessibilityBridgeMacDelegate>(
+        self, self.viewController, _bridge));
   }
   _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
 }

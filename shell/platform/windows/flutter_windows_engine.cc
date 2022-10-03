@@ -595,9 +595,9 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
       accessibility_bridge_.reset();
     } else if (semantics_enabled_ && !accessibility_bridge_) {
       accessibility_bridge_ = std::make_shared<AccessibilityBridge>();
-      auto delegate = std::make_unique<AccessibilityBridgeDelegateWindows>(
-          this, view_, accessibility_bridge_);
-      accessibility_bridge_->UpdateDelegate(std::move(delegate));
+      accessibility_bridge_->UpdateDelegate(
+          std::make_unique<AccessibilityBridgeDelegateWindows>(
+              this, view_, accessibility_bridge_));
     }
   }
 }
