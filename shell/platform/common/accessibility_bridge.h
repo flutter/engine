@@ -20,9 +20,9 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// Use this class to maintain an accessibility tree. This class consumes
-/// semantics updates from the embedder API and produces an accessibility tree
-/// in the native format.
+/// Use this class to maintain the accessibility tree for a view. This class
+/// consumes semantics updates from the embedder API and produces an
+/// accessibility tree in the native format.
 ///
 /// The bridge creates an AXTree to hold the semantics data that comes from
 /// Flutter semantics updates. The tree holds AXNode[s] which contain the
