@@ -26,6 +26,7 @@ enum FragmentFlow {
   sandwich,
 }
 
+/// Splits [text] into fragments based on directionality.
 class BidiFragmenter extends TextFragmenter {
   const BidiFragmenter(super.text);
 

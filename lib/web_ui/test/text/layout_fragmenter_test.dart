@@ -289,9 +289,5 @@ List<_Fragment> split(CanvasParagraph paragraph) {
 }
 
 List<LayoutFragment> computeLayoutFragments(CanvasParagraph paragraph) {
-  return LayoutFragmenter(
-    paragraph.plainText,
-    paragraph.paragraphStyle.effectiveTextDirection,
-    paragraph.spans,
-  ).fragment();
+  return LayoutFragmenter(paragraph.plainText, paragraph.spans).fragment();
 }

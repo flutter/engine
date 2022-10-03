@@ -55,11 +55,8 @@ class TextLayoutService {
 
   late final Spanometer spanometer = Spanometer(paragraph, context);
 
-  late final LayoutFragmenter layoutFragmenter = LayoutFragmenter(
-    paragraph.plainText,
-    paragraph.paragraphStyle.effectiveTextDirection,
-    paragraph.spans,
-  );
+  late final LayoutFragmenter layoutFragmenter =
+      LayoutFragmenter(paragraph.plainText, paragraph.spans);
 
   /// Performs the layout on a paragraph given the [constraints].
   ///
@@ -101,7 +98,6 @@ class TextLayoutService {
         if (currentLine.canHaveEllipsis) {
           currentLine.insertEllipsis();
           lines.add(currentLine.build());
-          // TODO(mdebbar): Add tests for didExceedMaxLines.
           didExceedMaxLines = true;
           break outerLoop;
         }
@@ -128,7 +124,6 @@ class TextLayoutService {
     final int? maxLines = paragraph.paragraphStyle.maxLines;
     if (maxLines != null && lines.length > maxLines) {
       didExceedMaxLines = true;
-      // TODO(mdebbar): Should we remove these lines before or after calculating min/max intrinsic width?
       lines.removeRange(maxLines, lines.length);
     }
 
@@ -165,10 +160,12 @@ class TextLayoutService {
       height,
     );
 
-    // ******************************* //
-    // *** PARAGRAPH JUSTIFICATION *** //
-    // ******************************* //
+    // **************************** //
+    // *** FRAGMENT POSITIONING *** //
+    // **************************** //
 
+    // We have to perform justification alignment first so that we can position
+    // fragments correctly later.
     if (lines.isNotEmpty) {
       final bool shouldJustifyParagraph = width.isFinite &&
           paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
@@ -431,10 +428,10 @@ class TextLayoutService {
 ///
 /// Then fragments can be added by calling [addFragment].
 ///
-/// Before adding a fragment, the method [canAddFragment] helps determine
-/// whether the line can fit a certain fragment or not.
+/// After adding a fragment, one can use [isOverflowing] to determine whether
+/// the added fragment caused the line to overflow or not.
 ///
-/// Once the line is complete, it can be built by calling [build] that generates
+/// Once the line is complete, it can be built by calling [build] to generate
 /// a [ParagraphLine] instance.
 ///
 /// To start building the next line, simply call [nextLine] to get a new
@@ -711,9 +708,6 @@ class LineBuilder {
     if (lastFragment.isPlaceholder) {
       // Placeholder can't be force-broken. Either keep all of it in the line or
       // move it to the next line.
-
-      // TODO(mdebbar): Add test for the case of a single placeholder that
-      //                doesn't fit in one line.
       if (allowLastFragmentToBeEmpty) {
         _fragmentsForNextLine!.insert(0, _fragments.removeLast());
         _recalculateMetrics();

@@ -12,6 +12,8 @@ import '../html/paragraph/helper.dart';
 import 'line_breaker_test_helper.dart';
 import 'line_breaker_test_raw_data.dart';
 
+final String placeholderChar = String.fromCharCode(0xFFFC);
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -26,31 +28,31 @@ void testMain() {
 
     test('whitespace', () {
       expect(split('foo bar'), <Line>[
-        Line('foo ', opportunity),
+        Line('foo ', opportunity, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('  foo    bar  '), <Line>[
-        Line('  ', opportunity),
-        Line('foo    ', opportunity),
-        Line('bar  ', endOfText),
+        Line('  ', opportunity, sp: 2),
+        Line('foo    ', opportunity, sp: 4),
+        Line('bar  ', endOfText, sp: 2),
       ]);
     });
 
     test('single-letter lines', () {
       expect(split('foo a bar'), <Line>[
-        Line('foo ', opportunity),
-        Line('a ', opportunity),
+        Line('foo ', opportunity, sp: 1),
+        Line('a ', opportunity, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('a b c'), <Line>[
-        Line('a ', opportunity),
-        Line('b ', opportunity),
+        Line('a ', opportunity, sp: 1),
+        Line('b ', opportunity, sp: 1),
         Line('c', endOfText),
       ]);
       expect(split(' a b '), <Line>[
-        Line(' ', opportunity),
-        Line('a ', opportunity),
-        Line('b ', endOfText),
+        Line(' ', opportunity, sp: 1),
+        Line('a ', opportunity, sp: 1),
+        Line('b ', endOfText, sp: 1),
       ]);
     });
 
@@ -58,175 +60,161 @@ void testMain() {
       final String bk = String.fromCharCode(0x000B);
       // Can't have a line break between CR×LF.
       expect(split('foo\r\nbar'), <Line>[
-        Line('foo\r\n', mandatory),
+        Line('foo\r\n', mandatory, nl: 2, sp: 2),
         Line('bar', endOfText),
       ]);
 
       // Any other new line is considered a line break on its own.
 
       expect(split('foo\n\nbar'), <Line>[
-        Line('foo\n', mandatory),
-        Line('\n', mandatory),
+        Line('foo\n', mandatory, nl: 1, sp: 1),
+        Line('\n', mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('foo\r\rbar'), <Line>[
-        Line('foo\r', mandatory),
-        Line('\r', mandatory),
+        Line('foo\r', mandatory, nl: 1, sp: 1),
+        Line('\r', mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('foo$bk${bk}bar'), <Line>[
-        Line('foo$bk', mandatory),
-        Line(bk, mandatory),
+        Line('foo$bk', mandatory, nl: 1, sp: 1),
+        Line(bk, mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
 
       expect(split('foo\n\rbar'), <Line>[
-        Line('foo\n', mandatory),
-        Line('\r', mandatory),
+        Line('foo\n', mandatory, nl: 1, sp: 1),
+        Line('\r', mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('foo$bk\rbar'), <Line>[
-        Line('foo$bk', mandatory),
-        Line('\r', mandatory),
+        Line('foo$bk', mandatory, nl: 1, sp: 1),
+        Line('\r', mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('foo\r${bk}bar'), <Line>[
-        Line('foo\r', mandatory),
-        Line(bk, mandatory),
+        Line('foo\r', mandatory, nl: 1, sp: 1),
+        Line(bk, mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('foo$bk\nbar'), <Line>[
-        Line('foo$bk', mandatory),
-        Line('\n', mandatory),
+        Line('foo$bk', mandatory, nl: 1, sp: 1),
+        Line('\n', mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
       expect(split('foo\n${bk}bar'), <Line>[
-        Line('foo\n', mandatory),
-        Line(bk, mandatory),
+        Line('foo\n', mandatory, nl: 1, sp: 1),
+        Line(bk, mandatory, nl: 1, sp: 1),
         Line('bar', endOfText),
       ]);
 
       // New lines at the beginning and end.
 
       expect(split('foo\n'), <Line>[
-        Line('foo\n', mandatory),
+        Line('foo\n', mandatory, nl: 1, sp: 1),
         Line('', endOfText),
       ]);
       expect(split('foo\r'), <Line>[
-        Line('foo\r', mandatory),
+        Line('foo\r', mandatory, nl: 1, sp: 1),
         Line('', endOfText),
       ]);
       expect(split('foo$bk'), <Line>[
-        Line('foo$bk', mandatory),
+        Line('foo$bk', mandatory, nl: 1, sp: 1),
         Line('', endOfText),
       ]);
 
       expect(split('\nfoo'), <Line>[
-        Line('\n', mandatory),
+        Line('\n', mandatory, nl: 1, sp: 1),
         Line('foo', endOfText),
       ]);
       expect(split('\rfoo'), <Line>[
-        Line('\r', mandatory),
+        Line('\r', mandatory, nl: 1, sp: 1),
         Line('foo', endOfText),
       ]);
       expect(split('${bk}foo'), <Line>[
-        Line(bk, mandatory),
+        Line(bk, mandatory, nl: 1, sp: 1),
         Line('foo', endOfText),
       ]);
 
       // Whitespace with new lines.
 
       expect(split('foo  \n'), <Line>[
-        Line('foo  \n', mandatory),
+        Line('foo  \n', mandatory, nl: 1, sp: 3),
         Line('', endOfText),
       ]);
 
       expect(split('foo  \n   '), <Line>[
-        Line('foo  \n', mandatory),
-        Line('   ', endOfText),
+        Line('foo  \n', mandatory, nl: 1, sp: 3),
+        Line('   ', endOfText, sp: 3),
       ]);
 
       expect(split('foo  \n   bar'), <Line>[
-        Line('foo  \n', mandatory),
-        Line('   ', opportunity),
+        Line('foo  \n', mandatory, nl: 1, sp: 3),
+        Line('   ', opportunity, sp: 3),
         Line('bar', endOfText),
       ]);
 
       expect(split('\n  foo'), <Line>[
-        Line('\n', mandatory),
-        Line('  ', opportunity),
+        Line('\n', mandatory, nl: 1, sp: 1),
+        Line('  ', opportunity, sp: 2),
         Line('foo', endOfText),
       ]);
       expect(split('   \n  foo'), <Line>[
-        Line('   \n', mandatory),
-        Line('  ', opportunity),
+        Line('   \n', mandatory, nl: 1, sp: 4),
+        Line('  ', opportunity, sp: 2),
         Line('foo', endOfText),
       ]);
     });
 
     test('trailing spaces and new lines', () {
-      expect(
-        const LineBreakFragmenter('foo bar  ').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 4, opportunity, trailingNewlines: 0, trailingSpaces: 1),
-          LineBreakFragment(4, 9, endOfText, trailingNewlines: 0, trailingSpaces: 2),
+      expect(split('foo bar  '), <Line>[
+          Line('foo ', opportunity, sp: 1),
+          Line('bar  ', endOfText, sp: 2),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('foo  \nbar\nbaz   \n').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 6, mandatory, trailingNewlines: 1, trailingSpaces: 3),
-          LineBreakFragment(6, 10, mandatory, trailingNewlines: 1, trailingSpaces: 1),
-          LineBreakFragment(10, 17, mandatory, trailingNewlines: 1, trailingSpaces: 4),
-          LineBreakFragment(17, 17, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('foo  \nbar\nbaz   \n'), <Line>[
+          Line('foo  \n', mandatory, nl: 1, sp: 3),
+          Line('bar\n', mandatory, nl: 1, sp: 1),
+          Line('baz   \n', mandatory, nl: 1, sp: 4),
+          Line('', endOfText),
         ],
       );
     });
 
     test('leading spaces', () {
-      expect(
-        const LineBreakFragmenter(' foo').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 1, opportunity, trailingNewlines: 0, trailingSpaces: 1),
-          LineBreakFragment(1, 4, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split(' foo'), <Line>[
+          Line(' ', opportunity, sp: 1),
+          Line('foo', endOfText),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('   foo').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 3, opportunity, trailingNewlines: 0, trailingSpaces: 3),
-          LineBreakFragment(3, 6, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('   foo'), <Line>[
+          Line('   ', opportunity, sp: 3),
+          Line('foo', endOfText),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('  foo   bar').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 2),
-          LineBreakFragment(2, 8, opportunity, trailingNewlines: 0, trailingSpaces: 3),
-          LineBreakFragment(8, 11, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('  foo   bar'), <Line>[
+          Line('  ', opportunity, sp: 2),
+          Line('foo   ', opportunity, sp: 3),
+          Line('bar', endOfText),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('  \n   foo').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 3, mandatory, trailingNewlines: 1, trailingSpaces: 3),
-          LineBreakFragment(3, 6, opportunity, trailingNewlines: 0, trailingSpaces: 3),
-          LineBreakFragment(6, 9, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('  \n   foo'), <Line>[
+          Line('  \n', mandatory, nl: 1, sp: 3),
+          Line('   ', opportunity, sp: 3),
+          Line('foo', endOfText),
         ],
       );
     });
 
     test('whitespace before the last character', () {
-      expect(
-        const LineBreakFragmenter('Lorem sit .').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 6, opportunity, trailingNewlines: 0, trailingSpaces: 1),
-          LineBreakFragment(6, 10, opportunity, trailingNewlines: 0, trailingSpaces: 1),
-          LineBreakFragment(10, 11, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('Lorem sit .'), <Line>[
+          Line('Lorem ', opportunity, sp: 1),
+          Line('sit ', opportunity, sp: 1),
+          Line('.', endOfText),
         ],
       );
     });
@@ -291,50 +279,40 @@ void testMain() {
         },
       );
 
-      expect(
-        LineBreakFragmenter(paragraph.plainText).fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 3, opportunity, trailingNewlines: 0, trailingSpaces: 2),
-          LineBreakFragment(3, 10, opportunity, trailingNewlines: 0, trailingSpaces: 2),
-          LineBreakFragment(10, 14, mandatory, trailingNewlines: 1, trailingSpaces: 3),
-          LineBreakFragment(14, 21, mandatory, trailingNewlines: 1, trailingSpaces: 2),
-          LineBreakFragment(21, 23, mandatory, trailingNewlines: 1, trailingSpaces: 1),
-          LineBreakFragment(23, 24, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(splitParagraph(paragraph), <Line>[
+          Line('$placeholderChar  ', opportunity, sp: 2),
+          Line('Lorem  ', opportunity, sp: 2),
+          Line('$placeholderChar  \n', mandatory, nl: 1, sp: 3),
+          Line('ipsum \n', mandatory, nl: 1, sp: 2),
+          Line('$placeholderChar\n', mandatory, nl: 1, sp: 1),
+          Line(placeholderChar, endOfText),
         ],
       );
     });
 
     test('surrogates', () {
-      expect(
-        const LineBreakFragmenter('A\u{1F600}').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 1, opportunity, trailingNewlines: 0, trailingSpaces: 0),
-          LineBreakFragment(1, 3, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('A\u{1F600}'), <Line>[
+          Line('A', opportunity),
+          Line('\u{1F600}', endOfText),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('\u{1F600}A').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 0),
-          LineBreakFragment(2, 3, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('\u{1F600}A'), <Line>[
+          Line('\u{1F600}', opportunity),
+          Line('A', endOfText),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('\u{1F600}\u{1F600}').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 0),
-          LineBreakFragment(2, 4, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('\u{1F600}\u{1F600}'), <Line>[
+          Line('\u{1F600}', opportunity),
+          Line('\u{1F600}', endOfText),
         ],
       );
 
-      expect(
-        const LineBreakFragmenter('A \u{1F600} \u{1F600}').fragment(),
-        const <LineBreakFragment>[
-          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 1),
-          LineBreakFragment(2, 5, opportunity, trailingNewlines: 0, trailingSpaces: 1),
-          LineBreakFragment(5, 7, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+      expect(split('A \u{1F600} \u{1F600}'), <Line>[
+          Line('A ', opportunity, sp: 1),
+          Line('\u{1F600} ', opportunity, sp: 1),
+          Line('\u{1F600}', endOfText),
         ],
       );
     });
@@ -427,7 +405,7 @@ void testMain() {
 
 /// Holds information about how a line was split from a string.
 class Line {
-  Line(this.text, this.breakType);
+  Line(this.text, this.breakType, {this.nl = 0, this.sp = 0});
 
   factory Line.fromLineBreakFragment(String text, LineBreakFragment fragment) {
     return Line(
@@ -438,6 +416,8 @@ class Line {
 
   final String text;
   final LineBreakType breakType;
+  final int nl;
+  final int sp;
 
   @override
   int get hashCode => Object.hash(text, breakType);

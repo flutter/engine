@@ -24,6 +24,7 @@ enum LineBreakType {
   endOfText,
 }
 
+/// Splits [text] into fragments based on line breaks.
 class LineBreakFragmenter extends TextFragmenter {
   const LineBreakFragmenter(super.text);
 

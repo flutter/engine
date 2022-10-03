@@ -60,6 +60,12 @@ class TextPaintService {
       return;
     }
 
+    // Don't paint the text for space-only boxes. This is just an
+    // optimization, it doesn't have any effect on the output.
+    if (fragment.isSpaceOnly) {
+      return;
+    }
+
     _prepareCanvasForFragment(canvas, fragment);
     final double fragmentX = fragment.textDirection! == ui.TextDirection.ltr
         ? fragment.left
@@ -70,26 +76,22 @@ class TextPaintService {
 
     final EngineTextStyle style = fragment.style;
 
-    // Don't paint the text for space-only boxes. This is just an
-    // optimization, it doesn't have any effect on the output.
-    if (!fragment.isSpaceOnly) {
-      final String text = fragment.getText(paragraph);
-      final double? letterSpacing = style.letterSpacing;
-      if (letterSpacing == null || letterSpacing == 0.0) {
-        canvas.drawText(text, x, y,
-            style: style.foreground?.style, shadows: style.shadows);
-      } else {
-        // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
-        //                https://github.com/flutter/flutter/issues/51234
-        double charX = x;
-        final int len = text.length;
-        for (int i = 0; i < len; i++) {
-          final String char = text[i];
-          canvas.drawText(char, charX.roundToDouble(), y,
-              style: style.foreground?.style,
-              shadows: style.shadows);
-          charX += letterSpacing + canvas.measureText(char).width!;
-        }
+    final String text = fragment.getText(paragraph);
+    final double? letterSpacing = style.letterSpacing;
+    if (letterSpacing == null || letterSpacing == 0.0) {
+      canvas.drawText(text, x, y,
+          style: style.foreground?.style, shadows: style.shadows);
+    } else {
+      // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
+      //                https://github.com/flutter/flutter/issues/51234
+      double charX = x;
+      final int len = text.length;
+      for (int i = 0; i < len; i++) {
+        final String char = text[i];
+        canvas.drawText(char, charX.roundToDouble(), y,
+            style: style.foreground?.style,
+            shadows: style.shadows);
+        charX += letterSpacing + canvas.measureText(char).width!;
       }
     }
 

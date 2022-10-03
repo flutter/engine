@@ -14,10 +14,13 @@ import 'line_breaker.dart';
 import 'paragraph.dart';
 import 'text_direction.dart';
 
+/// Splits [text] into fragments that are ready to be laid out by
+/// [TextLayoutService].
+///
+/// This fragmenter takes into account line breaks, directionality and styles.
 class LayoutFragmenter extends TextFragmenter {
-  const LayoutFragmenter(super.text, this.textDirection, this.paragraphSpans);
+  const LayoutFragmenter(super.text, this.paragraphSpans);
 
-  final ui.TextDirection textDirection;
   final List<ParagraphSpan> paragraphSpans;
 
   @override
@@ -268,6 +271,39 @@ mixin _FragmentMetrics on _CombinedFragment {
   }
 }
 
+/// Encapsulates positioning of the fragment relative to the line.
+///
+/// The coordinates are all relative to the line it belongs to. For example,
+/// [left] is the distance from the left edge of the line to the left edge of
+/// the fragment.
+///
+/// This is what the various measurements/coordinates look like for a fragment
+/// in an LTR paragraph:
+///
+///          *------------------------line.width-----------------*
+///                            *---width----*
+///          ┌─────────────────┬────────────┬────────────────────┐
+///          │                 │--FRAGMENT--│                    │
+///          └─────────────────┴────────────┴────────────────────┘
+///          *---startOffset---*
+///          *------left-------*
+///          *--------endOffset-------------*
+///          *----------right---------------*
+///
+///
+/// And in an RTL paragraph, [startOffset] and [endOffset] are flipped because
+/// the line starts from the right. Here's what they look like:
+///
+///          *------------------------line.width-----------------*
+///                            *---width----*
+///          ┌─────────────────┬────────────┬────────────────────┐
+///          │                 │--FRAGMENT--│                    │
+///          └─────────────────┴────────────┴────────────────────┘
+///                                         *----startOffset-----*
+///          *------left-------*
+///                            *-----------endOffset-------------*
+///          *----------right---------------*
+///
 mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   /// The distance from the beginning of the line to the beginning of the fragment.
   double get startOffset => _startOffset;
@@ -318,41 +354,8 @@ mixin _FragmentPosition on _CombinedFragment, _FragmentMetrics {
   }
 }
 
-// TODO(mdebbar): Rephrase these doc comments:
-
-/// Represents a box inside a paragraph span with the range of [start] to [end].
-///
-/// The box's coordinates are all relative to the line it belongs to. For
-/// example, [left] is the distance from the left edge of the line to the left
-/// edge of the box.
-///
-/// This is what the various measurements/coordinates look like for a box in an
-/// LTR paragraph:
-///
-///          *------------------------lineWidth------------------*
-///                            *--width--*
-///          ┌─────────────────┬─────────┬───────────────────────┐
-///          │                 │---BOX---│                       │
-///          └─────────────────┴─────────┴───────────────────────┘
-///          *---startOffset---*
-///          *------left-------*
-///          *--------endOffset----------*
-///          *----------right------------*
-///
-///
-/// And in an RTL paragraph, [startOffset] and [endOffset] are flipped because
-/// the line starts from the right. Here's what they look like:
-///
-///          *------------------------lineWidth------------------*
-///                            *--width--*
-///          ┌─────────────────┬─────────┬───────────────────────┐
-///          │                 │---BOX---│                       │
-///          └─────────────────┴─────────┴───────────────────────┘
-///                                      *------startOffset------*
-///          *------left-------*
-///                            *-----------endOffset-------------*
-///          *----------right------------*
-///
+/// Encapsulates calculations related to the bounding box of the fragment
+/// relative to the paragraph.
 mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   double get top => line.baseline - ascent;
   double get bottom => line.baseline + descent;
