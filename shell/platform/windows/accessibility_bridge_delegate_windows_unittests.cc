@@ -159,9 +159,10 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
 
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
-  bridge->UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
+  bridge->UpdateDelegate(
+      std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
   spy->OnAccessibilityEvent({AXNodeFromID(bridge, node_id),
-                            {ax_event, ax::mojom::EventFrom::kNone, {}}});
+                             {ax_event, ax::mojom::EventFrom::kNone, {}}});
   ASSERT_EQ(spy->dispatched_events().size(), 1);
   EXPECT_EQ(spy->dispatched_events()[0].event_type, expected_event);
 }
@@ -178,7 +179,8 @@ TEST(AccessibilityBridgeDelegateWindows, GetParent) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
-  bridge->UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
+  bridge->UpdateDelegate(
+      std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
   PopulateAXTree(bridge);
 
   auto node0_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -197,7 +199,8 @@ TEST(AccessibilityBridgeDelegateWindows, GetParentOnRootRetunsNullptr) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
-  bridge->UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
+  bridge->UpdateDelegate(
+      std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
   PopulateAXTree(bridge);
 
   auto node0_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -214,7 +217,8 @@ TEST(AccessibilityBridgeDelegateWindows, DispatchAccessibilityAction) {
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
-  bridge->UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
+  bridge->UpdateDelegate(
+      std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
   PopulateAXTree(bridge);
 
   FlutterSemanticsAction actual_action = kFlutterSemanticsActionTap;
@@ -254,12 +258,13 @@ TEST(AccessibilityBridgeDelegateWindows, OnAccessibilityEventFocusChanged) {
 
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
-  bridge->UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
+  bridge->UpdateDelegate(
+      std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
 
   spy->OnAccessibilityEvent({AXNodeFromID(bridge, 1),
-                            {ui::AXEventGenerator::Event::FOCUS_CHANGED,
-                             ax::mojom::EventFrom::kNone,
-                             {}}});
+                             {ui::AXEventGenerator::Event::FOCUS_CHANGED,
+                              ax::mojom::EventFrom::kNone,
+                              {}}});
   ASSERT_EQ(spy->dispatched_events().size(), 1);
   EXPECT_EQ(spy->dispatched_events()[0].event_type, EVENT_OBJECT_FOCUS);
 
