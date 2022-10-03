@@ -22,12 +22,15 @@ static NSString* const kAccessibilityMenuItemSelectedNotification = @"AXMenuItem
 
 AccessibilityBridgeMacDelegate::AccessibilityBridgeMacDelegate(
     __weak FlutterEngine* flutter_engine,
-    __weak FlutterViewController* view_controller)
-    : flutter_engine_(flutter_engine), view_controller_(view_controller) {}
+    __weak FlutterViewController* view_controller,
+    std::weak_ptr<AccessibilityBridge> bridge)
+    : flutter_engine_(flutter_engine),
+      view_controller_(view_controller),
+      accessibility_bridge_(bridge) {}
 
 void AccessibilityBridgeMacDelegate::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
-  if (!flutter_engine_.viewController.viewLoaded || !flutter_engine_.viewController.view.window) {
+  if (!view_controller_.viewLoaded || !view_controller_.view.window) {
     // Don't need to send accessibility events if the there is no view or window.
     return;
   }
@@ -47,9 +50,8 @@ std::vector<AccessibilityBridgeMacDelegate::NSAccessibilityEvent>
 AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event_type,
                                                        const ui::AXNode& ax_node) const {
   // Gets the native_node with the node_id.
-  NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
-  auto bridge = flutter_engine_.accessibilityBridge.lock();
-  NSCAssert(bridge, @"Accessibility bridge in flutter engine must not be null.");
+  auto bridge = accessibility_bridge_.lock();
+  NSCAssert(bridge, @"Accessibility bridge should not be expired");
   auto platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(ax_node.id()).lock();
   NSCAssert(platform_node_delegate, @"Event target must exist in accessibility bridge.");
   auto mac_platform_node_delegate =
@@ -292,10 +294,10 @@ AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Eve
     case ui::AXEventGenerator::Event::CHILDREN_CHANGED: {
       // NSAccessibilityCreatedNotification seems to be the only way to let
       // Voiceover pick up layout changes.
-      NSCAssert(flutter_engine_.viewController, @"The viewController must not be nil");
+      NSCAssert(view_controller_, @"The viewController must not be nil");
       events.push_back({
           .name = NSAccessibilityCreatedNotification,
-          .target = flutter_engine_.viewController.view.window,
+          .target = view_controller_.view.window,
           .user_info = nil,
       });
       break;
@@ -363,7 +365,7 @@ void AccessibilityBridgeMacDelegate::DispatchAccessibilityAction(ui::AXNode::AXI
                                                                  FlutterSemanticsAction action,
                                                                  fml::MallocMapping data) {
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
-  NSCAssert(flutter_engine_.viewController.viewLoaded && flutter_engine_.viewController.view.window,
+  NSCAssert(view_controller_.viewLoaded && view_controller_.view.window,
             @"The accessibility bridge should not receive accessibility actions if the flutter view"
             @"is not loaded or attached to a NSWindow.");
   [flutter_engine_ dispatchSemanticsAction:action toTarget:target withData:std::move(data)];
@@ -371,7 +373,7 @@ void AccessibilityBridgeMacDelegate::DispatchAccessibilityAction(ui::AXNode::AXI
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
 AccessibilityBridgeMacDelegate::CreateFlutterPlatformNodeDelegate() {
-  return std::make_shared<FlutterPlatformNodeDelegateMac>(flutter_engine_, view_controller_);
+  return std::make_shared<FlutterPlatformNodeDelegateMac>(view_controller_, accessibility_bridge_);
 }
 
 // Private method
@@ -394,9 +396,8 @@ void AccessibilityBridgeMacDelegate::DispatchMacOSNotificationWithUserInfo(
 }
 
 bool AccessibilityBridgeMacDelegate::HasPendingEvent(ui::AXEventGenerator::Event event) const {
-  NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
-  auto bridge = flutter_engine_.accessibilityBridge.lock();
-  NSCAssert(bridge, @"Accessibility bridge in flutter engine must not be null.");
+  auto bridge = accessibility_bridge_.lock();
+  NSCAssert(bridge, @"Accessibility bridge should not be expired");
   std::vector<ui::AXEventGenerator::TargetedEvent> pending_events = bridge->GetPendingEvents();
   for (const auto& pending_event : bridge->GetPendingEvents()) {
     if (pending_event.event_params.event == event) {

@@ -9,6 +9,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
+#include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/flutter_platform_node_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -20,8 +21,8 @@ namespace flutter {
 class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
  public:
   explicit FlutterPlatformNodeDelegateMac(
-      __weak FlutterEngine* engine,
-      __weak FlutterViewController* view_controller);
+      __weak FlutterViewController* view_controller,
+      std::weak_ptr<flutter::AccessibilityBridge> accessibility_bridge);
   virtual ~FlutterPlatformNodeDelegateMac();
 
   void Init(std::weak_ptr<OwnerBridge> bridge, ui::AXNode* node) override;
@@ -49,8 +50,8 @@ class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
 
  private:
   ui::AXPlatformNode* ax_platform_node_;
-  __weak FlutterEngine* engine_;
   __weak FlutterViewController* view_controller_;
+  std::weak_ptr<flutter::AccessibilityBridge> accessibility_bridge_;
 
   gfx::RectF ConvertBoundsFromLocalToScreen(
       const gfx::RectF& local_bounds) const;

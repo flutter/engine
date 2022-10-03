@@ -24,7 +24,8 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   /// @param[in]  flutter_engine     The weak reference to the FlutterEngine.
   /// @param[in]  view_controller    The weak reference to the FlutterViewController.
   explicit AccessibilityBridgeMacDelegate(__weak FlutterEngine* flutter_engine,
-                                          __weak FlutterViewController* view_controller);
+                                          __weak FlutterViewController* view_controller,
+                                          std::weak_ptr<AccessibilityBridge> bridge);
   virtual ~AccessibilityBridgeMacDelegate() = default;
 
   // |AccessibilityBridge::AccessibilityBridgeDelegate|
@@ -80,6 +81,7 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
 
   __weak FlutterEngine* flutter_engine_;
   __weak FlutterViewController* view_controller_;
+  std::weak_ptr<flutter::AccessibilityBridge> accessibility_bridge_;
 };
 
 }  // namespace flutter

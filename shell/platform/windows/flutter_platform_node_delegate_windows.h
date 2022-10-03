@@ -20,7 +20,8 @@ class FlutterWindowsEngine;
 // that compose the accessibility tree.
 class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
  public:
-  explicit FlutterPlatformNodeDelegateWindows(FlutterWindowsEngine* engine);
+  FlutterPlatformNodeDelegateWindows(FlutterWindowsView* view,
+                                     std::weak_ptr<AccessibilityBridge> bridge);
   virtual ~FlutterPlatformNodeDelegateWindows();
 
   // |ui::AXPlatformNodeDelegate|
@@ -51,7 +52,7 @@ class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
 
  private:
   ui::AXPlatformNode* ax_platform_node_;
-  FlutterWindowsEngine* engine_;
+  FlutterWindowsView* view_;
 };
 
 }  // namespace flutter

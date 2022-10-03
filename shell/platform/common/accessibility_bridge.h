@@ -63,6 +63,7 @@ class AccessibilityBridge
   class AccessibilityBridgeDelegate {
    public:
     virtual ~AccessibilityBridgeDelegate() = default;
+
     //---------------------------------------------------------------------------
     /// @brief      Handle accessibility events generated due to accessibility
     ///             tree changes. These events are generated in accessibility
@@ -104,9 +105,12 @@ class AccessibilityBridge
   //-----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a accessibility bridge.
   ///
-  /// @param[in]  user_data           A custom pointer to the data of your
-  ///                                 choice. This pointer can be retrieve later
-  ///                                 through GetUserData().
+  ///             The bridge is not ready for use until a delegate has been
+  ///             assigned. See AccessibilityBridge::UpdateDelegate.
+  AccessibilityBridge();
+
+  //-----------------------------------------------------------------------------
+  /// @brief      Creates a new instance of a accessibility bridge.
   explicit AccessibilityBridge(
       std::unique_ptr<AccessibilityBridgeDelegate> delegate);
   ~AccessibilityBridge();

@@ -19,11 +19,15 @@ constexpr int kHasScrollingAction =
     FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
 
 // AccessibilityBridge
-AccessibilityBridge::AccessibilityBridge(
-    std::unique_ptr<AccessibilityBridgeDelegate> delegate)
-    : delegate_(std::move(delegate)) {
+AccessibilityBridge::AccessibilityBridge() {
   event_generator_.SetTree(&tree_);
   tree_.AddObserver(static_cast<ui::AXTreeObserver*>(this));
+}
+
+AccessibilityBridge::AccessibilityBridge(
+    std::unique_ptr<AccessibilityBridgeDelegate> delegate)
+    : AccessibilityBridge() {
+  UpdateDelegate(std::move(delegate));
 }
 
 AccessibilityBridge::~AccessibilityBridge() {

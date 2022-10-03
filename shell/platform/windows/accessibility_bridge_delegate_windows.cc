@@ -11,8 +11,10 @@
 namespace flutter {
 
 AccessibilityBridgeDelegateWindows::AccessibilityBridgeDelegateWindows(
-    FlutterWindowsEngine* engine)
-    : engine_(engine) {
+    FlutterWindowsEngine* engine,
+    FlutterWindowsView* view,
+    std::weak_ptr<AccessibilityBridge> bridge)
+    : engine_(engine), view_(view), accessibility_bridge_(bridge) {
   assert(engine_);
 }
 
@@ -22,7 +24,7 @@ void AccessibilityBridgeDelegateWindows::OnAccessibilityEvent(
   ui::AXEventGenerator::Event event_type = targeted_event.event_params.event;
 
   // Look up the flutter platform node delegate.
-  auto bridge = engine_->accessibility_bridge().lock();
+  auto bridge = accessibility_bridge_.lock();
   assert(bridge);
   auto node_delegate =
       bridge->GetFlutterPlatformNodeDelegateFromID(ax_node->id()).lock();
@@ -147,7 +149,8 @@ void AccessibilityBridgeDelegateWindows::DispatchAccessibilityAction(
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
 AccessibilityBridgeDelegateWindows::CreateFlutterPlatformNodeDelegate() {
-  return std::make_shared<FlutterPlatformNodeDelegateWindows>(engine_);
+  return std::make_shared<FlutterPlatformNodeDelegateWindows>(
+      view_, accessibility_bridge_);
 }
 
 void AccessibilityBridgeDelegateWindows::DispatchWinAccessibilityEvent(

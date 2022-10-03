@@ -13,10 +13,9 @@
 namespace flutter {
 
 FlutterPlatformNodeDelegateWindows::FlutterPlatformNodeDelegateWindows(
-    FlutterWindowsEngine* engine)
-    : engine_(engine) {
-  assert(engine_);
-}
+    FlutterWindowsView* view,
+    AccessibilityBridge* bridge)
+    : view_(view) {}
 
 FlutterPlatformNodeDelegateWindows::~FlutterPlatformNodeDelegateWindows() {
   if (ax_platform_node_) {
@@ -53,12 +52,10 @@ gfx::NativeViewAccessible FlutterPlatformNodeDelegateWindows::HitTestSync(
   }
 
   // If any child in this node's subtree contains the point, return that child.
-  auto bridge = engine_->accessibility_bridge().lock();
-  assert(bridge);
   for (const ui::AXNode* child : GetAXNode()->children()) {
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
         std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
-            bridge->GetFlutterPlatformNodeDelegateFromID(child->id()).lock());
+            bridge_->GetFlutterPlatformNodeDelegateFromID(child->id()).lock());
     assert(win_delegate);
     auto hit_view = win_delegate->HitTestSync(screen_physical_pixel_x,
                                               screen_physical_pixel_y);
@@ -80,19 +77,18 @@ gfx::Rect FlutterPlatformNodeDelegateWindows::GetBoundsRect(
       coordinate_system, clipping_behavior, offscreen_result);
   POINT origin{bounds.x(), bounds.y()};
   POINT extent{bounds.x() + bounds.width(), bounds.y() + bounds.height()};
-  ClientToScreen(engine_->view()->GetPlatformWindow(), &origin);
-  ClientToScreen(engine_->view()->GetPlatformWindow(), &extent);
+  ClientToScreen(view_->GetPlatformWindow(), &origin);
+  ClientToScreen(view_->GetPlatformWindow(), &extent);
   return gfx::Rect(origin.x, origin.y, extent.x - origin.x,
                    extent.y - origin.y);
 }
 
 void FlutterPlatformNodeDelegateWindows::DispatchWinAccessibilityEvent(
     DWORD event_type) {
-  FlutterWindowsView* view = engine_->view();
-  if (!view) {
+  if (!view_) {
     return;
   }
-  HWND hwnd = view->GetPlatformWindow();
+  HWND hwnd = view_->GetPlatformWindow();
   if (!hwnd) {
     return;
   }
