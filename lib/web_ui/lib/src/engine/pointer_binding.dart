@@ -339,6 +339,13 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         deltaY *= ui.window.physicalSize.height;
         break;
       case domDeltaPixel:
+        if (operatingSystem == OperatingSystem.macOs && (isSafari || isFirefox)) {
+          // Safari and Firefox seem to report delta in logical pixels while
+          // Chrome uses physical pixels.
+          deltaX *= ui.window.devicePixelRatio;
+          deltaY *= ui.window.devicePixelRatio;
+        }
+        break;
       default:
         break;
     }
@@ -687,9 +694,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomPointerEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null); // ignore: unnecessary_null_comparison
-    assert(event != null); // ignore: unnecessary_null_comparison
-    assert(details != null); // ignore: unnecessary_null_comparison
+    assert(data != null);
+    assert(event != null);
+    assert(details != null);
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
@@ -979,9 +986,9 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomMouseEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null); // ignore: unnecessary_null_comparison
-    assert(event != null); // ignore: unnecessary_null_comparison
-    assert(details != null); // ignore: unnecessary_null_comparison
+    assert(data != null);
+    assert(event != null);
+    assert(details != null);
     _pointerDataConverter.convert(
       data,
       change: details.change,

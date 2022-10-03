@@ -10,8 +10,10 @@
 
 namespace impeller {
 
-CommandBufferGLES::CommandBufferGLES(ReactorGLES::Ref reactor)
-    : reactor_(std::move(reactor)),
+CommandBufferGLES::CommandBufferGLES(std::weak_ptr<const Context> context,
+                                     ReactorGLES::Ref reactor)
+    : CommandBuffer(std::move(context)),
+      reactor_(std::move(reactor)),
       is_valid_(reactor_ && reactor_->IsValid()) {}
 
 CommandBufferGLES::~CommandBufferGLES() = default;
@@ -27,13 +29,8 @@ bool CommandBufferGLES::IsValid() const {
 }
 
 // |CommandBuffer|
-bool CommandBufferGLES::SubmitCommands(CompletionCallback callback) {
-  if (!IsValid()) {
-    return false;
-  }
-
+bool CommandBufferGLES::OnSubmitCommands(CompletionCallback callback) {
   const auto result = reactor_->React();
-
   if (callback) {
     callback(result ? CommandBuffer::Status::kCompleted
                     : CommandBuffer::Status::kError);
@@ -43,12 +40,12 @@ bool CommandBufferGLES::SubmitCommands(CompletionCallback callback) {
 
 // |CommandBuffer|
 std::shared_ptr<RenderPass> CommandBufferGLES::OnCreateRenderPass(
-    RenderTarget target) const {
+    RenderTarget target) {
   if (!IsValid()) {
     return nullptr;
   }
   auto pass = std::shared_ptr<RenderPassGLES>(
-      new RenderPassGLES(std::move(target), reactor_));
+      new RenderPassGLES(context_, target, reactor_));
   if (!pass->IsValid()) {
     return nullptr;
   }
@@ -65,6 +62,13 @@ std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() const {
     return nullptr;
   }
   return pass;
+}
+
+// |CommandBuffer|
+std::shared_ptr<ComputePass> CommandBufferGLES::OnCreateComputePass() const {
+  // Compute passes aren't supported until GLES 3.2, at which point Vulkan is
+  // available anyway.
+  return nullptr;
 }
 
 }  // namespace impeller

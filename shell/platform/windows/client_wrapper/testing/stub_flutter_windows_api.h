@@ -62,11 +62,20 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopEngineProcessMessages.
   virtual uint64_t EngineProcessMessages() { return 0; }
 
+  // Called for FlutterDesktopEngineSetNextFrameCallback.
+  virtual void EngineSetNextFrameCallback(VoidCallback callback,
+                                          void* user_data) {}
+
   // Called for FlutterDesktopEngineReloadSystemFonts.
   virtual void EngineReloadSystemFonts() {}
 
   // Called for FlutterDesktopViewGetHWND.
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
+
+  // Called for FlutterDesktopViewGetGraphicsAdapter.
+  virtual IDXGIAdapter* ViewGetGraphicsAdapter() {
+    return reinterpret_cast<IDXGIAdapter*>(2);
+  }
 
   // Called for FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate.
   virtual void PluginRegistrarRegisterTopLevelWindowProcDelegate(

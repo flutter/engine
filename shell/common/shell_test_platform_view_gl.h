@@ -17,7 +17,7 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
                                 public GPUSurfaceGLDelegate {
  public:
   ShellTestPlatformViewGL(PlatformView::Delegate& delegate,
-                          TaskRunners task_runners,
+                          const TaskRunners& task_runners,
                           std::shared_ptr<ShellTestVsyncClock> vsync_clock,
                           CreateVsyncWaiter create_vsync_waiter,
                           std::shared_ptr<ShellTestExternalViewEmbedder>
@@ -61,7 +61,7 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;

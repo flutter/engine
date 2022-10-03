@@ -28,11 +28,11 @@ class MockSyncSwitch {
  public:
   struct Handlers {
     Handlers& SetIfTrue(const std::function<void()>& handler) {
-      true_handler = std::move(handler);
+      true_handler = handler;
       return *this;
     }
     Handlers& SetIfFalse(const std::function<void()>& handler) {
-      false_handler = std::move(handler);
+      false_handler = handler;
       return *this;
     }
     std::function<void()> true_handler = [] {};
@@ -88,8 +88,7 @@ TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
   AddNativeCallback("ValidateExternal",
                     CREATE_NATIVE_ENTRY(nativeValidateExternal));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -100,7 +99,7 @@ TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
   });
 
   message_latch.Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
@@ -153,8 +152,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
 
   AddNativeCallback("EncodeImage", CREATE_NATIVE_ENTRY(native_encode_image));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -165,7 +163,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
   });
 
   message_latch.Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 }  // namespace testing

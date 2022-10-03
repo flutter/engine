@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
@@ -27,7 +28,7 @@ EmbedderExternalViewEmbedder::~EmbedderExternalViewEmbedder() = default;
 
 void EmbedderExternalViewEmbedder::SetSurfaceTransformationCallback(
     SurfaceTransformationCallback surface_transformation_callback) {
-  surface_transformation_callback_ = surface_transformation_callback;
+  surface_transformation_callback_ = std::move(surface_transformation_callback);
 }
 
 SkMatrix EmbedderExternalViewEmbedder::GetSurfaceTransformation() const {
@@ -111,15 +112,22 @@ std::vector<SkCanvas*> EmbedderExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+std::vector<DisplayListBuilder*>
+EmbedderExternalViewEmbedder::GetCurrentBuilders() {
+  return std::vector<DisplayListBuilder*>({});
+}
+
+// |ExternalViewEmbedder|
+EmbedderPaintContext EmbedderExternalViewEmbedder::CompositeEmbeddedView(
+    int view_id) {
   auto vid = EmbedderExternalView::ViewIdentifier(view_id);
   auto found = pending_views_.find(vid);
   if (found == pending_views_.end()) {
     FML_DCHECK(false) << "Attempted to composite a view that was not "
                          "pre-rolled.";
-    return nullptr;
+    return {nullptr, nullptr};
   }
-  return found->second->GetCanvas();
+  return {found->second->GetCanvas(), nullptr};
 }
 
 static FlutterBackingStoreConfig MakeBackingStoreConfig(

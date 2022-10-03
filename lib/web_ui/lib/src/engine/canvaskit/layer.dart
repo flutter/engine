@@ -468,7 +468,7 @@ class PictureLayer extends Layer {
 
   @override
   void paint(PaintContext paintContext) {
-    assert(picture != null); // ignore: unnecessary_null_comparison
+    assert(picture != null);
     assert(needsPainting);
 
     paintContext.leafNodesCanvas!.save();
@@ -591,7 +591,10 @@ class PlatformViewLayer extends Layer {
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-    prerollContext.viewEmbedder!.prerollCompositeEmbeddedView(
+
+    /// ViewEmbedder is set to null when screenshotting. Therefore, skip
+    /// rendering
+    prerollContext.viewEmbedder?.prerollCompositeEmbeddedView(
       viewId,
       EmbeddedViewParams(
         offset,
@@ -604,7 +607,7 @@ class PlatformViewLayer extends Layer {
   @override
   void paint(PaintContext paintContext) {
     final CkCanvas? canvas =
-        paintContext.viewEmbedder!.compositeEmbeddedView(viewId);
+        paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
     if (canvas != null) {
       paintContext.leafNodesCanvas = canvas;
     }

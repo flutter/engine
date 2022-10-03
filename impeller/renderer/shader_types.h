@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/hash_combine.h"
+#include "flutter/fml/logging.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/runtime_stage/runtime_types.h"
 
 namespace impeller {
 
@@ -21,6 +23,22 @@ enum class ShaderStage {
   kTessellationEvaluation,
   kCompute,
 };
+
+constexpr ShaderStage ToShaderStage(RuntimeShaderStage stage) {
+  switch (stage) {
+    case RuntimeShaderStage::kVertex:
+      return ShaderStage::kVertex;
+    case RuntimeShaderStage::kFragment:
+      return ShaderStage::kFragment;
+    case RuntimeShaderStage::kCompute:
+      return ShaderStage::kCompute;
+    case RuntimeShaderStage::kTessellationControl:
+      return ShaderStage::kTessellationControl;
+    case RuntimeShaderStage::kTessellationEvaluation:
+      return ShaderStage::kTessellationEvaluation;
+  }
+  FML_UNREACHABLE();
+}
 
 enum class ShaderType {
   kUnknown,
@@ -49,6 +67,8 @@ struct ShaderStructMemberMetadata {
   std::string name;
   size_t offset;
   size_t size;
+  size_t byte_length;
+  size_t array_elements;
 };
 
 struct ShaderMetadata {
@@ -58,6 +78,8 @@ struct ShaderMetadata {
 
 struct ShaderUniformSlot {
   const char* name;
+  size_t ext_res_0;
+  size_t set;
   size_t binding;
 };
 
@@ -102,6 +124,17 @@ template <size_t Size>
 struct Padding {
  private:
   uint8_t pad_[Size];
+};
+
+/// @brief Struct used for padding uniform buffer array elements.
+template <typename T,
+          size_t Size,
+          class = std::enable_if_t<std::is_standard_layout_v<T>>>
+struct Padded {
+  T value;
+  Padding<Size> _PADDING_;
+
+  Padded(T p_value) : value(p_value){};  // NOLINT(google-explicit-constructor)
 };
 
 inline constexpr Vector4 ToVector(Color color) {

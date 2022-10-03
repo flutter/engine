@@ -39,7 +39,7 @@ class BitmapCanvas extends EngineCanvas {
   /// initialize this canvas.
   BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
       {double density = 1.0})
-      : assert(_bounds != null), // ignore: unnecessary_null_comparison
+      : assert(_bounds != null),
         _density = density,
         _renderStrategy = renderStrategy,
         widthInBitmapPixels = widthToPhysical(_bounds.width),
@@ -70,7 +70,7 @@ class BitmapCanvas extends EngineCanvas {
   /// Painting outside these bounds will result in cropping.
   ui.Rect get bounds => _bounds;
   set bounds(ui.Rect newValue) {
-    assert(newValue != null); // ignore: unnecessary_null_comparison
+    assert(newValue != null);
     _bounds = newValue;
     final int newCanvasPositionX = _bounds.left.floor() - kPaddingPixels;
     final int newCanvasPositionY = _bounds.top.floor() - kPaddingPixels;
@@ -218,7 +218,7 @@ class BitmapCanvas extends EngineCanvas {
 
   // Used by picture to assess if canvas is large enough to reuse as is.
   bool doesFitBounds(ui.Rect newBounds, double newDensity) {
-    assert(newBounds != null); // ignore: unnecessary_null_comparison
+    assert(newBounds != null);
     return widthInBitmapPixels >= widthToPhysical(newBounds.width) &&
         heightInBitmapPixels >= heightToPhysical(newBounds.height) &&
         _density == newDensity;
@@ -366,27 +366,35 @@ class BitmapCanvas extends EngineCanvas {
   /// - Pictures typically have large rect/rounded rectangles as background
   ///   prefer DOM if canvas has not been allocated yet.
   ///
-  bool _useDomForRenderingFill(SurfacePaintData paint) =>
-      _renderStrategy.isInsideSvgFilterTree ||
-      (_preserveImageData == false && _contains3dTransform) ||
+  bool _useDomForRenderingFill(SurfacePaintData paint) {
+    if (_preserveImageData) {
+      return false;
+    }
+    return _renderStrategy.isInsideSvgFilterTree ||
+      _contains3dTransform ||
       (_childOverdraw &&
           !_canvasPool.hasCanvas &&
           paint.maskFilter == null &&
           paint.shader == null &&
           paint.style != ui.PaintingStyle.stroke);
+  }
 
   /// Same as [_useDomForRenderingFill] but allows stroke as well.
   ///
   /// DOM canvas is generated for simple strokes using borders.
-  bool _useDomForRenderingFillAndStroke(SurfacePaintData paint) =>
-      _renderStrategy.isInsideSvgFilterTree ||
-      (_preserveImageData == false && _contains3dTransform) ||
+  bool _useDomForRenderingFillAndStroke(SurfacePaintData paint) {
+    if (_preserveImageData) {
+      return false;
+    }
+    return _renderStrategy.isInsideSvgFilterTree ||
+      _contains3dTransform ||
       ((_childOverdraw ||
               _renderStrategy.hasImageElements ||
               _renderStrategy.hasParagraphs) &&
           !_canvasPool.hasCanvas &&
           paint.maskFilter == null &&
           paint.shader == null);
+  }
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
@@ -626,7 +634,9 @@ class BitmapCanvas extends EngineCanvas {
       _applyTargetSize(
           imageElement, image.width.toDouble(), image.height.toDouble());
     }
-    _closeCanvas();
+    if (!_preserveImageData) {
+      _closeCanvas();
+    }
   }
 
   DomHTMLImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
@@ -668,26 +678,40 @@ class BitmapCanvas extends EngineCanvas {
       imgElement = _reuseOrCreateImage(htmlImage);
     }
     imgElement.style.mixBlendMode = blendModeToCssMixBlendMode(blendMode) ?? '';
-    if (_canvasPool.isClipped) {
-      // Reset width/height since they may have been previously set.
-      imgElement.style..removeProperty('width')..removeProperty('height');
-      final List<DomElement> clipElements = _clipContent(
-          _canvasPool.clipStack!, imgElement, p, _canvasPool.currentTransform);
-      for (final DomElement clipElement in clipElements) {
-        rootElement.append(clipElement);
-        _children.add(clipElement);
-      }
+    if (_preserveImageData && imgElement is DomHTMLImageElement) {
+      // If we're preserving image data, we have to actually draw the image
+      // element onto the canvas.
+      // TODO(jacksongardner): Make this actually work with color filters.
+      setUpPaint(paint, null);
+      _canvasPool.drawImage(imgElement, p);
+      tearDownPaint();
     } else {
-      final String cssTransform = float64ListToCssTransform(
-          transformWithOffset(_canvasPool.currentTransform, p).storage);
-      imgElement.style
-        ..transformOrigin = '0 0 0'
-        ..transform = cssTransform
+      if (_canvasPool.isClipped) {
         // Reset width/height since they may have been previously set.
-        ..removeProperty('width')
-        ..removeProperty('height');
-      rootElement.append(imgElement);
-      _children.add(imgElement);
+        imgElement.style
+          ..removeProperty('width')
+          ..removeProperty('height');
+        final List<DomElement> clipElements = _clipContent(
+            _canvasPool.clipStack!,
+            imgElement,
+            p,
+            _canvasPool.currentTransform);
+        for (final DomElement clipElement in clipElements) {
+          rootElement.append(clipElement);
+          _children.add(clipElement);
+        }
+      } else {
+        final String cssTransform = float64ListToCssTransform(
+            transformWithOffset(_canvasPool.currentTransform, p).storage);
+        imgElement.style
+          ..transformOrigin = '0 0 0'
+          ..transform = cssTransform
+          // Reset width/height since they may have been previously set.
+          ..removeProperty('width')
+          ..removeProperty('height');
+        rootElement.append(imgElement);
+        _children.add(imgElement);
+      }
     }
     return imgElement;
   }
@@ -1343,7 +1367,7 @@ String? stringForStrokeCap(ui.StrokeCap? strokeCap) {
 }
 
 String stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
-  assert(strokeJoin != null); // ignore: unnecessary_null_comparison
+  assert(strokeJoin != null);
   switch (strokeJoin) {
     case ui.StrokeJoin.round:
       return 'round';

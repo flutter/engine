@@ -231,10 +231,8 @@ Future<void> testMain() async {
     // The nested span here should not set it's family to default sans-serif.
     expect(spans[1].style.fontFamily, 'Ahem, $fallback, sans-serif');
   },
-      // TODO(mdebbar): https://github.com/flutter/flutter/issues/50771
       // TODO(mdebbar): https://github.com/flutter/flutter/issues/46638
-      skip: browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.firefox);
 
   test('adds Arial and sans-serif as fallback fonts', () {
     // Set this to false so it doesn't default to 'Ahem' font.
@@ -251,10 +249,8 @@ Future<void> testMain() async {
 
     debugEmulateFlutterTesterEnvironment = true;
   },
-      // TODO(mdebbar): https://github.com/flutter/flutter/issues/50771
       // TODO(mdebbar): https://github.com/flutter/flutter/issues/46638
-      skip: browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.firefox);
 
   test('does not add fallback fonts to generic families', () {
     // Set this to false so it doesn't default to 'Ahem' font.
@@ -285,9 +281,7 @@ Future<void> testMain() async {
         '"MyFont 2000", $fallback, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
-  },
-      // TODO(mdebbar): https://github.com/flutter/flutter/issues/50771
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   group('TextRange', () {
     test('empty ranges are correct', () {
@@ -351,5 +345,17 @@ Future<void> testMain() async {
       expect(const TextRange(start: 0, end: 5).textInside('hello'),
           equals('hello'));
     });
+  });
+
+  test('FontWeights have the correct value', () {
+    expect(FontWeight.w100.value, 100);
+    expect(FontWeight.w200.value, 200);
+    expect(FontWeight.w300.value, 300);
+    expect(FontWeight.w400.value, 400);
+    expect(FontWeight.w500.value, 500);
+    expect(FontWeight.w600.value, 600);
+    expect(FontWeight.w700.value, 700);
+    expect(FontWeight.w800.value, 800);
+    expect(FontWeight.w900.value, 900);
   });
 }

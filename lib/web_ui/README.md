@@ -108,27 +108,6 @@ Changing parameters in the browser lock is effective immediately when running
 tests locally. To make changes effective on LUCI follow instructions in
 [Rolling Browsers][#rolling-browsers].
 
-#### Local testing in Safari using the iOS Simulator
-
-1. If you haven't already, install Xcode.
-2. The iOS version and device type used by web engine tests are specified in
-   the [browser_lock.yaml][2] file. Install the iOS Simulator version using:
-   Xcode > Preferences > Components
-3. Run `xcrun simctl list devices`. If the simulator you want is not installed
-   use step 4.
-4. Use felt to create a simulator:
-
-```
-felt create_simulator
-```
-
-To run tests on ios-safari use the one of the following commands:
-
-```
-felt test --browser=ios-safari
-felt test --browser=ios-safari test/alarm_clock_test.dart
-```
-
 ### Rolling browsers
 
 When running tests on LUCI using Chromium, LUCI uses the version of Chromium
@@ -225,6 +204,19 @@ directly), follow these steps to roll to the new version:
 
 If you have questions, contact the Flutter Web team on Flutter Discord on the
 #hackers-web-🌍 channel.
+
+### Rolling Noto Font Data
+
+In order to generate new data for the Noto fallback fonts, you will need
+a GoogleFonts API key. Once you have one, run:
+
+```
+./dev/felt generate-fallback-font-data --key=<your GoogleFonts API key>
+```
+
+This will generate the file `lib/src/engine/canvaskit/font_fallback_data.dart` with
+the latest data from GoogleFonts. This generated file should then be rolled in with
+a PR to the engine.
 
 ### Configuration files
 

@@ -47,14 +47,14 @@ class Animator final {
   };
 
   Animator(Delegate& delegate,
-           TaskRunners task_runners,
+           const TaskRunners& task_runners,
            std::unique_ptr<VsyncWaiter> waiter);
 
   ~Animator();
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
+  void Render(std::shared_ptr<flutter::LayerTree> layer_tree);
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 

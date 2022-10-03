@@ -45,8 +45,24 @@ void FontCollection::SetupDefaultFontManager(
   collection_->SetupDefaultFontManager(font_initialization_data);
 }
 
+// Font manifest yaml format:
+//
+// flutter:
+//   fonts:
+//    - family: Raleway
+//      fonts:
+//        - asset: fonts/Raleway-Regular.ttf
+//        - asset: fonts/Raleway-Italic.ttf
+//          style: italic
+//    - family: RobotoMono
+//      fonts:
+//        - asset: fonts/RobotoMono-Regular.ttf
+//        - asset: fonts/RobotoMono-Bold.ttf
+//          weight: 700
+//
+// Structure described in https://docs.flutter.dev/cookbook/design/fonts
 void FontCollection::RegisterFonts(
-    std::shared_ptr<AssetManager> asset_manager) {
+    const std::shared_ptr<AssetManager>& asset_manager) {
   std::unique_ptr<fml::Mapping> manifest_mapping =
       asset_manager->GetAsMapping("FontManifest.json");
   if (manifest_mapping == nullptr) {
@@ -64,8 +80,6 @@ void FontCollection::RegisterFonts(
     FML_DLOG(WARNING) << "Error parsing the font manifest in the asset store.";
     return;
   }
-
-  // Structure described in https://flutter.io/custom-fonts/
 
   if (!document.IsArray()) {
     return;
@@ -131,7 +145,7 @@ void FontCollection::RegisterTestFonts() {
 
 void FontCollection::LoadFontFromList(Dart_Handle font_data_handle,
                                       Dart_Handle callback,
-                                      std::string family_name) {
+                                      const std::string& family_name) {
   tonic::Uint8List font_data(font_data_handle);
   UIDartState::ThrowIfUIOperationsProhibited();
   FontCollection& font_collection = UIDartState::Current()

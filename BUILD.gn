@@ -84,9 +84,13 @@ group("flutter") {
       "//flutter/examples/glfw",
       "//flutter/examples/vulkan_glfw",
     ]
+
+    if (!is_mac) {
+      public_deps += [ "//flutter/examples/glfw_drm" ]
+    }
   }
 
-  # If enbaled, compile the SDK / snapshot.
+  # If enabled, compile the SDK / snapshot.
   if (!is_fuchsia) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
@@ -99,6 +103,9 @@ group("flutter") {
         # //flutter/lib/snapshot:generate_snapshot_bin will only build
         # gen_snapshot for the host and not the target.
         "//third_party/dart/runtime/bin:gen_snapshot",
+
+        # Built alongside gen_snapshot for 64 bit targets
+        "//third_party/dart/runtime/bin:analyze_snapshot",
 
         # Impeller artifacts - compiler and libtessellator
         "//flutter/impeller/compiler:impellerc",
@@ -186,7 +193,7 @@ group("unittests") {
       public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
     }
 
-    if (is_mac || is_linux) {
+    if (is_mac || is_linux || is_win) {
       public_deps += [ "//flutter/impeller:impeller_unittests" ]
     }
 

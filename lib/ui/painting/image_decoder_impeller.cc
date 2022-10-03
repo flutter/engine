@@ -11,22 +11,22 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/display_list/display_list_image_impeller.h"
 #include "flutter/impeller/renderer/allocator.h"
+#include "flutter/impeller/renderer/command_buffer.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/impeller/renderer/texture.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "impeller/base/strings.h"
+#include "impeller/geometry/size.h"
 #include "include/core/SkSize.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 
 namespace flutter {
 
 ImageDecoderImpeller::ImageDecoderImpeller(
-    TaskRunners runners,
+    const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-    fml::WeakPtr<IOManager> io_manager)
-    : ImageDecoder(std::move(runners),
-                   std::move(concurrent_task_runner),
-                   io_manager) {
+    const fml::WeakPtr<IOManager>& io_manager)
+    : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager) {
   std::promise<std::shared_ptr<impeller::Context>> context_promise;
   context_ = context_promise.get_future();
   runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
@@ -58,7 +58,8 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 
 std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
-    SkISize target_size) {
+    SkISize target_size,
+    impeller::ISize max_texture_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";
@@ -70,6 +71,10 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
         << "Uncompressed images are not implemented in Impeller yet.";
     return nullptr;
   }
+  target_size.set(std::min(static_cast<int32_t>(max_texture_size.width),
+                           target_size.width()),
+                  std::min(static_cast<int32_t>(max_texture_size.height),
+                           target_size.height()));
 
   const SkISize source_size = descriptor->image_info().dimensions();
   auto decode_size = descriptor->get_scaled_dimensions(std::max(
@@ -132,8 +137,9 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   return scaled_bitmap;
 }
 
-static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
-                                    std::shared_ptr<SkBitmap> bitmap) {
+static sk_sp<DlImage> UploadTexture(
+    const std::shared_ptr<impeller::Context>& context,
+    std::shared_ptr<SkBitmap> bitmap) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context || !bitmap) {
     return nullptr;
@@ -146,11 +152,13 @@ static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
   }
 
   impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
+  texture_descriptor.mip_count = texture_descriptor.size.MipCount();
 
-  auto texture = context->GetPermanentsAllocator()->CreateTexture(
-      impeller::StorageMode::kHostVisible, texture_descriptor);
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
   if (!texture) {
     FML_DLOG(ERROR) << "Could not create Impeller texture.";
     return nullptr;
@@ -168,6 +176,31 @@ static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
   }
 
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
+
+  {
+    auto command_buffer = context->CreateCommandBuffer();
+    command_buffer->SetLabel("Mipmap Command Buffer");
+    if (!command_buffer) {
+      FML_DLOG(ERROR)
+          << "Could not create command buffer for mipmap generation.";
+      return nullptr;
+    }
+
+    auto blit_pass = command_buffer->CreateBlitPass();
+    blit_pass->SetLabel("Mipmap Blit Pass");
+    if (!blit_pass) {
+      FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
+      return nullptr;
+    }
+
+    blit_pass->GenerateMipmap(texture);
+
+    blit_pass->EncodeCommands(context->GetResourceAllocator());
+    if (!command_buffer->SubmitCommands()) {
+      FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
+      return nullptr;
+    }
+  }
 
   return impeller::DlImageImpeller::Make(std::move(texture));
 }
@@ -200,8 +233,12 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        io_runner = runners_.GetIOTaskRunner(),                    //
        result                                                     //
   ]() {
+        auto max_size_supported =
+            context->GetResourceAllocator()->GetMaxTextureSizeSupported();
+
         // Always decompress on the concurrent runner.
-        auto bitmap = DecompressTexture(raw_descriptor, target_size);
+        auto bitmap =
+            DecompressTexture(raw_descriptor, target_size, max_size_supported);
         if (!bitmap) {
           result(nullptr);
           return;

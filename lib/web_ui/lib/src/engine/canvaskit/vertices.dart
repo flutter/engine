@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
 import 'canvaskit_api.dart';
 import 'skia_object_cache.dart';
 
@@ -17,8 +18,8 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     List<ui.Color>? colors,
     List<int>? indices,
   }) {
-    assert(mode != null); // ignore: unnecessary_null_comparison
-    assert(positions != null); // ignore: unnecessary_null_comparison
+    assert(mode != null);
+    assert(positions != null);
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length) {
       throw ArgumentError(
@@ -49,8 +50,8 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     Int32List? colors,
     Uint16List? indices,
   }) {
-    assert(mode != null); // ignore: unnecessary_null_comparison
-    assert(positions != null); // ignore: unnecessary_null_comparison
+    assert(mode != null);
+    assert(positions != null);
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length) {
       throw ArgumentError(
@@ -107,5 +108,21 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   @override
   void delete() {
     rawSkiaObject?.delete();
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    delete();
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Vertices.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }

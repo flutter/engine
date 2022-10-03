@@ -16,6 +16,14 @@ typedef PlatformMessageCallback = void Function(
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
+// ignore: avoid_classes_with_only_static_members
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  static RootIsolateToken? get instance {
+    throw UnsupportedError('Root isolate not identifiable on web.');
+  }
+}
+
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
 
@@ -49,10 +57,20 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port);
+
+  void registerBackgroundIsolate(RootIsolateToken token);
+
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
   void setIsolateDebugName(String name) {}
+
+  void requestDartPerformanceMode(DartPerformanceMode mode) {}
 
   ByteData? getPersistentIsolateData() => null;
 
@@ -396,7 +414,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != null), // ignore: unnecessary_null_comparison
+  ])  : assert(_languageCode != null),
         assert(_languageCode != ''),
         scriptCode = null;
 
@@ -404,7 +422,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  })  : assert(languageCode != null), // ignore: unnecessary_null_comparison
+  })  : assert(languageCode != null),
         assert(languageCode != ''),
         _languageCode = languageCode,
         assert(scriptCode != ''),
@@ -543,4 +561,11 @@ class Locale {
     }
     return out.toString();
   }
+}
+
+enum DartPerformanceMode {
+  balanced,
+  latency,
+  throughput,
+  memory,
 }

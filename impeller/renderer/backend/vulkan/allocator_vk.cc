@@ -10,6 +10,8 @@ _Pragma("GCC diagnostic ignored \"-Wthread-safety-analysis\"");
 #define VMA_IMPLEMENTATION
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
 
 #include <memory>
 
@@ -58,30 +60,78 @@ bool AllocatorVK::IsValid() const {
 }
 
 // |Allocator|
-std::shared_ptr<Texture> AllocatorVK::CreateTexture(
-    StorageMode mode,
+std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
-  FML_UNREACHABLE();
+  auto image_create_info = vk::ImageCreateInfo{};
+  image_create_info.imageType = vk::ImageType::e2D;
+  image_create_info.format = ToVKImageFormat(desc.format);
+  image_create_info.extent.width = desc.size.width;
+  image_create_info.extent.height = desc.size.height;
+  image_create_info.samples = ToVKSampleCount(desc.sample_count);
+  image_create_info.mipLevels = desc.mip_count;
+
+  // TODO (kaushikiska): should we read these from desc?
+  image_create_info.extent.depth = 1;
+  image_create_info.arrayLayers = 1;
+
+  image_create_info.tiling = vk::ImageTiling::eOptimal;
+  image_create_info.initialLayout = vk::ImageLayout::eUndefined;
+  image_create_info.usage = vk::ImageUsageFlagBits::eSampled |
+                            vk::ImageUsageFlagBits::eColorAttachment;
+
+  VmaAllocationCreateInfo alloc_create_info = {};
+  alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+  // docs recommend using `VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT` for image
+  // allocations, but setting them to be host visible for now.
+  alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                            VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+  auto create_info_native =
+      static_cast<vk::ImageCreateInfo::NativeType>(image_create_info);
+
+  VkImage img;
+  VmaAllocation allocation;
+  VmaAllocationInfo allocation_info;
+  auto result = vk::Result{vmaCreateImage(allocator_, &create_info_native,
+                                          &alloc_create_info, &img, &allocation,
+                                          &allocation_info)};
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Unable to allocate an image";
+    return nullptr;
+  }
+
+  auto texture_info = std::make_unique<TextureInfoVK>(TextureInfoVK{
+      .backing_type = TextureBackingTypeVK::kAllocatedTexture,
+      .allocated_texture =
+          {
+              .allocator = &allocator_,
+              .allocation = allocation,
+              .allocation_info = allocation_info,
+              .image = img,
+          },
+  });
+  return std::make_shared<TextureVK>(desc, &context_, std::move(texture_info));
 }
 
 // |Allocator|
-std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
-                                                        size_t length) {
+std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
+    const DeviceBufferDescriptor& desc) {
   // TODO (kaushikiska): consider optimizing  the usage flags based on
   // StorageMode.
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
       vk::BufferCreateInfo()
-          .setUsage(vk::BufferUsageFlagBits::eStorageBuffer |
+          .setUsage(vk::BufferUsageFlagBits::eVertexBuffer |
+                    vk::BufferUsageFlagBits::eIndexBuffer |
+                    vk::BufferUsageFlagBits::eUniformBuffer |
                     vk::BufferUsageFlagBits::eTransferSrc |
                     vk::BufferUsageFlagBits::eTransferDst)
-          .setSize(length)
+          .setSize(desc.size)
           .setSharingMode(vk::SharingMode::eExclusive));
 
   VmaAllocationCreateInfo allocCreateInfo = {};
   allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-  allocCreateInfo.flags =
-      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-      VMA_ALLOCATION_CREATE_MAPPED_BIT;
+  allocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                          VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
   VkBuffer buffer;
   VmaAllocation buffer_allocation;
@@ -98,8 +148,15 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
   auto device_allocation = std::make_unique<DeviceBufferAllocationVK>(
       allocator_, buffer, buffer_allocation, buffer_allocation_info);
 
-  return std::make_shared<DeviceBufferVK>(length, mode, context_,
+  return std::make_shared<DeviceBufferVK>(desc, context_,
                                           std::move(device_allocation));
 }
 
+// |Allocator|
+ISize AllocatorVK::GetMaxTextureSizeSupported() const {
+  // TODO(magicianA): Get correct max texture size for Vulkan.
+  // 4096 is the required limit, see below:
+  // https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#limits-minmax
+  return {4096, 4096};
+}
 }  // namespace impeller

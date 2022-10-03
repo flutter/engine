@@ -30,9 +30,7 @@ Future<void> testMain() async {
           throwsA(const TypeMatcher<Exception>()));
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
 
     test('loads Blehm font from buffer', () async {
       expect(_containsFontFamily('Blehm'), isFalse);
@@ -46,9 +44,7 @@ Future<void> testMain() async {
       expect(_containsFontFamily('Blehm'), isTrue);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
 
     test('loading font should clear measurement caches', () async {
       final EngineParagraphStyle style = EngineParagraphStyle();
@@ -74,9 +70,7 @@ Future<void> testMain() async {
       expect(Spanometer.rulers.length, 0);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
 
     test('loading font should send font change message', () async {
       final ui.PlatformMessageCallback? oldHandler = ui.window.onPlatformMessage;
@@ -97,15 +91,13 @@ Future<void> testMain() async {
           fontFamily: 'Blehm');
       final Completer<void> completer = Completer<void>();
       domWindow.requestAnimationFrame(allowInterop((_) { completer.complete();}) );
-      await (completer.future); // ignore: unnecessary_parenthesis
+      await completer.future;
       window.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
       expect(message, '{"type":"fontsChange"}');
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
   });
 }
 

@@ -38,13 +38,14 @@ class DeviceBufferAllocationVK {
 class DeviceBufferVK final : public DeviceBuffer,
                              public BackendCast<DeviceBufferVK, DeviceBuffer> {
  public:
-  DeviceBufferVK(size_t size,
-                 StorageMode mode,
+  DeviceBufferVK(DeviceBufferDescriptor desc,
                  ContextVK& context,
                  std::unique_ptr<DeviceBufferAllocationVK> device_allocation);
 
   // |DeviceBuffer|
   ~DeviceBufferVK() override;
+
+  vk::Buffer GetVKBufferHandle() const;
 
  private:
   friend class AllocatorVK;
@@ -53,9 +54,12 @@ class DeviceBufferVK final : public DeviceBuffer,
   std::unique_ptr<DeviceBufferAllocationVK> device_allocation_;
 
   // |DeviceBuffer|
-  bool CopyHostBuffer(const uint8_t* source,
-                      Range source_range,
-                      size_t offset) override;
+  uint8_t* OnGetContents() const override;
+
+  // |DeviceBuffer|
+  bool OnCopyHostBuffer(const uint8_t* source,
+                        Range source_range,
+                        size_t offset) override;
 
   // |DeviceBuffer|
   bool SetLabel(const std::string& label) override;

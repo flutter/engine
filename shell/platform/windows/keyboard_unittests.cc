@@ -524,7 +524,7 @@ class KeyboardTester {
 
     MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
-    engine->RunWithEntrypoint(nullptr);
+    engine->Run();
     return engine;
   }
 
@@ -2372,6 +2372,19 @@ TEST(KeyboardTest, VietnameseTelexAddDiacriticWithSlowFalseResponse) {
 
 TEST(KeyboardTest, VietnameseTelexAddDiacriticWithSlowTrueResponse) {
   VietnameseTelexAddDiacriticWithSlowResponse(true);
+}
+
+// Ensure that the scancode-less key events issued by Narrator
+// when toggling caps lock don't violate assert statements.
+TEST(KeyboardTest, DoubleCapsLock) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyDownInfo{VK_CAPITAL, 0, kNotExtended}.Build(),
+      WmKeyUpInfo{VK_CAPITAL, 0, kNotExtended}.Build()});
+
+  clear_key_calls();
 }
 
 }  // namespace testing

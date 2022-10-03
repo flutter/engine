@@ -14,12 +14,14 @@
 
 namespace impeller {
 
-static ShaderStage ToShaderStage(Blob::ShaderType type) {
+static ShaderStage ToShaderStage(BlobShaderType type) {
   switch (type) {
-    case Blob::ShaderType::kVertex:
+    case BlobShaderType::kVertex:
       return ShaderStage::kVertex;
-    case Blob::ShaderType::kFragment:
+    case BlobShaderType::kFragment:
       return ShaderStage::kFragment;
+    case BlobShaderType::kCompute:
+      return ShaderStage::kCompute;
   }
   FML_UNREACHABLE();
 }
@@ -53,7 +55,7 @@ static std::string GLESShaderNameToShaderKeyName(const std::string& name,
 }
 
 ShaderLibraryGLES::ShaderLibraryGLES(
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries) {
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries) {
   ShaderFunctionMap functions;
   auto iterator = [&functions, library_id = library_id_](auto type,           //
                                                          const auto& name,    //

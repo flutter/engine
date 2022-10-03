@@ -32,19 +32,11 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
+  auto matrix = RasterCacheUtil::GetIntegralTransCTM(canvas.getTotalMatrix());
   SkRect bounds =
-      RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-#ifndef NDEBUG
-  // The image dimensions should always be larger than the device bounds and
-  // smaller than the device bounds plus one pixel, at the same time, we must
-  // introduce epsilon to solve the round-off error. The value of epsilon is
-  // 1/512, which represents half of an AA sample.
-  float epsilon = 1 / 512.0;
-  FML_DCHECK(image_->dimensions().width() - bounds.width() > -epsilon &&
-             image_->dimensions().height() - bounds.height() > -epsilon &&
-             image_->dimensions().width() - bounds.width() < 1 + epsilon &&
-             image_->dimensions().height() - bounds.height() < 1 + epsilon);
-#endif
+      RasterCacheUtil::GetRoundedOutDeviceBounds(logical_rect_, matrix);
+  FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
+             std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
   flow_.Step();
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
@@ -64,15 +56,13 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const std::function<void(SkCanvas*, const SkRect& rect)>& draw_checkerboard)
     const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
-
+  auto matrix = RasterCacheUtil::GetIntegralTransCTM(context.matrix);
   SkRect dest_rect =
-      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-  // we always round out here so that the texture is integer sized.
-  int width = SkScalarCeilToInt(dest_rect.width());
-  int height = SkScalarCeilToInt(dest_rect.height());
+      RasterCacheUtil::GetRoundedOutDeviceBounds(context.logical_rect, matrix);
 
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      width, height, sk_ref_sp(context.dst_color_space));
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
+                                 sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
@@ -86,7 +76,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
   canvas->translate(-dest_rect.left(), -dest_rect.top());
-  canvas->concat(context.matrix);
+  canvas->concat(matrix);
   draw_function(canvas);
 
   if (checkerboard_images_) {

@@ -109,6 +109,7 @@ void testNoCrashes() {
     testCanvas((Canvas canvas) => canvas.translate(double.nan, double.nan));
     testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[],
                                                                indices: <int>[]), BlendMode.screen, paint));
+    testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[])..dispose(), BlendMode.screen, paint));
   });
 }
 
@@ -505,6 +506,39 @@ void main() {
     expect(data.buffer.asUint8List()[3], 0xFF);
   });
 
+  test('toImage and toImageSync have identical contents', () async {
+    // Note: on linux this stil seems to be different.
+    // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/108835
+    if (Platform.isLinux) {
+      return;
+    }
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawRect(
+      const Rect.fromLTWH(20, 20, 100, 100),
+      Paint()..color = const Color(0xA0FF6D00),
+    );
+    final Picture picture = recorder.endRecording();
+    final Image toImageImage = await picture.toImage(200, 200);
+    final Image toImageSyncImage = picture.toImageSync(200, 200);
+
+    // To trigger observable difference in alpha, draw image
+    // on a second canvas.
+    Future<ByteData> drawOnCanvas(Image image) async {
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawPaint(Paint()..color = const Color(0x4FFFFFFF));
+      canvas.drawImage(image, Offset.zero, Paint());
+      final Image resultImage = await recorder.endRecording().toImage(200, 200);
+      return (await resultImage.toByteData())!;
+    }
+
+    final ByteData dataSync = await drawOnCanvas(toImageImage);
+    final ByteData data = await drawOnCanvas(toImageSyncImage);
+    expect(data, listEquals(dataSync));
+  });
+
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
     // Regression test for https://github.com/flutter/flutter/issues/97172
     bool assertsEnabled = false;
@@ -895,4 +929,54 @@ void main() {
     expect(canvas.getLocalClipBounds(), initialLocalBounds);
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
+
+  test('RestoreToCount can work', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    expect(canvas.getSaveCount(), equals(6));
+    canvas.restoreToCount(2);
+    expect(canvas.getSaveCount(), equals(2));
+    canvas.restore();
+    expect(canvas.getSaveCount(), equals(1));
+  });
+
+  test('RestoreToCount count less than 1, the stack should be reset', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    expect(canvas.getSaveCount(), equals(6));
+    canvas.restoreToCount(0);
+    expect(canvas.getSaveCount(), equals(1));
+  });
+
+  test('RestoreToCount count greater than current [getSaveCount], nothing would happend', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    canvas.save();
+    expect(canvas.getSaveCount(), equals(6));
+    canvas.restoreToCount(canvas.getSaveCount() + 1);
+    expect(canvas.getSaveCount(), equals(6));
+  });
 }
+
+Matcher listEquals(ByteData expected) => (dynamic v) {
+  Expect.type<ByteData>(v);
+  final ByteData value = v as ByteData;
+  expect(value.lengthInBytes, expected.lengthInBytes);
+  for (int i = 0; i < value.lengthInBytes; i++) {
+    expect(value.getUint8(i), expected.getUint8(i));
+  }
+};

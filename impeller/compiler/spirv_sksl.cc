@@ -22,6 +22,7 @@ std::string CompilerSkSL::compile() {
   options.version = 100;
   options.vulkan_semantics = false;
   options.enable_420pack_extension = false;
+  options.flatten_multidimensional_arrays = true;
 
   backend.allow_precision_qualifiers = false;
   backend.basic_int16_type = "short";
@@ -37,6 +38,8 @@ std::string CompilerSkSL::compile() {
   backend.uint32_t_literal_suffix = false;
   backend.use_array_constructor = true;
   backend.workgroup_size_is_hidden = true;
+
+  fixup_user_functions();
 
   fixup_anonymous_struct_names();
   fixup_type_alias();
@@ -65,11 +68,35 @@ std::string CompilerSkSL::compile() {
   statement("half4 main(float2 iFragCoord)");
   begin_scope();
   statement("  flutter_FragCoord = float4(iFragCoord, 0, 0);");
-  statement("  __main();");
+  statement("  FLT_main();");
   statement("  return " + output_name_ + ";");
   end_scope();
 
   return buffer.str();
+}
+
+void CompilerSkSL::fixup_user_functions() {
+  const std::string prefix = "FLT_flutter_local_";
+  ir.for_each_typed_id<SPIRFunction>([&](uint32_t, const SPIRFunction& func) {
+    const auto& original_name = get_name(func.self);
+    // Just in case. Don't add the prefix a second time.
+    if (original_name.rfind(prefix, 0) == 0) {
+      return;
+    }
+    std::string new_name = prefix + original_name;
+    set_name(func.self, new_name);
+  });
+
+  ir.for_each_typed_id<SPIRFunctionPrototype>(
+      [&](uint32_t, const SPIRFunctionPrototype& func) {
+        const auto& original_name = get_name(func.self);
+        // Just in case. Don't add the prefix a second time.
+        if (original_name.rfind(prefix, 0) == 0) {
+          return;
+        }
+        std::string new_name = prefix + original_name;
+        set_name(func.self, new_name);
+      });
 }
 
 void CompilerSkSL::emit_header() {
@@ -354,8 +381,8 @@ void CompilerSkSL::emit_function_prototype(SPIRFunction& func,
 
   // If this is the entrypoint of a fragment shader, then GLSL requires the
   // prototype to be "void main()", and so it is safe to rewrite as
-  // "void __main()".
-  statement("void __main()");
+  // "void FLT_main()".
+  statement("void FLT_main()");
 }
 
 std::string CompilerSkSL::image_type_glsl(const SPIRType& type, uint32_t id) {

@@ -27,13 +27,17 @@ class AtlasContents final : public Contents {
 
   void SetTransforms(std::vector<Matrix> transforms);
 
-  void SetBlendMode(Entity::BlendMode blend_mode);
+  void SetBlendMode(BlendMode blend_mode);
 
   void SetTextureCoordinates(std::vector<Rect> texture_coords);
 
   void SetColors(std::vector<Color> colors);
 
+  void SetCullRect(std::optional<Rect> cull_rect);
+
   void SetSamplerDescriptor(SamplerDescriptor desc);
+
+  void SetAlpha(Scalar alpha);
 
   const SamplerDescriptor& GetSamplerDescriptor() const;
 
@@ -50,7 +54,9 @@ class AtlasContents final : public Contents {
   std::vector<Rect> texture_coords_;
   std::vector<Color> colors_;
   std::vector<Matrix> transforms_;
-  Entity::BlendMode blend_mode_;
+  BlendMode blend_mode_;
+  std::optional<Rect> cull_rect_;
+  Scalar alpha_ = 1.0;
   SamplerDescriptor sampler_descriptor_ = {};
 
   FML_DISALLOW_COPY_AND_ASSIGN(AtlasContents);

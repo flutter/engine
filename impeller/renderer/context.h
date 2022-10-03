@@ -16,24 +16,18 @@ class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 class Allocator;
+class WorkQueue;
 
-class Context {
+class Context : public std::enable_shared_from_this<Context> {
  public:
   virtual ~Context();
 
   virtual bool IsValid() const = 0;
 
   //----------------------------------------------------------------------------
-  /// @return     An allocator suitable for allocations that persist between
-  ///             frames.
+  /// @return     A resource allocator.
   ///
-  virtual std::shared_ptr<Allocator> GetPermanentsAllocator() const = 0;
-
-  //----------------------------------------------------------------------------
-  /// @return     An allocator suitable for allocations that used only for one
-  ///             frame or render pass.
-  ///
-  virtual std::shared_ptr<Allocator> GetTransientsAllocator() const = 0;
+  virtual std::shared_ptr<Allocator> GetResourceAllocator() const = 0;
 
   virtual std::shared_ptr<ShaderLibrary> GetShaderLibrary() const = 0;
 
@@ -41,12 +35,13 @@ class Context {
 
   virtual std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const = 0;
 
-  virtual std::shared_ptr<CommandBuffer> CreateRenderCommandBuffer() const = 0;
+  virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
-  virtual std::shared_ptr<CommandBuffer> CreateTransferCommandBuffer()
-      const = 0;
+  virtual std::shared_ptr<WorkQueue> GetWorkQueue() const = 0;
 
   virtual bool HasThreadingRestrictions() const;
+
+  virtual bool SupportsOffscreenMSAA() const = 0;
 
  protected:
   Context();

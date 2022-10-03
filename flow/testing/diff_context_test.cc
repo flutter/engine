@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "diff_context_test.h"
+
+#include <utility>
 #include "flutter/display_list/display_list_builder.h"
 
 namespace flutter {
@@ -17,11 +19,12 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const MockLayerTree& old_layer_tree,
                                       const SkIRect& additional_damage,
                                       int horizontal_clip_alignment,
-                                      int vertical_clip_alignment) {
+                                      int vertical_clip_alignment,
+                                      bool use_raster_cache) {
   FML_CHECK(layer_tree.size() == old_layer_tree.size());
 
   DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
-                 old_layer_tree.paint_region_map());
+                 old_layer_tree.paint_region_map(), use_raster_cache);
   dc.PushCullRect(
       SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
@@ -41,7 +44,8 @@ std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(
     sk_sp<DisplayList> display_list,
     const SkPoint& offset) {
   return std::make_shared<DisplayListLayer>(
-      offset, SkiaGPUObject(display_list, unref_queue()), false, false);
+      offset, SkiaGPUObject(std::move(display_list), unref_queue()), false,
+      false);
 }
 
 std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(

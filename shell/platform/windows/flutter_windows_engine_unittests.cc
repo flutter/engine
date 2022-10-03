@@ -76,6 +76,11 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
                   THREAD_PRIORITY_ABOVE_NORMAL);
         return kSuccess;
       }));
+  // Accessibility updates must do nothing when the embedder engine is mocked
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
 
   // It should send locale info.
   bool update_locales_called = false;
@@ -129,7 +134,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   // Set the AngleSurfaceManager to !nullptr to test ANGLE rendering.
   modifier.SetSurfaceManager(reinterpret_cast<AngleSurfaceManager*>(1));
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
 
   EXPECT_TRUE(run_called);
   EXPECT_TRUE(update_locales_called);
@@ -193,6 +198,11 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
         EXPECT_EQ(config->type, kSoftware);
         return kSuccess;
       }));
+  // Accessibility updates must do nothing when the embedder engine is mocked
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
 
   // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
   // initialized engine instance.
@@ -206,7 +216,7 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
   // Set the AngleSurfaceManager to nullptr to test software fallback path.
   modifier.SetSurfaceManager(nullptr);
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
 
   EXPECT_TRUE(run_called);
 
@@ -351,7 +361,7 @@ TEST(FlutterWindowsEngine, AddPluginRegistrarDestructionCallback) {
   MockEmbedderApiForKeyboard(modifier,
                              std::make_shared<MockKeyResponseController>());
 
-  engine->RunWithEntrypoint(nullptr);
+  engine->Run();
 
   // Verify that destruction handlers don't overwrite each other.
   int result1 = 0;
@@ -386,6 +396,69 @@ TEST(FlutterWindowsEngine, ScheduleFrame) {
                        }));
 
   engine->ScheduleFrame();
+  EXPECT_TRUE(called);
+}
+
+TEST(FlutterWindowsEngine, SetNextFrameCallback) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  bool called = false;
+  modifier.embedder_api().SetNextFrameCallback = MOCK_ENGINE_PROC(
+      SetNextFrameCallback, ([&called](auto engine, auto callback, auto data) {
+        called = true;
+        return kSuccess;
+      }));
+
+  engine->SetNextFrameCallback([]() {});
+  EXPECT_TRUE(called);
+}
+
+TEST(FlutterWindowsEngine, GetExecutableName) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EXPECT_EQ(engine->GetExecutableName(), "flutter_windows_unittests.exe");
+}
+
+// Ensure that after setting or resetting the high contrast feature,
+// the corresponding status flag can be retrieved from the engine.
+TEST(FlutterWindowsEngine, UpdateHighContrastFeature) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  bool called = false;
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures, ([&called](auto engine, auto flags) {
+        called = true;
+        return kSuccess;
+      }));
+
+  engine->UpdateHighContrastEnabled(true);
+  EXPECT_TRUE(
+      engine->EnabledAccessibilityFeatures() &
+      FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
+  EXPECT_TRUE(engine->high_contrast_enabled());
+  EXPECT_TRUE(called);
+
+  engine->UpdateHighContrastEnabled(false);
+  EXPECT_FALSE(
+      engine->EnabledAccessibilityFeatures() &
+      FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
+  EXPECT_FALSE(engine->high_contrast_enabled());
+}
+
+TEST(FlutterWindowsEngine, PostRasterThreadTask) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  modifier.embedder_api().PostRenderThreadTask = MOCK_ENGINE_PROC(
+      PostRenderThreadTask, ([](auto engine, auto callback, auto context) {
+        callback(context);
+        return kSuccess;
+      }));
+
+  bool called = false;
+  engine->PostRasterThreadTask([&called]() { called = true; });
+
   EXPECT_TRUE(called);
 }
 

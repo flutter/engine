@@ -19,7 +19,7 @@ Future<Uint8List> readFile(String fileName) async {
   return file.readAsBytes();
 }
 
-void testFontWeightLerp() {
+void testFontWeight() {
   test('FontWeight.lerp works with non-null values', () {
     expect(FontWeight.lerp(FontWeight.w400, FontWeight.w600, .5), equals(FontWeight.w500));
   });
@@ -34,6 +34,18 @@ void testFontWeightLerp() {
 
   test('FontWeight.lerp returns FontWeight.w400 if b is null', () {
     expect(FontWeight.lerp(FontWeight.w400, null, 1), equals(FontWeight.w400));
+  });
+
+  test('FontWeights have the correct value', () {
+    expect(FontWeight.w100.value, 100);
+    expect(FontWeight.w200.value, 200);
+    expect(FontWeight.w300.value, 300);
+    expect(FontWeight.w400.value, 400);
+    expect(FontWeight.w500.value, 500);
+    expect(FontWeight.w600.value, 600);
+    expect(FontWeight.w700.value, 700);
+    expect(FontWeight.w800.value, 800);
+    expect(FontWeight.w900.value, 900);
   });
 }
 
@@ -276,8 +288,31 @@ void testFontVariation() {
   });
 }
 
+void testGetWordBoundary() {
+  test('GetWordBoundary', () async {
+    final Uint8List fontData = await readFile('RobotoSlab-VariableFont_wght.ttf');
+    await loadFontFromList(fontData, fontFamily: 'RobotoSerif');
+
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'RobotoSerif',
+      fontSize: 40.0,
+    ));
+    builder.addText('Hello team');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    TextRange range = paragraph.getWordBoundary(const TextPosition(offset: 5, affinity: TextAffinity.upstream));
+    expect(range.start, 0);
+    expect(range.end, 5);
+
+    range = paragraph.getWordBoundary(const TextPosition(offset: 5));
+    expect(range.start, 5);
+    expect(range.end, 6);
+  });
+}
+
 void main() {
-  testFontWeightLerp();
+  testFontWeight();
   testParagraphStyle();
   testTextStyle();
   testTextHeightBehavior();
@@ -285,4 +320,5 @@ void main() {
   testLoadFontFromList();
   testFontFeatureClass();
   testFontVariation();
+  testGetWordBoundary();
 }

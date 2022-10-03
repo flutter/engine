@@ -78,13 +78,14 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
       std::unique_ptr<flutter::FlutterWindowsEngine>(EngineFromHandle(engine)));
   state->view->CreateRenderSurface();
   if (!state->view->GetEngine()->running()) {
-    if (!state->view->GetEngine()->RunWithEntrypoint(nullptr)) {
+    if (!state->view->GetEngine()->Run()) {
       return nullptr;
     }
   }
 
   // Must happen after engine is running.
   state->view->SendInitialBounds();
+  state->view->SendInitialAccessibilityFeatures();
   return state.release();
 }
 
@@ -144,7 +145,7 @@ bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine_ref) {
 
 bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                              const char* entry_point) {
-  return EngineFromHandle(engine)->RunWithEntrypoint(entry_point);
+  return EngineFromHandle(engine)->Run(entry_point);
 }
 
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
@@ -176,8 +177,31 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
       EngineFromHandle(engine)->texture_registrar());
 }
 
+void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
+                                              VoidCallback callback,
+                                              void* user_data) {
+  EngineFromHandle(engine)->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return ViewFromHandle(view)->GetPlatformWindow();
+}
+
+IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
+  auto surface_manager = ViewFromHandle(view)->GetEngine()->surface_manager();
+  if (surface_manager) {
+    Microsoft::WRL::ComPtr<ID3D11Device> d3d_device;
+    Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
+    if (surface_manager->GetDevice(d3d_device.GetAddressOf()) &&
+        SUCCEEDED(d3d_device.As(&dxgi_device))) {
+      IDXGIAdapter* adapter;
+      if (SUCCEEDED(dxgi_device->GetAdapter(&adapter))) {
+        return adapter;
+      }
+    }
+  }
+  return nullptr;
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
@@ -278,11 +302,18 @@ int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
       ->RegisterTexture(texture_info);
 }
 
-bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+void FlutterDesktopTextureRegistrarUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    int64_t texture_id) {
-  return TextureRegistrarFromHandle(texture_registrar)
-      ->UnregisterTexture(texture_id);
+    int64_t texture_id,
+    void (*callback)(void* user_data),
+    void* user_data) {
+  auto registrar = TextureRegistrarFromHandle(texture_registrar);
+  if (callback) {
+    registrar->UnregisterTexture(
+        texture_id, [callback, user_data]() { callback(user_data); });
+    return;
+  }
+  registrar->UnregisterTexture(texture_id);
 }
 
 bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(

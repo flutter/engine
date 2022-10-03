@@ -14,37 +14,40 @@ enum FontStyle {
 
 /// The thickness of the glyphs used to draw the text
 class FontWeight {
-  const FontWeight._(this.index);
+  const FontWeight._(this.index, this.value);
 
   /// The encoded integer value of this font weight.
   final int index;
 
+  /// The thickness value of this font weight.
+  final int value;
+
   /// Thin, the least thick
-  static const FontWeight w100 = FontWeight._(0);
+  static const FontWeight w100 = FontWeight._(0, 100);
 
   /// Extra-light
-  static const FontWeight w200 = FontWeight._(1);
+  static const FontWeight w200 = FontWeight._(1, 200);
 
   /// Light
-  static const FontWeight w300 = FontWeight._(2);
+  static const FontWeight w300 = FontWeight._(2, 300);
 
   /// Normal / regular / plain
-  static const FontWeight w400 = FontWeight._(3);
+  static const FontWeight w400 = FontWeight._(3, 400);
 
   /// Medium
-  static const FontWeight w500 = FontWeight._(4);
+  static const FontWeight w500 = FontWeight._(4, 500);
 
   /// Semi-bold
-  static const FontWeight w600 = FontWeight._(5);
+  static const FontWeight w600 = FontWeight._(5, 600);
 
   /// Bold
-  static const FontWeight w700 = FontWeight._(6);
+  static const FontWeight w700 = FontWeight._(6, 700);
 
   /// Extra-bold
-  static const FontWeight w800 = FontWeight._(7);
+  static const FontWeight w800 = FontWeight._(7, 800);
 
   /// Black, the most thick
-  static const FontWeight w900 = FontWeight._(8);
+  static const FontWeight w900 = FontWeight._(8, 900);
 
   /// The default font weight.
   static const FontWeight normal = w400;
@@ -2235,13 +2238,12 @@ enum TextAffinity {
 
 /// A position in a string of text.
 ///
-/// A TextPosition can be used to locate a position in a string in code (using
-/// the [offset] property), and it can also be used to locate the same position
-/// visually in a rendered string of text (using [offset] and, when needed to
-/// resolve ambiguity, [affinity]).
+/// A TextPosition can be used to describe a caret position in between
+/// characters. The [offset] points to the position between `offset - 1` and
+/// `offset` characters of the string, and the [affinity] is used to describe
+/// which character this position affiliates with.
 ///
-/// The location of an offset in a rendered string is ambiguous in two cases.
-/// One happens when rendered text is forced to wrap. In this case, the offset
+/// One use case is when rendered text is forced to wrap. In this case, the offset
 /// where the wrap occurs could visually appear either at the end of the first
 /// line or the beginning of the second line. The second way is with
 /// bidirectional text.  An offset at the interface between two different text
@@ -2826,8 +2828,23 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// have word breaks on both sides. In such cases, this method will return
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
+  ///
+  /// The [TextPosition] is treated as caret position, its [TextPosition.affinity]
+  /// is used to determine which character this position points to. For example,
+  /// the word boundary at `TextPosition(offset: 5, affinity: TextPosition.upstream)`
+  /// of the `string = 'Hello word'` will return range (0, 5) because the position
+  /// points to the character 'o' instead of the space.
   TextRange getWordBoundary(TextPosition position) {
-    final List<int> boundary = _getWordBoundary(position.offset);
+    final int characterPosition;
+    switch (position.affinity) {
+      case TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+        break;
+      case TextAffinity.downstream:
+        characterPosition = position.offset;
+        break;
+    }
+    final List<int> boundary = _getWordBoundary(characterPosition);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
 
@@ -2904,6 +2921,36 @@ class Paragraph extends NativeFieldWrapperClass1 {
 
   @FfiNative<Handle Function(Pointer<Void>)>('Paragraph::computeLineMetrics')
   external Float64List _computeLineMetrics();
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Paragraph::dispose')
+  external void _dispose();
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
+  }
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
@@ -3163,8 +3210,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _placeholderScales.add(scale);
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Double, Double, Uint32, Double, Uint32)>('ParagraphBuilder::addPlaceholder')
-  external String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline);
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Uint32, Double, Uint32)>('ParagraphBuilder::addPlaceholder')
+  external void _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline);
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.

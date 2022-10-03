@@ -56,9 +56,7 @@ class HtmlCodec implements ui.Codec {
         int naturalWidth = imgElement.naturalWidth;
         int naturalHeight = imgElement.naturalHeight;
         // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
-        if (naturalWidth == 0 && naturalHeight == 0 && (
-            browserEngine == BrowserEngine.firefox ||
-                browserEngine == BrowserEngine.ie11)) {
+        if (naturalWidth == 0 && naturalHeight == 0 && browserEngine == BrowserEngine.firefox) {
           const int kDefaultImageSizeFallback = 300;
           naturalWidth = kDefaultImageSizeFallback;
           naturalHeight = kDefaultImageSizeFallback;
@@ -140,7 +138,9 @@ class SingleFrameInfo implements ui.FrameInfo {
 }
 
 class HtmlImage implements ui.Image {
-  HtmlImage(this.imgElement, this.width, this.height);
+  HtmlImage(this.imgElement, this.width, this.height) {
+    ui.Image.onCreate?.call(this);
+  }
 
   final DomHTMLImageElement imgElement;
   bool _requiresClone = false;
@@ -148,6 +148,7 @@ class HtmlImage implements ui.Image {
   bool _disposed = false;
   @override
   void dispose() {
+    ui.Image.onDispose?.call(this);
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
     if (assertionsEnabled) {

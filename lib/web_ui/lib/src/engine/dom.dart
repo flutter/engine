@@ -1276,8 +1276,7 @@ class DomStyleSheet {}
 class DomCSSStyleSheet extends DomStyleSheet {}
 
 extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
-  List<DomCSSRule> get cssRules =>
-      js_util.getProperty<List<Object?>>(this, 'cssRules').cast<DomCSSRule>();
+  external DomCSSRuleList get cssRules;
   int insertRule(String rule, [int? index]) => js_util
       .callMethod(this, 'insertRule', <Object>[rule, if (index != null) index]);
 }
@@ -1299,8 +1298,10 @@ extension DomScreenExtension on DomScreen {
 class DomScreenOrientation extends DomEventTarget {}
 
 extension DomScreenOrientationExtension on DomScreenOrientation {
-  Future<dynamic> lock(String orientation) => js_util
-      .promiseToFuture(js_util.callMethod(this, 'lock', <String>[orientation]));
+  Future<dynamic> lock(String orientation) {
+    final Object jsResult = js_util.callMethod<Object>(this, 'lock', <String>[orientation]);
+    return js_util.promiseToFuture(jsResult);
+  }
   external void unlock();
 }
 
@@ -1379,6 +1380,14 @@ class DomMessageChannel {}
 extension DomMessageChannelExtension on DomMessageChannel {
   external DomMessagePort get port1;
   external DomMessagePort get port2;
+}
+
+@JS()
+@staticInterop
+class DomCSSRuleList {}
+
+extension DomCSSRuleListExtension on DomCSSRuleList {
+  external int get length;
 }
 
 DomMessageChannel createDomMessageChannel() =>

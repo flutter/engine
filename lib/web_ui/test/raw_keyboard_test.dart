@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/services.dart';
@@ -68,9 +67,7 @@ void testMain() {
       });
 
       RawKeyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches keydown to flutter/keyevent channel', () {
       RawKeyboard.initialize();
@@ -101,9 +98,7 @@ void testMain() {
       expect(event.defaultPrevented, isFalse);
 
       RawKeyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches correct meta state', () {
       RawKeyboard.initialize();
@@ -155,9 +150,7 @@ void testMain() {
       });
 
       RawKeyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('dispatches repeat events', () {
       RawKeyboard.initialize();
@@ -210,9 +203,7 @@ void testMain() {
       ]);
 
       RawKeyboard.instance!.dispose();
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('stops dispatching events after dispose', () {
       RawKeyboard.initialize();

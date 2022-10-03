@@ -75,10 +75,10 @@ void Path::SetContourClosed(bool is_closed) {
 }
 
 void Path::EnumerateComponents(
-    Applier<LinearPathComponent> linear_applier,
-    Applier<QuadraticPathComponent> quad_applier,
-    Applier<CubicPathComponent> cubic_applier,
-    Applier<ContourComponent> contour_applier) const {
+    const Applier<LinearPathComponent>& linear_applier,
+    const Applier<QuadraticPathComponent>& quad_applier,
+    const Applier<CubicPathComponent>& cubic_applier,
+    const Applier<ContourComponent>& contour_applier) const {
   size_t currentIndex = 0;
   for (const auto& component : components_) {
     switch (component.type) {
@@ -237,7 +237,7 @@ Path::Polyline Path::CreatePolyline(
     for (const auto& point : collection) {
       if (previous_contour_point.has_value() &&
           previous_contour_point.value() == point) {
-        // Slip over duplicate points in the same contour.
+        // Skip over duplicate points in the same contour.
         continue;
       }
       previous_contour_point = point;

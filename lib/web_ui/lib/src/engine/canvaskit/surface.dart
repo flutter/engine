@@ -13,7 +13,7 @@ import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
-import 'initialization.dart';
+import 'renderer.dart';
 import 'surface_factory.dart';
 import 'util.dart';
 
@@ -131,7 +131,7 @@ class Surface {
 
   void addToScene() {
     if (!_addedToScene) {
-      skiaSceneHost!.prepend(htmlElement);
+      CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);
     }
     _addedToScene = true;
   }
@@ -161,6 +161,7 @@ class Surface {
       // The existing surface is still reusable.
       if (window.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
+        _translateCanvas();
       }
       return _surface!;
     }

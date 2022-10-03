@@ -32,17 +32,7 @@ Dart_Handle ImageShader::initWithImage(CanvasImage* image,
     return ToDart("ImageShader constructor called with non-genuine Image.");
   }
 
-  if (image->image()->owning_context() != DlImage::OwningContext::kIO) {
-    // TODO(dnfield): it should be possible to support this
-    // https://github.com/flutter/flutter/issues/105085
-    return ToDart("ImageShader constructor with GPU image is not supported.");
-  }
-
-  auto raw_sk_image = image->image()->skia_image();
-  if (!raw_sk_image) {
-    return ToDart("ImageShader constructor with Impeller is not supported.");
-  }
-  sk_image_ = UIDartState::CreateGPUObject(std::move(raw_sk_image));
+  image_ = image->image();
   tonic::Float64List matrix4(matrix_handle);
   SkMatrix local_matrix = ToSkMatrix(matrix4);
   matrix4.Release();
@@ -51,7 +41,7 @@ Dart_Handle ImageShader::initWithImage(CanvasImage* image,
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
                           : DlImageSampling::kLinear;
   cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
-      sk_image_.skia_object(), ToDl(tmx), ToDl(tmy), sampling, &local_matrix));
+      image_, ToDl(tmx), ToDl(tmy), sampling, &local_matrix));
   return Dart_Null();
 }
 
@@ -72,11 +62,17 @@ std::shared_ptr<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
 }
 
 int ImageShader::width() {
-  return sk_image_.skia_object()->width();
+  return image_->width();
 }
 
 int ImageShader::height() {
-  return sk_image_.skia_object()->height();
+  return image_->height();
+}
+
+void ImageShader::dispose() {
+  cached_shader_.reset();
+  image_.reset();
+  ClearDartWrapper();
 }
 
 ImageShader::ImageShader() = default;
