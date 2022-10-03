@@ -16,7 +16,7 @@ class WindowsRegistry {
   public:
     virtual ~WindowsRegistry();
 
-    virtual LSTATUS GetRegistryValue(HKEY hkey, LPCSTR key, LPCSTR value, DWORD flags, LPDWORD type, PVOID data, LPDWORD sizeData) const;
+    virtual LSTATUS GetRegistryValue(HKEY hkey, LPCWSTR key, LPCWSTR value, DWORD flags, LPDWORD type, PVOID data, LPDWORD sizeData) const;
   private:
 };
 

@@ -526,7 +526,7 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(*windows_registry_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {

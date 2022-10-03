@@ -9,12 +9,11 @@
 #include <sstream>
 
 #include "flutter/fml/platform/win/wstring_conversion.h"
-#include "flutter/fml/logging.h"
 
 namespace flutter {
 
-std::vector<LanguageInfo> GetPreferredLanguageInfo() {
-  std::vector<std::wstring> languages = GetPreferredLanguages();
+std::vector<LanguageInfo> GetPreferredLanguageInfo(const WindowsRegistry& registry) {
+  std::vector<std::wstring> languages = GetPreferredLanguages(registry);
   std::vector<LanguageInfo> language_info;
   language_info.reserve(languages.size());
 
@@ -24,7 +23,7 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
   return language_info;
 }
 
-std::vector<std::wstring> GetPreferredLanguages() {
+std::vector<std::wstring> GetPreferredLanguages(const WindowsRegistry& registry) {
   std::vector<std::wstring> languages;
   BOOL languages_from_registry = TRUE;
   ULONG buffer_size = 0;
@@ -32,9 +31,9 @@ std::vector<std::wstring> GetPreferredLanguages() {
   DWORD flags = MUI_LANGUAGE_NAME | MUI_UI_FALLBACK;
 
   // Determine where languages are defined and get buffer length
-  if (RegGetValueA(HKEY_CURRENT_USER,
-                   "Control panel\\International\\User Profile", "Languages",
-                   RRF_RT_REG_MULTI_SZ, NULL, NULL, &buffer_size) != S_OK) {
+  if (registry.GetRegistryValue(HKEY_CURRENT_USER,
+                   L"Control panel\\International\\User Profile", L"Languages",
+                   RRF_RT_REG_MULTI_SZ, NULL, NULL, &buffer_size) != ERROR_SUCCESS) {
     languages_from_registry = FALSE;
     if (!::GetThreadPreferredUILanguages(flags, &count, nullptr,
                                          &buffer_size)) {
@@ -42,11 +41,11 @@ std::vector<std::wstring> GetPreferredLanguages() {
     }
   }
 
-  // Mutli-string must be at least 3-long if non-empty,
+  // Multi-string must be at least 3-long if non-empty,
   // as a multi-string is terminated with 2 nulls.
   //
   // See:
-  // https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types
+  // https://learn.microsoft.com/windows/win32/sysinfo/registry-value-types
   if (buffer_size < 3) {
     languages_from_registry = FALSE;
   }
@@ -54,15 +53,11 @@ std::vector<std::wstring> GetPreferredLanguages() {
   // Initialize the buffer
   std::wstring buffer(buffer_size, '\0');
   if (languages_from_registry) {
-    std::string str_buffer(buffer_size, '\0');
-    if (RegGetValueA(HKEY_CURRENT_USER,
-                     "Control panel\\International\\User Profile", "Languages",
-                     RRF_RT_REG_MULTI_SZ, NULL, str_buffer.data(),
-                     &buffer_size) != S_OK) {
+    if (registry.GetRegistryValue(HKEY_CURRENT_USER,
+                     L"Control panel\\International\\User Profile", L"Languages",
+                     RRF_RT_REG_MULTI_SZ, NULL, buffer.data(),
+                     &buffer_size) != ERROR_SUCCESS) {
       return languages;
-    }
-    for (int i = 0; i < buffer_size; i++) {
-      buffer[i] = str_buffer[i];
     }
   } else {
     if (!::GetThreadPreferredUILanguages(flags, &count, buffer.data(),
@@ -87,7 +82,6 @@ std::vector<std::wstring> GetPreferredLanguages() {
     // Skip past that language and its terminating null in the buffer.
     start += language.size() + 1;
   }
-  FML_LOG(ERROR) << "Leaving func";
   return languages;
 }
 
