@@ -18,4 +18,4 @@ LSTATUS WindowsRegistry::GetRegistryValue(HKEY hkey,
 
 WindowsRegistry::~WindowsRegistry() {}
 
-}
+}  // namespace flutter

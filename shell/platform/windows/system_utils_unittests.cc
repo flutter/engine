@@ -12,7 +12,7 @@ namespace flutter {
 namespace testing {
 
 class MockWindowsRegistry : public WindowsRegistry {
-public:
+ public:
   virtual ~MockWindowsRegistry() {}
 
   virtual LSTATUS GetRegistryValue(HKEY hkey,
