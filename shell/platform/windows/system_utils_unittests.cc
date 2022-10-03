@@ -12,23 +12,30 @@ namespace flutter {
 namespace testing {
 
 class MockWindowsRegistry : public WindowsRegistry {
-  public:
-    virtual ~MockWindowsRegistry() {}
+public:
+  virtual ~MockWindowsRegistry() {}
 
-    virtual LSTATUS GetRegistryValue(HKEY hkey, LPCWSTR key, LPCWSTR value, DWORD flags, LPDWORD type, PVOID data, LPDWORD sizeData) const {
-      static const wchar_t* locales = L"en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0";
-      static DWORD locales_len = 35;
-      if (data != NULL) {
-        if (*sizeData < locales_len) {
-          return ERROR_MORE_DATA;
-        }
-        memcpy(data, locales, locales_len * sizeof(wchar_t));
-        *sizeData = locales_len * sizeof(wchar_t);
-      } else if (sizeData != NULL) {
-        *sizeData = locales_len * sizeof(wchar_t);
+  virtual LSTATUS GetRegistryValue(HKEY hkey,
+                                   LPCWSTR key,
+                                   LPCWSTR value,
+                                   DWORD flags,
+                                   LPDWORD type,
+                                   PVOID data,
+                                   LPDWORD sizeData) const {
+    static const wchar_t* locales =
+        L"en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0";
+    static DWORD locales_len = 35;
+    if (data != NULL) {
+      if (*sizeData < locales_len) {
+        return ERROR_MORE_DATA;
       }
-      return ERROR_SUCCESS;
+      memcpy(data, locales, locales_len * sizeof(wchar_t));
+      *sizeData = locales_len * sizeof(wchar_t);
+    } else if (sizeData != NULL) {
+      *sizeData = locales_len * sizeof(wchar_t);
     }
+    return ERROR_SUCCESS;
+  }
 };
 
 TEST(SystemUtils, GetPreferredLanguageInfo) {

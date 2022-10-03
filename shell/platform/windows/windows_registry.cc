@@ -6,7 +6,13 @@
 
 namespace flutter {
 
-LSTATUS WindowsRegistry::GetRegistryValue(HKEY hkey, LPCWSTR key, LPCWSTR value, DWORD flags, LPDWORD type, PVOID data, LPDWORD dataSize) const {
+LSTATUS WindowsRegistry::GetRegistryValue(HKEY hkey,
+                                          LPCWSTR key,
+                                          LPCWSTR value,
+                                          DWORD flags,
+                                          LPDWORD type,
+                                          PVOID data,
+                                          LPDWORD dataSize) const {
   return RegGetValue(hkey, key, value, flags, type, data, dataSize);
 }
 

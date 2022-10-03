@@ -12,7 +12,8 @@
 
 namespace flutter {
 
-std::vector<LanguageInfo> GetPreferredLanguageInfo(const WindowsRegistry& registry) {
+std::vector<LanguageInfo> GetPreferredLanguageInfo(
+    const WindowsRegistry& registry) {
   std::vector<std::wstring> languages = GetPreferredLanguages(registry);
   std::vector<LanguageInfo> language_info;
   language_info.reserve(languages.size());
@@ -23,7 +24,8 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo(const WindowsRegistry& regist
   return language_info;
 }
 
-std::vector<std::wstring> GetPreferredLanguages(const WindowsRegistry& registry) {
+std::vector<std::wstring> GetPreferredLanguages(
+    const WindowsRegistry& registry) {
   std::vector<std::wstring> languages;
   BOOL languages_from_registry = TRUE;
   ULONG buffer_size = 0;
@@ -32,8 +34,9 @@ std::vector<std::wstring> GetPreferredLanguages(const WindowsRegistry& registry)
 
   // Determine where languages are defined and get buffer length
   if (registry.GetRegistryValue(HKEY_CURRENT_USER,
-                   L"Control panel\\International\\User Profile", L"Languages",
-                   RRF_RT_REG_MULTI_SZ, NULL, NULL, &buffer_size) != ERROR_SUCCESS) {
+                                L"Control panel\\International\\User Profile",
+                                L"Languages", RRF_RT_REG_MULTI_SZ, NULL, NULL,
+                                &buffer_size) != ERROR_SUCCESS) {
     languages_from_registry = FALSE;
     if (!::GetThreadPreferredUILanguages(flags, &count, nullptr,
                                          &buffer_size)) {
@@ -53,10 +56,10 @@ std::vector<std::wstring> GetPreferredLanguages(const WindowsRegistry& registry)
   // Initialize the buffer
   std::wstring buffer(buffer_size, '\0');
   if (languages_from_registry) {
-    if (registry.GetRegistryValue(HKEY_CURRENT_USER,
-                     L"Control panel\\International\\User Profile", L"Languages",
-                     RRF_RT_REG_MULTI_SZ, NULL, buffer.data(),
-                     &buffer_size) != ERROR_SUCCESS) {
+    if (registry.GetRegistryValue(
+            HKEY_CURRENT_USER, L"Control panel\\International\\User Profile",
+            L"Languages", RRF_RT_REG_MULTI_SZ, NULL, buffer.data(),
+            &buffer_size) != ERROR_SUCCESS) {
       return languages;
     }
   } else {

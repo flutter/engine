@@ -526,7 +526,8 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo(*windows_registry_);
+  std::vector<LanguageInfo> languages =
+      GetPreferredLanguageInfo(*windows_registry_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -657,7 +658,8 @@ int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
   return flags;
 }
 
-void FlutterWindowsEngine::SetWindowsRegistry(const WindowsRegistry& windows_registry) {
+void FlutterWindowsEngine::SetWindowsRegistry(
+    const WindowsRegistry& windows_registry) {
   windows_registry_ = std::make_unique<WindowsRegistry>(windows_registry);
 }
 

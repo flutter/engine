@@ -13,11 +13,17 @@
 namespace flutter {
 
 class WindowsRegistry {
-  public:
-    virtual ~WindowsRegistry();
+public:
+  virtual ~WindowsRegistry();
 
-    virtual LSTATUS GetRegistryValue(HKEY hkey, LPCWSTR key, LPCWSTR value, DWORD flags, LPDWORD type, PVOID data, LPDWORD sizeData) const;
-  private:
+  virtual LSTATUS GetRegistryValue(HKEY hkey,
+                                   LPCWSTR key,
+                                   LPCWSTR value,
+                                   DWORD flags,
+                                   LPDWORD type,
+                                   PVOID data,
+                                   LPDWORD sizeData) const;
+private:
 };
 
 }
