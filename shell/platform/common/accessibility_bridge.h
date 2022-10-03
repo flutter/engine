@@ -103,7 +103,8 @@ class AccessibilityBridge
   };
 
   //-----------------------------------------------------------------------------
-  /// @brief      Creates a new instance of a accessibility bridge.
+  /// @brief      Creates a new instance of a accessibility bridge without a
+  ///             delegate.
   ///
   ///             The bridge is not ready for use until a delegate has been
   ///             assigned. See AccessibilityBridge::UpdateDelegate.
@@ -111,6 +112,9 @@ class AccessibilityBridge
 
   //-----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a accessibility bridge.
+  ///
+  ///             This is effectively identical to the default constructor
+  ///             followed by AccessibilityBridge::UpdateDelegate.
   explicit AccessibilityBridge(
       std::unique_ptr<AccessibilityBridgeDelegate> delegate);
   ~AccessibilityBridge();
