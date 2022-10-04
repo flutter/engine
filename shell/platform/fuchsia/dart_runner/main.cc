@@ -35,6 +35,7 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 #endif  // !defined(DART_PRODUCT)
 
 int main(int argc, const char** argv) {
+  FML_LOG(FATAL) << "TESTING FATAL LOG: Change picked up";
   async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
 
   // Create our component context which is served later.
