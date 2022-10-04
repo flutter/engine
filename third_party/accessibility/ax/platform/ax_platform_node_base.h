@@ -146,6 +146,10 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   bool GetIntListAttribute(ax::mojom::IntListAttribute attribute,
                            std::vector<int32_t>* value) const;
 
+  ax::mojom::NameFrom GetNameFrom() const;
+
+  bool HasNameFromOtherElement() const;
+
   // Returns the selection container if inside one.
   AXPlatformNodeBase* GetSelectionContainer() const;
 

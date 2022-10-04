@@ -901,6 +901,18 @@ bool AXPlatformNodeBase::IsChildOfLeaf() const {
   return delegate_ && delegate_->IsChildOfLeaf();
 }
 
+ax::mojom::NameFrom AXPlatformNodeBase::GetNameFrom() const {
+  if (!delegate_)
+    return ax::mojom::NameFrom::kNone;
+  return delegate_->GetNameFrom();
+}
+
+bool AXPlatformNodeBase::HasNameFromOtherElement() const {
+  ax::mojom::NameFrom nameFrom = GetNameFrom();
+  return nameFrom == ax::mojom::NameFrom::kCaption ||
+         nameFrom == ax::mojom::NameFrom::kRelatedElement;
+}
+
 bool AXPlatformNodeBase::IsInvisibleOrIgnored() const {
   return GetData().IsInvisibleOrIgnored();
 }

@@ -242,6 +242,10 @@ std::string AXPlatformNodeDelegateBase::GetName() const {
   return GetData().GetStringAttribute(ax::mojom::StringAttribute::kName);
 }
 
+ax::mojom::NameFrom AXPlatformNodeDelegateBase::GetNameFrom() const {
+  return GetData().GetNameFrom();
+}
+
 std::u16string AXPlatformNodeDelegateBase::GetHypertext() const {
   return std::u16string();
 }
