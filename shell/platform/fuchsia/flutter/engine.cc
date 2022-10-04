@@ -84,6 +84,7 @@ Engine::Engine(Delegate& delegate,
       latest_memory_pressure_level_(fuchsia::memorypressure::Level::NORMAL),
       intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
+  FML_LOG(FATAL) << "TESTING FATAL LOG: Change picked up";
   Initialize(/*=use_flatland*/ false, std::move(view_ref_pair), std::move(svc),
              std::move(runner_services), std::move(settings),
              std::move(fdio_ns), std::move(directory_request),
@@ -110,6 +111,7 @@ Engine::Engine(Delegate& delegate,
       latest_memory_pressure_level_(fuchsia::memorypressure::Level::NORMAL),
       intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
+  FML_LOG(FATAL) << "TESTING FATAL LOG: Change picked up";
   Initialize(/*=use_flatland*/ true, std::move(view_ref_pair), std::move(svc),
              std::move(runner_services), std::move(settings),
              std::move(fdio_ns), std::move(directory_request),
@@ -131,6 +133,7 @@ void Engine::Initialize(
   FML_CHECK((use_flatland && view_creation_token_.value.is_valid()) ||
             (!use_flatland && view_token_.value.is_valid()));
 
+  FML_LOG(FATAL) << "TESTING FATAL LOG: Change picked up";
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
   fml::RefPtr<fml::TaskRunner> platform_task_runner =

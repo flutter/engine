@@ -187,6 +187,7 @@ bool IsTestProgram(const fuchsia::data::Dictionary& program_metadata) {
 }
 
 DartRunner::DartRunner(sys::ComponentContext* context) : context_(context) {
+  FML_LOG(FATAL) << "TESTING LOG: Changes in Dart Runner";
   context_->outgoing()
       ->AddPublicService<fuchsia::component::runner::ComponentRunner>(
           [this](fidl::InterfaceRequest<
@@ -255,6 +256,7 @@ void DartRunner::Start(
   // Parse the program field of the component's cml and check if it is a test
   // component. If so, serve the |fuchsia.test.Suite| protocol from the
   // component's outgoing directory, via DartTestComponentController.
+  FML_LOG(FATAL) << "TESTING LOG: Changes in Dart Runner";
   if (IsTestProgram(start_info.program())) {
     std::string url_copy = start_info.resolved_url();
     TRACE_EVENT1("dart", "Start", "url", url_copy.c_str());
