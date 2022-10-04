@@ -126,6 +126,7 @@ void testMain() {
 
       await matchSceneGolden('canvaskit_inverse_colormatrix.png', builder.build(), region: region);
     });
+
     test('ColorFilter color with 0 opacity', () async {
       final LayerSceneBuilder builder = LayerSceneBuilder();
       builder.pushOffset(0,0);
@@ -155,7 +156,7 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, redCircle2);
 
-      await matchSceneGolden('canvaskit_translucent_colorfilter.png', builder.build(), region: region);
+      await matchSceneGolden('canvaskit_transparent_colorfilter.png', builder.build(), region: region);
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);

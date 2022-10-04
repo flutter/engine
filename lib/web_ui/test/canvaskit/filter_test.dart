@@ -123,7 +123,7 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, redCircle2);
 
-      await matchSceneGolden('canvaskit_imageFilter.png', builder.build(), region: region);
+      await matchSceneGolden('canvaskit_zero_sigma_blur.png', builder.build(), region: region);
     });
   });
 

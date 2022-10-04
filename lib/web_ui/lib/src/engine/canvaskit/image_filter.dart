@@ -109,11 +109,11 @@ class _CkBlurImageFilter extends CkImageFilter {
     /// effect of applying no filter
     if (sigmaX == 0 && sigmaY == 0) {
       return canvasKit.ImageFilter.MakeMatrixTransform(
-        toSkMatrixFromFloat64(Matrix4.identity().toFloat64()),
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
         toSkFilterOptions(ui.FilterQuality.none),
         null
-        );
-      }
+      );
+    }
     return canvasKit.ImageFilter.MakeBlur(
       sigmaX,
       sigmaY,
