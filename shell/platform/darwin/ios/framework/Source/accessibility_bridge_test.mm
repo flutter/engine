@@ -10,6 +10,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -348,10 +349,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
     XCTAssertNotNil(gMockPlatformView);
     flutterPlatformViewsController->Reset();
+    platform_view->NotifyDestroyed();
   }
   XCTAssertNil(gMockPlatformView);
   XCTAssertNil(flutterViewController.viewIfLoaded);
-  flutterViewController = nil;
+  [flutterViewController deregisterNotifications];
+  [flutterViewController release];
 }
 
 - (void)testReplacedSemanticsDoesNotCleanupChildren {
