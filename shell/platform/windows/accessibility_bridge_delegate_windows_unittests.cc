@@ -217,7 +217,7 @@ TEST(AccessibilityBridgeDelegateWindows, DispatchAccessibilityAction) {
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
   bridge->UpdateDelegate(
-      std::make_unique<AccessibilityBridgeDelegateWindowsSpy>(spy));
+      std::unique_ptr<AccessibilityBridgeDelegateWindowsSpy>(spy));
   PopulateAXTree(bridge);
 
   FlutterSemanticsAction actual_action = kFlutterSemanticsActionTap;
