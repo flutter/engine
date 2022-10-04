@@ -4,7 +4,6 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
-#import <CoreText/CoreText.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
@@ -74,6 +73,19 @@ static NSString* const kAutofillHints = @"hints";
 static NSString* const kAutocorrectionType = @"autocorrect";
 
 #pragma mark - Static Functions
+
+// Determine if the character at `range` of `text` is an emoji.
+static BOOL IsEmoji(NSString* text, NSRange charRange) {
+  UChar32 codePoint;
+  BOOL gotCodePoint = [text getBytes:&codePoint
+                           maxLength:sizeof(codePoint)
+                          usedLength:NULL
+                            encoding:NSUTF32StringEncoding
+                             options:kNilOptions
+                               range:charRange
+                      remainingRange:NULL];
+  return gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI);
+}
 
 // "TextInputType.none" is a made-up input type that's typically
 // used when there's an in-app virtual keyboard. If
@@ -1938,15 +1950,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       // We should check if the last character is a part of emoji.
       // If so, we must delete the entire emoji to prevent the text from being malformed.
       NSRange charRange = fml::RangeForCharacterAtIndex(self.text, oldRange.location - 1);
-      UChar32 codePoint;
-      BOOL gotCodePoint = [self.text getBytes:&codePoint
-                                    maxLength:sizeof(codePoint)
-                                   usedLength:NULL
-                                     encoding:NSUTF32StringEncoding
-                                      options:kNilOptions
-                                        range:charRange
-                               remainingRange:NULL];
-      if (gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI)) {
+      if (IsEmoji(self.text, charRange)) {
         newRange = NSMakeRange(charRange.location, oldRange.location - charRange.location);
       }
 
@@ -1956,14 +1960,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   }
 
   if (!_selectedTextRange.isEmpty) {
-    // Cache the last deleted composed characters to use for an iOS bug where the next
-    // insertion corrupts the composed characters.
+    // Cache the last deleted emoji to use for an iOS bug where the next
+    // insertion corrupts the emoji characters.
     // See: https://github.com/flutter/flutter/issues/111494#issuecomment-1248441346
-    NSString* deletedText = [self.text substringWithRange:_selectedTextRange.range];
-    CFRange range =
-        CFStringGetRangeOfComposedCharactersAtIndex((__bridge CFStringRef)deletedText, 0);
-    self.temporarilyDeletedComposedCharacter =
-        [deletedText substringWithRange:NSMakeRange(range.location, range.length)];
+    if (IsEmoji(self.text, _selectedTextRange.range)) {
+      NSString* deletedText = [self.text substringWithRange:_selectedTextRange.range];
+      NSRange deleteFirstCharacterRange = fml::RangeForCharacterAtIndex(deletedText, 0);
+      self.temporarilyDeletedComposedCharacter =
+          [deletedText substringWithRange:deleteFirstCharacterRange];
+    }
     [self replaceRange:_selectedTextRange withText:@""];
   }
 }
