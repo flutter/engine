@@ -17,26 +17,28 @@ namespace flutter {
 //------------------------------------------------------------------------------
 /// The macOS implementation of AccessibilityBridge::AccessibilityBridgeDelegate.
 /// This delegate is used to create AccessibilityBridge in the macOS embedding.
-class AccessibilityBridgeMacDelegate : public AccessibilityBridge::AccessibilityBridgeDelegate {
+class AccessibilityBridgeMac : public AccessibilityBridge {
  public:
   //---------------------------------------------------------------------------
   /// @brief      Creates an AccessibilityBridgeMacDelegate.
   /// @param[in]  flutter_engine     The weak reference to the FlutterEngine.
   /// @param[in]  view_controller    The weak reference to the FlutterViewController.
-  explicit AccessibilityBridgeMacDelegate(__weak FlutterEngine* flutter_engine,
-                                          __weak FlutterViewController* view_controller);
-  virtual ~AccessibilityBridgeMacDelegate() = default;
+  explicit AccessibilityBridgeMac(__weak FlutterEngine* flutter_engine,
+                                  __weak FlutterViewController* view_controller);
+  virtual ~AccessibilityBridgeMac() = default;
 
-  // |AccessibilityBridge::AccessibilityBridgeDelegate|
+  // |AccessibilityBridge|
   void OnAccessibilityEvent(ui::AXEventGenerator::TargetedEvent targeted_event) override;
 
-  // |AccessibilityBridge::AccessibilityBridgeDelegate|
+  // |FlutterPlatformNodeDelegate::OwnerBridge|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
                                    fml::MallocMapping data) override;
 
-  // |AccessibilityBridge::AccessibilityBridgeDelegate|
+  // |AccessibilityBridge|
   std::shared_ptr<FlutterPlatformNodeDelegate> CreateFlutterPlatformNodeDelegate() override;
+
+  void Update(__weak FlutterEngine* engine, __weak FlutterViewController* view_controller);
 
  private:
   /// A wrapper structure to wraps macOS native accessibility events.

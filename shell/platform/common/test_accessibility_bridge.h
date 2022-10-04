@@ -9,10 +9,9 @@
 
 namespace flutter {
 
-class TestAccessibilityBridgeDelegate
-    : public AccessibilityBridge::AccessibilityBridgeDelegate {
+class TestAccessibilityBridge : public AccessibilityBridge {
  public:
-  TestAccessibilityBridgeDelegate() = default;
+  TestAccessibilityBridge() = default;
 
   void OnAccessibilityEvent(
       ui::AXEventGenerator::TargetedEvent targeted_event) override;
@@ -21,6 +20,8 @@ class TestAccessibilityBridgeDelegate
                                    fml::MallocMapping data) override;
   std::shared_ptr<FlutterPlatformNodeDelegate>
   CreateFlutterPlatformNodeDelegate() override;
+
+  void Update() { Reset(); }
 
   std::vector<ui::AXEventGenerator::Event> accessibility_events;
   std::vector<FlutterSemanticsAction> performed_actions;
