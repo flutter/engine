@@ -157,7 +157,6 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
   auto bridge = view.GetEngine()->accessibility_bridge().lock();
   PopulateAXTree(bridge);
 
-
   auto spy = new AccessibilityBridgeDelegateWindowsSpy(
       view.GetEngine(), &view, view.GetEngine()->accessibility_bridge());
   bridge->UpdateDelegate(
