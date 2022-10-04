@@ -4,7 +4,6 @@
 
 #include <cwchar>
 
-#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "gtest/gtest.h"
 
