@@ -51,11 +51,6 @@ def main():
       required=True
   )
   parser.add_argument(
-      '--bitcode',
-      help='Deprecated, bitcode no longer supported',
-      action='store_false'
-  )
-  parser.add_argument(
       '--minversion', help='Minimum device OS version like "9.0"', type=str
   )
 
