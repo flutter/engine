@@ -33,7 +33,7 @@ void AccessibilityBridgeMac::Update(__weak FlutterEngine* engine,
 
 void AccessibilityBridgeMac::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
-  if (!flutter_engine_.viewController.viewLoaded || !flutter_engine_.viewController.view.window) {
+  if (!view_controller_.viewLoaded || !view_controller_.view.window) {
     // Don't need to send accessibility events if the there is no view or window.
     return;
   }
@@ -54,9 +54,7 @@ AccessibilityBridgeMac::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event
                                                const ui::AXNode& ax_node) const {
   // Gets the native_node with the node_id.
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
-  auto bridge = flutter_engine_.accessibilityBridge.lock();
-  NSCAssert(bridge, @"Accessibility bridge in flutter engine must not be null.");
-  auto platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(ax_node.id()).lock();
+  auto platform_node_delegate = GetFlutterPlatformNodeDelegateFromID(ax_node.id()).lock();
   NSCAssert(platform_node_delegate, @"Event target must exist in accessibility bridge.");
   auto mac_platform_node_delegate =
       std::static_pointer_cast<FlutterPlatformNodeDelegateMac>(platform_node_delegate);
@@ -146,12 +144,12 @@ AccessibilityBridgeMac::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event
       });
       // WebKit fires a notification both on the focused object and the page
       // root.
-      const ui::AXTreeData& tree_data = bridge->GetAXTreeData();
+      const ui::AXTreeData& tree_data = GetAXTreeData();
       int32_t focus = tree_data.focus_id;
       if (focus == ui::AXNode::kInvalidAXID || focus != tree_data.sel_anchor_object_id) {
         break;  // Just fire a notification on the root.
       }
-      auto focus_node = bridge->GetFlutterPlatformNodeDelegateFromID(focus).lock();
+      auto focus_node = GetFlutterPlatformNodeDelegateFromID(focus).lock();
       if (!focus_node) {
         break;  // Just fire a notification on the root.
       }
@@ -190,7 +188,7 @@ AccessibilityBridgeMac::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event
       if (ax_node.data().HasState(ax::mojom::State::kEditable)) {
         events.push_back({
             .name = NSAccessibilityValueChangedNotification,
-            .target = bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId)
+            .target = GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId)
                           .lock()
                           ->GetNativeViewAccessible(),
             .user_info = nil,
@@ -298,10 +296,9 @@ AccessibilityBridgeMac::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event
     case ui::AXEventGenerator::Event::CHILDREN_CHANGED: {
       // NSAccessibilityCreatedNotification seems to be the only way to let
       // Voiceover pick up layout changes.
-      NSCAssert(flutter_engine_.viewController, @"The viewController must not be nil");
       events.push_back({
           .name = NSAccessibilityCreatedNotification,
-          .target = flutter_engine_.viewController.view.window,
+          .target = view_controller_.view.window,
           .user_info = nil,
       });
       break;
@@ -369,7 +366,7 @@ void AccessibilityBridgeMac::DispatchAccessibilityAction(ui::AXNode::AXID target
                                                          FlutterSemanticsAction action,
                                                          fml::MallocMapping data) {
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
-  NSCAssert(flutter_engine_.viewController.viewLoaded && flutter_engine_.viewController.view.window,
+  NSCAssert(view_controller_.viewLoaded && view_controller_.view.window,
             @"The accessibility bridge should not receive accessibility actions if the flutter view"
             @"is not loaded or attached to a NSWindow.");
   [flutter_engine_ dispatchSemanticsAction:action toTarget:target withData:std::move(data)];
@@ -377,7 +374,7 @@ void AccessibilityBridgeMac::DispatchAccessibilityAction(ui::AXNode::AXID target
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
 AccessibilityBridgeMac::CreateFlutterPlatformNodeDelegate() {
-  return std::make_shared<FlutterPlatformNodeDelegateMac>(flutter_engine_, view_controller_);
+  return std::make_shared<FlutterPlatformNodeDelegateMac>(weak_from_this(), view_controller_);
 }
 
 // Private method
@@ -401,10 +398,8 @@ void AccessibilityBridgeMac::DispatchMacOSNotificationWithUserInfo(
 
 bool AccessibilityBridgeMac::HasPendingEvent(ui::AXEventGenerator::Event event) const {
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
-  auto bridge = flutter_engine_.accessibilityBridge.lock();
-  NSCAssert(bridge, @"Accessibility bridge in flutter engine must not be null.");
-  std::vector<ui::AXEventGenerator::TargetedEvent> pending_events = bridge->GetPendingEvents();
-  for (const auto& pending_event : bridge->GetPendingEvents()) {
+  std::vector<ui::AXEventGenerator::TargetedEvent> pending_events = GetPendingEvents();
+  for (const auto& pending_event : GetPendingEvents()) {
     if (pending_event.event_params.event == event) {
       return true;
     }

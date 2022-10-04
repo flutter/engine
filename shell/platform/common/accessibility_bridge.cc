@@ -126,7 +126,7 @@ const ui::AXTreeData& AccessibilityBridge::GetAXTreeData() const {
 }
 
 const std::vector<ui::AXEventGenerator::TargetedEvent>
-AccessibilityBridge::GetPendingEvents() {
+AccessibilityBridge::GetPendingEvents() const {
   std::vector<ui::AXEventGenerator::TargetedEvent> result(
       event_generator_.begin(), event_generator_.end());
   return result;
