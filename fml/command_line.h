@@ -223,7 +223,14 @@ inline CommandLine CommandLineFromIteratorsWithArgv0(const std::string& argv0,
 }
 
 // Builds a |CommandLine| from the usual argc/argv.
+//
+// First checks if CommandLineFromPlatform returns a value, to avoid using an
+// argv that is not provided as UTF-8.
 inline CommandLine CommandLineFromArgcArgv(int argc, const char* const* argv) {
+  auto command_line = CommandLineFromPlatform();
+  if (command_line.has_value()) {
+    return *command_line;
+  }
   return CommandLineFromIterators(argv, argv + argc);
 }
 
