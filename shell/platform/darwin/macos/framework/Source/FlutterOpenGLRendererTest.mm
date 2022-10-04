@@ -114,9 +114,8 @@ TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
   FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   [(FlutterView*)[mockFlutterView expect] present];
-  [renderer setFlutterView:mockFlutterView];
   [renderer openGLContext];
-  [renderer present];
+  [renderer present:mockFlutterView];
 }
 
 TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
@@ -131,9 +130,8 @@ TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
   [[mockFlutterView expect] backingStoreForSize:size];
-  [renderer setFlutterView:mockFlutterView];
   [renderer openGLContext];
-  [renderer fboForFrameInfo:&frameInfo];
+  [renderer fboForView:mockFlutterView frameInfo:&frameInfo];
 }
 
 }  // namespace flutter::testing

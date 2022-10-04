@@ -20,12 +20,20 @@ static bool OnClearCurrent(FlutterEngine* engine) {
 }
 
 static bool OnPresent(FlutterEngine* engine) {
-  return [engine.renderer present];
+  FlutterViewController* viewController = engine.viewController;
+  if (viewController == nil) {
+    return false;
+  }
+  return [engine.renderer present:viewController.flutterView];
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
+  FlutterViewController* viewController = engine.viewController;
+  if (viewController == nil) {
+    return -1; // TODO
+  }
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
-  return [openGLRenderer fboForFrameInfo:info];
+  return [openGLRenderer fboForView:viewController.flutterView frameInfo:info];
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
@@ -46,8 +54,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterOpenGLRenderer implementation.
 
 @implementation FlutterOpenGLRenderer {
-  FlutterView* _flutterView;
-
   // The context provided to the Flutter engine for rendering to the FlutterView. This is lazily
   // created during initialization of the FlutterView. This is used to render content into the
   // FlutterView.
@@ -62,12 +68,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return self;
 }
 
-- (void)setFlutterView:(FlutterView*)view {
-  _flutterView = view;
-  if (!view) {
-    _resourceContext = nil;
-  }
-}
+// - (void)setFlutterView:(FlutterView*)view {
+//   _flutterView = view;
+//   if (!view) {
+//     _resourceContext = nil;
+//   }
+// }
 
 - (BOOL)makeCurrent {
   if (!_openGLContext) {
@@ -82,25 +88,22 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return true;
 }
 
-- (BOOL)present {
-  if (!_openGLContext || !_flutterView) {
+- (BOOL)present:(FlutterView*)view {
+  if (!_openGLContext) {
     return NO;
   }
-  [_flutterView present];
+  [view present];
   return YES;
 }
 
-- (void)presentWithoutContent {
-  if (!_flutterView) {
-    return;
-  }
-  [_flutterView presentWithoutContent];
+- (void)presentWithoutContent:(FlutterView*)view {
+  [view presentWithoutContent];
 }
 
-- (uint32_t)fboForFrameInfo:(const FlutterFrameInfo*)info {
+- (uint32_t)fboForView:(FlutterView*)view frameInfo:(const FlutterFrameInfo*)info {
   CGSize size = CGSizeMake(info->size.width, info->size.height);
   FlutterOpenGLRenderBackingStore* backingStore =
-      reinterpret_cast<FlutterOpenGLRenderBackingStore*>([_flutterView backingStoreForSize:size]);
+      reinterpret_cast<FlutterOpenGLRenderBackingStore*>([view backingStoreForSize:size]);
   return backingStore.frameBufferID;
 }
 

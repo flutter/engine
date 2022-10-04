@@ -20,23 +20,18 @@
 - (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
 
 /**
- * Sets the FlutterView to render to.
- */
-- (void)setFlutterView:(nullable FlutterView*)view;
-
-/**
  * Creates a FlutterRendererConfig that renders using the appropriate backend.
  */
 - (FlutterRendererConfig)createRendererConfig;
 
 /**
- * Called by the engine when the context's buffers should be swapped.
+ * Called by the engine when the given view's buffers should be swapped.
  */
-- (BOOL)present;
+- (BOOL)present:(nonnull FlutterView*)view;
 
 /**
  * Tells the renderer that there is no Flutter content available for this frame.
  */
-- (void)presentWithoutContent;
+- (void)presentWithoutContent:(nonnull FlutterView*)view;
 
 @end

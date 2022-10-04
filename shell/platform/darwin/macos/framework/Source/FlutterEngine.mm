@@ -411,7 +411,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)setViewController:(FlutterViewController*)controller {
   if (_viewController != controller) {
     _viewController = controller;
-    [_renderer setFlutterView:controller.flutterView];
 
     if (_semanticsEnabled && _bridge) {
       _bridge->UpdateDelegate(
@@ -445,10 +444,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                                       openGLRenderer.openGLContext);
   }
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+    FlutterView* view = weakSelf.viewController.flutterView;
     if (has_flutter_content) {
-      return [weakSelf.renderer present] == YES;
+      return [weakSelf.renderer present:view] == YES;
     } else {
-      [weakSelf.renderer presentWithoutContent];
+      [weakSelf.renderer presentWithoutContent:view];
       return true;
     }
   });

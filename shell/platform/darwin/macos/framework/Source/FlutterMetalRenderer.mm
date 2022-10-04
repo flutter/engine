@@ -14,13 +14,21 @@
 
 static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
                                              const FlutterFrameInfo* frameInfo) {
+  FlutterViewController* viewController = engine.viewController;
+  if (viewController == nil) {
+    return FlutterMetalTexture{}; // TODO
+  }
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
-  return [metalRenderer createTextureForSize:size];
+  return [metalRenderer createTextureForView:viewController.flutterView size:size];
 }
 
 static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
-  return [engine.renderer present];
+  FlutterViewController* viewController = engine.viewController;
+  if (viewController == nil) {
+    return false;
+  }
+  return [engine.renderer present:viewController.flutterView];
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -35,8 +43,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterMetalRenderer implementation
 
 @implementation FlutterMetalRenderer {
-  FlutterView* _flutterView;
-
   FlutterDarwinContextMetal* _darwinMetalContext;
 }
 
@@ -61,10 +67,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return self;
 }
 
-- (void)setFlutterView:(FlutterView*)view {
-  _flutterView = view;
-}
-
 - (FlutterRendererConfig)createRendererConfig {
   FlutterRendererConfig config = {
       .type = FlutterRendererType::kMetal,
@@ -83,9 +85,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 #pragma mark - Embedder callback implementations.
 
-- (FlutterMetalTexture)createTextureForSize:(CGSize)size {
+- (FlutterMetalTexture)createTextureForView:(FlutterView*)view size:(CGSize)size {
   FlutterMetalRenderBackingStore* backingStore =
-      (FlutterMetalRenderBackingStore*)[_flutterView backingStoreForSize:size];
+      (FlutterMetalRenderBackingStore*)[view backingStoreForSize:size];
   id<MTLTexture> texture = backingStore.texture;
   FlutterMetalTexture embedderTexture;
   embedderTexture.struct_size = sizeof(FlutterMetalTexture);
@@ -94,19 +96,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return embedderTexture;
 }
 
-- (BOOL)present {
-  if (!_flutterView) {
-    return NO;
-  }
-  [_flutterView present];
+- (BOOL)present:(FlutterView*)view {
+  [view present];
   return YES;
 }
 
-- (void)presentWithoutContent {
-  if (!_flutterView) {
-    return;
-  }
-  [_flutterView presentWithoutContent];
+- (void)presentWithoutContent:(FlutterView*)view {
+  [view presentWithoutContent];
 }
 
 #pragma mark - FlutterTextureRegistrar methods.

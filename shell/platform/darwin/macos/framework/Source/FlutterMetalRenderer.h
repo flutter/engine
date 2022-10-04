@@ -25,9 +25,9 @@
 @property(nonatomic, readonly, nonnull) id<MTLCommandQueue> commandQueue;
 
 /**
- * Creates a Metal texture for the given size.
+ * Creates a Metal texture for the given view with the given size.
  */
-- (FlutterMetalTexture)createTextureForSize:(CGSize)size;
+- (FlutterMetalTexture)createTextureForView:(nonnull FlutterView*)view size:(CGSize)size;
 
 /**
  * Populates the texture registry with the provided metalTexture.

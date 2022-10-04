@@ -31,8 +31,7 @@ TEST(FlutterMetalRenderer, PresentDelegatesToFlutterView) {
   FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   [(FlutterView*)[mockFlutterView expect] present];
-  [renderer setFlutterView:mockFlutterView];
-  [renderer present];
+  [renderer present:mockFlutterView];
 }
 
 TEST(FlutterMetalRenderer, TextureReturnedByFlutterView) {
@@ -47,8 +46,7 @@ TEST(FlutterMetalRenderer, TextureReturnedByFlutterView) {
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
   [[mockFlutterView expect] backingStoreForSize:size];
-  [renderer setFlutterView:mockFlutterView];
-  [renderer createTextureForSize:size];
+  [renderer createTextureForView:mockFlutterView size:size];
 }
 
 }  // namespace flutter::testing
