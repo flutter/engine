@@ -16,7 +16,7 @@ static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
                                              const FlutterFrameInfo* frameInfo) {
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
-    return FlutterMetalTexture{}; // TODO
+    return FlutterMetalTexture{};  // TODO
   }
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);

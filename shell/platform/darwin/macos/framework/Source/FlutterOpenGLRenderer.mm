@@ -30,7 +30,7 @@ static bool OnPresent(FlutterEngine* engine) {
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
-    return -1; // TODO
+    return -1;  // TODO
   }
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer fboForView:viewController.flutterView frameInfo:info];
