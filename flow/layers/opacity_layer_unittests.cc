@@ -226,7 +226,7 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_mutators(),
-            std::vector({Mutator(layer_transform), Mutator(SK_AlphaOPAQUE)}));
+            std::vector({Mutator(layer_transform)}));
 
   const SkPaint opacity_paint = SkPaint(SkColors::kBlack);  // A = 1.0f
   SkRect opacity_bounds;

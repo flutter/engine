@@ -194,17 +194,17 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
 }
 
 TEST_F(LayerTreeTest, PrerollContextInitialization) {
-  MutatorsStack mock_mutators;
+  LayerStateStack state_stack;
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
   std::shared_ptr<TextureRegistry> mock_registry;
 
-  auto expect_defaults = [&mock_mutators, &mock_raster_time, &mock_ui_time,
+  auto expect_defaults = [&state_stack, &mock_raster_time, &mock_ui_time,
                           &mock_registry](const PrerollContext& context) {
     EXPECT_EQ(context.raster_cache, nullptr);
     EXPECT_EQ(context.gr_context, nullptr);
     EXPECT_EQ(context.view_embedder, nullptr);
-    EXPECT_EQ(&context.mutators_stack, &mock_mutators);
+    EXPECT_EQ(&context.state_stack, &state_stack);
     EXPECT_EQ(context.dst_color_space, nullptr);
     EXPECT_EQ(context.cull_rect, SkRect::MakeEmpty());
     EXPECT_EQ(context.surface_needs_readback, false);
@@ -223,7 +223,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
 
   // These 4 initializers are required because they are handled by reference
   PrerollContext context{
-      .mutators_stack = mock_mutators,
+      .state_stack = state_stack,
       .raster_time = mock_raster_time,
       .ui_time = mock_ui_time,
       .texture_registry = mock_registry,

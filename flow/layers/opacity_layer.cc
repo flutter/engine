@@ -46,9 +46,9 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // reverse transformation to the cull rect to properly cull child layers.
   context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
 
-  context->mutators_stack.PushTransform(
-      SkMatrix::Translate(offset_.fX, offset_.fY));
-  context->mutators_stack.PushOpacity(alpha_);
+  auto mutator = context->state_stack.save();
+  mutator.translate(offset_);
+  mutator.applyOpacity(SkRect(), DlColor::toOpacity(alpha_));
 
   AutoCache auto_cache =
       AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
@@ -64,8 +64,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // Now we let our parent layers know that we, too, can inherit opacity
   // regardless of what our children are capable of
   context->renderable_state_flags |= LayerStateStack::CALLER_CAN_APPLY_OPACITY;
-  context->mutators_stack.Pop();
-  context->mutators_stack.Pop();
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 

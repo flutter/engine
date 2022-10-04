@@ -20,10 +20,7 @@ class ClipRectLayer : public ClipShapeLayer<SkRect> {
  protected:
   const SkRect& clip_shape_bounds() const override;
 
-  void OnMutatorsStackPushClipShape(MutatorsStack& mutators_stack) override;
-
-  void OnCanvasClipShape(
-      LayerStateStack::MutatorContext& mutator) const override;
+  void ApplyClip(LayerStateStack::MutatorContext& mutator) const override;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRectLayer);

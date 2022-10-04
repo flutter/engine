@@ -61,7 +61,9 @@ class MockRasterCache : public RasterCache {
       size_t picture_and_display_list_cache_limit_per_frame =
           RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame)
       : RasterCache(access_threshold,
-                    picture_and_display_list_cache_limit_per_frame) {}
+                    picture_and_display_list_cache_limit_per_frame) {
+    state_stack_.set_delegate(&mutators_stack_);
+  }
 
   void AddMockLayer(int width, int height);
   void AddMockPicture(int width, int height);
@@ -79,7 +81,7 @@ class MockRasterCache : public RasterCache {
       .raster_cache                  = this,
       .gr_context                    = nullptr,
       .view_embedder                 = nullptr,
-      .mutators_stack                = mutators_stack_,
+      .state_stack                   = state_stack_,
       .dst_color_space               = color_space_,
       .cull_rect                     = kGiantRect,
       .surface_needs_readback        = false,
@@ -120,10 +122,10 @@ struct PaintContextHolder {
 };
 
 PrerollContextHolder GetSamplePrerollContextHolder(
+    LayerStateStack& state_stack,
     RasterCache* raster_cache,
     FixedRefreshRateStopwatch* raster_time,
-    FixedRefreshRateStopwatch* ui_time,
-    MutatorsStack* mutators_stack);
+    FixedRefreshRateStopwatch* ui_time);
 
 PaintContextHolder GetSamplePaintContextHolder(
     LayerStateStack& state_stack,

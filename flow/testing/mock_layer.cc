@@ -31,7 +31,7 @@ void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  parent_mutators_ = context->mutators_stack;
+  parent_mutators_ = *context->state_stack.mutators_delegate();
   parent_matrix_ = matrix;
   parent_cull_rect_ = context->cull_rect;
 

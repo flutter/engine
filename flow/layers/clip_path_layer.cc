@@ -21,13 +21,7 @@ const SkRect& ClipPathLayer::clip_shape_bounds() const {
   return clip_shape().getBounds();
 }
 
-void ClipPathLayer::OnMutatorsStackPushClipShape(
-    MutatorsStack& mutators_stack) {
-  mutators_stack.PushClipPath(clip_shape());
-}
-
-void ClipPathLayer::OnCanvasClipShape(
-    LayerStateStack::MutatorContext& mutator) const {
+void ClipPathLayer::ApplyClip(LayerStateStack::MutatorContext& mutator) const {
   mutator.clipPath(clip_shape(), clip_behavior() != Clip::hardEdge);
 }
 

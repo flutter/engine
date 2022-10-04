@@ -57,7 +57,7 @@ TEST_F(TransformLayerTest, Identity) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), SkMatrix());  // identity
   EXPECT_EQ(mock_layer->parent_cull_rect(), cull_rect);
-  EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(SkMatrix())}));
+  EXPECT_EQ(mock_layer->parent_mutators(), MutatorsStack());
 
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),

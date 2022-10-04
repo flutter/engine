@@ -53,7 +53,7 @@ struct PrerollContext {
   RasterCache* raster_cache;
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
-  MutatorsStack& mutators_stack;
+  LayerStateStack& state_stack;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
   bool surface_needs_readback;

@@ -20,6 +20,10 @@ void LayerStateStack::clear_delegate() {
     builder_->restoreToCount(restore_count_);
     builder_ = nullptr;
   }
+  if (mutators_) {
+    mutators_->PopTo(restore_count_);
+    mutators_ = nullptr;
+  }
 }
 
 void LayerStateStack::set_delegate(SkCanvas* canvas) {
@@ -27,7 +31,7 @@ void LayerStateStack::set_delegate(SkCanvas* canvas) {
   if (canvas) {
     restore_count_ = canvas->getSaveCount();
     canvas_ = canvas;
-    reapply_all(canvas, nullptr);
+    reapply_all();
   }
 }
 
@@ -36,20 +40,29 @@ void LayerStateStack::set_delegate(DisplayListBuilder* builder) {
   if (builder) {
     restore_count_ = builder->getSaveCount();
     builder_ = builder;
-    reapply_all(nullptr, builder);
+    reapply_all();
   }
 }
 
-void LayerStateStack::reapply_all(SkCanvas* canvas,
-                                  DisplayListBuilder* builder) {
+void LayerStateStack::set_delegate(MutatorsStack* stack) {
+  clear_delegate();
+  if (stack) {
+    restore_count_ = stack->stack_count();
+    mutators_ = stack;
+    reapply_all();
+  }
+}
+
+void LayerStateStack::reapply_all() {
   // We use a local RenderingAttributes instance so that it can track the
   // necessary state changes independently as they occur in the stack.
   // Reusing |outstanding_| would wreak havoc on the current state of
   // the stack. When we are finished, though, the local attributes
   // contents should match the current outstanding_ values;
-  RenderingAttributes attributes;
+  RenderingAttributes attributes = outstanding_;
+  outstanding_ = {};
   for (auto& state : state_stack_) {
-    state->reapply(&attributes, canvas, builder);
+    state->reapply(this);
   }
   FML_DCHECK(attributes == outstanding_);
 }
@@ -146,7 +159,7 @@ bool LayerStateStack::needs_painting(const SkRect& bounds) const {
 MutatorContext LayerStateStack::save() {
   auto ret = MutatorContext(this);
   state_stack_.emplace_back(std::make_unique<SaveEntry>());
-  state_stack_.back()->apply(&outstanding_, canvas_, builder_);
+  state_stack_.back()->apply(this);
   return ret;
 }
 
@@ -232,7 +245,7 @@ void MutatorContext::clipPath(const SkPath& path, bool is_aa) {
 
 void LayerStateStack::restore_to_count(size_t restore_count) {
   while (state_stack_.size() > restore_count) {
-    state_stack_.back()->restore(&outstanding_, canvas_, builder_);
+    state_stack_.back()->restore(this);
     state_stack_.pop_back();
   }
 }
@@ -372,48 +385,41 @@ void LayerStateStack::maybe_save_layer(
   }
 }
 
-void LayerStateStack::AttributesEntry::restore(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  *attributes = attributes_;
+void LayerStateStack::AttributesEntry::restore(LayerStateStack* stack) const {
+  stack->outstanding_ = attributes_;
 }
 
-void LayerStateStack::SaveEntry::apply(RenderingAttributes* attributes,
-                                       SkCanvas* canvas,
-                                       DisplayListBuilder* builder) const {
-  if (canvas) {
-    canvas->save();
+void LayerStateStack::SaveEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->save();
   }
-  if (builder) {
-    builder->save();
+  if (stack->builder_) {
+    stack->builder_->save();
   }
 }
 
-void LayerStateStack::SaveEntry::restore(RenderingAttributes* attributes,
-                                         SkCanvas* canvas,
-                                         DisplayListBuilder* builder) const {
-  if (canvas) {
-    canvas->restore();
+void LayerStateStack::SaveEntry::restore(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->restore();
   }
-  if (builder) {
-    builder->restore();
+  if (stack->builder_) {
+    stack->builder_->restore();
   }
-  do_checkerboard(canvas, builder);
+  do_checkerboard(stack->canvas_, stack->builder_);
 }
 
-void LayerStateStack::SaveLayerEntry::apply(RenderingAttributes* attributes,
-                                            SkCanvas* canvas,
-                                            DisplayListBuilder* builder) const {
-  if (canvas) {
+void LayerStateStack::SaveLayerEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
     SkPaint paint;
-    canvas->saveLayer(bounds_, attributes->fill(paint, blend_mode_));
+    stack->canvas_->saveLayer(bounds_,
+                              stack->outstanding_.fill(paint, blend_mode_));
   }
-  if (builder) {
+  if (stack->builder_) {
     DlPaint paint;
-    builder->saveLayer(&bounds_, attributes->fill(paint, blend_mode_));
+    stack->builder_->saveLayer(&bounds_,
+                               stack->outstanding_.fill(paint, blend_mode_));
   }
-  *attributes = {};
+  stack->outstanding_ = {};
 }
 
 void LayerStateStack::SaveLayerEntry::do_checkerboard(
@@ -429,53 +435,52 @@ void LayerStateStack::SaveLayerEntry::do_checkerboard(
   }
 }
 
-void LayerStateStack::OpacityEntry::apply(RenderingAttributes* attributes,
-                                          SkCanvas* canvas,
-                                          DisplayListBuilder* builder) const {
-  attributes->save_layer_bounds = bounds_;
-  attributes->opacity *= opacity_;
+void LayerStateStack::OpacityEntry::apply(LayerStateStack* stack) const {
+  stack->outstanding_.save_layer_bounds = bounds_;
+  stack->outstanding_.opacity *= opacity_;
+  if (stack->mutators_) {
+    stack->mutators_->PushOpacity(DlColor::toAlpha(opacity_));
+  }
 }
 
-void LayerStateStack::ImageFilterEntry::apply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  attributes->save_layer_bounds = bounds_;
-  attributes->image_filter = filter_;
+void LayerStateStack::ImageFilterEntry::apply(LayerStateStack* stack) const {
+  stack->outstanding_.save_layer_bounds = bounds_;
+  stack->outstanding_.image_filter = filter_;
+  if (stack->mutators_) {
+    // MutatorsStack::PushImageFilter does not exist...
+  }
 }
 
-void LayerStateStack::ColorFilterEntry::apply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  attributes->save_layer_bounds = bounds_;
-  attributes->color_filter = filter_;
+void LayerStateStack::ColorFilterEntry::apply(LayerStateStack* stack) const {
+  stack->outstanding_.save_layer_bounds = bounds_;
+  stack->outstanding_.color_filter = filter_;
+  if (stack->mutators_) {
+    // MutatorsStack::PushColorFilter does not exist...
+  }
 }
 
-void LayerStateStack::BackdropFilterEntry::apply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  if (canvas) {
+void LayerStateStack::BackdropFilterEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
     sk_sp<SkImageFilter> backdrop_filter =
         filter_ ? filter_->skia_object() : nullptr;
     SkPaint paint;
-    SkPaint* pPaint = attributes->fill(paint, blend_mode_);
-    canvas->saveLayer(
+    SkPaint* pPaint = stack->outstanding_.fill(paint, blend_mode_);
+    stack->canvas_->saveLayer(
         SkCanvas::SaveLayerRec{&bounds_, pPaint, backdrop_filter.get(), 0});
   }
-  if (builder) {
+  if (stack->builder_) {
     DlPaint paint;
-    DlPaint* pPaint = attributes->fill(paint, blend_mode_);
-    builder->saveLayer(&bounds_, pPaint, filter_.get());
+    DlPaint* pPaint = stack->outstanding_.fill(paint, blend_mode_);
+    stack->builder_->saveLayer(&bounds_, pPaint, filter_.get());
   }
-  *attributes = {};
+  if (stack->mutators_) {
+    stack->mutators_->PushBackdropFilter(filter_);
+  }
+  stack->outstanding_ = {};
 }
 
 void LayerStateStack::BackdropFilterEntry::reapply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
+    LayerStateStack* stack) const {
   // On the reapply for subsequent overlay layers, we do not
   // want to reapply the backdrop filter, but we do need to
   // do a saveLayer to encapsulate the contents and match the
@@ -483,91 +488,94 @@ void LayerStateStack::BackdropFilterEntry::reapply(
   // perfect if the BlendMode is not associative as we will be
   // compositing multiple parts of the content in batches.
   // Luckily the most common SrcOver is associative.
-  SaveLayerEntry::apply(attributes, canvas, builder);
+  SaveLayerEntry::apply(stack);
 }
 
-void LayerStateStack::TranslateEntry::apply(RenderingAttributes* attributes,
-                                            SkCanvas* canvas,
-                                            DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    canvas->translate(tx_, ty_);
+void LayerStateStack::TranslateEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->translate(tx_, ty_);
   }
-  if (builder != nullptr) {
-    builder->translate(tx_, ty_);
+  if (stack->builder_) {
+    stack->builder_->translate(tx_, ty_);
+  }
+  if (stack->mutators_) {
+    stack->mutators_->PushTransform(SkMatrix::Translate(tx_, ty_));
   }
 }
 
 void LayerStateStack::TransformMatrixEntry::apply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    canvas->concat(matrix_);
+    LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->concat(matrix_);
   }
-  if (builder != nullptr) {
-    builder->transform(matrix_);
+  if (stack->builder_) {
+    stack->builder_->transform(matrix_);
+  }
+  if (stack->mutators_) {
+    stack->mutators_->PushTransform(matrix_);
   }
 }
 
-void LayerStateStack::TransformM44Entry::apply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    canvas->concat(m44_);
+void LayerStateStack::TransformM44Entry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->concat(m44_);
   }
-  if (builder != nullptr) {
-    builder->transform(m44_);
+  if (stack->builder_) {
+    stack->builder_->transform(m44_);
+  }
+  if (stack->mutators_) {
+    stack->mutators_->PushTransform(m44_.asM33());
   }
 }
 
 void LayerStateStack::IntegralTransformEntry::apply(
-    RenderingAttributes* attributes,
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    auto matrix = canvas->getTotalMatrix();
+    LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    auto matrix = stack->canvas_->getTotalMatrix();
     matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
-    canvas->setMatrix(matrix);
+    stack->canvas_->setMatrix(matrix);
   }
-  if (builder != nullptr) {
-    auto matrix = builder->getTransform();
+  if (stack->builder_) {
+    auto matrix = stack->builder_->getTransform();
     matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
-    builder->transformReset();
-    builder->transform(matrix);
+    stack->builder_->transformReset();
+    stack->builder_->transform(matrix);
   }
 }
 
-void LayerStateStack::ClipRectEntry::apply(RenderingAttributes* attributes,
-                                           SkCanvas* canvas,
-                                           DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    canvas->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
+void LayerStateStack::ClipRectEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
   }
-  if (builder != nullptr) {
-    builder->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
+  if (stack->builder_) {
+    stack->builder_->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
   }
-}
-
-void LayerStateStack::ClipRRectEntry::apply(RenderingAttributes* attributes,
-                                            SkCanvas* canvas,
-                                            DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    canvas->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
-  }
-  if (builder != nullptr) {
-    builder->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
+  if (stack->mutators_) {
+    stack->mutators_->PushClipRect(rect_);
   }
 }
 
-void LayerStateStack::ClipPathEntry::apply(RenderingAttributes* attributes,
-                                           SkCanvas* canvas,
-                                           DisplayListBuilder* builder) const {
-  if (canvas != nullptr) {
-    canvas->clipPath(path_, SkClipOp::kIntersect, is_aa_);
+void LayerStateStack::ClipRRectEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
   }
-  if (builder != nullptr) {
-    builder->clipPath(path_, SkClipOp::kIntersect, is_aa_);
+  if (stack->builder_) {
+    stack->builder_->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
+  }
+  if (stack->mutators_) {
+    stack->mutators_->PushClipRRect(rrect_);
+  }
+}
+
+void LayerStateStack::ClipPathEntry::apply(LayerStateStack* stack) const {
+  if (stack->canvas_) {
+    stack->canvas_->clipPath(path_, SkClipOp::kIntersect, is_aa_);
+  }
+  if (stack->builder_) {
+    stack->builder_->clipPath(path_, SkClipOp::kIntersect, is_aa_);
+  }
+  if (stack->mutators_) {
+    stack->mutators_->PushClipPath(path_);
   }
 }
 

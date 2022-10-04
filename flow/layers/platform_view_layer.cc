@@ -23,9 +23,9 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
   }
   context->has_platform_view = true;
   set_subtree_has_platform_view(true);
+  auto mutators = context->state_stack.mutators_delegate();
   std::unique_ptr<EmbeddedViewParams> params =
-      std::make_unique<EmbeddedViewParams>(matrix, size_,
-                                           context->mutators_stack,
+      std::make_unique<EmbeddedViewParams>(matrix, size_, *mutators,
                                            context->display_list_enabled);
   context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
                                                        std::move(params));

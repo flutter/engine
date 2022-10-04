@@ -59,7 +59,9 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     Layer::AutoPrerollSaveLayerState save =
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
-    OnMutatorsStackPushClipShape(context->mutators_stack);
+
+    auto mutator = context->state_stack.save();
+    ApplyClip(mutator);
 
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
@@ -73,7 +75,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
       context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
     }
 
-    context->mutators_stack.Pop();
     context->cull_rect = previous_cull_rect;
   }
 
@@ -81,7 +82,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     FML_DCHECK(needs_painting(context));
 
     auto mutator = context.state_stack.save();
-    OnCanvasClipShape(mutator);
+    ApplyClip(mutator);
 
     if (!UsesSaveLayer()) {
       PaintChildren(context);
@@ -110,9 +111,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
  protected:
   virtual const SkRect& clip_shape_bounds() const = 0;
-  virtual void OnMutatorsStackPushClipShape(MutatorsStack& mutators_stack) = 0;
-  virtual void OnCanvasClipShape(
-      LayerStateStack::MutatorContext& mutator) const = 0;
+  virtual void ApplyClip(LayerStateStack::MutatorContext& mutator) const = 0;
   virtual ~ClipShapeLayer() = default;
 
   const ClipShape& clip_shape() const { return clip_shape_; }

@@ -51,7 +51,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .raster_cache                  = nullptr,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
-            .mutators_stack                = mutators_stack_,
+            .state_stack                   = preroll_state_stack_,
             .dst_color_space               = TestT::mock_color_space(),
             .cull_rect                     = kGiantRect,
             .surface_needs_readback        = false,
@@ -65,7 +65,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
         },
         paint_context_{
             // clang-format off
-            .state_stack                   = state_stack_,
+            .state_stack                   = paint_state_stack_,
             .canvas                        = &TestT::mock_canvas(),
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
@@ -105,8 +105,9 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         } {
     use_null_raster_cache();
+    preroll_state_stack_.set_delegate(&mutators_stack_);
+    paint_state_stack_.set_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_delegate(display_list_recorder_);
-    state_stack_.set_delegate(&TestT::mock_canvas());
     checkerboard_state_stack_.set_delegate(&TestT::mock_canvas());
     checkerboard_state_stack_.set_checkerboard_save_layers(true);
   }
@@ -203,7 +204,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     display_list_paint_context_.raster_cache = raster_cache_.get();
   }
 
-  LayerStateStack state_stack_;
+  LayerStateStack preroll_state_stack_;
+  LayerStateStack paint_state_stack_;
   LayerStateStack checkerboard_state_stack_;
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;

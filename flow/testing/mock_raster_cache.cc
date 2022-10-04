@@ -86,10 +86,10 @@ void MockRasterCache::AddMockPicture(int width, int height) {
 }
 
 PrerollContextHolder GetSamplePrerollContextHolder(
+    LayerStateStack& state_stack,
     RasterCache* raster_cache,
     FixedRefreshRateStopwatch* raster_time,
-    FixedRefreshRateStopwatch* ui_time,
-    MutatorsStack* mutators_stack) {
+    FixedRefreshRateStopwatch* ui_time) {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
 
   PrerollContextHolder holder = {
@@ -98,7 +98,7 @@ PrerollContextHolder GetSamplePrerollContextHolder(
           .raster_cache                  = raster_cache,
           .gr_context                    = nullptr,
           .view_embedder                 = nullptr,
-          .mutators_stack                = *mutators_stack,
+          .state_stack                   = state_stack,
           .dst_color_space               = srgb.get(),
           .cull_rect                     = kGiantRect,
           .surface_needs_readback        = false,

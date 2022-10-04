@@ -43,7 +43,10 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);
-  context->mutators_stack.PushTransform(transform_);
+
+  auto mutator = context->state_stack.save();
+  mutator.transform(transform_);
+
   SkRect previous_cull_rect = context->cull_rect;
   SkMatrix inverse_transform;
   // Perspective projections don't produce rectangles that are useful for
@@ -61,7 +64,6 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 
   context->cull_rect = previous_cull_rect;
-  context->mutators_stack.Pop();
 }
 
 void TransformLayer::Paint(PaintContext& context) const {

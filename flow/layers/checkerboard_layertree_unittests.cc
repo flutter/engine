@@ -39,8 +39,8 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerNotCheckBoard) {
   preroll_context()->cull_rect = cull_bounds;  // Cull child
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, cull_bounds);       // Untouched
-  EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, cull_bounds);    // Untouched
+  EXPECT_TRUE(preroll_context()->state_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_intersect_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
@@ -89,8 +89,8 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
   preroll_context()->cull_rect = cull_bounds;  // Cull child
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, cull_bounds);       // Untouched
-  EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, cull_bounds);    // Untouched
+  EXPECT_TRUE(preroll_context()->state_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_intersect_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
@@ -132,8 +132,8 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerNotCheckBoard) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);        // Untouched
-  EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);     // Untouched
+  EXPECT_TRUE(preroll_context()->state_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
@@ -173,8 +173,8 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);        // Untouched
-  EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);     // Untouched
+  EXPECT_TRUE(preroll_context()->state_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
@@ -214,8 +214,8 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerNotCheckBoard) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);        // Untouched
-  EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);     // Untouched
+  EXPECT_TRUE(preroll_context()->state_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
@@ -255,8 +255,8 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);        // Untouched
-  EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);     // Untouched
+  EXPECT_TRUE(preroll_context()->state_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
