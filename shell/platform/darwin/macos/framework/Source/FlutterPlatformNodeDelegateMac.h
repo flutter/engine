@@ -20,9 +20,8 @@ namespace flutter {
 /// AXPlatformNodeMac to manage the macOS-specific accessibility objects.
 class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
  public:
-  FlutterPlatformNodeDelegateMac(
-      std::weak_ptr<AccessibilityBridge> bridge,
-      __weak FlutterViewController* view_controller);
+  FlutterPlatformNodeDelegateMac(std::weak_ptr<AccessibilityBridge> bridge,
+                                 __weak FlutterViewController* view_controller);
   virtual ~FlutterPlatformNodeDelegateMac();
 
   void Init(std::weak_ptr<OwnerBridge> bridge, ui::AXNode* node) override;

@@ -104,10 +104,8 @@ gfx::RectF FlutterPlatformNodeDelegateMac::ConvertBoundsFromLocalToScreen(
   ns_local_bounds.origin.y = -ns_local_bounds.origin.y - ns_local_bounds.size.height;
 
   NSCAssert(view_controller_.viewLoaded, @"Flutter view must be loaded.");
-  NSRect ns_view_bounds =
-      [view_controller_.flutterView convertRectFromBacking:ns_local_bounds];
-  NSRect ns_window_bounds = [view_controller_.flutterView convertRect:ns_view_bounds
-                                                                     toView:nil];
+  NSRect ns_view_bounds = [view_controller_.flutterView convertRectFromBacking:ns_local_bounds];
+  NSRect ns_window_bounds = [view_controller_.flutterView convertRect:ns_view_bounds toView:nil];
   NSRect ns_screen_bounds =
       [[view_controller_.flutterView window] convertRectToScreen:ns_window_bounds];
   gfx::RectF screen_bounds(ns_screen_bounds.origin.x, ns_screen_bounds.origin.y,
