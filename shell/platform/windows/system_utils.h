@@ -31,6 +31,13 @@ struct LanguageInfo {
 std::vector<LanguageInfo> GetPreferredLanguageInfo(
     const WindowsRegistry& registry);
 
+// Retrieve the preferred languages from the registry.
+std::wstring GetPreferredLanguagesFromRegistry(
+    const WindowsRegistry& registry, ULONG buffer_size);
+
+// Retrieve the preferred languages from the MUI API.
+std::wstring GetPreferredLanguagesFromMUI();
+
 // Returns the list of user-preferred languages, in preference order.
 // The language names are as described at:
 // https://docs.microsoft.com/en-us/windows/win32/intl/language-names
