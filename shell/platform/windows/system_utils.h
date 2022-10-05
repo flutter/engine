@@ -12,12 +12,12 @@
 
 #include "flutter/shell/platform/windows/windows_registry.h"
 
+namespace flutter {
+
 // Registry key for user-preferred languages.
 constexpr const wchar_t kGetPreferredLanguageRegKey[] =
     L"Control panel\\International\\User Profile";
 constexpr const wchar_t kGetPreferredLanguageRegValue[] = L"Languages";
-
-namespace flutter {
 
 // Components of a system language/locale.
 struct LanguageInfo {
