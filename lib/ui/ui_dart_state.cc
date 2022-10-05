@@ -147,7 +147,8 @@ std::shared_ptr<VolatilePathTracker> UIDartState::GetVolatilePathTracker()
   return context_.volatile_path_tracker;
 }
 
-std::shared_ptr<fml::ConcurrentTaskRunner> UIDartState::GetConcurrentTaskRunner() const {
+std::shared_ptr<fml::ConcurrentTaskRunner>
+UIDartState::GetConcurrentTaskRunner() const {
   return context_.concurrent_task_runner;
 }
 

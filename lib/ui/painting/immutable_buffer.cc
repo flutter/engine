@@ -127,8 +127,7 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
 
   dart_state->GetConcurrentTaskRunner()->PostTask(
       [file_path = std::move(file_path),
-       ui_task_runner = std::move(ui_task_runner),
-       ui_task] {
+       ui_task_runner = std::move(ui_task_runner), ui_task] {
         auto mapping = std::make_unique<fml::FileMapping>(fml::OpenFile(
             file_path.c_str(), false, fml::FilePermission::kRead));
 
