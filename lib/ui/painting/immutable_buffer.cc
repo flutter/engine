@@ -106,10 +106,10 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
   auto buffer_handle = std::make_unique<tonic::DartPersistentValue>(
       dart_state, raw_buffer_handle);
 
-  auto ui_task =
-      fml::MakeCopyable([buffer_callback = std::move(buffer_callback),
-                         buffer_handle = std::move(buffer_handle)](
-                            sk_sp<SkData> sk_data, size_t buffer_size) mutable {
+  auto ui_task = fml::MakeCopyable(
+      [buffer_callback = std::move(buffer_callback),
+       buffer_handle = std::move(buffer_handle)](const sk_sp<SkData>& sk_data,
+                                                 size_t buffer_size) mutable {
         auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
@@ -128,7 +128,7 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
   dart_state->GetConcurrentTaskRunner()->PostTask(
       [file_path = std::move(file_path),
        ui_task_runner = std::move(ui_task_runner),
-       ui_task = std::move(ui_task)] {
+       ui_task] {
         auto mapping = std::make_unique<fml::FileMapping>(fml::OpenFile(
             file_path.c_str(), false, fml::FilePermission::kRead));
 

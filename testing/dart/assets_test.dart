@@ -39,7 +39,7 @@ void main() {
   });
 
   test('returns the bytes of a file', () async {
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromFilePath('assets/DashInNooglerHat.jpg');
+    final ImmutableBuffer buffer = await ImmutableBuffer.fromFilePath('gen/flutter/lib/ui/assets/DashInNooglerHat.jpg');
 
     expect(buffer.length == 354679, true);
   });
