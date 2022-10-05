@@ -339,6 +339,11 @@ class PlatformDispatcher {
   }
 
   /// Read the information of the latest vsync.
+  ///
+  /// For example, suppose we are running on a 60FPS device, and the first
+  /// vsync comes at 0ms, the second comes at 16.67ms, and the third comes at
+  /// 33.33ms. Then, if you call [lastVsyncInfo] at 18ms or 25ms or 30ms etc,
+  /// you will get a [VsyncInfo] with information about the second vsync.
   VsyncInfo lastVsyncInfo() => _lastVsyncInfo();
 
   @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::LastVsyncInfo')
