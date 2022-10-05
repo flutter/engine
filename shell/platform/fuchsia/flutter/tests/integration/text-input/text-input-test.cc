@@ -93,6 +93,15 @@ class TestResponseListenerServer
     response_ = request.text();
   }
 
+  // The Flutter test fixture does not really call this, but we must implement
+  // it for the server side implementation to be complete.
+  // |fuchsia::ui::test::input::KeyboardInputListener|
+  void ReportReady(
+      fuchsia::ui::test::input::KeyboardInputListener::ReportReadyCallback
+          callback) override {
+    callback();
+  }
+
   /// Starts this server.
   void Start(std::unique_ptr<LocalComponentHandles> handles) override {
     handles_ = std::move(handles);
