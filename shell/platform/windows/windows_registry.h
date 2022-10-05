@@ -36,4 +36,4 @@ class WindowsRegistry {
 
 }  // namespace flutter
 
-#endif
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOWS_REGISTRY_H_
