@@ -878,5 +878,36 @@ TEST_P(RendererTest, CanCreateCPUBackedTexture) {
   } while (dimension <= 8192);
 }
 
+TEST_P(RendererTest, DefaultIndexSize) {
+  using VS = BoxFadeVertexShader;
+
+  // Default to 16bit index buffer size, as this is a reasonable default and
+  // supported on all backends without extensions.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, VertexBufferBuilder) {
+  // Does not create index buffer if one is provided.
+  using VS = BoxFadeVertexShader;
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  vertex_builder.AppendIndex(0);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(3);
+
+  ASSERT_EQ(vertex_builder.GetIndexCount(), 6u);
+  ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
+}
+
 }  // namespace testing
 }  // namespace impeller
