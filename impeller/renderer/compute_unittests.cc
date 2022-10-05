@@ -47,10 +47,11 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
 
-  CS::Info info{.count = 5};
-  CS::Input0<5> input_0;
-  CS::Input1<5> input_1;
-  for (uint i = 0; i < 5; i++) {
+  static constexpr size_t kCount = 5;
+  CS::Info info{.count = kCount};
+  CS::Input0<kCount> input_0;
+  CS::Input1<kCount> input_1;
+  for (uint i = 0; i < kCount; i++) {
     input_0.elements[i] = Vector4(2.0 + i, 3.0 + i, 4.0 + i, 5.0 * i);
     input_1.elements[i] = Vector4(6.0, 7.0, 8.0, 9.0);
   }
@@ -61,7 +62,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
 
   DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = StorageMode::kHostVisible;
-  buffer_desc.size = sizeof(CS::Output<5>);
+  buffer_desc.size = sizeof(CS::Output<kCount>);
 
   auto output_buffer =
       context->GetResourceAllocator()->CreateBuffer(buffer_desc);
@@ -86,9 +87,10 @@ TEST_P(ComputeTest, CanCreateComputePass) {
         auto view = output_buffer->AsBufferView();
         EXPECT_EQ(view.range.length, 80lu);
 
-        CS::Output<5>* output = reinterpret_cast<CS::Output<5>*>(view.contents);
+        CS::Output<kCount>* output =
+            reinterpret_cast<CS::Output<kCount>*>(view.contents);
         EXPECT_TRUE(output);
-        for (size_t i = 0; i < 5; i++) {
+        for (size_t i = 0; i < kCount; i++) {
           Vector4 vector = output->elements[i];
           Vector4 computed = input_0.elements[i] * input_1.elements[i];
           EXPECT_EQ(vector, Vector4(computed.x + 2, computed.y + 3,
