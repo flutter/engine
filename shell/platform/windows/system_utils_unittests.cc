@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstring>
 #include <cwchar>
 
 #include "flutter/shell/platform/windows/system_utils.h"
@@ -20,18 +21,19 @@ class MockWindowsRegistry : public WindowsRegistry {
                                    DWORD flags,
                                    LPDWORD type,
                                    PVOID data,
-                                   LPDWORD sizeData) const {
-    static const wchar_t* locales =
-        L"en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0";
-    static DWORD locales_len = 35;
+                                   LPDWORD data_size) const {
+    using namespace std::string_literals;
+    static const std::wstring locales =
+        L"en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0"s;
+    static DWORD locales_len = locales.size() * sizeof(wchar_t);
     if (data != nullptr) {
-      if (*sizeData < locales_len) {
+      if (*data_size < locales_len) {
         return ERROR_MORE_DATA;
       }
-      memcpy(data, locales, locales_len * sizeof(wchar_t));
-      *sizeData = locales_len * sizeof(wchar_t);
-    } else if (sizeData != NULL) {
-      *sizeData = locales_len * sizeof(wchar_t);
+      std::memcpy(data, locales.data(), locales_len);
+      *data_size = locales_len;
+    } else if (data_size != NULL) {
+      *data_size = locales_len;
     }
     return ERROR_SUCCESS;
   }
