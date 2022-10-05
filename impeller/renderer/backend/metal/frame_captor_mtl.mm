@@ -31,7 +31,7 @@ bool FrameCaptorMTL::StartCapturingFrame(
   return captureManager.isCapturing;
 }
 
-bool FrameCaptorMTL::StopCapturing() {
+bool FrameCaptorMTL::StopCapturingFrame() {
   if (!device_) {
     return false;
   }

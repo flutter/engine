@@ -37,7 +37,7 @@ class FrameCaptor {
   ///
   /// @return The operation successful or not.
   ///
-  virtual bool StopCapturing();
+  virtual bool StopCapturingFrame();
 
  protected:
   FrameCaptor();

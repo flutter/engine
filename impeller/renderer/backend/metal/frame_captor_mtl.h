@@ -20,7 +20,7 @@ class FrameCaptorMTL final : public FrameCaptor,
 
   bool StartCapturingFrame(FrameCaptorConfiguration configuration) override;
 
-  bool StopCapturing() override;
+  bool StopCapturingFrame() override;
 
  private:
   friend class ContextMTL;

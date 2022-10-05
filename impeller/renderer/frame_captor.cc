@@ -14,7 +14,7 @@ bool FrameCaptor::StartCapturingFrame(FrameCaptorConfiguration configuration) {
   return false;
 }
 
-bool FrameCaptor::StopCapturing() {
+bool FrameCaptor::StopCapturingFrame() {
   return false;
 }
 
