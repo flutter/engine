@@ -23,7 +23,7 @@ void main() {
       expect(() {
         createTrustedScriptUrl('https://www.unpkg.com/soemthing/not-canvaskit.js');
       }, throwsAssertionError);
-    });
+    }, skip: isSafari || isFirefox);
   });
 }
 
