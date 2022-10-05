@@ -10,6 +10,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -211,9 +212,10 @@ bool SolidStrokeContents::Render(const ContentContext& renderer,
   }
   cmd.pipeline = renderer.GetSolidStrokePipeline(options);
   cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.primitive_type = PrimitiveType::kLineStrip;
 
   auto smoothing = SmoothingApproximation(
-      5.0 / (stroke_size_ * entity.GetTransformation().GetMaxBasisLength()),
+      60.0 / (stroke_size_ * entity.GetTransformation().GetMaxBasisLength()),
       0.0, 0.0);
 
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
