@@ -178,7 +178,9 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   EXPECT_EQ([engine.viewController.flutterView.accessibilityChildren count], 1u);
   NSAccessibilityElement* native_root = engine.viewController.flutterView.accessibilityChildren[0];
   std::string root_label = [native_root.accessibilityLabel UTF8String];
-  EXPECT_TRUE(root_label == "root");
+  EXPECT_TRUE(root_label == "");
+  std::string root_title = [native_root.accessibilityTitle UTF8String];
+  EXPECT_TRUE(root_title == "root");
   EXPECT_EQ(native_root.accessibilityRole, NSAccessibilityGroupRole);
   EXPECT_EQ([native_root.accessibilityChildren count], 1u);
   NSAccessibilityElement* native_child1 = native_root.accessibilityChildren[0];
