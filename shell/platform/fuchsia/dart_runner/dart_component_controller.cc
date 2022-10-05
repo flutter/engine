@@ -149,6 +149,7 @@ DartComponentController::~DartComponentController() {
 }
 
 bool DartComponentController::SetUp() {
+  FML_LOG(FATAL) << "TESTING FATAL LOG: Changes picked up";
   // Name the thread after the url of the component being launched.
   zx::thread::self()->set_property(ZX_PROP_NAME, label_.c_str(), label_.size());
   Dart_SetThreadName(label_.c_str());
