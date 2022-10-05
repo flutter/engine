@@ -51,10 +51,6 @@ class Context : public std::enable_shared_from_this<Context> {
 
   virtual bool SupportsOffscreenMSAA() const = 0;
 
-  virtual bool StartCapturingFrames() const;
-
-  virtual bool StopCapturingFrames() const;
-
  protected:
   Context();
 

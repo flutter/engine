@@ -76,12 +76,6 @@ class ContextMTL final : public Context,
   // |Context|
   bool SupportsOffscreenMSAA() const override;
 
-  // |Context|
-  bool StartCapturingFrames() const override;
-
-  // |Context|
-  bool StopCapturingFrames() const override;
-
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;
 

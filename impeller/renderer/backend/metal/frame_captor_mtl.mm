@@ -12,11 +12,37 @@ FrameCaptorMTL::~FrameCaptorMTL() = default;
 
 bool FrameCaptorMTL::StartCapturingFrame(
     FrameCaptorConfiguration configuration) {
-  return false;
+  if (!device_) {
+    return false;
+  }
+
+  MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+  if (captureManager.isCapturing) {
+    return false;
+  }
+
+  if (@available(iOS 13.0, macOS 10.15, *)) {
+    MTLCaptureDescriptor* desc = [[MTLCaptureDescriptor alloc] init];
+    desc.captureObject = device_;
+    return [captureManager startCaptureWithDescriptor:desc error:nil];
+  }
+
+  [captureManager startCaptureWithDevice:device_];
+  return captureManager.isCapturing;
 }
 
 bool FrameCaptorMTL::StopCapturing() {
-  return false;
+  if (!device_) {
+    return false;
+  }
+
+  MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+  if (!captureManager.isCapturing) {
+    return false;
+  }
+
+  [captureManager stopCapture];
+  return !captureManager.isCapturing;
 }
 
 }  // namespace impeller

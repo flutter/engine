@@ -42,23 +42,6 @@ class IOSSurface {
   // If a GrDirectContext is supplied, creates a secondary surface.
   virtual std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) = 0;
 
-  // Programmatically invoke frame captures.
-  // This method will start capturing frames during rendering.
-  // See |IOSSurface::StopCapturingFrames| to stop capturing
-  // frames. This method should only be called when debugging
-  // for frame analysis.
-  //
-  // @return The operation is success or not.
-  virtual bool StartCapturingFrames() const;
-
-  // This method will stop capturing rendering frames.
-  // See |IOSSurface::StartCapturingFrames| to start capturing
-  // frames. This method should only be called when debugging
-  // for frame analysis.
-  //
-  // @return The operation is success or not.
-  virtual bool StopCapturingFrames() const;
-
  protected:
   explicit IOSSurface(std::shared_ptr<IOSContext> ios_context);
 

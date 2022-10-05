@@ -18,12 +18,4 @@ std::shared_ptr<FrameCaptor> Context::GetFrameCaptor() const {
   return nullptr;
 }
 
-bool Context::StartCapturingFrames() const {
-  return false;
-}
-
-bool Context::StopCapturingFrames() const {
-  return false;
-}
-
 }  // namespace impeller
