@@ -11,18 +11,24 @@
 
 namespace flutter {
 
+/// A utility class to encapsulate interaction with the Windows registry.
+/// By encapsulating this in a class, we can mock out this functionality
+/// for unit testing.
 class WindowsRegistry {
  public:
-  explicit WindowsRegistry();
-  virtual ~WindowsRegistry();
+  WindowsRegistry() = default;
+  virtual ~WindowsRegistry() = default;
 
+  // Parameters and return values of this method match those of RegGetValue
+  // See:
+  // https://learn.microsoft.com/windows/win32/api/winreg/nf-winreg-reggetvaluew
   virtual LSTATUS GetRegistryValue(HKEY hkey,
                                    LPCWSTR key,
                                    LPCWSTR value,
                                    DWORD flags,
                                    LPDWORD type,
                                    PVOID data,
-                                   LPDWORD sizeData) const;
+                                   LPDWORD data_size) const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(WindowsRegistry);

@@ -6,18 +6,14 @@
 
 namespace flutter {
 
-WindowsRegistry::WindowsRegistry() {}
-
 LSTATUS WindowsRegistry::GetRegistryValue(HKEY hkey,
                                           LPCWSTR key,
                                           LPCWSTR value,
                                           DWORD flags,
                                           LPDWORD type,
                                           PVOID data,
-                                          LPDWORD dataSize) const {
-  return RegGetValue(hkey, key, value, flags, type, data, dataSize);
+                                          LPDWORD data_size) const {
+  return RegGetValue(hkey, key, value, flags, type, data, data_size);
 }
-
-WindowsRegistry::~WindowsRegistry() {}
 
 }  // namespace flutter
