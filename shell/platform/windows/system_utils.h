@@ -32,8 +32,8 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo(
     const WindowsRegistry& registry);
 
 // Retrieve the preferred languages from the registry.
-std::wstring GetPreferredLanguagesFromRegistry(
-    const WindowsRegistry& registry, ULONG buffer_size);
+std::wstring GetPreferredLanguagesFromRegistry(const WindowsRegistry& registry,
+                                               ULONG buffer_size);
 
 // Retrieve the preferred languages from the MUI API.
 std::wstring GetPreferredLanguagesFromMUI();

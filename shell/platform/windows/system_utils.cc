@@ -24,8 +24,8 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo(
   return language_info;
 }
 
-std::wstring GetPreferredLanguagesFromRegistry(
-    const WindowsRegistry& registry, ULONG buffer_size) {
+std::wstring GetPreferredLanguagesFromRegistry(const WindowsRegistry& registry,
+                                               ULONG buffer_size) {
   std::wstring buffer(buffer_size, '\0');
   if (registry.GetRegistryValue(HKEY_CURRENT_USER, kGetPreferredLanguageRegKey,
                                 kGetPreferredLanguageRegValue,
@@ -44,7 +44,8 @@ std::wstring GetPreferredLanguagesFromMUI() {
     return std::wstring();
   }
   std::wstring buffer(buffer_size, '\0');
-  if (!GetThreadPreferredUILanguages(flags, &count, buffer.data(), &buffer_size)) {
+  if (!GetThreadPreferredUILanguages(flags, &count, buffer.data(),
+                                     &buffer_size)) {
     return std::wstring();
   }
   return buffer;
@@ -77,8 +78,9 @@ std::vector<std::wstring> GetPreferredLanguages(
 
   // Initialize the buffer
   std::wstring buffer =
-      languages_from_registry ? GetPreferredLanguagesFromRegistry(registry, buffer_size) :
-      GetPreferredLanguagesFromMUI();
+      languages_from_registry
+          ? GetPreferredLanguagesFromRegistry(registry, buffer_size)
+          : GetPreferredLanguagesFromMUI();
 
   // Extract the individual languages from the buffer.
   size_t start = 0;
