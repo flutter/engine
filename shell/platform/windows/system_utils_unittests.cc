@@ -24,7 +24,7 @@ class MockWindowsRegistry : public WindowsRegistry {
     static const wchar_t* locales =
         L"en-US\0zh-Hans-CN\0ja\0zh-Hant-TW\0he\0\0";
     static DWORD locales_len = 35;
-    if (data != NULL) {
+    if (data != nullptr) {
       if (*sizeData < locales_len) {
         return ERROR_MORE_DATA;
       }
