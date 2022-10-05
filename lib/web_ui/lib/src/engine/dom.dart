@@ -73,6 +73,7 @@ class DomConsole {}
 
 extension DomConsoleExtension on DomConsole {
   external void warn(Object? arg);
+  external void error(Object? arg);
 }
 
 @JS('window')
@@ -517,7 +518,7 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
 class DomHTMLScriptElement extends DomHTMLElement {}
 
 extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
-  external set src(Object? /*String|TrustedScriptURL?*/ value);
+  external set src(Object /*String|TrustedScriptURL?*/ value);
 }
 
 DomHTMLScriptElement createDomHTMLScriptElement() =>
@@ -1494,6 +1495,11 @@ extension DomTrustedTypePolicyExtension on DomTrustedTypePolicy {
 @staticInterop
 abstract class DomTrustedScriptUrl {}
 
+/// (Some) methods of the [DomTrustedTypePolicy]
+extension DomTrustedScriptUrlExtension on DomTrustedScriptUrl {
+  String get url => js_util.callMethod<String>(this, 'toString', <String>[]);
+}
+
 // The expected set of files that the flutter-engine TrustedType policy is going
 // to accept as valid.
 const Set<String> _expectedFilesForTT = <String>{
@@ -1510,16 +1516,25 @@ DomTrustedTypePolicy get _ttPolicy {
         if (_expectedFilesForTT.contains(uri.pathSegments.last)) {
           return uri.toString();
         }
-        return null;
+        domWindow.console.error(
+          'URL rejected by TrustedTypes policy flutter-engine: $url'
+          '(download prevented)');
+        return null; // Ends up in JS as an empty string
       }
     )));
 }
 
 /// Converts a String [url] into a [DomTrustedScriptUrl] object (if available).
-Object? createTrustedScriptUrl(String url) {
+Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    return _ttPolicy.createScriptURL(url);
+    final DomTrustedScriptUrl trustedCanvasKitUrl =
+      _ttPolicy.createScriptURL(url);
+
+    assert(trustedCanvasKitUrl.url != '',
+      'URL: $url rejected by TrustedTypePolicy');
+
+    return trustedCanvasKitUrl;
   }
   return url;
 }
