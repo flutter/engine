@@ -338,6 +338,12 @@ class PlatformDispatcher {
     _invoke(onDrawFrame, _onDrawFrameZone);
   }
 
+  /// Read the information of the latest vsync.
+  VsyncInfo lastVsyncInfo() => _lastVsyncInfo();
+
+  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::LastVsyncInfo')
+  external static VsyncInfo _lastVsyncInfo();
+
   /// A callback that is invoked when pointer data is available.
   ///
   /// The framework invokes this callback in the same zone in which the callback
@@ -2175,4 +2181,16 @@ enum DartPerformanceMode {
   /// Optimize for low memory, at the expensive of throughput and latency by more
   /// frequently performing work.
   memory,
+}
+
+/// Vsync information.
+class VsyncInfo {
+  const VsyncInfo({
+    required this.timeStamp,
+  });
+
+  /// The time of the vsync. It has the same meaning as the time stamp
+  /// passed into [PlatformDispatcher.onBeginFrame] - both mean vsync
+  /// target time.
+  final Duration timeStamp;
 }
