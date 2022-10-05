@@ -212,7 +212,6 @@ bool SolidStrokeContents::Render(const ContentContext& renderer,
   }
   cmd.pipeline = renderer.GetSolidStrokePipeline(options);
   cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.primitive_type = PrimitiveType::kLineStrip;
 
   auto smoothing = SmoothingApproximation(
       60.0 / (stroke_size_ * entity.GetTransformation().GetMaxBasisLength()),
