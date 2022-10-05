@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -39,6 +40,8 @@ void main() {
   });
 
   test('returns the bytes of a file', () async {
+    print("CURRENT:");
+    print(Directory.current);
     final ImmutableBuffer buffer = await ImmutableBuffer.fromFilePath('gen/flutter/lib/ui/assets/DashInNooglerHat.jpg');
 
     expect(buffer.length == 354679, true);
