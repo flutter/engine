@@ -322,8 +322,8 @@ class FlutterWindowsEngine {
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
 
-  // A handle to a registry for registry values
-  std::unique_ptr<WindowsRegistry> registry_;
+  // Wrapper providing Windows registry access.
+  std::unique_ptr<WindowsRegistry> windows_registry_;
 };
 
 }  // namespace flutter

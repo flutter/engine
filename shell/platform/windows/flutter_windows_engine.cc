@@ -155,7 +155,7 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
       aot_data_(nullptr, nullptr),
-      registry_(std::make_unique<WindowsRegistry>()) {
+      windows_registry_(std::make_unique<WindowsRegistry>()) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -527,7 +527,7 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 
 void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages =
-      GetPreferredLanguageInfo(*registry_);
+      GetPreferredLanguageInfo(*windows_registry_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
