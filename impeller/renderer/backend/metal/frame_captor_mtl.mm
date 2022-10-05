@@ -24,6 +24,19 @@ bool FrameCaptorMTL::StartCapturingFrame(
   if (@available(iOS 13.0, macOS 10.15, *)) {
     MTLCaptureDescriptor* desc = [[MTLCaptureDescriptor alloc] init];
     desc.captureObject = device_;
+
+    MTLCaptureDestination targetDestination =
+        configuration.mtlSaveGPUTraceDocument
+            ? MTLCaptureDestinationGPUTraceDocument
+            : MTLCaptureDestinationDeveloperTools;
+    if (![captureManager supportsDestination:targetDestination]) {
+      return false;
+    }
+    desc.destination = targetDestination;
+
+    if (configuration.mtlSaveGPUTraceDocument) {
+      desc.outputURL = [NSURL fileURLWithPath:@""];
+    }
     return [captureManager startCaptureWithDescriptor:desc error:nil];
   }
 

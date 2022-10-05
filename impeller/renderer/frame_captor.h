@@ -9,7 +9,14 @@ namespace impeller {
 //------------------------------------------------------------------------------
 /// @brief      Frame capture configuration.
 ///
-struct FrameCaptorConfiguration {};
+struct FrameCaptorConfiguration {
+  /// This param is for metal backend.
+  /// When this value is true, a gpu trace file will be saved in devices when
+  /// capture finishes. Otherwise, the Xcode will automatically open and show
+  /// trace result.
+  ///
+  bool mtlSaveGPUTraceDocument = false;
+};
 
 //------------------------------------------------------------------------------
 /// @brief      A class used for frame capture during rendering. Backend like
