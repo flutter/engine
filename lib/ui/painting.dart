@@ -6104,7 +6104,12 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     final ImmutableBuffer instance = ImmutableBuffer._(0);
     return _futurize((_Callback<int> callback) {
       return instance._initFromFile(path, callback);
-    }).then((int length) => instance.._length = length);
+    }).then((int length) {
+      if (length == -1) {
+        throw Exception('Could not load file at $path.');
+      }
+      return instance.._length = length;
+    });
   }
 
   @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::init')

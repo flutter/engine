@@ -116,7 +116,8 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
         }
         tonic::DartState::Scope scope(dart_state);
         if (!sk_data) {
-          tonic::DartInvoke(buffer_callback->Get(), {Dart_Null()});
+          // -1 is used as a sentinel that the file could not be opened.
+          tonic::DartInvoke(buffer_callback->Get(), {tonic::ToDart(-1)});
           return;
         }
         auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
