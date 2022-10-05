@@ -42,8 +42,10 @@ class Context : public std::enable_shared_from_this<Context> {
 
   //----------------------------------------------------------------------------
   /// @return A frame captor for offline frame analysis during development.
+  /// Importantly, for rendering backends can't capture frame, this method will
+  /// return nullptr.
   ///
-  virtual std::shared_ptr<FrameCaptor> GetFrameCaptor() const = 0;
+  virtual std::shared_ptr<FrameCaptor> GetFrameCaptor() const;
 
   virtual bool HasThreadingRestrictions() const;
 

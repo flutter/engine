@@ -82,7 +82,7 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
-  // Setup the frame captor
+  // Setup the frame captor.
   {
     frame_captor_ =
         std::shared_ptr<FrameCaptorMTL>(new FrameCaptorMTL(device_));

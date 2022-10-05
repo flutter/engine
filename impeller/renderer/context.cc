@@ -14,6 +14,10 @@ bool Context::HasThreadingRestrictions() const {
   return false;
 }
 
+std::shared_ptr<FrameCaptor> Context::GetFrameCaptor() const {
+  return nullptr;
+}
+
 bool Context::StartCapturingFrames() const {
   return false;
 }
