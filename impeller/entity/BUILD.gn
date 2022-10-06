@@ -135,10 +135,10 @@ impeller_component("entity") {
     "entity_pass.h",
     "entity_pass_delegate.cc",
     "entity_pass_delegate.h",
+    "geometry.cc",
+    "geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
-    "geometry.h",
-    "geometry.cc",
   ]
 
   public_deps = [
