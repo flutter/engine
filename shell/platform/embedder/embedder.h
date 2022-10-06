@@ -1082,8 +1082,10 @@ typedef struct {
   /// A value that `value` will have after a kFlutterSemanticsActionDecrease`
   /// action has been performed.
   const char* decreased_value;
-  /// The reading direction for `label`, `value`, `hint`, `increasedValue`, and
-  /// `decreasedValue`.
+  /// A textual tooltip attached to the node.
+  const char* tooltip;
+  /// The reading direction for `label`, `value`, `hint`, `increasedValue`,
+  /// `decreasedValue`, and `tooltip`.
   FlutterTextDirection text_direction;
   /// The bounding box for this node in its coordinate system.
   FlutterRect rect;
