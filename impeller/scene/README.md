@@ -7,7 +7,7 @@
 Impeller Scene is an experimental realtime 3D renderer powered by Impeller's
 render layer with the following design priorities:
 
-* Ease to use.
+* Ease of use.
 * Suitability for mobile.
 * Scalability in the common case.
 
@@ -30,17 +30,17 @@ auto environment_hdri =
 
 /// Construct a scene.
 
-auto scene = impeller::scene::Scene();
+auto scene = impeller::scene::Scene(context);
 
 scene.Add(dash_gltf.scene);
 
-auto& dash_mixer = dash_gltf.scene.CreateAnimationPlayer();
-auto& walk_action = dash_mixer.CreateClipAction(dash_gltf.GetClip("Walk"));
+auto& dash_player = dash_gltf.scene.CreateAnimationPlayer();
+auto& walk_action = dash_player.CreateClipAction(dash_gltf.GetClip("Walk"));
 walk_action.SetLoop(impeller::scene::AnimationAction::kLoopForever);
 walk_action.SetWeight(0.7f);
 walk_action.Seek(0.0f);
 walk_action.Play();
-auto& run_action = dash_mixer.CreateClipAction(dash_gltf.GetClip("Run"));
+auto& run_action = dash_player.CreateClipAction(dash_gltf.GetClip("Run"));
 run_action.SetLoop(impeller::scene::AnimationAction::kLoopForever);
 run_action.SetWeight(0.3f);
 run_action.Play();
@@ -51,8 +51,8 @@ scene.Add(
         /* intensity */ 5,
         /* direction */ {2, 3, 4}));
 
-std::unique_ptr<impeller::scene::SceneEntity> sphere =
-    impeller::scene::StaticMesh::MakeSphere(allocator, /* radius */ 2);
+std::unique_ptr<impeller::scene::MeshEntity> sphere =
+    impeller::scene::MeshEntity::MakeSphere(allocator, /* radius */ 2);
 sphere->SetTransform(Matrix::MakeRotationEuler({kPiOver4, kPiOver4, 0}));
 sphere->SetCullingMode(impeller::scene::CullingMode::kFrustum);
 
@@ -75,6 +75,8 @@ material.SetStencilConfig({
   impeller::StencilOperation::kIncrementClamp,  // operation
   impeller::CompareFunction::kAlways,           // compare
 });
+
+sphere->SetMaterial(material);
 
 auto cube = impeller::scene::StaticMesh::Cube({4, 4, 4});
 cube.SetTransform(Matrix::MakeTranslation({4, 0, 0}));
