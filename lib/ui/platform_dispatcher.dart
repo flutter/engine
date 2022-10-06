@@ -750,19 +750,6 @@ class PlatformDispatcher {
     _invoke(onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone,);
   }
 
-  /// Change the retained semantics data about this platform dispatcher.
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this platform dispatcher
-  /// changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
-
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
-  external static void _updateSemantics(SemanticsUpdate update);
-
   /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
