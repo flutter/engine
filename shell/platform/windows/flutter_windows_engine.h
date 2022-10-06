@@ -68,9 +68,8 @@ static void WindowsPlatformThreadPrioritySetter(
 class FlutterWindowsEngine {
  public:
   // Creates a new Flutter engine with an injectible windows registry.
-  FlutterWindowsEngine(
-      const FlutterProjectBundle& project,
-      std::unique_ptr<WindowsRegistry> windows_registry);
+  FlutterWindowsEngine(const FlutterProjectBundle& project,
+                       std::unique_ptr<WindowsRegistry> windows_registry);
 
   // Creates a new Flutter engine object configured to run |project|.
   explicit FlutterWindowsEngine(const FlutterProjectBundle& project)
