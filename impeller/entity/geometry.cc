@@ -50,8 +50,9 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
   auto buffer = device_allocator->CreateBuffer(buffer_desc);
 
   const auto& positions = vertices_.GetPositions();
-  if (!buffer->CopyHostBuffer(reinterpret_cast<const uint8_t*>(positions.data()),
-                              Range{0, total_vtx_bytes}, 0)) {
+  if (!buffer->CopyHostBuffer(
+          reinterpret_cast<const uint8_t*>(positions.data()),
+          Range{0, total_vtx_bytes}, 0)) {
     return {};
   }
   if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(

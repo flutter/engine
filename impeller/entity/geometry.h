@@ -20,9 +20,9 @@ struct GeometryResult {
 };
 
 enum GeometryVertexType {
-    kPosition,
-    kColor,
-    kUV,
+  kPosition,
+  kColor,
+  kUV,
 };
 
 class Geometry {

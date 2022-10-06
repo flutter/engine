@@ -15,9 +15,9 @@
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/vertices.h"
-#include "impeller/entity/geometry.h"
 
 namespace impeller {
 
