@@ -699,12 +699,21 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// semantics update cannot be used further.
   @override
   @Deprecated('''
+<<<<<<< HEAD
     In a multi-view world, the platform dispatcher can no longer provide apis
     to update semantics since each view will host its own semantics tree.
 
     Semantics updates must be passed to an individual [FlutterView]. To update
     semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
     call `updateSemantics`.
+=======
+  In a multi-view world, the platform dispatcher can no longer provide apis
+  to update semantics since each view will host its own semantics tree.
+
+  Semantics updates must be passed to an individual flutter view. To update
+  semantics, use PlatformDispatcher.instance.views to get a flutter view and
+  call `updateSemantics`.
+>>>>>>> ccc5c13a67 (Deprecate `platform_dispatcher` apis in favor of updateSemantics in FlutterView)
   ''')
   void updateSemantics(ui.SemanticsUpdate update) {
     EngineSemanticsOwner.instance.updateSemantics(update);
