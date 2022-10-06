@@ -43,11 +43,15 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   auto pass = cmd_buffer->CreateComputePass();
   ASSERT_TRUE(pass && pass->IsValid());
 
+  static constexpr size_t kCount = 5;
+
+  pass->SetGridSize(ISize(kCount, 1));
+  pass->SetThreadGroupSize(ISize(kCount, 1));
+
   ComputeCommand cmd;
   cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
 
-  static constexpr size_t kCount = 5;
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
   CS::Input1<kCount> input_1;
@@ -85,7 +89,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
         EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
         auto view = output_buffer->AsBufferView();
-        EXPECT_EQ(view.range.length, 80lu);
+        EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
 
         CS::Output<kCount>* output =
             reinterpret_cast<CS::Output<kCount>*>(view.contents);
