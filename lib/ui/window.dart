@@ -734,17 +734,6 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
 
-  /// Change the retained semantics data about this window.
-  ///
-  /// {@macro dart.ui.window.functionForwardWarning}
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this window changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
-
   /// Sends a message to a platform-specific plugin.
   ///
   /// {@macro dart.ui.window.functionForwardWarning}
