@@ -1472,42 +1472,74 @@ FLUTTER_ASSERT_ARC
   [inputView endFloatingCursor];
 }
 
-- (void)testBoundsForFloatingCursor {
+- (void)testFloatingCursor {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView
+      setTextInputState:@{@"text" : @"test", @"selectionBase" : @1, @"selectionExtent" : @1}];
 
+  FlutterTextSelectionRect* first =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 0, 100, 100) position:0U];
+  FlutterTextSelectionRect* second =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(100, 100, 100, 100) position:1U];
+  FlutterTextSelectionRect* third =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(200, 200, 100, 100) position:2U];
+  FlutterTextSelectionRect* fourth =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 300, 100, 100) position:3U];
+  [inputView setSelectionRects:@[ first, second, third, fourth ]];
+
+  // Verify zeroth caret rect is based on left edge of first character.
+  XCTAssertTrue(
+      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:0]],
+                        CGRectMake(0, 0, 0, 100)));
+  // Verify caret rects are based on right edge of preceding character.
+  XCTAssertTrue(
+      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:1]],
+                        CGRectMake(100, 0, 0, 100)));
+  XCTAssertTrue(
+      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:2]],
+                        CGRectMake(200, 100, 0, 100)));
+  XCTAssertTrue(
+      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:3]],
+                        CGRectMake(300, 200, 0, 100)));
+  XCTAssertTrue(
+      CGRectEqualToRect([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:4]],
+                        CGRectMake(400, 300, 0, 100)));
+  // Verify no caret rect for out-of-range character.
+  XCTAssertTrue(CGRectEqualToRect(
+      [inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:5]], CGRectZero));
+
+  // Verify floating cursor updates are relative to original position, and that there is no bounds
+  // change.
   CGRect initialBounds = inputView.bounds;
-  // Make sure the initial bounds.size is not as large.
-  XCTAssertLessThan(inputView.bounds.size.width, 100);
-  XCTAssertLessThan(inputView.bounds.size.height, 100);
-
   [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
-  CGRect bounds = inputView.bounds;
-  XCTAssertGreaterThan(bounds.size.width, 1000);
-  XCTAssertGreaterThan(bounds.size.height, 1000);
-
-  // Verify the caret is centered.
-  XCTAssertEqual(
-      CGRectGetMidX(bounds),
-      CGRectGetMidX([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:1235]]));
-  XCTAssertEqual(
-      CGRectGetMidY(bounds),
-      CGRectGetMidY([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:4567]]));
+  XCTAssertTrue(CGRectEqualToRect(initialBounds, inputView.bounds));
+  OCMVerify([engine flutterTextInputView:inputView
+                    updateFloatingCursor:FlutterFloatingCursorDragStateStart
+                              withClient:0
+                            withPosition:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                              return ([state[@"X"] isEqualToNumber:@(0)]) &&
+                                     ([state[@"Y"] isEqualToNumber:@(0)]);
+                            }]]);
 
   [inputView updateFloatingCursorAtPoint:CGPointMake(456, 654)];
-  bounds = inputView.bounds;
-  XCTAssertGreaterThan(bounds.size.width, 1000);
-  XCTAssertGreaterThan(bounds.size.height, 1000);
-
-  // Verify the caret is centered.
-  XCTAssertEqual(
-      CGRectGetMidX(bounds),
-      CGRectGetMidX([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:21]]));
-  XCTAssertEqual(
-      CGRectGetMidY(bounds),
-      CGRectGetMidY([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:42]]));
+  XCTAssertTrue(CGRectEqualToRect(initialBounds, inputView.bounds));
+  OCMVerify([engine flutterTextInputView:inputView
+                    updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
+                              withClient:0
+                            withPosition:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                              return ([state[@"X"] isEqualToNumber:@(333)]) &&
+                                     ([state[@"Y"] isEqualToNumber:@(333)]);
+                            }]]);
 
   [inputView endFloatingCursor];
   XCTAssertTrue(CGRectEqualToRect(initialBounds, inputView.bounds));
+  OCMVerify([engine flutterTextInputView:inputView
+                    updateFloatingCursor:FlutterFloatingCursorDragStateEnd
+                              withClient:0
+                            withPosition:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                              return ([state[@"X"] isEqualToNumber:@(0)]) &&
+                                     ([state[@"Y"] isEqualToNumber:@(0)]);
+                            }]]);
 }
 
 #pragma mark - UIKeyInput Overrides - Tests
