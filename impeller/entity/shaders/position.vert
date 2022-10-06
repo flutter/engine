@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-uniform FrameInfo {
+uniform VertInfo {
   mat4 mvp;
-} frame_info;
+  vec4 color;
+} vert_info;
 
 in vec2 position;
-in vec4 color;
 
 out vec4 v_color;
 
 void main() {
-  gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
-  v_color = color;
+  gl_Position = vert_info.mvp * vec4(position, 0.0, 1.0);
+  v_color = vert_info.color;
 }
