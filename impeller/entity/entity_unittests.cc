@@ -20,6 +20,7 @@
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
+#include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
@@ -35,8 +36,11 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
+#include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "include/core/SkBlendMode.h"
 #include "third_party/imgui/imgui.h"
+#include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace impeller {
 namespace testing {
@@ -199,13 +203,22 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
 
 TEST_P(EntityTest, TriangleInsideASquare) {
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    Point a = IMPELLER_PLAYGROUND_POINT(Point(10, 10), 20, Color::White());
-    Point b = IMPELLER_PLAYGROUND_POINT(Point(210, 10), 20, Color::White());
-    Point c = IMPELLER_PLAYGROUND_POINT(Point(210, 210), 20, Color::White());
-    Point d = IMPELLER_PLAYGROUND_POINT(Point(10, 210), 20, Color::White());
-    Point e = IMPELLER_PLAYGROUND_POINT(Point(50, 50), 20, Color::White());
-    Point f = IMPELLER_PLAYGROUND_POINT(Point(100, 50), 20, Color::White());
-    Point g = IMPELLER_PLAYGROUND_POINT(Point(50, 150), 20, Color::White());
+    Point offset(100, 100);
+
+    Point a =
+        IMPELLER_PLAYGROUND_POINT(Point(10, 10) + offset, 20, Color::White());
+    Point b =
+        IMPELLER_PLAYGROUND_POINT(Point(210, 10) + offset, 20, Color::White());
+    Point c =
+        IMPELLER_PLAYGROUND_POINT(Point(210, 210) + offset, 20, Color::White());
+    Point d =
+        IMPELLER_PLAYGROUND_POINT(Point(10, 210) + offset, 20, Color::White());
+    Point e =
+        IMPELLER_PLAYGROUND_POINT(Point(50, 50) + offset, 20, Color::White());
+    Point f =
+        IMPELLER_PLAYGROUND_POINT(Point(100, 50) + offset, 20, Color::White());
+    Point g =
+        IMPELLER_PLAYGROUND_POINT(Point(50, 150) + offset, 20, Color::White());
     Path path = PathBuilder{}
                     .MoveTo(a)
                     .LineTo(b)
@@ -1975,6 +1988,34 @@ TEST_P(EntityTest, TTTBlendColor) {
     ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
               Color(0.1, 0.1, 0.1, 0.1));
   }
+}
+
+TEST_P(EntityTest, SdfText) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    SkFont font;
+    font.setSize(30);
+    auto blob = SkTextBlob::MakeFromString(
+        "the quick brown fox jumped over the lazy dog (but with sdf).", font);
+    auto frame = TextFrameFromTextBlob(blob);
+    auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
+    lazy_glyph_atlas->AddTextFrame(frame);
+
+    EXPECT_FALSE(lazy_glyph_atlas->HasColor());
+
+    auto text_contents = std::make_shared<TextContents>();
+    text_contents->SetTextFrame(std::move(frame));
+    text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
+    text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
+    Entity entity;
+    entity.SetTransformation(
+        Matrix::MakeTranslation(Vector3{200.0, 200.0, 0.0}) *
+        Matrix::MakeScale(GetContentScale()));
+    entity.SetContents(text_contents);
+
+    // Force SDF rendering.
+    return text_contents->RenderSdf(context, entity, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing

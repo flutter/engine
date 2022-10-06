@@ -3,24 +3,26 @@
 // found in the LICENSE file.
 
 #pragma once
-
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
+#include "impeller/renderer/vertex_buffer.h"
 
 namespace impeller {
 
-template <typename PerVertexData>
-VertexBuffer CreateSolidFillVertices(const Path& path, HostBuffer& buffer) {
-  VertexBufferBuilder<PerVertexData> vtx_builder;
+class Tessellator;
+class Path;
+class HostBuffer;
 
-  auto tesselation_result = Tessellator{}.Tessellate(
-      path.GetFillType(), path.CreatePolyline(),
-      [&vtx_builder](auto point) { vtx_builder.AppendVertex({point}); });
-  if (tesselation_result != Tessellator::Result::kSuccess) {
-    return {};
-  }
-
-  return vtx_builder.CreateVertexBuffer(buffer);
-}
+/**
+ * @brief Populate a VertexBuffer with solid fill vertices created by
+ * tessellating an input path.
+ *
+ * @param tessellator    The tessellator
+ * @param path           The path to be tessellated
+ * @param buffer         The transient buffer
+ * @return VertexBuffer  A populated vertex buffer if successful, otherwise
+ * empty.
+ */
+VertexBuffer CreateSolidFillVertices(std::shared_ptr<Tessellator> tessellator,
+                                     const Path& path,
+                                     HostBuffer& buffer);
 
 }  // namespace impeller

@@ -17,7 +17,7 @@ namespace impeller {
 DeviceBufferGLES::DeviceBufferGLES(DeviceBufferDescriptor desc,
                                    ReactorGLES::Ref reactor,
                                    std::shared_ptr<Allocation> backing_store)
-    : DeviceBuffer(std::move(desc)),
+    : DeviceBuffer(desc),
       reactor_(std::move(reactor)),
       handle_(reactor_ ? reactor_->CreateHandle(HandleType::kBuffer)
                        : HandleGLES::DeadHandle()),
@@ -28,6 +28,14 @@ DeviceBufferGLES::~DeviceBufferGLES() {
   if (!handle_.IsDead()) {
     reactor_->CollectHandle(handle_);
   }
+}
+
+// |DeviceBuffer|
+uint8_t* DeviceBufferGLES::OnGetContents() const {
+  if (!reactor_) {
+    return nullptr;
+  }
+  return backing_store_->GetBuffer();
 }
 
 // |DeviceBuffer|

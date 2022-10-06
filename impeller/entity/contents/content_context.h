@@ -40,6 +40,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
+#include "impeller/entity/glyph_atlas_sdf.frag.h"
+#include "impeller/entity/glyph_atlas_sdf.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
@@ -144,6 +146,8 @@ using SolidStrokePipeline =
     RenderPipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
+using GlyphAtlasSdfPipeline =
+    RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
 using VerticesPipeline =
     RenderPipelineT<VerticesVertexShader, VerticesFragmentShader>;
 using AtlasPipeline =
@@ -179,6 +183,8 @@ struct ContentContextOptions {
   void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
 
+class Tessellator;
+
 class ContentContext {
  public:
   explicit ContentContext(std::shared_ptr<Context> context);
@@ -186,6 +192,8 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  std::shared_ptr<Tessellator> GetTessellator() const;
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -270,6 +278,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasSdfPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(glyph_atlas_sdf_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetVerticesPipeline(
@@ -399,6 +412,7 @@ class ContentContext {
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
+  mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
   mutable Variants<VerticesPipeline> vertices_pipelines_;
   mutable Variants<AtlasPipeline> atlas_pipelines_;
   // Advanced blends.
@@ -448,6 +462,7 @@ class ContentContext {
   }
 
   bool is_valid_ = false;
+  std::shared_ptr<Tessellator> tessellator_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };
