@@ -264,7 +264,11 @@ void a11y_main() async {
       label: 'Archive',
       hint: 'archive message',
     );
-  PlatformDispatcher.instance.views.first.updateSemantics(builder.build());
+
+  PlatformDispatcher.instance.views.forEach((FlutterView view) {
+    view.updateSemantics(builder.build());
+  });
+
   signalNativeTest();
 
   // Await semantics action from embedder.
