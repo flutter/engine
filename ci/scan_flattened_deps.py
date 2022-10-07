@@ -93,13 +93,15 @@ def parse_deps_file(deps_flat_file):
   }
   osv_url = 'https://api.osv.dev/v1/querybatch'
 
+  clone_test_dir = '/clone-test'
+
   os.mkdir(
-      CHECKOUT_ROOT + '/clone-test'
+      CHECKOUT_ROOT + clone_test_dir
   )  #clone deps with upstream into temporary dir
 
   # Extract commit hash, save in dictionary
   for line in lines:
-    os.chdir(CHECKOUT_ROOT + '/clone-test')
+    os.chdir(CHECKOUT_ROOT + clone_test_dir)
     dep = line.strip().split(
         '@'
     )  # separate fully qualified dep into name + pinned hash
@@ -238,7 +240,7 @@ def get_common_ancestor_commit(dep):
             )
         )
 
-        # get the most recent commit from defaul branch of upstream
+        # get the most recent commit from default branch of upstream
         commit = subprocess.check_output(
             'git for-each-ref ' +
             "--format=\'%(objectname:short)\' refs/heads/upstream",
