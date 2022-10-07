@@ -2690,67 +2690,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: accessibility
-LIBRARY: engine
-ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h + ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../flutter/pylint-2.7
-FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_clipping_behavior.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_constants.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_coordinate_system.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_enum_util_unittest.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_mode.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_node_text_styles.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_node_text_styles.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_offscreen_result.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_range_unittest.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_role_properties_unittest.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.h
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.cc
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win_unittest.cc
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_base_unittest.cc
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.cc
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.h
-FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win_unittest.h
-FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h
-FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray_unittest.cc
-----------------------------------------------------------------------------------------------------
-Copyright 2019 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: accessibility
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_id_registry.cc
@@ -2856,6 +2795,65 @@ FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_update.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: accessibility
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_clipping_behavior.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_constants.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_coordinate_system.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_enum_util_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_mode.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_node_text_styles.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_node_text_styles.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_offscreen_result.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_range_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_role_properties_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_base_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win_unittest.h
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray_unittest.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2019 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
