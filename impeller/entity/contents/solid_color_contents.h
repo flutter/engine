@@ -12,6 +12,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
+#include "impeller/entity/geometry.h"
 
 namespace impeller {
 
@@ -27,7 +28,7 @@ class SolidColorContents final : public Contents {
 
   static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
 
-  void SetPath(Path path);
+  void SetGeometry(std::unique_ptr<Geometry> geometry);
 
   void SetCover(bool cover);
 
@@ -48,7 +49,7 @@ class SolidColorContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  Path path_;
+  std::unique_ptr<Geometry> geometry_;
   bool cover_ = false;
 
   Color color_;
