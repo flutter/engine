@@ -72,11 +72,10 @@ class VerticesGeometry : public Geometry {
 
  private:
   // |Geometry|
-  GeometryResult GetPositionBuffer(
-      std::shared_ptr<Allocator> device_allocator,
-      HostBuffer& host_buffer,
-      std::shared_ptr<Tessellator> tessellator,
-      ISize render_target_size) override;
+  GeometryResult GetPositionBuffer(std::shared_ptr<Allocator> device_allocator,
+                                   HostBuffer& host_buffer,
+                                   std::shared_ptr<Tessellator> tessellator,
+                                   ISize render_target_size) override;
 
   // |Geometry|
   GeometryResult GetPositionColorBuffer(
@@ -113,11 +112,10 @@ class PathGeometry : public Geometry {
 
  private:
   // |Geometry|
-  GeometryResult GetPositionBuffer(
-      std::shared_ptr<Allocator> device_allocator,
-      HostBuffer& host_buffer,
-      std::shared_ptr<Tessellator> tessellator,
-      ISize render_target_size) override;
+  GeometryResult GetPositionBuffer(std::shared_ptr<Allocator> device_allocator,
+                                   HostBuffer& host_buffer,
+                                   std::shared_ptr<Tessellator> tessellator,
+                                   ISize render_target_size) override;
 
   // |Geometry|
   GeometryResult GetPositionColorBuffer(
@@ -155,11 +153,10 @@ class CoverGeometry : public Geometry {
 
  private:
   // |Geometry|
-  GeometryResult GetPositionBuffer(
-      std::shared_ptr<Allocator> device_allocator,
-      HostBuffer& host_buffer,
-      std::shared_ptr<Tessellator> tessellator,
-      ISize render_target_size) override;
+  GeometryResult GetPositionBuffer(std::shared_ptr<Allocator> device_allocator,
+                                   HostBuffer& host_buffer,
+                                   std::shared_ptr<Tessellator> tessellator,
+                                   ISize render_target_size) override;
 
   // |Geometry|
   GeometryResult GetPositionColorBuffer(

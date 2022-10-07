@@ -5,9 +5,9 @@
 #include "impeller/entity/geometry.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/position_color.vert.h"
+#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/device_buffer.h"
 #include "impeller/tessellator/tessellator.h"
-#include "impeller/geometry/path_builder.h"
 
 namespace impeller {
 
