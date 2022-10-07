@@ -5,7 +5,6 @@
 #include "solid_color_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/solid_fill_utils.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
 #include "impeller/renderer/render_pass.h"

@@ -5,7 +5,6 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/solid_fill_utils.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"

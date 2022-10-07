@@ -55,6 +55,7 @@ class Geometry {
   virtual GeometryResult GetPositionUVBuffer(
       std::shared_ptr<Allocator> device_allocator,
       HostBuffer& host_buffer,
+      std::shared_ptr<Tessellator> tessellator,
       ISize render_target_size) = 0;
 
   virtual GeometryVertexType GetVertexType() = 0;

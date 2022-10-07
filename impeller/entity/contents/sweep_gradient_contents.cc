@@ -7,7 +7,6 @@
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
-#include "impeller/entity/contents/solid_fill_utils.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
