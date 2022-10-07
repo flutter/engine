@@ -53,7 +53,7 @@ class Texture {
       size_t slice) = 0;
 
  private:
-  TextureIntent intent_ = TextureIntent::kUploadFromHost;
+  TextureIntent intent_ = TextureIntent::kRenderToTexture;
   const TextureDescriptor desc_;
 
   bool IsSliceValid(size_t slice) const;

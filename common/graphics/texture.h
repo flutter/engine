@@ -41,7 +41,6 @@ class Texture : public ContextListener {
     GrDirectContext* gr_context = nullptr;
     const SkPaint* sk_paint = nullptr;
     const DlPaint* dl_paint = nullptr;
-    bool enable_impeller = false;
   };
 
   explicit Texture(int64_t id);  // Called from UI or raster thread.
