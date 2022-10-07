@@ -78,6 +78,9 @@ bool Contents::ShouldRender(const Entity& entity,
   if (!coverage.has_value()) {
     return false;
   }
+  if (coverage == kLargestCover) {
+    return true;
+  }
   return stencil_coverage->IntersectsWithRect(coverage.value());
 }
 

@@ -236,9 +236,9 @@ std::optional<Rect> PathGeometry::GetCoverage(Matrix transform) {
 
 /////// Cover Geometry ///////
 
-CoverGeometry::CoverGeometry() {}
+CoverGeometry::CoverGeometry() = default;
 
-CoverGeometry::~CoverGeometry() {}
+CoverGeometry::~CoverGeometry() = default;
 
 GeometryResult CoverGeometry::GetPositionBuffer(
     std::shared_ptr<Allocator> device_allocator,
@@ -295,7 +295,7 @@ GeometryVertexType CoverGeometry::GetVertexType() {
 }
 
 std::optional<Rect> CoverGeometry::GetCoverage(Matrix transform) {
-  return Rect::MakeLTRB(-INFINITY, -INFINITY, INFINITY, INFINITY);
+  return kLargestCover;
 }
 
 }  // namespace impeller

@@ -30,8 +30,6 @@ class SolidColorContents final : public Contents {
 
   void SetGeometry(std::unique_ptr<Geometry> geometry);
 
-  void SetCover(bool cover);
-
   void SetColor(Color color);
 
   const Color& GetColor() const;
@@ -50,7 +48,6 @@ class SolidColorContents final : public Contents {
 
  private:
   std::unique_ptr<Geometry> geometry_;
-  bool cover_ = false;
 
   Color color_;
 

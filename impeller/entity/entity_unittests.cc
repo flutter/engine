@@ -1480,7 +1480,7 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
   {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::CornflowerBlue());
-    fill->SetCover(true);
+    fill->SetGeometry(Geometry::MakeCover());
     ASSERT_TRUE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
     ASSERT_TRUE(
         fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));

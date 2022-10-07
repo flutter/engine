@@ -202,7 +202,7 @@ struct TRect {
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
 
-constexpr Rect LargestCover =
+constexpr Rect kLargestCover =
     Rect::MakeLTRB(-INFINITY, -INFINITY, INFINITY, INFINITY);
 
 }  // namespace impeller

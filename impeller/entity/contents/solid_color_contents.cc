@@ -27,13 +27,12 @@ void SolidColorContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
   geometry_ = std::move(geometry);
 }
 
-void SolidColorContents::SetCover(bool cover) {
-  cover_ = cover;
-}
-
 std::optional<Rect> SolidColorContents::GetCoverage(
     const Entity& entity) const {
   if (color_.IsTransparent()) {
+    return std::nullopt;
+  }
+  if (geometry_ == nullptr) {
     return std::nullopt;
   }
   return geometry_->GetCoverage(entity.GetTransformation());
@@ -45,7 +44,7 @@ bool SolidColorContents::ShouldRender(
   if (!stencil_coverage.has_value()) {
     return false;
   }
-  return cover_ || Contents::ShouldRender(entity, stencil_coverage);
+  return Contents::ShouldRender(entity, stencil_coverage);
 }
 
 bool SolidColorContents::Render(const ContentContext& renderer,
