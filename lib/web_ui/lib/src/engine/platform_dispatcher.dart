@@ -698,7 +698,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   @override
-  void updateSemantics(ui.SemanticsUpdate update) {
+  void updateSemantics(ui.SemanticsUpdate update, [ui.FlutterView? view]) {
     EngineSemanticsOwner.instance.updateSemantics(update);
   }
 
