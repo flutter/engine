@@ -70,9 +70,8 @@ def sarif_rule():
       }, 'help': {
           'text':
               'More details in the OSV DB at: https://osv.dev/vulnerability/'
-      }, 'defaultConfiguration': {'level': 'error'}, 'properties': {
-          'tags': ['supply-chain', 'dependency']
-      }
+      }, 'defaultConfiguration': {'level': 'error'},
+      'properties': {'tags': ['supply-chain', 'dependency']}
   }
 
 
@@ -123,10 +122,12 @@ def parse_deps_file(deps_flat_file):
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found
   data = json.dumps({'queries': queries}).encode('utf-8')
-  req = request.Request(osv_url, data, headers={"Accept": "application/json"}) # this will make the method "POST"
+  req = request.Request(
+      osv_url, data, headers=headers
+  )  # this will make the method "POST"
   with request.urlopen(req) as resp:
     res_body = resp.read()
-    results_json = json.loads(res_body.decode("utf-8"))
+    results_json = json.loads(res_body.decode('utf-8'))
     if resp.status != 200:
       print('Request error')
     elif results_json['results'] == [{}]:
@@ -136,9 +137,8 @@ def parse_deps_file(deps_flat_file):
       filtered_results = list(filter(lambda vuln: vuln != {}, results))
       if len(filtered_results) > 0:
         print(
-            'Found vulnerability on {vuln_count} dependenc(y/ies), adding to report'.format(
-                vuln_count=str(len(filtered_results))
-            )
+            'Found vulnerability on {vuln_count} dependenc(y/ies), adding to report'
+            .format(vuln_count=str(len(filtered_results)))
         )
         print(*filtered_results)
         return filtered_results
