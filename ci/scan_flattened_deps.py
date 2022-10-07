@@ -16,8 +16,7 @@ import os
 import subprocess
 import sys
 import time
-
-import requests
+from urllib import request
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
@@ -72,7 +71,6 @@ def sarif_rule():
           'text':
               'More details in the OSV DB at: https://osv.dev/vulnerability/'
       }, 'defaultConfiguration': {'level': 'error'}, 'properties': {
-          'problem.severity': 'error', 'security-severity': '9.8',
           'tags': ['supply-chain', 'dependency']
       }
   }
@@ -124,25 +122,27 @@ def parse_deps_file(deps_flat_file):
 
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found
-  responses = requests.post(
-      osv_url, headers=headers, json={'queries': queries}, allow_redirects=True
-  )
-  if responses.status_code != 200:
-    print('Request error')
-  elif responses.json() == {}:
-    print('Found no vulnerabilities')
-  elif responses.json().get('results'):
-    results = responses.json().get('results')
-    filtered_results = list(filter(lambda vuln: vuln != {}, results))
-    if len(filtered_results) > 0:
-      print(
-          'Found {vuln_count} vulnerabilit(y/ies), adding to report'.format(
-              vuln_count=str(len(filtered_results))
-          )
-      )
-      print(' '.join(filtered_results))
-      return filtered_results
-    print('Found no vulnerabilities')
+  data = json.dumps({'queries': queries}).encode('utf-8')
+  req = request.Request(osv_url, data, headers={"Accept": "application/json"}) # this will make the method "POST"
+  with request.urlopen(req) as resp:
+    res_body = resp.read()
+    results_json = json.loads(res_body.decode("utf-8"))
+    if resp.status != 200:
+      print('Request error')
+    elif results_json['results'] == [{}]:
+      print('Found no vulnerabilities')
+    else:
+      results = results_json['results']
+      filtered_results = list(filter(lambda vuln: vuln != {}, results))
+      if len(filtered_results) > 0:
+        print(
+            'Found vulnerability on {vuln_count} dependenc(y/ies), adding to report'.format(
+                vuln_count=str(len(filtered_results))
+            )
+        )
+        print(*filtered_results)
+        return filtered_results
+      print('Found no vulnerabilities')
   return {}
 
 
