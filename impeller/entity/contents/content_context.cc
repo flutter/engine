@@ -215,8 +215,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
   geometry_position_pipelines_[{}] =
       CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
-  geometry_uv_pipelines_[{}] =
-      CreateDefaultPipeline<GeometryUvPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.

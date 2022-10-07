@@ -162,8 +162,6 @@ using GeometryPositionPipeline =
     RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
-using GeometryUvPipeline =
-    RenderPipelineT<PositionUvVertexShader, VerticesFragmentShader>;
 
 struct ContentContextOptions {
   SampleCount sample_count = SampleCount::kCount1;
@@ -303,11 +301,6 @@ class ContentContext {
     return GetPipeline(geometry_position_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryUvPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_uv_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(atlas_pipelines_, opts);
@@ -434,7 +427,6 @@ class ContentContext {
   mutable Variants<AtlasPipeline> atlas_pipelines_;
   mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
-  mutable Variants<GeometryUvPipeline> geometry_uv_pipelines_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
