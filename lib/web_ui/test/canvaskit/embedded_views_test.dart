@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -641,14 +642,6 @@ void testMain() {
       final CkPicture picture = recorder.endRecording();
       sb.addPicture(ui.Offset.zero, picture);
       sb.addPlatformView(0, width: 10, height: 10);
-
-      final CkPictureRecorder recorder2 = CkPictureRecorder();
-      final CkCanvas canvas2 = recorder.beginRecording(ui.Rect.largest);
-      canvas.drawRect(const ui.Rect.fromLTRB(0, 0, 50, 50), CkPaint()..color = const ui.Color(0xffff0000));
-      final CkPicture picture2 = recorder.endRecording();
-      sb.addPicture(ui.Offset.zero, picture2);
-
-
 
       window.webOnlyDebugPhysicalSizeOverride = const ui.Size(100, 100);
       window.debugForceResize();

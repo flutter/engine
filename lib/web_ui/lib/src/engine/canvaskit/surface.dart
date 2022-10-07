@@ -180,13 +180,10 @@ class Surface {
 
       // If we have a surface, send a dummy command to its canvas to make its context
       // current or else disposing the context could fail below.
-      //_surface?.getCanvas().clear(const ui.Color(0x00000000));
+      _surface?.getCanvas().clear(const ui.Color(0x00000000));
       _surface?.dispose();
       _surface = null;
       _addedToScene = false;
-      if (_grContext != null) {
-        print('ABOUT TO RELEASE GRCONTEXT!');
-      }
       _grContext?.releaseResourcesAndAbandonContext();
       _grContext?.delete();
       _grContext = null;
