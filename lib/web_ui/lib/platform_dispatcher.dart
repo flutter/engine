@@ -83,7 +83,15 @@ abstract class PlatformDispatcher {
   VoidCallback? get onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
-  void updateSemantics(SemanticsUpdate update, [FlutterView view]);
+  @Deprecated('''
+  In a multi-view world, the platform dispatcher can no longer provide apis
+  to update semantics since each view will host its own semantics tree.
+
+  Semantics updates must be passed to an individual flutter view. To update
+  semantics, use PlatformDispatcher.instance.views to get a flutter view and
+  call `updateSemantics`.
+  ''')
+  void updateSemantics(SemanticsUpdate update);
 
   Locale get locale;
 
