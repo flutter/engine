@@ -841,5 +841,73 @@ TEST_P(RendererTest, InactiveUniforms) {
   OpenPlaygroundHere(callback);
 }
 
+TEST_P(RendererTest, CanCreateCPUBackedTexture) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  }
+
+  auto context = GetContext();
+  auto allocator = context->GetResourceAllocator();
+  size_t dimension = 2;
+
+  do {
+    ISize size(dimension, dimension);
+    TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
+    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+    texture_descriptor.size = size;
+    auto row_bytes =
+        std::max(static_cast<uint16_t>(size.width * 4),
+                 allocator->MinimumBytesPerRow(texture_descriptor.format));
+    auto buffer_size = size.height * row_bytes;
+
+    DeviceBufferDescriptor buffer_descriptor;
+    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
+    buffer_descriptor.size = buffer_size;
+
+    auto buffer = allocator->CreateBuffer(buffer_descriptor);
+
+    ASSERT_TRUE(buffer);
+
+    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
+
+    ASSERT_TRUE(texture);
+    ASSERT_TRUE(texture->IsValid());
+
+    dimension *= 2;
+  } while (dimension <= 8192);
+}
+
+TEST_P(RendererTest, DefaultIndexSize) {
+  using VS = BoxFadeVertexShader;
+
+  // Default to 16bit index buffer size, as this is a reasonable default and
+  // supported on all backends without extensions.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, VertexBufferBuilder) {
+  // Does not create index buffer if one is provided.
+  using VS = BoxFadeVertexShader;
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  vertex_builder.AppendIndex(0);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(3);
+
+  ASSERT_EQ(vertex_builder.GetIndexCount(), 6u);
+  ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
+}
+
 }  // namespace testing
 }  // namespace impeller
