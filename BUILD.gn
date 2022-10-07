@@ -44,30 +44,6 @@ config("export_dynamic_symbols") {
   }
 }
 
-if (flutter_prebuilt_dart_sdk) {
-  copy_trees("_copy_trees") {
-    sources = [
-      {
-        target = "copy_dart_sdk"
-        visibility = [ ":dart_sdk" ]
-        source = prebuilt_dart_sdk
-        dest = "$root_out_dir/dart-sdk"
-        ignore_patterns = "{}"
-      },
-    ]
-  }
-}
-
-group("dart_sdk") {
-  if (build_engine_artifacts) {
-    if (flutter_prebuilt_dart_sdk) {
-      public_deps = [ ":copy_dart_sdk" ]
-    } else {
-      public_deps = [ "//third_party/dart:create_sdk" ]
-    }
-  }
-}
-
 group("flutter") {
   testonly = true
 
@@ -96,7 +72,7 @@ group("flutter") {
 
     if (build_engine_artifacts) {
       public_deps += [
-        ":dart_sdk",
+        "//flutter/dart_sdk",
         "//flutter/flutter_frontend_server:frontend_server",
 
         # This must be listed explicitly for desktop cross-builds since

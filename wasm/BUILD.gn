@@ -8,5 +8,8 @@
 
 # This is the default target when building when the target CPU is WASM.
 group("wasm") {
-  deps = [ "//third_party/skia/modules/canvaskit" ]
+  deps = [
+    "//flutter/web_sdk",
+    "//third_party/skia/modules/canvaskit",
+  ]
 }

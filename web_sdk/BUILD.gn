@@ -153,7 +153,7 @@ template("_dartdevc") {
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        "//flutter:dart_sdk",
+        "//flutter/dart_sdk",
       ]
       script = "//build/gn_run_binary.py"
 
@@ -184,7 +184,7 @@ template("_dartdevc") {
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        "//flutter:dart_sdk",
+        "//flutter/dart_sdk",
         "//third_party/dart/pkg:pkg_files_stamp",
         "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
         "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
@@ -215,7 +215,7 @@ template("_kernel_worker") {
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        "//flutter:dart_sdk",
+        "//flutter/dart_sdk",
       ]
       script = "//build/gn_run_binary.py"
 
@@ -247,7 +247,7 @@ template("_kernel_worker") {
         ":web_engine_library",
         ":web_ui_library",
         ":web_ui_library_sources",
-        "//flutter:dart_sdk",
+        "//flutter/dart_sdk",
         "//third_party/dart/pkg:pkg_files_stamp",
         "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
         "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
