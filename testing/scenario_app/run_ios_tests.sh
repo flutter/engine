@@ -56,4 +56,6 @@ set -o pipefail && xcodebuild -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,OS=13.0,name=iPhone 8' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
+  -skip-testing "ScenariosUITest/UnobstructedPlatformViewTests" \
+  -skip-testing "ScenariosUITest/BogusFontTextTest" \
   INFOPLIST_FILE="Scenarios/Info_Impeller.plist" # Plist with FLTEnableImpeller=YES
