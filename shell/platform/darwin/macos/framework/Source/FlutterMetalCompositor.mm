@@ -11,10 +11,10 @@
 namespace flutter {
 
 FlutterMetalCompositor::FlutterMetalCompositor(
-    ViewProvider get_view_callback,
+    FlutterViewProvider* view_provider,
     FlutterPlatformViewController* platform_views_controller,
     id<MTLDevice> mtl_device)
-    : FlutterCompositor(get_view_callback),
+    : FlutterCompositor(view_provider),
       mtl_device_(mtl_device),
       platform_views_controller_(platform_views_controller) {}
 

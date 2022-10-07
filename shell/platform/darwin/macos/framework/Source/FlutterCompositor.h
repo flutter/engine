@@ -10,6 +10,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
@@ -19,9 +20,7 @@ namespace flutter {
 // Platform views are not yet supported.
 class FlutterCompositor {
  public:
-  using ViewProvider = std::function<FlutterView*(uint64_t view_id)>;
-
-  explicit FlutterCompositor(ViewProvider get_view_callback);
+  explicit FlutterCompositor(FlutterViewProvider* view_provider);
 
   virtual ~FlutterCompositor() = default;
 
@@ -88,7 +87,7 @@ class FlutterCompositor {
   // A list of the active CALayer objects for the frame that need to be removed.
   std::list<CALayer*> active_ca_layers_;
 
-  ViewProvider get_view_callback_;
+  __weak FlutterViewProvider* view_provider_;
 
   // Callback set by the embedder to be called when the layer tree has been
   // correctly set up for this frame.

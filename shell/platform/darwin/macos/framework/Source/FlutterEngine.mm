@@ -211,6 +211,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // This is either a FlutterGLCompositor or a FlutterMetalCompositor instance.
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
+  FlutterViewProvider* _viewProvider;
+
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
 
@@ -244,6 +246,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
+  _viewProvider = [[FlutterViewProvider alloc] initWithEngine:self];
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
@@ -424,6 +427,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 }
 
+// - (nullable FlutterViewController*)viewControllerForId:(uint64_t)id {
+//   // Always gets the first view, #0. After Flutter supports multi-view, it
+//   // should get the view ID from somewhere.
+//   if (id == 0) {
+//     return _viewController;
+//   }
+//   return nil;
+// }
+
 - (FlutterCompositor*)createFlutterCompositor {
   // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.
@@ -434,19 +446,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  flutter::FlutterCompositor::ViewProvider getViewCallback = [weakSelf](uint64_t view_id) {
-    return weakSelf.viewController == nullptr ? nullptr : weakSelf.viewController.flutterView;
-  };
-
   if ([FlutterRenderingBackend renderUsingMetal]) {
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
     _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-        std::move(getViewCallback), _platformViewController, metalRenderer.device);
+        _viewProvider, _platformViewController, metalRenderer.device);
   } else {
     FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
     [openGLRenderer.openGLContext makeCurrentContext];
-    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(std::move(getViewCallback),
-                                                                      openGLRenderer.openGLContext);
+    _macOSCompositor =
+        std::make_unique<flutter::FlutterGLCompositor>(_viewProvider, openGLRenderer.openGLContext);
   }
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
     if (has_flutter_content) {

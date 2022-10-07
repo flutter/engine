@@ -19,9 +19,9 @@
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(ViewProvider get_view_callback,
+FlutterGLCompositor::FlutterGLCompositor(FlutterViewProvider* view_provider,
                                          NSOpenGLContext* opengl_context)
-    : FlutterCompositor(get_view_callback), open_gl_context_(opengl_context) {}
+    : FlutterCompositor(view_provider), open_gl_context_(opengl_context) {}
 
 bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                              FlutterBackingStore* backing_store_out) {

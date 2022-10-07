@@ -14,7 +14,7 @@ namespace flutter {
 class FlutterMetalCompositor : public FlutterCompositor {
  public:
   explicit FlutterMetalCompositor(
-      ViewProvider get_view_callback,
+      FlutterViewProvider* view_provider,
       FlutterPlatformViewController* platform_views_controller,
       id<MTLDevice> mtl_device);
 

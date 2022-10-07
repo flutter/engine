@@ -10,15 +10,19 @@
 #import "flutter/testing/testing.h"
 
 namespace flutter::testing {
+namespace {
+
+FlutterViewProvider* MockViewProvider() {
+  id mock_view = OCMClassMock([FlutterView class]);
+  FlutterViewProvider* viewProviderMock = OCMStrictClassMock([FlutterViewProvider class]);
+  OCMStub([viewProviderMock getView:[OCMArg any]]).andReturn(mock_view);
+  return viewProviderMock;
+}
+}  // namespace
 
 TEST(FlutterGLCompositorTest, TestPresent) {
-  id mock_view = OCMClassMock([FlutterView class]);
-  flutter::FlutterCompositor::ViewProvider get_view_callback = [&mock_view](uint64_t view_id) {
-    return mock_view;
-  };
-
   std::unique_ptr<flutter::FlutterGLCompositor> macos_compositor =
-      std::make_unique<FlutterGLCompositor>(get_view_callback, nullptr);
+      std::make_unique<FlutterGLCompositor>(MockViewProvider(), nullptr);
 
   bool flag = false;
   macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content) {
