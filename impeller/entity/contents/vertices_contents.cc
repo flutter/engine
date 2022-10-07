@@ -63,6 +63,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
       vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                       entity.GetTransformation();
       VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+      break;
     }
     case GeometryVertexType::kUV:
     case GeometryVertexType::kPosition: {
@@ -81,6 +82,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
       vert_info.color = color_.Premultiply();
       VS::BindVertInfo(cmd,
                        pass.GetTransientsBuffer().EmplaceUniform(vert_info));
+      break;
     }
   }
   pass.AddCommand(std::move(cmd));
