@@ -743,6 +743,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
+  @override
   @Deprecated('''
   A singleton flutter window no longer manages semantics trees. In a multi-view
   world, each flutter view must manage its own semantics tree.
