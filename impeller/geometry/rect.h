@@ -73,6 +73,13 @@ struct TRect {
     return TRect::MakeLTRB(left, top, right, bottom);
   }
 
+  constexpr static TRect MakeMaximum() {
+    return TRect::MakeLTRB(-std::numeric_limits<Scalar>::infinity(),
+                           -std::numeric_limits<Scalar>::infinity(),
+                           std::numeric_limits<Scalar>::infinity(),
+                           std::numeric_limits<Scalar>::infinity());
+  }
+
   template <class U>
   constexpr explicit TRect(const TRect<U>& other)
       : origin(static_cast<TPoint<Type>>(other.origin)),
@@ -197,13 +204,16 @@ struct TRect {
   constexpr bool IntersectsWithRect(const TRect& o) const {
     return Intersection(o).has_value();
   }
+
+  constexpr const std::array<T, 8> Vertices() const {
+    auto wx = origin.x + size.width;
+    auto wy = origin.y + size.height;
+    return {origin.x, origin.y, wx, origin.y, origin.x, wy, wx, wy};
+  }
 };
 
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
-
-constexpr Rect kLargestCover =
-    Rect::MakeLTRB(-INFINITY, -INFINITY, INFINITY, INFINITY);
 
 }  // namespace impeller
 
