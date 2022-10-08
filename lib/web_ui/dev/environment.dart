@@ -21,7 +21,6 @@ class Environment {
   factory Environment() {
     final bool isMacosArm = ffi.Abi.current() == ffi.Abi.macosArm64;
     final io.File dartExecutable = io.File(io.Platform.resolvedExecutable);
-    print("dart executable: $dartExecutable");
     final io.File self = io.File.fromUri(io.Platform.script);
 
     final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
