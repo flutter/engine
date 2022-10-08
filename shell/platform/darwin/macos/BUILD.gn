@@ -204,6 +204,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/FlutterViewControllerTestUtils.h",
     "framework/Source/FlutterViewControllerTestUtils.mm",
+    "framework/Source/FlutterViewProviderUnitTests.mm",
     "framework/Source/TestFlutterPlatformView.h",
     "framework/Source/TestFlutterPlatformView.mm",
   ]

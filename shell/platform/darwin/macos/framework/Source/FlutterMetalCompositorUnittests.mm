@@ -30,7 +30,9 @@ FlutterViewProvider* MockViewProvider() {
       .andReturn(backingStoreMock);
 
   FlutterViewProvider* viewProviderMock = OCMStrictClassMock([FlutterViewProvider class]);
-  OCMStub([viewProviderMock getView:[OCMArg any]]).andReturn(viewMock);
+  OCMStub([viewProviderMock getView:0])
+    .ignoringNonObjectArgs()
+    .andReturn(viewMock);
   return viewProviderMock;
 }
 }  // namespace

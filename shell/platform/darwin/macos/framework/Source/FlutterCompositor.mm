@@ -34,7 +34,7 @@ bool FlutterCompositor::EndFrame(bool has_flutter_content) {
 }
 
 FlutterView* FlutterCompositor::GetView(uint64_t view_id) {
-  return [view_provider_ getView:@(view_id)];
+  return [view_provider_ getView:view_id];
 }
 
 void FlutterCompositor::SetFrameStatus(FlutterCompositor::FrameStatus frame_status) {

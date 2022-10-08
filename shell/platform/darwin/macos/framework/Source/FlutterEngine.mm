@@ -427,15 +427,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 }
 
-// - (nullable FlutterViewController*)viewControllerForId:(uint64_t)id {
-//   // Always gets the first view, #0. After Flutter supports multi-view, it
-//   // should get the view ID from somewhere.
-//   if (id == 0) {
-//     return _viewController;
-//   }
-//   return nil;
-// }
-
 - (FlutterCompositor*)createFlutterCompositor {
   // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.

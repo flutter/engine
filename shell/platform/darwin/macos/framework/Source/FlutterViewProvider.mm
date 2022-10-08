@@ -23,10 +23,10 @@
   return self;
 }
 
-- (nullable FlutterView*)getView:(NSNumber*)viewId {
+- (nullable FlutterView*)getView:(uint64_t)viewId {
   // Only supports the first view, #0. After Flutter supports multi-view, it
   // should get the view according to the ID.
-  if (viewId == 0) {
+  if (viewId == kFlutterDefaultViewId) {
     return _engine.viewController.flutterView;
   }
   return nil;

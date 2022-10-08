@@ -67,8 +67,6 @@ FLUTTER_DARWIN_EXPORT
  */
 @property(nonatomic, nullable, weak) FlutterViewController* viewController;
 
-// - (nullable FlutterViewController*)viewControllerForId:(uint64_t)id;
-
 /**
  * The `FlutterBinaryMessenger` for communicating with this engine.
  */

@@ -6,16 +6,23 @@
 
 @class FlutterEngine;
 
+/**
+ * @brief A facade over FlutterEngine that allows FlutterEngine's children
+ *        components to query FlutterView. FlutterViewProvider only holds a
+ *        weak reference to FlutterEngine.
+ */
 @interface FlutterViewProvider : NSObject
 
 /**
- *
+ * Create a FlutterViewProvider with the underlying engine.
  */
-- (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine;
+- (nonnull instancetype)initWithEngine:(nonnull __weak FlutterEngine*)engine;
 
 /**
+ * Get the FlutterView with the given view ID.
  *
+ * Return nil if the ID is not available.
  */
-- (nullable FlutterView*)getView:(nonnull NSNumber*)id;
+- (nullable FlutterView*)getView:(uint64_t)id;
 
 @end

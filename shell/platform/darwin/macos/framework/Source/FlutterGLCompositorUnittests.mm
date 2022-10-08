@@ -13,9 +13,11 @@ namespace flutter::testing {
 namespace {
 
 FlutterViewProvider* MockViewProvider() {
-  id mock_view = OCMClassMock([FlutterView class]);
+  id viewMock = OCMClassMock([FlutterView class]);
   FlutterViewProvider* viewProviderMock = OCMStrictClassMock([FlutterViewProvider class]);
-  OCMStub([viewProviderMock getView:[OCMArg any]]).andReturn(mock_view);
+  OCMStub([viewProviderMock getView:0])
+    .ignoringNonObjectArgs()
+    .andReturn(viewMock);
   return viewProviderMock;
 }
 }  // namespace
