@@ -18,8 +18,10 @@ class FrameCaptorMTL final : public FrameCaptor,
   // |FrameCaptor|
   ~FrameCaptorMTL() override;
 
+  // |FrameCaptor|
   bool StartCapturingFrame(FrameCaptorConfiguration configuration) override;
 
+  // |FrameCaptor|
   bool StopCapturingFrame() override;
 
  private:
@@ -27,6 +29,10 @@ class FrameCaptorMTL final : public FrameCaptor,
 
   id<MTLDevice> device_;
   FrameCaptorMTL(id<MTLDevice> device);
+
+  NSURL* GetUniqueGPUTraceSavedURL() const;
+  NSURL* GetGPUTraceSavedDictionaryURL() const;
+  bool CreateGPUTraceSavedDictionaryIfNeeded() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FrameCaptorMTL);
 };
