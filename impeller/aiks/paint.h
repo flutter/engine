@@ -90,6 +90,18 @@ struct Paint {
 
   std::shared_ptr<Contents> CreateContentsForEntity(Path path = {},
                                                     bool cover = false) const;
+
+ private:
+  std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
+                                         bool is_solid_color,
+                                         const Matrix& effect_transform) const;
+
+  std::shared_ptr<Contents> WithImageFilter(
+      std::shared_ptr<Contents> input,
+      const Matrix& effect_transform) const;
+
+  std::shared_ptr<Contents> WithColorFilter(std::shared_ptr<Contents> input,
+                                            bool absorb_opacity = false) const;
 };
 
 }  // namespace impeller
