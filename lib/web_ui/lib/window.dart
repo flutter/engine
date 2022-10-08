@@ -132,6 +132,12 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   }
 
   @override
+  @Deprecated('''
+  A singleton flutter window no longer manages semantics trees. In a multi-view
+  world, each flutter view must manage its own semantics tree.
+
+  Call updateSemantics() from FlutterView instead.
+  ''')
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   void sendPlatformMessage(
