@@ -267,14 +267,14 @@ abstract class FlutterView {
   @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::Render')
   external static void _render(Scene scene);
 
-  /// Change the retained semantics data about this platform dispatcher.
+  /// Change the retained semantics data about this [FlutterView].
   ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this platform dispatcher
+  /// If [PlatformDispatcher.semanticsEnabled] is true, the user has requested that this function
+  /// be called whenever the semantic content of this [FlutterView]
   /// changes.
   ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
+  /// This function disposes the given update, which means the semantics update
+  /// cannot be used further.
   void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
 
   @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
@@ -733,24 +733,6 @@ class SingletonFlutterWindow extends FlutterWindow {
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
-
-  /// Change the retained semantics data about this window.
-  ///
-  /// {@macro dart.ui.window.functionForwardWarning}
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this window changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
-  @override
-  @Deprecated('''
-  A singleton flutter window no longer manages semantics trees. In a multi-view
-  world, each flutter view must manage its own semantics tree.
-
-  Call updateSemantics() from FlutterView instead.
-  ''')
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   /// Sends a message to a platform-specific plugin.
   ///
