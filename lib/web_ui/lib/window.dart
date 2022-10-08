@@ -16,6 +16,7 @@ abstract class FlutterView {
   WindowPadding get padding => viewConfiguration.padding;
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
 
 abstract class FlutterWindow extends FlutterView {
@@ -130,6 +131,13 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
 
+  @override
+  @Deprecated('''
+  A singleton flutter window no longer manages semantics trees. In a multi-view
+  world, each flutter view must manage its own semantics tree.
+
+  Call updateSemantics() from FlutterView instead.
+  ''')
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   void sendPlatformMessage(
