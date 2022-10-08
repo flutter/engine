@@ -246,7 +246,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(
     std::shared_ptr<Tessellator> tessellator,
     ISize render_target_size) {
   auto rect = Rect(Size(render_target_size));
-  constexpr uint16_t kRectIndicies[6] = {0, 1, 2, 3};
+  constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = {.vertex_buffer = host_buffer.Emplace(
