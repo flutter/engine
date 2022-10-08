@@ -698,6 +698,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   @override
+<<<<<<< HEAD
   @Deprecated('''
 <<<<<<< HEAD
     In a multi-view world, the platform dispatcher can no longer provide apis
@@ -716,6 +717,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 >>>>>>> ccc5c13a67 (Deprecate `platform_dispatcher` apis in favor of updateSemantics in FlutterView)
   ''')
   void updateSemantics(ui.SemanticsUpdate update) {
+=======
+  void updateSemantics(ui.SemanticsUpdate update, [ui.FlutterView? view]) {
+>>>>>>> 58037d36e1 (Testing this commit, will explain later)
     EngineSemanticsOwner.instance.updateSemantics(update);
   }
 

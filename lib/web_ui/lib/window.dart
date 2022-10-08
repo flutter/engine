@@ -16,7 +16,7 @@ abstract class FlutterView {
   WindowPadding get padding => viewConfiguration.padding;
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update, this);
 }
 
 abstract class FlutterWindow extends FlutterView {
@@ -130,6 +130,9 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
+
+  @override
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update, this);
 
   void sendPlatformMessage(
     String name,
