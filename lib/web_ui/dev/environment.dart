@@ -20,8 +20,10 @@ Environment? _environment;
 class Environment {
   factory Environment() {
     final bool isMacosArm = ffi.Abi.current() == ffi.Abi.macosArm64;
-    final String dartSdkPrefix = ffi.Abi.current().toString().replaceAll(r'_', '-');
+    final io.File dartExecutable = io.File(io.Platform.resolvedExecutable);
+    print("dart executable: $dartExecutable");
     final io.File self = io.File.fromUri(io.Platform.script);
+
     final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
     final io.Directory engineToolsDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
@@ -29,8 +31,7 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory wasmReleaseOutDir =
         io.Directory(pathlib.join(outDir.path, 'wasm_release'));
-    final io.Directory dartSdkDir =
-        io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'prebuilts', dartSdkPrefix, 'dart-sdk'));
+    final io.Directory dartSdkDir = dartExecutable.parent.parent;
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
 
