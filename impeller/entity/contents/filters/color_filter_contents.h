@@ -30,22 +30,11 @@ class ColorFilterContents : public FilterContents {
   ~ColorFilterContents() override;
 
   void SetAbsorbOpacity(bool absorb_opacity);
+
   bool GetAbsorbOpacity() const;
 
  private:
   bool absorb_opacity_ = false;
-  //   virtual std::optional<Rect> GetFilterCoverage(
-  //       const FilterInput::Vector& inputs,
-  //       const Entity& entity,
-  //       const Matrix& effect_transform) const;
-
-  //   /// @brief  Converts zero or more filter inputs into a new texture.
-  //   virtual std::optional<Snapshot> RenderFilter(
-  //       const FilterInput::Vector& inputs,
-  //       const ContentContext& renderer,
-  //       const Entity& entity,
-  //       const Matrix& effect_transform,
-  //       const Rect& coverage) const = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterContents);
 };
