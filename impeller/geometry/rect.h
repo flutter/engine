@@ -204,12 +204,6 @@ struct TRect {
   constexpr bool IntersectsWithRect(const TRect& o) const {
     return Intersection(o).has_value();
   }
-
-  constexpr const std::array<T, 8> Vertices() const {
-    auto wx = origin.x + size.width;
-    auto wy = origin.y + size.height;
-    return {origin.x, origin.y, wx, origin.y, origin.x, wy, wx, wy};
-  }
 };
 
 using Rect = TRect<Scalar>;
