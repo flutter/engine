@@ -67,6 +67,31 @@ std::shared_ptr<Contents> Paint::WithFilters(
   return input;
 }
 
+std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
+    std::shared_ptr<Contents> input,
+    const Matrix& effect_transform) const {
+  if (mask_blur_descriptor.has_value()) {
+    input = mask_blur_descriptor->CreateMaskBlur(FilterInput::Make(input),
+                                                 false, effect_transform);
+  }
+
+  if (image_filter.has_value()) {
+    const ImageFilterProc& filter = image_filter.value();
+    input = filter(FilterInput::Make(input), effect_transform);
+  }
+
+  if (color_filter.has_value()) {
+    const ColorFilterProc& filter = color_filter.value();
+    auto color_filter_contents = filter(FilterInput::Make(input));
+    if (color_filter_contents) {
+      color_filter_contents->SetAbsorbOpacity(true);
+    }
+    input = color_filter_contents;
+  }
+
+  return input;
+}
+
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     FilterInput::Ref input,
     bool is_solid_color,

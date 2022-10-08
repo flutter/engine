@@ -40,8 +40,8 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
   contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
   contents->SetDeferApplyingOpacity(true);
-
-  return paint_.WithFilters(std::move(contents), false, effect_transform);
+  return paint_.WithFiltersForSubpassTarget(std::move(contents),
+                                            effect_transform);
 }
 
 }  // namespace impeller

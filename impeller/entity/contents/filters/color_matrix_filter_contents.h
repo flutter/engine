@@ -7,22 +7,20 @@
 #include <memory>
 #include <optional>
 
-#include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 namespace impeller {
 
 // Look at example at: https://github.com/flutter/impeller/pull/132
 
-class ColorMatrixFilterContents final : public FilterContents {
+class ColorMatrixFilterContents final : public ColorFilterContents {
  public:
   ColorMatrixFilterContents();
 
   ~ColorMatrixFilterContents() override;
 
   void SetMatrix(const ColorMatrix& matrix);
-
-  void SetAbsorbOpacity(bool absorb_opacity);
 
  private:
   // |FilterContents|
@@ -34,7 +32,6 @@ class ColorMatrixFilterContents final : public FilterContents {
       const Rect& coverage) const override;
 
   ColorMatrix matrix_;
-  bool absorb_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorMatrixFilterContents);
 };

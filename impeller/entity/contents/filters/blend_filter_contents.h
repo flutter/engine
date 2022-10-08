@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 namespace impeller {
 
-class BlendFilterContents : public FilterContents {
+class BlendFilterContents : public ColorFilterContents {
  public:
   using AdvancedBlendProc = std::function<std::optional<Snapshot>(
       const FilterInput::Vector& inputs,
@@ -29,8 +29,6 @@ class BlendFilterContents : public FilterContents {
   ///         been blended.
   void SetForegroundColor(std::optional<Color> color);
 
-  void SetAbsorbOpacity(bool absorb_opacity);
-
  private:
   // |FilterContents|
   std::optional<Snapshot> RenderFilter(const FilterInput::Vector& inputs,
@@ -42,7 +40,6 @@ class BlendFilterContents : public FilterContents {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   AdvancedBlendProc advanced_blend_proc_;
   std::optional<Color> foreground_color_;
-  bool absorb_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlendFilterContents);
 };

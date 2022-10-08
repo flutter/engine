@@ -314,10 +314,6 @@ void BlendFilterContents::SetForegroundColor(std::optional<Color> color) {
   foreground_color_ = color;
 }
 
-void BlendFilterContents::SetAbsorbOpacity(bool absorb_opacity) {
-  absorb_opacity_ = absorb_opacity;
-}
-
 std::optional<Snapshot> BlendFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
@@ -331,17 +327,17 @@ std::optional<Snapshot> BlendFilterContents::RenderFilter(
   if (inputs.size() == 1 && !foreground_color_.has_value()) {
     // Nothing to blend.
     return PipelineBlend(inputs, renderer, entity, coverage, BlendMode::kSource,
-                         std::nullopt, absorb_opacity_);
+                         std::nullopt, GetAbsorbOpacity());
   }
 
   if (blend_mode_ <= Entity::kLastPipelineBlendMode) {
     return PipelineBlend(inputs, renderer, entity, coverage, blend_mode_,
-                         foreground_color_, absorb_opacity_);
+                         foreground_color_, GetAbsorbOpacity());
   }
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
     return advanced_blend_proc_(inputs, renderer, entity, coverage,
-                                foreground_color_, absorb_opacity_);
+                                foreground_color_, GetAbsorbOpacity());
   }
   FML_UNREACHABLE();
 }
