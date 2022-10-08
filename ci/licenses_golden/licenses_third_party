@@ -1,4 +1,4 @@
-Signature: 351990ec688636fdfe1f26c522d2abcc
+Signature: 36e67619dd1da61614875cdd230dc6ee
 
 UNUSED LICENSES:
 
@@ -10835,7 +10835,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/growable_array.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/identical_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/immutable_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/integers.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/integers_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/invocation_mirror_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/isolate_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/math_patch.dart
@@ -10852,8 +10851,8 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/type_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/weak_property.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/array_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/bool_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/integers_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/map_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/integers_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/async/async.dart
 FILE: ../../../third_party/dart/sdk/lib/async/async_error.dart
 FILE: ../../../third_party/dart/sdk/lib/async/broadcast_stream_controller.dart
@@ -11318,7 +11317,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/deferred_load_patch.dar
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/function.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/internal_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/mirror_reference.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/null_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/schedule_microtask_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/stacktrace.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/symbol_patch.dart
@@ -11326,8 +11324,8 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/timer_impl.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/typed_data_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/uri_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/collection_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/null_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/io_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/null_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/async/deferred_load.dart
 FILE: ../../../third_party/dart/sdk/lib/async/schedule_microtask.dart
 FILE: ../../../third_party/dart/sdk/lib/async/stream.dart
@@ -14060,6 +14058,7 @@ FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/lib/src/completion.da
 FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/lib/src/console.dart
 FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/lib/src/expression.dart
 FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/lib/src/format.dart
+FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/lib/src/intset.dart
 FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/lib/src/load.dart
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.h
@@ -14114,6 +14113,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/symbol_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/timer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/type.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/uri_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/core/record.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/c_type.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/native_finalizer.dart
 FILE: ../../../third_party/dart/sdk/lib/js/js_wasm.dart
