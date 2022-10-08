@@ -82,11 +82,13 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // Setup the frame captor.
   {
     frame_captor_ =
         std::shared_ptr<FrameCaptorMTL>(new FrameCaptorMTL(device_));
   }
+#endif
 
   is_valid_ = true;
 }
