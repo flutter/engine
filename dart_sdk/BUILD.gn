@@ -1,16 +1,18 @@
 import("//flutter/common/config.gni")
 import("//third_party/dart/build/dart/copy_tree.gni")
 
-copy_trees("_copy_trees") {
-  sources = [
-    {
-      target = "copy_dart_sdk"
-      visibility = [ ":dart_sdk" ]
-      source = prebuilt_dart_sdk
-      dest = "$root_out_dir/dart-sdk"
-      ignore_patterns = "{}"
-    },
-  ]
+if (flutter_prebuilt_dart_sdk) {
+  copy_trees("_copy_trees") {
+    sources = [
+      {
+        target = "copy_dart_sdk"
+        visibility = [ ":dart_sdk" ]
+        source = prebuilt_dart_sdk
+        dest = "$root_out_dir/dart-sdk"
+        ignore_patterns = "{}"
+      },
+    ]
+  }
 }
 
 group("dart_sdk") {
