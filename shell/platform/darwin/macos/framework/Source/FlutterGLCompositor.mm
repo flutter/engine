@@ -77,9 +77,10 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
 }
 
 bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
-  // Always gets the first view, #0. After Flutter supports multi-view, it
-  // should get the view ID from somewhere.
-  FlutterView* view = GetView(0);
+  // TODO(dkwingsmt): This class only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere.
+  FlutterView* view = GetView(kFlutterDefaultViewId);
   if (!view) {
     return false;
   }

@@ -21,7 +21,7 @@
 /**
  * Get the FlutterView with the given view ID.
  *
- * Return nil if the ID is not available.
+ * Returns nil if the ID is invalid.
  */
 - (nullable FlutterView*)getView:(uint64_t)id;
 

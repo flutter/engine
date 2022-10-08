@@ -47,8 +47,8 @@ class FlutterMetalCompositor : public FlutterCompositor {
  private:
   // Presents the platform view layer represented by `layer`. `layer_index` is
   // used to position the layer in the z-axis. If the layer does not have a
-  // superview, it will become subview of `default_super_view`.
-  void PresentPlatformView(FlutterView* default_super_view,
+  // superview, it will become subview of the view corresponding to `view_id`.
+  void PresentPlatformView(uint64_t view_id,
                            const FlutterLayer* layer,
                            size_t layer_position);
 

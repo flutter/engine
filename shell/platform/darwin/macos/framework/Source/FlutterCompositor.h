@@ -20,6 +20,7 @@ namespace flutter {
 // Platform views are not yet supported.
 class FlutterCompositor {
  public:
+  // Create a FlutterCompositor by specifying a way to query the view.
   explicit FlutterCompositor(FlutterViewProvider* view_provider);
 
   virtual ~FlutterCompositor() = default;
@@ -63,6 +64,9 @@ class FlutterCompositor {
   typedef enum { kStarted, kPresenting, kEnded } FrameStatus;
 
  protected:
+  // Get the view associated with the view ID.
+  //
+  // Returns nil if the ID is invalid.
   FlutterView* GetView(uint64_t view_id);
 
   // Gets and sets the FrameStatus for the current frame.
