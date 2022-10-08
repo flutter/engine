@@ -20,7 +20,11 @@ namespace flutter {
 // Platform views are not yet supported.
 class FlutterCompositor {
  public:
-  // Create a FlutterCompositor by specifying a way to query the view.
+  // Create a FlutterCompositor with a view provider.
+  //
+  // The view_provider is used to query FlutterViews from view IDs,
+  // which are used for presenting and creating backing stores.
+  // It must not be null, and is typically a facade over FlutterEngine.
   explicit FlutterCompositor(FlutterViewProvider* view_provider);
 
   virtual ~FlutterCompositor() = default;
@@ -91,7 +95,8 @@ class FlutterCompositor {
   // A list of the active CALayer objects for the frame that need to be removed.
   std::list<CALayer*> active_ca_layers_;
 
-  __weak FlutterViewProvider* view_provider_;
+  // Where the compositor can query FlutterViews. Must not be null.
+  FlutterViewProvider* const view_provider_;
 
   // Callback set by the embedder to be called when the layer tree has been
   // correctly set up for this frame.

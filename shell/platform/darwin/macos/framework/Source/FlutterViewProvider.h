@@ -8,8 +8,9 @@
 
 /**
  * @brief A facade over FlutterEngine that allows FlutterEngine's children
- *        components to query FlutterView. FlutterViewProvider only holds a
- *        weak reference to FlutterEngine.
+ *        components to query FlutterView.
+ *
+ *        FlutterViewProvider only holds a weak reference to FlutterEngine.
  */
 @interface FlutterViewProvider : NSObject
 
