@@ -21,7 +21,7 @@ TEST(FlutterViewProviderUnittests, GetViewReturnsTheCorrectView) {
   FlutterViewProvider* viewProvider;
   id mockEngine = OCMClassMock([FlutterEngine class]);
   __block id mockFlutterViewController;
-  OCMStub([mockEngine viewController]).andDo(^(NSInvocation *invocation) {
+  OCMStub([mockEngine viewController]).andDo(^(NSInvocation* invocation) {
     if (mockFlutterViewController != nil) {
       [invocation setReturnValue:&mockFlutterViewController];
     }
