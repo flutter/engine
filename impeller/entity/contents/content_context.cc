@@ -110,8 +110,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kModulate:
-      // kSourceColor and kDestinationColor override the alpha blend factor.
-      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceColor;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -205,8 +204,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearToSrgbFilterPipeline>(*context_);
   srgb_to_linear_filter_pipelines_[{}] =
       CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
-  solid_stroke_pipelines_[{}] =
-      CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
   glyph_atlas_sdf_pipelines_[{}] =
