@@ -98,6 +98,10 @@
   textureOut->width = textureSize.width();
   textureOut->pixel_format = FlutterMetalExternalTexturePixelFormat::kYUVA;
   textureOut->textures = _textures.data();
+  OSType pixel_format = CVPixelBufferGetPixelFormatType(pixelBuffer);
+  textureOut->yuv_range = pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                              ? FlutterMetalExternalTextureYUVRange::kLimited
+                              : FlutterMetalExternalTextureYUVRange::kFull;
 
   return YES;
 }
