@@ -161,7 +161,8 @@ void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
 
-bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
+bool Playground::OpenPlaygroundHere(
+    const Renderer::RenderCallback& render_callback) {
   if (!is_enabled()) {
     return true;
   }
@@ -252,6 +253,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
         }
         render_target.SetColorAttachment(color0, 0);
 
+#ifndef IMPELLER_ENABLE_VULKAN
         {
           TextureDescriptor stencil0_tex;
           stencil0_tex.storage_mode = StorageMode::kDeviceTransient;
@@ -279,6 +281,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
           render_target.SetStencilAttachment(stencil0);
         }
+#endif
 
         auto pass = buffer->CreateRenderPass(render_target);
         if (!pass) {

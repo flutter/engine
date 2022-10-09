@@ -64,11 +64,11 @@ static std::optional<Snapshot> AdvancedBlend(
   if (!foreground_color.has_value()) {
     src_snapshot = inputs[1]->GetSnapshot(renderer, entity);
     if (!src_snapshot.has_value()) {
-      return std::nullopt;
+      return dst_snapshot;
     }
     auto maybe_src_uvs = src_snapshot->GetCoverageUVs(coverage);
     if (!maybe_src_uvs.has_value()) {
-      return std::nullopt;
+      return dst_snapshot;
     }
     src_uvs = maybe_src_uvs.value();
   }
@@ -93,7 +93,8 @@ static std::optional<Snapshot> AdvancedBlend(
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
-    auto options = OptionsFromPassAndEntity(pass, entity);
+    auto options = OptionsFromPass(pass);
+    options.blend_mode = BlendMode::kSource;
     std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
         std::invoke(pipeline_proc, renderer, options);
 
@@ -192,9 +193,11 @@ static std::optional<Snapshot> PipelineBlend(
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                        Matrix::MakeTranslation(-coverage.origin) *
                        input->transform;
-
-      auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-      VS::BindFrameInfo(cmd, uniform_view);
+      FS::FragInfo frag_info;
+      frag_info.texture_sampler_y_coord_scale =
+          input->texture->GetYCoordScale();
+      FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+      VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
       pass.AddCommand(cmd);
       return true;
@@ -227,9 +230,10 @@ static std::optional<Snapshot> PipelineBlend(
 
     if (foreground_color.has_value()) {
       auto contents = std::make_shared<SolidColorContents>();
-      contents->SetPath(PathBuilder{}
-                            .AddRect(Rect::MakeSize(pass.GetRenderTargetSize()))
-                            .TakePath());
+      contents->SetGeometry(Geometry::MakePath(
+          PathBuilder{}
+              .AddRect(Rect::MakeSize(pass.GetRenderTargetSize()))
+              .TakePath()));
       contents->SetColor(foreground_color.value());
 
       Entity foreground_entity;

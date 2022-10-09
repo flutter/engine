@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/command.h"
 
+#include <utility>
+
 #include "impeller/base/validation.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/vertex_descriptor.h"
@@ -36,7 +38,7 @@ BufferView Command::GetVertexBuffer() const {
 bool Command::BindResource(ShaderStage stage,
                            const ShaderUniformSlot& slot,
                            const ShaderMetadata& metadata,
-                           BufferView view) {
+                           const BufferView& view) {
   if (!view) {
     return false;
   }
@@ -64,7 +66,7 @@ bool Command::BindResource(ShaderStage stage,
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
                            const ShaderMetadata& metadata,
-                           std::shared_ptr<const Texture> texture) {
+                           const std::shared_ptr<const Texture>& texture) {
   if (!texture || !texture->IsValid()) {
     return false;
   }
@@ -94,7 +96,7 @@ bool Command::BindResource(ShaderStage stage,
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
                            const ShaderMetadata& metadata,
-                           std::shared_ptr<const Sampler> sampler) {
+                           const std::shared_ptr<const Sampler>& sampler) {
   if (!sampler || !sampler->IsValid()) {
     return false;
   }
@@ -106,9 +108,11 @@ bool Command::BindResource(ShaderStage stage,
   switch (stage) {
     case ShaderStage::kVertex:
       vertex_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
+      vertex_bindings.sampled_images[slot.sampler_index] = slot;
       return true;
     case ShaderStage::kFragment:
       fragment_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
+      fragment_bindings.sampled_images[slot.sampler_index] = slot;
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
@@ -124,8 +128,8 @@ bool Command::BindResource(ShaderStage stage,
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
                            const ShaderMetadata& metadata,
-                           std::shared_ptr<const Texture> texture,
-                           std::shared_ptr<const Sampler> sampler) {
+                           const std::shared_ptr<const Texture>& texture,
+                           const std::shared_ptr<const Sampler>& sampler) {
   return BindResource(stage, slot, metadata, texture) &&
          BindResource(stage, slot, metadata, sampler);
 }

@@ -45,11 +45,16 @@ class DeviceBufferVK final : public DeviceBuffer,
   // |DeviceBuffer|
   ~DeviceBufferVK() override;
 
+  vk::Buffer GetVKBufferHandle() const;
+
  private:
   friend class AllocatorVK;
 
   ContextVK& context_;
   std::unique_ptr<DeviceBufferAllocationVK> device_allocation_;
+
+  // |DeviceBuffer|
+  uint8_t* OnGetContents() const override;
 
   // |DeviceBuffer|
   bool OnCopyHostBuffer(const uint8_t* source,

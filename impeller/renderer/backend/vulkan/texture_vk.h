@@ -14,12 +14,14 @@
 namespace impeller {
 
 enum class TextureBackingTypeVK {
+  kUnknownType,
   kAllocatedTexture,
   kWrappedTexture,
 };
 
 struct WrappedTextureInfoVK {
   SwapchainImageVK* swapchain_image = nullptr;
+  uint32_t frame_num = 0;
 };
 
 struct AllocatedTextureInfoVK {
@@ -27,6 +29,7 @@ struct AllocatedTextureInfoVK {
   VmaAllocation allocation = nullptr;
   VmaAllocationInfo allocation_info = {};
   VkImage image = nullptr;
+  VkImageView image_view = nullptr;
 };
 
 struct TextureInfoVK {
@@ -49,6 +52,10 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   bool IsWrapped() const;
 
   vk::Image GetImage() const;
+
+  vk::ImageView GetImageView() const;
+
+  TextureInfoVK* GetTextureInfo() const;
 
  private:
   ContextVK* context_;

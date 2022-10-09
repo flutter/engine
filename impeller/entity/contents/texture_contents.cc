@@ -11,6 +11,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
@@ -72,7 +73,8 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
 
   // Passthrough textures that have simple rectangle paths and complete source
   // rects.
-  if (is_rect_ && source_rect_ == Rect::MakeSize(texture_->GetSize())) {
+  if (is_rect_ && source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
+      opacity_ >= 1 - kEhCloseEnough) {
     auto scale = Vector2(bounds->size / Size(texture_->GetSize()));
     return Snapshot{.texture = texture_,
                     .transform = entity.GetTransformation() *
@@ -114,7 +116,7 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   {
-    const auto tess_result = Tessellator{}.Tessellate(
+    const auto tess_result = renderer.GetTessellator()->Tessellate(
         path_.GetFillType(), path_.CreatePolyline(),
         [this, &vertex_builder, &coverage_rect, &texture_size](Point vtx) {
           VS::PerVertexData data;

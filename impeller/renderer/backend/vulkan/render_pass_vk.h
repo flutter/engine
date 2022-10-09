@@ -4,19 +4,27 @@
 
 #pragma once
 
+#include <vector>
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
 class RenderPassVK final : public RenderPass {
  public:
   RenderPassVK(std::weak_ptr<const Context> context,
+               vk::Device device,
                RenderTarget target,
-               vk::CommandBuffer command_buffer,
-               vk::UniqueRenderPass render_pass);
+               vk::UniqueCommandBuffer command_buffer,
+               vk::UniqueRenderPass render_pass,
+               SurfaceProducerVK* surface_producer);
 
   // |RenderPass|
   ~RenderPassVK() override;
@@ -24,8 +32,11 @@ class RenderPassVK final : public RenderPass {
  private:
   friend class CommandBufferVK;
 
-  vk::CommandBuffer command_buffer_;
+  vk::Device device_;
+  vk::UniqueCommandBuffer command_buffer_;
   vk::UniqueRenderPass render_pass_;
+  SurfaceProducerVK* surface_producer_;
+
   std::string label_ = "";
   bool is_valid_ = false;
 
@@ -37,6 +48,34 @@ class RenderPassVK final : public RenderPass {
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;
+
+  bool EncodeCommand(uint32_t frame_num,
+                     const Context& context,
+                     const Command& command) const;
+
+  bool AllocateAndBindDescriptorSets(
+      uint32_t frame_num,
+      const Context& context,
+      const Command& command,
+      PipelineCreateInfoVK* pipeline_create_info) const;
+
+  bool EndCommandBuffer(uint32_t frame_num);
+
+  bool UpdateDescriptorSets(uint32_t frame_num,
+                            const char* label,
+                            const Bindings& bindings,
+                            Allocator& allocator,
+                            vk::DescriptorSet desc_set) const;
+
+  void SetViewportAndScissor(const Command& command) const;
+
+  vk::Framebuffer CreateFrameBuffer(
+      const WrappedTextureInfoVK& wrapped_texture_info) const;
+
+  bool TransitionImageLayout(uint32_t frame_num,
+                             vk::Image image,
+                             vk::ImageLayout layout_old,
+                             vk::ImageLayout layout_new) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);
 };

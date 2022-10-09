@@ -178,6 +178,28 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       testCollector.collectNow();
     });
 
+    test('CkImage.clone also clones the VideoFrame', () async {
+      final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+        data: kAnimatedGif,
+        debugSource: 'test',
+      );
+      final ui.FrameInfo frame = await image.getNextFrame();
+      final CkImage ckImage = frame.image as CkImage;
+      expect(ckImage.videoFrame, isNotNull);
+
+      final CkImage imageClone = ckImage.clone();
+      expect(imageClone.videoFrame, isNotNull);
+
+      final ByteData png = await imageClone.toByteData(format: ui.ImageByteFormat.png);
+      expect(png, isNotNull);
+
+      // The precise PNG encoding is browser-specific, but we can check the file
+      // signature.
+      expect(detectContentType(png.buffer.asUint8List()), 'image/png');
+      testCollector.collectNow();
+    // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
+    }, skip: isFirefox || isSafari);
+
     // Regression test for https://github.com/flutter/flutter/issues/72469
     test('CkImage can be resurrected', () {
       browserSupportsFinalizationRegistry = false;
@@ -519,8 +541,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
       image.dispose();
       codec.dispose();
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-    }, skip: isFirefox || isSafari);
+    });
 
     // This is a regression test for the issues with transferring textures from
     // one GL context to another, such as:
@@ -612,8 +633,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       );
       mandrill.dispose();
       codec.dispose();
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-    }, skip: isFirefox || isSafari);
+    });
 
     test('can detect JPEG from just magic number', () async {
       expect(

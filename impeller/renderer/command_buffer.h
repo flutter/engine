@@ -61,7 +61,7 @@ class CommandBuffer {
   ///
   /// @param[in]  callback  The completion callback.
   ///
-  [[nodiscard]] bool SubmitCommands(CompletionCallback callback);
+  [[nodiscard]] bool SubmitCommands(const CompletionCallback& callback);
 
   [[nodiscard]] bool SubmitCommands();
 
@@ -74,7 +74,7 @@ class CommandBuffer {
   /// @return     A valid render pass or null.
   ///
   std::shared_ptr<RenderPass> CreateRenderPass(
-      RenderTarget render_target) const;
+      const RenderTarget& render_target);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a blit pass to record blit commands into.
@@ -96,7 +96,7 @@ class CommandBuffer {
   explicit CommandBuffer(std::weak_ptr<const Context> context);
 
   virtual std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget render_target) const = 0;
+      RenderTarget render_target) = 0;
 
   virtual std::shared_ptr<BlitPass> OnCreateBlitPass() const = 0;
 
