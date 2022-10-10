@@ -264,6 +264,22 @@ StrokePathGeometry::StrokePathGeometry(Path path,
 
 StrokePathGeometry::~StrokePathGeometry() = default;
 
+Scalar StrokePathGeometry::GetStrokeWidth() const {
+  return stroke_width_;
+}
+
+Scalar StrokePathGeometry::GetMiterLimit() const {
+  return miter_limit_;
+}
+
+Cap StrokePathGeometry::GetStrokeCap() const {
+  return stroke_cap_;
+}
+
+Join StrokePathGeometry::GetStrokeJoin() const {
+  return stroke_join_;
+}
+
 // static
 Scalar StrokePathGeometry::CreateBevelAndGetDirection(
     VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& vtx_builder,

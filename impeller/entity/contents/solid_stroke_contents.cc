@@ -53,7 +53,6 @@ bool SolidStrokeContents::Render(const ContentContext& renderer,
   frag_info.color = color_.Premultiply();
 
   Command cmd;
-  cmd.primitive_type = PrimitiveType::kTriangleStrip;
   cmd.label = "Solid Stroke";
   cmd.stencil_reference = entity.GetStencilDepth();
 

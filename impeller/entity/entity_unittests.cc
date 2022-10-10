@@ -623,37 +623,47 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
-// TEST_P(EntityTest, SolidStrokeContentsSetStrokeCapsAndJoins) {
-//   {
-//     SolidStrokeContents stroke;
-//     // Defaults.
-//     ASSERT_EQ(stroke.GetStrokeCap(), SolidStrokeContents::Cap::kButt);
-//     ASSERT_EQ(stroke.GetStrokeJoin(), SolidStrokeContents::Join::kMiter);
-//   }
+TEST_P(EntityTest, SolidStrokeContentsSetStrokeCapsAndJoins) {
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{});
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    // Defaults.
+    ASSERT_EQ(path_geometry->GetStrokeCap(), Cap::kButt);
+    ASSERT_EQ(path_geometry->GetStrokeJoin(), Join::kMiter);
+  }
 
-//   {
-//     SolidStrokeContents stroke;
-//     stroke.SetStrokeCap(SolidStrokeContents::Cap::kSquare);
-//     ASSERT_EQ(stroke.GetStrokeCap(), SolidStrokeContents::Cap::kSquare);
-//   }
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, 4.0, Cap::kSquare);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_EQ(path_geometry->GetStrokeCap(), Cap::kSquare);
+  }
 
-//   {
-//     SolidStrokeContents stroke;
-//     stroke.SetStrokeCap(SolidStrokeContents::Cap::kRound);
-//     ASSERT_EQ(stroke.GetStrokeCap(), SolidStrokeContents::Cap::kRound);
-//   }
-// }
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, 4.0, Cap::kRound);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_EQ(path_geometry->GetStrokeCap(), Cap::kRound);
+  }
+}
 
-// TEST_P(EntityTest, SolidStrokeContentsSetMiter) {
-//   SolidStrokeContents contents;
-//   ASSERT_FLOAT_EQ(contents.GetStrokeMiter(), 4);
+TEST_P(EntityTest, SolidStrokeContentsSetMiterLimit) {
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{});
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_FLOAT_EQ(path_geometry->GetMiterLimit(), 4);
+  }
 
-//   contents.SetStrokeMiter(8);
-//   ASSERT_FLOAT_EQ(contents.GetStrokeMiter(), 8);
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, /*miter_limit=*/8.0);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_FLOAT_EQ(path_geometry->GetMiterLimit(), 8);
+  }
 
-//   contents.SetStrokeMiter(-1);
-//   ASSERT_FLOAT_EQ(contents.GetStrokeMiter(), 8);
-// }
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, /*miter_limit=*/-1.0);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_FLOAT_EQ(path_geometry->GetMiterLimit(), 4);
+  }
+}
 
 TEST_P(EntityTest, BlendingModeOptions) {
   std::vector<const char*> blend_mode_names;

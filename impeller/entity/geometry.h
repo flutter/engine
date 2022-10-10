@@ -163,6 +163,14 @@ class StrokePathGeometry : public Geometry {
 
   ~StrokePathGeometry();
 
+  Scalar GetStrokeWidth() const;
+
+  Scalar GetMiterLimit() const;
+
+  Cap GetStrokeCap() const;
+
+  Join GetStrokeJoin() const;
+
  private:
   using VS = SolidFillVertexShader;
 
