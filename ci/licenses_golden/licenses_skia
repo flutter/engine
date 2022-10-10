@@ -1,4 +1,4 @@
-Signature: 964de7744e130ae1db9fe532e6802b17
+Signature: 6e665821f49d50971fd7a62a5312974a
 
 UNUSED LICENSES:
 
@@ -6627,8 +6627,6 @@ FILE: ../../../third_party/skia/src/core/SkYUVAPixmaps.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ClipStack.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ClipStack.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBackendSemaphore.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrBackendSurfaceMutableState.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrBackendSurfaceMutableStateImpl.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBackendUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBackendUtils.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrDDLTask.cpp
@@ -7960,11 +7958,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/include/gpu/MutableTextureState.h
 FILE: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanTypes.h
 FILE: ../../../third_party/skia/include/private/gpu/graphite/VulkanGraphiteTypesPriv.h
+FILE: ../../../third_party/skia/include/private/gpu/vk/VulkanTypesPriv.h
+FILE: ../../../third_party/skia/src/gpu/MutableTextureStateRef.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanGraphiteTypes.cpp
