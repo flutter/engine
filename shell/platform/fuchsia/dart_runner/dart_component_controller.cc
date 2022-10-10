@@ -158,10 +158,10 @@ bool DartComponentController::SetUp() {
   }
 
   if (SetUpFromAppSnapshot()) {
-    FX_LOGF(ERROR, LOG_TAG, "TESTING LOG: AppSnapshot");
-    return false;
     FX_LOGF(INFO, LOG_TAG, "%s is running from an app snapshot", url_.c_str());
   } else if (SetUpFromKernel()) {
+    FX_LOGF(ERROR, LOG_TAG, "TESTING LOG: Kernel");
+    return false;
     FX_LOGF(INFO, LOG_TAG, "%s is running from kernel", url_.c_str());
   } else {
     FX_LOGF(ERROR, LOG_TAG, "Failed to set up component controller for %s.",
