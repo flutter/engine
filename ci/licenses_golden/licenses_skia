@@ -1,4 +1,4 @@
-Signature: da5076a9e8df3d698f5f2023129b712c
+Signature: 75e0ad8c76f4c7f2bdaecbac782ae034
 
 UNUSED LICENSES:
 
@@ -7760,7 +7760,6 @@ FILE: ../../../third_party/skia/include/gpu/GpuTypes.h
 FILE: ../../../third_party/skia/include/gpu/graphite/CombinationBuilder.h
 FILE: ../../../third_party/skia/include/gpu/graphite/ContextOptions.h
 FILE: ../../../third_party/skia/include/gpu/graphite/ImageProvider.h
-FILE: ../../../third_party/skia/include/gpu/graphite/dawn/DawnBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanBackendContext.h
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
@@ -7849,16 +7848,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.h
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCaps.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCaps.h
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.h
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnQueueManager.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnQueueManager.h
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnResourceProvider.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnResourceProvider.h
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnSharedContext.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnSharedContext.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Geometry.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/SubRunData.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputePipeline.h
@@ -8012,7 +8001,6 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCOLRv1.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCOLRv1.cpp
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkMeshSpecification.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google, LLC
 
