@@ -8,7 +8,7 @@ import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'key_map.g.dart';
-import 'keyboard_layout_detector.dart' show KeyboardLayoutDetector;
+import 'keyboard_layout_detector.dart';
 import 'platform_dispatcher.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
@@ -148,7 +148,7 @@ class KeyboardBinding {
   void _setup() {
     _addEventListener('keydown', allowInterop((DomEvent event) {
       layoutDetector.update(event as DomKeyboardEvent);
-      print('${event.code} ${layoutDetector.getKey(event.code ?? '')}');
+      print('${event.code} 0x${layoutDetector.getKey(event.code ?? '')?.toRadixString(16)}');
       return _converter.handleEvent(FlutterHtmlKeyboardEvent(event));
     }));
     _addEventListener('keyup', allowInterop((DomEvent event) {

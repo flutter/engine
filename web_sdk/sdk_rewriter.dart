@@ -11,6 +11,7 @@ final ArgParser argParser = ArgParser()
   ..addOption('output-dir')
   ..addOption('input-dir')
   ..addFlag('ui')
+  ..addFlag('keyboard-layouts')
   ..addOption('library-name')
   ..addOption('api-file')
   ..addMultiOption('source-file')
@@ -24,6 +25,19 @@ import\s*'src/engine.dart'\s*as\s+engine;
 '''), r'''
 import 'dart:_engine' as engine;
 '''),
+  AllReplacer(RegExp(
+    r'''
+export\s*'src/engine.dart'
+'''),
+    r'''
+export 'dart:_engine'
+''',
+  ),
+];
+
+final List<Replacer> keyboardLayoutsPatterns = <Replacer>[
+  AllReplacer(RegExp(r'library\s+web_keyboard_layouts;'), 'library dart.web_keyboard_layouts;'),
+  AllReplacer(RegExp(r'part\s+of\s+web_keyboard_layouts;'), 'part of dart.web_keyboard_layouts;'),
   AllReplacer(RegExp(
     r'''
 export\s*'src/engine.dart'
@@ -49,6 +63,7 @@ import 'dart:_js_annotations';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:web_keyboard_layouts' as keyboard_layouts;
 $extraImports
 '''
     ),

@@ -19,6 +19,14 @@ web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
                              ],
                              "list lines")
 
+web_keyboard_layouts_sources =
+    exec_script("//third_party/dart/tools/list_dart_files.py",
+                [
+                  "absolute",
+                  rebase_path("//flutter/third_party/web_keyboard_layouts/lib"),
+                ],
+                "list lines")
+
 group("web_sdk") {
   deps = [
     ":flutter_dartdevc_canvaskit_html_kernel_sdk",
@@ -103,6 +111,12 @@ sdk_rewriter("web_ui_library_sources") {
   exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/*") ]
 }
 
+sdk_rewriter("web_keyboard_layouts_library") {
+  ui = true
+  input_dir = "//flutter/third_party/web_keyboard_layouts/lib/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/web_keyboard_layouts/"
+}
+
 sdk_rewriter("web_engine_library") {
   library_name = "engine"
   api_file = "//flutter/lib/web_ui/lib/src/engine.dart"
@@ -151,6 +165,7 @@ template("_dartdevc") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
+        ":web_keyboard_layouts_library",
         ":web_ui_library",
         ":web_ui_library_sources",
         "//flutter:dart_sdk",
@@ -182,6 +197,7 @@ template("_dartdevc") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
+        ":web_keyboard_layouts_library",
         ":web_ui_library",
         ":web_ui_library_sources",
         "//flutter:dart_sdk",
@@ -213,6 +229,7 @@ template("_kernel_worker") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
+        ":web_keyboard_layouts_library",
         ":web_ui_library",
         ":web_ui_library_sources",
         "//flutter:dart_sdk",
@@ -245,6 +262,7 @@ template("_kernel_worker") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
+        ":web_keyboard_layouts_library",
         ":web_ui_library",
         ":web_ui_library_sources",
         "//flutter:dart_sdk",
@@ -625,6 +643,7 @@ if (!is_fuchsia) {
       ":skwasm_impl_library",
       ":skwasm_stub_library",
       ":web_engine_library",
+      ":web_keyboard_layouts_library",
       ":web_ui_library",
       ":web_ui_library_sources",
     ]
@@ -638,6 +657,7 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_outline")
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound")
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_sound")
+    sources += get_target_outputs(":web_keyboard_layouts_library")
     sources += get_target_outputs(":web_ui_library")
     sources += get_target_outputs(":web_ui_library_sources")
     sources += get_target_outputs(":skwasm_stub_library")
