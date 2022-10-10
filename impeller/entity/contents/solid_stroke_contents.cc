@@ -55,12 +55,7 @@ bool SolidStrokeContents::Render(const ContentContext& renderer,
   Command cmd;
   cmd.primitive_type = PrimitiveType::kTriangleStrip;
   cmd.label = "Solid Stroke";
-
   cmd.stencil_reference = entity.GetStencilDepth();
-
-  // auto smoothing = SmoothingApproximation(
-  //     60.0 / (stroke_size_ * entity.GetTransformation().GetMaxBasisLength()),
-  //     0.0, 0.0);
 
   auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
 
@@ -71,8 +66,6 @@ bool SolidStrokeContents::Render(const ContentContext& renderer,
   }
   cmd.pipeline = renderer.GetSolidFillPipeline(options);
 
-  // Scalar min_size = 1.0f / sqrt(std::abs(determinant));
-  // Scalar stroke_width = std::max(stroke_size_, min_size);
   cmd.BindVertices(geometry_result.vertex_buffer);
   cmd.primitive_type = geometry_result.type;
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));

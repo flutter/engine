@@ -208,11 +208,18 @@ class StrokePathGeometry : public Geometry {
       const Point& start_offset,
       const Point& end_offset);
 
-  VertexBuffer CreateSolidStrokeVertices(
+  static VertexBuffer CreateSolidStrokeVertices(
       const Path& path,
       HostBuffer& buffer,
+      Scalar stroke_width,
       Scalar scaled_miter_limit,
+      const JoinProc& join_proc,
+      const CapProc& cap_proc,
       const SmoothingApproximation& smoothing);
+
+  static StrokePathGeometry::JoinProc GetJoinProc(Join stroke_join);
+
+  static StrokePathGeometry::CapProc GetCapProc(Cap stroke_cap);
 
   Path path_;
   Scalar stroke_width_;
