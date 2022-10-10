@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/solid_fill.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/vertices.h"
@@ -28,6 +30,18 @@ enum GeometryVertexType {
   kUV,
 };
 
+enum class Cap {
+    kButt,
+    kRound,
+    kSquare,
+};
+
+enum class Join {
+    kMiter,
+    kRound,
+    kBevel,
+};
+
 class Geometry {
  public:
   Geometry();
@@ -36,7 +50,14 @@ class Geometry {
 
   static std::unique_ptr<Geometry> MakeVertices(Vertices vertices);
 
-  static std::unique_ptr<Geometry> MakePath(Path path);
+  static std::unique_ptr<Geometry> MakeFillPath(Path path);
+
+  static std::unique_ptr<Geometry> MakeStrokePath(
+      Path path,
+      Scalar stroke_width = 0.0,
+      Scalar miter_limit = 4.0,
+      Cap stroke_cap = Cap::kButt,
+      Join stroke_join = Join::kMiter);
 
   static std::unique_ptr<Geometry> MakeCover();
 
@@ -129,6 +150,77 @@ class FillPathGeometry : public Geometry {
   Path path_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FillPathGeometry);
+};
+
+/// @brief A geometry that is created from a stroked path object.
+class StrokePathGeometry : public Geometry {
+ public:
+  StrokePathGeometry(Path path,
+                     Scalar stroke_width,
+                     Scalar miter_limit,
+                     Cap stroke_cap,
+                     Join stroke_join);
+
+  ~StrokePathGeometry();
+
+ private:
+  using VS = SolidFillVertexShader;
+
+  using CapProc =
+      std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
+                         const Point& position,
+                         const Point& offset,
+                         const SmoothingApproximation& smoothing)>;
+  using JoinProc =
+      std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
+                         const Point& position,
+                         const Point& start_offset,
+                         const Point& end_offset,
+                         Scalar miter_limit,
+                         const SmoothingApproximation& smoothing)>;
+
+  // |Geometry|
+  GeometryResult GetPositionBuffer(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) override;
+
+  // |Geometry|
+  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass,
+                                        Color paint_color,
+                                        BlendMode blend_mode) override;
+
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
+  // |Geometry|
+  GeometryVertexType GetVertexType() const override;
+
+  // |Geometry|
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  static Scalar CreateBevelAndGetDirection(
+      VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& vtx_builder,
+      const Point& position,
+      const Point& start_offset,
+      const Point& end_offset);
+
+  VertexBuffer CreateSolidStrokeVertices(
+      const Path& path,
+      HostBuffer& buffer,
+      Scalar scaled_miter_limit,
+      const SmoothingApproximation& smoothing);
+
+  Path path_;
+  Scalar stroke_width_;
+  Scalar miter_limit_;
+  Cap stroke_cap_;
+  Join stroke_join_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(StrokePathGeometry);
 };
 
 /// @brief A geometry that implements "drawPaint" like behavior by covering

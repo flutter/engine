@@ -82,7 +82,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 std::unique_ptr<SolidColorContents> SolidColorContents::Make(Path path,
                                                              Color color) {
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakePath(std::move(path)));
+  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
   contents->SetColor(color);
   return contents;
 }

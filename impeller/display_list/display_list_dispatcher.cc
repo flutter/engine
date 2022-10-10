@@ -24,6 +24,7 @@
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
@@ -223,13 +224,13 @@ void DisplayListDispatcher::setStrokeMiter(SkScalar limit) {
 void DisplayListDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
   switch (cap) {
     case flutter::DlStrokeCap::kButt:
-      paint_.stroke_cap = SolidStrokeContents::Cap::kButt;
+      paint_.stroke_cap = Cap::kButt;
       break;
     case flutter::DlStrokeCap::kRound:
-      paint_.stroke_cap = SolidStrokeContents::Cap::kRound;
+      paint_.stroke_cap = Cap::kRound;
       break;
     case flutter::DlStrokeCap::kSquare:
-      paint_.stroke_cap = SolidStrokeContents::Cap::kSquare;
+      paint_.stroke_cap = Cap::kSquare;
       break;
   }
 }
@@ -238,13 +239,13 @@ void DisplayListDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
 void DisplayListDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
   switch (join) {
     case flutter::DlStrokeJoin::kMiter:
-      paint_.stroke_join = SolidStrokeContents::Join::kMiter;
+      paint_.stroke_join = Join::kMiter;
       break;
     case flutter::DlStrokeJoin::kRound:
-      paint_.stroke_join = SolidStrokeContents::Join::kRound;
+      paint_.stroke_join = Join::kRound;
       break;
     case flutter::DlStrokeJoin::kBevel:
-      paint_.stroke_join = SolidStrokeContents::Join::kBevel;
+      paint_.stroke_join = Join::kBevel;
       break;
   }
 }
@@ -986,8 +987,8 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
   paint.style = Paint::Style::kStroke;
   switch (mode) {
     case SkCanvas::kPoints_PointMode:
-      if (paint.stroke_cap == SolidStrokeContents::Cap::kButt) {
-        paint.stroke_cap = SolidStrokeContents::Cap::kSquare;
+      if (paint.stroke_cap == Cap::kButt) {
+        paint.stroke_cap = Cap::kSquare;
       }
       for (uint32_t i = 0; i < count; i++) {
         Point p0 = ToPoint(points[i]);

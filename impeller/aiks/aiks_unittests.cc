@@ -1482,12 +1482,12 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     }
 
     for (auto join :
-         {SolidStrokeContents::Join::kBevel, SolidStrokeContents::Join::kRound,
-          SolidStrokeContents::Join::kMiter}) {
+         {Join::kBevel, Join::kRound,
+          Join::kMiter}) {
       paint.stroke_join = join;
       for (auto cap :
-           {SolidStrokeContents::Cap::kButt, SolidStrokeContents::Cap::kSquare,
-            SolidStrokeContents::Cap::kRound}) {
+           {Cap::kButt, Cap::kSquare,
+            Cap::kRound}) {
         paint.stroke_cap = cap;
         canvas.DrawPath(path, paint);
         canvas.Translate({80, 0});
