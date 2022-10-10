@@ -107,7 +107,7 @@ def parse_deps_file(deps_flat_file):
     )  # separate fully qualified dep into name + pinned hash
 
     common_commit = get_common_ancestor_commit(dep)
-    if common_commit is not None:
+    if isinstance(common_commit, str):
       queries.append({'commit': common_commit})
     else:
       failed_deps.append(dep[0])
@@ -124,9 +124,7 @@ def parse_deps_file(deps_flat_file):
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found
   data = json.dumps({'queries': queries}).encode('utf-8')
-  req = request.Request(
-      osv_url, data, headers=headers
-  )  # this will make the method "POST"
+  req = request.Request(osv_url, data, headers=headers)
   with request.urlopen(req) as resp:
     res_body = resp.read()
     results_json = json.loads(res_body.decode('utf-8'))
