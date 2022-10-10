@@ -59,11 +59,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
       renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto allocator = renderer.GetContext()->GetResourceAllocator();
-  auto geometry_result = geometry_->GetPositionBuffer(
-      allocator, host_buffer, renderer.GetTessellator(),
-      pass.GetRenderTargetSize());
+  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
   cmd.BindVertices(geometry_result.vertex_buffer);
   cmd.primitive_type = geometry_result.type;
 

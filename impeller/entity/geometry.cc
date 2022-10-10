@@ -7,6 +7,7 @@
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/device_buffer.h"
+#include "impeller/renderer/render_pass.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
@@ -21,7 +22,7 @@ std::unique_ptr<Geometry> Geometry::MakeVertices(Vertices vertices) {
 }
 
 std::unique_ptr<Geometry> Geometry::MakePath(Path path) {
-  return std::make_unique<PathGeometry>(std::move(path));
+  return std::make_unique<FillPathGeometry>(std::move(path));
 }
 
 std::unique_ptr<Geometry> Geometry::MakeCover() {
@@ -45,10 +46,9 @@ static PrimitiveType GetPrimitiveType(const Vertices& vertices) {
 }
 
 GeometryResult VerticesGeometry::GetPositionBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
-    ISize render_target_size) {
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
   if (!vertices_.IsValid()) {
     return {};
   }
@@ -61,7 +61,8 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
   buffer_desc.size = total_vtx_bytes + total_idx_bytes;
   buffer_desc.storage_mode = StorageMode::kHostVisible;
 
-  auto buffer = device_allocator->CreateBuffer(buffer_desc);
+  auto buffer =
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
   const auto& positions = vertices_.GetPositions();
   if (!buffer->CopyHostBuffer(
@@ -92,9 +93,9 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
 }
 
 GeometryResult VerticesGeometry::GetPositionColorBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass,
     Color paint_color,
     BlendMode blend_mode) {
   using VS = GeometryColorPipeline::VertexShader;
@@ -124,7 +125,8 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
   buffer_desc.size = total_vtx_bytes + total_idx_bytes;
   buffer_desc.storage_mode = StorageMode::kHostVisible;
 
-  auto buffer = device_allocator->CreateBuffer(buffer_desc);
+  auto buffer =
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
 
   if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
                               Range{0, total_vtx_bytes}, 0)) {
@@ -153,38 +155,38 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
 }
 
 GeometryResult VerticesGeometry::GetPositionUVBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
-    ISize render_target_size) {
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
   // TODO(jonahwilliams): support texture coordinates in vertices.
   return {};
 }
 
-GeometryVertexType VerticesGeometry::GetVertexType() {
+GeometryVertexType VerticesGeometry::GetVertexType() const {
   if (vertices_.GetColors().size()) {
     return GeometryVertexType::kColor;
   }
   return GeometryVertexType::kPosition;
 }
 
-std::optional<Rect> VerticesGeometry::GetCoverage(Matrix transform) {
+std::optional<Rect> VerticesGeometry::GetCoverage(
+    const Matrix& transform) const {
   return vertices_.GetTransformedBoundingBox(transform);
 }
 
 /////// Path Geometry ///////
 
-PathGeometry::PathGeometry(Path path) : path_(std::move(path)) {}
+FillPathGeometry::FillPathGeometry(Path path) : path_(std::move(path)) {}
 
-PathGeometry::~PathGeometry() = default;
+FillPathGeometry::~FillPathGeometry() = default;
 
-GeometryResult PathGeometry::GetPositionBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
-    ISize render_target_size) {
+GeometryResult FillPathGeometry::GetPositionBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
   VertexBuffer vertex_buffer;
-  auto tesselation_result = tessellator->TessellateBuilder(
+  auto& host_buffer = pass.GetTransientsBuffer();
+  auto tesselation_result = renderer.GetTessellator()->TessellateBuilder(
       path_.GetFillType(), path_.CreatePolyline(),
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
@@ -207,30 +209,30 @@ GeometryResult PathGeometry::GetPositionBuffer(
   };
 }
 
-GeometryResult PathGeometry::GetPositionColorBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
+GeometryResult FillPathGeometry::GetPositionColorBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass,
     Color paint_color,
     BlendMode blend_mode) {
   // TODO(jonahwilliams): support per-color vertex in path geometry.
   return {};
 }
 
-GeometryResult PathGeometry::GetPositionUVBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
-    ISize render_target_size) {
+GeometryResult FillPathGeometry::GetPositionUVBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
   // TODO(jonahwilliams): support texture coordinates in path geometry.
   return {};
 }
 
-GeometryVertexType PathGeometry::GetVertexType() {
+GeometryVertexType FillPathGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
 }
 
-std::optional<Rect> PathGeometry::GetCoverage(Matrix transform) {
+std::optional<Rect> FillPathGeometry::GetCoverage(
+    const Matrix& transform) const {
   return path_.GetTransformedBoundingBox(transform);
 }
 
@@ -240,13 +242,12 @@ CoverGeometry::CoverGeometry() = default;
 
 CoverGeometry::~CoverGeometry() = default;
 
-GeometryResult CoverGeometry::GetPositionBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
-    ISize render_target_size) {
-  auto rect = Rect(Size(render_target_size));
+GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
+                                                const Entity& entity,
+                                                RenderPass& pass) {
+  auto rect = Rect(Size(pass.GetRenderTargetSize()));
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
+  auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = {.vertex_buffer = host_buffer.Emplace(
@@ -262,9 +263,9 @@ GeometryResult CoverGeometry::GetPositionBuffer(
 }
 
 GeometryResult CoverGeometry::GetPositionColorBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass,
     Color paint_color,
     BlendMode blend_mode) {
   // TODO(jonahwilliams): support per-color vertex in cover geometry.
@@ -272,19 +273,18 @@ GeometryResult CoverGeometry::GetPositionColorBuffer(
 }
 
 GeometryResult CoverGeometry::GetPositionUVBuffer(
-    std::shared_ptr<Allocator> device_allocator,
-    HostBuffer& host_buffer,
-    std::shared_ptr<Tessellator> tessellator,
-    ISize render_target_size) {
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
   // TODO(jonahwilliams): support texture coordinates in cover geometry.
   return {};
 }
 
-GeometryVertexType CoverGeometry::GetVertexType() {
+GeometryVertexType CoverGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
 }
 
-std::optional<Rect> CoverGeometry::GetCoverage(Matrix transform) {
+std::optional<Rect> CoverGeometry::GetCoverage(const Matrix& transform) const {
   return Rect::MakeMaximum();
 }
 
