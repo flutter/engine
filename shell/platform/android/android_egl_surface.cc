@@ -190,16 +190,9 @@ AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
     : surface_(surface),
       display_(display),
       context_(context),
-      damage_(std::make_unique<AndroidEGLSurfaceDamage>()) {
+      damage_(std::make_unique<AndroidEGLSurfaceDamage>()),
+      presentation_time_proc_(nullptr) {
   damage_->init(display_, context);
-
-  const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
-
-  if (HasExtension(extensions, "EGL_ANDROID_presentation_time")) {
-    presentation_time_proc_ =
-        reinterpret_cast<PFNEGLPRESENTATIONTIMEANDROIDPROC>(
-            eglGetProcAddress("eglPresentationTimeANDROID"));
-  }
 }
 
 AndroidEGLSurface::~AndroidEGLSurface() {

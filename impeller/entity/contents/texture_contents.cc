@@ -4,12 +4,16 @@
 
 #include "texture_contents.h"
 
+#include <memory>
 #include <optional>
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/geometry/constants.h"
+#include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/tessellator/tessellator.h"
@@ -20,8 +24,20 @@ TextureContents::TextureContents() = default;
 
 TextureContents::~TextureContents() = default;
 
+std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
+  auto contents = std::make_shared<TextureContents>();
+  contents->path_ = PathBuilder{}.AddRect(destination).TakePath();
+  contents->is_rect_ = true;
+  return contents;
+}
+
+void TextureContents::SetLabel(std::string label) {
+  label_ = label;
+}
+
 void TextureContents::SetPath(Path path) {
   path_ = std::move(path);
+  is_rect_ = false;
 }
 
 void TextureContents::SetTexture(std::shared_ptr<Texture> texture) {
@@ -36,12 +52,38 @@ void TextureContents::SetOpacity(Scalar opacity) {
   opacity_ = opacity;
 }
 
+void TextureContents::SetStencilEnabled(bool enabled) {
+  stencil_enabled_ = enabled;
+}
+
 std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
   if (opacity_ == 0) {
     return std::nullopt;
   }
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
+
+std::optional<Snapshot> TextureContents::RenderToSnapshot(
+    const ContentContext& renderer,
+    const Entity& entity) const {
+  auto bounds = path_.GetBoundingBox();
+  if (!bounds.has_value()) {
+    return std::nullopt;
+  }
+
+  // Passthrough textures that have simple rectangle paths and complete source
+  // rects.
+  if (is_rect_ && source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
+      opacity_ >= 1 - kEhCloseEnough) {
+    auto scale = Vector2(bounds->size / Size(texture_->GetSize()));
+    return Snapshot{.texture = texture_,
+                    .transform = entity.GetTransformation() *
+                                 Matrix::MakeTranslation(bounds->origin) *
+                                 Matrix::MakeScale(scale),
+                    .sampler_descriptor = sampler_descriptor_};
+  }
+  return Contents::RenderToSnapshot(renderer, entity);
+}
 
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
@@ -74,11 +116,11 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   {
-    const auto tess_result = Tessellator{}.Tessellate(
+    const auto tess_result = renderer.GetTessellator()->Tessellate(
         path_.GetFillType(), path_.CreatePolyline(),
         [this, &vertex_builder, &coverage_rect, &texture_size](Point vtx) {
           VS::PerVertexData data;
-          data.vertices = vtx;
+          data.position = vtx;
           auto coverage_coords =
               (vtx - coverage_rect->origin) / coverage_rect->size;
           data.texture_coords =
@@ -101,21 +143,28 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
-  frame_info.alpha = opacity_;
+  VS::VertInfo vert_info;
+  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                  entity.GetTransformation();
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
+  frag_info.alpha = opacity_;
 
   Command cmd;
-  cmd.label = "TextureFill";
-  cmd.pipeline =
-      renderer.GetTexturePipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.label = "Texture Fill";
+  if (!label_.empty()) {
+    cmd.label += ": " + label_;
+  }
+
+  auto pipeline_options = OptionsFromPassAndEntity(pass, entity);
+  if (!stencil_enabled_) {
+    pipeline_options.stencil_compare = CompareFunction::kAlways;
+  }
+  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(

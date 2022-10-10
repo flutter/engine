@@ -12,8 +12,14 @@ namespace impeller {
 
 class InlinePassContext {
  public:
+  struct RenderPassResult {
+    std::shared_ptr<RenderPass> pass;
+    std::shared_ptr<Texture> backdrop_texture;
+  };
+
   InlinePassContext(std::shared_ptr<Context> context,
-                    RenderTarget render_target);
+                    const RenderTarget& render_target,
+                    uint32_t pass_texture_reads);
   ~InlinePassContext();
 
   bool IsValid() const;
@@ -21,8 +27,9 @@ class InlinePassContext {
   std::shared_ptr<Texture> GetTexture();
   bool EndPass();
   const RenderTarget& GetRenderTarget() const;
+  uint32_t GetPassCount() const;
 
-  std::shared_ptr<RenderPass> GetRenderPass(uint32_t pass_depth);
+  RenderPassResult GetRenderPass(uint32_t pass_depth);
 
  private:
   std::shared_ptr<Context> context_;
@@ -30,6 +37,7 @@ class InlinePassContext {
   std::shared_ptr<CommandBuffer> command_buffer_;
   std::shared_ptr<RenderPass> pass_;
   uint32_t pass_count_ = 0;
+  uint32_t total_pass_reads_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(InlinePassContext);
 };

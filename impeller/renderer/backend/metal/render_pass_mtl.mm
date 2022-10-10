@@ -22,17 +22,19 @@ namespace impeller {
 static bool ConfigureResolveTextureAttachment(
     const Attachment& desc,
     MTLRenderPassAttachmentDescriptor* attachment) {
-  if (desc.store_action == StoreAction::kMultisampleResolve &&
-      !desc.resolve_texture) {
+  bool needs_resolve =
+      desc.store_action == StoreAction::kMultisampleResolve ||
+      desc.store_action == StoreAction::kStoreAndMultisampleResolve;
+
+  if (needs_resolve && !desc.resolve_texture) {
     VALIDATION_LOG << "Resolve store action specified on attachment but no "
                       "resolve texture was specified.";
     return false;
   }
 
-  if (desc.resolve_texture &&
-      desc.store_action != StoreAction::kMultisampleResolve) {
-    VALIDATION_LOG << "Resolve store action specified but there was no "
-                      "resolve attachment.";
+  if (desc.resolve_texture && !needs_resolve) {
+    VALIDATION_LOG << "A resolve texture was specified even though the store "
+                      "action doesn't require it.";
     return false;
   }
 
@@ -128,8 +130,10 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
   return result;
 }
 
-RenderPassMTL::RenderPassMTL(id<MTLCommandBuffer> buffer, RenderTarget target)
-    : RenderPass(std::move(target)),
+RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
+                             const RenderTarget& target,
+                             id<MTLCommandBuffer> buffer)
+    : RenderPass(std::move(context), target),
       buffer_(buffer),
       desc_(ToMTLRenderPassDescriptor(GetRenderTarget())) {
   if (!buffer_ || !desc_ || !render_target_.IsValid()) {
@@ -151,8 +155,7 @@ void RenderPassMTL::OnSetLabel(std::string label) {
   label_ = std::move(label);
 }
 
-bool RenderPassMTL::EncodeCommands(
-    const std::shared_ptr<Allocator>& transients_allocator) const {
+bool RenderPassMTL::OnEncodeCommands(const Context& context) const {
   TRACE_EVENT0("impeller", "RenderPassMTL::EncodeCommands");
   if (!IsValid()) {
     return false;
@@ -173,7 +176,7 @@ bool RenderPassMTL::EncodeCommands(
   fml::ScopedCleanupClosure auto_end(
       [render_command_encoder]() { [render_command_encoder endEncoding]; });
 
-  return EncodeCommands(transients_allocator, render_command_encoder);
+  return EncodeCommands(context.GetResourceAllocator(), render_command_encoder);
 }
 
 //-----------------------------------------------------------------------------
@@ -299,6 +302,36 @@ struct PassBindingsCache {
     return false;
   }
 
+  void SetViewport(const Viewport& viewport) {
+    if (viewport_.has_value() && viewport_.value() == viewport) {
+      return;
+    }
+    [encoder_ setViewport:MTLViewport{
+                              .originX = viewport.rect.origin.x,
+                              .originY = viewport.rect.origin.y,
+                              .width = viewport.rect.size.width,
+                              .height = viewport.rect.size.height,
+                              .znear = viewport.depth_range.z_near,
+                              .zfar = viewport.depth_range.z_far,
+                          }];
+    viewport_ = viewport;
+  }
+
+  void SetScissor(const IRect& scissor) {
+    if (scissor_.has_value() && scissor_.value() == scissor) {
+      return;
+    }
+    [encoder_
+        setScissorRect:MTLScissorRect{
+                           .x = static_cast<NSUInteger>(scissor.origin.x),
+                           .y = static_cast<NSUInteger>(scissor.origin.y),
+                           .width = static_cast<NSUInteger>(scissor.size.width),
+                           .height =
+                               static_cast<NSUInteger>(scissor.size.height),
+                       }];
+    scissor_ = scissor;
+  }
+
  private:
   struct BufferOffsetPair {
     id<MTLBuffer> buffer = nullptr;
@@ -314,6 +347,8 @@ struct PassBindingsCache {
   std::map<ShaderStage, BufferMap> buffers_;
   std::map<ShaderStage, TextureMap> textures_;
   std::map<ShaderStage, SamplerMap> samplers_;
+  std::optional<Viewport> viewport_;
+  std::optional<IRect> scissor_;
 };
 
 static bool Bind(PassBindingsCache& pass,
@@ -408,14 +443,13 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       auto_pop_debug_marker.Release();
     }
 
-    if (target_sample_count !=
-        command.pipeline->GetDescriptor().GetSampleCount()) {
+    const auto& pipeline_desc = command.pipeline->GetDescriptor();
+    if (target_sample_count != pipeline_desc.GetSampleCount()) {
       VALIDATION_LOG << "Pipeline for command and the render target disagree "
                         "on sample counts (target was "
                      << static_cast<uint64_t>(target_sample_count)
                      << " but pipeline wanted "
-                     << static_cast<uint64_t>(
-                            command.pipeline->GetDescriptor().GetSampleCount())
+                     << static_cast<uint64_t>(pipeline_desc.GetSampleCount())
                      << ").";
       return false;
     }
@@ -424,32 +458,17 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
         PipelineMTL::Cast(*command.pipeline).GetMTLRenderPipelineState());
     pass_bindings.SetDepthStencilState(
         PipelineMTL::Cast(*command.pipeline).GetMTLDepthStencilState());
-    [encoder setFrontFacingWinding:command.winding == WindingOrder::kClockwise
+    pass_bindings.SetViewport(command.viewport.value_or<Viewport>(
+        {.rect = Rect::MakeSize(GetRenderTargetSize())}));
+    pass_bindings.SetScissor(
+        command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize())));
+
+    [encoder setFrontFacingWinding:pipeline_desc.GetWindingOrder() ==
+                                           WindingOrder::kClockwise
                                        ? MTLWindingClockwise
                                        : MTLWindingCounterClockwise];
-    [encoder setCullMode:ToMTLCullMode(command.cull_mode)];
+    [encoder setCullMode:ToMTLCullMode(pipeline_desc.GetCullMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
-
-    auto v = command.viewport.value_or<Viewport>(
-        {.rect = Rect::MakeSize(Size(GetRenderTargetSize()))});
-    MTLViewport viewport = {
-        .originX = v.rect.origin.x,
-        .originY = v.rect.origin.y,
-        .width = v.rect.size.width,
-        .height = v.rect.size.height,
-        .znear = v.depth_range.z_near,
-        .zfar = v.depth_range.z_far,
-    };
-    [encoder setViewport:viewport];
-
-    auto s = command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize()));
-    MTLScissorRect scissor = {
-        .x = static_cast<NSUInteger>(s.origin.x),
-        .y = static_cast<NSUInteger>(s.origin.y),
-        .width = static_cast<NSUInteger>(s.size.width),
-        .height = static_cast<NSUInteger>(s.size.height),
-    };
-    [encoder setScissorRect:scissor];
 
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
       return false;
@@ -474,18 +493,31 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     if (!mtl_index_buffer) {
       return false;
     }
+
     FML_DCHECK(command.index_count *
                    (command.index_type == IndexType::k16bit ? 2 : 4) ==
                command.index_buffer.range.length);
-    // Returns void. All error checking must be done by this point.
-    [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
-                        indexCount:command.index_count
-                         indexType:ToMTLIndexType(command.index_type)
-                       indexBuffer:mtl_index_buffer
-                 indexBufferOffset:command.index_buffer.range.offset
-                     instanceCount:command.instance_count
-                        baseVertex:command.base_vertex
-                      baseInstance:0u];
+
+    if (command.instance_count != 1u) {
+#if TARGET_OS_SIMULATOR
+      VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
+      return false;
+#endif
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
+                          indexCount:command.index_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset
+                       instanceCount:command.instance_count
+                          baseVertex:command.base_vertex
+                        baseInstance:0u];
+    } else {
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
+                          indexCount:command.index_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset];
+    }
   }
   return true;
 }

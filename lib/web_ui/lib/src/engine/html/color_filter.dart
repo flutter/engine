@@ -18,8 +18,7 @@ import 'surface.dart';
 /// A surface that applies an [ColorFilter] to its children.
 class PersistedColorFilter extends PersistedContainerSurface
     implements ui.ColorFilterEngineLayer {
-  PersistedColorFilter(PersistedColorFilter? oldLayer, this.filter)
-      : super(oldLayer);
+  PersistedColorFilter(PersistedColorFilter? super.oldLayer, this.filter);
 
   @override
   DomElement? get childContainer => _childContainer;
@@ -53,6 +52,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void discard() {
     super.discard();
     flutterViewEmbedder.removeResource(_filterElement);
+    _filterElement = null;
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -253,8 +253,6 @@ const int kOperatorArithmetic = 6;
 
 /// Builds an [SvgFilter].
 class SvgFilterBuilder {
-  static int _filterIdCounter = 0;
-
   SvgFilterBuilder() : id = '_fcf${++_filterIdCounter}' {
     filter.id = id;
 
@@ -268,6 +266,8 @@ class SvgFilterBuilder {
     filter.width!.baseVal!.valueAsString = '100%';
     filter.height!.baseVal!.valueAsString = '100%';
   }
+
+  static int _filterIdCounter = 0;
 
   final String id;
   final SVGSVGElement root = kSvgResourceHeader.cloneNode(false) as

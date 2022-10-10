@@ -9,23 +9,20 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "impeller/entity/contents/contents.h"
+#include "flutter/impeller/renderer/texture.h"
+#include "impeller/entity/contents/color_source_contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 
 namespace impeller {
 
-class LinearGradientContents final : public Contents {
+class LinearGradientContents final : public ColorSourceContents {
  public:
   LinearGradientContents();
 
   ~LinearGradientContents() override;
-
-  void SetPath(Path path);
-
-  // |Contents|
-  std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -36,13 +33,20 @@ class LinearGradientContents final : public Contents {
 
   void SetColors(std::vector<Color> colors);
 
+  void SetStops(std::vector<Scalar> stops);
+
   const std::vector<Color>& GetColors() const;
 
+  const std::vector<Scalar>& GetStops() const;
+
+  void SetTileMode(Entity::TileMode tile_mode);
+
  private:
-  Path path_;
   Point start_point_;
   Point end_point_;
   std::vector<Color> colors_;
+  std::vector<Scalar> stops_;
+  Entity::TileMode tile_mode_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LinearGradientContents);
 };

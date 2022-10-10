@@ -16,6 +16,7 @@ abstract class FlutterView {
   WindowPadding get padding => viewConfiguration.padding;
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
 
 abstract class FlutterWindow extends FlutterView {
@@ -130,8 +131,6 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
 
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
-
   void sendPlatformMessage(
     String name,
     ByteData? data,
@@ -167,7 +166,7 @@ enum Brightness {
 // TODO(dit): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
   CallbackHandle.fromRawHandle(this._handle)
-    : assert(_handle != null, "'_handle' must not be null."); // ignore: unnecessary_null_comparison
+    : assert(_handle != null, "'_handle' must not be null.");
 
   final int _handle;
 

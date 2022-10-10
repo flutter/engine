@@ -64,8 +64,6 @@ static const std::string kAllowedDartFlags[] = {
     "--write-service-info",
     "--null_assertions",
     "--strict_null_safety_checks",
-    "--enable-display-list",
-    "--no-enable-display-list",
     "--max_subtype_cache_entries",
 };
 // clang-format on
@@ -201,8 +199,9 @@ static bool GetSwitchValue(const fml::CommandLine& command_line,
   return false;
 }
 
-std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
-                                               std::string native_lib_path) {
+std::unique_ptr<fml::Mapping> GetSymbolMapping(
+    const std::string& symbol_prefix,
+    const std::string& native_lib_path) {
   const uint8_t* mapping = nullptr;
   intptr_t size;
 

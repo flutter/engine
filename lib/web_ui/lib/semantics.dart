@@ -5,7 +5,7 @@
 part of ui;
 
 class SemanticsAction {
-  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
+  const SemanticsAction._(this.index) : assert(index != null);
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -134,7 +134,7 @@ class SemanticsAction {
 }
 
 class SemanticsFlag {
-  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
+  const SemanticsFlag._(this.index) : assert(index != null);
 
   final int index;
 
@@ -163,6 +163,7 @@ class SemanticsFlag {
   static const int _kIsLinkIndex = 1 << 22;
   static const int _kIsSliderIndex = 1 << 23;
   static const int _kIsKeyboardKeyIndex = 1 << 24;
+  static const int _kIsCheckStateMixedIndex = 1 << 25;
 
   static const SemanticsFlag hasCheckedState = SemanticsFlag._(_kHasCheckedStateIndex);
   static const SemanticsFlag isChecked = SemanticsFlag._(_kIsCheckedIndex);
@@ -189,6 +190,7 @@ class SemanticsFlag {
   static const SemanticsFlag hasToggledState = SemanticsFlag._(_kHasToggledStateIndex);
   static const SemanticsFlag isToggled = SemanticsFlag._(_kIsToggledIndex);
   static const SemanticsFlag hasImplicitScrolling = SemanticsFlag._(_kHasImplicitScrollingIndex);
+  static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex);
 
   static const Map<int, SemanticsFlag> values = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
@@ -216,6 +218,7 @@ class SemanticsFlag {
     _kIsLinkIndex: isLink,
     _kIsSliderIndex: isSlider,
     _kIsKeyboardKeyIndex: isKeyboardKey,
+    _kIsCheckStateMixedIndex: isCheckStateMixed,
   };
 
   @override
@@ -271,6 +274,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isSlider';
       case _kIsKeyboardKeyIndex:
         return 'SemanticsFlag.isKeyboardKey';
+      case _kIsCheckStateMixedIndex:
+        return 'SemanticsFlag.isCheckStateMixed';
     }
     assert(false, 'Unhandled index: $index (0x${index.toRadixString(8).padLeft(4, "0")})');
     return '';
@@ -297,8 +302,8 @@ abstract class StringAttribute {
 
 class SpellOutStringAttribute extends StringAttribute {
   SpellOutStringAttribute({
-    required TextRange range,
-  }) : super._(range: range);
+    required super.range,
+  }) : super._();
 
   @override
   StringAttribute copy({required TextRange range}) {
@@ -313,9 +318,9 @@ class SpellOutStringAttribute extends StringAttribute {
 
 class LocaleStringAttribute extends StringAttribute {
   LocaleStringAttribute({
-    required TextRange range,
+    required super.range,
     required this.locale,
-  }) : super._(range: range);
+  }) : super._();
 
   final Locale locale;
 
@@ -368,8 +373,9 @@ class SemanticsUpdateBuilder {
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
   }) {
-    if (transform.length != 16)
+    if (transform.length != 16) {
       throw ArgumentError('transform argument must have 16 entries.');
+    }
     _nodeUpdates.add(engine.SemanticsNodeUpdate(
       id: id,
       flags: flags,

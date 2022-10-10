@@ -5,14 +5,16 @@
 #include "flutter/display_list/display_list_attributes_testing.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_image.h"
 #include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/types.h"
+#include "third_party/skia/include/core/SkString.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 namespace testing {
 
-static sk_sp<SkImage> MakeTestImage(int w, int h, SkColor color) {
+static sk_sp<DlImage> MakeTestImage(int w, int h, SkColor color) {
   sk_sp<SkSurface> surface;
   if (SkColorGetA(color) < 255) {
     surface = SkSurface::MakeRasterN32Premul(w, h);
@@ -23,11 +25,20 @@ static sk_sp<SkImage> MakeTestImage(int w, int h, SkColor color) {
   }
   SkCanvas* canvas = surface->getCanvas();
   canvas->drawColor(color);
-  return surface->makeImageSnapshot();
+  return DlImage::Make(surface->makeImageSnapshot());
 }
 
-static const sk_sp<SkImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
-static const sk_sp<SkImage> kTestAlphaImage1 =
+static const sk_sp<SkRuntimeEffect> kTestRuntimeEffect1 =
+    SkRuntimeEffect::MakeForShader(
+        SkString("vec4 main(vec2 p) { return vec4(0); }"))
+        .effect;
+static const sk_sp<SkRuntimeEffect> kTestRuntimeEffect2 =
+    SkRuntimeEffect::MakeForShader(
+        SkString("vec4 main(vec2 p) { return vec4(1); }"))
+        .effect;
+
+static const sk_sp<DlImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
+static const sk_sp<DlImage> kTestAlphaImage1 =
     MakeTestImage(10, 10, SK_ColorTRANSPARENT);
 // clang-format off
 static const SkMatrix kTestMatrix1 =
@@ -117,15 +128,16 @@ TEST(DisplayListColorSource, FromSkiaColorShader) {
 }
 
 TEST(DisplayListColorSource, FromSkiaImageShader) {
-  sk_sp<SkShader> shader =
-      kTestImage1->makeShader(ToSk(DlImageSampling::kLinear), &kTestMatrix1);
+  sk_sp<SkShader> shader = kTestImage1->skia_image()->makeShader(
+      ToSk(DlImageSampling::kLinear), &kTestMatrix1);
   std::shared_ptr<DlColorSource> source = DlColorSource::From(shader);
   DlImageColorSource dl_source(kTestImage1, DlTileMode::kClamp,
                                DlTileMode::kClamp, DlImageSampling::kLinear,
                                &kTestMatrix1);
   ASSERT_EQ(source->type(), DlColorSourceType::kImage);
   ASSERT_EQ(*source->asImage(), dl_source);
-  ASSERT_EQ(source->asImage()->image(), kTestImage1);
+  ASSERT_TRUE(source->asImage()->image()->Equals(kTestImage1));
+  ASSERT_TRUE(kTestImage1->Equals(source->asImage()->image()));
   ASSERT_EQ(source->asImage()->matrix(), kTestMatrix1);
   ASSERT_EQ(source->asImage()->horizontal_tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asImage()->vertical_tile_mode(), DlTileMode::kClamp);
@@ -136,6 +148,7 @@ TEST(DisplayListColorSource, FromSkiaImageShader) {
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaLinearGradient) {
@@ -175,6 +188,7 @@ TEST(DisplayListColorSource, FromSkiaRadialGradient) {
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaConicalGradient) {
@@ -195,6 +209,7 @@ TEST(DisplayListColorSource, FromSkiaConicalGradient) {
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaSweepGradient) {
@@ -215,6 +230,7 @@ TEST(DisplayListColorSource, FromSkiaSweepGradient) {
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaUnrecognizedShader) {
@@ -229,6 +245,7 @@ TEST(DisplayListColorSource, FromSkiaUnrecognizedShader) {
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, ColorConstructor) {
@@ -251,6 +268,7 @@ TEST(DisplayListColorSource, ColorAsColor) {
   ASSERT_EQ(source.asRadialGradient(), nullptr);
   ASSERT_EQ(source.asConicalGradient(), nullptr);
   ASSERT_EQ(source.asSweepGradient(), nullptr);
+  ASSERT_EQ(source.asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, ColorContents) {
@@ -398,6 +416,7 @@ TEST(DisplayListColorSource, LinearGradientAsLinear) {
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, LinearGradientContents) {
@@ -516,6 +535,7 @@ TEST(DisplayListColorSource, RadialGradientAsRadial) {
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, RadialGradientContents) {
@@ -634,6 +654,7 @@ TEST(DisplayListColorSource, ConicalGradientAsConical) {
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, ConicalGradientContents) {
@@ -768,6 +789,7 @@ TEST(DisplayListColorSource, SweepGradientAsSweep) {
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, SweepGradientContents) {
@@ -886,6 +908,7 @@ TEST(DisplayListColorSource, UnknownAsNone) {
   ASSERT_EQ(source.asRadialGradient(), nullptr);
   ASSERT_EQ(source.asConicalGradient(), nullptr);
   ASSERT_EQ(source.asSweepGradient(), nullptr);
+  ASSERT_EQ(source.asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, UnknownContents) {
@@ -912,6 +935,34 @@ TEST(DisplayListColorSource, UnknownNotEquals) {
   DlUnknownColorSource source1(kTestUnknownShader);
   DlUnknownColorSource source2(kTestAlphaUnknownShader);
   TestNotEquals(source1, source2, "SkShader differs");
+}
+
+TEST(DisplayListColorSource, RuntimeEffect) {
+  std::shared_ptr<DlRuntimeEffectColorSource> source1 =
+      DlColorSource::MakeRuntimeEffect(kTestRuntimeEffect1, {}, nullptr);
+  std::shared_ptr<DlRuntimeEffectColorSource> source2 =
+      DlColorSource::MakeRuntimeEffect(kTestRuntimeEffect2, {}, nullptr);
+  std::shared_ptr<DlRuntimeEffectColorSource> source3 =
+      DlColorSource::MakeRuntimeEffect(nullptr, {}, nullptr);
+
+  ASSERT_EQ(source1->type(), DlColorSourceType::kRuntimeEffect);
+  ASSERT_EQ(source1->asRuntimeEffect(), source1.get());
+  ASSERT_NE(source2->asRuntimeEffect(), source1.get());
+
+  ASSERT_EQ(source1->asImage(), nullptr);
+  ASSERT_EQ(source1->asColor(), nullptr);
+  ASSERT_EQ(source1->asLinearGradient(), nullptr);
+  ASSERT_EQ(source1->asRadialGradient(), nullptr);
+  ASSERT_EQ(source1->asConicalGradient(), nullptr);
+  ASSERT_EQ(source1->asSweepGradient(), nullptr);
+
+  ASSERT_NE(source1->skia_object(), nullptr);
+  ASSERT_EQ(source3->skia_object(), nullptr);
+
+  TestEquals(source1, source1);
+  TestEquals(source3, source3);
+  TestNotEquals(source1, source2, "SkRuntimeEffect differs");
+  TestNotEquals(source2, source3, "SkRuntimeEffect differs");
 }
 
 }  // namespace testing

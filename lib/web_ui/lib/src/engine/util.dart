@@ -552,11 +552,6 @@ String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
 }
 
-/// Checks if the dynamic [object] is equal to null.
-bool unsafeIsNull(dynamic object) {
-  return object == null;
-}
-
 /// A typed variant of [domWindow.fetch].
 Future<DomResponse> httpFetch(String url) async {
   final Object? result = await domWindow.fetch(url);
@@ -647,7 +642,7 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///     Input: [0, 1, 2, 3]
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
-  return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
+  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
 }
 
 /// Sets a style property on [element].

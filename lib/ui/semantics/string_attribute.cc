@@ -10,21 +10,11 @@
 #include "third_party/tonic/dart_binding_macros.h"
 
 #include <memory>
+#include <utility>
 
 namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, NativeStringAttribute);
-
-#define FOR_EACH_BINDING(V)                           \
-  V(NativeStringAttribute, initLocaleStringAttribute) \
-  V(NativeStringAttribute, initSpellOutStringAttribute)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void NativeStringAttribute::RegisterNatives(
-    tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
 
 NativeStringAttribute::NativeStringAttribute() {}
 
@@ -58,7 +48,7 @@ void NativeStringAttribute::initLocaleStringAttribute(
   locale_attribute->start = start;
   locale_attribute->end = end;
   locale_attribute->type = StringAttributeType::kLocale;
-  locale_attribute->locale = locale;
+  locale_attribute->locale = std::move(locale);
   native_string_attribute->attribute_ = locale_attribute;
 }
 

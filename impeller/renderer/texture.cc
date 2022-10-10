@@ -8,7 +8,7 @@
 
 namespace impeller {
 
-Texture::Texture(TextureDescriptor desc) : desc_(std::move(desc)) {}
+Texture::Texture(TextureDescriptor desc) : desc_(desc) {}
 
 Texture::~Texture() = default;
 
@@ -40,6 +40,10 @@ bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
   }
   intent_ = TextureIntent::kUploadFromHost;
   return true;
+}
+
+size_t Texture::GetMipCount() const {
+  return GetTextureDescriptor().mip_count;
 }
 
 const TextureDescriptor& Texture::GetTextureDescriptor() const {

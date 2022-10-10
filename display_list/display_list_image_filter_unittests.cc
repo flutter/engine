@@ -3,10 +3,14 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_attributes_testing.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_color.h"
+#include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_sampling_options.h"
+#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
 
@@ -179,7 +183,7 @@ static bool containsInclusive(const SkIRect rect, const SkRect bounds) {
           bounds.fBottom <= rect.fBottom + 1E-9);
 }
 
-// Used to verify that the expected output bounds and revers engineered
+// Used to verify that the expected output bounds and reverse-engineered
 // "input bounds for output bounds" rectangles are included in the rectangle
 // returned from the various bounds computation methods under the specified
 // matrix.
@@ -187,44 +191,44 @@ static void TestBoundsWithMatrix(const DlImageFilter& filter,
                                  const SkMatrix& matrix,
                                  const SkRect& sourceBounds,
                                  const SkPoint expectedLocalOutputQuad[4]) {
-  SkRect deviceInputBounds = matrix.mapRect(sourceBounds);
-  SkPoint expectedDeviceOutputQuad[4];
-  matrix.mapPoints(expectedDeviceOutputQuad, expectedLocalOutputQuad, 4);
+  SkRect device_input_bounds = matrix.mapRect(sourceBounds);
+  SkPoint expected_output_quad[4];
+  matrix.mapPoints(expected_output_quad, expectedLocalOutputQuad, 4);
 
-  SkIRect deviceFilterIBounds;
-  ASSERT_EQ(filter.map_device_bounds(deviceInputBounds.roundOut(), matrix,
-                                     deviceFilterIBounds),
-            &deviceFilterIBounds);
-  ASSERT_TRUE(containsInclusive(deviceFilterIBounds, expectedDeviceOutputQuad));
+  SkIRect device_filter_ibounds;
+  ASSERT_EQ(filter.map_device_bounds(device_input_bounds.roundOut(), matrix,
+                                     device_filter_ibounds),
+            &device_filter_ibounds);
+  ASSERT_TRUE(containsInclusive(device_filter_ibounds, expected_output_quad));
 
-  SkIRect reverseInputIBounds;
-  ASSERT_EQ(filter.get_input_device_bounds(deviceFilterIBounds, matrix,
-                                           reverseInputIBounds),
-            &reverseInputIBounds);
-  ASSERT_TRUE(containsInclusive(reverseInputIBounds, deviceInputBounds));
+  SkIRect reverse_input_ibounds;
+  ASSERT_EQ(filter.get_input_device_bounds(device_filter_ibounds, matrix,
+                                           reverse_input_ibounds),
+            &reverse_input_ibounds);
+  ASSERT_TRUE(containsInclusive(reverse_input_ibounds, device_input_bounds));
 }
 
 static void TestInvalidBounds(const DlImageFilter& filter,
                               const SkMatrix& matrix,
                               const SkRect& localInputBounds) {
-  SkIRect deviceInputBounds = matrix.mapRect(localInputBounds).roundOut();
+  SkIRect device_input_bounds = matrix.mapRect(localInputBounds).roundOut();
 
-  SkRect localFilterBounds;
-  ASSERT_EQ(filter.map_local_bounds(localInputBounds, localFilterBounds),
+  SkRect local_filter_bounds;
+  ASSERT_EQ(filter.map_local_bounds(localInputBounds, local_filter_bounds),
             nullptr);
-  ASSERT_EQ(localFilterBounds, localInputBounds);
+  ASSERT_EQ(local_filter_bounds, localInputBounds);
 
-  SkIRect deviceFilterIBounds;
-  ASSERT_EQ(
-      filter.map_device_bounds(deviceInputBounds, matrix, deviceFilterIBounds),
-      nullptr);
-  ASSERT_EQ(deviceFilterIBounds, deviceInputBounds);
-
-  SkIRect reverseInputIBounds;
-  ASSERT_EQ(filter.get_input_device_bounds(deviceInputBounds, matrix,
-                                           reverseInputIBounds),
+  SkIRect device_filter_ibounds;
+  ASSERT_EQ(filter.map_device_bounds(device_input_bounds, matrix,
+                                     device_filter_ibounds),
             nullptr);
-  ASSERT_EQ(reverseInputIBounds, deviceInputBounds);
+  ASSERT_EQ(device_filter_ibounds, device_input_bounds);
+
+  SkIRect reverse_input_ibounds;
+  ASSERT_EQ(filter.get_input_device_bounds(device_input_bounds, matrix,
+                                           reverse_input_ibounds),
+            nullptr);
+  ASSERT_EQ(reverse_input_ibounds, device_input_bounds);
 }
 
 // localInputBounds is a sample bounds for testing as input to the filter.
@@ -238,10 +242,10 @@ static void TestInvalidBounds(const DlImageFilter& filter,
 static void TestBounds(const DlImageFilter& filter,
                        const SkRect& sourceBounds,
                        const SkPoint expectedLocalOutputQuad[4]) {
-  SkRect localFilterBounds;
-  ASSERT_EQ(filter.map_local_bounds(sourceBounds, localFilterBounds),
-            &localFilterBounds);
-  ASSERT_TRUE(containsInclusive(localFilterBounds, expectedLocalOutputQuad));
+  SkRect local_filter_bounds;
+  ASSERT_EQ(filter.map_local_bounds(sourceBounds, local_filter_bounds),
+            &local_filter_bounds);
+  ASSERT_TRUE(containsInclusive(local_filter_bounds, expectedLocalOutputQuad));
 
   for (int scale = 1; scale <= 4; scale++) {
     for (int skew = 0; skew < 8; skew++) {
@@ -253,8 +257,8 @@ static void TestBounds(const DlImageFilter& filter,
         ASSERT_TRUE(matrix.invert(nullptr));
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
-        matrix.setPerspX(0.01);
-        matrix.setPerspY(0.01);
+        matrix.setPerspX(0.001);
+        matrix.setPerspY(0.001);
         ASSERT_TRUE(matrix.invert(nullptr));
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
@@ -266,9 +270,9 @@ static void TestBounds(const DlImageFilter& filter,
 static void TestBounds(const DlImageFilter& filter,
                        const SkRect& sourceBounds,
                        const SkRect& expectedLocalOutputBounds) {
-  SkPoint expectedLocalOutputQuad[4];
-  expectedLocalOutputBounds.toQuad(expectedLocalOutputQuad);
-  TestBounds(filter, sourceBounds, expectedLocalOutputQuad);
+  SkPoint expected_local_output_quad[4];
+  expectedLocalOutputBounds.toQuad(expected_local_output_quad);
+  TestBounds(filter, sourceBounds, expected_local_output_quad);
 }
 
 TEST(DisplayListImageFilter, BlurConstructor) {
@@ -317,10 +321,9 @@ TEST(DisplayListImageFilter, BlurNotEquals) {
 
 TEST(DisplayListImageFilter, BlurBounds) {
   DlBlurImageFilter filter = DlBlurImageFilter(5, 10, DlTileMode::kDecal);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
-  SkRect expectOutputBounds = inputBounds.makeOutset(15, 30);
-  // SkRect expectInputBounds = expectOutputBounds.makeOutset(15, 30);
-  TestBounds(filter, inputBounds, expectOutputBounds);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expected_output_bounds = input_bounds.makeOutset(15, 30);
+  TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
 TEST(DisplayListImageFilter, DilateConstructor) {
@@ -366,9 +369,9 @@ TEST(DisplayListImageFilter, DilateNotEquals) {
 
 TEST(DisplayListImageFilter, DilateBounds) {
   DlDilateImageFilter filter = DlDilateImageFilter(5, 10);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
-  SkRect expectOutputBounds = inputBounds.makeOutset(5, 10);
-  TestBounds(filter, inputBounds, expectOutputBounds);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expected_output_bounds = input_bounds.makeOutset(5, 10);
+  TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
 TEST(DisplayListImageFilter, ErodeConstructor) {
@@ -414,9 +417,9 @@ TEST(DisplayListImageFilter, ErodeNotEquals) {
 
 TEST(DisplayListImageFilter, ErodeBounds) {
   DlErodeImageFilter filter = DlErodeImageFilter(5, 10);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
-  SkRect expectOutputBounds = inputBounds.makeInset(5, 10);
-  TestBounds(filter, inputBounds, expectOutputBounds);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expected_output_bounds = input_bounds.makeInset(5, 10);
+  TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
 TEST(DisplayListImageFilter, MatrixConstructor) {
@@ -488,14 +491,14 @@ TEST(DisplayListImageFilter, MatrixBounds) {
   SkMatrix inverse;
   ASSERT_TRUE(matrix.invert(&inverse));
   DlMatrixImageFilter filter(matrix, DlImageSampling::kLinear);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   SkPoint expectedOutputQuad[4] = {
       {50, 77},    // (20,20) => (20*2 + 10, 20/2 + 20*3 + 7) == (50, 77)
       {50, 257},   // (20,80) => (20*2 + 10, 20/2 + 80*3 + 7) == (50, 257)
       {170, 287},  // (80,80) => (80*2 + 10, 80/2 + 80*3 + 7) == (170, 287)
       {170, 107},  // (80,20) => (80*2 + 10, 80/2 + 20*3 + 7) == (170, 107)
   };
-  TestBounds(filter, inputBounds, expectedOutputQuad);
+  TestBounds(filter, input_bounds, expectedOutputQuad);
 }
 
 TEST(DisplayListImageFilter, ComposeConstructor) {
@@ -586,9 +589,92 @@ TEST(DisplayListImageFilter, ComposeBounds) {
   DlDilateImageFilter outer = DlDilateImageFilter(5, 10);
   DlBlurImageFilter inner = DlBlurImageFilter(12, 5, DlTileMode::kDecal);
   DlComposeImageFilter filter = DlComposeImageFilter(outer, inner);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
-  SkRect expectOutputBounds = inputBounds.makeOutset(36, 15).makeOutset(5, 10);
-  TestBounds(filter, inputBounds, expectOutputBounds);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expected_output_bounds =
+      input_bounds.makeOutset(36, 15).makeOutset(5, 10);
+  TestBounds(filter, input_bounds, expected_output_bounds);
+}
+
+static void TestUnboundedBounds(DlImageFilter& filter,
+                                const SkRect& sourceBounds,
+                                const SkRect& expectedOutputBounds,
+                                const SkRect& expectedInputBounds) {
+  SkRect bounds;
+  EXPECT_EQ(filter.map_local_bounds(sourceBounds, bounds), nullptr);
+  EXPECT_EQ(bounds, expectedOutputBounds);
+
+  SkIRect ibounds;
+  EXPECT_EQ(
+      filter.map_device_bounds(sourceBounds.roundOut(), SkMatrix::I(), ibounds),
+      nullptr);
+  EXPECT_EQ(ibounds, expectedOutputBounds.roundOut());
+
+  EXPECT_EQ(filter.get_input_device_bounds(sourceBounds.roundOut(),
+                                           SkMatrix::I(), ibounds),
+            nullptr);
+  EXPECT_EQ(ibounds, expectedInputBounds.roundOut());
+}
+
+TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInner) {
+  auto input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  auto expected_bounds = SkRect::MakeLTRB(5, 2, 95, 98);
+
+  DlBlendColorFilter color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto outer = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
+  auto inner = DlColorFilterImageFilter(color_filter.shared());
+  auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
+
+  TestUnboundedBounds(composed, input_bounds, expected_bounds, expected_bounds);
+}
+
+TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedOuter) {
+  auto input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  auto expected_bounds = SkRect::MakeLTRB(5, 2, 95, 98);
+
+  DlBlendColorFilter color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto outer = DlColorFilterImageFilter(color_filter.shared());
+  auto inner = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
+  auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
+
+  TestUnboundedBounds(composed, input_bounds, expected_bounds, expected_bounds);
+}
+
+TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInnerAndOuter) {
+  auto input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  auto expected_bounds = input_bounds;
+
+  DlBlendColorFilter color_filter1(DlColor::kRed(), DlBlendMode::kSrcOver);
+  DlBlendColorFilter color_filter2(DlColor::kBlue(), DlBlendMode::kSrcOver);
+  auto outer = DlColorFilterImageFilter(color_filter1.shared());
+  auto inner = DlColorFilterImageFilter(color_filter2.shared());
+  auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
+
+  TestUnboundedBounds(composed, input_bounds, expected_bounds, expected_bounds);
+}
+
+// See https://github.com/flutter/flutter/issues/108433
+TEST(DisplayListImageFilter, Issue_108433) {
+  auto input_bounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+
+  auto sk_filter = SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver);
+  auto sk_outer = SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr);
+  auto sk_inner = SkImageFilters::ColorFilter(sk_filter, nullptr);
+  auto sk_compose = SkImageFilters::Compose(sk_outer, sk_inner);
+
+  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto dl_outer = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
+  auto dl_inner = DlColorFilterImageFilter(dl_color_filter.shared());
+  auto dl_compose = DlComposeImageFilter(dl_outer, dl_inner);
+
+  auto sk_bounds = sk_compose->filterBounds(
+      input_bounds, SkMatrix::I(),
+      SkImageFilter::MapDirection::kForward_MapDirection);
+
+  SkIRect dl_bounds;
+  EXPECT_EQ(
+      dl_compose.map_device_bounds(input_bounds, SkMatrix::I(), dl_bounds),
+      nullptr);
+  ASSERT_EQ(dl_bounds, sk_bounds);
 }
 
 TEST(DisplayListImageFilter, ColorFilterConstructor) {
@@ -645,15 +731,15 @@ TEST(DisplayListImageFilter, ColorFilterNotEquals) {
 TEST(DisplayListImageFilter, ColorFilterBounds) {
   DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcIn);
   DlColorFilterImageFilter filter(dl_color_filter);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
-  TestBounds(filter, inputBounds, inputBounds);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  TestBounds(filter, input_bounds, input_bounds);
 }
 
 TEST(DisplayListImageFilter, ColorFilterModifiesTransparencyBounds) {
   DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
   DlColorFilterImageFilter filter(dl_color_filter);
-  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
-  TestInvalidBounds(filter, SkMatrix::I(), inputBounds);
+  SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  TestInvalidBounds(filter, SkMatrix::I(), input_bounds);
 }
 
 TEST(DisplayListImageFilter, UnknownConstructor) {
@@ -676,6 +762,99 @@ TEST(DisplayListImageFilter, UnknownContents) {
 
   ASSERT_EQ(filter.skia_object(), sk_filter);
   ASSERT_EQ(filter.skia_object().get(), sk_filter.get());
+}
+
+TEST(DisplayListImageFilter, LocalImageFilterBounds) {
+  auto filter_matrix = SkMatrix::MakeAll(2.0, 0.0, 10,  //
+                                         0.5, 3.0, 15,  //
+                                         0.0, 0.0, 1);
+  std::vector<sk_sp<SkImageFilter>> sk_filters{
+      SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr),
+      SkImageFilters::ColorFilter(
+          SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver), nullptr),
+      SkImageFilters::Dilate(5.0, 10.0, nullptr),
+      SkImageFilters::MatrixTransform(filter_matrix,
+                                      ToSk(DlImageSampling::kLinear), nullptr),
+      SkImageFilters::Compose(
+          SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr),
+          SkImageFilters::ColorFilter(
+              SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver),
+              nullptr))};
+
+  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  std::vector<std::shared_ptr<DlImageFilter>> dl_filters{
+      std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat),
+      std::make_shared<DlColorFilterImageFilter>(dl_color_filter.shared()),
+      std::make_shared<DlDilateImageFilter>(5, 10),
+      std::make_shared<DlMatrixImageFilter>(filter_matrix,
+                                            DlImageSampling::kLinear),
+      std::make_shared<DlComposeImageFilter>(
+          std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat),
+          std::make_shared<DlColorFilterImageFilter>(
+              dl_color_filter.shared()))};
+
+  auto persp = SkMatrix::I();
+  persp.setPerspY(0.001);
+  std::vector<SkMatrix> matrices = {
+      SkMatrix::Translate(10.0, 10.0),
+      SkMatrix::Scale(2.0, 2.0).preTranslate(10.0, 10.0),
+      SkMatrix::RotateDeg(45).preTranslate(5.0, 5.0), persp};
+  std::vector<SkMatrix> bounds_matrices{SkMatrix::Translate(5.0, 10.0),
+                                        SkMatrix::Scale(2.0, 2.0)};
+
+  for (unsigned i = 0; i < sk_filters.size(); i++) {
+    for (unsigned j = 0; j < matrices.size(); j++) {
+      for (unsigned k = 0; k < bounds_matrices.size(); k++) {
+        auto& m = matrices[j];
+        auto& bounds_matrix = bounds_matrices[k];
+        auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
+        auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
+        if (!sk_local_filter || !dl_local_filter) {
+          ASSERT_TRUE(!sk_local_filter);
+          ASSERT_TRUE(!dl_local_filter);
+          continue;
+        }
+        {
+          auto input_bounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+          SkIRect sk_rect, dl_rect;
+          sk_rect = sk_local_filter->filterBounds(
+              input_bounds, bounds_matrix,
+              SkImageFilter::MapDirection::kForward_MapDirection);
+          dl_local_filter->map_device_bounds(input_bounds, bounds_matrix,
+                                             dl_rect);
+          ASSERT_EQ(sk_rect, dl_rect);
+        }
+        {
+          // Test for: Know the outset bounds to get the inset bounds
+          // Skia have some bounds calculate error of DilateFilter and
+          // MatrixFilter
+          // Skia issue: https://bugs.chromium.org/p/skia/issues/detail?id=13444
+          // flutter issue: https://github.com/flutter/flutter/issues/108693
+          if (i == 2 || i == 3) {
+            continue;
+          }
+          auto outset_bounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+          SkIRect sk_rect, dl_rect;
+          sk_rect = sk_local_filter->filterBounds(
+              outset_bounds, bounds_matrix,
+              SkImageFilter::MapDirection::kReverse_MapDirection);
+          dl_local_filter->get_input_device_bounds(outset_bounds, bounds_matrix,
+                                                   dl_rect);
+          ASSERT_EQ(sk_rect, dl_rect);
+        }
+      }
+    }
+  }
+}
+
+TEST(DisplayListImageFilter, LocalImageSkiaNull) {
+  auto blur_filter =
+      std::make_shared<DlBlurImageFilter>(0, 0, DlTileMode::kClamp);
+  DlLocalMatrixImageFilter dl_local_matrix_filter(SkMatrix::RotateDeg(45),
+                                                  blur_filter);
+  // With sigmas set to zero on the blur filter, Skia will return a null filter.
+  // The local matrix filter should return nullptr instead of crashing.
+  ASSERT_EQ(dl_local_matrix_filter.skia_object(), nullptr);
 }
 
 TEST(DisplayListImageFilter, UnknownEquals) {

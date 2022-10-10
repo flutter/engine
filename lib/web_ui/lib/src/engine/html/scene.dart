@@ -25,8 +25,8 @@ class SurfaceScene implements ui.Scene {
   }
 
   @override
-  ui.Image toGpuImage(int width, int height) {
-    throw UnsupportedError('toGpuImage is not supported on the Web');
+  ui.Image toImageSync(int width, int height) {
+    throw UnsupportedError('toImageSync is not supported on the Web');
   }
 
   /// Releases the resources used by this scene.
@@ -38,7 +38,7 @@ class SurfaceScene implements ui.Scene {
 
 /// A surface that creates a DOM element for whole app.
 class PersistedScene extends PersistedContainerSurface {
-  PersistedScene(PersistedScene? oldLayer) : super(oldLayer) {
+  PersistedScene(PersistedScene? super.oldLayer) {
     transform = Matrix4.identity();
   }
 

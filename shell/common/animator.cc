@@ -22,10 +22,10 @@ constexpr fml::TimeDelta kNotifyIdleTaskWaitTime =
 }  // namespace
 
 Animator::Animator(Delegate& delegate,
-                   TaskRunners task_runners,
+                   const TaskRunners& task_runners,
                    std::unique_ptr<VsyncWaiter> waiter)
     : delegate_(delegate),
-      task_runners_(std::move(task_runners)),
+      task_runners_(task_runners),
       waiter_(std::move(waiter)),
 #if SHELL_ENABLE_METAL
       layer_tree_pipeline_(std::make_shared<LayerTreePipeline>(2)),
@@ -144,7 +144,7 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+void Animator::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
   has_rendered_ = true;
   last_layer_tree_size_ = layer_tree->frame_size();
 

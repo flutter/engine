@@ -27,6 +27,10 @@
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
+#if defined(FML_OS_WIN)
+#include <combaseapi.h>
+#endif  // defined(FML_OS_WIN)
+
 #if defined(FML_OS_POSIX)
 #include <signal.h>
 #endif  // defined(FML_OS_POSIX)
@@ -56,7 +60,12 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return &canvas_; }
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override { return {}; }
+
+  // |ExternalViewEmbedder|
+  EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {&canvas_, nullptr};
+  }
 
  private:
   SkCanvas canvas_;
@@ -74,8 +83,8 @@ class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
 class TesterPlatformView : public PlatformView,
                            public GPUSurfaceSoftwareDelegate {
  public:
-  TesterPlatformView(Delegate& delegate, TaskRunners task_runners)
-      : PlatformView(delegate, std::move(task_runners)) {}
+  TesterPlatformView(Delegate& delegate, const TaskRunners& task_runners)
+      : PlatformView(delegate, task_runners) {}
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override {
@@ -363,7 +372,7 @@ int main(int argc, char* argv[]) {
   dart::bin::SetExecutableName(argv[0]);
   dart::bin::SetExecutableArguments(argc - 1, argv);
 
-  auto command_line = fml::CommandLineFromArgcArgv(argc, argv);
+  auto command_line = fml::CommandLineFromPlatformOrArgcArgv(argc, argv);
 
   if (command_line.HasOption(flutter::FlagForSwitch(flutter::Switch::Help))) {
     flutter::PrintUsage("flutter_tester");
@@ -397,8 +406,8 @@ int main(int argc, char* argv[]) {
     std::cout << message << std::endl;
   };
 
-  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
-    fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
+  settings.task_observer_add = [](intptr_t key, const fml::closure& callback) {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(key, callback);
   };
 
   settings.task_observer_remove = [](intptr_t key) {
@@ -413,6 +422,10 @@ int main(int argc, char* argv[]) {
     ::exit(1);
     return true;
   };
+
+#if defined(FML_OS_WIN)
+  CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif  // defined(FML_OS_WIN)
 
   return flutter::RunTester(settings,
                             command_line.HasOption(flutter::FlagForSwitch(

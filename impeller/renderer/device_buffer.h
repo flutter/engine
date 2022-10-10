@@ -11,6 +11,7 @@
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/buffer.h"
 #include "impeller/renderer/buffer_view.h"
+#include "impeller/renderer/device_buffer_descriptor.h"
 #include "impeller/renderer/range.h"
 #include "impeller/renderer/texture.h"
 
@@ -21,9 +22,9 @@ class DeviceBuffer : public Buffer,
  public:
   virtual ~DeviceBuffer();
 
-  [[nodiscard]] virtual bool CopyHostBuffer(const uint8_t* source,
-                                            Range source_range,
-                                            size_t offset = 0u) = 0;
+  [[nodiscard]] bool CopyHostBuffer(const uint8_t* source,
+                                    Range source_range,
+                                    size_t offset = 0u);
 
   virtual bool SetLabel(const std::string& label) = 0;
 
@@ -31,15 +32,25 @@ class DeviceBuffer : public Buffer,
 
   BufferView AsBufferView() const;
 
+  virtual std::shared_ptr<Texture> AsTexture(
+      Allocator& allocator,
+      const TextureDescriptor& descriptor,
+      uint16_t row_bytes) const;
+
   // |Buffer|
   std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
       Allocator& allocator) const;
 
  protected:
-  const size_t size_;
-  const StorageMode mode_;
+  const DeviceBufferDescriptor desc_;
 
-  DeviceBuffer(size_t size, StorageMode mode);
+  explicit DeviceBuffer(DeviceBufferDescriptor desc);
+
+  virtual uint8_t* OnGetContents() const = 0;
+
+  virtual bool OnCopyHostBuffer(const uint8_t* source,
+                                Range source_range,
+                                size_t offset) = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(DeviceBuffer);

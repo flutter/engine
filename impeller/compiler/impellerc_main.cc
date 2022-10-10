@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <filesystem>
+#include <system_error>
 
 #include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
@@ -19,6 +20,21 @@
 
 namespace impeller {
 namespace compiler {
+
+// Sets the file access mode of the file at path 'p' to 0644.
+static bool SetPermissiveAccess(const std::filesystem::path& p) {
+  auto permissions =
+      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write |
+      std::filesystem::perms::group_read | std::filesystem::perms::others_read;
+  std::error_code error;
+  std::filesystem::permissions(p, permissions, error);
+  if (error) {
+    std::cerr << "Failed to set access on file '" << p
+              << "': " << error.message() << std::endl;
+    return false;
+  }
+  return true;
+}
 
 bool Main(const fml::CommandLine& command_line) {
   fml::InstallCrashHandler();
@@ -74,9 +90,10 @@ bool Main(const fml::CommandLine& command_line) {
 
   auto spriv_file_name = std::filesystem::absolute(
       std::filesystem::current_path() / switches.spirv_file_name);
-  if (!fml::WriteAtomically(*switches.working_directory,
-                            spriv_file_name.string().c_str(),
-                            *compiler.GetSPIRVAssembly())) {
+  if (!fml::WriteAtomically(
+          *switches.working_directory,
+          reinterpret_cast<const char*>(spriv_file_name.u8string().c_str()),
+          *compiler.GetSPIRVAssembly())) {
     std::cerr << "Could not write file to " << switches.spirv_file_name
               << std::endl;
     return false;
@@ -85,7 +102,7 @@ bool Main(const fml::CommandLine& command_line) {
   if (TargetPlatformNeedsSL(options.target_platform)) {
     auto sl_file_name = std::filesystem::absolute(
         std::filesystem::current_path() / switches.sl_file_name);
-    const bool is_runtime_stage_data = HasSuffix(switches.sl_file_name, "iplr");
+    const bool is_runtime_stage_data = switches.iplr;
     if (is_runtime_stage_data) {
       auto reflector = compiler.GetReflector();
       if (reflector == nullptr) {
@@ -102,18 +119,25 @@ bool Main(const fml::CommandLine& command_line) {
         std::cerr << "Runtime stage data could not be created." << std::endl;
         return false;
       }
-      if (!fml::WriteAtomically(*switches.working_directory,    //
-                                sl_file_name.string().c_str(),  //
-                                *stage_data_mapping             //
+      if (!fml::WriteAtomically(*switches.working_directory,  //
+                                reinterpret_cast<const char*>(
+                                    sl_file_name.u8string().c_str()),  //
+                                *stage_data_mapping                    //
                                 )) {
         std::cerr << "Could not write file to " << switches.sl_file_name
                   << std::endl;
         return false;
       }
+      // Tools that consume the runtime stage data expect the access mode to
+      // be 0644.
+      if (!SetPermissiveAccess(sl_file_name)) {
+        return false;
+      }
     } else {
-      if (!fml::WriteAtomically(*switches.working_directory,
-                                sl_file_name.string().c_str(),
-                                *compiler.GetSLShaderSource())) {
+      if (!fml::WriteAtomically(
+              *switches.working_directory,
+              reinterpret_cast<const char*>(sl_file_name.u8string().c_str()),
+              *compiler.GetSLShaderSource())) {
         std::cerr << "Could not write file to " << switches.sl_file_name
                   << std::endl;
         return false;
@@ -127,7 +151,8 @@ bool Main(const fml::CommandLine& command_line) {
           std::filesystem::current_path() / switches.reflection_json_name);
       if (!fml::WriteAtomically(
               *switches.working_directory,
-              reflection_json_name.string().c_str(),
+              reinterpret_cast<const char*>(
+                  reflection_json_name.u8string().c_str()),
               *compiler.GetReflector()->GetReflectionJSON())) {
         std::cerr << "Could not write reflection json to "
                   << switches.reflection_json_name << std::endl;
@@ -141,7 +166,8 @@ bool Main(const fml::CommandLine& command_line) {
                                     switches.reflection_header_name.c_str());
       if (!fml::WriteAtomically(
               *switches.working_directory,
-              reflection_header_name.string().c_str(),
+              reinterpret_cast<const char*>(
+                  reflection_header_name.u8string().c_str()),
               *compiler.GetReflector()->GetReflectionHeader())) {
         std::cerr << "Could not write reflection header to "
                   << switches.reflection_header_name << std::endl;
@@ -154,7 +180,8 @@ bool Main(const fml::CommandLine& command_line) {
           std::filesystem::absolute(std::filesystem::current_path() /
                                     switches.reflection_cc_name.c_str());
       if (!fml::WriteAtomically(*switches.working_directory,
-                                reflection_cc_name.string().c_str(),
+                                reinterpret_cast<const char*>(
+                                    reflection_cc_name.u8string().c_str()),
                                 *compiler.GetReflector()->GetReflectionCC())) {
         std::cerr << "Could not write reflection CC to "
                   << switches.reflection_cc_name << std::endl;
@@ -172,18 +199,20 @@ bool Main(const fml::CommandLine& command_line) {
       case TargetPlatform::kOpenGLDesktop:
       case TargetPlatform::kRuntimeStageMetal:
       case TargetPlatform::kRuntimeStageGLES:
+      case TargetPlatform::kSkSL:
+      case TargetPlatform::kVulkan:
         result_file = switches.sl_file_name;
         break;
-      case TargetPlatform::kFlutterSPIRV:
       case TargetPlatform::kUnknown:
         result_file = switches.spirv_file_name;
         break;
     }
     auto depfile_path = std::filesystem::absolute(
         std::filesystem::current_path() / switches.depfile_path.c_str());
-    if (!fml::WriteAtomically(*switches.working_directory,
-                              depfile_path.string().c_str(),
-                              *compiler.CreateDepfileContents({result_file}))) {
+    if (!fml::WriteAtomically(
+            *switches.working_directory,
+            reinterpret_cast<const char*>(depfile_path.u8string().c_str()),
+            *compiler.CreateDepfileContents({result_file}))) {
       std::cerr << "Could not write depfile to " << switches.depfile_path
                 << std::endl;
       return false;
@@ -197,7 +226,8 @@ bool Main(const fml::CommandLine& command_line) {
 }  // namespace impeller
 
 int main(int argc, char const* argv[]) {
-  return impeller::compiler::Main(fml::CommandLineFromArgcArgv(argc, argv))
+  return impeller::compiler::Main(
+             fml::CommandLineFromPlatformOrArgcArgv(argc, argv))
              ? EXIT_SUCCESS
              : EXIT_FAILURE;
 }

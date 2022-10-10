@@ -11,6 +11,8 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
 
+using tonic::DartPersistentValue;
+
 namespace flutter {
 
 class SingleFrameCodec : public Codec {
@@ -29,9 +31,6 @@ class SingleFrameCodec : public Codec {
 
   // |Codec|
   Dart_Handle getNextFrame(Dart_Handle args) override;
-
-  // |DartWrappable|
-  size_t GetAllocationSize() const override;
 
  private:
   enum class Status { kNew, kInProgress, kComplete };

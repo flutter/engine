@@ -88,6 +88,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   return std::make_unique<SurfaceFrame>(nullptr,                          // surface
                                         SurfaceFrame::FramebufferInfo{},  // framebuffer info
                                         submit_callback,                  // submit callback
+                                        frame_info,                       // frame size
                                         nullptr,                          // context result
                                         true                              // display list fallback
   );
@@ -118,6 +119,11 @@ bool GPUSurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
 // |Surface|
 bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
   return false;
+}
+
+// |Surface|
+impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
+  return aiks_context_.get();
 }
 
 }  // namespace flutter

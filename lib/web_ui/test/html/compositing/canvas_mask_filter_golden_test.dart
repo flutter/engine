@@ -20,8 +20,8 @@ Future<void> testMain() async {
   setUpAll(() async {
     ui.debugEmulateFlutterTesterEnvironment = true;
     await ui.webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    renderer.fontCollection.debugRegisterTestFonts();
+    await renderer.fontCollection.ensureFontsLoaded();
   });
 
   tearDown(() {
@@ -154,7 +154,7 @@ Future<void> testMain() async {
     });
   }
 
-  testMaskFilterBlur(isWebkit: false);
+  testMaskFilterBlur();
   testMaskFilterBlur(isWebkit: true);
 
   for (final int testDpr in <int>[1, 2, 4]) {

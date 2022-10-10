@@ -324,13 +324,13 @@ void scene_with_red_box() {
 
 
 @pragma('vm:entry-point')
-Future<void> toGpuImage() async {
+Future<void> toImageSync() async {
   final PictureRecorder recorder = PictureRecorder();
   final Canvas canvas = Canvas(recorder);
   canvas.drawPaint(Paint()..color = const Color(0xFFAAAAAA));
   final Picture picture = recorder.endRecording();
 
-  final Image image = picture.toGpuImage(20, 25);
+  final Image image = picture.toImageSync(20, 25);
   void expect(Object? a, Object? b) {
     if (a != b) {
       throw 'Expected $a to == $b';
@@ -339,8 +339,99 @@ Future<void> toGpuImage() async {
   expect(image.width, 20);
   expect(image.height, 25);
 
-  final ByteData data = (await image.toByteData())!;
-  expect(data.lengthInBytes, 20 * 25 * 4);
-  expect(data.buffer.asUint32List().every((int byte) => byte == 0xFFAAAAAA), true);
+  final ByteData dataBefore = (await image.toByteData())!;
+  expect(dataBefore.lengthInBytes, 20 * 25 * 4);
+  for (final int byte in dataBefore.buffer.asUint32List()) {
+    expect(byte, 0xFFAAAAAA);
+  }
+
+  // Cause the rasterizer to get torn down.
   notifyNative();
+
+  final ByteData dataAfter = (await image.toByteData())!;
+  expect(dataAfter.lengthInBytes, 20 * 25 * 4);
+  for (final int byte in dataAfter.buffer.asUint32List()) {
+    expect(byte, 0xFFAAAAAA);
+  }
+
+  // Verify that the image can be drawn successfully.
+  final PictureRecorder recorder2 = PictureRecorder();
+  final Canvas canvas2 = Canvas(recorder2);
+  canvas2.drawImage(image, Offset.zero, Paint());
+  final Picture picture2 = recorder2.endRecording();
+
+  picture.dispose();
+  picture2.dispose();
+  notifyNative();
+}
+
+@pragma('vm:entry-point')
+Future<void> included() async {
+
+}
+
+Future<void> excluded() async {
+
+}
+
+class IsolateParam {
+  const IsolateParam(this.sendPort, this.rawHandle);
+  final SendPort sendPort;
+  final int rawHandle;
+}
+
+@pragma('vm:entry-point')
+Future<void> runCallback(IsolateParam param) async {
+  try {
+    final Future<dynamic> Function() func = PluginUtilities.getCallbackFromHandle(
+      CallbackHandle.fromRawHandle(param.rawHandle)
+    )! as Future<dynamic> Function();
+    await func.call();
+    param.sendPort.send(true);
+  }
+  on NoSuchMethodError {
+    param.sendPort.send(false);
+  }
+}
+
+@pragma('vm:entry-point')
+void notifyNativeBool(bool value) native 'NotifyNativeBool';
+
+@pragma('vm:entry-point')
+Future<void> testPluginUtilitiesCallbackHandle() async {
+  ReceivePort port = ReceivePort();
+  await Isolate.spawn(
+    runCallback,
+    IsolateParam(
+      port.sendPort,
+      PluginUtilities.getCallbackHandle(included)!.toRawHandle()
+    ),
+    onError: port.sendPort
+  );
+  final dynamic result1 = await port.first;
+  if (result1 != true) {
+    print('Expected $result1 to == true');
+    notifyNativeBool(false);
+    return;
+  }
+  port.close();
+  if (const bool.fromEnvironment('dart.vm.product')) {
+    port = ReceivePort();
+    await Isolate.spawn(
+      runCallback,
+      IsolateParam(
+        port.sendPort,
+        PluginUtilities.getCallbackHandle(excluded)!.toRawHandle()
+      ),
+      onError: port.sendPort
+    );
+    final dynamic result2 = await port.first;
+    if (result2 != false) {
+      print('Expected $result2 to == false');
+      notifyNativeBool(false);
+      return;
+    }
+    port.close();
+  }
+  notifyNativeBool(true);
 }

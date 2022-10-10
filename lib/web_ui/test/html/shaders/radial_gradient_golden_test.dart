@@ -17,28 +17,25 @@ Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    renderer.fontCollection.debugRegisterTestFonts();
+    await renderer.fontCollection.ensureFontsLoaded();
   });
 
-  Future<void> _testGradient(String fileName, Shader shader,
+  Future<void> testGradient(String fileName, Shader shader,
       {Rect paintRect = const Rect.fromLTRB(50, 50, 300, 300),
       Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300),
-      bool write = false,
-      double maxDiffRatePercent = 0,
       Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
     final RecordingCanvas rc = RecordingCanvas(region);
     final SurfacePaint paint = SurfacePaint()..shader = shader;
     final Path path = Path();
     path.addRect(paintRect);
     rc.drawPath(path, paint);
-    await canvasScreenshot(rc, fileName, write: write, region: region,
-        maxDiffRatePercent: maxDiffRatePercent);
+    await canvasScreenshot(rc, fileName, region: region);
   }
 
   test('Should draw centered radial gradient.', () async {
     const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
-    await _testGradient(
+    await testGradient(
         'radial_gradient_centered',
         Gradient.radial(
             Offset((shaderRect.left + shaderRect.right) / 2,
@@ -47,14 +44,12 @@ Future<void> testMain() async {
             <Color>[
               const Color.fromARGB(255, 0, 0, 0),
               const Color.fromARGB(255, 0, 0, 255)
-            ]),
-        shaderRect: shaderRect,
-        maxDiffRatePercent: 0.2);
+            ]));
   });
 
   test('Should draw right bottom centered radial gradient.', () async {
     const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
-    await _testGradient(
+    await testGradient(
       'radial_gradient_right_bottom',
       Gradient.radial(
         Offset(shaderRect.right, shaderRect.bottom),
@@ -64,14 +59,12 @@ Future<void> testMain() async {
           const Color.fromARGB(255, 0, 0, 255)
         ],
       ),
-      shaderRect: shaderRect,
-      maxDiffRatePercent: 0.3,
     );
   });
 
   test('Should draw with radial gradient with TileMode.clamp.', () async {
     const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
-    await _testGradient(
+    await testGradient(
       'radial_gradient_tilemode_clamp',
       Gradient.radial(
         Offset((shaderRect.left + shaderRect.right) / 2,
@@ -82,10 +75,8 @@ Future<void> testMain() async {
           const Color.fromARGB(255, 0, 0, 255)
         ],
         <double>[0.0, 1.0],
-        TileMode.clamp,
       ),
       shaderRect: shaderRect,
-      maxDiffRatePercent: 0.2,
     );
   });
 
@@ -100,7 +91,7 @@ Future<void> testMain() async {
 
   test('Should draw with radial gradient with TileMode.repeated.', () async {
     const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
-    await _testGradient(
+    await testGradient(
         'radial_gradient_tilemode_repeated',
         Gradient.radial(
             Offset((shaderRect.left + shaderRect.right) / 2,
@@ -117,7 +108,7 @@ Future<void> testMain() async {
 
   test('Should draw with radial gradient with TileMode.mirrored.', () async {
     const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
-    await _testGradient(
+    await testGradient(
         'radial_gradient_tilemode_mirror',
         Gradient.radial(
             Offset((shaderRect.left + shaderRect.right) / 2,

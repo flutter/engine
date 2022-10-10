@@ -7,6 +7,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+#include "unicode/uchar.h"
+
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
 
@@ -47,6 +49,7 @@ static NSString* const kSetEditableSizeAndTransformMethod =
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
 static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -70,6 +73,19 @@ static NSString* const kAutofillHints = @"hints";
 static NSString* const kAutocorrectionType = @"autocorrect";
 
 #pragma mark - Static Functions
+
+// Determine if the character at `range` of `text` is an emoji.
+static BOOL IsEmoji(NSString* text, NSRange charRange) {
+  UChar32 codePoint;
+  BOOL gotCodePoint = [text getBytes:&codePoint
+                           maxLength:sizeof(codePoint)
+                          usedLength:NULL
+                            encoding:NSUTF32StringEncoding
+                             options:kNilOptions
+                               range:charRange
+                      remainingRange:NULL];
+  return gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI);
+}
 
 // "TextInputType.none" is a made-up input type that's typically
 // used when there's an in-app virtual keyboard. If
@@ -158,10 +174,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     return UIReturnKeyNext;
   }
 
-  if (@available(iOS 9.0, *)) {
-    if ([inputType isEqualToString:@"TextInputAction.continueAction"]) {
-      return UIReturnKeyContinue;
-    }
+  if ([inputType isEqualToString:@"TextInputAction.continueAction"]) {
+    return UIReturnKeyContinue;
   }
 
   if ([inputType isEqualToString:@"TextInputAction.join"]) {
@@ -191,100 +205,96 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
   }
 
   NSString* hint = hints[0];
-  if (@available(iOS 10.0, *)) {
-    if ([hint isEqualToString:@"addressCityAndState"]) {
-      return UITextContentTypeAddressCityAndState;
-    }
-
-    if ([hint isEqualToString:@"addressState"]) {
-      return UITextContentTypeAddressState;
-    }
-
-    if ([hint isEqualToString:@"addressCity"]) {
-      return UITextContentTypeAddressCity;
-    }
-
-    if ([hint isEqualToString:@"sublocality"]) {
-      return UITextContentTypeSublocality;
-    }
-
-    if ([hint isEqualToString:@"streetAddressLine1"]) {
-      return UITextContentTypeStreetAddressLine1;
-    }
-
-    if ([hint isEqualToString:@"streetAddressLine2"]) {
-      return UITextContentTypeStreetAddressLine2;
-    }
-
-    if ([hint isEqualToString:@"countryName"]) {
-      return UITextContentTypeCountryName;
-    }
-
-    if ([hint isEqualToString:@"fullStreetAddress"]) {
-      return UITextContentTypeFullStreetAddress;
-    }
-
-    if ([hint isEqualToString:@"postalCode"]) {
-      return UITextContentTypePostalCode;
-    }
-
-    if ([hint isEqualToString:@"location"]) {
-      return UITextContentTypeLocation;
-    }
-
-    if ([hint isEqualToString:@"creditCardNumber"]) {
-      return UITextContentTypeCreditCardNumber;
-    }
-
-    if ([hint isEqualToString:@"email"]) {
-      return UITextContentTypeEmailAddress;
-    }
-
-    if ([hint isEqualToString:@"jobTitle"]) {
-      return UITextContentTypeJobTitle;
-    }
-
-    if ([hint isEqualToString:@"givenName"]) {
-      return UITextContentTypeGivenName;
-    }
-
-    if ([hint isEqualToString:@"middleName"]) {
-      return UITextContentTypeMiddleName;
-    }
-
-    if ([hint isEqualToString:@"familyName"]) {
-      return UITextContentTypeFamilyName;
-    }
-
-    if ([hint isEqualToString:@"name"]) {
-      return UITextContentTypeName;
-    }
-
-    if ([hint isEqualToString:@"namePrefix"]) {
-      return UITextContentTypeNamePrefix;
-    }
-
-    if ([hint isEqualToString:@"nameSuffix"]) {
-      return UITextContentTypeNameSuffix;
-    }
-
-    if ([hint isEqualToString:@"nickname"]) {
-      return UITextContentTypeNickname;
-    }
-
-    if ([hint isEqualToString:@"organizationName"]) {
-      return UITextContentTypeOrganizationName;
-    }
-
-    if ([hint isEqualToString:@"telephoneNumber"]) {
-      return UITextContentTypeTelephoneNumber;
-    }
+  if ([hint isEqualToString:@"addressCityAndState"]) {
+    return UITextContentTypeAddressCityAndState;
   }
 
-  if (@available(iOS 11.0, *)) {
-    if ([hint isEqualToString:@"password"]) {
-      return UITextContentTypePassword;
-    }
+  if ([hint isEqualToString:@"addressState"]) {
+    return UITextContentTypeAddressState;
+  }
+
+  if ([hint isEqualToString:@"addressCity"]) {
+    return UITextContentTypeAddressCity;
+  }
+
+  if ([hint isEqualToString:@"sublocality"]) {
+    return UITextContentTypeSublocality;
+  }
+
+  if ([hint isEqualToString:@"streetAddressLine1"]) {
+    return UITextContentTypeStreetAddressLine1;
+  }
+
+  if ([hint isEqualToString:@"streetAddressLine2"]) {
+    return UITextContentTypeStreetAddressLine2;
+  }
+
+  if ([hint isEqualToString:@"countryName"]) {
+    return UITextContentTypeCountryName;
+  }
+
+  if ([hint isEqualToString:@"fullStreetAddress"]) {
+    return UITextContentTypeFullStreetAddress;
+  }
+
+  if ([hint isEqualToString:@"postalCode"]) {
+    return UITextContentTypePostalCode;
+  }
+
+  if ([hint isEqualToString:@"location"]) {
+    return UITextContentTypeLocation;
+  }
+
+  if ([hint isEqualToString:@"creditCardNumber"]) {
+    return UITextContentTypeCreditCardNumber;
+  }
+
+  if ([hint isEqualToString:@"email"]) {
+    return UITextContentTypeEmailAddress;
+  }
+
+  if ([hint isEqualToString:@"jobTitle"]) {
+    return UITextContentTypeJobTitle;
+  }
+
+  if ([hint isEqualToString:@"givenName"]) {
+    return UITextContentTypeGivenName;
+  }
+
+  if ([hint isEqualToString:@"middleName"]) {
+    return UITextContentTypeMiddleName;
+  }
+
+  if ([hint isEqualToString:@"familyName"]) {
+    return UITextContentTypeFamilyName;
+  }
+
+  if ([hint isEqualToString:@"name"]) {
+    return UITextContentTypeName;
+  }
+
+  if ([hint isEqualToString:@"namePrefix"]) {
+    return UITextContentTypeNamePrefix;
+  }
+
+  if ([hint isEqualToString:@"nameSuffix"]) {
+    return UITextContentTypeNameSuffix;
+  }
+
+  if ([hint isEqualToString:@"nickname"]) {
+    return UITextContentTypeNickname;
+  }
+
+  if ([hint isEqualToString:@"organizationName"]) {
+    return UITextContentTypeOrganizationName;
+  }
+
+  if ([hint isEqualToString:@"telephoneNumber"]) {
+    return UITextContentTypeTelephoneNumber;
+  }
+
+  if ([hint isEqualToString:@"password"]) {
+    return UITextContentTypePassword;
   }
 
   if (@available(iOS 12.0, *)) {
@@ -372,31 +382,27 @@ typedef NS_ENUM(NSInteger, FlutterAutofillType) {
 };
 
 static BOOL IsFieldPasswordRelated(NSDictionary* configuration) {
-  if (@available(iOS 10.0, *)) {
-    // Autofill is explicitly disabled if the id isn't present.
-    if (!AutofillIdFromDictionary(configuration)) {
-      return NO;
-    }
+  // Autofill is explicitly disabled if the id isn't present.
+  if (!AutofillIdFromDictionary(configuration)) {
+    return NO;
+  }
 
-    BOOL isSecureTextEntry = [configuration[kSecureTextEntry] boolValue];
-    if (isSecureTextEntry) {
+  BOOL isSecureTextEntry = [configuration[kSecureTextEntry] boolValue];
+  if (isSecureTextEntry) {
+    return YES;
+  }
+
+  NSDictionary* autofill = configuration[kAutofillProperties];
+  UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
+
+  if ([contentType isEqualToString:UITextContentTypePassword] ||
+      [contentType isEqualToString:UITextContentTypeUsername]) {
+    return YES;
+  }
+
+  if (@available(iOS 12.0, *)) {
+    if ([contentType isEqualToString:UITextContentTypeNewPassword]) {
       return YES;
-    }
-
-    NSDictionary* autofill = configuration[kAutofillProperties];
-    UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
-
-    if (@available(iOS 11.0, *)) {
-      if ([contentType isEqualToString:UITextContentTypePassword] ||
-          [contentType isEqualToString:UITextContentTypeUsername]) {
-        return YES;
-      }
-    }
-
-    if (@available(iOS 12.0, *)) {
-      if ([contentType isEqualToString:UITextContentTypeNewPassword]) {
-        return YES;
-      }
     }
   }
   return NO;
@@ -413,14 +419,10 @@ static FlutterAutofillType AutofillTypeOf(NSDictionary* configuration) {
     return kFlutterAutofillTypePassword;
   }
 
-  if (@available(iOS 10.0, *)) {
-    NSDictionary* autofill = configuration[kAutofillProperties];
-    UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
-    return !autofill || [contentType isEqualToString:@""] ? kFlutterAutofillTypeNone
-                                                          : kFlutterAutofillTypeRegular;
-  }
-
-  return kFlutterAutofillTypeNone;
+  NSDictionary* autofill = configuration[kAutofillProperties];
+  UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
+  return !autofill || [contentType isEqualToString:@""] ? kFlutterAutofillTypeNone
+                                                        : kFlutterAutofillTypeRegular;
 }
 
 static BOOL IsApproximatelyEqual(float x, float y, float delta) {
@@ -713,6 +715,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+// The composed character that is temporarily removed by the keyboard API.
+// This is cleared at the start of each keyboard interaction. (Enter a character, delete a character
+// etc)
+@property(nonatomic, copy) NSString* temporarilyDeletedComposedCharacter;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -772,10 +778,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     _enableInteractiveSelection = YES;
     _accessibilityEnabled = NO;
     _decommissioned = NO;
-    if (@available(iOS 11.0, *)) {
-      _smartQuotesType = UITextSmartQuotesTypeYes;
-      _smartDashesType = UITextSmartDashesTypeYes;
-    }
+    _smartQuotesType = UITextSmartQuotesTypeYes;
+    _smartDashesType = UITextSmartDashesTypeYes;
     _selectionRects = [[NSArray alloc] init];
 
     if (@available(iOS 14.0, *)) {
@@ -802,18 +806,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   self.returnKeyType = ToUIReturnKeyType(configuration[kInputAction]);
   self.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
   _enableInteractiveSelection = [configuration[kEnableInteractiveSelection] boolValue];
-  if (@available(iOS 11.0, *)) {
-    NSString* smartDashesType = configuration[kSmartDashesType];
-    // This index comes from the SmartDashesType enum in the framework.
-    bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
-    self.smartDashesType =
-        smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
-    NSString* smartQuotesType = configuration[kSmartQuotesType];
-    // This index comes from the SmartQuotesType enum in the framework.
-    bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
-    self.smartQuotesType =
-        smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
-  }
+  NSString* smartDashesType = configuration[kSmartDashesType];
+  // This index comes from the SmartDashesType enum in the framework.
+  bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
+  self.smartDashesType = smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
+  NSString* smartQuotesType = configuration[kSmartQuotesType];
+  // This index comes from the SmartQuotesType enum in the framework.
+  bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
+  self.smartQuotesType = smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
     self.keyboardAppearance = UIKeyboardAppearanceDark;
   } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {
@@ -825,19 +825,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   self.autocorrectionType = autocorrect && ![autocorrect boolValue]
                                 ? UITextAutocorrectionTypeNo
                                 : UITextAutocorrectionTypeDefault;
-  if (@available(iOS 10.0, *)) {
-    self.autofillId = AutofillIdFromDictionary(configuration);
-    if (autofill == nil) {
-      self.textContentType = @"";
-    } else {
-      self.textContentType = ToUITextContentType(autofill[kAutofillHints]);
-      [self setTextInputState:autofill[kAutofillEditingValue]];
-      NSAssert(_autofillId, @"The autofill configuration must contain an autofill id");
-    }
-    // The input field needs to be visible for the system autofill
-    // to find it.
-    self.isVisibleToAutofill = autofill || _secureTextEntry;
+  self.autofillId = AutofillIdFromDictionary(configuration);
+  if (autofill == nil) {
+    self.textContentType = @"";
+  } else {
+    self.textContentType = ToUITextContentType(autofill[kAutofillHints]);
+    [self setTextInputState:autofill[kAutofillEditingValue]];
+    NSAssert(_autofillId, @"The autofill configuration must contain an autofill id");
   }
+  // The input field needs to be visible for the system autofill
+  // to find it.
+  self.isVisibleToAutofill = autofill || _secureTextEntry;
 }
 
 - (UITextContentType)textContentType {
@@ -899,6 +897,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_markedTextStyle release];
   [_textContentType release];
   [_textInteraction release];
+  [_temporarilyDeletedComposedCharacter release];
+  _temporarilyDeletedComposedCharacter = nil;
   [super dealloc];
 }
 
@@ -1243,6 +1243,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
+  // `temporarilyDeletedComposedCharacter` should only be used during a single text change session.
+  // So it needs to be cleared at the start of each text editting session.
+  self.temporarilyDeletedComposedCharacter = nil;
+
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
     [self.textInputDelegate flutterTextInputView:self
                                    performAction:FlutterTextInputActionNewline
@@ -1530,11 +1534,49 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _cachedFirstRect = kInvalidFirstRect;
 }
 
+// Returns the bounding CGRect of the transformed incomingRect, in the view's
+// coordinates.
+- (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect {
+  CGPoint points[] = {
+      incomingRect.origin,
+      CGPointMake(incomingRect.origin.x, incomingRect.origin.y + incomingRect.size.height),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width, incomingRect.origin.y),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                  incomingRect.origin.y + incomingRect.size.height)};
+
+  CGPoint origin = CGPointMake(CGFLOAT_MAX, CGFLOAT_MAX);
+  CGPoint farthest = CGPointMake(-CGFLOAT_MAX, -CGFLOAT_MAX);
+
+  for (int i = 0; i < 4; i++) {
+    const CGPoint point = points[i];
+
+    CGFloat x = _editableTransform.m11 * point.x + _editableTransform.m21 * point.y +
+                _editableTransform.m41;
+    CGFloat y = _editableTransform.m12 * point.x + _editableTransform.m22 * point.y +
+                _editableTransform.m42;
+
+    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
+                      _editableTransform.m44;
+
+    if (w == 0.0) {
+      return kInvalidFirstRect;
+    } else if (w != 1.0) {
+      x /= w;
+      y /= w;
+    }
+
+    origin.x = MIN(origin.x, x);
+    origin.y = MIN(origin.y, y);
+    farthest.x = MAX(farthest.x, x);
+    farthest.y = MAX(farthest.y, y);
+  }
+  return CGRectMake(origin.x, origin.y, farthest.x - origin.x, farthest.y - origin.y);
+}
+
 // The following methods are required to support force-touch cursor positioning
 // and to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
-
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
@@ -1543,22 +1585,21 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
-    // The candidates view can't be shown if _editableTransform is not affine,
-    // or markedRect is invalid.
-    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect) ||
-        !CATransform3DIsAffine(_editableTransform)) {
+    // The candidates view can't be shown if the framework has not sent the
+    // first caret rect.
+    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect)) {
       return kInvalidFirstRect;
     }
 
     if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
       // If the width returned is too small, that means the framework sent us
-      // the caret rect instead of the marked text rect. Expand it to 0.1 so
-      // the IME candidates view show up.
-      double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
+      // the caret rect instead of the marked text rect. Expand it to 0.2 so
+      // the IME candidates view would show up.
       CGRect rect = _markedRect;
-      rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
-      _cachedFirstRect =
-          CGRectApplyAffineTransform(rect, CATransform3DGetAffineTransform(_editableTransform));
+      if (CGRectIsEmpty(rect)) {
+        rect = CGRectInset(rect, -0.1, 0);
+      }
+      _cachedFirstRect = [self localRectFromFrameworkTransform:rect];
     }
 
     return _cachedFirstRect;
@@ -1830,6 +1871,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)insertText:(NSString*)text {
+  if (self.temporarilyDeletedComposedCharacter.length > 0 && text.length == 1 && !text.UTF8String &&
+      [text characterAtIndex:0] == [self.temporarilyDeletedComposedCharacter characterAtIndex:0]) {
+    // Workaround for https://github.com/flutter/flutter/issues/111494
+    // TODO(cyanglaz): revert this workaround if when flutter supports a minimum iOS version which
+    // this bug is fixed by Apple.
+    text = self.temporarilyDeletedComposedCharacter;
+    self.temporarilyDeletedComposedCharacter = nil;
+  }
+
   NSMutableArray<FlutterTextSelectionRect*>* copiedRects =
       [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
   NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
@@ -1896,12 +1946,29 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     NSRange oldRange = ((FlutterTextRange*)oldSelectedRange).range;
     if (oldRange.location > 0) {
       NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
+
+      // We should check if the last character is a part of emoji.
+      // If so, we must delete the entire emoji to prevent the text from being malformed.
+      NSRange charRange = fml::RangeForCharacterAtIndex(self.text, oldRange.location - 1);
+      if (IsEmoji(self.text, charRange)) {
+        newRange = NSMakeRange(charRange.location, oldRange.location - charRange.location);
+      }
+
       _selectedTextRange = [[FlutterTextRange rangeWithNSRange:newRange] copy];
       [oldSelectedRange release];
     }
   }
 
   if (!_selectedTextRange.isEmpty) {
+    // Cache the last deleted emoji to use for an iOS bug where the next
+    // insertion corrupts the emoji characters.
+    // See: https://github.com/flutter/flutter/issues/111494#issuecomment-1248441346
+    if (IsEmoji(self.text, _selectedTextRange.range)) {
+      NSString* deletedText = [self.text substringWithRange:_selectedTextRange.range];
+      NSRange deleteFirstCharacterRange = fml::RangeForCharacterAtIndex(deletedText, 0);
+      self.temporarilyDeletedComposedCharacter =
+          [deletedText substringWithRange:deleteFirstCharacterRange];
+    }
     [self replaceRange:_selectedTextRange withText:@""];
   }
 }
@@ -2102,6 +2169,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
     result(nil);
+  } else if ([method isEqualToString:kStartLiveTextInputMethod]) {
+    [self startLiveTextInput];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -2144,6 +2214,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                                    position:[rect[4] unsignedIntegerValue]]];
   }
   _activeView.selectionRects = rectsAsRect;
+}
+
+- (void)startLiveTextInput {
+  if (@available(iOS 15.0, *)) {
+    if (_activeView == nil || !_activeView.isFirstResponder) {
+      return;
+    }
+    [_activeView captureTextFromCamera:nil];
+  }
 }
 
 - (void)showTextInput {

@@ -40,7 +40,11 @@ class EnginePictureRecorder implements ui.PictureRecorder {
     }
     _isRecording = false;
     _canvas!.endRecording();
-    return EnginePicture(_canvas, cullRect);
+    final EnginePicture result = EnginePicture(_canvas, cullRect);
+    // We invoke the handler here, not in the Picture constructor, because we want
+    // [result.approximateBytesUsed] to be available for the handler.
+    ui.Picture.onCreate?.call(result);
+    return result;
   }
 }
 
@@ -89,14 +93,15 @@ class EnginePicture implements ui.Picture {
   }
 
   @override
-  ui.Image toGpuImage(int width, int height) {
-    throw UnsupportedError('toGpuImage is not supported on the HTML backend. Use drawPicture instead, or toImage.');
+  ui.Image toImageSync(int width, int height) {
+    throw UnsupportedError('toImageSync is not supported on the HTML backend. Use drawPicture instead, or toImage.');
   }
 
   bool _disposed = false;
 
   @override
   void dispose() {
+    ui.Picture.onDispose?.call(this);
     _disposed = true;
   }
 

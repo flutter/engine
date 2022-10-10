@@ -21,8 +21,8 @@ void main() {
 Future<void> testMain() async {
   setUpAll(() async {
     await ui.webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    renderer.fontCollection.debugRegisterTestFonts();
+    await renderer.fontCollection.ensureFontsLoaded();
   });
 
   setUp(() async {
@@ -172,7 +172,6 @@ Future<void> testMain() async {
     builder.pushPhysicalShape(
       path: ui.Path()
         ..addRRect(ui.RRect.fromLTRBR(10, 10, 60, 60, const ui.Radius.circular(5))),
-      clipBehavior: ui.Clip.none,
       color: const ui.Color.fromRGBO(0, 0, 0, 0.3),
       elevation: 0,
     );
@@ -303,7 +302,7 @@ Future<void> testMain() async {
     final DomElement viewElement3 = builder3.build().webOnlyRootElement!;
     domDocument.body!.append(viewElement3);
     await matchGoldenFile('compositing_physical_update_3.png',
-        region: region, maxDiffRatePercent: 0.8);
+        region: region);
     viewElement3.remove();
 
     /// Update shape from arbitrary path to rect.
@@ -338,8 +337,7 @@ Future<void> testMain() async {
     final DomElement viewElement5 = builder5.build().webOnlyRootElement!;
     domDocument.body!.append(viewElement5);
     await matchGoldenFile('compositing_physical_update_3.png',
-        region: region,
-        maxDiffRatePercent: browserEngine == BrowserEngine.webkit ? 0.6 : 0.4);
+        region: region);
     viewElement5.remove();
 
     /// Update shadow color.
@@ -884,8 +882,6 @@ void _testCullRectComputation() {
       await matchGoldenFile(
         'compositing_draw_high_quality_text.png',
         region: canvasSize,
-        maxDiffRatePercent: 0.0,
-        pixelComparison: PixelComparison.precise,
       );
     },
     testOn: 'chrome',

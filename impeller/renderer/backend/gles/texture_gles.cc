@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/gles/texture_gles.h"
 
 #include <optional>
+#include <utility>
 
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
@@ -12,6 +13,7 @@
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -37,18 +39,18 @@ HandleType ToHandleType(TextureGLES::Type type) {
 }
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), std::move(desc), false) {}
+    : TextureGLES(std::move(reactor), desc, false) {}
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
                          TextureDescriptor desc,
                          enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), std::move(desc), true) {}
+    : TextureGLES(std::move(reactor), desc, true) {}
 
 TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
                          TextureDescriptor desc,
                          bool is_wrapped)
-    : Texture(std::move(desc)),
-      reactor_(reactor),
+    : Texture(desc),
+      reactor_(std::move(reactor)),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       handle_(reactor_->CreateHandle(ToHandleType(type_))),
       is_wrapped_(is_wrapped) {
@@ -71,7 +73,7 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
 
 // |Texture|
 TextureGLES::~TextureGLES() {
-  reactor_->CollectHandle(std::move(handle_));
+  reactor_->CollectHandle(handle_);
 }
 
 // |Texture|
@@ -349,11 +351,15 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 }
 
-bool TextureGLES::Bind() const {
+std::optional<GLuint> TextureGLES::GetGLHandle() const {
   if (!IsValid()) {
-    return false;
+    return std::nullopt;
   }
-  auto handle = reactor_->GetGLHandle(handle_);
+  return reactor_->GetGLHandle(handle_);
+}
+
+bool TextureGLES::Bind() const {
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
@@ -375,6 +381,37 @@ bool TextureGLES::Bind() const {
   return true;
 }
 
+bool TextureGLES::GenerateMipmaps() const {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto type = GetTextureDescriptor().type;
+  switch (type) {
+    case TextureType::kTexture2D:
+      break;
+    case TextureType::kTexture2DMultisample:
+      VALIDATION_LOG << "Generating mipmaps for multisample textures is not "
+                        "supported in the GLES backend.";
+      return false;
+    case TextureType::kTextureCube:
+      break;
+  }
+
+  if (!Bind()) {
+    return false;
+  }
+
+  auto handle = GetGLHandle();
+  if (!handle.has_value()) {
+    return false;
+  }
+
+  const auto& gl = reactor_->GetProcTable();
+  gl.GenerateMipmap(ToTextureType(type));
+  return true;
+}
+
 TextureGLES::Type TextureGLES::GetType() const {
   return type_;
 }
@@ -390,20 +427,21 @@ static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
   }
 }
 
-bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
+bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
+                                             GLuint fbo,
                                              AttachmentPoint point) const {
   if (!IsValid()) {
     return false;
   }
   InitializeContentsIfNecessary();
-  auto handle = reactor_->GetGLHandle(handle_);
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
     case Type::kTexture:
-      gl.FramebufferTexture2D(GL_FRAMEBUFFER,            // target
+      gl.FramebufferTexture2D(target,                    // target
                               ToAttachmentPoint(point),  // attachment
                               GL_TEXTURE_2D,             // textarget
                               handle.value(),            // texture
@@ -411,7 +449,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
       );
       break;
     case Type::kRenderBuffer:
-      gl.FramebufferRenderbuffer(GL_FRAMEBUFFER,            // target
+      gl.FramebufferRenderbuffer(target,                    // target
                                  ToAttachmentPoint(point),  // attachment
                                  GL_RENDERBUFFER,  // render-buffer target
                                  handle.value()    // render-buffer

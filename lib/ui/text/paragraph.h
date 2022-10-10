@@ -12,10 +12,6 @@
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/third_party/txt/src/txt/paragraph.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class Paragraph : public RefCountedDartWrappable<Paragraph> {
@@ -53,9 +49,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   Dart_Handle getLineBoundary(unsigned offset);
   tonic::Float64List computeLineMetrics();
 
-  size_t GetAllocationSize() const override;
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
+  void dispose();
 
  private:
   std::unique_ptr<txt::Paragraph> m_paragraph;

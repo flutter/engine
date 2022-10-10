@@ -1,8 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-// @dart = 2.12
 part of dart.ui;
 
 /// Whether to slant the glyphs in the font
@@ -16,37 +14,40 @@ enum FontStyle {
 
 /// The thickness of the glyphs used to draw the text
 class FontWeight {
-  const FontWeight._(this.index);
+  const FontWeight._(this.index, this.value);
 
   /// The encoded integer value of this font weight.
   final int index;
 
+  /// The thickness value of this font weight.
+  final int value;
+
   /// Thin, the least thick
-  static const FontWeight w100 = FontWeight._(0);
+  static const FontWeight w100 = FontWeight._(0, 100);
 
   /// Extra-light
-  static const FontWeight w200 = FontWeight._(1);
+  static const FontWeight w200 = FontWeight._(1, 200);
 
   /// Light
-  static const FontWeight w300 = FontWeight._(2);
+  static const FontWeight w300 = FontWeight._(2, 300);
 
   /// Normal / regular / plain
-  static const FontWeight w400 = FontWeight._(3);
+  static const FontWeight w400 = FontWeight._(3, 400);
 
   /// Medium
-  static const FontWeight w500 = FontWeight._(4);
+  static const FontWeight w500 = FontWeight._(4, 500);
 
   /// Semi-bold
-  static const FontWeight w600 = FontWeight._(5);
+  static const FontWeight w600 = FontWeight._(5, 600);
 
   /// Bold
-  static const FontWeight w700 = FontWeight._(6);
+  static const FontWeight w700 = FontWeight._(6, 700);
 
   /// Extra-bold
-  static const FontWeight w800 = FontWeight._(7);
+  static const FontWeight w800 = FontWeight._(7, 800);
 
   /// Black, the most thick
-  static const FontWeight w900 = FontWeight._(8);
+  static const FontWeight w900 = FontWeight._(8, 900);
 
   /// The default font weight.
   static const FontWeight normal = w400;
@@ -82,8 +83,9 @@ class FontWeight {
   /// an [AnimationController].
   static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
     assert(t != null);
-    if (a == null && b == null)
+    if (a == null && b == null) {
       return null;
+    }
     return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8)];
   }
 
@@ -919,8 +921,9 @@ class FontFeature {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is FontFeature
         && other.feature == feature
         && other.value == value;
@@ -980,8 +983,9 @@ class FontVariation {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is FontVariation
         && other.axis == axis
         && other.value == value;
@@ -1043,8 +1047,9 @@ class TextDecoration {
   /// Creates a decoration that paints the union of all the given decorations.
   factory TextDecoration.combine(List<TextDecoration> decorations) {
     int mask = 0;
-    for (final TextDecoration decoration in decorations)
+    for (final TextDecoration decoration in decorations) {
       mask |= decoration._mask;
+    }
     return TextDecoration._(mask);
   }
 
@@ -1078,17 +1083,22 @@ class TextDecoration {
 
   @override
   String toString() {
-    if (_mask == 0)
+    if (_mask == 0) {
       return 'TextDecoration.none';
+    }
     final List<String> values = <String>[];
-    if (_mask & underline._mask != 0)
+    if (_mask & underline._mask != 0) {
       values.add('underline');
-    if (_mask & overline._mask != 0)
+    }
+    if (_mask & overline._mask != 0) {
       values.add('overline');
-    if (_mask & lineThrough._mask != 0)
+    }
+    if (_mask & lineThrough._mask != 0) {
       values.add('lineThrough');
-    if (values.length == 1)
+    }
+    if (values.length == 1) {
       return 'TextDecoration.${values[0]}';
+    }
     return 'TextDecoration.combine([${values.join(", ")}])';
   }
 }
@@ -1226,8 +1236,9 @@ class TextHeightBehavior {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
         && other.applyHeightToLastDescent == applyHeightToLastDescent
@@ -1259,13 +1270,16 @@ class TextHeightBehavior {
 /// the same length, and contain the same elements in the same order. Returns
 /// false otherwise.
 bool _listEquals<T>(List<T>? a, List<T>? b) {
-  if (a == null)
+  if (a == null) {
     return b == null;
-  if (b == null || a.length != b.length)
+  }
+  if (b == null || a.length != b.length) {
     return false;
+  }
   for (int index = 0; index < a.length; index += 1) {
-    if (a[index] != b[index])
+    if (a[index] != b[index]) {
       return false;
+    }
   }
   return true;
 }
@@ -1519,8 +1533,9 @@ class TextStyle {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     return other is TextStyle
         && other._leadingDistribution == _leadingDistribution
         && other._fontFamily == _fontFamily
@@ -1686,7 +1701,7 @@ class ParagraphStyle {
   ///   paragraph. If the last line is ellipsized (see `ellipsis` below), the
   ///   alignment is applied to that line after it has been truncated but before
   ///   the ellipsis has been added.
-   //   See: https://github.com/flutter/flutter/issues/9819
+  ///   See: https://github.com/flutter/flutter/issues/9819
   ///
   /// * `textDirection`: The directionality of the text, left-to-right (e.g.
   ///   Norwegian) or right-to-left (e.g. Hebrew). This controls the overall
@@ -1785,10 +1800,12 @@ class ParagraphStyle {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is ParagraphStyle
         && other._fontFamily == _fontFamily
         && other._fontSize == _fontSize
@@ -1817,7 +1834,7 @@ class ParagraphStyle {
              'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
              'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
-             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? "\"$_ellipsis\""                  : "unspecified"}, '
+             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? '"$_ellipsis"'                    : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
            ')';
   }
@@ -1849,8 +1866,9 @@ ByteData _encodeStrut(
     leading == null &&
     fontWeight == null &&
     fontStyle == null &&
-    forceStrutHeight == null)
+    forceStrutHeight == null) {
     return ByteData(0);
+  }
 
   final ByteData data = ByteData(16); // Max size is 16 bytes
   int bitmask = 0; // 8 bit mask
@@ -1865,7 +1883,7 @@ ByteData _encodeStrut(
     data.setInt8(byteCount, fontStyle.index);
     byteCount += 1;
   }
-  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)){
+  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
     bitmask |= 1 << 2;
     // passed separately to native
   }
@@ -1881,7 +1899,6 @@ ByteData _encodeStrut(
     bitmask |= 1 << 5;
     data.setFloat32(byteCount, height, _kFakeHostEndian);
     byteCount += 4;
-
   }
   if (leading != null) {
     bitmask |= 1 << 6;
@@ -1896,7 +1913,7 @@ ByteData _encodeStrut(
 
   assert(byteCount <= 16);
   assert(bitmask >> 8 == 0, 'strut bitmask overflow: $bitmask');
-  return ByteData.view(data.buffer, 0,  byteCount);
+  return ByteData.view(data.buffer, 0, byteCount);
 }
 
 /// See also:
@@ -1983,10 +2000,12 @@ class StrutStyle {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is StrutStyle
         && other._fontFamily == _fontFamily
         && other._leadingDistribution == _leadingDistribution
@@ -2148,10 +2167,12 @@ class TextBox {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (other.runtimeType != runtimeType)
+    }
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is TextBox
         && other.left == left
         && other.top == top
@@ -2217,13 +2238,12 @@ enum TextAffinity {
 
 /// A position in a string of text.
 ///
-/// A TextPosition can be used to locate a position in a string in code (using
-/// the [offset] property), and it can also be used to locate the same position
-/// visually in a rendered string of text (using [offset] and, when needed to
-/// resolve ambiguity, [affinity]).
+/// A TextPosition can be used to describe a caret position in between
+/// characters. The [offset] points to the position between `offset - 1` and
+/// `offset` characters of the string, and the [affinity] is used to describe
+/// which character this position affiliates with.
 ///
-/// The location of an offset in a rendered string is ambiguous in two cases.
-/// One happens when rendered text is forced to wrap. In this case, the offset
+/// One use case is when rendered text is forced to wrap. In this case, the offset
 /// where the wrap occurs could visually appear either at the end of the first
 /// line or the beginning of the second line. The second way is with
 /// bidirectional text.  An offset at the interface between two different text
@@ -2260,8 +2280,9 @@ class TextPosition {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is TextPosition
         && other.offset == offset
         && other.affinity == affinity;
@@ -2292,7 +2313,7 @@ class TextRange {
     required this.start,
     required this.end,
   }) : assert(start != null && start >= -1),
-        assert(end != null && end >= -1);
+       assert(end != null && end >= -1);
 
   /// A text range that starts and ends at offset.
   ///
@@ -2344,8 +2365,9 @@ class TextRange {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
+    }
     return other is TextRange
         && other.start == start
         && other.end == end;
@@ -2387,7 +2409,7 @@ class ParagraphConstraints {
   /// follows).
   ///
   /// The width influences how ellipses are applied. See the discussion at
-  /// [new ParagraphStyle] for more details.
+  /// [ParagraphStyle.new] for more details.
   ///
   /// This width is also used to position glyphs according to the [TextAlign]
   /// alignment described in the [ParagraphStyle] used when building the
@@ -2396,8 +2418,9 @@ class ParagraphConstraints {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is ParagraphConstraints
         && other.width == width;
   }
@@ -2674,38 +2697,45 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// The amount of horizontal space this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double get width native 'Paragraph_width';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::width', isLeaf: true)
+  external double get width;
 
   /// The amount of vertical space this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double get height native 'Paragraph_height';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::height', isLeaf: true)
+  external double get height;
 
   /// The distance from the left edge of the leftmost glyph to the right edge of
   /// the rightmost glyph in the paragraph.
   ///
   /// Valid only after [layout] has been called.
-  double get longestLine native 'Paragraph_longestLine';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::longestLine', isLeaf: true)
+  external double get longestLine;
 
   /// The minimum width that this paragraph could be without failing to paint
   /// its contents within itself.
   ///
   /// Valid only after [layout] has been called.
-  double get minIntrinsicWidth native 'Paragraph_minIntrinsicWidth';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::minIntrinsicWidth', isLeaf: true)
+  external double get minIntrinsicWidth;
 
   /// Returns the smallest width beyond which increasing the width never
   /// decreases the height.
   ///
   /// Valid only after [layout] has been called.
-  double get maxIntrinsicWidth native 'Paragraph_maxIntrinsicWidth';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::maxIntrinsicWidth', isLeaf: true)
+  external double get maxIntrinsicWidth;
 
   /// The distance from the top of the paragraph to the alphabetic
   /// baseline of the first line, in logical pixels.
-  double get alphabeticBaseline native 'Paragraph_alphabeticBaseline';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::alphabeticBaseline', isLeaf: true)
+  external double get alphabeticBaseline;
 
   /// The distance from the top of the paragraph to the ideographic
   /// baseline of the first line, in logical pixels.
-  double get ideographicBaseline native 'Paragraph_ideographicBaseline';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::ideographicBaseline', isLeaf: true)
+  external double get ideographicBaseline;
 
   /// True if there is more vertical content, but the text was truncated, either
   /// because we reached `maxLines` lines of text or because the `maxLines` was
@@ -2713,8 +2743,9 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// constraint.
   ///
   /// See the discussion of the `maxLines` and `ellipsis` arguments at
-  /// [new ParagraphStyle].
-  bool get didExceedMaxLines native 'Paragraph_didExceedMaxLines';
+  /// [ParagraphStyle.new].
+  @FfiNative<Bool Function(Pointer<Void>)>('Paragraph::didExceedMaxLines', isLeaf: true)
+  external bool get didExceedMaxLines;
 
   /// Computes the size and position of each glyph in the paragraph.
   ///
@@ -2726,7 +2757,8 @@ class Paragraph extends NativeFieldWrapperClass1 {
       return true;
     }());
   }
-  void _layout(double width) native 'Paragraph_layout';
+  @FfiNative<Void Function(Pointer<Void>, Double)>('Paragraph::layout', isLeaf: true)
+  external void _layout(double width);
 
   List<TextBox> _decodeTextBoxes(Float32List encoded) {
     final int count = encoded.length ~/ 5;
@@ -2762,8 +2794,10 @@ class Paragraph extends NativeFieldWrapperClass1 {
     assert(boxWidthStyle != null);
     return _decodeTextBoxes(_getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index));
   }
+
   // See paragraph.cc for the layout of this return value.
-  Float32List _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
+  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Uint32, Uint32)>('Paragraph::getRectsForRange')
+  external Float32List _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
@@ -2775,14 +2809,18 @@ class Paragraph extends NativeFieldWrapperClass1 {
   List<TextBox> getBoxesForPlaceholders() {
     return _decodeTextBoxes(_getBoxesForPlaceholders());
   }
-  Float32List _getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Paragraph::getRectsForPlaceholders')
+  external Float32List _getBoxesForPlaceholders();
 
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {
     final List<int> encoded = _getPositionForOffset(offset.dx, offset.dy);
     return TextPosition(offset: encoded[0], affinity: TextAffinity.values[encoded[1]]);
   }
-  List<int> _getPositionForOffset(double dx, double dy) native 'Paragraph_getPositionForOffset';
+
+  @FfiNative<Handle Function(Pointer<Void>, Double, Double)>('Paragraph::getPositionForOffset')
+  external List<int> _getPositionForOffset(double dx, double dy);
 
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///
@@ -2790,11 +2828,28 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// have word breaks on both sides. In such cases, this method will return
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
+  ///
+  /// The [TextPosition] is treated as caret position, its [TextPosition.affinity]
+  /// is used to determine which character this position points to. For example,
+  /// the word boundary at `TextPosition(offset: 5, affinity: TextPosition.upstream)`
+  /// of the `string = 'Hello word'` will return range (0, 5) because the position
+  /// points to the character 'o' instead of the space.
   TextRange getWordBoundary(TextPosition position) {
-    final List<int> boundary = _getWordBoundary(position.offset);
+    final int characterPosition;
+    switch (position.affinity) {
+      case TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+        break;
+      case TextAffinity.downstream:
+        characterPosition = position.offset;
+        break;
+    }
+    final List<int> boundary = _getWordBoundary(characterPosition);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
-  List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+
+  @FfiNative<Handle Function(Pointer<Void>, Uint32)>('Paragraph::getWordBoundary')
+  external List<int> _getWordBoundary(int offset);
 
   /// Returns the [TextRange] of the line at the given [TextPosition].
   ///
@@ -2810,8 +2865,7 @@ class Paragraph extends NativeFieldWrapperClass1 {
 
     final List<int> nextBoundary = _getLineBoundary(position.offset + 1);
     final TextRange nextLine = TextRange(start: nextBoundary[0], end: nextBoundary[1]);
-    // If there is no next line, because we're at the end of the field, return
-    // line.
+    // If there is no next line, because we're at the end of the field, return line.
     if (!nextLine.isValid) {
       return line;
     }
@@ -2821,17 +2875,19 @@ class Paragraph extends NativeFieldWrapperClass1 {
     // word wrap (downstream), we need to return the line for the next offset.
     if (position.affinity == TextAffinity.downstream && line != nextLine
         && position.offset == line.end && line.end == nextLine.start) {
-      final List<int> nextBoundary = _getLineBoundary(position.offset + 1);
       return TextRange(start: nextBoundary[0], end: nextBoundary[1]);
     }
     return line;
   }
-  List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
+
+  @FfiNative<Handle Function(Pointer<Void>, Uint32)>('Paragraph::getLineBoundary')
+  external List<int> _getLineBoundary(int offset);
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
   // this indirection.
-  void _paint(Canvas canvas, double x, double y) native 'Paragraph_paint';
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>('Paragraph::paint')
+  external void _paint(Canvas canvas, double x, double y);
 
   /// Returns the full list of [LineMetrics] that describe in detail the various
   /// metrics of each laid out line.
@@ -2860,14 +2916,46 @@ class Paragraph extends NativeFieldWrapperClass1 {
     ];
     return metrics;
   }
-  Float64List _computeLineMetrics() native 'Paragraph_computeLineMetrics';
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Paragraph::computeLineMetrics')
+  external Float64List _computeLineMetrics();
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Paragraph::dispose')
+  external void _dispose();
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
+  }
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
 ///
 /// To set the paragraph's alignment, truncation, and ellipsizing behavior, pass
 /// an appropriately-configured [ParagraphStyle] object to the
-/// [new ParagraphBuilder] constructor.
+/// [ParagraphBuilder.new] constructor.
 ///
 /// Then, call combinations of [pushStyle], [addText], and [pop] to add styled
 /// text to the object.
@@ -2916,16 +3004,16 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
       );
   }
 
-  void _constructor(
-    Int32List encoded,
-    ByteData? strutData,
-    String fontFamily,
-    List<Object?>? strutFontFamily,
-    double fontSize,
-    double height,
-    String ellipsis,
-    String locale
-  ) native 'ParagraphBuilder_constructor';
+  @FfiNative<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>('ParagraphBuilder::Create')
+  external void _constructor(
+      Int32List encoded,
+      ByteData? strutData,
+      String fontFamily,
+      List<Object?>? strutFontFamily,
+      double fontSize,
+      double height,
+      String ellipsis,
+      String locale);
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount => _placeholderCount;
@@ -2933,7 +3021,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
 
   /// The scales of the placeholders in the paragraph.
   List<double> get placeholderScales => _placeholderScales;
-  List<double> _placeholderScales = <double>[];
+  final List<double> _placeholderScales = <double>[];
 
   final TextLeadingDistribution _defaultLeadingDistribution;
   /// Applies the given style to the added text until [pop] is called.
@@ -2942,8 +3030,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   void pushStyle(TextStyle style) {
     final List<String> fullFontFamilies = <String>[];
     fullFontFamilies.add(style._fontFamily);
-    if (style._fontFamilyFallback != null)
+    if (style._fontFamilyFallback != null) {
       fullFontFamilies.addAll(style._fontFamilyFallback!);
+    }
 
     final Int32List encoded = style._encoded;
     final TextLeadingDistribution finalLeadingDistribution = style._leadingDistribution ?? _defaultLeadingDistribution;
@@ -2995,7 +3084,25 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     );
   }
 
-  void _pushStyle(
+  @FfiNative<
+      Void Function(
+          Pointer<Void>,
+          Handle,
+          Handle,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle)>('ParagraphBuilder::pushStyle')
+  external void _pushStyle(
     Int32List encoded,
     List<Object?> fontFamilies,
     double fontSize,
@@ -3011,7 +3118,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     ByteData shadowsData,
     ByteData? fontFeaturesData,
     ByteData? fontVariationsData,
-  ) native 'ParagraphBuilder_pushStyle';
+  );
 
   static String _encodeLocale(Locale? locale) => locale?.toString() ?? '';
 
@@ -3021,17 +3128,21 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// added to the paragraph is affected by all the styles in the stack. Calling
   /// [pop] removes the topmost style in the stack, leaving the remaining styles
   /// in effect.
-  void pop() native 'ParagraphBuilder_pop';
+  @FfiNative<Void Function(Pointer<Void>)>('ParagraphBuilder::pop', isLeaf: true)
+  external void pop();
 
   /// Adds the given text to the paragraph.
   ///
   /// The text will be styled according to the current stack of text styles.
   void addText(String text) {
     final String? error = _addText(text);
-    if (error != null)
+    if (error != null) {
       throw ArgumentError(error);
+    }
   }
-  String? _addText(String text) native 'ParagraphBuilder_addText';
+
+  @FfiNative<Handle Function(Pointer<Void>, Handle)>('ParagraphBuilder::addText')
+  external String? _addText(String text);
 
   /// Adds an inline placeholder space to the paragraph.
   ///
@@ -3096,7 +3207,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Uint32, Double, Uint32)>('ParagraphBuilder::addPlaceholder')
+  external void _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline);
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
@@ -3108,7 +3221,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _build(paragraph);
     return paragraph;
   }
-  void _build(Paragraph outParagraph) native 'ParagraphBuilder_build';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('ParagraphBuilder::build')
+  external void _build(Paragraph outParagraph);
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.
@@ -3120,6 +3235,7 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
     (_Callback<void> callback) {
       _loadFontFromList(list, callback, fontFamily ?? '');
+      return null;
     }
   ).then((_) => _sendFontChangeMessage());
 }
@@ -3143,4 +3259,5 @@ FutureOr<void> _sendFontChangeMessage() async {
   }
 }
 
-void _loadFontFromList(Uint8List list, _Callback<void> callback, String fontFamily) native 'loadFontFromList';
+@FfiNative<Void Function(Handle, Handle, Handle)>('FontCollection::LoadFontFromList')
+external void _loadFontFromList(Uint8List list, _Callback<void> callback, String fontFamily);

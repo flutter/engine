@@ -12,7 +12,6 @@
 library browser_api;
 
 import 'dart:async';
-import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -25,12 +24,14 @@ import 'dom.dart';
 import 'platform_dispatcher.dart';
 import 'vector_math.dart';
 
+export 'package:js/js.dart' show allowInterop;
+
 /// Creates JavaScript object populated with [properties].
 ///
 /// This is equivalent to writing `{}` in plain JavaScript.
 Object createPlainJsObject([Map<String, Object?>? properties]) {
   if (properties != null) {
-    return js.JsObject.jsify(properties);
+    return js_util.jsify(properties) as Object;
   } else {
     return js_util.newObject<Object>();
   }
@@ -68,11 +69,6 @@ T setJsProperty<T>(Object object, String name, T value) {
     ' - Ensure that the property is safe then add it to _safeJsProperties set.',
   );
   return js_util.setProperty<T>(object, name, value);
-}
-
-/// Wraps function [f] to be callable from JavaScript.
-F allowInterop<F extends Function>(F f) {
-  return js.allowInterop<F>(f);
 }
 
 /// Converts a JavaScript `Promise` into Dart [Future].
@@ -246,15 +242,19 @@ void debugResetBrowserSupportsImageDecoder() {
       _imageDecoderConstructor != null;
 }
 
+/// The signature of the function passed to the constructor of JavaScript `Promise`.
+typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
+
 /// Corresponds to JavaScript's `Promise`.
 ///
 /// This type doesn't need any members. Instead, it should be first converted
 /// to Dart's [Future] using [promiseToFuture] then interacted with through the
 /// [Future] API.
-@JS()
-@anonymous
+@JS('window.Promise')
 @staticInterop
-class JsPromise {}
+class JsPromise {
+  external factory JsPromise(JsPromiseCallback callback);
+}
 
 /// Corresponds to the browser's `ImageDecoder` type.
 ///
@@ -332,7 +332,10 @@ class DecodeOptions {
 ///  * https://www.w3.org/TR/webcodecs/#videoframe-interface
 @JS()
 @anonymous
-class VideoFrame implements DomCanvasImageSource {
+@staticInterop
+class VideoFrame implements DomCanvasImageSource {}
+
+extension VideoFrameExtension on VideoFrame {
   external int allocationSize();
   external JsPromise copyTo(Uint8List destination);
   external String? get format;
@@ -341,6 +344,7 @@ class VideoFrame implements DomCanvasImageSource {
   external int get displayWidth;
   external int get displayHeight;
   external int? get duration;
+  external VideoFrame clone();
   external void close();
 }
 
@@ -407,12 +411,34 @@ void vertexAttribPointerGlContext(
 
 /// Compiled and cached gl program.
 class GlProgram {
-  final Object program;
   GlProgram(this.program);
+  final Object program;
 }
 
 /// JS Interop helper for webgl apis.
 class GlContext {
+  factory GlContext(OffScreenCanvas offScreenCanvas) {
+    return OffScreenCanvas.supported
+        ? GlContext._fromOffscreenCanvas(offScreenCanvas.offScreenCanvas!)
+        : GlContext._fromCanvasElement(
+        offScreenCanvas.canvasElement!, webGLVersion == WebGLVersion.webgl1);
+  }
+
+  GlContext._fromOffscreenCanvas(DomOffscreenCanvas canvas)
+      : glContext = canvas.getContext('webgl2', <String, dynamic>{'premultipliedAlpha': false})!,
+        isOffscreen = true {
+    _programCache = <String, GlProgram?>{};
+    _canvas = canvas;
+  }
+
+  GlContext._fromCanvasElement(DomCanvasElement canvas, bool useWebGl1)
+      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2',
+      <String, dynamic>{'premultipliedAlpha': false})!,
+        isOffscreen = false {
+    _programCache = <String, GlProgram?>{};
+    _canvas = canvas;
+  }
+
   final Object glContext;
   final bool isOffscreen;
   Object? _kCompileStatus;
@@ -440,28 +466,6 @@ class GlContext {
   int? _widthInPixels;
   int? _heightInPixels;
   static late Map<String, GlProgram?> _programCache;
-
-  factory GlContext(OffScreenCanvas offScreenCanvas) {
-    return OffScreenCanvas.supported
-        ? GlContext._fromOffscreenCanvas(offScreenCanvas.offScreenCanvas!)
-        : GlContext._fromCanvasElement(
-        offScreenCanvas.canvasElement!, webGLVersion == WebGLVersion.webgl1);
-  }
-
-  GlContext._fromOffscreenCanvas(DomOffscreenCanvas canvas)
-      : glContext = canvas.getContext('webgl2', <String, dynamic>{'premultipliedAlpha': false})!,
-        isOffscreen = true {
-    _programCache = <String, GlProgram?>{};
-    _canvas = canvas;
-  }
-
-  GlContext._fromCanvasElement(DomCanvasElement canvas, bool useWebGl1)
-      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2',
-      <String, dynamic>{'premultipliedAlpha': false})!,
-        isOffscreen = false {
-    _programCache = <String, GlProgram?>{};
-    _canvas = canvas;
-  }
 
   void setViewportSize(int width, int height) {
     _widthInPixels = width;
@@ -912,8 +916,8 @@ void setupVertexTransforms(
   // Set uniform to scale 0..width/height pixels coordinates to -1..1
   // clipspace range and flip the Y axis.
   final Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
-  gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
-      -2.0 / heightInPixels.toDouble(), 1, 1);
+  gl.setUniform4f(resolution, 2.0 / widthInPixels,
+      -2.0 / heightInPixels, 1, 1);
   final Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
   gl.setUniform4f(shift, -1, 1, 0, 0);
 }
@@ -953,12 +957,6 @@ dynamic tileModeToGlWrapping(GlContext gl, ui.TileMode tileMode) {
 
 /// Polyfill for DomOffscreenCanvas that is not supported on some browsers.
 class OffScreenCanvas {
-  DomOffscreenCanvas? offScreenCanvas;
-  DomCanvasElement? canvasElement;
-  int width;
-  int height;
-  static bool? _supported;
-
   OffScreenCanvas(this.width, this.height) {
     if (OffScreenCanvas.supported) {
       offScreenCanvas = createDomOffscreenCanvas(width, height);
@@ -971,6 +969,12 @@ class OffScreenCanvas {
       _updateCanvasCssSize(canvasElement!);
     }
   }
+
+  DomOffscreenCanvas? offScreenCanvas;
+  DomCanvasElement? canvasElement;
+  int width;
+  int height;
+  static bool? _supported;
 
   void _updateCanvasCssSize(DomCanvasElement element) {
     final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;

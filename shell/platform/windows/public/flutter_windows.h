@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
+#include <dxgi.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <windows.h>
@@ -16,6 +17,8 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+typedef void (*VoidCallback)(void* /* user data */);
 
 // Opaque reference to a Flutter window controller.
 typedef struct FlutterDesktopViewControllerState*
@@ -46,6 +49,14 @@ typedef struct {
   // containing the executable. This can be nullptr for a non-AOT build, as
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
+
+  // The name of the top-level Dart entrypoint function. If null or the empty
+  // string, 'main' is assumed. If a custom entrypoint is used, this parameter
+  // must specifiy the name of a top-level function in the same Dart library as
+  // the app's main() function. Custom entrypoint functions must be decorated
+  // with `@pragma('vm:entry-point')` to ensure the method is not tree-shaken
+  // by the Dart compiler.
+  const char* dart_entrypoint;
 
   // Number of elements in the array passed in as dart_entrypoint_argv.
   int dart_entrypoint_argc;
@@ -129,13 +140,19 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopEngineCreate(
 // |engine| is no longer valid after this call.
 FLUTTER_EXPORT bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine);
 
-// Starts running the given engine instance and optional entry point in the Dart
-// project. If the entry point is null, defaults to main().
+// Starts running the given engine instance.
 //
-// If provided, entry_point must be the name of a top-level function from the
+// The entry_point parameter is deprecated but preserved for
+// backward-compatibility. If desired, a custom Dart entrypoint function can be
+// set in the dart_entrypoint field of the FlutterDesktopEngineProperties
+// struct passed to FlutterDesktopEngineCreate.
+//
+// If sprecified, entry_point must be the name of a top-level function from the
 // same Dart library that contains the app's main() function, and must be
 // decorated with `@pragma(vm:entry-point)` to ensure the method is not
-// tree-shaken by the Dart compiler.
+// tree-shaken by the Dart compiler. If conflicting non-null values are passed
+// to this function and via the FlutterDesktopEngineProperties struct, the run
+// will fail.
 //
 // Returns false if running the engine failed.
 FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
@@ -169,13 +186,25 @@ FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 
 // Returns the texture registrar associated with the engine.
 FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
-FlutterDesktopEngineGetTextureRegistrar(
-    FlutterDesktopTextureRegistrarRef texture_registrar);
+FlutterDesktopEngineGetTextureRegistrar(FlutterDesktopEngineRef engine);
+
+// Schedule a callback to be called after the next frame is drawn.
+//
+// This must be called from the platform thread. The callback is executed only
+// once on the platform thread.
+FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
+    FlutterDesktopEngineRef engine,
+    VoidCallback callback,
+    void* user_data);
 
 // ========== View ==========
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
+
+// Returns the DXGI adapter used for rendering or nullptr in case of error.
+FLUTTER_EXPORT IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(
+    FlutterDesktopViewRef view);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h

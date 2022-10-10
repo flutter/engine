@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
@@ -53,7 +54,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
   if (num_cache_attempts_ >= layer_cached_threshold_) {
     // the layer can be cached
     cache_state_ = CacheState::kCurrent;
-    context->raster_cache->MarkSeen(key_id_, matrix_);
+    context->raster_cache->MarkSeen(key_id_, matrix_, true);
   } else {
     num_cache_attempts_++;
     // access current layer
@@ -67,7 +68,8 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
                                    RasterCacheKeyType::kLayerChildren);
       }
       cache_state_ = CacheState::kChildren;
-      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix_);
+      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix_,
+                                      true);
     }
   }
 }
@@ -147,12 +149,11 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
     if (const SkRect* paint_bounds = GetPaintBoundsFromLayer()) {
       RasterCache::Context r_context = {
           // clang-format off
-      .gr_context         = context.gr_context,
-      .dst_color_space    = context.dst_color_space,
-      .matrix             = matrix_,
-      .logical_rect       = *paint_bounds,
-      .flow_type          = flow_type,
-      .checkerboard       = context.checkerboard_offscreen_layers,
+          .gr_context         = context.gr_context,
+          .dst_color_space    = context.dst_color_space,
+          .matrix             = matrix_,
+          .logical_rect       = *paint_bounds,
+          .flow_type          = flow_type,
           // clang-format on
       };
       return context.raster_cache->UpdateCacheEntry(

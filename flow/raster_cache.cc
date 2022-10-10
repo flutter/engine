@@ -32,8 +32,9 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
+  auto matrix = RasterCacheUtil::GetIntegralTransCTM(canvas.getTotalMatrix());
   SkRect bounds =
-      RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+      RasterCacheUtil::GetRoundedOutDeviceBounds(logical_rect_, matrix);
   FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
@@ -51,17 +52,17 @@ RasterCache::RasterCache(size_t access_threshold,
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
-    const std::function<void(SkCanvas*)>& draw_function) {
+    const std::function<void(SkCanvas*)>& draw_function,
+    const std::function<void(SkCanvas*, const SkRect& rect)>& draw_checkerboard)
+    const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
-
+  auto matrix = RasterCacheUtil::GetIntegralTransCTM(context.matrix);
   SkRect dest_rect =
-      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
-  // we always round out here so that the texture is integer sized.
-  int width = SkScalarCeilToInt(dest_rect.width());
-  int height = SkScalarCeilToInt(dest_rect.height());
+      RasterCacheUtil::GetRoundedOutDeviceBounds(context.logical_rect, matrix);
 
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      width, height, sk_ref_sp(context.dst_color_space));
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(dest_rect.width(), dest_rect.height(),
+                                 sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
@@ -75,11 +76,11 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
   canvas->translate(-dest_rect.left(), -dest_rect.top());
-  canvas->concat(context.matrix);
+  canvas->concat(matrix);
   draw_function(canvas);
 
-  if (context.checkerboard) {
-    DrawCheckerboard(canvas, context.logical_rect);
+  if (checkerboard_images_) {
+    draw_checkerboard(canvas, context.logical_rect);
   }
 
   return std::make_unique<RasterCacheResult>(
@@ -92,9 +93,9 @@ bool RasterCache::UpdateCacheEntry(
     const std::function<void(SkCanvas*)>& render_function) const {
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
-  entry.used_this_frame = true;
   if (!entry.image) {
-    entry.image = Rasterize(raster_cache_context, render_function);
+    entry.image =
+        Rasterize(raster_cache_context, render_function, DrawCheckerboard);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {
@@ -110,24 +111,27 @@ bool RasterCache::UpdateCacheEntry(
   return entry.image != nullptr;
 }
 
-bool RasterCache::Touch(const RasterCacheKeyID& id,
-                        const SkMatrix& matrix) const {
-  RasterCacheKey cache_key = RasterCacheKey(id, matrix);
-  auto it = cache_.find(cache_key);
-  if (it != cache_.end()) {
-    it->second.access_count++;
-    it->second.used_this_frame = true;
-    return true;
-  }
-  return false;
-}
-
 int RasterCache::MarkSeen(const RasterCacheKeyID& id,
-                          const SkMatrix& matrix) const {
+                          const SkMatrix& matrix,
+                          bool visible) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
-  entry.used_this_frame = true;
-  return entry.access_count;
+  entry.encountered_this_frame = true;
+  entry.visible_this_frame = visible;
+  if (visible || entry.accesses_since_visible > 0) {
+    entry.accesses_since_visible++;
+  }
+  return entry.accesses_since_visible;
+}
+
+int RasterCache::GetAccessCount(const RasterCacheKeyID& id,
+                                const SkMatrix& matrix) const {
+  RasterCacheKey key = RasterCacheKey(id, matrix);
+  auto entry = cache_.find(key);
+  if (entry != cache_.cend()) {
+    return entry->second.accesses_since_visible;
+  }
+  return -1;
 }
 
 bool RasterCache::HasEntry(const RasterCacheKeyID& id,
@@ -148,8 +152,6 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   }
 
   Entry& entry = it->second;
-  entry.access_count++;
-  entry.used_this_frame = true;
 
   if (entry.image) {
     entry.image->draw(canvas, paint);
@@ -159,58 +161,47 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   return false;
 }
 
-void RasterCache::PrepareNewFrame() {
+void RasterCache::BeginFrame() {
   display_list_cached_this_frame_ = 0;
+  picture_metrics_ = {};
+  layer_metrics_ = {};
 }
 
-void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
-                                          RasterCacheMetrics& picture_metrics,
-                                          RasterCacheMetrics& layer_metrics) {
+void RasterCache::UpdateMetrics() {
+  for (auto it = cache_.begin(); it != cache_.end(); ++it) {
+    Entry& entry = it->second;
+    FML_DCHECK(entry.encountered_this_frame);
+    if (entry.image) {
+      RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+      metrics.in_use_count++;
+      metrics.in_use_bytes += entry.image->image_bytes();
+    }
+    entry.encountered_this_frame = false;
+  }
+}
+
+void RasterCache::EvictUnusedCacheEntries() {
   std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
 
-  for (auto it = cache.begin(); it != cache.end(); ++it) {
+  for (auto it = cache_.begin(); it != cache_.end(); ++it) {
     Entry& entry = it->second;
-
-    if (!entry.used_this_frame) {
+    if (!entry.encountered_this_frame) {
       dead.push_back(it);
-    } else if (entry.image) {
-      RasterCacheKeyKind kind = it->first.kind();
-      switch (kind) {
-        case RasterCacheKeyKind::kDisplayListMetrics:
-          picture_metrics.in_use_count++;
-          picture_metrics.in_use_bytes += entry.image->image_bytes();
-          break;
-        case RasterCacheKeyKind::kLayerMetrics:
-          layer_metrics.in_use_count++;
-          layer_metrics.in_use_bytes += entry.image->image_bytes();
-          break;
-      }
     }
-    entry.used_this_frame = false;
   }
 
   for (auto it : dead) {
     if (it->second.image) {
-      RasterCacheKeyKind kind = it->first.kind();
-      switch (kind) {
-        case RasterCacheKeyKind::kDisplayListMetrics:
-          picture_metrics.eviction_count++;
-          picture_metrics.eviction_bytes += it->second.image->image_bytes();
-          break;
-        case RasterCacheKeyKind::kLayerMetrics:
-          layer_metrics.eviction_count++;
-          layer_metrics.eviction_bytes += it->second.image->image_bytes();
-          break;
-      }
+      RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+      metrics.eviction_count++;
+      metrics.eviction_bytes += it->second.image->image_bytes();
     }
-    cache.erase(it);
+    cache_.erase(it);
   }
 }
 
-void RasterCache::CleanupAfterFrame() {
-  picture_metrics_ = {};
-  layer_metrics_ = {};
-  SweepOneCacheAfterFrame(cache_, picture_metrics_, layer_metrics_);
+void RasterCache::EndFrame() {
+  UpdateMetrics();
   TraceStatsToTimeline();
 }
 
@@ -289,6 +280,15 @@ size_t RasterCache::EstimatePictureCacheByteSize() const {
     }
   }
   return picture_cache_bytes;
+}
+
+RasterCacheMetrics& RasterCache::GetMetricsForKind(RasterCacheKeyKind kind) {
+  switch (kind) {
+    case RasterCacheKeyKind::kDisplayListMetrics:
+      return picture_metrics_;
+    case RasterCacheKeyKind::kLayerMetrics:
+      return layer_metrics_;
+  }
 }
 
 }  // namespace flutter

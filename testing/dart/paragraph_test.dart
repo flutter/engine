@@ -70,20 +70,19 @@ void main() {
     ));
     builder.addText('Test Ahem');
     final Paragraph paragraph = builder.build();
-    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+    paragraph.layout(const ParagraphConstraints(width: fontSize * 5.0));
 
     // Wraps to two lines.
     expect(paragraph.height, closeTo(fontSize * 2.0, 0.001));
 
-    final TextPosition wrapPositionDown = TextPosition(
+    const TextPosition wrapPositionDown = TextPosition(
       offset: 5,
-      affinity: TextAffinity.downstream,
     );
     TextRange line = paragraph.getLineBoundary(wrapPositionDown);
     expect(line.start, 5);
     expect(line.end, 9);
 
-    final TextPosition wrapPositionUp = TextPosition(
+    const TextPosition wrapPositionUp = TextPosition(
       offset: 5,
       affinity: TextAffinity.upstream,
     );
@@ -91,17 +90,15 @@ void main() {
     expect(line.start, 0);
     expect(line.end, 5);
 
-    final TextPosition wrapPositionStart = TextPosition(
+    const TextPosition wrapPositionStart = TextPosition(
       offset: 0,
-      affinity: TextAffinity.downstream,
     );
     line = paragraph.getLineBoundary(wrapPositionStart);
     expect(line.start, 0);
     expect(line.end, 5);
 
-    final TextPosition wrapPositionEnd = TextPosition(
+    const TextPosition wrapPositionEnd = TextPosition(
       offset: 9,
-      affinity: TextAffinity.downstream,
     );
     line = paragraph.getLineBoundary(wrapPositionEnd);
     expect(line.start, 5);
@@ -119,20 +116,19 @@ void main() {
     ));
     builder.addText('القاهرةالقاهرة');
     final Paragraph paragraph = builder.build();
-    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+    paragraph.layout(const ParagraphConstraints(width: fontSize * 5.0));
 
     // Wraps to three lines.
     expect(paragraph.height, closeTo(fontSize * 3.0, 0.001));
 
-    final TextPosition wrapPositionDown = TextPosition(
+    const TextPosition wrapPositionDown = TextPosition(
       offset: 5,
-      affinity: TextAffinity.downstream,
     );
     TextRange line = paragraph.getLineBoundary(wrapPositionDown);
     expect(line.start, 5);
     expect(line.end, 10);
 
-    final TextPosition wrapPositionUp = TextPosition(
+    const TextPosition wrapPositionUp = TextPosition(
       offset: 5,
       affinity: TextAffinity.upstream,
     );
@@ -140,17 +136,15 @@ void main() {
     expect(line.start, 0);
     expect(line.end, 5);
 
-    final TextPosition wrapPositionStart = TextPosition(
+    const TextPosition wrapPositionStart = TextPosition(
       offset: 0,
-      affinity: TextAffinity.downstream,
     );
     line = paragraph.getLineBoundary(wrapPositionStart);
     expect(line.start, 0);
     expect(line.end, 5);
 
-    final TextPosition wrapPositionEnd = TextPosition(
+    const TextPosition wrapPositionEnd = TextPosition(
       offset: 9,
-      affinity: TextAffinity.downstream,
     );
     line = paragraph.getLineBoundary(wrapPositionEnd);
     expect(line.start, 5);
@@ -168,21 +162,20 @@ void main() {
     ));
     builder.addText('Test\n\nAhem');
     final Paragraph paragraph = builder.build();
-    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+    paragraph.layout(const ParagraphConstraints(width: fontSize * 5.0));
 
     // Three lines due to line breaks, with the middle line being empty.
     expect(paragraph.height, closeTo(fontSize * 3.0, 0.001));
 
-    final TextPosition emptyLinePosition = TextPosition(
+    const TextPosition emptyLinePosition = TextPosition(
       offset: 5,
-      affinity: TextAffinity.downstream,
     );
     TextRange line = paragraph.getLineBoundary(emptyLinePosition);
     expect(line.start, 5);
     expect(line.end, 5);
 
     // Since these are hard newlines, TextAffinity has no effect here.
-    final TextPosition emptyLinePositionUpstream = TextPosition(
+    const TextPosition emptyLinePositionUpstream = TextPosition(
       offset: 5,
       affinity: TextAffinity.upstream,
     );
@@ -190,20 +183,33 @@ void main() {
     expect(line.start, 5);
     expect(line.end, 5);
 
-    final TextPosition endOfFirstLinePosition = TextPosition(
+    const TextPosition endOfFirstLinePosition = TextPosition(
       offset: 4,
-      affinity: TextAffinity.downstream,
     );
     line = paragraph.getLineBoundary(endOfFirstLinePosition);
     expect(line.start, 0);
     expect(line.end, 4);
 
-    final TextPosition startOfLastLinePosition = TextPosition(
+    const TextPosition startOfLastLinePosition = TextPosition(
       offset: 6,
-      affinity: TextAffinity.downstream,
     );
     line = paragraph.getLineBoundary(startOfLastLinePosition);
     expect(line.start, 6);
     expect(line.end, 10);
+  });
+
+  test('painting a disposed paragraph does not crash', () {
+    final Paragraph paragraph = ParagraphBuilder(ParagraphStyle()).build();
+    paragraph.dispose();
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    void callback() { canvas.drawParagraph(paragraph, Offset.zero); }
+    if (assertStatementsEnabled) {
+      expectAssertion(callback);
+    } else {
+      expect(callback, throwsStateError);
+    }
   });
 }

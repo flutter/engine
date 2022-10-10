@@ -29,11 +29,12 @@ enum class TargetPlatform {
   kUnknown,
   kMetalDesktop,
   kMetalIOS,
-  kFlutterSPIRV,
   kOpenGLES,
   kOpenGLDesktop,
+  kVulkan,
   kRuntimeStageMetal,
   kRuntimeStageGLES,
+  kSkSL,
 };
 
 bool TargetPlatformIsMetal(TargetPlatform platform);

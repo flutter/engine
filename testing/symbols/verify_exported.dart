@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:convert';
 import 'dart:io';
 
@@ -29,7 +28,17 @@ void main(List<String> arguments) {
     print('usage: dart verify_exported.dart OUT_DIR [BUILDTOOLS]');
     exit(1);
   }
-  final String outPath = arguments.first;
+  String outPath = arguments.first;
+  if (p.isRelative(outPath)) {
+    /// If path is relative then create a full path starting from the engine checkout
+    /// repository.
+    if (!Platform.environment.containsKey('ENGINE_CHECKOUT_PATH')) {
+      print('ENGINE_CHECKOUT_PATH env variable is mandatory when using relative destination path');
+      exit(1);
+    }
+    final String engineCheckoutPath = Platform.environment['ENGINE_CHECKOUT_PATH']!;
+    outPath = p.join(engineCheckoutPath, outPath);
+  }
   final String buildToolsPath = arguments.length == 1
       ? p.join(p.dirname(outPath), 'buildtools')
       : arguments[1];
@@ -57,10 +66,15 @@ void main(List<String> arguments) {
       .where((String s) => s.startsWith('ios_'));
   final Iterable<String> androidReleaseBuilds = releaseBuilds
       .where((String s) => s.startsWith('android_'));
+  final Iterable<String> hostReleaseBuilds = releaseBuilds
+      .where((String s) => s.startsWith('host_'));
 
   int failures = 0;
   failures += _checkIos(outPath, nmPath, iosReleaseBuilds);
   failures += _checkAndroid(outPath, nmPath, androidReleaseBuilds);
+  if (Platform.isLinux) {
+    failures += _checkLinux(outPath, nmPath, hostReleaseBuilds);
+  }
   print('Failing checks: $failures');
   exit(failures);
 }
@@ -222,7 +236,7 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
     final Map<String, String> badSymbols = <String, String>{};
     for (final String key in entryMap.keys) {
       if (entryMap[key] != expectedSymbols[key]) {
-        badSymbols[key] = entryMap[key];
+        badSymbols[key] = entryMap[key]!;
       }
     }
     if (badSymbols.isNotEmpty) {
@@ -232,6 +246,40 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
       failures++;
     } else {
       print('OK: $libFlutter');
+    }
+  }
+  return failures;
+}
+
+int _checkLinux(String outPath, String nmPath, Iterable<String> builds) {
+  int failures = 0;
+  for (final String build in builds) {
+    final String libFlutter = p.join(outPath, build, 'libflutter_engine.so');
+    if (!File(libFlutter).existsSync()) {
+      print('SKIPPING: $libFlutter does not exist.');
+      continue;
+    }
+    final ProcessResult nmResult = Process.runSync(nmPath, <String>['-gUD', libFlutter]);
+    if (nmResult.exitCode != 0) {
+      print('ERROR: failed to execute "nm -gUD $libFlutter":\n${nmResult.stderr}');
+      failures++;
+      continue;
+    }
+    final List<NmEntry> entries = NmEntry.parse(nmResult.stdout as String).toList();
+    for (final NmEntry entry in entries) {
+      if (entry.type != 'T' && entry.type != 'R') {
+        print('ERROR: $libFlutter exports an unexpected symbol type: ($entry)');
+        print(' Library has $entries.');
+        failures++;
+        break;
+      }
+      if (!(entry.name.startsWith('Flutter')
+            || entry.name.startsWith('__Flutter'))) {
+        print('ERROR: $libFlutter exports an unexpected symbol name: ($entry)');
+        print(' Library has $entries.');
+        failures++;
+        break;
+      }
     }
   }
   return failures;
@@ -250,4 +298,7 @@ class NmEntry {
       return NmEntry._(parts[0], parts[1], parts.last);
     });
   }
+
+  @override
+  String toString() => '$name: $type';
 }

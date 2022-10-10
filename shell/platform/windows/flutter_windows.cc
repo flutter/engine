@@ -19,7 +19,9 @@
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
@@ -61,6 +63,32 @@ static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(registrar);
 }
 
+FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+    int width,
+    int height,
+    FlutterDesktopEngineRef engine) {
+  std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
+      std::make_unique<flutter::FlutterWindow>(width, height);
+
+  auto state = std::make_unique<FlutterDesktopViewControllerState>();
+  state->view =
+      std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
+  // Take ownership of the engine, starting it if necessary.
+  state->view->SetEngine(
+      std::unique_ptr<flutter::FlutterWindowsEngine>(EngineFromHandle(engine)));
+  state->view->CreateRenderSurface();
+  if (!state->view->GetEngine()->running()) {
+    if (!state->view->GetEngine()->Run()) {
+      return nullptr;
+    }
+  }
+
+  // Must happen after engine is running.
+  state->view->SendInitialBounds();
+  state->view->SendInitialAccessibilityFeatures();
+  return state.release();
+}
+
 void FlutterDesktopViewControllerDestroy(
     FlutterDesktopViewControllerRef controller) {
   delete controller;
@@ -79,6 +107,23 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
 void FlutterDesktopViewControllerForceRedraw(
     FlutterDesktopViewControllerRef controller) {
   controller->view->ForceRedraw();
+}
+
+bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
+    FlutterDesktopViewControllerRef controller,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam,
+    LRESULT* result) {
+  std::optional<LRESULT> delegate_result =
+      controller->view->GetEngine()
+          ->window_proc_delegate_manager()
+          ->OnTopLevelWindowProc(hwnd, message, wparam, lparam);
+  if (delegate_result) {
+    *result = *delegate_result;
+  }
+  return delegate_result.has_value();
 }
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
@@ -100,7 +145,11 @@ bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine_ref) {
 
 bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                              const char* entry_point) {
-  return EngineFromHandle(engine)->RunWithEntrypoint(entry_point);
+  return EngineFromHandle(engine)->Run(entry_point);
+}
+
+uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
+  return std::chrono::nanoseconds::max().count();
 }
 
 void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
@@ -128,13 +177,59 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
       EngineFromHandle(engine)->texture_registrar());
 }
 
+void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
+                                              VoidCallback callback,
+                                              void* user_data) {
+  EngineFromHandle(engine)->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return ViewFromHandle(view)->GetPlatformWindow();
+}
+
+IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
+  auto surface_manager = ViewFromHandle(view)->GetEngine()->surface_manager();
+  if (surface_manager) {
+    Microsoft::WRL::ComPtr<ID3D11Device> d3d_device;
+    Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
+    if (surface_manager->GetDevice(d3d_device.GetAddressOf()) &&
+        SUCCEEDED(d3d_device.As(&dxgi_device))) {
+      IDXGIAdapter* adapter;
+      if (SUCCEEDED(dxgi_device->GetAdapter(&adapter))) {
+        return adapter;
+      }
+    }
+  }
+  return nullptr;
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
   return HandleForView(registrar->engine->view());
+}
+
+void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate,
+    void* user_data) {
+  registrar->engine->window_proc_delegate_manager()
+      ->RegisterTopLevelWindowProcDelegate(delegate, user_data);
+}
+
+void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate) {
+  registrar->engine->window_proc_delegate_manager()
+      ->UnregisterTopLevelWindowProcDelegate(delegate);
+}
+
+UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
+  return flutter::GetDpiForHWND(hwnd);
+}
+
+UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
+  return flutter::GetDpiForMonitor(monitor);
 }
 
 void FlutterDesktopResyncOutputStreams() {
@@ -207,11 +302,18 @@ int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
       ->RegisterTexture(texture_info);
 }
 
-bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+void FlutterDesktopTextureRegistrarUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    int64_t texture_id) {
-  return TextureRegistrarFromHandle(texture_registrar)
-      ->UnregisterTexture(texture_id);
+    int64_t texture_id,
+    void (*callback)(void* user_data),
+    void* user_data) {
+  auto registrar = TextureRegistrarFromHandle(texture_registrar);
+  if (callback) {
+    registrar->UnregisterTexture(
+        texture_id, [callback, user_data]() { callback(user_data); });
+    return;
+  }
+  registrar->UnregisterTexture(texture_id);
 }
 
 bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(

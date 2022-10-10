@@ -48,7 +48,8 @@ struct TRect {
     return TRect(x, y, width, height);
   }
 
-  constexpr static TRect MakeSize(const TSize<Type>& size) {
+  template <class U>
+  constexpr static TRect MakeSize(const TSize<U>& size) {
     return TRect(0.0, 0.0, size.width, size.height);
   }
 
@@ -70,6 +71,13 @@ struct TRect {
       }
     }
     return TRect::MakeLTRB(left, top, right, bottom);
+  }
+
+  constexpr static TRect MakeMaximum() {
+    return TRect::MakeLTRB(-std::numeric_limits<Scalar>::infinity(),
+                           -std::numeric_limits<Scalar>::infinity(),
+                           std::numeric_limits<Scalar>::infinity(),
+                           std::numeric_limits<Scalar>::infinity());
   }
 
   template <class U>
@@ -138,6 +146,14 @@ struct TRect {
     return {left, top, right, bottom};
   }
 
+  /// @brief  Get a version of this rectangle that has a non-negative size.
+  constexpr TRect GetPositive() const {
+    auto ltrb = GetLTRB();
+    return MakeLTRB(ltrb[0], ltrb[1], ltrb[2], ltrb[3]);
+  }
+
+  /// @brief  Get the points that represent the 4 corners of this rectangle. The
+  ///         order is: Top left, top right, bottom left, bottom right.
   constexpr std::array<TPoint<T>, 4> GetPoints() const {
     auto [left, top, right, bottom] = GetLTRB();
     return {TPoint(left, top), TPoint(right, top), TPoint(left, bottom),
@@ -186,7 +202,7 @@ struct TRect {
   }
 
   constexpr bool IntersectsWithRect(const TRect& o) const {
-    return Interesection(o).has_value();
+    return Intersection(o).has_value();
   }
 };
 

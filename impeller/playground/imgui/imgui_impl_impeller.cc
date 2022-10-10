@@ -24,6 +24,7 @@
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/range.h"
 #include "impeller/renderer/render_pass.h"
@@ -36,7 +37,7 @@
 struct ImGui_ImplImpeller_Data {
   std::shared_ptr<impeller::Context> context;
   std::shared_ptr<impeller::Texture> font_texture;
-  std::shared_ptr<impeller::Pipeline> pipeline;
+  std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
   std::shared_ptr<const impeller::Sampler> sampler;
 };
 
@@ -70,12 +71,13 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
     auto texture_descriptor = impeller::TextureDescriptor{};
+    texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
     texture_descriptor.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
     texture_descriptor.size = {width, height};
     texture_descriptor.mip_count = 1u;
 
-    bd->font_texture = context->GetPermanentsAllocator()->CreateTexture(
-        impeller::StorageMode::kHostVisible, texture_descriptor);
+    bd->font_texture =
+        context->GetResourceAllocator()->CreateTexture(texture_descriptor);
     IM_ASSERT(bd->font_texture != nullptr &&
               "Could not allocate ImGui font texture.");
     bd->font_texture->SetLabel("ImGui Font Texture");
@@ -91,7 +93,6 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    desc->SetSampleCount(impeller::SampleCount::kCount4);
     auto stencil = desc->GetFrontStencilAttachmentDescriptor();
     if (stencil.has_value()) {
       stencil->stencil_compare = impeller::CompareFunction::kAlways;
@@ -100,7 +101,7 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     }
 
     bd->pipeline =
-        context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
 
     bd->sampler = context->GetSamplerLibrary()->GetSampler({});
@@ -136,8 +137,11 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   }
 
   // Allocate buffer for vertices + indices.
-  auto buffer = bd->context->GetTransientsAllocator()->CreateBuffer(
-      impeller::StorageMode::kHostVisible, total_vtx_bytes + total_idx_bytes);
+  impeller::DeviceBufferDescriptor buffer_desc;
+  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
+  buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
+
+  auto buffer = bd->context->GetResourceAllocator()->CreateBuffer(buffer_desc);
   buffer->SetLabel(impeller::SPrintF("ImGui vertex+index buffer"));
 
   auto display_rect =
@@ -224,8 +228,8 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         {
           // Clamp the clip to ensure it never goes outside of the render
           // target.
-          auto visible_clip = clip_rect.Intersection(impeller::Rect::MakeSize(
-              impeller::Size(render_pass.GetRenderTargetSize())));
+          auto visible_clip = clip_rect.Intersection(
+              impeller::Rect::MakeSize(render_pass.GetRenderTargetSize()));
           if (!visible_clip.has_value()) {
             continue;  // Nothing to render.
           }
@@ -239,7 +243,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         cmd.viewport = viewport;
         cmd.scissor = impeller::IRect(clip_rect);
 
-        cmd.winding = impeller::WindingOrder::kClockwise;
         cmd.pipeline = bd->pipeline;
         VS::BindUniformBuffer(cmd, vtx_uniforms);
         FS::BindTex(cmd, bd->font_texture, bd->sampler);

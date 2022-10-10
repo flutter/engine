@@ -92,6 +92,8 @@ template("runner_sources") {
       "platform_view.h",
       "pointer_delegate.cc",
       "pointer_delegate.h",
+      "pointer_injector_delegate.cc",
+      "pointer_injector_delegate.h",
       "program_metadata.h",
       "runner.cc",
       "runner.h",
@@ -104,6 +106,8 @@ template("runner_sources") {
       "surface_producer.h",
       "task_runner_adapter.cc",
       "task_runner_adapter.h",
+      "text_delegate.cc",
+      "text_delegate.h",
       "unique_fdio_ns.h",
       "vsync_waiter.cc",
       "vsync_waiter.h",
@@ -158,6 +162,7 @@ template("runner_sources") {
              "$fuchsia_sdk_root/fidl:fuchsia.ui.pointer",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.pointerinjector",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
              "$fuchsia_sdk_root/pkg:async-loop",
@@ -452,6 +457,34 @@ jit_runner("flutter_jit_product_runner") {
   product = true
 }
 
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+aot_runner("oot_flutter_aot_runner") {
+  product = false
+}
+
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+aot_runner("oot_flutter_aot_product_runner") {
+  product = true
+}
+
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+jit_runner("oot_flutter_jit_runner") {
+  product = false
+}
+
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+jit_runner("oot_flutter_jit_product_runner") {
+  product = true
+}
+
 test_fixtures("flutter_runner_fixtures") {
   fixtures = []
 }
@@ -472,6 +505,7 @@ if (enable_unittests) {
       "keyboard_unittest.cc",
       "platform_view_unittest.cc",
       "pointer_delegate_unittests.cc",
+      "pointer_injector_delegate_unittest.cc",
       "tests/engine_unittests.cc",
       "tests/fake_flatland_unittests.cc",
       "tests/fake_session_unittests.cc",
@@ -483,6 +517,7 @@ if (enable_unittests) {
       "tests/gfx_session_connection_unittests.cc",
       "tests/pointer_event_utility.cc",
       "tests/pointer_event_utility.h",
+      "text_delegate_unittests.cc",
       "vsync_waiter_unittest.cc",
     ]
 
@@ -878,7 +913,7 @@ if (enable_unittests) {
       ":testing_tests",
       ":txt_tests",
       ":ui_tests",
-      "integration_flutter_tests",
+      "tests/integration",
     ]
   }
 }

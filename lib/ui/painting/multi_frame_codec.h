@@ -9,6 +9,8 @@
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/image_generator.h"
 
+using tonic::DartPersistentValue;
+
 namespace flutter {
 
 class MultiFrameCodec : public Codec {
@@ -59,7 +61,7 @@ class MultiFrameCodec : public Codec {
 
     void GetNextFrameAndInvokeCallback(
         std::unique_ptr<DartPersistentValue> callback,
-        fml::RefPtr<fml::TaskRunner> ui_task_runner,
+        const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
         fml::WeakPtr<GrDirectContext> resourceContext,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,

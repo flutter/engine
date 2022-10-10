@@ -26,12 +26,12 @@ import 'surface.dart';
 class PersistedShaderMask extends PersistedContainerSurface
     implements ui.ShaderMaskEngineLayer {
   PersistedShaderMask(
-    PersistedShaderMask? oldLayer,
+    PersistedShaderMask? super.oldLayer,
     this.shader,
     this.maskRect,
     this.blendMode,
     this.filterQuality,
-  ) : super(oldLayer);
+  );
 
   DomElement? _childContainer;
   final ui.Shader shader;
@@ -57,6 +57,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   void discard() {
     super.discard();
     flutterViewEmbedder.removeResource(_shaderElement);
+    _shaderElement = null;
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.

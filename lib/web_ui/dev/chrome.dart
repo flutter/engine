@@ -8,7 +8,6 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:image/image.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
@@ -59,11 +58,6 @@ class ChromeEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class Chrome extends Browser {
-  final BrowserProcess _process;
-
-  @override
-  final Future<Uri> remoteDebuggerUrl;
-
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Chrome(Uri url, BrowserInstallation installation, {bool debug = false}) {
@@ -122,6 +116,11 @@ class Chrome extends Browser {
   }
 
   Chrome._(this._process, this.remoteDebuggerUrl);
+
+  final BrowserProcess _process;
+
+  @override
+  final Future<Uri> remoteDebuggerUrl;
 
   @override
   Future<void> get onExit => _process.onExit;
@@ -280,7 +279,7 @@ Future<Uri> getRemoteDebuggerUrl(Uri base) async {
     final HttpClientResponse response = await request.close();
     final List<dynamic>? jsonObject =
         await json.fuse(utf8).decoder.bind(response).single as List<dynamic>?;
-    return base.resolve(jsonObject!.first['devtoolsFrontendUrl'] as String);
+    return base.resolve((jsonObject!.first as Map<dynamic, dynamic>)['devtoolsFrontendUrl'] as String);
   } catch (_) {
     // If we fail to talk to the remote debugger protocol, give up and return
     // the raw URL rather than crashing.

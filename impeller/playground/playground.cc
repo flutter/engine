@@ -14,7 +14,6 @@
 #include "third_party/glfw/include/GLFW/glfw3.h"
 
 #include "flutter/fml/paths.h"
-#include "flutter/testing/testing.h"
 #include "impeller/base/validation.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/playground/imgui/imgui_impl_impeller.h"
@@ -36,6 +35,8 @@ std::string PlaygroundBackendToString(PlaygroundBackend backend) {
       return "Metal";
     case PlaygroundBackend::kOpenGLES:
       return "OpenGLES";
+    case PlaygroundBackend::kVulkan:
+      return "Vulkan";
   }
   FML_UNREACHABLE();
 }
@@ -74,15 +75,11 @@ Playground::Playground()
 
 Playground::~Playground() = default;
 
-PlaygroundBackend Playground::GetBackend() const {
-  return GetParam();
-}
-
 std::shared_ptr<Context> Playground::GetContext() const {
   return renderer_ ? renderer_->GetContext() : nullptr;
 }
 
-static constexpr bool PlatformSupportsBackend(PlaygroundBackend backend) {
+bool Playground::SupportsBackend(PlaygroundBackend backend) {
   switch (backend) {
     case PlaygroundBackend::kMetal:
 #if IMPELLER_ENABLE_METAL
@@ -96,16 +93,20 @@ static constexpr bool PlatformSupportsBackend(PlaygroundBackend backend) {
 #else   // IMPELLER_ENABLE_OPENGLES
       return false;
 #endif  // IMPELLER_ENABLE_OPENGLES
+    case PlaygroundBackend::kVulkan:
+#if IMPELLER_ENABLE_VULKAN
+      return true;
+#else   // IMPELLER_ENABLE_VULKAN
+      return false;
+#endif  // IMPELLER_ENABLE_VULKAN
   }
   FML_UNREACHABLE();
 }
 
-void Playground::SetUp() {
-  if (!PlatformSupportsBackend(GetBackend())) {
-    GTEST_SKIP_("This backend is disabled or isn't supported on this platform");
-  }
+void Playground::SetupWindow(PlaygroundBackend backend) {
+  FML_CHECK(SupportsBackend(backend));
 
-  impl_ = PlaygroundImpl::Create(GetParam());
+  impl_ = PlaygroundImpl::Create(backend);
   if (!impl_) {
     return;
   }
@@ -120,9 +121,15 @@ void Playground::SetUp() {
   renderer_ = std::move(renderer);
 }
 
-void Playground::TearDown() {
+void Playground::TeardownWindow() {
   renderer_.reset();
   impl_.reset();
+}
+
+static std::atomic_bool gShouldOpenNewPlaygrounds = true;
+
+bool Playground::ShouldOpenNewPlaygrounds() {
+  return gShouldOpenNewPlaygrounds;
 }
 
 static void PlaygroundKeyCallback(GLFWwindow* window,
@@ -131,15 +138,11 @@ static void PlaygroundKeyCallback(GLFWwindow* window,
                                   int action,
                                   int mods) {
   if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_RELEASE) {
+    if (mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER | GLFW_MOD_SHIFT)) {
+      gShouldOpenNewPlaygrounds = false;
+    }
     ::glfwSetWindowShouldClose(window, GLFW_TRUE);
   }
-}
-
-static std::string GetWindowTitle(const std::string& test_name) {
-  std::stringstream stream;
-  stream << "Impeller Playground for '" << test_name
-         << "' (Press ESC or 'q' to quit)";
-  return stream.str();
 }
 
 Point Playground::GetCursorPosition() const {
@@ -158,7 +161,8 @@ void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
 
-bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
+bool Playground::OpenPlaygroundHere(
+    const Renderer::RenderCallback& render_callback) {
   if (!is_enabled()) {
     return true;
   }
@@ -182,8 +186,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
   if (!window) {
     return false;
   }
-  ::glfwSetWindowTitle(
-      window, GetWindowTitle(flutter::testing::GetCurrentTestName()).c_str());
+  ::glfwSetWindowTitle(window, GetWindowTitle().c_str());
   ::glfwSetWindowUserPointer(window, this);
   ::glfwSetWindowSizeCallback(
       window, [](GLFWwindow* window, int width, int height) -> void {
@@ -231,7 +234,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
       // Render ImGui overlay.
       {
-        auto buffer = renderer->GetContext()->CreateRenderCommandBuffer();
+        auto buffer = renderer->GetContext()->CreateCommandBuffer();
         if (!buffer) {
           return false;
         }
@@ -240,9 +243,46 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
         if (render_target.GetColorAttachments().empty()) {
           return false;
         }
+
         auto color0 = render_target.GetColorAttachments().find(0)->second;
         color0.load_action = LoadAction::kLoad;
+        if (color0.resolve_texture) {
+          color0.texture = color0.resolve_texture;
+          color0.resolve_texture = nullptr;
+          color0.store_action = StoreAction::kStore;
+        }
         render_target.SetColorAttachment(color0, 0);
+
+#ifndef IMPELLER_ENABLE_VULKAN
+        {
+          TextureDescriptor stencil0_tex;
+          stencil0_tex.storage_mode = StorageMode::kDeviceTransient;
+          stencil0_tex.type = TextureType::kTexture2D;
+          stencil0_tex.sample_count = SampleCount::kCount1;
+          stencil0_tex.format = PixelFormat::kDefaultStencil;
+          stencil0_tex.size = color0.texture->GetSize();
+          stencil0_tex.usage =
+              static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+          auto stencil_texture =
+              renderer->GetContext()->GetResourceAllocator()->CreateTexture(
+                  stencil0_tex);
+
+          if (!stencil_texture) {
+            VALIDATION_LOG << "Could not create stencil texture.";
+            return false;
+          }
+          stencil_texture->SetLabel("ImguiStencil");
+
+          StencilAttachment stencil0;
+          stencil0.texture = stencil_texture;
+          stencil0.clear_stencil = 0;
+          stencil0.load_action = LoadAction::kClear;
+          stencil0.store_action = StoreAction::kDontCare;
+
+          render_target.SetStencilAttachment(stencil0);
+        }
+#endif
+
         auto pass = buffer->CreateRenderPass(render_target);
         if (!pass) {
           return false;
@@ -251,7 +291,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
         ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass);
 
-        pass->EncodeCommands(renderer->GetContext()->GetTransientsAllocator());
+        pass->EncodeCommands();
         if (!buffer->SubmitCommands()) {
           return false;
         }
@@ -275,7 +315,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
   return OpenPlaygroundHere(
       [context = GetContext(), &pass_callback](RenderTarget& render_target) {
-        auto buffer = context->CreateRenderCommandBuffer();
+        auto buffer = context->CreateCommandBuffer();
         if (!buffer) {
           return false;
         }
@@ -291,7 +331,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
           return false;
         }
 
-        pass->EncodeCommands(context->GetTransientsAllocator());
+        pass->EncodeCommands();
         if (!buffer->SubmitCommands()) {
           return false;
         }
@@ -301,12 +341,12 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
 
 std::optional<DecompressedImage> Playground::LoadFixtureImageRGBA(
     const char* fixture_name) const {
-  if (!renderer_) {
+  if (!renderer_ || fixture_name == nullptr) {
     return std::nullopt;
   }
 
-  auto compressed_image = CompressedImage::Create(
-      flutter::testing::OpenFixtureAsMapping(fixture_name));
+  auto compressed_image =
+      CompressedImage::Create(OpenAssetAsMapping(fixture_name));
   if (!compressed_image) {
     VALIDATION_LOG << "Could not create compressed image.";
     return std::nullopt;
@@ -326,20 +366,22 @@ std::optional<DecompressedImage> Playground::LoadFixtureImageRGBA(
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
-    const char* fixture_name) const {
+    const char* fixture_name,
+    bool enable_mipmapping) const {
   auto image = LoadFixtureImageRGBA(fixture_name);
   if (!image.has_value()) {
     return nullptr;
   }
 
   auto texture_descriptor = TextureDescriptor{};
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = image->GetSize();
-  texture_descriptor.mip_count = 1u;
+  texture_descriptor.mip_count =
+      enable_mipmapping ? image->GetSize().MipCount() : 1u;
 
-  auto texture =
-      renderer_->GetContext()->GetPermanentsAllocator()->CreateTexture(
-          StorageMode::kHostVisible, texture_descriptor);
+  auto texture = renderer_->GetContext()->GetResourceAllocator()->CreateTexture(
+      texture_descriptor);
   if (!texture) {
     VALIDATION_LOG << "Could not allocate texture for fixture " << fixture_name;
     return nullptr;
@@ -367,14 +409,14 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
   }
 
   auto texture_descriptor = TextureDescriptor{};
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
   texture_descriptor.type = TextureType::kTextureCube;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = images[0].GetSize();
   texture_descriptor.mip_count = 1u;
 
-  auto texture =
-      renderer_->GetContext()->GetPermanentsAllocator()->CreateTexture(
-          StorageMode::kHostVisible, texture_descriptor);
+  auto texture = renderer_->GetContext()->GetResourceAllocator()->CreateTexture(
+      texture_descriptor);
   if (!texture) {
     VALIDATION_LOG << "Could not allocate texture cube.";
     return nullptr;

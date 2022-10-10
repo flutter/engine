@@ -32,10 +32,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
   // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, std::move(framebuffer_info),
+        nullptr, framebuffer_info,
         [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
-        });
+        },
+        logical_size);
   }
 
   if (!IsValid()) {
@@ -73,8 +74,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
     return self->delegate_->PresentBackingStore(surface_frame.SkiaSurface());
   };
 
-  return std::make_unique<SurfaceFrame>(backing_store,
-                                        std::move(framebuffer_info), on_submit);
+  return std::make_unique<SurfaceFrame>(backing_store, framebuffer_info,
+                                        on_submit, logical_size);
 }
 
 // |Surface|

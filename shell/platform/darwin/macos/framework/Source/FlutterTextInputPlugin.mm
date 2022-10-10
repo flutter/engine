@@ -32,6 +32,7 @@ static NSString* const kUpdateEditStateResponseMethod = @"TextInputClient.update
 static NSString* const kUpdateEditStateWithDeltasResponseMethod =
     @"TextInputClient.updateEditingStateWithDeltas";
 static NSString* const kPerformAction = @"TextInputClient.performAction";
+static NSString* const kPerformSelectors = @"TextInputClient.performSelectors";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
 static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
@@ -175,6 +176,13 @@ static char markerKey;
 @property(nonatomic) BOOL enableDeltaModel;
 
 /**
+ * Used to gather multiple selectors performed in one run loop turn. These
+ * will be all sent in one platform channel call so that the framework can process
+ * them in single microtask.
+ */
+@property(nonatomic) NSMutableArray* pendingSelectors;
+
+/**
  * Handles a Flutter system message on the text input channel.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -211,6 +219,11 @@ static char markerKey;
  * sent over the FlutterMethodChannel.
  */
 - (NSString*)textAffinityString;
+
+/**
+ * Allow overriding run loop mode for test.
+ */
+@property(readwrite, nonatomic) NSString* customRunLoopMode;
 
 @end
 
@@ -504,10 +517,6 @@ static char markerKey;
                                                              : kTextAffinityDownstream;
 }
 
-- (BOOL)isComposing {
-  return _activeModel && !_activeModel->composing_range().collapsed();
-}
-
 - (BOOL)handleKeyEvent:(NSEvent*)event {
   if (event.type == NSEventTypeKeyUp ||
       (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
@@ -615,6 +624,11 @@ static char markerKey;
 #pragma mark -
 #pragma mark NSTextInputClient
 
+- (void)insertTab:(id)sender {
+  // Implementing insertTab: makes AppKit send tab as command, instead of
+  // insertText with '\t'.
+}
+
 - (void)insertText:(id)string replacementRange:(NSRange)range {
   if (_activeModel == nullptr) {
     return;
@@ -670,6 +684,36 @@ static char markerKey;
     void (*func)(id, SEL, id) = reinterpret_cast<void (*)(id, SEL, id)>(imp);
     func(self, selector, nil);
   }
+
+  if (selector == @selector(insertNewline:)) {
+    // Already handled through text insertion (multiline) or action.
+    return;
+  }
+
+  // Group multiple selectors received within a single run loop turn so that
+  // the framework can process them in single microtask.
+  NSString* name = NSStringFromSelector(selector);
+  if (_pendingSelectors == nil) {
+    _pendingSelectors = [NSMutableArray array];
+  }
+  [_pendingSelectors addObject:name];
+
+  if (_pendingSelectors.count == 1) {
+    __weak NSMutableArray* selectors = _pendingSelectors;
+    __weak FlutterMethodChannel* channel = _channel;
+    __weak NSNumber* clientID = self.clientID;
+
+    CFStringRef runLoopMode = self.customRunLoopMode != nil
+                                  ? (__bridge CFStringRef)self.customRunLoopMode
+                                  : kCFRunLoopCommonModes;
+
+    CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
+      if (selectors.count > 0) {
+        [channel invokeMethod:kPerformSelectors arguments:@[ clientID, selectors ]];
+        [selectors removeAllObjects];
+      }
+    });
+  }
 }
 
 - (void)insertNewline:(id)sender {
@@ -696,6 +740,19 @@ static char markerKey;
   if (!_activeModel->composing()) {
     _activeModel->BeginComposing();
   }
+
+  if (replacementRange.location != NSNotFound) {
+    // According to the NSTextInputClient documentation replacementRange is
+    // computed from the beginning of the marked text. That doesn't seem to be
+    // the case, because in situations where the replacementRange is actually
+    // specified (i.e. when switching between characters equivalent after long
+    // key press) the replacementRange is provided while there is no composition.
+    _activeModel->SetComposingRange(
+        flutter::TextRange(replacementRange.location,
+                           replacementRange.location + replacementRange.length),
+        0);
+  }
+
   flutter::TextRange composingBeforeChange = _activeModel->composing_range();
   flutter::TextRange selectionBeforeChange = _activeModel->selection();
 
@@ -767,24 +824,57 @@ static char markerKey;
   return @[];
 }
 
-- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange {
-  if (!self.flutterViewController.viewLoaded) {
-    return CGRectZero;
+// Returns the bounding CGRect of the transformed incomingRect, in screen
+// coordinates.
+- (CGRect)screenRectFromFrameworkTransform:(CGRect)incomingRect {
+  CGPoint points[] = {
+      incomingRect.origin,
+      CGPointMake(incomingRect.origin.x, incomingRect.origin.y + incomingRect.size.height),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width, incomingRect.origin.y),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                  incomingRect.origin.y + incomingRect.size.height)};
+
+  CGPoint origin = CGPointMake(CGFLOAT_MAX, CGFLOAT_MAX);
+  CGPoint farthest = CGPointMake(-CGFLOAT_MAX, -CGFLOAT_MAX);
+
+  for (int i = 0; i < 4; i++) {
+    const CGPoint point = points[i];
+
+    CGFloat x = _editableTransform.m11 * point.x + _editableTransform.m21 * point.y +
+                _editableTransform.m41;
+    CGFloat y = _editableTransform.m12 * point.x + _editableTransform.m22 * point.y +
+                _editableTransform.m42;
+
+    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
+                      _editableTransform.m44;
+
+    if (w == 0.0) {
+      return CGRectZero;
+    } else if (w != 1.0) {
+      x /= w;
+      y /= w;
+    }
+
+    origin.x = MIN(origin.x, x);
+    origin.y = MIN(origin.y, y);
+    farthest.x = MAX(farthest.x, x);
+    farthest.y = MAX(farthest.y, y);
   }
+
+  const NSView* fromView = self.flutterViewController.flutterView;
+  const CGRect rectInWindow = [fromView
+      convertRect:CGRectMake(origin.x, origin.y, farthest.x - origin.x, farthest.y - origin.y)
+           toView:nil];
+  NSWindow* window = fromView.window;
+  return window ? [window convertRectToScreen:rectInWindow] : rectInWindow;
+}
+
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange {
   // This only determines position of caret instead of any arbitrary range, but it's enough
   // to properly position accent selection popup
-  if (CATransform3DIsAffine(_editableTransform) && !CGRectEqualToRect(_caretRect, CGRectNull)) {
-    CGRect rect =
-        CGRectApplyAffineTransform(_caretRect, CATransform3DGetAffineTransform(_editableTransform));
-
-    // convert to window coordinates
-    rect = [self.flutterViewController.flutterView convertRect:rect toView:nil];
-
-    // convert to screen coordinates
-    return [self.flutterViewController.flutterView.window convertRectToScreen:rect];
-  } else {
-    return CGRectZero;
-  }
+  return !self.flutterViewController.viewLoaded || CGRectEqualToRect(_caretRect, CGRectNull)
+             ? CGRectZero
+             : [self screenRectFromFrameworkTransform:_caretRect];
 }
 
 - (NSUInteger)characterIndexForPoint:(NSPoint)point {

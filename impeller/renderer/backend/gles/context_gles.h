@@ -21,7 +21,7 @@ class ContextGLES final : public Context,
  public:
   static std::shared_ptr<ContextGLES> Create(
       std::unique_ptr<ProcTableGLES> gl,
-      std::vector<std::shared_ptr<fml::Mapping>> shader_libraries);
+      const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries);
 
   // |Context|
   ~ContextGLES() override;
@@ -29,7 +29,7 @@ class ContextGLES final : public Context,
   const ReactorGLES::Ref& GetReactor() const;
 
   std::optional<ReactorGLES::WorkerID> AddReactorWorker(
-      std::shared_ptr<ReactorGLES::Worker> worker);
+      const std::shared_ptr<ReactorGLES::Worker>& worker);
 
   bool RemoveReactorWorker(ReactorGLES::WorkerID id);
 
@@ -38,21 +38,19 @@ class ContextGLES final : public Context,
   std::shared_ptr<ShaderLibraryGLES> shader_library_;
   std::shared_ptr<PipelineLibraryGLES> pipeline_library_;
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
-  std::shared_ptr<AllocatorGLES> permanents_allocator_;
-  std::shared_ptr<AllocatorGLES> transients_allocator_;
+  std::shared_ptr<WorkQueue> work_queue_;
+  std::shared_ptr<AllocatorGLES> resource_allocator_;
   bool is_valid_ = false;
 
-  ContextGLES(std::unique_ptr<ProcTableGLES> gl,
-              std::vector<std::shared_ptr<fml::Mapping>> shader_libraries);
+  ContextGLES(
+      std::unique_ptr<ProcTableGLES> gl,
+      const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries);
 
   // |Context|
   bool IsValid() const override;
 
   // |Context|
-  std::shared_ptr<Allocator> GetPermanentsAllocator() const override;
-
-  // |Context|
-  std::shared_ptr<Allocator> GetTransientsAllocator() const override;
+  std::shared_ptr<Allocator> GetResourceAllocator() const override;
 
   // |Context|
   std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override;
@@ -64,13 +62,16 @@ class ContextGLES final : public Context,
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override;
 
   // |Context|
-  std::shared_ptr<CommandBuffer> CreateRenderCommandBuffer() const override;
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  std::shared_ptr<CommandBuffer> CreateTransferCommandBuffer() const override;
+  std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
   bool HasThreadingRestrictions() const override;
+
+  // |Context|
+  bool SupportsOffscreenMSAA() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };

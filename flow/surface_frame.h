@@ -51,12 +51,13 @@ class SurfaceFrame {
     // If existing damage is unspecified (nullopt), entire frame will be
     // rasterized (no partial redraw). To signal that there is no existing
     // damage use an empty SkIRect.
-    std::optional<SkIRect> existing_damage;
+    std::optional<SkIRect> existing_damage = std::nullopt;
   };
 
   SurfaceFrame(sk_sp<SkSurface> surface,
                FramebufferInfo framebuffer_info,
                const SubmitCallback& submit_callback,
+               SkISize frame_size,
                std::unique_ptr<GLContextResult> context_result = nullptr,
                bool display_list_fallback = false);
 

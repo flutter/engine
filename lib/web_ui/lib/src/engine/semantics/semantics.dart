@@ -382,7 +382,7 @@ abstract class RoleManager {
   ///
   /// A single role object manages exactly one [SemanticsObject].
   RoleManager(this.role, this.semanticsObject)
-      : assert(semanticsObject != null); // ignore: unnecessary_null_comparison
+      : assert(semanticsObject != null);
 
   /// Role identifier.
   final Role role;
@@ -869,7 +869,7 @@ class SemanticsObject {
   void updateSelf(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
-    assert(update.flags != null); // ignore: unnecessary_null_comparison
+    assert(update.flags != null);
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
@@ -1337,7 +1337,7 @@ class SemanticsObject {
       } else {
         // Clone to avoid mutating _transform.
         effectiveTransform = Matrix4.fromFloat32List(transform).clone()
-          ..translate(_rect!.left, _rect!.top, 0.0);
+          ..translate(_rect!.left, _rect!.top);
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
@@ -1473,8 +1473,8 @@ class EngineSemanticsOwner {
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
-    assert(child != null); // ignore: unnecessary_null_comparison
-    assert(parent != null); // ignore: unnecessary_null_comparison
+    assert(child != null);
+    assert(parent != null);
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -1549,8 +1549,6 @@ class EngineSemanticsOwner {
 
   /// The top-level DOM element of the semantics DOM element tree.
   DomElement? _rootSemanticsElement;
-
-  // ignore: prefer_function_declarations_over_variables
   TimestampFunction _now = () => DateTime.now();
 
   void debugOverrideTimestampFunction(TimestampFunction value) {
@@ -1615,7 +1613,7 @@ class EngineSemanticsOwner {
   /// The default mode is [AccessibilityMode.unknown].
   AccessibilityMode get mode => _mode;
   set mode(AccessibilityMode value) {
-    assert(value != null); // ignore: unnecessary_null_comparison
+    assert(value != null);
     _mode = value;
   }
 
@@ -1652,8 +1650,8 @@ class EngineSemanticsOwner {
   /// This is used to deduplicate gestures detected by Flutter and gestures
   /// detected by the browser. Flutter-detected gestures have higher precedence.
   void _temporarilyDisableBrowserGestureMode() {
-    const Duration _kDebounceThreshold = Duration(milliseconds: 500);
-    _getGestureModeClock()!.datetime = _now().add(_kDebounceThreshold);
+    const Duration kDebounceThreshold = Duration(milliseconds: 500);
+    _getGestureModeClock()!.datetime = _now().add(kDebounceThreshold);
     if (_gestureMode != GestureMode.pointerEvents) {
       _gestureMode = GestureMode.pointerEvents;
       _notifyGestureModeListeners();
@@ -1694,7 +1692,7 @@ class EngineSemanticsOwner {
     // For pointer event reference see:
     //
     // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
-    const List<String> _pointerEventTypes = <String>[
+    const List<String> pointerEventTypes = <String>[
       'pointerdown',
       'pointermove',
       'pointerleave',
@@ -1712,7 +1710,7 @@ class EngineSemanticsOwner {
       'keydown',
     ];
 
-    if (_pointerEventTypes.contains(event.type)) {
+    if (pointerEventTypes.contains(event.type)) {
       _temporarilyDisableBrowserGestureMode();
     }
 
@@ -1724,7 +1722,7 @@ class EngineSemanticsOwner {
   /// Callbacks are called synchronously. HTML DOM updates made in a callback
   /// take effect in the current animation frame and/or the current message loop
   /// event.
-  List<GestureModeCallback?> _gestureModeListeners = <GestureModeCallback?>[];
+  final List<GestureModeCallback?> _gestureModeListeners = <GestureModeCallback?>[];
 
   /// Calls the [callback] every time the current [GestureMode] changes.
   ///

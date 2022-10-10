@@ -62,10 +62,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
     if (weak) {
       GLPresentInfo present_info = {
           .fbo_id = 0,
-          .damage = std::nullopt,
+          .frame_damage = std::nullopt,
           // TODO (https://github.com/flutter/flutter/issues/105597): wire-up
           // presentation time to impeller backend.
           .presentation_time = std::nullopt,
+          .buffer_damage = std::nullopt,
       };
       delegate->GLContextPresent(present_info);
     }
@@ -119,6 +120,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       nullptr,                          // surface
       SurfaceFrame::FramebufferInfo{},  // framebuffer info
       submit_callback,                  // submit callback
+      size,                             // frame size
       std::move(context_switch),        // context result
       true                              // display list fallback
   );
@@ -155,6 +157,11 @@ bool GPUSurfaceGLImpeller::AllowsDrawingWhenGpuDisabled() const {
 // |Surface|
 bool GPUSurfaceGLImpeller::EnableRasterCache() const {
   return false;
+}
+
+// |Surface|
+impeller::AiksContext* GPUSurfaceGLImpeller::GetAiksContext() const {
+  return aiks_context_.get();
 }
 
 }  // namespace flutter

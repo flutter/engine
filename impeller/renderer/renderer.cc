@@ -33,7 +33,7 @@ bool Renderer::IsValid() const {
 }
 
 bool Renderer::Render(std::unique_ptr<Surface> surface,
-                      RenderCallback render_callback) const {
+                      const RenderCallback& render_callback) const {
   TRACE_EVENT0("impeller", "Renderer::Render");
   if (!IsValid()) {
     return false;
@@ -53,8 +53,11 @@ bool Renderer::Render(std::unique_ptr<Surface> surface,
     return false;
   }
 
+  const auto present_result = surface->Present();
+
   frames_in_flight_sema_->Signal();
-  return surface->Present();
+
+  return present_result;
 }
 
 std::shared_ptr<Context> Renderer::GetContext() const {

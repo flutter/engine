@@ -173,6 +173,74 @@
   return true;
 }
 
+- (bool)testSetMarkedTextWithReplacementRange {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
+  [plugin handleMethodCall:[FlutterMethodCall
+                               methodCallWithMethodName:@"TextInput.setClient"
+                                              arguments:@[
+                                                @(1), @{
+                                                  @"inputAction" : @"action",
+                                                  @"inputType" : @{@"name" : @"inputName"},
+                                                }
+                                              ]]
+                    result:^(id){
+                    }];
+
+  FlutterMethodCall* call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
+                                                              arguments:@{
+                                                                @"text" : @"1234",
+                                                                @"selectionBase" : @(3),
+                                                                @"selectionExtent" : @(3),
+                                                                @"composingBase" : @(-1),
+                                                                @"composingExtent" : @(-1),
+                                                              }];
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  [plugin setMarkedText:@"marked"
+          selectedRange:NSMakeRange(1, 0)
+       replacementRange:NSMakeRange(1, 2)];
+
+  NSDictionary* expectedState = @{
+    @"selectionBase" : @(2),
+    @"selectionExtent" : @(2),
+    @"selectionAffinity" : @"TextAffinity.upstream",
+    @"selectionIsDirectional" : @(NO),
+    @"composingBase" : @(1),
+    @"composingExtent" : @(7),
+    @"text" : @"1marked4",
+  };
+
+  NSData* updateCall = [[FlutterJSONMethodCodec sharedInstance]
+      encodeMethodCall:[FlutterMethodCall
+                           methodCallWithMethodName:@"TextInputClient.updateEditingState"
+                                          arguments:@[ @(1), expectedState ]]];
+
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
+  } @catch (...) {
+    return false;
+  }
+  return true;
+}
+
 - (bool)testComposingRegionRemovedByFramework {
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
@@ -370,7 +438,6 @@
                     }];
 
   NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
-
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
         [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)]);
@@ -379,6 +446,148 @@
   }
 
   return NSEqualRects(rect, NSMakeRect(38, 20, 2, 19));
+}
+
+- (bool)testFirstRectForCharacterRangeAtInfinity {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  FlutterViewController* controllerMock = OCMClassMock([FlutterViewController class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock engine])
+      .andReturn(engineMock);
+
+  id viewMock = OCMClassMock([NSView class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock bounds])
+      .andReturn(NSMakeRect(0, 0, 200, 200));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      controllerMock.viewLoaded)
+      .andReturn(YES);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock flutterView])
+      .andReturn(viewMock);
+
+  id windowMock = OCMClassMock([NSWindow class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock window])
+      .andReturn(windowMock);
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
+
+  FlutterMethodCall* call = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                     arguments:@{
+                       @"height" : @(20.0),
+                       // Projects all points to infinity.
+                       @"transform" : @[
+                         @(1.0), @(0.0), @(0.0), @(0.0), @(0.0), @(1.0), @(0.0), @(0.0), @(0.0),
+                         @(0.0), @(1.0), @(0.0), @(20.0), @(10.0), @(0.0), @(0.0)
+                       ],
+                       @"width" : @(400.0),
+                     }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setCaretRect"
+                                           arguments:@{
+                                             @"height" : @(19.0),
+                                             @"width" : @(2.0),
+                                             @"x" : @(8.0),
+                                             @"y" : @(0.0),
+                                           }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
+  return NSEqualRects(rect, CGRectZero);
+}
+
+- (bool)testFirstRectForCharacterRangeWithEsotericAffineTransform {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  FlutterViewController* controllerMock = OCMClassMock([FlutterViewController class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock engine])
+      .andReturn(engineMock);
+
+  id viewMock = OCMClassMock([NSView class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock bounds])
+      .andReturn(NSMakeRect(0, 0, 200, 200));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      controllerMock.viewLoaded)
+      .andReturn(YES);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock flutterView])
+      .andReturn(viewMock);
+
+  id windowMock = OCMClassMock([NSWindow class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock window])
+      .andReturn(windowMock);
+
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock convertRect:NSMakeRect(-18, 6, 3, 3) toView:nil])
+      .andReturn(NSMakeRect(-18, 6, 3, 3));
+
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [windowMock convertRectToScreen:NSMakeRect(-18, 6, 3, 3)])
+      .andReturn(NSMakeRect(-18, 6, 3, 3));
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
+
+  FlutterMethodCall* call = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                     arguments:@{
+                       @"height" : @(20.0),
+                       // This matrix can be generated by running this dart code snippet:
+                       // Matrix4.identity()..scale(3.0)..rotateZ(math.pi/2)..translate(1.0, 2.0,
+                       // 3.0);
+                       @"transform" : @[
+                         @(0.0), @(3.0), @(0.0), @(0.0), @(-3.0), @(0.0), @(0.0), @(0.0), @(0.0),
+                         @(0.0), @(3.0), @(0.0), @(-6.0), @(3.0), @(9.0), @(1.0)
+                       ],
+                       @"width" : @(400.0),
+                     }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setCaretRect"
+                                           arguments:@{
+                                             @"height" : @(1.0),
+                                             @"width" : @(1.0),
+                                             @"x" : @(1.0),
+                                             @"y" : @(3.0),
+                                           }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [windowMock convertRectToScreen:NSMakeRect(-18, 6, 3, 3)]);
+  } @catch (...) {
+    return false;
+  }
+
+  return NSEqualRects(rect, NSMakeRect(-18, 6, 3, 3));
 }
 
 - (bool)testSetEditingStateWithTextEditingDelta {
@@ -1057,6 +1266,68 @@
   return localTextAndSelectionUpdated;
 }
 
+- (bool)testSelectorsAreForwardedToFramework {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
+  [plugin handleMethodCall:[FlutterMethodCall
+                               methodCallWithMethodName:@"TextInput.setClient"
+                                              arguments:@[
+                                                @(1), @{
+                                                  @"inputAction" : @"action",
+                                                  @"enableDeltaModel" : @"true",
+                                                  @"inputType" : @{@"name" : @"inputName"},
+                                                }
+                                              ]]
+                    result:^(id){
+                    }];
+
+  // Can't run CFRunLoop in default mode because it causes crashes from scheduled
+  // sources from other tests.
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  plugin.customRunLoopMode = runLoopMode;
+
+  // Ensure both selectors are grouped in one platform channel call.
+  [plugin doCommandBySelector:@selector(moveUp:)];
+  [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
+
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source.
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+
+  NSData* performSelectorCall = [[FlutterJSONMethodCodec sharedInstance]
+      encodeMethodCall:[FlutterMethodCall
+                           methodCallWithMethodName:@"TextInputClient.performSelectors"
+                                          arguments:@[
+                                            @(1), @[ @"moveUp:", @"moveRightAndModifySelection:" ]
+                                          ]]];
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:performSelectorCall]);
+  } @catch (...) {
+    return false;
+  }
+
+  return true;
+}
+
 @end
 
 namespace flutter::testing {
@@ -1080,6 +1351,10 @@ TEST(FlutterTextInputPluginTest, TestSetMarkedTextWithSelectionChange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSetMarkedTextWithSelectionChange]);
 }
 
+TEST(FlutterTextInputPluginTest, TestSetMarkedTextWithReplacementRange) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSetMarkedTextWithReplacementRange]);
+}
+
 TEST(FlutterTextInputPluginTest, TestComposingRegionRemovedByFramework) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingRegionRemovedByFramework]);
 }
@@ -1090,6 +1365,15 @@ TEST(FlutterTextInputPluginTest, TestClearClientDuringComposing) {
 
 TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testFirstRectForCharacterRange]);
+}
+
+TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeAtInfinity) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testFirstRectForCharacterRangeAtInfinity]);
+}
+
+TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeWithEsotericAffineTransform) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc]
+      testFirstRectForCharacterRangeWithEsotericAffineTransform]);
 }
 
 TEST(FlutterTextInputPluginTest, TestSetEditingStateWithTextEditingDelta) {
@@ -1118,6 +1402,10 @@ TEST(FlutterTextInputPluginTest, TestPerformKeyEquivalent) {
 
 TEST(FlutterTextInputPluginTest, UnhandledKeyEquivalent) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] unhandledKeyEquivalent]);
+}
+
+TEST(FlutterTextInputPluginTest, TestSelectorsAreForwardedToFramework) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSelectorsAreForwardedToFramework]);
 }
 
 TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {

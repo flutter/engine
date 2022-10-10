@@ -275,7 +275,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const SkPoint point,
                  DlImageSampling sampling,
                  bool render_with_attributes) override;
-  void drawImage(const sk_sp<DlImage> image,
+  void drawImage(const sk_sp<DlImage>& image,
                  const SkPoint point,
                  DlImageSampling sampling,
                  const DlPaint* paint = nullptr);
@@ -287,7 +287,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
-  void drawImageRect(const sk_sp<DlImage> image,
+  void drawImageRect(const sk_sp<DlImage>& image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
@@ -299,7 +299,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                      const SkRect& dst,
                      DlFilterMode filter,
                      bool render_with_attributes) override;
-  void drawImageNine(const sk_sp<DlImage> image,
+  void drawImageNine(const sk_sp<DlImage>& image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
@@ -318,7 +318,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
-  void drawAtlas(const sk_sp<DlImage> atlas,
+  void drawAtlas(const sk_sp<DlImage>& atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
                  const DlColor colors[],
@@ -343,6 +343,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   sk_sp<DisplayList> Build();
 
  private:
+  void checkForDeferredSave();
+
   SkAutoTMalloc<uint8_t> storage_;
   size_t used_ = 0;
   size_t allocated_ = 0;
@@ -361,6 +363,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   void setAttributesFromDlPaint(const DlPaint& paint,
                                 const DisplayListAttributeFlags flags);
+  void intersect(const SkRect& rect);
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
@@ -395,6 +398,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
     // is handled (e.g., |cannot_inherit_opacity| == false).
     // This offset is only valid if |has_layer| is true.
     size_t save_layer_offset;
+
+    bool has_deferred_save_op_ = false;
 
     bool has_layer;
     bool cannot_inherit_opacity;

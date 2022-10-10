@@ -16,49 +16,24 @@ using tonic::ToDart;
 
 namespace flutter {
 
-static void ImageShader_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&ImageShader::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageShader);
 
-#define FOR_EACH_BINDING(V) V(ImageShader, initWithImage)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ImageShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ImageShader_constructor", ImageShader_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
-fml::RefPtr<ImageShader> ImageShader::Create() {
-  return fml::MakeRefCounted<ImageShader>();
+void ImageShader::Create(Dart_Handle wrapper) {
+  auto res = fml::MakeRefCounted<ImageShader>();
+  res->AssociateWithDartWrapper(wrapper);
 }
 
 Dart_Handle ImageShader::initWithImage(CanvasImage* image,
                                        SkTileMode tmx,
                                        SkTileMode tmy,
                                        int filter_quality_index,
-                                       tonic::Float64List& matrix4) {
+                                       Dart_Handle matrix_handle) {
   if (!image) {
-    matrix4.Release();
     return ToDart("ImageShader constructor called with non-genuine Image.");
   }
 
-  if (image->image()->owning_context() != DlImage::OwningContext::kIO) {
-    matrix4.Release();
-    // TODO(dnfield): it should be possible to support this
-    // https://github.com/flutter/flutter/issues/105085
-    return ToDart("ImageShader constructor with GPU image is not supported.");
-  }
-
-  auto raw_sk_image = image->image()->skia_image();
-  if (!raw_sk_image) {
-    matrix4.Release();
-    return ToDart("ImageShader constructor with Impeller is not supported.");
-  }
-  sk_image_ = UIDartState::CreateGPUObject(std::move(raw_sk_image));
+  image_ = image->image();
+  tonic::Float64List matrix4(matrix_handle);
   SkMatrix local_matrix = ToSkMatrix(matrix4);
   matrix4.Release();
   sampling_is_locked_ = filter_quality_index >= 0;
@@ -66,13 +41,14 @@ Dart_Handle ImageShader::initWithImage(CanvasImage* image,
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
                           : DlImageSampling::kLinear;
   cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
-      sk_image_.skia_object(), ToDl(tmx), ToDl(tmy), sampling, &local_matrix));
+      image_, ToDl(tmx), ToDl(tmy), sampling, &local_matrix));
   return Dart_Null();
 }
 
 std::shared_ptr<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
   if (sampling_is_locked_) {
-    sampling = cached_shader_.skia_object()->sampling();
+    return cached_shader_.skia_object()->with_sampling(
+        cached_shader_.skia_object()->sampling());
   }
   // It might seem that if the sampling is locked we can just return the
   // cached version, but since we need to hold the cached shader in a
@@ -86,11 +62,17 @@ std::shared_ptr<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
 }
 
 int ImageShader::width() {
-  return sk_image_.skia_object()->width();
+  return image_->width();
 }
 
 int ImageShader::height() {
-  return sk_image_.skia_object()->height();
+  return image_->height();
+}
+
+void ImageShader::dispose() {
+  cached_shader_.reset();
+  image_.reset();
+  ClearDartWrapper();
 }
 
 ImageShader::ImageShader() = default;

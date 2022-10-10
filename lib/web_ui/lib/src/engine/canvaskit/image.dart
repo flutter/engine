@@ -83,7 +83,6 @@ class ImageCodecException implements Exception {
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
 typedef HttpRequestFactory = DomXMLHttpRequest Function();
-// ignore: prefer_function_declarations_over_variables
 HttpRequestFactory httpRequestFactory = () => createDomXMLHttpRequest();
 void debugRestoreHttpRequestFactory() {
   httpRequestFactory = () => createDomXMLHttpRequest();
@@ -95,7 +94,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, WebOnlyImageCodecChunkCallback? chunkCallback) async {
   final Uint8List list = await fetchImage(url, chunkCallback);
   if (browserSupportsImageDecoder) {
-    return CkBrowserImageDecoder.create(data: list, debugSource: url.toString());
+    return CkBrowserImageDecoder.create(data: list, debugSource: url);
   } else {
     return CkAnimatedImage.decodeFromBytes(list, url);
   }
@@ -150,9 +149,7 @@ Future<Uint8List> fetchImage(
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
   CkImage(SkImage skImage, { this.videoFrame }) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
+    _init();
     if (browserSupportsFinalizationRegistry) {
       box = SkiaObjectBox<CkImage, SkImage>(this, skImage);
     } else {
@@ -200,16 +197,21 @@ class CkImage implements ui.Image, StackTraceDebugger {
     }
   }
 
-  CkImage.cloneOf(this.box) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
+  CkImage.cloneOf(this.box, {this.videoFrame}) {
+    _init();
     box.ref(this);
   }
 
+  void _init() {
+    if (assertionsEnabled) {
+      _debugStackTrace = StackTrace.current;
+    }
+    ui.Image.onCreate?.call(this);
+  }
+
   @override
-  StackTrace get debugStackTrace => _debugStackTrace!;
-  StackTrace? _debugStackTrace;
+  StackTrace get debugStackTrace => _debugStackTrace;
+  late StackTrace _debugStackTrace;
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
@@ -242,6 +244,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
       !_disposed,
       'Cannot dispose an image that has already been disposed.',
     );
+    ui.Image.onDispose?.call(this);
     _disposed = true;
     box.unref(this);
   }
@@ -258,7 +261,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
   @override
   CkImage clone() {
     assert(_debugCheckIsNotDisposed());
-    return CkImage.cloneOf(box);
+    return CkImage.cloneOf(box, videoFrame: videoFrame?.clone());
   }
 
   @override
@@ -345,10 +348,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
 /// Data for a single frame of an animated image.
 class AnimatedImageFrameInfo implements ui.FrameInfo {
+  AnimatedImageFrameInfo(this._duration, this._image);
+
   final Duration _duration;
   final CkImage _image;
-
-  AnimatedImageFrameInfo(this._duration, this._image);
 
   @override
   Duration get duration => _duration;

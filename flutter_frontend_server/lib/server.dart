@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.8
+// ignore_for_file: avoid_print
+
 library flutter_frontend_server;
 
 import 'dart:async';
@@ -11,10 +12,10 @@ import 'dart:io' hide FileSystemEntity;
 import 'package:args/args.dart';
 import 'package:frontend_server/frontend_server.dart' as frontend
     show
-        FrontendCompiler,
         CompilerInterface,
-        listenAndCompile,
+        FrontendCompiler,
         argParser,
+        listenAndCompile,
         usage;
 import 'package:path/path.dart' as path;
 
@@ -24,9 +25,9 @@ import 'package:path/path.dart' as path;
 /// version for testing.
 Future<int> starter(
   List<String> args, {
-  frontend.CompilerInterface compiler,
-  Stream<List<int>> input,
-  StringSink output,
+  frontend.CompilerInterface? compiler,
+  Stream<List<int>>? input,
+  StringSink? output,
 }) async {
   ArgResults options;
   try {

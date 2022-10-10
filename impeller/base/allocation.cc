@@ -5,6 +5,7 @@
 #include "impeller/base/allocation.h"
 
 #include <algorithm>
+#include <cstring>
 
 #include "flutter/fml/logging.h"
 #include "impeller/base/validation.h"
@@ -93,11 +94,11 @@ std::shared_ptr<fml::Mapping> CreateMappingWithCopy(const uint8_t* contents,
 
   std::memmove(allocation->GetBuffer(), contents, length);
 
-  return CreateMappingFromAllocation(std::move(allocation));
+  return CreateMappingFromAllocation(allocation);
 }
 
 std::shared_ptr<fml::Mapping> CreateMappingFromAllocation(
-    std::shared_ptr<Allocation> allocation) {
+    const std::shared_ptr<Allocation>& allocation) {
   if (!allocation) {
     return nullptr;
   }
@@ -106,6 +107,13 @@ std::shared_ptr<fml::Mapping> CreateMappingFromAllocation(
       allocation->GetLength(),                                    //
       [allocation](auto, auto) {}                                 //
   );
+}
+
+std::shared_ptr<fml::Mapping> CreateMappingWithString(std::string string) {
+  auto buffer = std::make_shared<std::string>(std::move(string));
+  return std::make_unique<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(buffer->c_str()), buffer->length(),
+      [buffer](auto, auto) {});
 }
 
 }  // namespace impeller

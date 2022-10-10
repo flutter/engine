@@ -462,7 +462,8 @@ void DrawSimpleFrame(GfxExternalViewEmbedder& external_view_embedder,
       nullptr, std::make_unique<flutter::SurfaceFrame>(
                    nullptr, framebuffer_info,
                    [](const flutter::SurfaceFrame& surface_frame,
-                      SkCanvas* canvas) { return true; }));
+                      SkCanvas* canvas) { return true; },
+                   frame_size));
 }
 
 void DrawFrameWithView(GfxExternalViewEmbedder& external_view_embedder,
@@ -480,7 +481,7 @@ void DrawFrameWithView(GfxExternalViewEmbedder& external_view_embedder,
     external_view_embedder.PostPrerollAction(nullptr);
     background_draw_callback(root_canvas);
     SkCanvas* overlay_canvas =
-        external_view_embedder.CompositeEmbeddedView(view_id);
+        external_view_embedder.CompositeEmbeddedView(view_id).canvas;
     overlay_draw_callback(overlay_canvas);
   }
   external_view_embedder.EndFrame(false, nullptr);
@@ -489,7 +490,8 @@ void DrawFrameWithView(GfxExternalViewEmbedder& external_view_embedder,
       nullptr, std::make_unique<flutter::SurfaceFrame>(
                    nullptr, framebuffer_info,
                    [](const flutter::SurfaceFrame& surface_frame,
-                      SkCanvas* canvas) { return true; }));
+                      SkCanvas* canvas) { return true; },
+                   frame_size));
 }
 
 FramePresentedInfo MakeFramePresentedInfoForOnePresent(

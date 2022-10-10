@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_color_source.h"
+#include "display_list_color_source.h"
 #include "flutter/display_list/display_list_sampling_options.h"
 
 namespace flutter {
@@ -17,8 +18,8 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
     SkImage* image = sk_shader->isAImage(&local_matrix, xy);
     if (image) {
       return std::make_shared<DlImageColorSource>(
-          sk_ref_sp(image), ToDl(xy[0]), ToDl(xy[1]), DlImageSampling::kLinear,
-          &local_matrix);
+          DlImage::Make(image), ToDl(xy[0]), ToDl(xy[1]),
+          DlImageSampling::kLinear, &local_matrix);
     }
   }
   // Skia provides |SkShader->asAGradient(&info)| method to access the
@@ -126,6 +127,14 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
                                            colors, stops, tile_mode, matrix),
             DlGradientDeleter);
   return std::move(ret);
+}
+
+std::shared_ptr<DlRuntimeEffectColorSource> DlColorSource::MakeRuntimeEffect(
+    sk_sp<SkRuntimeEffect> runtime_effect,
+    std::vector<std::shared_ptr<DlColorSource>> samplers,
+    sk_sp<SkData> uniform_data) {
+  return std::make_shared<DlRuntimeEffectColorSource>(
+      std::move(runtime_effect), std::move(samplers), std::move(uniform_data));
 }
 
 }  // namespace flutter

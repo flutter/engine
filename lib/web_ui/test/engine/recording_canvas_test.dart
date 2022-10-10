@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../html/paragraph/text_scuba.dart';
+import '../html/screenshot.dart';
 import '../mock_engine_canvas.dart';
 
 void main() {
@@ -28,7 +28,7 @@ void testMain() {
   });
 
   group('paragraph bounds', () {
-    Paragraph _paragraphForBoundsTest(TextAlign alignment) {
+    Paragraph paragraphForBoundsTest(TextAlign alignment) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontSize: 20,
@@ -39,14 +39,14 @@ void testMain() {
     }
 
     test('not laid out', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.start);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
       expect(underTest.pictureBounds, Rect.zero);
     });
 
     test('finite width', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.start);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
       paragraph.layout(const ParagraphConstraints(width: 110));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -56,7 +56,7 @@ void testMain() {
     });
 
     test('finite width center-aligned', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.center);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.center);
       paragraph.layout(const ParagraphConstraints(width: 110));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -66,7 +66,7 @@ void testMain() {
     });
 
     test('infinite width', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.start);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
       paragraph.layout(const ParagraphConstraints(width: double.infinity));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -121,7 +121,7 @@ void testMain() {
       expect(mockCanvas.methodCallLog.single.methodName, 'endOfPaint');
     });
 
-    test('negative corners in inner RRect get passed through to draw', () {
+    test('deflated corners in inner RRect get passed through to draw', () {
       // This comes from github issue #40728
       final RRect outer = RRect.fromRectAndCorners(
           const Rect.fromLTWH(0, 0, 88, 48),
@@ -129,9 +129,8 @@ void testMain() {
           bottomLeft: const Radius.circular(6));
       final RRect inner = outer.deflate(1);
 
-      // If these assertions fail, check [_measureBorderRadius] in recording_canvas.dart
-      expect(inner.brRadius, equals(const Radius.circular(-1)));
-      expect(inner.trRadius, equals(const Radius.circular(-1)));
+      expect(inner.brRadius, equals(Radius.zero));
+      expect(inner.trRadius, equals(Radius.zero));
 
       underTest.drawDRRect(outer, inner, somePaint);
       underTest.endRecording();

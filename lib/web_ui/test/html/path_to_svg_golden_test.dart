@@ -26,8 +26,6 @@ Future<void> testMain() async {
 
   Future<void> testPath(Path path, String scubaFileName,
       {SurfacePaint? paint,
-      double? maxDiffRatePercent,
-      bool write = false,
       PaintMode mode = PaintMode.kStrokeAndFill}) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 400);
     final BitmapCanvas bitmapCanvas =
@@ -75,7 +73,7 @@ Future<void> testMain() async {
     sceneElement.append(svgElement);
 
     await matchGoldenFile('$scubaFileName.png',
-        region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
+        region: region);
 
     bitmapCanvas.rootElement.remove();
     svgElement.remove();
@@ -112,20 +110,16 @@ Future<void> testMain() async {
 
   test('render arcs', () async {
     final List<ArcSample> arcs = <ArcSample>[
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: false, distance: 20),
+      ArcSample(Offset.zero, distance: 20),
       ArcSample(const Offset(200, 0),
-          largeArc: true, clockwise: false, distance: 20),
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: true, distance: 20),
+          largeArc: true, distance: 20),
+      ArcSample(Offset.zero, clockwise: true, distance: 20),
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: 20),
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: false, distance: -20),
+      ArcSample(Offset.zero, distance: -20),
       ArcSample(const Offset(200, 0),
-          largeArc: true, clockwise: false, distance: -20),
-      ArcSample(const Offset(0, 0),
-          largeArc: false, clockwise: true, distance: -20),
+          largeArc: true, distance: -20),
+      ArcSample(Offset.zero, clockwise: true, distance: -20),
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: -20)
     ];
@@ -141,7 +135,7 @@ Future<void> testMain() async {
     final Path path = Path();
     path.addRect(const Rect.fromLTRB(15, 15, 60, 20));
     path.addRect(const Rect.fromLTRB(35, 160, 15, 100));
-    await testPath(path, 'svg_rect', maxDiffRatePercent: 1.0);
+    await testPath(path, 'svg_rect');
   });
 
   test('render notch', () async {
@@ -151,9 +145,7 @@ Future<void> testMain() async {
     path.quadraticBezierTo(98, 0, 99.97, 7.8);
     path.arcToPoint(const Offset(162, 7.8),
         radius: const Radius.circular(32),
-        largeArc: false,
-        clockwise: false,
-        rotation: 0);
+        clockwise: false);
     path.lineTo(200, 7.8);
     path.lineTo(200, 80);
     path.lineTo(0, 80);
@@ -216,13 +208,13 @@ DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
 }
 
 class ArcSample {
+  ArcSample(this.offset,
+      {this.largeArc = false, this.clockwise = false, this.distance = 0});
+
   final Offset offset;
   final bool largeArc;
   final bool clockwise;
   final double distance;
-
-  ArcSample(this.offset,
-      {this.largeArc = false, this.clockwise = false, this.distance = 0});
 
   Path createPath() {
     final Offset startP =

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-// @dart = 2.12
 part of dart.ui;
 
 /// How the pointer has changed since the last report.
@@ -128,6 +126,12 @@ enum PointerSignalKind {
 
   /// A pointer-generated scroll (e.g., mouse wheel or trackpad scroll).
   scroll,
+
+  /// A pointer-generated scroll-inertia cancel.
+  scrollInertiaCancel,
+
+  /// A pointer-generated scale event (e.g. trackpad pinch).
+  scale,
 
   /// An unknown pointer signal kind.
   unknown

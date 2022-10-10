@@ -11,8 +11,8 @@ import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
-import 'initialization.dart';
 import 'painting.dart';
+import 'renderer.dart';
 import 'skia_object_cache.dart';
 import 'util.dart';
 
@@ -178,6 +178,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           toSkStrutStyleProperties(strutStyle, textHeightBehavior);
     }
 
+    properties.replaceTabCharacters = true;
     properties.textStyle = toSkTextStyleProperties(
         fontFamily, fontSize, height, fontWeight, fontStyle);
 
@@ -219,6 +220,7 @@ class CkTextStyle implements ui.TextStyle {
     CkPaint? foreground,
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations,
   }) {
     return CkTextStyle._(
       color,
@@ -241,6 +243,7 @@ class CkTextStyle implements ui.TextStyle {
       foreground,
       shadows,
       fontFeatures,
+      fontVariations,
     );
   }
 
@@ -265,6 +268,7 @@ class CkTextStyle implements ui.TextStyle {
     this.foreground,
     this.shadows,
     this.fontFeatures,
+    this.fontVariations,
   );
 
   final ui.Color? color;
@@ -287,6 +291,7 @@ class CkTextStyle implements ui.TextStyle {
   final CkPaint? foreground;
   final List<ui.Shadow>? shadows;
   final List<ui.FontFeature>? fontFeatures;
+  final List<ui.FontVariation>? fontVariations;
 
   /// Merges this text style with [other] and returns the new text style.
   ///
@@ -314,6 +319,7 @@ class CkTextStyle implements ui.TextStyle {
       foreground: other.foreground ?? foreground,
       shadows: other.shadows ?? shadows,
       fontFeatures: other.fontFeatures ?? fontFeatures,
+      fontVariations: other.fontVariations ?? fontVariations,
     );
   }
 
@@ -344,6 +350,7 @@ class CkTextStyle implements ui.TextStyle {
     final CkPaint? foreground = this.foreground;
     final List<ui.Shadow>? shadows = this.shadows;
     final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+    final List<ui.FontVariation>? fontVariations = this.fontVariations;
 
     final SkTextStyleProperties properties = SkTextStyleProperties();
 
@@ -447,6 +454,17 @@ class CkTextStyle implements ui.TextStyle {
         skFontFeatures.add(skFontFeature);
       }
       properties.fontFeatures = skFontFeatures;
+    }
+
+    if (fontVariations != null) {
+      final List<SkFontVariation> skFontVariations = <SkFontVariation>[];
+      for (final ui.FontVariation fontVariation in fontVariations) {
+        final SkFontVariation skFontVariation = SkFontVariation();
+        skFontVariation.axis = fontVariation.axis;
+        skFontVariation.value = fontVariation.value;
+        skFontVariations.add(skFontVariation);
+      }
+      properties.fontVariations = skFontVariations;
     }
 
     return canvasKit.TextStyle(properties);
@@ -637,7 +655,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   //                lot of paragraphs are laid out _and_ rendered. To support
   //                this use-case without blowing up memory usage we need this:
   //                https://github.com/flutter/flutter/issues/81224
-  static SynchronousSkiaObjectCache _paragraphCache =
+  static final SynchronousSkiaObjectCache _paragraphCache =
       SynchronousSkiaObjectCache(500);
 
   /// Marks this paragraph as having been used this frame.
@@ -657,7 +675,8 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
 
   @override
   void delete() {
-    _skParagraph!.delete();
+    _skParagraph?.delete();
+    _skParagraph = null;
   }
 
   @override
@@ -698,8 +717,8 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   double _width = 0;
 
   @override
-  List<ui.TextBox> getBoxesForPlaceholders() => _boxesForPlaceholders!;
-  List<ui.TextBox>? _boxesForPlaceholders;
+  List<ui.TextBox> getBoxesForPlaceholders() => _boxesForPlaceholders;
+  late List<ui.TextBox> _boxesForPlaceholders;
 
   @override
   List<ui.TextBox> getBoxesForRange(
@@ -756,7 +775,16 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final SkTextRange skRange = paragraph.getWordBoundary(position.offset);
+    final int characterPosition;
+    switch (position.affinity) {
+      case ui.TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+        break;
+      case ui.TextAffinity.downstream:
+        characterPosition = position.offset;
+        break;
+    }
+    final SkTextRange skRange = paragraph.getWordBoundary(characterPosition);
     return ui.TextRange(start: skRange.start, end: skRange.end);
   }
 
@@ -783,7 +811,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         return ui.TextRange(start: metric.startIndex, end: metric.endIndex);
       }
     }
-    return const ui.TextRange(start: -1, end: -1);
+    return ui.TextRange.empty;
   }
 
   @override
@@ -796,6 +824,23 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
       result.add(CkLineMetrics._(metric));
     }
     return result;
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    delete();
+    didDelete();
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Paragraph.debugDisposed is only available when asserts are enabled.');
   }
 }
 
@@ -835,13 +880,6 @@ class CkLineMetrics implements ui.LineMetrics {
 }
 
 class CkParagraphBuilder implements ui.ParagraphBuilder {
-  final SkParagraphBuilder _paragraphBuilder;
-  final CkParagraphStyle _style;
-  final List<_ParagraphCommand> _commands;
-  int _placeholderCount;
-  final List<double> _placeholderScales;
-  final List<CkTextStyle> _styleStack;
-
   CkParagraphBuilder(ui.ParagraphStyle style)
       : _commands = <_ParagraphCommand>[],
         _style = style as CkParagraphStyle,
@@ -850,10 +888,17 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         _styleStack = <CkTextStyle>[],
         _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
           style.skParagraphStyle,
-          skiaFontCollection.fontProvider,
+          CanvasKitRenderer.instance.fontCollection.fontProvider,
         ) {
     _styleStack.add(_style.getTextStyle());
   }
+
+  final SkParagraphBuilder _paragraphBuilder;
+  final CkParagraphStyle _style;
+  final List<_ParagraphCommand> _commands;
+  int _placeholderCount;
+  final List<double> _placeholderScales;
+  final List<CkTextStyle> _styleStack;
 
   @override
   void addPlaceholder(
@@ -1019,11 +1064,6 @@ class _CkParagraphPlaceholder {
 }
 
 class _ParagraphCommand {
-  final _ParagraphCommandType type;
-  final String? text;
-  final CkTextStyle? style;
-  final _CkParagraphPlaceholder? placeholderStyle;
-
   const _ParagraphCommand._(
     this.type,
     this.text,
@@ -1044,6 +1084,11 @@ class _ParagraphCommand {
       _CkParagraphPlaceholder placeholderStyle)
       : this._(
             _ParagraphCommandType.addPlaceholder, null, null, placeholderStyle);
+
+  final _ParagraphCommandType type;
+  final String? text;
+  final CkTextStyle? style;
+  final _CkParagraphPlaceholder? placeholderStyle;
 }
 
 enum _ParagraphCommandType {

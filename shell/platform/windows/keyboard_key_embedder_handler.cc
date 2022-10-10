@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-#include "flutter/shell/platform/windows/keyboard_win32_common.h"
+#include "flutter/shell/platform/windows/keyboard_utils.h"
 
 namespace flutter {
 
@@ -164,8 +164,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
          action == WM_SYSKEYDOWN || action == WM_SYSKEYUP);
 
   auto last_logical_record_iter = pressingRecords_.find(physical_key);
-  const bool had_record = last_logical_record_iter != pressingRecords_.end();
-  const uint64_t last_logical_record =
+  bool had_record = last_logical_record_iter != pressingRecords_.end();
+  uint64_t last_logical_record =
       had_record ? last_logical_record_iter->second : 0;
 
   // The logical key for the current "tap sequence".
@@ -186,6 +186,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
 
   const bool is_event_down = action == WM_KEYDOWN || action == WM_SYSKEYDOWN;
 
+  bool event_key_can_be_repeat = true;
   UpdateLastSeenCritialKey(key, physical_key, sequence_logical_key);
   // Synchronize the toggled states of critical keys (such as whether CapsLocks
   // is enabled). Toggled states can only be changed upon a down event, so if
@@ -197,14 +198,21 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // updated to the true state, while the critical keys whose toggled state have
   // been changed will be pressed regardless of their true pressed state.
   // Updating the pressed state will be done by SynchronizeCritialPressedStates.
-  SynchronizeCritialToggledStates(key, is_event_down);
+  SynchronizeCritialToggledStates(key, is_event_down, &event_key_can_be_repeat);
   // Synchronize the pressed states of critical keys (such as whether CapsLocks
   // is pressed).
   //
   // After this function, all critical keys except for the target key will have
   // their toggled state and pressed state matched with their true states. The
   // target key's pressed state will be updated immediately after this.
-  SynchronizeCritialPressedStates(key, physical_key, is_event_down);
+  SynchronizeCritialPressedStates(key, physical_key, is_event_down,
+                                  event_key_can_be_repeat);
+
+  // Reassess the last logical record in case pressingRecords_ was modified
+  // by the above synchronization methods.
+  last_logical_record_iter = pressingRecords_.find(physical_key);
+  had_record = last_logical_record_iter != pressingRecords_.end();
+  last_logical_record = had_record ? last_logical_record_iter->second : 0;
 
   // The resulting event's `type`.
   FlutterKeyEventType type;
@@ -262,8 +270,14 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     pressingRecords_[physical_key] = eventual_logical_record;
   } else {
     auto record_iter = pressingRecords_.find(physical_key);
-    assert(record_iter != pressingRecords_.end());
-    pressingRecords_.erase(record_iter);
+    // Assert this in debug mode. But in cases that it doesn't satisfy
+    // (such as due to a bug), make sure the `erase` is only called
+    // with a valid value to avoid crashing.
+    if (record_iter != pressingRecords_.end()) {
+      pressingRecords_.erase(record_iter);
+    } else {
+      assert(false);
+    }
   }
 
   FlutterKeyEvent key_data{
@@ -297,6 +311,14 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   pending_responses_[response_id] = std::move(pending_ptr);
   SendEvent(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
             reinterpret_cast<void*>(pending_responses_[response_id].get()));
+
+  // Post-event synchronization. It is useful in cases where the true pressing
+  // state does not match the event type. For example, a CapsLock down event is
+  // received despite that GetKeyState says that CapsLock is not pressed. In
+  // such case, post-event synchronization will synthesize a CapsLock up event
+  // after the main event.
+  SynchronizeCritialPressedStates(key, physical_key, is_event_down,
+                                  event_key_can_be_repeat);
 }
 
 void KeyboardKeyEmbedderHandler::KeyboardHook(
@@ -340,7 +362,8 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
     int event_virtual_key,
-    bool is_event_down) {
+    bool is_event_down,
+    bool* event_key_can_be_repeat) {
   //    NowState ---------------->  PreEventState --------------> TrueState
   //              Synchronization                      Event
   for (auto& kv : critical_keys_) {
@@ -385,6 +408,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
                                         key_info.physical_key,
                                         key_info.logical_key, empty_character),
                   nullptr, nullptr);
+        *event_key_can_be_repeat = false;
       }
       key_info.toggled_on = true_toggled;
     }
@@ -394,7 +418,8 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
     int event_virtual_key,
     int event_physical_key,
-    bool is_event_down) {
+    bool is_event_down,
+    bool event_key_can_be_repeat) {
   // During an incoming event, there might be a synthesized Flutter event for
   // each key of each pressing goal, followed by an eventual main Flutter
   // event.
@@ -424,8 +449,18 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
       if (is_event_down) {
         // For down events, this key is the event key if they have the same
         // virtual key, because virtual key represents "functionality."
+        //
+        // In that case, normally Flutter should synthesize nothing since the
+        // resulting event can adapt to the current state by dispatching either
+        // a down or a repeat event. However, in certain cases (when Flutter has
+        // just synchronized the key's toggling state) the event must not be a
+        // repeat event.
         if (virtual_key == event_virtual_key) {
-          pre_event_pressed = false;
+          if (event_key_can_be_repeat) {
+            continue;
+          } else {
+            pre_event_pressed = false;
+          }
         }
       } else {
         // For up events, this key is the event key if they have the same

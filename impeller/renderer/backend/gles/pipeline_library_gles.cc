@@ -70,7 +70,7 @@ static void LogShaderCompilationFailure(const ProcTableGLES& gl,
 
 static bool LinkProgram(
     const ReactorGLES& reactor,
-    std::shared_ptr<PipelineGLES> pipeline,
+    const std::shared_ptr<PipelineGLES>& pipeline,
     const std::shared_ptr<const ShaderFunction>& vert_function,
     const std::shared_ptr<const ShaderFunction>& frag_function) {
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -167,14 +167,20 @@ static bool LinkProgram(
 }
 
 // |PipelineLibrary|
-PipelineFuture PipelineLibraryGLES::GetRenderPipeline(
+bool PipelineLibraryGLES::IsValid() const {
+  return reactor_ != nullptr;
+}
+
+// |PipelineLibrary|
+PipelineFuture<PipelineDescriptor> PipelineLibraryGLES::GetPipeline(
     PipelineDescriptor descriptor) {
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
     return found->second;
   }
 
   if (!reactor_) {
-    return RealizedFuture<std::shared_ptr<Pipeline>>(nullptr);
+    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
+        nullptr);
   }
 
   auto vert_function = descriptor.GetEntrypointForStage(ShaderStage::kVertex);
@@ -183,11 +189,13 @@ PipelineFuture PipelineLibraryGLES::GetRenderPipeline(
   if (!vert_function || !frag_function) {
     VALIDATION_LOG
         << "Could not find stage entrypoint functions in pipeline descriptor.";
-    return RealizedFuture<std::shared_ptr<Pipeline>>(nullptr);
+    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
+        nullptr);
   }
 
-  auto promise = std::make_shared<std::promise<std::shared_ptr<Pipeline>>>();
-  auto future = PipelineFuture{promise->get_future()};
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
+  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
   pipelines_[descriptor] = future;
   auto weak_this = weak_from_this();
 
@@ -205,13 +213,14 @@ PipelineFuture PipelineLibraryGLES::GetRenderPipeline(
             new PipelineGLES(reactor_ptr, strong_this, descriptor));
         auto program = reactor.GetGLHandle(pipeline->GetProgramHandle());
         if (!program.has_value()) {
+          promise->set_value(nullptr);
           VALIDATION_LOG << "Could not obtain program handle.";
           return;
         }
-        const auto link_result = LinkProgram(reactor,                   //
-                                             pipeline,                  //
-                                             std::move(vert_function),  //
-                                             std::move(frag_function)   //
+        const auto link_result = LinkProgram(reactor,        //
+                                             pipeline,       //
+                                             vert_function,  //
+                                             frag_function   //
         );
         if (!link_result) {
           promise->set_value(nullptr);
@@ -233,6 +242,18 @@ PipelineFuture PipelineLibraryGLES::GetRenderPipeline(
       });
   FML_CHECK(result);
 
+  return future;
+}
+
+// |PipelineLibrary|
+PipelineFuture<ComputePipelineDescriptor> PipelineLibraryGLES::GetPipeline(
+    ComputePipelineDescriptor descriptor) {
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
+  auto future =
+      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
+  // TODO(dnfield): implement compute for GLES.
+  promise->set_value(nullptr);
   return future;
 }
 

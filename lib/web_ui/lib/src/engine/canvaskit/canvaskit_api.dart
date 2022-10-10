@@ -7,19 +7,19 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 // ignore_for_file: non_constant_identifier_names
-
-// ignore_for_file: public_member_api_docs
 @JS()
 library canvaskit_api;
 
 import 'dart:async';
-import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../configuration.dart';
 import '../dom.dart';
+import '../initialization.dart';
 import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
@@ -109,6 +109,7 @@ extension CanvasKitExtension on CanvasKit {
   external SkParagraphStyle ParagraphStyle(
       SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
+  external SkSurface MakeWebGLCanvasSurface(DomCanvasElement canvas);
   external SkSurface MakeSurface(
     int width,
     int height,
@@ -1241,10 +1242,11 @@ Float32List toSkMatrixFromFloat32(Float32List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1255,10 +1257,11 @@ Float32List toSkMatrixFromFloat64(Float64List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1850,11 +1853,6 @@ extension SkPictureExtension on SkPicture {
 class SkParagraphBuilderNamespace {}
 
 extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
-  external SkParagraphBuilder Make(
-    SkParagraphStyle paragraphStyle,
-    SkFontMgr? fontManager,
-  );
-
   external SkParagraphBuilder MakeFromFontProvider(
     SkParagraphStyle paragraphStyle,
     TypefaceFontProvider? fontManager,
@@ -1902,6 +1900,7 @@ extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   external set ellipsis(String? value);
   external set textStyle(SkTextStyleProperties? value);
   external set strutStyle(SkStrutStyleProperties? strutStyle);
+  external set replaceTabCharacters(bool? bool);
 }
 
 @JS()
@@ -2027,6 +2026,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
   external set fontStyle(SkFontStyle? value);
   external set shadows(List<SkTextShadow>? value);
   external set fontFeatures(List<SkFontFeature>? value);
+  external set fontVariations(List<SkFontVariation>? value);
 }
 
 @JS()
@@ -2079,6 +2079,16 @@ extension SkFontFeatureExtension on SkFontFeature {
 @JS()
 @anonymous
 @staticInterop
+class SkFontVariation {}
+
+extension SkFontVariationExtension on SkFontVariation {
+  external set axis(String? value);
+  external set value(double? value);
+}
+
+@JS()
+@anonymous
+@staticInterop
 class SkTypeface {}
 
 @JS('window.flutterCanvasKit.Font')
@@ -2110,7 +2120,7 @@ class TypefaceFontProvider extends SkFontMgr {
   external factory TypefaceFontProvider();
 }
 
-extension TypefaceFontProviderExtension on SkFontMgr {
+extension TypefaceFontProviderExtension on TypefaceFontProvider {
   external void registerFont(Uint8List font, String family);
 }
 
@@ -2275,7 +2285,7 @@ abstract class Collector {
 class ProductionCollector implements Collector {
   ProductionCollector() {
     _skObjectFinalizationRegistry =
-        SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+        SkObjectFinalizationRegistry(allowInterop((SkDeletable deletable) {
       // This is called when GC decides to collect the wrapper object and
       // notify us, which may happen after the object is already deleted
       // explicitly, e.g. when its ref count drops to zero. When that happens
@@ -2530,6 +2540,28 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
   external int get width;
 }
 
+/// Helper interop methods for [patchCanvasKitModule].
+@JS()
+external set _flutterWebCachedModule(Object? module);
+
+@JS()
+external Object? get _flutterWebCachedModule;
+
+@JS()
+external set _flutterWebCachedExports(Object? exports);
+
+@JS()
+external Object? get _flutterWebCachedExports;
+
+@JS('Object')
+external Object get objectConstructor;
+
+@JS()
+external Object? get exports;
+
+@JS()
+external Object? get module;
+
 /// Monkey-patch the top-level `module` and `exports` objects so that
 /// CanvasKit doesn't attempt to register itself as an anonymous module.
 ///
@@ -2553,40 +2585,85 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
 void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   // First check if `exports` and `module` are already defined. If so, then
   // CommonJS is being used, and we shouldn't have any problems.
-  final js.JsFunction objectConstructor = js.context['Object'] as js.JsFunction;
-  if (js.context['exports'] == null) {
-    final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
+  if (exports == null) {
+    final Object? exportsAccessor = js_util.jsify(<String, dynamic>{
       'get': allowInterop(() {
         if (domDocument.currentScript == canvasKitScript) {
-          return js.JsObject(objectConstructor);
+          return objectConstructor;
         } else {
-          return js.context['_flutterWebCachedExports'];
+          return _flutterWebCachedExports;
         }
       }),
       'set': allowInterop((dynamic value) {
-        js.context['_flutterWebCachedExports'] = value;
+        _flutterWebCachedExports = value;
       }),
       'configurable': true,
     });
-    objectConstructor.callMethod(
-        'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
+    js_util.callMethod(objectConstructor,
+        'defineProperty', <dynamic>[domWindow, 'exports', exportsAccessor]);
   }
-  if (js.context['module'] == null) {
-    final js.JsObject moduleAccessor = js.JsObject.jsify(<String, dynamic>{
+  if (module == null) {
+    final Object? moduleAccessor = js_util.jsify(<String, dynamic>{
       'get': allowInterop(() {
         if (domDocument.currentScript == canvasKitScript) {
-          return js.JsObject(objectConstructor);
+          return objectConstructor;
         } else {
-          return js.context['_flutterWebCachedModule'];
+          return _flutterWebCachedModule;
         }
       }),
       'set': allowInterop((dynamic value) {
-        js.context['_flutterWebCachedModule'] = value;
+        _flutterWebCachedModule = value;
       }),
       'configurable': true,
     });
-    objectConstructor.callMethod(
-        'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+    js_util.callMethod(objectConstructor,
+        'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
   domDocument.head!.appendChild(canvasKitScript);
+}
+
+String get canvasKitBuildUrl =>
+  configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
+String get canvasKitJavaScriptBindingsUrl =>
+    '${canvasKitBuildUrl}canvaskit.js';
+String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+    canvasKitBase + file;
+
+/// Download and initialize the CanvasKit module.
+///
+/// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
+/// and intialize the CanvasKit wasm.
+Future<CanvasKit> downloadCanvasKit() async {
+  await _downloadCanvasKitJs();
+  final Completer<CanvasKit> canvasKitInitCompleter = Completer<CanvasKit>();
+  final CanvasKitInitPromise canvasKitInitPromise =
+      CanvasKitInit(CanvasKitInitOptions(
+    locateFile: allowInterop((String file, String unusedBase) =>
+        canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
+  ));
+  canvasKitInitPromise.then(allowInterop((CanvasKit ck) {
+    canvasKitInitCompleter.complete(ck);
+  }));
+  return canvasKitInitCompleter.future;
+}
+
+/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
+Future<void> _downloadCanvasKitJs() {
+  final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
+
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = canvasKitJavaScriptUrl;
+
+  final Completer<void> canvasKitLoadCompleter = Completer<void>();
+  late DomEventListener callback;
+  void loadEventHandler(DomEvent _) {
+    canvasKitLoadCompleter.complete();
+    canvasKitScript.removeEventListener('load', callback);
+  }
+  callback = allowInterop(loadEventHandler);
+  canvasKitScript.addEventListener('load', callback);
+
+  patchCanvasKitModule(canvasKitScript);
+
+  return canvasKitLoadCompleter.future;
 }

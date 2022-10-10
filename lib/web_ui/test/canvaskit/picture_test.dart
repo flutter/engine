@@ -86,13 +86,13 @@ void testMain() {
       });
     });
 
-    test('toGpuImage', () async {
+    test('toImageSync', () async {
       const ui.Color color = ui.Color(0xFFAAAAAA);
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
       canvas.drawPaint(ui.Paint()..color = color);
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image image = picture.toGpuImage(10, 15);
+      final ui.Image image = picture.toImageSync(10, 15);
 
       expect(image.width, 10);
       expect(image.height, 15);
@@ -102,6 +102,6 @@ void testMain() {
       expect(data!.lengthInBytes, 10 * 15 * 4);
       expect(data.buffer.asUint32List().first, color.value);
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
