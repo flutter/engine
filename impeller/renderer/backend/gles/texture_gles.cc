@@ -99,6 +99,16 @@ struct TexImage2DData {
         external_format = GL_ALPHA;
         type = GL_UNSIGNED_BYTE;
         break;
+      case PixelFormat::kR8UNormInt:
+        internal_format = GL_RED;
+        external_format = GL_RED;
+        type = GL_UNSIGNED_BYTE;
+        break;
+      case PixelFormat::kR8G8UNormInt:
+        internal_format = GL_RG;
+        external_format = GL_RG;
+        type = GL_UNSIGNED_BYTE;
+        break;
       case PixelFormat::kR8G8B8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormInt:
       case PixelFormat::kR8G8B8A8UNormIntSRGB:
@@ -122,6 +132,20 @@ struct TexImage2DData {
       case PixelFormat::kA8UNormInt: {
         internal_format = GL_ALPHA;
         external_format = GL_ALPHA;
+        type = GL_UNSIGNED_BYTE;
+        data = std::move(mapping);
+        break;
+      }
+      case PixelFormat::kR8UNormInt: {
+        internal_format = GL_RED;
+        external_format = GL_RED;
+        type = GL_UNSIGNED_BYTE;
+        data = std::move(mapping);
+        break;
+      }
+      case PixelFormat::kR8G8UNormInt: {
+        internal_format = GL_RG;
+        external_format = GL_RG;
         type = GL_UNSIGNED_BYTE;
         data = std::move(mapping);
         break;
@@ -275,6 +299,8 @@ static std::optional<GLenum> ToRenderBufferFormat(PixelFormat format) {
       return GL_STENCIL_INDEX8;
     case PixelFormat::kUnknown:
     case PixelFormat::kA8UNormInt:
+    case PixelFormat::kR8UNormInt:
+    case PixelFormat::kR8G8UNormInt:
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
       return std::nullopt;

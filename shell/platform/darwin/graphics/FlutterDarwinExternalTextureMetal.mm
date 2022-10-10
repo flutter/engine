@@ -4,13 +4,11 @@
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "flutter/display_list/display_list_image.h"
-
 #if IMPELLER_SUPPORTS_RENDERING
 #include "impeller/base/config.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
-
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -162,13 +160,6 @@ FLUTTER_ASSERT_ARC
 
 - (sk_sp<flutter::DlImage>)wrapNV12ExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
                                                context:(flutter::Texture::PaintContext&)context {
-#if IMPELLER_SUPPORTS_RENDERING
-  if (_enableImpeller) {
-    IMPELLER_UNIMPLEMENTED
-    return nullptr;
-  }
-#endif  // IMPELLER_SUPPORTS_RENDERING
-
   SkISize textureSize =
       SkISize::Make(CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer));
   CVMetalTextureRef yMetalTexture = nullptr;
@@ -214,6 +205,34 @@ FLUTTER_ASSERT_ARC
 
   id<MTLTexture> uvTex = CVMetalTextureGetTexture(uvMetalTexture);
   CVBufferRelease(uvMetalTexture);
+
+#if IMPELLER_SUPPORTS_RENDERING
+  if (_enableImpeller) {
+    impeller::TextureDescriptor yDesc;
+    yDesc.storage_mode = impeller::StorageMode::kHostVisible;
+    yDesc.format = impeller::PixelFormat::kR8UNormInt;
+    yDesc.size = {textureSize.width(), textureSize.height()};
+    yDesc.mip_count = 1;
+    auto yTexture = impeller::TextureMTL::Wrapper(yDesc, yTex);
+    yTexture->SetIntent(impeller::TextureIntent::kUploadFromHost);
+
+    impeller::TextureDescriptor uvDesc;
+    uvDesc.storage_mode = impeller::StorageMode::kHostVisible;
+    uvDesc.format = impeller::PixelFormat::kR8G8UNormInt;
+    uvDesc.size = {textureSize.width() / 2, textureSize.height() / 2};
+    uvDesc.mip_count = 1;
+    auto uvTexture = impeller::TextureMTL::Wrapper(uvDesc, uvTex);
+    uvTexture->SetIntent(impeller::TextureIntent::kUploadFromHost);
+
+    impeller::YUVColorSpace yuvColorSpace =
+        _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            ? impeller::YUVColorSpace::kBT601LimitedRange
+            : impeller::YUVColorSpace::kBT601FullRange;
+
+    return impeller::DlImageImpeller::MakeFromYUVTextures(context.aiks_context, yTexture, uvTexture,
+                                                          yuvColorSpace);
+  }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
   auto skImage = [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex
                                                                        UVTex:uvTex
