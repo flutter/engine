@@ -153,7 +153,6 @@ template("_dartdevc") {
       ":web_engine_library",
       ":web_ui_library",
       ":web_ui_library_sources",
-      "//flutter/dart_sdk",
     ]
     script = "//build/gn_run_binary.py"
 
@@ -194,7 +193,6 @@ template("_kernel_worker")  {
       ":web_engine_library",
       ":web_ui_library",
       ":web_ui_library_sources",
-      "//flutter/dart_sdk",
     ]
     script = "//build/gn_run_binary.py"
 
@@ -242,6 +240,8 @@ template("_compile_outline") {
       "org-dartlang-sdk",
       "--multi-root",
       "file:///" + rebase_path("$root_out_dir"),
+      "--multi-root",
+      "file:///" + rebase_path("$prebuilt_dart_sdk/.."),
       "--libraries-file",
       "org-dartlang-sdk:///flutter_web_sdk/libraries.json",
       "--output",
@@ -324,6 +324,8 @@ template("_compile_ddc_modules") {
       "org-dartlang-sdk",
       "--multi-root",
       "file:///" + rebase_path("$root_out_dir"),
+      "--multi-root",
+      "file:///" + rebase_path("$prebuilt_dart_sdk/.."),
       "--multi-root-output-path",
       rebase_path("$root_out_dir/"),
       "--libraries-file",
