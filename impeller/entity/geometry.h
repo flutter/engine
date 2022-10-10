@@ -31,15 +31,15 @@ enum GeometryVertexType {
 };
 
 enum class Cap {
-    kButt,
-    kRound,
-    kSquare,
+  kButt,
+  kRound,
+  kSquare,
 };
 
 enum class Join {
-    kMiter,
-    kRound,
-    kBevel,
+  kMiter,
+  kRound,
+  kBevel,
 };
 
 class Geometry {

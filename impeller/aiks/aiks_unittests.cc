@@ -1481,13 +1481,9 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
       canvas.ClipPath(PathBuilder{}.AddCircle(middle, radius).TakePath());
     }
 
-    for (auto join :
-         {Join::kBevel, Join::kRound,
-          Join::kMiter}) {
+    for (auto join : {Join::kBevel, Join::kRound, Join::kMiter}) {
       paint.stroke_join = join;
-      for (auto cap :
-           {Cap::kButt, Cap::kSquare,
-            Cap::kRound}) {
+      for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
         paint.stroke_cap = cap;
         canvas.DrawPath(path, paint);
         canvas.Translate({80, 0});
