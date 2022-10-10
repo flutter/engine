@@ -221,7 +221,7 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
 }
 
 # Archives Flutter Web SDK
-if (!is_fuchsia) {
+if (!is_fuchsia && !is_android) {
   group("flutter_web_sdk") {
     deps = [ "//flutter/web_sdk:flutter_web_sdk_archive" ]
   }
