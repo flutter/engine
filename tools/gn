@@ -969,16 +969,17 @@ def main(argv):
       '--export-compile-commands',
   ]
 
-  if args.ide != '':
-    command.append('--ide=%s' % args.ide)
-  elif sys.platform == 'darwin':
-    # On the Mac, generate an Xcode project by default.
-    command.append('--ide=xcode')
-    command.append('--xcode-project=flutter_engine')
-    command.append('--xcode-build-system=new')
-  elif sys.platform.startswith('win'):
-    # On Windows, generate a Visual Studio project.
-    command.append('--ide=vs')
+  if args.target_os != 'wasm':
+    if args.ide != '':
+      command.append('--ide=%s' % args.ide)
+    elif sys.platform == 'darwin':
+      # On the Mac, generate an Xcode project by default.
+      command.append('--ide=xcode')
+      command.append('--xcode-project=flutter_engine')
+      command.append('--xcode-build-system=new')
+    elif sys.platform.startswith('win'):
+      # On Windows, generate a Visual Studio project.
+      command.append('--ide=vs')
 
   command.append('--export-compile-commands=default')
 

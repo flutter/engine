@@ -221,6 +221,8 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
 }
 
 # Archives Flutter Web SDK
+# TODO(jacksongardner): Remove this step entirely once we stop producing
+# platform-specific flutter_web_sdk artifacts
 if (!is_fuchsia && host_os == target_os) {
   group("flutter_web_sdk") {
     deps = [ "//flutter/web_sdk:flutter_web_sdk_archive" ]
