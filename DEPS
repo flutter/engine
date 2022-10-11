@@ -15,6 +15,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
+  'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': 'e2ba2f5b20e0d188dbfb5d3df64aa9787ebb3f37',
@@ -116,7 +117,7 @@ deps = {
    Var('flutter_git') + '/third_party/harfbuzz' + '@' + 'd40d15e994ed60d32bcfc9ab87004dfb028dfbd6',
 
   'src/third_party/libcxx':
-   Var('fuchsia_git') + '/third_party/libcxx' + '@' + '7524ef50093a376f334a62a7e5cebf5d238d4c99',
+   Var('llvm_git') + '/libcxx' + '@' + '7524ef50093a376f334a62a7e5cebf5d238d4c99',
 
   'src/third_party/libcxxabi':
    Var('fuchsia_git') + '/third_party/libcxxabi' + '@' + '74d1e602c76350f0760bf6907910e4f3a4fccffe',
