@@ -1,0 +1,13 @@
+name: gen_web_keyboard_layouts
+description: Generates keyboard layouts for Web from external sources.
+
+environment:
+  sdk: ">=2.18.0-0 <3.0.0"
+
+dependencies:
+  args: ^2.3.1
+  http: ^0.13.4
+  path: ^1.8.1
+
+dev_dependencies:
+  test: ^1.21.1
