@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "display_list/display_list_runtime_effect.h"
 #include "flutter/display_list/display_list_attributes_testing.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_color_source.h"
@@ -28,14 +29,16 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, SkColor color) {
   return DlImage::Make(surface->makeImageSnapshot());
 }
 
-static const sk_sp<SkRuntimeEffect> kTestRuntimeEffect1 =
-    SkRuntimeEffect::MakeForShader(
-        SkString("vec4 main(vec2 p) { return vec4(0); }"))
-        .effect;
-static const sk_sp<SkRuntimeEffect> kTestRuntimeEffect2 =
-    SkRuntimeEffect::MakeForShader(
-        SkString("vec4 main(vec2 p) { return vec4(1); }"))
-        .effect;
+static const sk_sp<DlRuntimeEffect> kTestRuntimeEffect1 =
+    DlRuntimeEffect::MakeSkia(
+        SkRuntimeEffect::MakeForShader(
+            SkString("vec4 main(vec2 p) { return vec4(0); }"))
+            .effect);
+static const sk_sp<DlRuntimeEffect> kTestRuntimeEffect2 =
+    DlRuntimeEffect::MakeSkia(
+        SkRuntimeEffect::MakeForShader(
+            SkString("vec4 main(vec2 p) { return vec4(1); }"))
+            .effect);
 
 static const sk_sp<DlImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
 static const sk_sp<DlImage> kTestAlphaImage1 =
