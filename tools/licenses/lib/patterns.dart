@@ -554,6 +554,22 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     )
   ),
 
+  // Seen in Microsoft files
+  LicenseFileReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    fileIndex: 3,
+    pattern: RegExp(
+      kIndent +
+      r'Copyright .+\. All rights reserved\. '
+      r'Licensed under the MIT License\. '
+      r'See (License.txt) in the project root for license information\.'
+      .replaceAll(' ', _linebreak),
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
 ];
 
 
