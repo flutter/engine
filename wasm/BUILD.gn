@@ -10,6 +10,7 @@
 group("wasm") {
   deps = [
     "//flutter/web_sdk",
+    "//flutter/web_sdk:flutter_web_sdk_archive",
     "//third_party/skia/modules/canvaskit",
   ]
 }
