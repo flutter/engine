@@ -74,15 +74,13 @@ size_t GlyphAtlas::IterateGlyphs(
   return count;
 }
 
-FontGlyphPair::Vector GlyphAtlas::FindNewGlyphs(
-    const FontGlyphPair::Vector& new_glyphs) {
-  FontGlyphPair::Vector results;
+bool GlyphAtlas::HasSamePairs(const FontGlyphPair::Vector& new_glyphs) {
   for (const auto& pair : new_glyphs) {
     if (positions_.find(pair) == positions_.end()) {
-      results.push_back(pair);
+      return false;
     }
   }
-  return results;
+  return true;
 }
 
 }  // namespace impeller

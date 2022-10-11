@@ -117,15 +117,14 @@ class GlyphAtlas {
   std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Find a list of all font-glyph pairs not currently in the
-  /// atlas.
+  /// @brief      whether this atlas contains all of the same font-glyph pairs
+  ///             as the vector.
   ///
   /// @param[in]  new_glyphs  The full set of new glyphs
   ///
-  /// @return     A vector of all glyphs in new_glyphs that are not in the
-  ///             current atlas.
+  /// @return     Whether this atlas contains all passed pairs.
   ///
-  FontGlyphPair::Vector FindNewGlyphs(const FontGlyphPair::Vector& new_glyphs);
+  bool HasSamePairs(const FontGlyphPair::Vector& new_glyphs);
 
  private:
   const Type type_;

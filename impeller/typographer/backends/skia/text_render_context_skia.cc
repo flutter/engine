@@ -358,14 +358,12 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   }
 
   // ---------------------------------------------------------------------------
-  // Step 2: Determine if the atlas type and font glyph pairs are identical to
-  //         the current atlas and reuse if possible.
+  // Step 2: Determine if the atlas type and font glyph pairs are compatible
+  //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
-  if (last_atlas->GetType() == type) {
-    auto new_glyphs = last_atlas->FindNewGlyphs(font_glyph_pairs);
-    if (new_glyphs.empty()) {
-      return last_atlas;
-    }
+  if (last_atlas->GetType() == type &&
+      last_atlas->HasSamePairs(font_glyph_pairs)) {
+    return last_atlas;
   }
 
   auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
