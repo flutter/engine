@@ -108,8 +108,7 @@ class KeyboardBinding {
   }
 
   final KeyboardLayoutDetector layoutDetector = KeyboardLayoutDetector();
-  final DomElement glassPaneElement;
-  late KeyboardConverter _converter;
+  late final KeyboardConverter _converter;
   final Map<String, DomEventListener> _listeners = <String, DomEventListener>{};
 
   void _addEventListener(String eventName, DomEventListener handler) {
