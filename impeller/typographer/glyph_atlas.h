@@ -116,6 +116,17 @@ class GlyphAtlas {
   ///
   std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Find a list of all font-glyph pairs not currently in the
+  /// atlas.
+  ///
+  /// @param[in]  new_glyphs  The full set of new glyphs
+  ///
+  /// @return     A vector of all glyphs in new_glyphs that are not in the
+  ///             current atlas.
+  ///
+  FontGlyphPair::Vector FindNewGlyphs(const FontGlyphPair::Vector& new_glyphs);
+
  private:
   const Type type_;
   std::shared_ptr<Texture> texture_;
@@ -127,6 +138,29 @@ class GlyphAtlas {
       positions_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlas);
+};
+
+//------------------------------------------------------------------------------
+/// @brief      A container for caching a glyph atlas across frames.
+///
+class GlyphAtlasContext {
+ public:
+  GlyphAtlasContext();
+
+  ~GlyphAtlasContext();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the current glyph atlas.
+  std::shared_ptr<GlyphAtlas> GetGlyphAtlas() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the context with a newly constructed glyph atlas.
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas);
+
+ private:
+  std::shared_ptr<GlyphAtlas> atlas_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContext);
 };
 
 }  // namespace impeller
