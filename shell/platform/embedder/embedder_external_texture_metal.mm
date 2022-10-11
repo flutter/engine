@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_external_texture_metal.h"
 
+#include "embedder.h"
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -78,7 +79,7 @@ sk_sp<SkImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
         id<MTLTexture> yTex = (__bridge id<MTLTexture>)texture->textures[0];
         id<MTLTexture> uvTex = (__bridge id<MTLTexture>)texture->textures[1];
         SkYUVColorSpace color_space =
-            texture->yuv_range == FlutterMetalExternalTextureYUVRange::kLimited
+            texture->yuv_color_space == FlutterMetalExternalTextureYUVColorSpace::kBT601LimitedRange
                 ? kRec601_Limited_SkYUVColorSpace
                 : kJPEG_Full_SkYUVColorSpace;
         image = [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex

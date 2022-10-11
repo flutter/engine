@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
+#include "embedder.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
 
@@ -99,9 +100,9 @@
   textureOut->pixel_format = FlutterMetalExternalTexturePixelFormat::kYUVA;
   textureOut->textures = _textures.data();
   OSType pixel_format = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  textureOut->yuv_range = pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
-                              ? FlutterMetalExternalTextureYUVRange::kLimited
-                              : FlutterMetalExternalTextureYUVRange::kFull;
+  textureOut->yuv_color_space = pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                                    ? FlutterMetalExternalTextureYUVColorSpace::kBT601LimitedRange
+                                    : FlutterMetalExternalTextureYUVColorSpace::kBT601FullRange;
 
   return YES;
 }
