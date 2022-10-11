@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/embedder/embedder_external_texture_metal.h"
 
-#include "embedder.h"
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "third_party/skia/include/core/SkImage.h"

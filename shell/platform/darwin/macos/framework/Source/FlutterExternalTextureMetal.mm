@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
-#include "embedder.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
 
