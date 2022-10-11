@@ -18,7 +18,7 @@ LicenseType convertLicenseNameToType(String? name) {
     case 'apache':
     case 'apache-license-2.0':
     case 'license-apache-2.0.txt':
-    case 'Apache-2.0.txt':
+    case 'apache-2.0.txt':
     case 'license.vulkan':
       return LicenseType.apache;
     case 'bsd':
