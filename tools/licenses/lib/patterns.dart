@@ -561,9 +561,8 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     fileIndex: 3,
     pattern: RegExp(
       kIndent +
-      r'Copyright .+\. All rights reserved\. '
       r'Licensed under the MIT License\. '
-      r'See (License.txt) in the project root for license information\.'
+      r'See (License\.txt) in the project root for license information\.'
       .replaceAll(' ', _linebreak),
       multiLine: true,
       caseSensitive: false,
