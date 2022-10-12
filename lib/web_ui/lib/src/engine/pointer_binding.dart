@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine/keyboard_binding.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart' show registerHotRestartListener;
@@ -609,9 +610,19 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     }, useCapture: useCapture);
   }
 
+  void _checkModifiersState(DomEvent event) {
+    // TODO(bleroux): add support for 'Meta', 'Ctrl' and 'Alt'
+    final DomPointerEvent pointerEvent = event as DomPointerEvent;
+    final bool shiftPressed = pointerEvent.getModifierState('Shift');
+    KeyboardBinding.instance!.synthesizeShiftKeyIfNeeded(
+      shiftPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+    );
+  }
+
   @override
   void setup() {
     _addPointerEventListener(glassPaneElement, 'pointerdown', (DomPointerEvent event) {
+      _checkModifiersState(event);
       final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
@@ -630,6 +641,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
 
     _addPointerEventListener(domWindow, 'pointermove', (DomPointerEvent event) {
+      _checkModifiersState(event);
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -657,6 +669,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     }, useCapture: false);
 
     _addPointerEventListener(domWindow, 'pointerup', (DomPointerEvent event) {
+      _checkModifiersState(event);
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];

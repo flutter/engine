@@ -152,6 +152,35 @@ class KeyboardBinding {
     _converter = KeyboardConverter(_onKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
   }
 
+  // Synthesize shift key up or down event only when the known pressing state is different.
+  void synthesizeShiftKeyIfNeeded(ui.KeyEventType type) {
+    // TODO(bleroux): should we take care of shift left AND shift right?
+    final int physicalShift = kWebToPhysicalKey['ShiftLeft']!;
+    final bool alreadyPressed = _converter._pressingRecords.containsKey(physicalShift);
+    final bool synthesizeDown = type == ui.KeyEventType.down && !alreadyPressed;
+    final bool synthesizeUp = type == ui.KeyEventType.up && alreadyPressed;
+    if (synthesizeDown || synthesizeUp) {
+      _converter.performDispatchKeyData(_shiftLeftKeyData(type));
+      // Update pressing state
+      if (synthesizeDown) {
+        _converter._pressingRecords[physicalShift] = _kLogicalShiftLeft;
+      } else {
+        _converter._pressingRecords.remove(physicalShift);
+      }
+    }
+  }
+
+  ui.KeyData _shiftLeftKeyData(ui.KeyEventType type) {
+    return ui.KeyData(
+      timeStamp: Duration.zero,
+      type: type,
+      physical: kWebToPhysicalKey['ShiftLeft']!,
+      logical: _kLogicalShiftLeft,
+      character: null,
+      synthesized: true,
+    );
+  }
+
   void _reset() {
     _clearListeners();
     _converter.dispose();
