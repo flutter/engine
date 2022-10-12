@@ -13,7 +13,6 @@ import 'data.dart';
 
 import 'json_get.dart';
 import 'layout_types.dart';
-import 'utils.dart';
 
 /// All goals in the form of KeyboardEvent.key.
 final List<String> kGoalKeys = kLayoutGoals.keys.toList();
@@ -295,6 +294,20 @@ int _sortLayout(Layout a, Layout b) {
   return result;
 }
 
+String _prettyPrintBody(String body, int width) {
+  int min(int a, int b)  {
+    return a < b ? a : b;
+  }
+  final List<String> result = <String>[];
+  int start = 0;
+  while (start < body.length) {
+    final String row = body.substring(start, min(body.length, start + width));
+    result.add("  '$row'");
+    start += width;
+  }
+  return result.join('\n');
+}
+
 Future<void> generate(Options options) async {
   // Fetch files from GitHub.
   final Map<String, dynamic> githubBody = await _fetchGithub(
@@ -326,29 +339,18 @@ Future<void> generate(Options options) async {
     .toList()
     ..sort(_sortLayout);
 
-  final Iterable<String> entriesString = layouts.map((Layout layout) {
-    return _renderTemplate(
-      File(path.join(options.dataRoot, entryTemplateName)).readAsStringSync(),
-      <String, String>{
-        'NAME': layout.language,
-        'PLATFORM': _platformToString(layout.platform),
-        'ENTRIES': layout.entries.entries.map((MapEntry<String, LayoutEntry> mapEntry) {
-          final String value = mapEntry.value.printables.map((String char) {
-            return toHex(char.isEmpty ? 0 : char.codeUnitAt(0));
-          }).join(', ');
-          return '      <int>[$value], // ${mapEntry.key}';
-        }).join('\n'),
-      },
-    ).trimRight();
-  });
+  final LayoutStore store = LayoutStore(kLayoutGoals, layouts);
+  final String body = marshallStoreCompressed(store);
+
+  // Verify that the store can be unmarshalled correctly.
+  verifyLayoutStoreEqual(store, unmarshallStoreCompressed(body));
+
   final String result = _renderTemplate(
     File(path.join(options.dataRoot, overallTemplateName)).readAsStringSync(),
     <String, String>{
       'COMMIT_ID': commitId,
-      'LAYOUT_GOALS': kLayoutGoals.entries.map((MapEntry<String, String?> entry) =>
-        "  '${entry.key}': ${entry.value == null ? 'null' : "'${entry.value}'"},"
-      ).join('\n'),
-      'LAYOUT_ENTRIES': entriesString.join('\n\n'),
+      'BODY': _prettyPrintBody(body, 64),
+      'BODY_LENGTH': '${body.length}',
     },
   );
   final String outputPath = path.join(options.outputRoot, outputName);
