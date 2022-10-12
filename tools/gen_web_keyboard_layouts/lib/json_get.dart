@@ -25,7 +25,7 @@ String _jsonTypeErrorMessage(List<String> currentPath, String nextKey, Type expe
 }
 
 JsonContext<T> jsonGetKey<T>(JsonContext<JsonObject> context, String key) {
-  dynamic result = context.current[key];
+  final dynamic result = context.current[key];
   if (result is! T) {
     throw ArgumentError(_jsonTypeErrorMessage(context.path, key, T, result.runtimeType));
   }
@@ -33,7 +33,7 @@ JsonContext<T> jsonGetKey<T>(JsonContext<JsonObject> context, String key) {
 }
 
 JsonContext<T> jsonGetIndex<T>(JsonContext<JsonArray> context, int index) {
-  dynamic result = context.current[index];
+  final dynamic result = context.current[index];
   if (result is! T) {
     throw ArgumentError(_jsonTypeErrorMessage(context.path, '$index', T, result.runtimeType));
   }
@@ -42,7 +42,7 @@ JsonContext<T> jsonGetIndex<T>(JsonContext<JsonArray> context, int index) {
 
 JsonContext<T> jsonGetPath<T>(JsonContext<dynamic> context, List<dynamic> path) {
   JsonContext<dynamic> current = context;
-  void _jsonGetKeyOrIndex<M>(dynamic key, int depth) {
+  void jsonGetKeyOrIndex<M>(dynamic key, int depth) {
     assert(key is String || key is int, 'Key at $depth is a ${key.runtimeType}.');
     if (key is String) {
       current = jsonGetKey<M>(current as JsonContext<JsonObject>, key);
@@ -52,12 +52,12 @@ JsonContext<T> jsonGetPath<T>(JsonContext<dynamic> context, List<dynamic> path) 
       assert(false);
     }
   }
-  void _jsonGetKeyOrIndexForNext(dynamic key, dynamic nextKey, int depth) {
+  void jsonGetKeyOrIndexForNext(dynamic key, dynamic nextKey, int depth) {
     assert(nextKey is String || nextKey is int, 'Key at ${depth + 1} is a ${key.runtimeType}.');
     if (nextKey is String) {
-      _jsonGetKeyOrIndex<JsonObject>(key, depth);
+      jsonGetKeyOrIndex<JsonObject>(key, depth);
     } else if (nextKey is int) {
-      _jsonGetKeyOrIndex<JsonArray>(key, depth);
+      jsonGetKeyOrIndex<JsonArray>(key, depth);
     } else {
       assert(false);
     }
@@ -65,9 +65,9 @@ JsonContext<T> jsonGetPath<T>(JsonContext<dynamic> context, List<dynamic> path) 
 
   for (int depth = 0; depth < path.length; depth += 1) {
     if (depth != path.length - 1) {
-      _jsonGetKeyOrIndexForNext(path[depth], path[depth + 1], depth);
+      jsonGetKeyOrIndexForNext(path[depth], path[depth + 1], depth);
     } else {
-      _jsonGetKeyOrIndex<T>(path[depth], depth);
+      jsonGetKeyOrIndex<T>(path[depth], depth);
     }
   }
   return current as JsonContext<T>;

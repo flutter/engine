@@ -1,7 +1,4 @@
-# Cupertino Icons
-
-This is an asset repo containing the keyboard layouts used by
-Flutter's [Web keyboard manager](https://github.com/flutter/engine/blob/main/lib/web_ui/lib/src/engine/keyboard_binding.dart).
+# Web Keyboard Layouts
 
 # Usage
 

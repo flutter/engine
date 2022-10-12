@@ -2,18 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:gen_web_keyboard_layouts/data.dart';
-import 'package:meta/meta.dart' show immutable;
 
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart' show immutable;
 import 'package:path/path.dart' as path;
 
+import 'data.dart';
+
 import 'json_get.dart';
+import 'layout_types.dart';
 import 'utils.dart';
 
-const int kDeadChar = 0x1000000;
+/// All goals in the form of KeyboardEvent.key.
+final List<String> kGoalKeys = kLayoutGoals.keys.toList();
+
+/// A map from the key of `kLayoutGoals` (KeyboardEvent.key) to an
+/// auto-incremental index.
+final Map<String, int> kGoalToIndex = Map<String, int>.fromEntries(
+  kGoalKeys.asMap().entries.map(
+    (MapEntry<int, String> entry) => MapEntry<String, int>(entry.value, entry.key)),
+);
 
 @immutable
 class Options {
@@ -43,8 +53,8 @@ class Options {
 
 const String githubCacheFileName = 'github-response.json';
 const String githubTargetFolder = 'src/vs/workbench/services/keybinding/browser/keyboardLayouts';
-const String overallTemplateName = 'layouts.dart.tmpl';
-const String entryTemplateName = 'layout_entry.dart.tmpl';
+const String overallTemplateName = 'definitions.dart.tmpl';
+const String entryTemplateName = 'definitions_entry.dart.tmpl';
 const String outputName = 'definitions.g.dart';
 
 const String githubQuery = '''
@@ -118,7 +128,7 @@ Future<String> tryCached(String cachePath, bool forceRefresh, AsyncGetter<String
   return result;
 }
 
-Future<Map<String, dynamic>> fetchGithub(String githubToken, bool forceRefresh, String cachePath) async {
+Future<Map<String, dynamic>> _fetchGithub(String githubToken, bool forceRefresh, String cachePath) async {
   final String response = await tryCached(cachePath, forceRefresh, () async {
     final String condensedQuery = githubQuery
         .replaceAll(RegExp(r'\{ +'), '{')
@@ -142,34 +152,44 @@ Future<Map<String, dynamic>> fetchGithub(String githubToken, bool forceRefresh, 
 }
 
 @immutable
-class GitHubFile {
-  const GitHubFile({required this.name, required this.content});
+class _GitHubFile {
+  const _GitHubFile({required this.name, required this.content});
 
   final String name;
   final String content;
 }
 
-GitHubFile jsonGetGithubFile(JsonContext<JsonArray> files, int index) {
+_GitHubFile _jsonGetGithubFile(JsonContext<JsonArray> files, int index) {
   final JsonContext<JsonObject> file = jsonGetIndex<JsonObject>(files, index);
-  return GitHubFile(
+  return _GitHubFile(
     name: jsonGetKey<String>(file, 'name').current,
     content: jsonGetPath<String>(file, <String>['object', 'text']).current,
   );
 }
 
-typedef LayoutEntry = List<int>;
+String _parsePrintable(String rawString) {
+  // Parse a char represented in unicode hex, such as \u001b.
+  final RegExp hexParser = RegExp(r'^\\u([0-9a-fA-F]+)$');
 
-@immutable
-class Layout {
-  const Layout(this.name, this.platform, this.mapping);
-
-  final String name;
-  final String platform;
-  final Map<String, LayoutEntry> mapping;
+  if (rawString.isEmpty) {
+    return '';
+  }
+  final RegExpMatch? hexMatch = hexParser.firstMatch(rawString);
+  if (hexMatch != null) {
+    final int codeUnit = int.parse(hexMatch.group(1)!, radix: 16);
+    return String.fromCharCode(codeUnit);
+  }
+  return const <String, String>{
+    r'\\': r'\',
+    r'\r': '\r',
+    r'\b': '\b',
+    r'\t': '\t',
+    r"\'": "'",
+  }[rawString] ?? rawString;
 }
 
-Layout parseLayoutFile(GitHubFile file) {
-  final Map<String, LayoutEntry> mapping = <String, LayoutEntry>{};
+Layout _parseLayoutFromGithubFile(_GitHubFile file) {
+  final Map<String, LayoutEntry> entries = <String, LayoutEntry>{};
 
   // Parse a line that looks like the following, and get its key as well as
   // the content within the square bracket.
@@ -179,67 +199,59 @@ Layout parseLayoutFile(GitHubFile file) {
   final RegExp lineParser = RegExp(r'^[ \t]*(.+?): \[(.*)\],$');
   // Parse each child of the content within the square bracket.
   final RegExp listParser = RegExp(r"^'(.*?)', '(.*?)', '(.*?)', '(.*?)', (\d)(?:, '(.+)')?$");
-  // Parse a char represented in unicode hex, such as \u001b.
-  final RegExp hexParser = RegExp(r'^\\u([0-9a-fA-F]+)$');
   file.content.split('\n').forEach((String line) {
     final RegExpMatch? lineMatch = lineParser.firstMatch(line);
     if (lineMatch == null) {
       return;
     }
+    // KeyboardKey.key, such as "KeyZ".
     final String eventKey = lineMatch.group(1)!;
+    // Only record goals.
+    if (!kGoalToIndex.containsKey(eventKey)) {
+      return;
+    }
+
+    // Comma-separated definition as a string, such as "'y', 'Y', '', '', 0, 'VK_Y'".
     final String definition = lineMatch.group(2)!;
     if (definition.isEmpty) {
       return;
     }
+    // Group 1-4 are single strings for an entry, such as "y", "", "\u001b".
+    // Group 5 is the dead mask.
     final RegExpMatch? listMatch = listParser.firstMatch(definition);
     assert(listMatch != null, 'Unable to match $definition');
     final int deadMask = int.parse(listMatch!.group(5)!, radix: 10);
 
-    int combineValue(String rawString, int deadMask) {
-      if (deadMask != 0 || rawString.isEmpty) {
-        return kDeadChar;
-      }
-      final RegExpMatch? hexMatch = hexParser.firstMatch(rawString);
-      if (hexMatch != null) {
-        return int.parse(hexMatch.group(1)!, radix: 16);
-      }
-      final String charString = const <String, String>{
-        r'\\': r'\',
-        r'\r': '\r',
-        r'\b': '\b',
-        r'\t': '\t',
-        r"\'": "'",
-        'l̥': 'l', // TODO
-        'L̥': 'L', // TODO
-        'r̥': 'r', // TODO
-        'R̥': 'R', // TODO
-      }[rawString] ?? rawString;
-      assert(charString.length == 1, 'Unrecognized multibyte character |$charString| (file ${file.name} key $eventKey)');
-      return charString.codeUnitAt(0);
-    }
-    mapping[eventKey] = <int>[
-      combineValue(listMatch.group(1)!, deadMask & 0x1),
-      combineValue(listMatch.group(2)!, deadMask & 0x2),
-      combineValue(listMatch.group(3)!, deadMask & 0x4),
-      combineValue(listMatch.group(4)!, deadMask & 0x8),
-    ];
+    entries[eventKey] = LayoutEntry(
+      <String>[
+        _parsePrintable(listMatch.group(1)!),
+        _parsePrintable(listMatch.group(2)!),
+        _parsePrintable(listMatch.group(3)!),
+        _parsePrintable(listMatch.group(4)!),
+      ],
+      deadMask,
+    );
   });
+
+  for (final String goalKey in kGoalKeys) {
+    entries.putIfAbsent(goalKey, () => LayoutEntry.empty);
+  }
 
   // Parse the file name, which looks like "en-belgian.win.ts".
   final RegExp fileNameParser = RegExp(r'^([^.]+)\.([^.]+)\.ts$');
-  Layout? layout;
+  late final Layout layout;
   try {
     final RegExpMatch? match = fileNameParser.firstMatch(file.name);
     final String layoutName = match!.group(1)!;
-    final String platform = match.group(2)!;
-    layout = Layout(layoutName, platform, mapping);
+    final LayoutPlatform platform = _platformFromGithubString(match.group(2)!);
+    layout = Layout(layoutName, platform, entries);
   } catch (exception) {
     throw ArgumentError('Unrecognizable file name ${file.name}.');
   }
   return layout;
 }
 
-String renderTemplate(String template, Map<String, String> dictionary) {
+String _renderTemplate(String template, Map<String, String> dictionary) {
   String result = template;
   dictionary.forEach((String key, String value) {
     final String localResult = result.replaceAll('@@@$key@@@', value);
@@ -251,9 +263,41 @@ String renderTemplate(String template, Map<String, String> dictionary) {
   return result;
 }
 
+LayoutPlatform _platformFromGithubString(String origin) {
+  switch (origin) {
+    case 'win':
+      return LayoutPlatform.win;
+    case 'linux':
+      return LayoutPlatform.linux;
+    case 'darwin':
+      return LayoutPlatform.darwin;
+    default:
+      throw ArgumentError('Unexpected platform "$origin".');
+  }
+}
+
+String _platformToString(LayoutPlatform value) {
+  switch (value) {
+    case LayoutPlatform.win:
+      return 'win';
+    case LayoutPlatform.linux:
+      return 'linux';
+    case LayoutPlatform.darwin:
+      return 'darwin';
+  }
+}
+
+int _sortLayout(Layout a, Layout b) {
+  int result = a.language.compareTo(b.language);
+  if (result == 0) {
+    result = a.platform.index.compareTo(b.platform.index);
+  }
+  return result;
+}
+
 Future<void> generate(Options options) async {
   // Fetch files from GitHub.
-  final Map<String, dynamic> githubBody = await fetchGithub(
+  final Map<String, dynamic> githubBody = await _fetchGithub(
     options.githubToken,
     options.force,
     path.join(options.cacheRoot, githubCacheFileName),
@@ -269,32 +313,35 @@ Future<void> generate(Options options) async {
     commitJson,
     jsonPathSplit('file.object.entries'),
   );
-  final Iterable<GitHubFile> files = Iterable<GitHubFile>.generate(
+  final Iterable<_GitHubFile> files = Iterable<_GitHubFile>.generate(
     fileListJson.current.length,
-    (int index) => jsonGetGithubFile(fileListJson, index),
+    (int index) => _jsonGetGithubFile(fileListJson, index),
   ).where(
-    // A few files in the folder are controlling files, containing no layout
-    // information.
-    (GitHubFile file) => !file.name.startsWith('layout.contribution.')
+    // Exclude controlling files, which contain no layout information.
+    (_GitHubFile file) => !file.name.startsWith('layout.contribution.')
                       && !file.name.startsWith('_.contribution'),
   );
 
-  final List<Layout> layouts = files.map(parseLayoutFile).toList();
+  final List<Layout> layouts = files.map(_parseLayoutFromGithubFile)
+    .toList()
+    ..sort(_sortLayout);
 
   final Iterable<String> entriesString = layouts.map((Layout layout) {
-    return renderTemplate(
+    return _renderTemplate(
       File(path.join(options.dataRoot, entryTemplateName)).readAsStringSync(),
       <String, String>{
-        'NAME': layout.name,
-        'PLATFORM': layout.platform,
-        'ENTRIES': kLayoutGoals.keys.map((String key) {
-          final String value = layout.mapping[key]!.map(toHex).join(', ');
-          return '      <int>[$value], // $key';
+        'NAME': layout.language,
+        'PLATFORM': _platformToString(layout.platform),
+        'ENTRIES': layout.entries.entries.map((MapEntry<String, LayoutEntry> mapEntry) {
+          final String value = mapEntry.value.printables.map((String char) {
+            return toHex(char.isEmpty ? 0 : char.codeUnitAt(0));
+          }).join(', ');
+          return '      <int>[$value], // ${mapEntry.key}';
         }).join('\n'),
       },
     ).trimRight();
   });
-  final String result = renderTemplate(
+  final String result = _renderTemplate(
     File(path.join(options.dataRoot, overallTemplateName)).readAsStringSync(),
     <String, String>{
       'COMMIT_ID': commitId,

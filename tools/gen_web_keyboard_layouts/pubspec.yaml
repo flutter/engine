@@ -8,6 +8,7 @@ dependencies:
   args: ^2.3.1
   http: ^0.13.4
   path: ^1.8.1
+  meta: any
 
 dev_dependencies:
   test: ^1.21.1
