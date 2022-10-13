@@ -241,10 +241,10 @@ void testMain() {
         Line(placeholderChar, opportunity),
         Line('Lorem', opportunity),
         Line(placeholderChar, opportunity),
-        Line('ipsum\n', mandatory),
+        Line('ipsum\n', mandatory, nl: 1, sp: 1),
         Line(placeholderChar, opportunity),
         Line('dolor', opportunity),
-        Line('$placeholderChar\n', mandatory),
+        Line('$placeholderChar\n', mandatory, nl: 1, sp: 1),
         Line('sit', opportunity),
         Line(placeholderChar, endOfText),
       ]);
@@ -411,6 +411,8 @@ class Line {
     return Line(
       text.substring(fragment.start, fragment.end),
       fragment.type,
+      nl: fragment.trailingNewlines,
+      sp: fragment.trailingSpaces,
     );
   }
 
@@ -420,11 +422,15 @@ class Line {
   final int sp;
 
   @override
-  int get hashCode => Object.hash(text, breakType);
+  int get hashCode => Object.hash(text, breakType, nl, sp);
 
   @override
   bool operator ==(Object other) {
-    return other is Line && other.text == text && other.breakType == breakType;
+    return other is Line &&
+        other.text == text &&
+        other.breakType == breakType &&
+        other.nl == nl &&
+        other.sp == sp;
   }
 
   String get escapedText {
@@ -440,7 +446,7 @@ class Line {
 
   @override
   String toString() {
-    return '"$escapedText" ($breakType)';
+    return '"$escapedText" ($breakType, nl: $nl, sp: $sp)';
   }
 }
 

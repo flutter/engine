@@ -225,7 +225,7 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     if (prev1 == LineCharProperty.CR) {
       if (curr == LineCharProperty.LF) {
         // LB5: CR × LF
-        continue;
+        setBreak(LineBreakType.prohibited, 5);
       } else {
         // LB5: CR !
         setBreak(LineBreakType.mandatory, 5);
