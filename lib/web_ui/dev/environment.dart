@@ -108,13 +108,13 @@ class Environment {
   String get dartExecutable => pathlib.join(dartSdkDir.path, 'bin', 'dart');
 
   /// Path to dartaotruntime for running aot snapshots
-  String get dartPrecompiledRuntimePath => pathlib.join(engineBuildDir.path, 'dart_precompiled_runtime');
+  String get dartPrecompiledRuntimePath => pathlib.join(dartSdkDir.path, 'bin', 'dartaotruntime');
 
   /// The "pub" executable file.
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
 
   /// The path to dart2wasm pre-compiled snapshot
-  String get dart2wasmSnapshotPath => pathlib.join(engineBuildDir.path, 'dart2wasm.snapshot');
+  String get dart2wasmSnapshotPath => pathlib.join(dartSdkDir.path, 'snapshots', 'dart2wasm.snapshot');
 
   /// The path to dart2wasm.dart file
   String get dart2wasmScriptPath => pathlib.join(

@@ -26,10 +26,6 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       help: 'Build CanvasKit locally instead of getting it from CIPD. Disabled '
           'by default.',
     );
-    argParser.addFlag(
-      'dart2wasm',
-      help: 'Build tools needed for wasm unit tests (dart2wasm from the dart sdk).',
-    );
   }
 
   @override
@@ -42,13 +38,11 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get buildCanvasKit => boolArg('build-canvaskit');
 
-  bool get dart2wasm => boolArg('dart2wasm');
-
   @override
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(dart2wasm: dart2wasm),
+      GnPipelineStep(),
       NinjaPipelineStep(target: environment.engineBuildDir),
     ];
     if (buildCanvasKit) {
@@ -79,7 +73,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 /// Not safe to interrupt as it may leave the `out/` directory in a corrupted
 /// state. GN is pretty quick though, so it's OK to not support interruption.
 class GnPipelineStep extends ProcessStep {
-  GnPipelineStep({this.target = 'engine', this.dart2wasm = false})
+  GnPipelineStep({this.target = 'engine'})
       : assert(target == 'engine' || target == 'canvaskit');
 
   @override
@@ -92,7 +86,6 @@ class GnPipelineStep extends ProcessStep {
   ///
   /// Acceptable values: engine, canvaskit
   final String target;
-  final bool dart2wasm;
 
   @override
   Future<ProcessManager> createProcess() {
@@ -103,7 +96,6 @@ class GnPipelineStep extends ProcessStep {
         '--unopt',
         if (Platform.isMacOS) '--xcode-symlinks',
         '--full-dart-sdk',
-        if (dart2wasm) '--dart2wasm',
         if (environment.isMacosArm) '--mac-cpu=arm64',
       ]);
     } else if (target == 'canvaskit') {
