@@ -42,7 +42,8 @@ IMPELLER_API void Close(PathBuilder* builder);
 
 IMPELLER_API struct Vertices* Tessellate(PathBuilder* builder,
                                          int fill_type,
-                                         Scalar scale,
+                                         Scalar tolerance,
+                                         // Unused, remaining for ABI stability.
                                          Scalar angle_tolerance,
                                          Scalar cusp_limit);
 

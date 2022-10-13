@@ -17,6 +17,7 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
+#include "path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -1426,8 +1427,7 @@ TEST(GeometryTest, RectGetPositive) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  SmoothingApproximation approximation;
-  auto polyline = component.CreatePolyline(approximation);
+  auto polyline = component.CreatePolyline();
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1711,6 +1711,136 @@ TEST(GeometryTest, Gradient) {
 
     ASSERT_EQ(gradient.texture_size, 1024u);
   }
+}
+
+static void LogPoint(Point p, bool comma) {
+  if (comma) {
+    std::cout << "{x: " << p.x << ", y: " << p.y << "}," << std::endl;
+  } else {
+    std::cout << "{x: " << p.x << ", y: " << p.y << "}" << std::endl;
+  }
+}
+
+static Scalar ApproximateParabolaIntegral(Scalar x) {
+  constexpr Scalar d = 0.67;
+  return x / (1.0 - d + sqrt(sqrt(pow(d, 4) + 0.25 * x * x)));
+}
+
+static std::vector<Point> CreateQuadPolyline(
+    const QuadraticPathComponent& component) {
+  auto tolerance = .1f;
+  auto sqrt_tol = sqrt(tolerance);
+
+  auto d01 = component.cp - component.p1;
+  auto d12 = component.p2 - component.cp;
+  auto dd = d01 - d12;
+  auto cross = (component.p2 - component.p1).Cross(dd);
+  auto x0 = d01.Dot(dd) * 1 / cross;
+  auto x2 = d12.Dot(dd) * 1 / cross;
+  auto scale = abs(cross / (hypot(dd.x, dd.y) * (x2 - x0)));
+
+  auto a0 = ApproximateParabolaIntegral(x0);
+  auto a2 = ApproximateParabolaIntegral(x2);
+  Scalar val = 0.f;
+  if (isfinite(scale)) {
+    auto da = abs(a2 - a0);
+    auto sqrt_scale = sqrt(scale);
+    if ((x0 < 0 && x2 < 0) || (x0 >= 0 && x2 >= 0)) {
+      val = da * sqrt_scale;
+    } else {
+      // cusp case
+      auto xmin = sqrt_tol / sqrt_scale;
+      val = sqrt_tol * da / ApproximateParabolaIntegral(xmin);
+    }
+  }
+  auto u0 = ApproximateParabolaIntegral(a0);
+  auto u2 = ApproximateParabolaIntegral(a2);
+  auto uscale = 1 / (u2 - u0);
+
+  auto line_count = ceil(0.5 * val / sqrt_tol);
+  auto step = 1 / line_count;
+  FML_LOG(ERROR) << "Line count: " << line_count;
+  for (size_t i = 1; i < line_count; i += 1) {
+    auto u = i * step;
+    auto a = a0 + (a2 - a0) * u;
+    auto t = (ApproximateParabolaIntegral(a) - u0) * uscale;
+    LogPoint(component.Solve(t), true);
+  }
+  LogPoint(component.p2, false);
+
+  return {};
+}
+
+static std::vector<Point> CreateCubicPolyline(
+    const CubicPathComponent& component) {
+  FML_LOG(ERROR) << "New";
+
+  Scalar t = 0;
+
+  CubicPathComponent current_component = component;
+  int count = 0;
+  while (t < 1.0) {
+    count += 1;
+
+    auto v1 = current_component.cp1 - current_component.p1;
+    auto v2 = current_component.cp2 - current_component.p1;
+
+    auto s = abs(v2.Cross(v1) / hypot(v1.x, v1.y));
+
+    if (s < kEhCloseEnough) {
+      break;
+    }
+
+    constexpr Scalar f = 0.005;
+    t = 2 * sqrt(f / (3.f * s));
+
+    // P'1
+    auto ab = current_component.p1 +
+              t * (current_component.cp1 - current_component.p1);
+    // P'2
+    auto bc = current_component.cp1 +
+              t * (current_component.cp2 - current_component.cp1);
+    // P'3
+    auto cd = current_component.cp2 +
+              t * (current_component.p2 - current_component.cp2);
+
+    // P''1
+    auto abc = ab + t * (bc - ab);
+    // P''2
+    auto bcd = bc + t * (cd - bc);
+
+    // P'''1
+    auto abcd = abc + t * (bcd - abc);
+
+    current_component = {abcd, bcd, cd, current_component.p2};
+    LogPoint(abcd, true);
+  }
+  LogPoint(component.p2, false);
+  FML_LOG(ERROR) << count;
+  return {};
+}
+
+TEST(GeometryTest, NewPolylineAlgo) {
+  // CubicPathComponent component({10, 10}, {25, 12}, {40, 15}, {38, 24});
+  CubicPathComponent component({100, 100}, {300, 200}, {200, 200}, {200, 100});
+  auto points = component.CreatePolyline();
+  LogPoint({100, 100}, true);
+  for (auto point : points) {
+    LogPoint(point, point != points.back());
+  }
+  FML_LOG(ERROR) << points.size();
+  CreateCubicPolyline(component);
+}
+
+TEST(GeometryTest, NewQuadPolylineAlgo) {
+  QuadraticPathComponent component({100, 100}, {300, 200}, {200, 100});
+  auto points = component.CreatePolyline();
+  // LogPoint({100, 100}, true);
+  for (auto point : points) {
+    LogPoint(point, point != points.back());
+  }
+  FML_LOG(ERROR) << points.size();
+  CreateQuadPolyline(component);
 }
 
 }  // namespace testing
