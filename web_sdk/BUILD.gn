@@ -6,6 +6,11 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 
+declare_args() {
+  build_canvaskit = false
+  archive_flutter_web_sdk = true
+}
+
 kernel_out_dir = "$root_out_dir/flutter_web_sdk/kernel"
 sdk_dill = "$kernel_out_dir/flutter_ddc_sdk.dill"
 sdk_dill_sound = "$kernel_out_dir/flutter_ddc_sdk_sound.dill"
@@ -30,6 +35,10 @@ group("web_sdk") {
     ":flutter_dartdevc_kernel_sdk_outline_sound",
     ":flutter_dartdevc_kernel_sdk_sound",
   ]
+
+  if (archive_flutter_web_sdk && !is_fuchsia) {
+    deps += [ ":flutter_web_sdk_archive" ]
+  }
 }
 
 template("sdk_rewriter") {
@@ -421,6 +430,10 @@ if (!is_fuchsia) {
       ":web_ui_library",
       ":web_ui_library_sources",
     ]
+
+    if (build_canvaskit) {
+      deps += [ "//third_party/skia/modules/canvaskit" ]
+    }
     sources = get_target_outputs(":flutter_dartdevc_canvaskit_html_kernel_sdk")
     sources +=
         get_target_outputs(":flutter_dartdevc_canvaskit_html_kernel_sdk_sound")
@@ -442,6 +455,18 @@ if (!is_fuchsia) {
         {
           source = rebase_path(source)
           destination = rebase_path(source, "$root_build_dir")
+        },
+      ]
+    }
+    if (build_canvaskit) {
+      tmp_files += [
+        {
+          source = rebase_path("$root_out_dir/canvaskit.js")
+          destination = "canvaskit/canvaskit.js"
+        },
+        {
+          source = rebase_path("$root_out_dir/canvaskit.wasm")
+          destination = "canvaskit/canvaskit.wasm"
         },
       ]
     }

@@ -12,6 +12,8 @@ import("//third_party/dart/build/dart/copy_tree.gni")
 
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
+# TODO(jacksongardner): remove this poorly named argument once the recipes stop
+# using it.
 declare_args() {
   full_dart_sdk = false
 }

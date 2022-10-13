@@ -25,6 +25,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       'build-canvaskit',
       help: 'Build CanvasKit locally instead of getting it from CIPD. Disabled '
           'by default.',
+      defaultsTo: true
     );
   }
 
@@ -42,7 +43,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(),
+      GnPipelineStep(buildCanvasKit: buildCanvasKit),
       NinjaPipelineStep(target: environment.wasmReleaseOutDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -67,6 +68,10 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 /// Not safe to interrupt as it may leave the `out/` directory in a corrupted
 /// state. GN is pretty quick though, so it's OK to not support interruption.
 class GnPipelineStep extends ProcessStep {
+  GnPipelineStep({required this.buildCanvasKit});
+
+  final bool buildCanvasKit;
+
   @override
   String get description => 'gn';
 
@@ -76,9 +81,10 @@ class GnPipelineStep extends ProcessStep {
   @override
   Future<ProcessManager> createProcess() {
     print('Running gn...');
-    const List<String> gnArgs = <String>[
-      '--wasm',
+    final List<String> gnArgs = <String>[
+      '--web',
       '--runtime-mode=release',
+      if (buildCanvasKit) '--build-canvaskit',
     ];
     return startProcess(
       path.join(environment.flutterDirectory.path, 'tools', 'gn'),
