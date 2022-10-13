@@ -260,7 +260,9 @@ def to_gn_args(args):
   gn_args['build_flutter_web_sdk'] = args.build_web_sdk
   gn_args['full_dart_sdk'] = args.full_dart_sdk
   if args.build_web_sdk or args.full_dart_sdk:
-    gn_args['build_canvaskit'] = args.build_canvaskit
+    # TODO(jacksongardner): Make this based off of the input argument rather
+    # than forced to true, once the recipes are updated.
+    gn_args['build_canvaskit'] = True
 
   if args.enable_unittests:
     gn_args['enable_unittests'] = args.enable_unittests
