@@ -230,9 +230,14 @@ static void BM_ManyCubicPolyline(benchmark::State& state) {
                         {347.56, 106.771})
           .Close()
           .TakePath();
+  size_t point_count = 0u;
+  size_t single_point_count = 0u;
   while (state.KeepRunning()) {
-    path.CreatePolyline();
+    single_point_count = path.CreatePolyline().points.size();
+    point_count += single_point_count;
   }
+  state.counters["SinglePointCount"] = single_point_count;
+  state.counters["TotalPointCount"] = point_count;
 }
 
 BENCHMARK(BM_ManyCubicPolyline);
@@ -366,9 +371,14 @@ static void BM_ManyQuadPolyline(benchmark::State& state) {
                   .QuadraticCurveTo({349.127, 104.139}, {347.56, 106.771})
                   .Close()
                   .TakePath();
+  size_t point_count = 0u;
+  size_t single_point_count = 0u;
   while (state.KeepRunning()) {
-    path.CreatePolyline();
+    single_point_count = path.CreatePolyline().points.size();
+    point_count += single_point_count;
   }
+  state.counters["SinglePointCount"] = single_point_count;
+  state.counters["TotalPointCount"] = point_count;
 }
 
 BENCHMARK(BM_ManyQuadPolyline);
