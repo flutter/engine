@@ -6,45 +6,90 @@ import 'dart:convert' show base64, utf8;
 import 'dart:io' hide BytesBuilder;
 import 'dart:typed_data';
 
-import 'package:meta/meta.dart' show immutable;
-
+/// The platform that the browser is running on.
 enum LayoutPlatform {
+  /// Windows.
   win,
+  /// Linux.
   linux,
+  /// MacOS or iOS.
   darwin,
 }
 
+// The length of [LayoutEntry.printable].
 const int _kPrintableLength = 4;
 
-@immutable
+/// Describes the characters that a physical keyboard key will be mapped to
+/// under different modifier states, for a given language on a given
+/// platform.
 class LayoutEntry {
+  /// Create a layout entry.
   LayoutEntry(this.printables, this.deadMasks)
     : assert(printables.length == _kPrintableLength);
 
+  /// The printable characters that a key should be mapped to under different
+  /// modifier states.
+  ///
+  /// The [printables] always have a length of 4, corresponding to "without any
+  /// modifiers", "with Shift", "with AltGr", and "with Shift and AltGr"
+  /// respectively. Some values might be empty, or be dead keys that are
+  /// indiecated by [deadMasks].
   final List<String> printables;
+
+  /// Whether the outcome of a key is a dead key under different modifier
+  /// states.
+  ///
+  /// The four LSB [deadMasks] correspond to the four conditions of
+  /// [printables]: 0x1 for "without any modifiers", 0x2 for "with Shift",
+  /// 0x4 for "with AltGr", and 0x8 for "with Shift and AltGr". A set bit means
+  /// the character is a dead key.
   final int deadMasks;
 
+  /// An empty [LayoutEntry] that produces dead keys under all conditions.
   static final LayoutEntry empty = LayoutEntry(
     const <String>['', '', '', ''], 0xf);
 }
 
-@immutable
+/// Describes the characters that all goal keys will be mapped to for a given
+/// language on a given platform.
 class Layout {
+  /// Create a [Layout].
   const Layout(this.language, this.platform, this.entries);
 
+  /// The language being used.
   final String language;
+
+  /// The platform that the browser is running on.
   final LayoutPlatform platform;
+
+  /// Maps from DOM `KeyboardKey.key`s to the characters they produce.
   final Map<String, LayoutEntry> entries;
 }
 
-@immutable
+/// Describes all information needed to detect keyboard layout for any languages
+/// on any platforms.
 class LayoutStore {
+  /// Create a [LayoutStore].
   const LayoutStore(this.goals, this.layouts);
 
+  /// The list of goals, mapping from DOM `KeyboardKey.key` to their mandatory
+  /// goal characters, or null if this goal is optional.
+  ///
+  /// Mandatory goals are characters that must be fulfilled during keyboard
+  /// layout detection. If the character of a mandatory goal is not assigned in
+  /// earlier stages, this character (the value of this map) will be assigned
+  /// to its corresponding key (the key of this map).
+  ///
+  /// Optional goals are keys that will be tested to see if they can be mapped
+  /// to mandatory goal characters.
   final Map<String, String?> goals;
+
+  /// The layout information for different languages on different platforms.
   final List<Layout> layouts;
 }
 
+// A [ByteBuffer] that records a offset for the convenience of reading
+// sequentially.
 class _ByteStream {
   _ByteStream(this.buffer)
     : _data = buffer.asByteData(), _offset = 0;
@@ -52,15 +97,28 @@ class _ByteStream {
   final ByteBuffer buffer;
   final ByteData _data;
 
+  // The current offset.
+  //
+  // The next read will start from this byte (inclusive).
   int get offest => _offset;
   int _offset;
 
+  // Read the next byte as an 8-bit unsigned integer, and increase [offset] by
+  // 1.
   int readUint8() {
     final int result = _data.getUint8(_offset);
     _offset += 1;
     return result;
   }
 
+  // Read the next few bytes as a UTF-8 string, and increase [offset]
+  // accordingly.
+  //
+  // The first byte will be a uint8, `length`, the number of bytes of the UTF-8
+  // sequence. Following that is the UTF-8 sequence. Therefore, the total
+  // increment for [offset] is `length + 1`.
+  //
+  // If the `length` is 0, then an empty string is returned.
   String readString() {
     final int length = _data.getUint8(_offset);
     if (length == 0) {
@@ -73,6 +131,11 @@ class _ByteStream {
     return result;
   }
 
+  // Read the next few bytes as a nullable UTF-8 string, and increase [offset]
+  // accordingly.
+  //
+  // It is the same as [readString], except that if the `length` is 0, a null is
+  // returned.
   String? readNullableString() {
     final int length = _data.getUint8(_offset);
     if (length == 0) {
@@ -83,6 +146,7 @@ class _ByteStream {
   }
 }
 
+/// Decode a [LayoutStore] out of the compressed binary data.
 LayoutStore unmarshallStoreCompressed(String compressed) {
   final Uint8List bytes = Uint8List.fromList(gzip.decode(base64.decode(compressed)));
   return _unmarshallStore(bytes.buffer);
@@ -125,6 +189,7 @@ LayoutEntry _unmarshallLayoutEntry(_ByteStream stream) {
   return LayoutEntry(printables, deadMasks);
 }
 
+/// Compress a [LayoutStore] into the compressed binary data.
 String marshallStoreCompressed(LayoutStore store) {
   final BytesBuilder bodyBuilder = BytesBuilder();
   _marshallStore(bodyBuilder, store);
@@ -199,12 +264,21 @@ void _marshallLayoutEntry(BytesBuilder builder, LayoutEntry entry) {
 
 typedef _VerifyCallback<T> = void Function(T value1, T value2, String path);
 
+/// Verify that two [LayoutStore]s are equal.
+///
+/// It verifies all fields of all children objects of the store. For maps,
+/// it also verifies that the two stores have the same order of entries.
+///
+/// Inconsistencies will lead to throwing [Exception].
 void verifyLayoutStoreEqual(LayoutStore store1, LayoutStore store2) {
+  // Test if two values are equal by `==`, or throw an exception.
   void expectEqual<T>(T a, T b, String path) {
     if (a != b) {
       throw Exception('Error verifying unmarshalled layout on $path: $a != $b');
     }
   }
+  // Test that two iterables are of the same length, and each of their elements
+  // are verifies by `body`.
   void verifyEach<T>(Iterable<T> a, Iterable<T> b, String path, _VerifyCallback<T> body) {
     expectEqual(a.length, b.length, '$path.length');
     final Iterator<T> aIter = a.iterator;
@@ -216,6 +290,7 @@ void verifyLayoutStoreEqual(LayoutStore store1, LayoutStore store2) {
       index += 1;
     }
   }
+
   // Verify Store.goals
   verifyEach(store1.goals.entries, store2.goals.entries, 'Store.goals',
     (MapEntry<String, String?> entry1, MapEntry<String, String?> entry2, String path) {
