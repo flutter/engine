@@ -12,7 +12,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
@@ -205,7 +205,7 @@ bool EntityPass::Render(ContentContext& renderer,
 
       Entity entity;
       entity.SetContents(contents);
-      entity.SetBlendMode(BlendMode::kSourceOver);
+      entity.SetBlendMode(BlendMode::kSource);
 
       entity.Render(renderer, *render_pass);
     }
@@ -532,10 +532,10 @@ bool EntityPass::OnRender(
           FilterInput::Make(texture,
                             result.entity.GetTransformation().Invert())};
       auto contents =
-          FilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
+          ColorFilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
       contents->SetCoverageCrop(result.entity.GetCoverage());
       result.entity.SetContents(std::move(contents));
-      result.entity.SetBlendMode(BlendMode::kSourceOver);
+      result.entity.SetBlendMode(BlendMode::kSource);
     }
 
     //--------------------------------------------------------------------------
