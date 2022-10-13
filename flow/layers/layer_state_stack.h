@@ -494,7 +494,9 @@ class LayerStateStack {
   std::vector<std::unique_ptr<StateEntry>> state_stack_;
   friend class MutatorContext;
 
+  SkM44 initial_matrix_;
   SkM44 matrix_;
+  SkRect initial_cull_rect_;
   SkRect cull_rect_;
 
   SkCanvas* canvas_ = nullptr;

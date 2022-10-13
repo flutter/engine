@@ -21,9 +21,9 @@ static inline bool has_perspective(const SkM44& matrix) {
 
 LayerStateStack::LayerStateStack(const SkRect* cull_rect) {
   if (cull_rect) {
-    cull_rect_ = *cull_rect;
+    initial_cull_rect_ = cull_rect_ = *cull_rect;
   } else {
-    cull_rect_ = kGiantRect;
+    initial_cull_rect_ = cull_rect_ = kGiantRect;
   }
 }
 
@@ -72,35 +72,35 @@ void LayerStateStack::set_delegate(MutatorsStack* stack) {
 void LayerStateStack::set_initial_cull_rect(const SkRect& cull_rect) {
   FML_CHECK(is_empty()) << "set_initial_cull_rect() must be called before any "
                            "state is pushed onto the state stack";
-  cull_rect_ = cull_rect;
+  initial_cull_rect_ = cull_rect_ = cull_rect;
 }
 
 void LayerStateStack::set_initial_transform(const SkMatrix& matrix) {
   FML_CHECK(is_empty()) << "set_initial_transform() must be called before any "
                            "state is pushed onto the state stack";
-  matrix_ = SkM44(matrix);
+  initial_matrix_ = matrix_ = SkM44(matrix);
 }
 
 void LayerStateStack::set_initial_transform(const SkM44& matrix) {
   FML_CHECK(is_empty()) << "set_initial_transform() must be called before any "
                            "state is pushed onto the state stack";
-  matrix_ = matrix;
+  initial_matrix_ = matrix_ = matrix;
 }
 
 void LayerStateStack::set_initial_state(const SkRect& cull_rect,
                                         const SkMatrix& matrix) {
   FML_CHECK(is_empty()) << "set_initial_state() must be called before any "
                            "state is pushed onto the state stack";
-  cull_rect_ = cull_rect;
-  matrix_ = SkM44(matrix);
+  initial_cull_rect_ = cull_rect_ = cull_rect;
+  initial_matrix_ = matrix_ = SkM44(matrix);
 }
 
 void LayerStateStack::set_initial_state(const SkRect& cull_rect,
                                         const SkM44& matrix) {
   FML_CHECK(is_empty()) << "set_initial_state() must be called before any "
                            "state is pushed onto the state stack";
-  cull_rect_ = cull_rect;
-  matrix_ = matrix;
+  initial_cull_rect_ = cull_rect_ = cull_rect;
+  initial_matrix_ = matrix_ = matrix;
 }
 
 void LayerStateStack::reapply_all() {
@@ -110,11 +110,17 @@ void LayerStateStack::reapply_all() {
   // the stack. When we are finished, though, the local attributes
   // contents should match the current outstanding_ values;
   RenderingAttributes attributes = outstanding_;
+  SkM44 matrix = matrix_;
+  SkRect cull_rect = cull_rect_;
   outstanding_ = {};
+  matrix_ = initial_matrix_;
+  cull_rect_ = initial_cull_rect_;
   for (auto& state : state_stack_) {
     state->reapply(this);
   }
   FML_DCHECK(attributes == outstanding_);
+  FML_DCHECK(matrix == matrix_);
+  FML_DCHECK(cull_rect == cull_rect_);
 }
 
 AutoRestore::AutoRestore(LayerStateStack* stack)
