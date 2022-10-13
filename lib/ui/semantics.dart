@@ -760,7 +760,7 @@ class LocaleStringAttribute extends StringAttribute {
 /// An object that creates [SemanticsUpdate] objects.
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
-/// [PlatformDispatcher.updateSemantics] to update the semantics conveyed to the
+/// [FlutterView.updateSemantics] to update the semantics conveyed to the
 /// user.
 @pragma('vm:entry-point')
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
@@ -1030,7 +1030,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
-  /// The returned object can be passed to [PlatformDispatcher.updateSemantics]
+  /// The returned object can be passed to [FlutterView.updateSemantics]
   /// to actually update the semantics retained by the system.
   ///
   /// This object is unusable after calling build.
@@ -1048,7 +1048,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
 /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
 ///
 /// Semantics updates can be applied to the system's retained semantics tree
-/// using the [PlatformDispatcher.updateSemantics] method.
+/// using the [FlutterView.updateSemantics] method.
 @pragma('vm:entry-point')
 class SemanticsUpdate extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
