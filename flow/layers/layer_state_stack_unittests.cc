@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_image_filter.h"
+#include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/mock_canvas.h"
@@ -18,11 +19,15 @@ TEST(LayerStateStack, Defaults) {
 
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
   ASSERT_EQ(state_stack.builder_delegate(), nullptr);
-  ASSERT_EQ(state_stack.checkerboard_save_layers(), false);
+  ASSERT_EQ(state_stack.get_draw_checkerboard(), nullptr);
   ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
   ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
   ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
   ASSERT_EQ(state_stack.outstanding_bounds(), SkRect());
+  ASSERT_EQ(state_stack.device_cull_rect(), kGiantRect);
+  ASSERT_EQ(state_stack.local_cull_rect(), kGiantRect);
+  ASSERT_EQ(state_stack.transform(), SkMatrix::I());
+  ASSERT_EQ(state_stack.transformFullPerspective(), SkM44());
 
   SkPaint sk_paint;
   state_stack.fill(sk_paint);

@@ -13,10 +13,6 @@ class ClipRectLayer : public ClipShapeLayer<SkRect> {
  public:
   ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
-  void Paint(PaintContext& context) const override;
-
  protected:
   const SkRect& clip_shape_bounds() const override;
 

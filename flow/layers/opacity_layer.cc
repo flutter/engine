@@ -36,26 +36,19 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void OpacityLayer::Preroll(PrerollContext* context) {
   FML_DCHECK(!layers().empty());  // We can't be a leaf.
-
-  SkMatrix child_matrix = matrix;
-  child_matrix.preTranslate(offset_.fX, offset_.fY);
-
-  // Similar to what's done in TransformLayer::Preroll, we have to apply the
-  // reverse transformation to the cull rect to properly cull child layers.
-  context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
 
   auto mutator = context->state_stack.save();
   mutator.translate(offset_);
   mutator.applyOpacity(SkRect(), DlColor::toOpacity(alpha_));
 
-  AutoCache auto_cache =
-      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+  AutoCache auto_cache = AutoCache(layer_raster_cache_item_.get(), context,
+                                   context->state_stack.transform());
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context);
   // We store the inheritance ability of our children for |Paint|
   set_children_can_accept_opacity((context->renderable_state_flags &
                                    LayerStateStack::CALLER_CAN_APPLY_OPACITY) !=
@@ -73,9 +66,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     // should tell the AutoCache object don't do raster_cache.
     auto_cache.ShouldNotBeCached();
   }
-
-  // Restore cull_rect
-  context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
@@ -89,7 +79,9 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   mutator.applyOpacity(child_paint_bounds(), opacity());
 
-  PaintChildren(context);
+  if (!context.state_stack.painting_is_nop()) {
+    PaintChildren(context);
+  }
 }
 
 }  // namespace flutter

@@ -83,7 +83,6 @@ class MockRasterCache : public RasterCache {
       .view_embedder                 = nullptr,
       .state_stack                   = state_stack_,
       .dst_color_space               = color_space_,
-      .cull_rect                     = kGiantRect,
       .surface_needs_readback        = false,
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,

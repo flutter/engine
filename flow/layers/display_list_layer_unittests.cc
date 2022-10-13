@@ -52,7 +52,7 @@ TEST_F(DisplayListLayerTest, PaintingEmptyLayerDies) {
       layer_offset, SkiaGPUObject<DisplayList>(display_list, unref_queue()),
       false, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
@@ -66,7 +66,7 @@ TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
       layer_offset, SkiaGPUObject<DisplayList>(), false, false);
 
   // Crashes reading a nullptr.
-  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()), "");
+  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context()), "");
 }
 #endif
 
@@ -81,7 +81,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   auto layer = std::make_shared<DisplayListLayer>(
       layer_offset, SkiaGPUObject(display_list, unref_queue()), false, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(),
             picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY));
   EXPECT_EQ(layer->display_list(), display_list.get());
@@ -109,7 +109,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 
   auto context = preroll_context();
-  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context());
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
@@ -118,7 +118,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
-  opacity_layer->Preroll(context, SkMatrix::I());
+  opacity_layer->Preroll(context);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
   DisplayListBuilder child_builder;
@@ -165,7 +165,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   EXPECT_FALSE(display_list->can_apply_group_opacity());
 
   auto context = preroll_context();
-  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context());
   EXPECT_EQ(context->renderable_state_flags, 0);
 
   int opacity_alpha = 0x7F;
@@ -173,7 +173,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
-  opacity_layer->Preroll(context, SkMatrix::I());
+  opacity_layer->Preroll(context);
   EXPECT_FALSE(opacity_layer->children_can_accept_opacity());
 
   DisplayListBuilder child_builder;
@@ -227,20 +227,20 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   use_skia_raster_cache();
 
   auto context = preroll_context();
-  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context());
   EXPECT_EQ(context->renderable_state_flags, 0);
 
   // Pump the DisplayListLayer until it is ready to cache its DL
-  display_list_layer->Preroll(preroll_context(), SkMatrix());
-  display_list_layer->Preroll(preroll_context(), SkMatrix());
-  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context());
+  display_list_layer->Preroll(preroll_context());
+  display_list_layer->Preroll(preroll_context());
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
-  opacity_layer->Preroll(context, SkMatrix::I());
+  opacity_layer->Preroll(context);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
   // The following would be a great test of the painting of the above
@@ -379,7 +379,7 @@ TEST_F(DisplayListLayerTest, LayerTreeSnapshotsWhenEnabled) {
   auto layer = std::make_shared<DisplayListLayer>(
       layer_offset, SkiaGPUObject(display_list, unref_queue()), false, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
 
   enable_leaf_layer_tracing();
   layer->Paint(paint_context());
@@ -398,7 +398,7 @@ TEST_F(DisplayListLayerTest, NoLayerTreeSnapshotsWhenDisabledByDefault) {
   auto layer = std::make_shared<DisplayListLayer>(
       layer_offset, SkiaGPUObject(display_list, unref_queue()), false, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   layer->Paint(paint_context());
 
   auto& snapshot_store = layer_snapshot_store();
@@ -422,10 +422,10 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // First Preroll the DisplayListLayer a few times where it does not intersect
   // the cull rect. No caching progress should occur during this time, the
   // access_count should remain 0 because the DisplayList was never "visible".
-  preroll_context()->cull_rect = missed_cull_rect;
+  preroll_context()->state_stack.set_initial_cull_rect(missed_cull_rect);
   for (int i = 0; i < 10; i++) {
     preroll_context()->raster_cached_entries->clear();
-    layer->Preroll(preroll_context(), SkMatrix::I());
+    layer->Preroll(preroll_context());
     ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
     ASSERT_TRUE(raster_cache_item->GetId().has_value());
     ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
@@ -442,9 +442,9 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // the cull rect. No caching progress should occur during this time
   // since this is the first frame in which it was visible, but the
   // count should start incrementing.
-  preroll_context()->cull_rect = hit_cull_rect;
+  preroll_context()->state_stack.set_initial_cull_rect(hit_cull_rect);
   preroll_context()->raster_cached_entries->clear();
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
   ASSERT_TRUE(raster_cache_item->GetId().has_value());
   ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
@@ -460,10 +460,10 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // it does not intersect and it should continue to count these operations
   // even though it is not visible. No actual caching should occur yet,
   // even though we will surpass its threshold.
-  preroll_context()->cull_rect = missed_cull_rect;
+  preroll_context()->state_stack.set_initial_cull_rect(missed_cull_rect);
   for (int i = 0; i < 10; i++) {
     preroll_context()->raster_cached_entries->clear();
-    layer->Preroll(preroll_context(), SkMatrix());
+    layer->Preroll(preroll_context());
     ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
     ASSERT_TRUE(raster_cache_item->GetId().has_value());
     ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
@@ -480,9 +480,9 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // the cull rect. Since we should have exhausted our access count
   // threshold in the loop above, these operations should result in the
   // DisplayList being cached.
-  preroll_context()->cull_rect = hit_cull_rect;
+  preroll_context()->state_stack.set_initial_cull_rect(hit_cull_rect);
   preroll_context()->raster_cached_entries->clear();
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kCurrent);
   ASSERT_TRUE(raster_cache_item->GetId().has_value());
   ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(

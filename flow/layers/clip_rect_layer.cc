@@ -9,14 +9,6 @@ namespace flutter {
 ClipRectLayer::ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior)
     : ClipShapeLayer(clip_rect, clip_behavior) {}
 
-void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  ClipShapeLayer::Preroll(context, matrix);
-}
-
-void ClipRectLayer::Paint(PaintContext& context) const {
-  ClipShapeLayer::Paint(context);
-}
-
 const SkRect& ClipRectLayer::clip_shape_bounds() const {
   return clip_shape();
 }

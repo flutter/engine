@@ -14,10 +14,6 @@ class ClipPathLayer : public ClipShapeLayer<SkPath> {
   explicit ClipPathLayer(const SkPath& clip_path,
                          Clip clip_behavior = Clip::antiAlias);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
-  void Paint(PaintContext& context) const override;
-
  protected:
   const SkRect& clip_shape_bounds() const override;
 

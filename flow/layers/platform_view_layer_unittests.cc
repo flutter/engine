@@ -24,7 +24,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   auto layer =
       std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(layer->paint_bounds(),
             SkRect::MakeSize(layer_size)
@@ -55,7 +55,7 @@ TEST_F(PlatformViewLayerTest, ClippedPlatformViewPrerollsAndPaintsNothing) {
   auto embedder = MockViewEmbedder();
   preroll_context()->view_embedder = &embedder;
 
-  parent_clip_layer->Preroll(preroll_context(), SkMatrix());
+  parent_clip_layer->Preroll(preroll_context());
   EXPECT_TRUE(preroll_context()->has_platform_view);
   EXPECT_EQ(layer->paint_bounds(),
             SkRect::MakeSize(layer_size)
@@ -76,11 +76,6 @@ TEST_F(PlatformViewLayerTest, ClippedPlatformViewPrerollsAndPaintsNothing) {
            MockCanvas::DrawCall{
                1, MockCanvas::ClipRectData{parent_clip, SkClipOp::kIntersect,
                                            MockCanvas::kHard_ClipEdgeStyle}},
-           MockCanvas::DrawCall{1, MockCanvas::SaveData{2}},
-           MockCanvas::DrawCall{
-               2, MockCanvas::ClipRectData{child_clip, SkClipOp::kIntersect,
-                                           MockCanvas::kHard_ClipEdgeStyle}},
-           MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
@@ -92,7 +87,7 @@ TEST_F(PlatformViewLayerTest, OpacityInheritance) {
       std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
 
   PrerollContext* context = preroll_context();
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
@@ -130,7 +125,7 @@ TEST_F(PlatformViewLayerTest, StateTransfer) {
 
   PrerollContext* preroll_ctx = preroll_context();
   preroll_ctx->view_embedder = &embedder;
-  transform_layer1->Preroll(preroll_ctx, SkMatrix());
+  transform_layer1->Preroll(preroll_ctx);
 
   PaintContext& paint_ctx = paint_context();
   paint_ctx.view_embedder = &embedder;

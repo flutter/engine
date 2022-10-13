@@ -50,13 +50,12 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void PhysicalShapeLayer::Preroll(PrerollContext* context,
-                                 const SkMatrix& matrix) {
+void PhysicalShapeLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, &child_paint_bounds);
   context->renderable_state_flags =
       UsesSaveLayer() ? Layer::SAVE_LAYER_RENDER_FLAGS : 0;
 
@@ -67,7 +66,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow.
     paint_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
-        path_, elevation_, context->frame_device_pixel_ratio, matrix);
+        path_, elevation_, context->frame_device_pixel_ratio,
+        context->state_stack.transform());
   }
 
   if (clip_behavior_ == Clip::none) {

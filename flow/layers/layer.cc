@@ -26,8 +26,6 @@ uint64_t Layer::NextUniqueID() {
   return id;
 }
 
-void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
-
 Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
     PrerollContext* preroll_context,
     bool save_layer_is_active,

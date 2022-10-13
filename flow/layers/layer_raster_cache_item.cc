@@ -47,7 +47,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
   // alive, but if the following conditions apply then we need to set our
   // state back to kDoNotCache so that we don't populate the entry later.
   if (context->has_platform_view || context->has_texture_layer ||
-      !SkRect::Intersects(context->cull_rect, layer_->paint_bounds())) {
+      context->state_stack.content_culled(layer_->paint_bounds())) {
     return;
   }
   child_items_ = context->raster_cached_entries->size() - child_items_;
@@ -104,8 +104,8 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
                SkCanvas* canvas) {
   FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
   LayerStateStack state_stack;
-  state_stack.set_checkerboard_save_layers(
-      paint_context.state_stack.checkerboard_save_layers());
+  state_stack.set_draw_checkerboard(
+      paint_context.state_stack.get_draw_checkerboard());
   auto mutator = state_stack.save();
   mutator.transform(canvas->getTotalMatrix());
   PaintContext context = {

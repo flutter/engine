@@ -26,6 +26,17 @@ sk_sp<SkShader> CreateCheckerboardShader(SkColor c1, SkColor c2, int size) {
 
 }  // anonymous namespace
 
+void DrawCheckerboard(SkCanvas* canvas,
+                      DisplayListBuilder* builder,
+                      const SkRect& rect) {
+  if (canvas) {
+    DrawCheckerboard(canvas, rect);
+  }
+  if (builder) {
+    DrawCheckerboard(builder, rect);
+  }
+}
+
 void DrawCheckerboard(SkCanvas* canvas, const SkRect& rect) {
   // Draw a checkerboard
   canvas->save();

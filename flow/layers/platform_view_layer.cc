@@ -11,8 +11,7 @@ PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
                                      int64_t view_id)
     : offset_(offset), size_(size), view_id_(view_id) {}
 
-void PlatformViewLayer::Preroll(PrerollContext* context,
-                                const SkMatrix& matrix) {
+void PlatformViewLayer::Preroll(PrerollContext* context) {
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
 
@@ -25,7 +24,8 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
   set_subtree_has_platform_view(true);
   auto mutators = context->state_stack.mutators_delegate();
   std::unique_ptr<EmbeddedViewParams> params =
-      std::make_unique<EmbeddedViewParams>(matrix, size_, *mutators,
+      std::make_unique<EmbeddedViewParams>(context->state_stack.transform(),
+                                           size_, *mutators,
                                            context->display_list_enabled);
   context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
                                                        std::move(params));

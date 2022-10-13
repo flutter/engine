@@ -9,6 +9,7 @@
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
@@ -45,6 +46,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   LayerStateStack state_stack;
+  state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
   MutatorsStack stack;
   state_stack.set_delegate(&stack);
   RasterCache* cache =
@@ -58,7 +60,6 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .view_embedder                 = frame.view_embedder(),
       .state_stack                   = state_stack,
       .dst_color_space               = color_space,
-      .cull_rect                     = cull_rect,
       .surface_needs_readback        = false,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
@@ -69,7 +70,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       // clang-format on
   };
 
-  root_layer_->Preroll(&context, frame.root_surface_transformation());
+  root_layer_->Preroll(&context);
 
   return context.surface_needs_readback;
 }
@@ -111,8 +112,12 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     return;
   }
 
+  SkRect cull_rect = SkRect::Make(frame.canvas()->getDeviceClipBounds());
   LayerStateStack state_stack;
-  state_stack.set_checkerboard_save_layers(checkerboard_offscreen_layers_);
+  state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
+  if (checkerboard_offscreen_layers_) {
+    state_stack.set_draw_checkerboard(DrawCheckerboard);
+  }
 
   DisplayListBuilder* builder = frame.display_list_builder();
   if (builder) {
@@ -168,14 +173,12 @@ sk_sp<DisplayList> LayerTree::Flatten(
   DisplayListCanvasRecorder recorder(bounds);
 
   LayerStateStack state_stack;
-  state_stack.set_checkerboard_save_layers(false);
+  state_stack.set_draw_checkerboard(nullptr);
+  // No root surface transformation. So assume identity.
+  state_stack.set_initial_state(kGiantRect, SkMatrix::I());
 
   MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
-  SkMatrix root_surface_transformation;
-
-  // No root surface transformation. So assume identity.
-  root_surface_transformation.reset();
 
   PrerollContext preroll_context{
       // clang-format off
@@ -184,7 +187,6 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .view_embedder                 = nullptr,
       .state_stack                   = state_stack,
       .dst_color_space               = nullptr,
-      .cull_rect                     = kGiantRect,
       .surface_needs_readback        = false,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
@@ -215,8 +217,10 @@ sk_sp<DisplayList> LayerTree::Flatten(
   // picture.
   if (root_layer_) {
     state_stack.set_delegate(&unused_stack);
-    root_layer_->Preroll(&preroll_context, root_surface_transformation);
+    root_layer_->Preroll(&preroll_context);
     FML_DCHECK(state_stack.is_empty());
+    FML_DCHECK(state_stack.device_cull_rect() == kGiantRect);
+    FML_DCHECK(state_stack.transformFullPerspective() == SkM44());
 
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting(paint_context)) {

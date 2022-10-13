@@ -35,14 +35,13 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ShaderMaskLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  SkMatrix child_matrix = matrix;
-  AutoCache cache =
-      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
+                              context->state_stack.transform());
 
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context);
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
   context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;

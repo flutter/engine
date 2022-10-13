@@ -95,13 +95,11 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
   return res;
 }
 
-void DisplayListLayer::Preroll(PrerollContext* context,
-                               const SkMatrix& matrix) {
+void DisplayListLayer::Preroll(PrerollContext* context) {
   DisplayList* disp_list = display_list();
-  SkMatrix child_matrix = matrix;
 
-  AutoCache cache =
-      AutoCache(display_list_raster_cache_item_.get(), context, child_matrix);
+  AutoCache cache = AutoCache(display_list_raster_cache_item_.get(), context,
+                              context->state_stack.transform());
   if (disp_list->can_apply_group_opacity()) {
     context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
   }

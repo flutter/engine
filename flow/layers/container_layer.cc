@@ -107,9 +107,9 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }
 
-void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ContainerLayer::Preroll(PrerollContext* context) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, &child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
 }
 
@@ -127,7 +127,6 @@ static bool safe_intersection_test(const SkRect* rect1, const SkRect& rect2) {
 }
 
 void ContainerLayer::PrerollChildren(PrerollContext* context,
-                                     const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
   // Platform views have no children, so context->has_platform_view should
   // always be false.
@@ -149,7 +148,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
     // opt-in to applying state attributes during its |Preroll|
     context->renderable_state_flags = 0;
 
-    layer->Preroll(context, child_matrix);
+    layer->Preroll(context);
 
     all_renderable_state_flags &= context->renderable_state_flags;
     if (safe_intersection_test(child_paint_bounds, layer->paint_bounds())) {

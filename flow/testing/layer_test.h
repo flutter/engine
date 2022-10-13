@@ -53,7 +53,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .view_embedder                 = nullptr,
             .state_stack                   = preroll_state_stack_,
             .dst_color_space               = TestT::mock_color_space(),
-            .cull_rect                     = kGiantRect,
             .surface_needs_readback        = false,
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
@@ -109,7 +108,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     paint_state_stack_.set_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_delegate(display_list_recorder_);
     checkerboard_state_stack_.set_delegate(&TestT::mock_canvas());
-    checkerboard_state_stack_.set_checkerboard_save_layers(true);
+    checkerboard_state_stack_.set_draw_checkerboard(draw_checkerboard);
+    checkerboard_paint_.setColor(checkerboard_color_);
   }
 
   /**
@@ -172,6 +172,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   PaintContext& display_list_paint_context() {
     return display_list_paint_context_;
   }
+  const SkPaint& checkerboard_paint() { return checkerboard_paint_; }
   PaintContext& checkerboard_context() { return checkerboard_context_; }
   LayerSnapshotStore& layer_snapshot_store() { return snapshot_store_; }
 
@@ -204,6 +205,23 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     display_list_paint_context_.raster_cache = raster_cache_.get();
   }
 
+  static constexpr SkColor checkerboard_color_ = 0x42424242;
+
+  static void draw_checkerboard(SkCanvas* canvas,
+                                DisplayListBuilder* builder,
+                                const SkRect& rect) {
+    if (canvas) {
+      SkPaint paint;
+      paint.setColor(checkerboard_color_);
+      canvas->drawRect(rect, paint);
+    }
+    if (builder) {
+      DlPaint paint;
+      paint.setColor(checkerboard_color_);
+      builder->drawRect(rect, paint);
+    }
+  }
+
   LayerStateStack preroll_state_stack_;
   LayerStateStack paint_state_stack_;
   LayerStateStack checkerboard_state_stack_;
@@ -219,6 +237,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   LayerStateStack display_list_state_stack_;
   sk_sp<DisplayList> display_list_;
   PaintContext display_list_paint_context_;
+  SkPaint checkerboard_paint_;
   PaintContext checkerboard_context_;
   LayerSnapshotStore snapshot_store_;
 

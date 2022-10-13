@@ -8,16 +8,17 @@
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/paint_utils.h"
 
 namespace flutter {
 
 class LayerStateStack {
  public:
-  LayerStateStack() = default;
+  explicit LayerStateStack(const SkRect* cull_rect = nullptr);
 
-  bool checkerboard_save_layers() { return do_checkerboard_; }
-  void set_checkerboard_save_layers(bool checkerboard) {
-    do_checkerboard_ = checkerboard;
+  CheckerboardFunc get_draw_checkerboard() const { return draw_checkerboard_; }
+  void set_draw_checkerboard(CheckerboardFunc draw_checkerboard) {
+    draw_checkerboard_ = draw_checkerboard;
   }
 
   // Clears out any old delegate to make room for a new one.
@@ -63,6 +64,15 @@ class LayerStateStack {
   // MutatorsStack (if not null). This ensures that only one delegate - either
   // a canvas, a builder, or mutator stack - is present at any one time.
   void set_delegate(MutatorsStack* stack);
+
+  // Overrides the initial cull rect and/or transform when it is not known at
+  // the time that the LayerStateStack is constructed. Must be called before
+  // any state has been pushed on the stack.
+  void set_initial_cull_rect(const SkRect& cull_rect);
+  void set_initial_transform(const SkMatrix& matrix);
+  void set_initial_transform(const SkM44& matrix);
+  void set_initial_state(const SkRect& cull_rect, const SkMatrix& matrix);
+  void set_initial_state(const SkRect& cull_rect, const SkM44& matrix);
 
   class AutoRestore {
    public:
@@ -154,37 +164,39 @@ class LayerStateStack {
   [[nodiscard]] AutoRestore applyState(const SkRect& bounds,
                                        int can_apply_flags = 0);
 
-  SkScalar outstanding_opacity() { return outstanding_.opacity; }
+  SkScalar outstanding_opacity() const { return outstanding_.opacity; }
 
-  std::shared_ptr<const DlColorFilter> outstanding_color_filter() {
+  std::shared_ptr<const DlColorFilter> outstanding_color_filter() const {
     return outstanding_.color_filter;
   }
 
-  std::shared_ptr<const DlImageFilter> outstanding_image_filter() {
+  std::shared_ptr<const DlImageFilter> outstanding_image_filter() const {
     return outstanding_.image_filter;
   }
 
-  SkRect outstanding_bounds() { return outstanding_.save_layer_bounds; }
+  SkRect outstanding_bounds() const { return outstanding_.save_layer_bounds; }
 
   // Fill the provided paint object with any oustanding attributes and
   // return a pointer to it, or return a nullptr if there were no
   // outstanding attributes to paint with.
-  SkPaint* fill(SkPaint& paint) { return outstanding_.fill(paint); }
+  SkPaint* fill(SkPaint& paint) const { return outstanding_.fill(paint); }
 
   // Fill the provided paint object with any oustanding attributes and
   // return a pointer to it, or return a nullptr if there were no
   // outstanding attributes to paint with.
   DlPaint* fill(DlPaint& paint) const { return outstanding_.fill(paint); }
 
+  SkRect device_cull_rect() const { return cull_rect_; }
+  SkRect local_cull_rect() const;
+  SkM44 transformFullPerspective() const { return matrix_; }
+  SkMatrix transform() const { return matrix_.asM33(); }
+
   // Tests if painting content with the current outstanding attributes
   // will produce any content.
-  bool needs_painting() const { return outstanding_.opacity > 0; }
+  bool painting_is_nop() const { return outstanding_.opacity <= 0; }
 
   // Tests if painting content with the given bounds will produce any output.
-  // This method also tests whether the outstanding attributes will allow
-  // output to be produced, but then goes on to test if the supplied bounds
-  // will fall within the current clip bounds based on the transform.
-  bool needs_painting(const SkRect& bounds) const;
+  bool content_culled(const SkRect& content_bounds) const;
 
   // Saves the current state of the state stack and returns a
   // MutatorContext which can be used to manipulate the state.
@@ -195,7 +207,7 @@ class LayerStateStack {
   bool is_empty() const { return state_stack_.empty(); }
 
  private:
-  size_t stack_count() { return state_stack_.size(); }
+  size_t stack_count() const { return state_stack_.size(); }
   void restore_to_count(size_t restore_count);
   void reapply_all();
 
@@ -239,6 +251,10 @@ class LayerStateStack {
   void maybe_save_layer(const std::shared_ptr<const DlColorFilter>& filter);
   void maybe_save_layer(const std::shared_ptr<const DlImageFilter>& filter);
   // ---------------------
+
+  void intersect_cull_rect(const SkRect& clip, SkClipOp op, bool is_aa);
+  void intersect_cull_rect(const SkRRect& clip, SkClipOp op, bool is_aa);
+  void intersect_cull_rect(const SkPath& clip, SkClipOp op, bool is_aa);
 
   struct RenderingAttributes {
     // We need to record the last bounds we received for the last
@@ -300,28 +316,21 @@ class LayerStateStack {
     void restore(LayerStateStack* stack) const override;
 
    protected:
-    virtual void do_checkerboard(SkCanvas* canvas,
-                                 DisplayListBuilder* builder) const {}
+    virtual void do_checkerboard(LayerStateStack* stack) const {}
   };
 
   class SaveLayerEntry : public SaveEntry {
    public:
-    SaveLayerEntry(const SkRect& bounds,
-                   DlBlendMode blend_mode,
-                   bool checkerboard)
-        : bounds_(bounds),
-          blend_mode_(blend_mode),
-          do_checkerboard_(checkerboard) {}
+    SaveLayerEntry(const SkRect& bounds, DlBlendMode blend_mode)
+        : bounds_(bounds), blend_mode_(blend_mode) {}
 
     void apply(LayerStateStack* stack) const override;
 
    protected:
     const SkRect bounds_;
     const DlBlendMode blend_mode_;
-    const bool do_checkerboard_;
 
-    void do_checkerboard(SkCanvas* canvas,
-                         DisplayListBuilder* builder) const override;
+    void do_checkerboard(LayerStateStack* stack) const override;
   };
 
   class OpacityEntry : public StateEntry {
@@ -330,6 +339,7 @@ class LayerStateStack {
         : bounds_(bounds), opacity_(opacity) {}
 
     void apply(LayerStateStack* stack) const override;
+    void restore(LayerStateStack* stack) const override;
 
    private:
     const SkRect bounds_;
@@ -368,12 +378,12 @@ class LayerStateStack {
    public:
     BackdropFilterEntry(const SkRect& bounds,
                         const std::shared_ptr<const DlImageFilter>& filter,
-                        DlBlendMode blend_mode,
-                        bool checkerboard)
-        : SaveLayerEntry(bounds, blend_mode, checkerboard), filter_(filter) {}
+                        DlBlendMode blend_mode)
+        : SaveLayerEntry(bounds, blend_mode), filter_(filter) {}
     ~BackdropFilterEntry() override = default;
 
     void apply(LayerStateStack* stack) const override;
+    void restore(LayerStateStack* stack) const override;
 
     void reapply(LayerStateStack* stack) const override;
 
@@ -382,11 +392,20 @@ class LayerStateStack {
     friend class LayerStateStack;
   };
 
-  class TransformEntry : public StateEntry {};
+  class TransformEntry : public StateEntry {
+   public:
+    TransformEntry(const SkM44& matrix) : previous_matrix_(matrix) {}
+
+    void restore(LayerStateStack* stack) const override;
+
+   private:
+    const SkM44 previous_matrix_;
+  };
 
   class TranslateEntry : public TransformEntry {
    public:
-    TranslateEntry(SkScalar tx, SkScalar ty) : tx_(tx), ty_(ty) {}
+    TranslateEntry(const SkM44& previous_matrix, SkScalar tx, SkScalar ty)
+        : TransformEntry(previous_matrix), tx_(tx), ty_(ty) {}
 
     void apply(LayerStateStack* stack) const override;
 
@@ -397,7 +416,8 @@ class LayerStateStack {
 
   class TransformMatrixEntry : public TransformEntry {
    public:
-    TransformMatrixEntry(const SkMatrix& matrix) : matrix_(matrix) {}
+    TransformMatrixEntry(const SkM44 previous_matrix, const SkMatrix& matrix)
+        : TransformEntry(previous_matrix), matrix_(matrix) {}
 
     void apply(LayerStateStack* stack) const override;
 
@@ -407,7 +427,8 @@ class LayerStateStack {
 
   class TransformM44Entry : public TransformEntry {
    public:
-    TransformM44Entry(const SkM44& m44) : m44_(m44) {}
+    TransformM44Entry(const SkM44 previous_matrix, const SkM44& m44)
+        : TransformEntry(previous_matrix), m44_(m44) {}
 
     void apply(LayerStateStack* stack) const override;
 
@@ -415,64 +436,74 @@ class LayerStateStack {
     const SkM44 m44_;
   };
 
-  class IntegralTransformEntry : public StateEntry {
+  class IntegralTransformEntry : public TransformEntry {
    public:
-    IntegralTransformEntry() {}
+    IntegralTransformEntry(const SkM44 previous_matrix)
+        : TransformEntry(previous_matrix) {}
 
     void apply(LayerStateStack* stack) const override;
   };
 
   class ClipEntry : public StateEntry {
    protected:
-    ClipEntry(bool is_aa) : is_aa_(is_aa) {}
+    ClipEntry(const SkRect& cull_rect, bool is_aa)
+        : previous_cull_rect_(cull_rect), is_aa_(is_aa) {}
 
+    void restore(LayerStateStack* stack) const override;
+
+    const SkRect previous_cull_rect_;
     const bool is_aa_;
   };
 
   class ClipRectEntry : public ClipEntry {
    public:
-    ClipRectEntry(const SkRect& rect, bool is_aa)
-        : ClipEntry(is_aa), rect_(rect) {}
+    ClipRectEntry(const SkRect& cull_rect, const SkRect& clip_rect, bool is_aa)
+        : ClipEntry(cull_rect, is_aa), clip_rect_(clip_rect) {}
 
     void apply(LayerStateStack* stack) const override;
 
    private:
-    const SkRect rect_;
+    const SkRect clip_rect_;
   };
 
   class ClipRRectEntry : public ClipEntry {
    public:
-    ClipRRectEntry(const SkRRect& rrect, bool is_aa)
-        : ClipEntry(is_aa), rrect_(rrect) {}
+    ClipRRectEntry(const SkRect& cull_rect,
+                   const SkRRect& clip_rrect,
+                   bool is_aa)
+        : ClipEntry(cull_rect, is_aa), clip_rrect_(clip_rrect) {}
 
     void apply(LayerStateStack* stack) const override;
 
    private:
-    const SkRRect rrect_;
+    const SkRRect clip_rrect_;
   };
 
   class ClipPathEntry : public ClipEntry {
    public:
-    ClipPathEntry(const SkPath& path, bool is_aa)
-        : ClipEntry(is_aa), path_(path) {}
+    ClipPathEntry(const SkRect& cull_rect, const SkPath& clip_path, bool is_aa)
+        : ClipEntry(cull_rect, is_aa), clip_path_(clip_path) {}
     ~ClipPathEntry() override = default;
 
     void apply(LayerStateStack* stack) const override;
 
    private:
-    const SkPath path_;
+    const SkPath clip_path_;
   };
 
   std::vector<std::unique_ptr<StateEntry>> state_stack_;
   friend class MutatorContext;
+
+  SkM44 matrix_;
+  SkRect cull_rect_;
 
   SkCanvas* canvas_ = nullptr;
   DisplayListBuilder* builder_ = nullptr;
   MutatorsStack* mutators_ = nullptr;
   int restore_count_ = 0;
   RenderingAttributes outstanding_;
+  CheckerboardFunc draw_checkerboard_ = nullptr;
 
-  bool do_checkerboard_ = false;
   friend class SaveLayerEntry;
 };
 

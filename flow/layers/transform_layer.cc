@@ -40,30 +40,15 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  SkMatrix child_matrix;
-  child_matrix.setConcat(matrix, transform_);
-
+void TransformLayer::Preroll(PrerollContext* context) {
   auto mutator = context->state_stack.save();
   mutator.transform(transform_);
 
-  SkRect previous_cull_rect = context->cull_rect;
-  SkMatrix inverse_transform;
-  // Perspective projections don't produce rectangles that are useful for
-  // culling for some reason.
-  if (!transform_.hasPerspective() && transform_.invert(&inverse_transform)) {
-    inverse_transform.mapRect(&context->cull_rect);
-  } else {
-    context->cull_rect = kGiantRect;
-  }
-
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, child_matrix, &child_paint_bounds);
+  PrerollChildren(context, &child_paint_bounds);
 
   transform_.mapRect(&child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
-
-  context->cull_rect = previous_cull_rect;
 }
 
 void TransformLayer::Paint(PaintContext& context) const {

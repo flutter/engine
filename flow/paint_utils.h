@@ -12,6 +12,11 @@
 
 namespace flutter {
 
+typedef void (*CheckerboardFunc)(SkCanvas*, DisplayListBuilder*, const SkRect&);
+
+void DrawCheckerboard(SkCanvas* canvas,
+                      DisplayListBuilder* builder,
+                      const SkRect& rect);
 void DrawCheckerboard(SkCanvas* canvas, const SkRect& rect);
 void DrawCheckerboard(DisplayListBuilder* builder, const SkRect& rect);
 

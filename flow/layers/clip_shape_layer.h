@@ -42,20 +42,15 @@ class ClipShapeLayer : public CacheableContainerLayer {
     context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override {
-    SkRect previous_cull_rect = context->cull_rect;
+  void Preroll(PrerollContext* context) override {
     bool uses_save_layer = UsesSaveLayer();
 
-    if (!context->cull_rect.intersect(clip_shape_bounds())) {
-      context->cull_rect.setEmpty();
-    }
-    SkMatrix child_matrix = matrix;
     // We can use the raster_cache for children only when the use_save_layer is
     // true so if use_save_layer is false we pass the layer_raster_item is
     // nullptr which mean we don't do raster cache logic.
     AutoCache cache =
         AutoCache(uses_save_layer ? layer_raster_cache_item_.get() : nullptr,
-                  context, child_matrix);
+                  context, context->state_stack.transform());
 
     Layer::AutoPrerollSaveLayerState save =
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
@@ -64,9 +59,11 @@ class ClipShapeLayer : public CacheableContainerLayer {
     ApplyClip(mutator);
 
     SkRect child_paint_bounds = SkRect::MakeEmpty();
-    PrerollChildren(context, matrix, &child_paint_bounds);
+    PrerollChildren(context, &child_paint_bounds);
     if (child_paint_bounds.intersect(clip_shape_bounds())) {
       set_paint_bounds(child_paint_bounds);
+    } else {
+      set_paint_bounds(SkRect::MakeEmpty());
     }
 
     // If we use a SaveLayer then we can accept opacity on behalf
@@ -74,8 +71,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
     if (uses_save_layer) {
       context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
     }
-
-    context->cull_rect = previous_cull_rect;
   }
 
   void Paint(PaintContext& context) const override {
@@ -83,6 +78,9 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     auto mutator = context.state_stack.save();
     ApplyClip(mutator);
+    if (context.state_stack.content_culled(child_paint_bounds())) {
+      return;
+    }
 
     if (!UsesSaveLayer()) {
       PaintChildren(context);

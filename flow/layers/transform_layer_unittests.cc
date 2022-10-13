@@ -19,7 +19,7 @@ using TransformLayerTest = LayerTest;
 TEST_F(TransformLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<TransformLayer>(SkMatrix());  // identity
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting(paint_context()));
@@ -48,8 +48,8 @@ TEST_F(TransformLayerTest, Identity) {
   auto layer = std::make_shared<TransformLayer>(SkMatrix());  // identity
   layer->Add(mock_layer);
 
-  preroll_context()->cull_rect = cull_rect;
-  layer->Preroll(preroll_context(), SkMatrix());
+  preroll_context()->state_stack.set_initial_cull_rect(cull_rect);
+  layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_EQ(layer->child_paint_bounds(), mock_layer->paint_bounds());
@@ -68,8 +68,9 @@ TEST_F(TransformLayerTest, Identity) {
 TEST_F(TransformLayerTest, Simple) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  SkRect cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
+  SkRect local_cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
+  SkRect device_cull_rect = initial_transform.mapRect(local_cull_rect);
   SkMatrix layer_transform = SkMatrix::Translate(2.5f, 2.5f);
   SkMatrix inverse_layer_transform;
   EXPECT_TRUE(layer_transform.invert(&inverse_layer_transform));
@@ -78,8 +79,9 @@ TEST_F(TransformLayerTest, Simple) {
   auto layer = std::make_shared<TransformLayer>(layer_transform);
   layer->Add(mock_layer);
 
-  preroll_context()->cull_rect = cull_rect;
-  layer->Preroll(preroll_context(), initial_transform);
+  preroll_context()->state_stack.set_initial_state(device_cull_rect,
+                                                   initial_transform);
+  layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(),
             layer_transform.mapRect(mock_layer->paint_bounds()));
@@ -89,7 +91,7 @@ TEST_F(TransformLayerTest, Simple) {
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_cull_rect(),
-            inverse_layer_transform.mapRect(cull_rect));
+            inverse_layer_transform.mapRect(local_cull_rect));
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_transform)}));
 
@@ -107,8 +109,9 @@ TEST_F(TransformLayerTest, Simple) {
 TEST_F(TransformLayerTest, Nested) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  SkRect cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
+  SkRect local_cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
+  SkRect device_cull_rect = initial_transform.mapRect(local_cull_rect);
   SkMatrix layer1_transform = SkMatrix::Translate(2.5f, 2.5f);
   SkMatrix layer2_transform = SkMatrix::Translate(2.5f, 2.5f);
   SkMatrix inverse_layer1_transform, inverse_layer2_transform;
@@ -121,8 +124,9 @@ TEST_F(TransformLayerTest, Nested) {
   layer1->Add(layer2);
   layer2->Add(mock_layer);
 
-  preroll_context()->cull_rect = cull_rect;
-  layer1->Preroll(preroll_context(), initial_transform);
+  preroll_context()->state_stack.set_initial_state(device_cull_rect,
+                                                   initial_transform);
+  layer1->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer2->paint_bounds(),
             layer2_transform.mapRect(mock_layer->paint_bounds()));
@@ -139,7 +143,7 @@ TEST_F(TransformLayerTest, Nested) {
                        layer2_transform));
   EXPECT_EQ(mock_layer->parent_cull_rect(),
             inverse_layer2_transform.mapRect(
-                inverse_layer1_transform.mapRect(cull_rect)));
+                inverse_layer1_transform.mapRect(local_cull_rect)));
   EXPECT_EQ(
       mock_layer->parent_mutators(),
       std::vector({Mutator(layer2_transform), Mutator(layer1_transform)}));
@@ -162,8 +166,9 @@ TEST_F(TransformLayerTest, Nested) {
 TEST_F(TransformLayerTest, NestedSeparated) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  SkRect cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
   SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
+  SkRect local_cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
+  SkRect device_cull_rect = initial_transform.mapRect(local_cull_rect);
   SkMatrix layer1_transform = SkMatrix::Translate(2.5f, 2.5f);
   SkMatrix layer2_transform = SkMatrix::Translate(2.5f, 2.5f);
   SkMatrix inverse_layer1_transform, inverse_layer2_transform;
@@ -180,8 +185,9 @@ TEST_F(TransformLayerTest, NestedSeparated) {
   layer1->Add(layer2);
   layer2->Add(mock_layer2);
 
-  preroll_context()->cull_rect = cull_rect;
-  layer1->Preroll(preroll_context(), initial_transform);
+  preroll_context()->state_stack.set_initial_state(device_cull_rect,
+                                                   initial_transform);
+  layer1->Preroll(preroll_context());
   SkRect layer1_child_bounds = layer2->paint_bounds();
   layer1_child_bounds.join(mock_layer1->paint_bounds());
   SkRect expected_layer1_bounds = layer1_child_bounds;
@@ -205,10 +211,10 @@ TEST_F(TransformLayerTest, NestedSeparated) {
       SkMatrix::Concat(SkMatrix::Concat(initial_transform, layer1_transform),
                        layer2_transform));
   EXPECT_EQ(mock_layer1->parent_cull_rect(),
-            inverse_layer1_transform.mapRect(cull_rect));
+            inverse_layer1_transform.mapRect(local_cull_rect));
   EXPECT_EQ(mock_layer2->parent_cull_rect(),
             inverse_layer2_transform.mapRect(
-                inverse_layer1_transform.mapRect(cull_rect)));
+                inverse_layer1_transform.mapRect(local_cull_rect)));
   EXPECT_EQ(mock_layer1->parent_mutators(),
             std::vector({Mutator(layer1_transform)}));
   EXPECT_EQ(
@@ -242,7 +248,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
 
   // TransformLayer will pass through compatibility from a compatible child
   PrerollContext* context = preroll_context();
-  transform1->Preroll(context, SkMatrix::I());
+  transform1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
@@ -252,7 +258,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
 
   // TransformLayer will pass through compatibility from multiple
   // non-overlapping compatible children
-  transform1->Preroll(context, SkMatrix::I());
+  transform1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
@@ -262,7 +268,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
 
   // TransformLayer will not pass through compatibility from multiple
   // overlapping children even if they are individually compatible
-  transform1->Preroll(context, SkMatrix::I());
+  transform1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags, 0);
 
   auto transform2 = std::make_shared<TransformLayer>(SkMatrix::Scale(2, 2));
@@ -270,7 +276,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   transform2->Add(mock2);
 
   // Double check first two children are compatible and non-overlapping
-  transform2->Preroll(context, SkMatrix::I());
+  transform2->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
@@ -280,7 +286,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
 
   // The third child is non-overlapping, but not compatible so the
   // TransformLayer should end up incompatible
-  transform2->Preroll(context, SkMatrix::I());
+  transform2->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
@@ -297,7 +303,7 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
   // TransformLayer will pass through compatibility from multiple
   // non-overlapping compatible children
   PrerollContext* context = preroll_context();
-  transform_layer->Preroll(context, SkMatrix::I());
+  transform_layer->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
             LayerStateStack::CALLER_CAN_APPLY_OPACITY);
 
@@ -305,7 +311,7 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
   SkPoint offset = SkPoint::Make(10, 10);
   auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
   opacity_layer->Add(transform_layer);
-  opacity_layer->Preroll(context, SkMatrix::I());
+  opacity_layer->Preroll(context);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
   DisplayListBuilder expected_builder;

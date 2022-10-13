@@ -20,7 +20,7 @@ class ContainerLayer : public Layer {
 
   virtual void Add(std::shared_ptr<Layer> layer);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
   void Paint(PaintContext& context) const override;
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
@@ -45,9 +45,7 @@ class ContainerLayer : public Layer {
   }
 
  protected:
-  void PrerollChildren(PrerollContext* context,
-                       const SkMatrix& child_matrix,
-                       SkRect* child_paint_bounds);
+  void PrerollChildren(PrerollContext* context, SkRect* child_paint_bounds);
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;

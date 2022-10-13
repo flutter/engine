@@ -37,15 +37,13 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void ColorFilterLayer::Preroll(PrerollContext* context,
-                               const SkMatrix& matrix) {
+void ColorFilterLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  SkMatrix child_matrix = matrix;
-  AutoCache cache =
-      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
+                              context->state_stack.transform());
 
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context);
 
   // Our saveLayer would apply any outstanding opacity or any outstanding
   // image filter before it applies our color filter, but that is in the

@@ -37,7 +37,7 @@ class MockLayer : public Layer {
     return mock_layer;
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
   void Paint(PaintContext& context) const override;
 
   const MutatorsStack& parent_mutators() { return parent_mutators_; }
@@ -140,7 +140,7 @@ class MockCacheableContainerLayer : public CacheableContainerLayer {
     return std::make_shared<MockCacheableContainerLayer>();
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
   explicit MockCacheableContainerLayer(bool cache_children = false)
       : CacheableContainerLayer(3, cache_children) {}
@@ -164,7 +164,7 @@ class MockCacheableLayer : public MockLayer {
     return raster_cache_item_.get();
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
  private:
   std::unique_ptr<LayerRasterCacheItem> raster_cache_item_;

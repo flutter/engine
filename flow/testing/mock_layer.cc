@@ -30,10 +30,10 @@ void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void MockLayer::Preroll(PrerollContext* context) {
   parent_mutators_ = *context->state_stack.mutators_delegate();
-  parent_matrix_ = matrix;
-  parent_cull_rect_ = context->cull_rect;
+  parent_matrix_ = context->state_stack.transform();
+  parent_cull_rect_ = context->state_stack.local_cull_rect();
 
   set_parent_has_platform_view(context->has_platform_view);
   set_parent_has_texture_layer(context->has_texture_layer);
@@ -64,24 +64,22 @@ void MockLayer::Paint(PaintContext& context) const {
   context.canvas->drawPath(fake_paint_path_, sk_paint);
 }
 
-void MockCacheableContainerLayer::Preroll(PrerollContext* context,
-                                          const SkMatrix& matrix) {
+void MockCacheableContainerLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  SkMatrix child_matrix = matrix;
-  auto cache = AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+  auto cache = AutoCache(layer_raster_cache_item_.get(), context,
+                         context->state_stack.transform());
 
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context);
 }
 
-void MockCacheableLayer::Preroll(PrerollContext* context,
-                                 const SkMatrix& matrix) {
+void MockCacheableLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  SkMatrix child_matrix = matrix;
-  auto cache = AutoCache(raster_cache_item_.get(), context, child_matrix);
+  auto cache = AutoCache(raster_cache_item_.get(), context,
+                         context->state_stack.transform());
 
-  MockLayer::Preroll(context, child_matrix);
+  MockLayer::Preroll(context);
 }
 
 }  // namespace testing

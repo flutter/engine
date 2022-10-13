@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/layer_state_stack.h"
+#include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache_util.h"
 
@@ -10,6 +11,21 @@ namespace flutter {
 
 using AutoRestore = LayerStateStack::AutoRestore;
 using MutatorContext = LayerStateStack::MutatorContext;
+
+static inline bool has_perspective(const SkM44& matrix) {
+  return (matrix.rc(3, 0) != 0 ||  //
+          matrix.rc(3, 1) != 0 ||  //
+          matrix.rc(3, 2) != 0 ||  //
+          matrix.rc(3, 3) != 1);
+}
+
+LayerStateStack::LayerStateStack(const SkRect* cull_rect) {
+  if (cull_rect) {
+    cull_rect_ = *cull_rect;
+  } else {
+    cull_rect_ = kGiantRect;
+  }
+}
 
 void LayerStateStack::clear_delegate() {
   if (canvas_) {
@@ -51,6 +67,40 @@ void LayerStateStack::set_delegate(MutatorsStack* stack) {
     mutators_ = stack;
     reapply_all();
   }
+}
+
+void LayerStateStack::set_initial_cull_rect(const SkRect& cull_rect) {
+  FML_CHECK(is_empty()) << "set_initial_cull_rect() must be called before any "
+                           "state is pushed onto the state stack";
+  cull_rect_ = cull_rect;
+}
+
+void LayerStateStack::set_initial_transform(const SkMatrix& matrix) {
+  FML_CHECK(is_empty()) << "set_initial_transform() must be called before any "
+                           "state is pushed onto the state stack";
+  matrix_ = SkM44(matrix);
+}
+
+void LayerStateStack::set_initial_transform(const SkM44& matrix) {
+  FML_CHECK(is_empty()) << "set_initial_transform() must be called before any "
+                           "state is pushed onto the state stack";
+  matrix_ = matrix;
+}
+
+void LayerStateStack::set_initial_state(const SkRect& cull_rect,
+                                        const SkMatrix& matrix) {
+  FML_CHECK(is_empty()) << "set_initial_state() must be called before any "
+                           "state is pushed onto the state stack";
+  cull_rect_ = cull_rect;
+  matrix_ = SkM44(matrix);
+}
+
+void LayerStateStack::set_initial_state(const SkRect& cull_rect,
+                                        const SkM44& matrix) {
+  FML_CHECK(is_empty()) << "set_initial_state() must be called before any "
+                           "state is pushed onto the state stack";
+  cull_rect_ = cull_rect;
+  matrix_ = matrix;
 }
 
 void LayerStateStack::reapply_all() {
@@ -135,25 +185,29 @@ DlPaint* LayerStateStack::RenderingAttributes::fill(DlPaint& paint,
   return ret;
 }
 
-bool LayerStateStack::needs_painting(const SkRect& bounds) const {
-  if (!needs_painting()) {
-    // Answer based on outstanding attributes...
+SkRect LayerStateStack::local_cull_rect() const {
+  SkM44 inverse;
+  if (cull_rect_.isEmpty() || !matrix_.invert(&inverse)) {
+    // Either rendering is clipped out or transformed into emptiness
+    return SkRect::MakeEmpty();
+  }
+  if (has_perspective(inverse)) {
+    // We could do a 4-point long-form conversion, but since this is
+    // only used for culling, let's just return a non-constricting
+    // cull rect.
+    return kGiantRect;
+  }
+  return inverse.asM33().mapRect(cull_rect_);
+}
+
+bool LayerStateStack::content_culled(const SkRect& content_bounds) const {
+  if (cull_rect_.isEmpty() || content_bounds.isEmpty()) {
+    return true;
+  }
+  if (has_perspective(matrix_)) {
     return false;
   }
-  if (canvas_) {
-    // Workaround for Skia bug (quickReject does not reject empty bounds).
-    // https://bugs.chromium.org/p/skia/issues/detail?id=10951
-    if (bounds.isEmpty()) {
-      return false;
-    }
-    return !canvas_->quickReject(bounds);
-  }
-  if (builder_) {
-    return !builder_->quickReject(bounds);
-  }
-  // We could track the attributes ourselves, but this method is
-  // unlikely to be called without a canvas or builder to back it up.
-  return true;
+  return !matrix_.asM33().mapRect(content_bounds).intersects(cull_rect_);
 }
 
 MutatorContext LayerStateStack::save() {
@@ -277,43 +331,47 @@ void LayerStateStack::push_backdrop(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode) {
-  state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
-      bounds, filter, blend_mode, do_checkerboard_));
+  state_stack_.emplace_back(
+      std::make_unique<BackdropFilterEntry>(bounds, filter, blend_mode));
   apply_last_entry();
 }
 
 void LayerStateStack::push_translate(SkScalar tx, SkScalar ty) {
-  state_stack_.emplace_back(std::make_unique<TranslateEntry>(tx, ty));
+  state_stack_.emplace_back(std::make_unique<TranslateEntry>(matrix_, tx, ty));
   apply_last_entry();
 }
 
 void LayerStateStack::push_transform(const SkM44& m44) {
-  state_stack_.emplace_back(std::make_unique<TransformM44Entry>(m44));
+  state_stack_.emplace_back(std::make_unique<TransformM44Entry>(matrix_, m44));
   apply_last_entry();
 }
 
 void LayerStateStack::push_transform(const SkMatrix& matrix) {
-  state_stack_.emplace_back(std::make_unique<TransformMatrixEntry>(matrix));
+  state_stack_.emplace_back(
+      std::make_unique<TransformMatrixEntry>(matrix_, matrix));
   apply_last_entry();
 }
 
 void LayerStateStack::push_integral_transform() {
-  state_stack_.emplace_back(std::make_unique<IntegralTransformEntry>());
+  state_stack_.emplace_back(std::make_unique<IntegralTransformEntry>(matrix_));
   apply_last_entry();
 }
 
 void LayerStateStack::push_clip_rect(const SkRect& rect, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipRectEntry>(rect, is_aa));
+  state_stack_.emplace_back(
+      std::make_unique<ClipRectEntry>(cull_rect_, rect, is_aa));
   apply_last_entry();
 }
 
 void LayerStateStack::push_clip_rrect(const SkRRect& rrect, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipRRectEntry>(rrect, is_aa));
+  state_stack_.emplace_back(
+      std::make_unique<ClipRRectEntry>(cull_rect_, rrect, is_aa));
   apply_last_entry();
 }
 
 void LayerStateStack::push_clip_path(const SkPath& path, bool is_aa) {
-  state_stack_.emplace_back(std::make_unique<ClipPathEntry>(path, is_aa));
+  state_stack_.emplace_back(
+      std::make_unique<ClipPathEntry>(cull_rect_, path, is_aa));
   apply_last_entry();
 }
 
@@ -335,8 +393,8 @@ bool LayerStateStack::needs_save_layer(int flags) const {
 
 void LayerStateStack::save_layer(const SkRect& bounds) {
   push_attributes();
-  state_stack_.emplace_back(std::make_unique<SaveLayerEntry>(
-      bounds, DlBlendMode::kSrcOver, do_checkerboard_));
+  state_stack_.emplace_back(
+      std::make_unique<SaveLayerEntry>(bounds, DlBlendMode::kSrcOver));
   apply_last_entry();
 }
 
@@ -348,8 +406,9 @@ void LayerStateStack::maybe_save_layer_for_transform() {
 }
 
 void LayerStateStack::maybe_save_layer_for_clip() {
-  // Alpha of clipped content == clip of alpha content
-  // Color-filtering of clipped content == clip of color-filtered content
+  // Alpha and ColorFilter don't care about clipping
+  // - Alpha of clipped content == clip of alpha content
+  // - Color-filtering of clipped content == clip of color-filtered content
   if (outstanding_.image_filter) {
     save_layer(outstanding_.save_layer_bounds);
   }
@@ -385,6 +444,110 @@ void LayerStateStack::maybe_save_layer(
   }
 }
 
+void LayerStateStack::intersect_cull_rect(const SkRRect& clip,
+                                          SkClipOp op,
+                                          bool is_aa) {
+  switch (op) {
+    case SkClipOp::kIntersect:
+      break;
+    case SkClipOp::kDifference:
+      if (!clip.isRect()) {
+        return;
+      }
+      break;
+  }
+  intersect_cull_rect(clip.getBounds(), op, is_aa);
+}
+
+void LayerStateStack::intersect_cull_rect(const SkPath& clip,
+                                          SkClipOp op,
+                                          bool is_aa) {
+  SkRect bounds;
+  switch (op) {
+    case SkClipOp::kIntersect:
+      bounds = clip.getBounds();
+      break;
+    case SkClipOp::kDifference:
+      if (!clip.isRect(&bounds)) {
+        return;
+      }
+      break;
+  }
+  intersect_cull_rect(bounds, op, is_aa);
+}
+
+void LayerStateStack::intersect_cull_rect(const SkRect& clip,
+                                          SkClipOp op,
+                                          bool is_aa) {
+  if (has_perspective(matrix_)) {
+    // We can conservatively ignore this clip.
+    return;
+  }
+  if (cull_rect_.isEmpty()) {
+    // No point in intersecting further.
+    return;
+  }
+  SkRect rect = clip;
+  switch (op) {
+    case SkClipOp::kIntersect:
+      if (rect.isEmpty()) {
+        cull_rect_.setEmpty();
+        break;
+      }
+      rect = matrix_.asM33().mapRect(rect);
+      if (is_aa) {
+        rect.roundOut(&rect);
+      }
+      if (!cull_rect_.intersect(rect)) {
+        cull_rect_.setEmpty();
+      }
+      break;
+    case SkClipOp::kDifference:
+      if (rect.isEmpty() || !rect.intersects(cull_rect_)) {
+        break;
+      }
+      if (matrix_.asM33().mapRect(&rect)) {
+        // This technique only works if it is rect -> rect
+        if (is_aa) {
+          SkIRect rounded;
+          rect.round(&rounded);
+          if (rounded.isEmpty()) {
+            break;
+          }
+          rect.set(rounded);
+        }
+        if (rect.fLeft <= cull_rect_.fLeft &&
+            rect.fRight >= cull_rect_.fRight) {
+          // bounds spans entire width of cull_rect_
+          // therefore we can slice off a top or bottom
+          // edge of the cull_rect_.
+          SkScalar top = std::max(rect.fBottom, cull_rect_.fTop);
+          SkScalar btm = std::min(rect.fTop, cull_rect_.fBottom);
+          if (top < btm) {
+            cull_rect_.fTop = top;
+            cull_rect_.fBottom = btm;
+          } else {
+            cull_rect_.setEmpty();
+          }
+        } else if (rect.fTop <= cull_rect_.fTop &&
+                   rect.fBottom >= cull_rect_.fBottom) {
+          // bounds spans entire height of cull_rect_
+          // therefore we can slice off a left or right
+          // edge of the cull_rect_.
+          SkScalar lft = std::max(rect.fRight, cull_rect_.fLeft);
+          SkScalar rgt = std::min(rect.fLeft, cull_rect_.fRight);
+          if (lft < rgt) {
+            cull_rect_.fLeft = lft;
+            cull_rect_.fRight = rgt;
+          } else {
+            cull_rect_.setEmpty();
+          }
+        }
+      }
+      break;
+  }
+}
+
 void LayerStateStack::AttributesEntry::restore(LayerStateStack* stack) const {
   stack->outstanding_ = attributes_;
 }
@@ -399,13 +562,13 @@ void LayerStateStack::SaveEntry::apply(LayerStateStack* stack) const {
 }
 
 void LayerStateStack::SaveEntry::restore(LayerStateStack* stack) const {
+  do_checkerboard(stack);
   if (stack->canvas_) {
     stack->canvas_->restore();
   }
   if (stack->builder_) {
     stack->builder_->restore();
   }
-  do_checkerboard(stack->canvas_, stack->builder_);
 }
 
 void LayerStateStack::SaveLayerEntry::apply(LayerStateStack* stack) const {
@@ -423,15 +586,9 @@ void LayerStateStack::SaveLayerEntry::apply(LayerStateStack* stack) const {
 }
 
 void LayerStateStack::SaveLayerEntry::do_checkerboard(
-    SkCanvas* canvas,
-    DisplayListBuilder* builder) const {
-  if (do_checkerboard_) {
-    if (canvas) {
-      DrawCheckerboard(canvas, bounds_);
-    }
-    if (builder) {
-      DrawCheckerboard(builder, bounds_);
-    }
+    LayerStateStack* stack) const {
+  if (stack->draw_checkerboard_) {
+    (*stack->draw_checkerboard_)(stack->canvas_, stack->builder_, bounds_);
   }
 }
 
@@ -440,6 +597,12 @@ void LayerStateStack::OpacityEntry::apply(LayerStateStack* stack) const {
   stack->outstanding_.opacity *= opacity_;
   if (stack->mutators_) {
     stack->mutators_->PushOpacity(DlColor::toAlpha(opacity_));
+  }
+}
+
+void LayerStateStack::OpacityEntry::restore(LayerStateStack* stack) const {
+  if (stack->mutators_) {
+    stack->mutators_->Pop();
   }
 }
 
@@ -479,6 +642,14 @@ void LayerStateStack::BackdropFilterEntry::apply(LayerStateStack* stack) const {
   stack->outstanding_ = {};
 }
 
+void LayerStateStack::BackdropFilterEntry::restore(
+    LayerStateStack* stack) const {
+  if (stack->mutators_) {
+    stack->mutators_->Pop();
+  }
+  LayerStateStack::SaveLayerEntry::restore(stack);
+}
+
 void LayerStateStack::BackdropFilterEntry::reapply(
     LayerStateStack* stack) const {
   // On the reapply for subsequent overlay layers, we do not
@@ -491,6 +662,13 @@ void LayerStateStack::BackdropFilterEntry::reapply(
   SaveLayerEntry::apply(stack);
 }
 
+void LayerStateStack::TransformEntry::restore(LayerStateStack* stack) const {
+  stack->matrix_ = previous_matrix_;
+  if (stack->mutators_) {
+    stack->mutators_->Pop();
+  }
+}
+
 void LayerStateStack::TranslateEntry::apply(LayerStateStack* stack) const {
   if (stack->canvas_) {
     stack->canvas_->translate(tx_, ty_);
@@ -501,6 +679,7 @@ void LayerStateStack::TranslateEntry::apply(LayerStateStack* stack) const {
   if (stack->mutators_) {
     stack->mutators_->PushTransform(SkMatrix::Translate(tx_, ty_));
   }
+  stack->matrix_.preConcat(SkM44::Translate(tx_, ty_));
 }
 
 void LayerStateStack::TransformMatrixEntry::apply(
@@ -514,6 +693,7 @@ void LayerStateStack::TransformMatrixEntry::apply(
   if (stack->mutators_) {
     stack->mutators_->PushTransform(matrix_);
   }
+  stack->matrix_.preConcat(matrix_);
 }
 
 void LayerStateStack::TransformM44Entry::apply(LayerStateStack* stack) const {
@@ -526,57 +706,72 @@ void LayerStateStack::TransformM44Entry::apply(LayerStateStack* stack) const {
   if (stack->mutators_) {
     stack->mutators_->PushTransform(m44_.asM33());
   }
+  stack->matrix_.preConcat(m44_);
 }
 
 void LayerStateStack::IntegralTransformEntry::apply(
     LayerStateStack* stack) const {
+  SkM44 matrix = RasterCacheUtil::GetIntegralTransCTM(stack->matrix_);
   if (stack->canvas_) {
-    auto matrix = stack->canvas_->getTotalMatrix();
-    matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
     stack->canvas_->setMatrix(matrix);
   }
   if (stack->builder_) {
-    auto matrix = stack->builder_->getTransform();
-    matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
     stack->builder_->transformReset();
     stack->builder_->transform(matrix);
+  }
+  if (stack->mutators_) {
+    // There is no "SetMatrix" on MutatorsStack, but we need to push
+    // something to match the corresponding pop on the transform
+    // restore.
+    stack->mutators_->PushTransform(SkMatrix::I());
+  }
+  stack->matrix_ = matrix;
+}
+
+void LayerStateStack::ClipEntry::restore(LayerStateStack* stack) const {
+  stack->cull_rect_ = previous_cull_rect_;
+  if (stack->mutators_) {
+    stack->mutators_->Pop();
   }
 }
 
 void LayerStateStack::ClipRectEntry::apply(LayerStateStack* stack) const {
   if (stack->canvas_) {
-    stack->canvas_->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
+    stack->canvas_->clipRect(clip_rect_, SkClipOp::kIntersect, is_aa_);
   }
   if (stack->builder_) {
-    stack->builder_->clipRect(rect_, SkClipOp::kIntersect, is_aa_);
+    stack->builder_->clipRect(clip_rect_, SkClipOp::kIntersect, is_aa_);
   }
   if (stack->mutators_) {
-    stack->mutators_->PushClipRect(rect_);
+    stack->mutators_->PushClipRect(clip_rect_);
   }
+  stack->intersect_cull_rect(clip_rect_, SkClipOp::kIntersect, is_aa_);
 }
 
 void LayerStateStack::ClipRRectEntry::apply(LayerStateStack* stack) const {
   if (stack->canvas_) {
-    stack->canvas_->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
+    stack->canvas_->clipRRect(clip_rrect_, SkClipOp::kIntersect, is_aa_);
   }
   if (stack->builder_) {
-    stack->builder_->clipRRect(rrect_, SkClipOp::kIntersect, is_aa_);
+    stack->builder_->clipRRect(clip_rrect_, SkClipOp::kIntersect, is_aa_);
   }
   if (stack->mutators_) {
-    stack->mutators_->PushClipRRect(rrect_);
+    stack->mutators_->PushClipRRect(clip_rrect_);
   }
+  stack->intersect_cull_rect(clip_rrect_, SkClipOp::kIntersect, is_aa_);
 }
 
 void LayerStateStack::ClipPathEntry::apply(LayerStateStack* stack) const {
   if (stack->canvas_) {
-    stack->canvas_->clipPath(path_, SkClipOp::kIntersect, is_aa_);
+    stack->canvas_->clipPath(clip_path_, SkClipOp::kIntersect, is_aa_);
   }
   if (stack->builder_) {
-    stack->builder_->clipPath(path_, SkClipOp::kIntersect, is_aa_);
+    stack->builder_->clipPath(clip_path_, SkClipOp::kIntersect, is_aa_);
   }
   if (stack->mutators_) {
-    stack->mutators_->PushClipPath(path_);
+    stack->mutators_->PushClipPath(clip_path_);
   }
+  stack->intersect_cull_rect(clip_path_, SkClipOp::kIntersect, is_aa_);
 }
 
 }  // namespace flutter

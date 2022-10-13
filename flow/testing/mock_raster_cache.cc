@@ -27,7 +27,7 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   int layer_cached_threshold = 1;
   MockCacheableLayer layer =
       MockCacheableLayer(path, SkPaint(), layer_cached_threshold);
-  layer.Preroll(&preroll_context_, ctm);
+  layer.Preroll(&preroll_context_);
   layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_);
   RasterCache::Context r_context = {
       // clang-format off
@@ -100,7 +100,6 @@ PrerollContextHolder GetSamplePrerollContextHolder(
           .view_embedder                 = nullptr,
           .state_stack                   = state_stack,
           .dst_color_space               = srgb.get(),
-          .cull_rect                     = kGiantRect,
           .surface_needs_readback        = false,
           .raster_time                   = *raster_time,
           .ui_time                       = *ui_time,

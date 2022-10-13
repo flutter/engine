@@ -55,7 +55,6 @@ struct PrerollContext {
   ExternalViewEmbedder* view_embedder;
   LayerStateStack& state_stack;
   SkColorSpace* dst_color_space;
-  SkRect cull_rect;
   bool surface_needs_readback;
 
   // These allow us to paint in the end of subtree Preroll.
@@ -166,7 +165,7 @@ class Layer {
     context->SetLayerPaintRegion(this, context->GetOldLayerPaintRegion(this));
   }
 
-  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
+  virtual void Preroll(PrerollContext* context) = 0;
 
   // Used during Preroll by layers that employ a saveLayer to manage the
   // PrerollContext settings with values affected by the saveLayer mechanism.
@@ -240,7 +239,8 @@ class Layer {
       // See https://github.com/flutter/flutter/issues/81419
       return true;
     }
-    return context.state_stack.needs_painting(paint_bounds_);
+    return !context.state_stack.painting_is_nop() &&
+           !context.state_stack.content_culled(paint_bounds_);
   }
 
   // Propagated unique_id of the first layer in "chain" of replacement layers
