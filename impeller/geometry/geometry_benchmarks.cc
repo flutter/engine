@@ -6,6 +6,7 @@
 
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -232,9 +233,12 @@ static void BM_ManyCubicPolyline(benchmark::State& state) {
           .TakePath();
   size_t point_count = 0u;
   size_t single_point_count = 0u;
+  Tessellator tess;
   while (state.KeepRunning()) {
-    single_point_count = path.CreatePolyline().points.size();
+    auto polyline = path.CreatePolyline();
+    single_point_count = polyline.points.size();
     point_count += single_point_count;
+    tess.Tessellate(FillType::kNonZero, polyline, [](Point) {});
   }
   state.counters["SinglePointCount"] = single_point_count;
   state.counters["TotalPointCount"] = point_count;
@@ -373,9 +377,12 @@ static void BM_ManyQuadPolyline(benchmark::State& state) {
                   .TakePath();
   size_t point_count = 0u;
   size_t single_point_count = 0u;
+  Tessellator tess;
   while (state.KeepRunning()) {
-    single_point_count = path.CreatePolyline().points.size();
+    auto polyline = path.CreatePolyline();
+    single_point_count = polyline.points.size();
     point_count += single_point_count;
+    tess.Tessellate(FillType::kNonZero, polyline, [](Point) {});
   }
   state.counters["SinglePointCount"] = single_point_count;
   state.counters["TotalPointCount"] = point_count;
