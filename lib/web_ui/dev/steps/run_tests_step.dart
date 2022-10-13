@@ -39,7 +39,7 @@ class RunTestsStep implements PipelineStep {
     this.testFiles,
     required this.overridePathToCanvasKit,
     required this.wasm
-  }) : _browserEnvironment = getBrowserEnvironment(browserName, enableWasmGC: wasm);
+  });
 
   final String browserName;
   final List<FilePath>? testFiles;
@@ -50,8 +50,6 @@ class RunTestsStep implements PipelineStep {
 
   /// Require Skia Gold to be available and reachable.
   final bool requireSkiaGold;
-
-  final BrowserEnvironment _browserEnvironment;
 
   @override
   String get description => 'run_tests';
@@ -65,14 +63,16 @@ class RunTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await _prepareTestResultsDirectory();
-    await _browserEnvironment.prepare();
+
+    final BrowserEnvironment browserEnvironment = getBrowserEnvironment(browserName, enableWasmGC: wasm);
+    await browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
     await _runTestBatch(
       testFiles: testFiles,
-      browserEnvironment: _browserEnvironment,
+      browserEnvironment: browserEnvironment,
       expectFailure: false,
       isDebug: isDebug,
       wasm: wasm,
@@ -81,7 +81,7 @@ class RunTestsStep implements PipelineStep {
       overridePathToCanvasKit: overridePathToCanvasKit,
     );
 
-    await _browserEnvironment.cleanup();
+    await browserEnvironment.cleanup();
 
     if (io.exitCode != 0) {
       throw ToolExit('Some tests failed');
