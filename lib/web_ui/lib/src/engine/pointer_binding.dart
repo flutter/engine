@@ -613,9 +613,11 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   void _checkModifiersState(DomEvent event) {
     // TODO(bleroux): add support for 'Meta', 'Ctrl' and 'Alt'
     final DomPointerEvent pointerEvent = event as DomPointerEvent;
+
     final bool shiftPressed = pointerEvent.getModifierState('Shift');
     KeyboardBinding.instance!.synthesizeShiftKeyIfNeeded(
       shiftPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+      event.timeStamp!,
     );
   }
 

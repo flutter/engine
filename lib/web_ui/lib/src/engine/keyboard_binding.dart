@@ -153,14 +153,15 @@ class KeyboardBinding {
   }
 
   // Synthesize shift key up or down event only when the known pressing state is different.
-  void synthesizeShiftKeyIfNeeded(ui.KeyEventType type) {
+  void synthesizeShiftKeyIfNeeded(ui.KeyEventType type, num eventTimestamp) {
     // TODO(bleroux): should we take care of shift left AND shift right?
     final int physicalShift = kWebToPhysicalKey['ShiftLeft']!;
     final bool alreadyPressed = _converter._pressingRecords.containsKey(physicalShift);
     final bool synthesizeDown = type == ui.KeyEventType.down && !alreadyPressed;
     final bool synthesizeUp = type == ui.KeyEventType.up && alreadyPressed;
     if (synthesizeDown || synthesizeUp) {
-      _converter.performDispatchKeyData(_shiftLeftKeyData(type));
+      final Duration timestamp = _eventTimeStampToDuration(eventTimestamp);
+      _converter.performDispatchKeyData(_shiftLeftKeyData(type, timestamp));
       // Update pressing state
       if (synthesizeDown) {
         _converter._pressingRecords[physicalShift] = _kLogicalShiftLeft;
@@ -170,9 +171,9 @@ class KeyboardBinding {
     }
   }
 
-  ui.KeyData _shiftLeftKeyData(ui.KeyEventType type) {
+  ui.KeyData _shiftLeftKeyData(ui.KeyEventType type, Duration timestamp) {
     return ui.KeyData(
-      timeStamp: Duration.zero,
+      timeStamp: timestamp,
       type: type,
       physical: kWebToPhysicalKey['ShiftLeft']!,
       logical: _kLogicalShiftLeft,
