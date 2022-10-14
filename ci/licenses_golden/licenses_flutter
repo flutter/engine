@@ -1175,6 +1175,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
@@ -1292,6 +1294,7 @@ FILE: ../../../flutter/impeller/geometry/color.cc
 FILE: ../../../flutter/impeller/geometry/color.h
 FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
+FILE: ../../../flutter/impeller/geometry/geometry_benchmarks.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
 FILE: ../../../flutter/impeller/geometry/gradient.cc
