@@ -176,6 +176,7 @@ class SingleViewPresentation extends Presentation {
 
     View embeddedView = state.platformView.getView();
     if (embeddedView.getContext() instanceof MutableContextWrapper) {
+      Log.e("StuartMorgan", "Updating the context");
       MutableContextWrapper currentContext = (MutableContextWrapper) embeddedView.getContext();
       currentContext.setBaseContext(baseContext);
     } else {
