@@ -104,6 +104,7 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
                SkCanvas* canvas) {
   FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
   LayerStateStack state_stack;
+  state_stack.set_delegate(canvas);
   state_stack.set_draw_checkerboard(
       paint_context.state_stack.get_draw_checkerboard());
   auto mutator = state_stack.save();
