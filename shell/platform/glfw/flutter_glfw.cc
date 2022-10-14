@@ -664,9 +664,6 @@ static bool RunFlutterEngine(
           std::filesystem::path(executable_location) / aot_library_path;
     }
   }
-  auto assets_path_string = assets_path.c_str();
-  auto icu_path_string = icu_path.c_str();
-
   // Configure a task runner using the event loop.
   engine_state->event_loop = std::move(event_loop);
   FlutterTaskRunnerDescription platform_task_runner = {};
@@ -690,8 +687,8 @@ static bool RunFlutterEngine(
   }
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
-  args.assets_path = assets_path_string;
-  args.icu_data_path = icu_path_string;
+  args.assets_path = assets_path.c_str();
+  args.icu_data_path = icu_path.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
   args.platform_message_callback = EngineOnFlutterPlatformMessage;
