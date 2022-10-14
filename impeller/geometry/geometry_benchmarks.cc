@@ -18,6 +18,8 @@ Path CreateCubic();
 Path CreateQuadratic();
 }  // namespace
 
+static Tessellator tess;
+
 template <class... Args>
 static void BM_Polyline(benchmark::State& state, Args&&... args) {
   auto args_tuple = std::make_tuple(std::move(args)...);
@@ -26,7 +28,6 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
 
   size_t point_count = 0u;
   size_t single_point_count = 0u;
-  Tessellator tess;
   while (state.KeepRunning()) {
     auto polyline = path.CreatePolyline();
     single_point_count = polyline.points.size();
