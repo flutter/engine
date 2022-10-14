@@ -140,7 +140,7 @@ deps = {
    Var('github_git') + '/google/shaderc.git' + '@' + '948660cccfbbc303d2590c7f44a4cee40b66fdd6',
 
   'src/third_party/vulkan-deps':
-   Var('chromium_git') + '/vulkan-deps' + '@' + '23b710f1a0b3c44d51035c6400a554415f95d9c6',
+   Var('chromium_git') + '/vulkan-deps' + '@' + '18608d767af1a350bd1fe0bcf7fbcb9e5b2e0eb0',
 
   'src/third_party/flatbuffers':
    Var('github_git') + '/google/flatbuffers.git' + '@' + '0a80646371179f8a7a5c1f42c31ee1d44dcf6709',
@@ -469,7 +469,7 @@ deps = {
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + 'bea8d2471bd912220ba59032e0738f3364632657',
 
    'src/third_party/angle':
-   Var('chromium_git') + '/angle/angle.git' + '@' + '3faaded8234b31dea24c929e40e33089a34a9aa5',
+   Var('chromium_git') + '/angle/angle.git' + '@' + '7c4dc25328858a45cb54985fc7751d7bc92906bd',
 
    'src/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
