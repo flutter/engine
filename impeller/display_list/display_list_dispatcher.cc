@@ -10,6 +10,7 @@
 
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color_filter.h"
+#include "display_list/display_list_color_source.h"
 #include "display_list/display_list_path_effect.h"
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
@@ -426,7 +427,12 @@ void DisplayListDispatcher::setColorSource(
       return;
     }
     case flutter::DlColorSourceType::kConicalGradient:
-    case flutter::DlColorSourceType::kRuntimeEffect:
+    case flutter::DlColorSourceType::kRuntimeEffect: {
+      const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
+          source->asRuntimeEffect();
+      const auto effect = runtime_effect_color_source->runtime_effect();
+      auto runtime_stage = effect->runtime_stage();
+    }
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;
