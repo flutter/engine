@@ -151,8 +151,7 @@
                 "targets": [
                     "flutter:unittests",
                     "flutter/build/archives:flutter_patched_sdk",
-                    "flutter/shell/platform/linux:flutter_gtk",
-                    "flutter/build/archives:flutter_web_sdk"
+                    "flutter/shell/platform/linux:flutter_gtk"
                 ]
             },
             "tests": [
