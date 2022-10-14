@@ -43,6 +43,9 @@ void LayerStateStack::clear_delegate() {
 }
 
 void LayerStateStack::set_delegate(SkCanvas* canvas) {
+  if (canvas == canvas_) {
+    return;
+  }
   clear_delegate();
   if (canvas) {
     restore_count_ = canvas->getSaveCount();
@@ -52,6 +55,9 @@ void LayerStateStack::set_delegate(SkCanvas* canvas) {
 }
 
 void LayerStateStack::set_delegate(DisplayListBuilder* builder) {
+  if (builder == builder_) {
+    return;
+  }
   clear_delegate();
   if (builder) {
     restore_count_ = builder->getSaveCount();
@@ -61,6 +67,9 @@ void LayerStateStack::set_delegate(DisplayListBuilder* builder) {
 }
 
 void LayerStateStack::set_delegate(MutatorsStack* stack) {
+  if (stack == mutators_) {
+    return;
+  }
   clear_delegate();
   if (stack) {
     restore_count_ = stack->stack_count();
