@@ -109,17 +109,21 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
-  // Now apply the image filter and then try rendering children either from
-  // cache or directly.
-  mutator.applyImageFilter(child_paint_bounds(), filter_);
-
   if (context.raster_cache && layer_raster_cache_item_->IsCacheChildren()) {
+    // If we render the children from cache then we need the special
+    // transformed version of the filter so we must process it into the
+    // cache paint object manually.
+    FML_DCHECK(transformed_filter_ != nullptr);
     SkPaint sk_paint;
-    if (layer_raster_cache_item_->Draw(context,
-                                       context.state_stack.fill(sk_paint))) {
+    context.state_stack.fill(sk_paint);
+    sk_paint.setImageFilter(transformed_filter_->skia_object());
+    if (layer_raster_cache_item_->Draw(context, &sk_paint)) {
       return;
     }
   }
+
+  // Now apply the image filter and then try rendering the children.
+  mutator.applyImageFilter(child_paint_bounds(), filter_);
 
   PaintChildren(context);
 }
