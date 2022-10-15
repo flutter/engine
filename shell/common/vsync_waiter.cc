@@ -110,7 +110,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   }
 
   // The event named "VSYNC" is special in `chrome://tracing` tool - it will
-  // have zebra visualization.
+  // have a zebra visualization.
   fml::tracing::TraceTimelineEvent(
       "flutter", "VSYNC", frame_start_time.ToEpochDelta().ToMicroseconds(), 0,
       Dart_Timeline_Event_Begin, {"frame_start_time", "frame_target_time"},
