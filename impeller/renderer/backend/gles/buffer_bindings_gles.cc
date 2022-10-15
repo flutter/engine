@@ -50,7 +50,7 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     attrib.normalized = GL_FALSE;
     attrib.offset = offset;
     offset += (input.bit_width * input.vec_size) / 8;
-    vertex_attrib_arrays.emplace_back(std::move(attrib));
+    vertex_attrib_arrays.emplace_back(attrib);
   }
   for (auto& array : vertex_attrib_arrays) {
     array.stride = offset;
@@ -103,6 +103,9 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
     GLsizei written_count = 0u;
     GLint uniform_var_size = 0u;
     GLenum uniform_type = GL_FLOAT;
+    // Note: Active uniforms are defined as uniforms that may have an impact on
+    //       the output of the shader. Drivers are allowed to (and often do)
+    //       optimize out unused uniforms.
     gl.GetActiveUniform(program,            // program
                         i,                  // index
                         max_name_size,      // buffer_size
@@ -211,27 +214,30 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
       continue;
     }
 
-    const auto member_key = CreateUnifiormMemberKey(metadata->name, member.name,
-                                                    member.array_elements > 1);
+    size_t element_count = member.array_elements.value_or(1);
+
+    const auto member_key =
+        CreateUnifiormMemberKey(metadata->name, member.name, element_count > 1);
     const auto location = uniform_locations_.find(member_key);
     if (location == uniform_locations_.end()) {
-      VALIDATION_LOG << "Location for uniform member not known: " << member_key;
-      return false;
+      // The list of uniform locations only contains "active" uniforms that are
+      // not optimized out. So this situation is expected to happen when unused
+      // uniforms are present in the shader.
+      continue;
     }
 
-    size_t element_stride = member.byte_length / member.array_elements;
+    size_t element_stride = member.byte_length / element_count;
 
     auto* buffer_data =
         reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
 
     std::vector<uint8_t> array_element_buffer;
-    if (member.array_elements > 1) {
+    if (element_count > 1) {
       // When binding uniform arrays, the elements must be contiguous. Copy the
       // uniforms to a temp buffer to eliminate any padding needed by the other
       // backends.
-      array_element_buffer.resize(member.size * member.array_elements);
-      for (size_t element_i = 0; element_i < member.array_elements;
-           element_i++) {
+      array_element_buffer.resize(member.size * element_count);
+      for (size_t element_i = 0; element_i < element_count; element_i++) {
         std::memcpy(array_element_buffer.data() + element_i * member.size,
                     reinterpret_cast<const char*>(buffer_data) +
                         element_i * element_stride,
@@ -245,34 +251,34 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
       case ShaderType::kFloat:
         switch (member.size) {
           case sizeof(Matrix):
-            gl.UniformMatrix4fv(location->second,       // location
-                                member.array_elements,  // count
-                                GL_FALSE,               // normalize
-                                buffer_data             // data
+            gl.UniformMatrix4fv(location->second,  // location
+                                element_count,     // count
+                                GL_FALSE,          // normalize
+                                buffer_data        // data
             );
             continue;
           case sizeof(Vector4):
-            gl.Uniform4fv(location->second,       // location
-                          member.array_elements,  // count
-                          buffer_data             // data
+            gl.Uniform4fv(location->second,  // location
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
           case sizeof(Vector3):
-            gl.Uniform3fv(location->second,       // location
-                          member.array_elements,  // count
-                          buffer_data             // data
+            gl.Uniform3fv(location->second,  // location
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
           case sizeof(Vector2):
-            gl.Uniform2fv(location->second,       // location
-                          member.array_elements,  // count
-                          buffer_data             // data
+            gl.Uniform2fv(location->second,  // location
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
           case sizeof(Scalar):
-            gl.Uniform1fv(location->second,       // location
-                          member.array_elements,  // count
-                          buffer_data             // data
+            gl.Uniform1fv(location->second,  // location
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
         }

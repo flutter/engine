@@ -11,7 +11,7 @@
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/render_target_builder.h"
+#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -44,7 +44,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestination:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -56,7 +56,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestinationOver:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
@@ -110,8 +110,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kModulate:
-      // kSourceColor and kDestinationColor override the alpha blend factor.
-      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceColor;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -143,7 +142,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 }
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
-    : context_(std::move(context)) {
+    : context_(std::move(context)),
+      tessellator_(std::make_shared<Tessellator>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -204,11 +204,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearToSrgbFilterPipeline>(*context_);
   srgb_to_linear_filter_pipelines_[{}] =
       CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
-  solid_stroke_pipelines_[{}] =
-      CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
-  vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
+  glyph_atlas_sdf_pipelines_[{}] =
+      CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
+  geometry_color_pipelines_[{}] =
+      CreateDefaultPipeline<GeometryColorPipeline>(*context_);
+  geometry_position_pipelines_[{}] =
+      CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.
@@ -246,15 +249,12 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     SubpassCallback subpass_callback) const {
   auto context = GetContext();
 
-  RenderTargetType render_target_type = context->SupportsOffscreenMSAA()
-                                            ? RenderTargetType::kOffscreenMSAA
-                                            : RenderTargetType::kOffscreen;
-
-  RenderTarget subpass_target = RenderTargetBuilder()
-                                    .SetSize(texture_size)
-                                    .SetRenderTargetType(render_target_type)
-                                    .Build(*context);
-
+  RenderTarget subpass_target;
+  if (context->SupportsOffscreenMSAA()) {
+    subpass_target = RenderTarget::CreateOffscreenMSAA(*context, texture_size);
+  } else {
+    subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+  }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
     return nullptr;
@@ -285,6 +285,10 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   }
 
   return subpass_texture;
+}
+
+std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
+  return tessellator_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {

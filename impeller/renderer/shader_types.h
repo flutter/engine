@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -68,7 +69,7 @@ struct ShaderStructMemberMetadata {
   size_t offset;
   size_t size;
   size_t byte_length;
-  size_t array_elements;
+  std::optional<size_t> array_elements;
 };
 
 struct ShaderMetadata {
@@ -114,6 +115,8 @@ struct SampledImageSlot {
   const char* name;
   size_t texture_index;
   size_t sampler_index;
+  size_t binding;
+  size_t set;
 
   constexpr bool HasTexture() const { return texture_index < 32u; }
 

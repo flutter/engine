@@ -108,8 +108,11 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
     frame_info.src_factor = src_color_factor_;
     frame_info.inner_blur_factor = inner_blur_factor_;
     frame_info.outer_blur_factor = outer_blur_factor_;
-    auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-    VS::BindFrameInfo(cmd, uniform_view);
+    FS::FragInfo frag_info;
+    frag_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
+    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindTextureSampler(cmd, input_snapshot->texture, sampler);
@@ -124,7 +127,8 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
   out_texture->SetLabel("BorderMaskBlurFilter Texture");
 
   return Snapshot{.texture = out_texture,
-                  .transform = Matrix::MakeTranslation(coverage.origin)};
+                  .transform = Matrix::MakeTranslation(coverage.origin),
+                  .opacity = input_snapshot->opacity};
 }
 
 std::optional<Rect> BorderMaskBlurFilterContents::GetFilterCoverage(
