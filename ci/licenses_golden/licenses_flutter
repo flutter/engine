@@ -709,6 +709,8 @@ FILE: ../../../flutter/display_list/display_list_path_effect.h
 FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
 FILE: ../../../flutter/display_list/display_list_rtree.cc
 FILE: ../../../flutter/display_list/display_list_rtree.h
+FILE: ../../../flutter/display_list/display_list_runtime_effect.cc
+FILE: ../../../flutter/display_list/display_list_runtime_effect.h
 FILE: ../../../flutter/display_list/display_list_sampling_options.h
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
@@ -1175,6 +1177,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
@@ -1292,6 +1296,7 @@ FILE: ../../../flutter/impeller/geometry/color.cc
 FILE: ../../../flutter/impeller/geometry/color.h
 FILE: ../../../flutter/impeller/geometry/constants.cc
 FILE: ../../../flutter/impeller/geometry/constants.h
+FILE: ../../../flutter/impeller/geometry/geometry_benchmarks.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.cc
 FILE: ../../../flutter/impeller/geometry/geometry_unittests.h
 FILE: ../../../flutter/impeller/geometry/gradient.cc
@@ -2074,6 +2079,7 @@ FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
+FILE: ../../../flutter/shell/common/vsync_waiter_unittests.cc
 FILE: ../../../flutter/shell/common/vsync_waiters_test.cc
 FILE: ../../../flutter/shell/common/vsync_waiters_test.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
