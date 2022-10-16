@@ -137,7 +137,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   return scaled_bitmap;
 }
 
-static sk_sp<DlImage> UploadTexture(
+std::shared_ptr<impeller::Texture> ImageDecoderImpeller::ConvertBitmapToTexture(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<SkBitmap> bitmap) {
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -176,6 +176,16 @@ static sk_sp<DlImage> UploadTexture(
   }
 
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
+
+  return texture;
+}
+
+static sk_sp<DlImage> UploadTexture(
+    const std::shared_ptr<impeller::Context>& context,
+    std::shared_ptr<SkBitmap> bitmap) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+
+  auto texture = ImageDecoderImpeller::ConvertBitmapToTexture(context, bitmap);
 
   {
     auto command_buffer = context->CreateCommandBuffer();
