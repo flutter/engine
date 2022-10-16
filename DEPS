@@ -137,10 +137,10 @@ deps = {
    Var('fuchsia_git') + '/third_party/glfw' + '@' + '78e6a0063d27ed44c2c4805606309744f6fb29fc',
 
   'src/third_party/shaderc':
-   Var('github_git') + '/google/shaderc.git' + '@' + 'aa4de735c581f033dbbdd33e756e29d1b52a58e1',
+   Var('github_git') + '/google/shaderc.git' + '@' + '948660cccfbbc303d2590c7f44a4cee40b66fdd6',
 
   'src/third_party/vulkan-deps':
-   Var('chromium_git') + '/vulkan-deps' + '@' + '18608d767af1a350bd1fe0bcf7fbcb9e5b2e0eb0',
+   Var('chromium_git') + '/vulkan-deps' + '@' + '863435cf089823dbdeba040778b2e2182577e2e1',
 
   'src/third_party/flatbuffers':
    Var('github_git') + '/google/flatbuffers.git' + '@' + '0a80646371179f8a7a5c1f42c31ee1d44dcf6709',
@@ -466,10 +466,10 @@ deps = {
    Var('fuchsia_git') + '/third_party/Vulkan-Headers.git' + '@' + '32640ad82ef648768c706c9bf828b77123a09bc2',
 
    'src/third_party/swiftshader':
-   Var('swiftshader_git') + '/SwiftShader.git' + '@' + 'ab3cb3f5416b4363f4d4f0e06b35ec8c3dc4714c',
+   Var('swiftshader_git') + '/SwiftShader.git' + '@' + 'bea8d2471bd912220ba59032e0738f3364632657',
 
    'src/third_party/angle':
-   Var('chromium_git') + '/angle/angle.git' + '@' + '7c4dc25328858a45cb54985fc7751d7bc92906bd',
+   Var('chromium_git') + '/angle/angle.git' + '@' + '2d5defc7193520626de147e0c8b4f47d9e6360d2',
 
    'src/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
