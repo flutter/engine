@@ -339,24 +339,24 @@ class FlutterTapTest : public PortableUITest,
 
     // Add components specific for this test case to the realm.
     // for (const auto& [name, component] : GetTestV2Components()) {
-      realm_builder()->AddChild(kFlutterRealm, kFlutterRealmUrl,
-                                component_testing::ChildOptions{
-                                    .environment = kFlutterRunnerEnvironment,
-                                });
+    realm_builder()->AddChild(kFlutterRealm, kFlutterRealmUrl,
+                              component_testing::ChildOptions{
+                                  .environment = kFlutterRunnerEnvironment,
+                              });
     // }
-    realm_builder()->AddRoute(Route{
-      .capabilities = {Protocol{
-          fuchsia::ui::test::input::TouchInputListener::Name_}},
-      .source = ParentRef(),
-      .targets = {kFlutterJitRunnerRef, ChildRef{kFlutterRealm}}});
+    realm_builder()->AddRoute(
+        Route{.capabilities = {Protocol{
+                  fuchsia::ui::test::input::TouchInputListener::Name_}},
+              .source = ParentRef(),
+              .targets = {kFlutterJitRunnerRef, ChildRef{kFlutterRealm}}});
 
     // Add the necessary routing for each of the extra components added
     // above.
     // for (const auto& route : GetTestRoutes()) {
-      realm_builder()->AddRoute(
-          Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-           .source = ChildRef{kFlutterRealm},
-           .targets = {ParentRef()}});
+    realm_builder()->AddRoute(
+        Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
+              .source = ChildRef{kFlutterRealm},
+              .targets = {ParentRef()}});
     // }
   }
 
