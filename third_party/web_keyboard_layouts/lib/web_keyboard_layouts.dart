@@ -3,5 +3,9 @@
 
 library web_keyboard_layouts;
 
-part 'base.dart';
+import 'dart:convert' show base64, utf8;
+import 'dart:io' hide BytesBuilder;
+import 'dart:typed_data';
+
+part 'types.g.dart';
 part 'definitions.g.dart';

@@ -62,6 +62,7 @@ Future<void> main(List<String> rawArguments) async {
     githubToken: envGithubToken,
     cacheRoot: path.join(packageRoot.path, '.cache'),
     dataRoot: path.join(packageRoot.path, 'data'),
+    libRoot: path.join(packageRoot.path, 'lib'),
     force: parsedArguments['force'] as bool,
     outputRoot: path.join(packageRoot.parent.parent.path,
         'third_party', 'web_keyboard_layouts', 'lib'),

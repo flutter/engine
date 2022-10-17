@@ -15,7 +15,7 @@
 
 part of web_keyboard_layouts;
 
-const String kCompressedBody =
+final LayoutStore kCompressedBody = unmarshallStoreCompressed(
   'H4sIAAAAAAAAE+1c+XdUVba+51ShdPf7IwTbdgAEBRnUVpzneRaliRolgoAh2N2K'
   'rCSEDBBkFEgCARJCGAIkjEkgsFbdKn/o1Hqv+A+e+Af4L7z9ffucW7cqlQHa99S3'
   'WIuz7qnKpVK1v29/ezi7MjP5Qvk/HzOP4fK4eRyXJ8wTuDxpnsTlKfMULk+bp3F5'
@@ -140,4 +140,4 @@ const String kCompressedBody =
   'OV5wP/4AVyeFebEb4p7mZVm/9zRBVb5HVZkpGEbg0vttut3NRkBgKMziWxwezOy3'
   'mXb9Yye0hVyn4vz24QLV9hWUqvStXy+dsbRsxYgh3psdjDE6GImfL9VMoIehR/Sl'
   'mhjB+Kev8jsaoyaGPGjKtzGCkl2MxE/VW2U1R5mUPNgma3OUbMqDmqifIS/ZJqu1'
-  'xHGs/M7Ez0PtPJGVW5rl/230nQ3Z18ralO9uyB37XX/jfwDr7kubSFEAAA=='; // 7996 bytes
+  'xHGs/M7Ez0PtPJGVW5rl/230nQ3Z18ralO9uyB37XX/jfwDr7kubSFEAAA=='); // 7996 bytes

@@ -14,47 +14,11 @@ import 'data.dart';
 import 'json_get.dart';
 import 'layout_types.dart';
 
-/// All goals in the form of KeyboardEvent.key.
-final List<String> kGoalKeys = kLayoutGoals.keys.toList();
-
-/// A map from the key of `kLayoutGoals` (KeyboardEvent.key) to an
-/// auto-incremental index.
-final Map<String, int> kGoalToIndex = Map<String, int>.fromEntries(
-  kGoalKeys.asMap().entries.map(
-    (MapEntry<int, String> entry) => MapEntry<String, int>(entry.value, entry.key)),
-);
-
-@immutable
-class Options {
-  /// Build an option.
-  const Options({
-    required this.force,
-    required this.githubToken,
-    required this.cacheRoot,
-    required this.dataRoot,
-    required this.outputRoot,
-  });
-
-  final bool force;
-
-  /// The GitHub personal access token used to make the GitHub request.
-  final String githubToken;
-
-  /// The path of the folder that store cache.
-  final String cacheRoot;
-
-  /// The path of the folder that store data files, such as templates.
-  final String dataRoot;
-
-  /// The folder to store the output Dart files.
-  final String outputRoot;
-}
+/// Signature for function that asynchonously returns a value.
+typedef AsyncGetter<T> = Future<T> Function();
 
 const String githubCacheFileName = 'github-response.json';
 const String githubTargetFolder = 'src/vs/workbench/services/keybinding/browser/keyboardLayouts';
-const String overallTemplateName = 'definitions.dart.tmpl';
-const String entryTemplateName = 'definitions_entry.dart.tmpl';
-const String outputName = 'definitions.g.dart';
 
 const String githubQuery = '''
 {
@@ -87,8 +51,46 @@ const String githubQuery = '''
 }
 ''';
 
-/// Signature for function that asynchonously returns a value.
-typedef AsyncGetter<T> = Future<T> Function();
+/// All goals in the form of KeyboardEvent.key.
+final List<String> kGoalKeys = kLayoutGoals.keys.toList();
+
+/// A map from the key of `kLayoutGoals` (KeyboardEvent.key) to an
+/// auto-incremental index.
+final Map<String, int> kGoalToIndex = Map<String, int>.fromEntries(
+  kGoalKeys.asMap().entries.map(
+    (MapEntry<int, String> entry) => MapEntry<String, int>(entry.value, entry.key)),
+);
+
+@immutable
+class Options {
+  /// Build an option.
+  const Options({
+    required this.force,
+    required this.githubToken,
+    required this.cacheRoot,
+    required this.dataRoot,
+    required this.libRoot,
+    required this.outputRoot,
+  });
+
+  final bool force;
+
+  /// The GitHub personal access token used to make the GitHub request.
+  final String githubToken;
+
+  /// The path of the folder that store cache.
+  final String cacheRoot;
+
+  /// The path of the folder that store data files, such as templates.
+  final String dataRoot;
+
+  /// The path of the folder that store input lib files, typically the folder
+  /// that contains this file.
+  final String libRoot;
+
+  /// The folder to store the output Dart files.
+  final String outputRoot;
+}
 
 /// Retrieve a string using the procedure defined by `ifNotExist` based on the
 /// cache file at `cachePath`.
@@ -101,7 +103,7 @@ typedef AsyncGetter<T> = Future<T> Function();
 ///
 /// Exceptions from `ifNotExist` will be thrown, while exceptions related to
 /// caching are only printed.
-Future<String> tryCached(String cachePath, bool forceRefresh, AsyncGetter<String> ifNotExist) async {
+Future<String> _tryCached(String cachePath, bool forceRefresh, AsyncGetter<String> ifNotExist) async {
   final File cacheFile = File(cachePath);
   if (!forceRefresh && cacheFile.existsSync()) {
     try {
@@ -128,7 +130,7 @@ Future<String> tryCached(String cachePath, bool forceRefresh, AsyncGetter<String
 }
 
 Future<Map<String, dynamic>> _fetchGithub(String githubToken, bool forceRefresh, String cachePath) async {
-  final String response = await tryCached(cachePath, forceRefresh, () async {
+  final String response = await _tryCached(cachePath, forceRefresh, () async {
     final String condensedQuery = githubQuery
         .replaceAll(RegExp(r'\{ +'), '{')
         .replaceAll(RegExp(r' +\}'), '}');
@@ -250,7 +252,8 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
   return layout;
 }
 
-String _renderTemplate(String template, Map<String, String> dictionary) {
+String _renderTemplate(
+  String template, Map<String, String> dictionary) {
   String result = template;
   dictionary.forEach((String key, String value) {
     final String localResult = result.replaceAll('@@@$key@@@', value);
@@ -261,6 +264,16 @@ String _renderTemplate(String template, Map<String, String> dictionary) {
   });
   return result;
 }
+
+void _writeFileTo(
+    String outputDir,
+    String outputFileName,
+    String body) {
+  final String outputPath = path.join(outputDir, outputFileName);
+  Directory(outputDir).createSync(recursive: true);
+  File(outputPath).writeAsStringSync(body);
+}
+
 
 LayoutPlatform _platformFromGithubString(String origin) {
   switch (origin) {
@@ -308,6 +321,25 @@ String _prettyPrintBody(String body, int width) {
   return result.join('\n');
 }
 
+String _readSharedSegment(String path) {
+  const String kSegmentStartMark = '/*@@@ SHARED SEGMENT START @@@*/';
+  const String kSegmentEndMark = '/*@@@ SHARED SEGMENT END @@@*/';
+  final List<String> lines = File(path).readAsStringSync().split('\n');
+  // Defining the two variables as `late final` ensures that each mark is found
+  // once and only once, otherwise assertion errors will be thrown.
+  late final int startLine;
+  late final int endLine;
+  for (int lineNo = 0; lineNo < lines.length; lineNo += 1) {
+    if (lines[lineNo] == kSegmentStartMark) {
+      startLine = lineNo;
+    } else if (lines[lineNo] == kSegmentEndMark) {
+      endLine = lineNo;
+    }
+  }
+  assert(startLine < endLine);
+  return lines.sublist(startLine + 1, endLine).join('\n');
+}
+
 Future<void> generate(Options options) async {
   // Fetch files from GitHub.
   final Map<String, dynamic> githubBody = await _fetchGithub(
@@ -335,25 +367,42 @@ Future<void> generate(Options options) async {
                       && !file.name.startsWith('_.contribution'),
   );
 
+  // Layouts must be sorted to ensure that the output file has a fixed order.
   final List<Layout> layouts = files.map(_parseLayoutFromGithubFile)
     .toList()
     ..sort(_sortLayout);
 
+  // Build store.
   final LayoutStore store = LayoutStore(kLayoutGoals, layouts);
   final String body = marshallStoreCompressed(store);
 
   // Verify that the store can be unmarshalled correctly.
+  // Inconcistencies will cause exceptions.
   verifyLayoutStoreEqual(store, unmarshallStoreCompressed(body));
 
-  final String result = _renderTemplate(
-    File(path.join(options.dataRoot, overallTemplateName)).readAsStringSync(),
-    <String, String>{
-      'COMMIT_ID': commitId,
-      'BODY': _prettyPrintBody(body, 64),
-      'BODY_LENGTH': '${body.length}',
-    },
+  // Generate the definition file.
+  _writeFileTo(
+    options.outputRoot,
+    'definitions.g.dart',
+    _renderTemplate(
+      File(path.join(options.dataRoot, 'definitions.dart.tmpl')).readAsStringSync(),
+      <String, String>{
+        'COMMIT_ID': commitId,
+        'BODY': _prettyPrintBody(body, 64),
+        'BODY_LENGTH': '${body.length}',
+      },
+    ),
   );
-  final String outputPath = path.join(options.outputRoot, outputName);
-  Directory(path.dirname(outputPath)).createSync(recursive: true);
-  File(outputPath).writeAsStringSync(result);
+
+  // Generate the type file.
+  _writeFileTo(
+    options.outputRoot,
+    'types.g.dart',
+    _renderTemplate(
+      File(path.join(options.dataRoot, 'types.dart.tmpl')).readAsStringSync(),
+      <String, String>{
+        'BODY': _readSharedSegment(path.join(options.libRoot, 'layout_types.dart')),
+      },
+    ),
+  );
 }
