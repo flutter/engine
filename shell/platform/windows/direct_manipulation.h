@@ -106,6 +106,8 @@ class DirectManipulationEventHandler
                 DIRECTMANIPULATION_INTERACTION_TYPE interaction) override;
 
  private:
+  // Unique identifier to associate with all gesture event updates.
+  int32_t GetDeviceId();
   // Parent object, used to store the target for gesture event updates.
   DirectManipulationOwner* owner_;
   // We need to reset some parts of DirectManipulation after each gesture

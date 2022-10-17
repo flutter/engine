@@ -24,6 +24,10 @@
 
 namespace flutter {
 
+int32_t DirectManipulationEventHandler::GetDeviceId() {
+  return (int32_t) reinterpret_cast<int64_t>(this);
+}
+
 STDMETHODIMP DirectManipulationEventHandler::QueryInterface(REFIID iid,
                                                             void** ppv) {
   if ((iid == IID_IUnknown) ||
@@ -50,8 +54,7 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
     if (!during_synthesized_reset_) {
       // Not a false event.
       if (owner_->binding_handler_delegate) {
-        owner_->binding_handler_delegate->OnPointerPanZoomStart(
-            (int32_t) reinterpret_cast<int64_t>(this));
+        owner_->binding_handler_delegate->OnPointerPanZoomStart(GetDeviceId());
       }
     }
   }
@@ -60,12 +63,11 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
     last_pan_delta_x_ = 0.0;
     last_pan_delta_y_ = 0.0;
     if (owner_->binding_handler_delegate) {
-      owner_->binding_handler_delegate->OnPointerPanZoomEnd(
-          (int32_t) reinterpret_cast<int64_t>(this));
+      owner_->binding_handler_delegate->OnPointerPanZoomEnd(GetDeviceId());
     }
   } else if (previous == DIRECTMANIPULATION_INERTIA) {
     if (owner_->binding_handler_delegate && std::max(std::abs(last_pan_delta_x_), std::abs(last_pan_delta_y_)) > 0.01) {
-      owner_->binding_handler_delegate->OnScrollInertiaCancel((int32_t) reinterpret_cast<int64_t>(this));
+      owner_->binding_handler_delegate->OnScrollInertiaCancel(GetDeviceId());
     }
     // Need to reset the content transform to its original position
     // so that we are ready for the next gesture.
@@ -123,7 +125,7 @@ HRESULT DirectManipulationEventHandler::OnContentUpdated(
     last_pan_y_ = pan_y;
     if (owner_->binding_handler_delegate && !during_inertia_) {
       owner_->binding_handler_delegate->OnPointerPanZoomUpdate(
-          (int32_t) reinterpret_cast<int64_t>(this), pan_x, pan_y, scale, 0);
+          GetDeviceId(), pan_x, pan_y, scale, 0);
     }
   }
   return S_OK;
