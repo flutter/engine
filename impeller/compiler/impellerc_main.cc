@@ -203,7 +203,6 @@ bool Main(const fml::CommandLine& command_line) {
       case TargetPlatform::kVulkan:
         result_file = switches.sl_file_name;
         break;
-      case TargetPlatform::kFlutterSPIRV:
       case TargetPlatform::kUnknown:
         result_file = switches.spirv_file_name;
         break;
@@ -227,9 +226,8 @@ bool Main(const fml::CommandLine& command_line) {
 }  // namespace impeller
 
 int main(int argc, char const* argv[]) {
-  std::optional<fml::CommandLine> command_line = fml::CommandLineFromPlatform();
-  if (!command_line) {
-    command_line = fml::CommandLineFromArgcArgv(argc, argv);
-  }
-  return impeller::compiler::Main(*command_line) ? EXIT_SUCCESS : EXIT_FAILURE;
+  return impeller::compiler::Main(
+             fml::CommandLineFromPlatformOrArgcArgv(argc, argv))
+             ? EXIT_SUCCESS
+             : EXIT_FAILURE;
 }

@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <memory>
 #include <sstream>
+#include <utility>
 
 #include "flutter/fml/paths.h"
 #include "impeller/base/allocation.h"
@@ -21,7 +22,7 @@ namespace compiler {
 
 const uint32_t kFragBindingBase = 128;
 const size_t kNumUniformKinds =
-    int(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
+    static_cast<int>(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
 
 static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
                                          const SourceOptions& source_options) {
@@ -69,7 +70,6 @@ static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
     case TargetPlatform::kVulkan:
     case TargetPlatform::kRuntimeStageMetal:
       return false;
-    case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
@@ -91,7 +91,6 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
       compiler = CreateMSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
-    case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
       compiler = CreateGLSLCompiler(ir, source_options);
@@ -238,7 +237,7 @@ void Compiler::SetBindingBase(shaderc::CompileOptions& compiler_opts) const {
 }
 
 Compiler::Compiler(const fml::Mapping& source_mapping,
-                   SourceOptions source_options,
+                   const SourceOptions& source_options,
                    Reflector::Options reflector_options)
     : options_(source_options) {
   if (source_mapping.GetMapping() == nullptr) {
@@ -300,21 +299,6 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
     case TargetPlatform::kRuntimeStageGLES:
       spirv_options.SetOptimizationLevel(
           shaderc_optimization_level::shaderc_optimization_level_performance);
-      spirv_options.SetTargetEnvironment(
-          shaderc_target_env::shaderc_target_env_opengl,
-          shaderc_env_version::shaderc_env_version_opengl_4_5);
-      spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
-      break;
-    case TargetPlatform::kFlutterSPIRV:
-      // With any optimization level above 'zero' enabled, shaderc will emit
-      // ops that are not supported by the Engine's SPIR-V -> SkSL transpiler.
-      // In particular, with 'shaderc_optimization_level_size' enabled, it will
-      // generate OpPhi (opcode 245) for test 246_OpLoopMerge.frag instead of
-      // the OpLoopMerge op expected by that test.
-      // See: https://github.com/flutter/flutter/issues/105396.
-      spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_zero);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_opengl,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
@@ -482,7 +466,7 @@ const std::vector<std::string>& Compiler::GetIncludedFileNames() const {
 }
 
 static std::string JoinStrings(std::vector<std::string> items,
-                               std::string separator) {
+                               const std::string& separator) {
   std::stringstream stream;
   for (size_t i = 0, count = items.size(); i < count; i++) {
     const auto is_last = (i == count - 1);
@@ -495,7 +479,7 @@ static std::string JoinStrings(std::vector<std::string> items,
   return stream.str();
 }
 
-std::string Compiler::GetDependencyNames(std::string separator) const {
+std::string Compiler::GetDependencyNames(const std::string& separator) const {
   std::vector<std::string> dependencies = included_file_names_;
   dependencies.push_back(options_.file_name);
   return JoinStrings(dependencies, separator);

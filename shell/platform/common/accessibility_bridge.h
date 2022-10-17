@@ -195,6 +195,7 @@ class AccessibilityBridge
     std::string value;
     std::string increased_value;
     std::string decreased_value;
+    std::string tooltip;
     FlutterTextDirection text_direction;
     FlutterRect rect;
     FlutterTransformation transform;
@@ -227,7 +228,8 @@ class AccessibilityBridge
   // pending_semantics_updates_. Returns std::nullopt if none are reparented.
   std::optional<ui::AXTreeUpdate> CreateRemoveReparentedNodesUpdate();
 
-  void GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result);
+  void GetSubTreeList(const SemanticsNode& target,
+                      std::vector<SemanticsNode>& result);
   void ConvertFlutterUpdate(const SemanticsNode& node,
                             ui::AXTreeUpdate& tree_update);
   void SetRoleFromFlutterUpdate(ui::AXNodeData& node_data,
@@ -248,6 +250,8 @@ class AccessibilityBridge
                                 const SemanticsNode& node);
   void SetValueFromFlutterUpdate(ui::AXNodeData& node_data,
                                  const SemanticsNode& node);
+  void SetTooltipFromFlutterUpdate(ui::AXNodeData& node_data,
+                                   const SemanticsNode& node);
   void SetTreeData(const SemanticsNode& node, ui::AXTreeUpdate& tree_update);
   SemanticsNode FromFlutterSemanticsNode(
       const FlutterSemanticsNode* flutter_node);

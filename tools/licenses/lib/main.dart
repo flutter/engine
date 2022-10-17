@@ -54,7 +54,7 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
   static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg|Brewfile)$', caseSensitive: false);
   static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|swift\.swiftformat|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|swift\.swiftformat|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap|CODEOWNERS|TESTOWNERS)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
   // The ICU library has sample code that will never get linked.
   static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
@@ -1021,11 +1021,15 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     return !entry.fullName.endsWith('third_party/gn') &&
            !entry.fullName.endsWith('third_party/gradle') &&
            !entry.fullName.endsWith('third_party/imgui') &&
+           !entry.fullName.endsWith('third_party/tinygltf') &&
+           !entry.fullName.endsWith('third_party/json/docs') &&
+           !entry.fullName.endsWith('third_party/json/LICENSES') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
             entry.name != '.git' &&
             entry.name != '.github' &&
             entry.name != '.gitignore' &&
+            entry.name != '.reuse' &&
             entry.name != '.vscode' &&
             entry.name != 'javatests' &&
             entry.name != 'fixtures' &&
@@ -2850,16 +2854,19 @@ Future<void> _collectLicensesForComponent(_RepositoryDirectory componentRoot, {
   }
 
   sink.writeln('UNUSED LICENSES:\n');
-  final List<String> unusedLicenses = licenses
+  final List<License> rawUnusedLicenses = licenses
     .where((License license) => !license.isUsed)
+    .toList();
+  rawUnusedLicenses.sort((License a, License b) => a.toStringBody().compareTo(b.toStringBody()));
+  final List<String> unusedLicenses = rawUnusedLicenses
     .map((License license) => license.toString())
     .toList();
-  unusedLicenses.sort();
   sink.writeln(unusedLicenses.join('\n\n'));
   sink.writeln('~' * 80);
 
   sink.writeln('USED LICENSES:\n');
   final List<License> usedLicenses = licenses.where((License license) => license.isUsed).toList();
+  usedLicenses.sort((License a, License b) => a.toStringBody().compareTo(b.toStringBody()));
   final List<String> output = usedLicenses.map((License license) => license.toString()).toList();
   for (int index = 0; index < output.length; index += 1) {
     // The strings we look for here are strings which we do not expect to see in
@@ -2903,8 +2910,6 @@ Future<void> _collectLicensesForComponent(_RepositoryDirectory componentRoot, {
       throw 'Unexpected indecisiveness found in: ${usedLicenses[index].origin}';
     }
   }
-
-  output.sort();
   sink.writeln(output.join('\n\n'));
   sink.writeln('Total license count: ${licenses.length}');
 
@@ -2964,12 +2969,14 @@ Future<void> main(List<String> arguments) async {
       }
       progress.label = 'Dumping results...';
       progress.flush();
-      final List<String?> output = licenses
+      final List<License> sortedLicenses = licenses
         .where((License license) => license.isUsed)
+        .toList();
+      sortedLicenses.sort((License a, License b) => a.toStringBody().compareTo(b.toStringBody()));
+      final List<String?> output = sortedLicenses
         .map((License license) => license.toStringFormal())
         .whereNotNull()
         .toList();
-      output.sort();
       print(output.join('\n${"-" * 80}\n'));
       progress.label = 'Done.';
       progress.flush();

@@ -42,6 +42,8 @@ impeller_component("geometry") {
     "vertices.cc",
     "vertices.h",
   ]
+
+  deps = [ "//flutter/fml" ]
 }
 
 impeller_component("geometry_unittests") {
@@ -53,5 +55,15 @@ impeller_component("geometry_unittests") {
   deps = [
     ":geometry",
     "//flutter/testing",
+  ]
+}
+
+executable("geometry_benchmarks") {
+  testonly = true
+  sources = [ "geometry_benchmarks.cc" ]
+  deps = [
+    ":geometry",
+    "../tessellator",
+    "//flutter/benchmarking",
   ]
 }

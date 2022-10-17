@@ -87,7 +87,13 @@ void PlaygroundImplVK::SetupSwapchain() {
   auto window = reinterpret_cast<GLFWwindow*>(handle_.get());
   vk::Instance instance = context_vk->GetInstance();
   VkSurfaceKHR surface_tmp;
-  ::glfwCreateWindowSurface(instance, window, nullptr, &surface_tmp);
+  auto res = vk::Result{
+      ::glfwCreateWindowSurface(instance, window, nullptr, &surface_tmp)};
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create surface for GLFW window: "
+                   << vk::to_string(res);
+    return;
+  }
   vk::UniqueSurfaceKHR surface{surface_tmp, instance};
   context_vk->SetupSwapchain(std::move(surface));
 }
@@ -108,7 +114,7 @@ PlaygroundImpl::WindowHandle PlaygroundImplVK::GetWindowHandle() const {
 std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
   ContextVK* context_vk = reinterpret_cast<ContextVK*>(context_.get());
-  return context_vk->AcquireSurface();
+  return context_vk->AcquireSurface(current_frame_++);
 }
 
 }  // namespace impeller

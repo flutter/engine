@@ -54,7 +54,6 @@ static std::optional<fb::TargetPlatform> ToTargetPlatform(
     case TargetPlatform::kUnknown:
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
-    case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
     case TargetPlatform::kVulkan:
@@ -157,7 +156,9 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
     }
     desc->type = uniform_type.value();
     desc->bit_width = uniform.bit_width;
-    desc->array_elements = uniform.array_elements;
+    if (uniform.array_elements.has_value()) {
+      desc->array_elements = uniform.array_elements.value();
+    }
 
     runtime_stage.uniforms.emplace_back(std::move(desc));
   }

@@ -13,6 +13,8 @@
 #include "impeller/fixtures/colors.vert.h"
 #include "impeller/fixtures/impeller.frag.h"
 #include "impeller/fixtures/impeller.vert.h"
+#include "impeller/fixtures/inactive_uniforms.frag.h"
+#include "impeller/fixtures/inactive_uniforms.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
@@ -423,11 +425,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   cmd.label = "InstancedDraw";
 
   static constexpr size_t kInstancesCount = 5u;
-  std::vector<VS::InstanceInfo> instances;
+  VS::InstanceInfo<kInstancesCount> instances;
   for (size_t i = 0; i < kInstancesCount; i++) {
-    VS::InstanceInfo info;
-    info.colors = Color::Random();
-    instances.emplace_back(info);
+    instances.colors[i] = Color::Random();
   }
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
@@ -792,6 +792,119 @@ TEST_P(RendererTest, ArrayUniforms) {
     return true;
   };
   OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, InactiveUniforms) {
+  using VS = InactiveUniformsVertexShader;
+  using FS = InactiveUniformsFragmentShader;
+
+  auto context = GetContext();
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
+
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Inactive Uniform";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+
+    FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
+                               .color = Color::Green()};
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanCreateCPUBackedTexture) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  }
+
+  auto context = GetContext();
+  auto allocator = context->GetResourceAllocator();
+  size_t dimension = 2;
+
+  do {
+    ISize size(dimension, dimension);
+    TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
+    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+    texture_descriptor.size = size;
+    auto row_bytes =
+        std::max(static_cast<uint16_t>(size.width * 4),
+                 allocator->MinimumBytesPerRow(texture_descriptor.format));
+    auto buffer_size = size.height * row_bytes;
+
+    DeviceBufferDescriptor buffer_descriptor;
+    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
+    buffer_descriptor.size = buffer_size;
+
+    auto buffer = allocator->CreateBuffer(buffer_descriptor);
+
+    ASSERT_TRUE(buffer);
+
+    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
+
+    ASSERT_TRUE(texture);
+    ASSERT_TRUE(texture->IsValid());
+
+    dimension *= 2;
+  } while (dimension <= 8192);
+}
+
+TEST_P(RendererTest, DefaultIndexSize) {
+  using VS = BoxFadeVertexShader;
+
+  // Default to 16bit index buffer size, as this is a reasonable default and
+  // supported on all backends without extensions.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, VertexBufferBuilder) {
+  // Does not create index buffer if one is provided.
+  using VS = BoxFadeVertexShader;
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  vertex_builder.AppendIndex(0);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(3);
+
+  ASSERT_EQ(vertex_builder.GetIndexCount(), 6u);
+  ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
 }
 
 }  // namespace testing

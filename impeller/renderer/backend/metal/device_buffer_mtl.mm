@@ -14,14 +14,39 @@ namespace impeller {
 DeviceBufferMTL::DeviceBufferMTL(DeviceBufferDescriptor desc,
                                  id<MTLBuffer> buffer,
                                  MTLStorageMode storage_mode)
-    : DeviceBuffer(std::move(desc)),
-      buffer_(buffer),
-      storage_mode_(storage_mode) {}
+    : DeviceBuffer(desc), buffer_(buffer), storage_mode_(storage_mode) {}
 
 DeviceBufferMTL::~DeviceBufferMTL() = default;
 
 id<MTLBuffer> DeviceBufferMTL::GetMTLBuffer() const {
   return buffer_;
+}
+
+uint8_t* DeviceBufferMTL::OnGetContents() const {
+  if (storage_mode_ != MTLStorageModeShared) {
+    return nullptr;
+  }
+  return reinterpret_cast<uint8_t*>(buffer_.contents);
+}
+
+std::shared_ptr<Texture> DeviceBufferMTL::AsTexture(
+    Allocator& allocator,
+    const TextureDescriptor& descriptor,
+    uint16_t row_bytes) const {
+  auto mtl_texture_desc = ToMTLTextureDescriptor(descriptor);
+
+  if (!mtl_texture_desc) {
+    VALIDATION_LOG << "Texture descriptor was invalid.";
+    return nullptr;
+  }
+
+  auto texture = [buffer_ newTextureWithDescriptor:mtl_texture_desc
+                                            offset:0
+                                       bytesPerRow:row_bytes];
+  if (!texture) {
+    return nullptr;
+  }
+  return std::make_shared<TextureMTL>(descriptor, texture);
 }
 
 [[nodiscard]] bool DeviceBufferMTL::OnCopyHostBuffer(const uint8_t* source,
