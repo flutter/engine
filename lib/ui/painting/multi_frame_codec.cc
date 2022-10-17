@@ -132,6 +132,7 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }
 
+#if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
     sk_sp<DlImage> result;
     // impeller, transfer to DlImageImpeller
@@ -143,6 +144,7 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
 
     return result;
   }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
   sk_sp<SkImage> skImage;
   gpu_disable_sync_switch->Execute(
