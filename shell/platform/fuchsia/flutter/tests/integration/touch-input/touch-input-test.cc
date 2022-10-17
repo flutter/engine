@@ -169,6 +169,7 @@ class ResponseListenerServer
   void ReportTouchInput(
       fuchsia::ui::test::input::TouchInputListenerReportTouchInputRequest
           request) override {
+    FML_LOG(INFO) << "Received ReportTouchInput event";
     events_received_.push_back(std::move(request));
   }
 
@@ -176,6 +177,7 @@ class ResponseListenerServer
   // When the component framework requests for this component to start, this
   // method will be invoked by the realm_builder library.
   void Start(std::unique_ptr<LocalComponentHandles> local_handles) override {
+    FML_LOG(INFO) << "Starting ResponseListenerServer";
     // When this component starts, add a binding to the
     // test.touch.ResponseListener protocol to this component's outgoing
     // directory.
@@ -186,6 +188,7 @@ class ResponseListenerServer
                                bindings_.AddBinding(this, std::move(request),
                                                     dispatcher_);
                              })));
+    FML_LOG(INFO) << "Handle added for ResponseListenerServer";
     local_handles_.emplace_back(std::move(local_handles));
   }
 
@@ -242,50 +245,18 @@ class FlutterTapTest : public PortableUITest,
     RegisterTouchScreen();
   }
 
-  // Routes needed to setup Flutter client.
-  static std::vector<Route> GetFlutterRoutes(ChildRef target) {
-    return {
-        {.capabilities = {Protocol{
-             fuchsia::ui::test::input::TouchInputListener::Name_}},
-         .source = ChildRef{kMockResponseListener},
-         .targets = {target}},
-        {.capabilities = {Protocol{fuchsia::logger::LogSink::Name_},
-                          Protocol{fuchsia::sysmem::Allocator::Name_},
-                          Protocol{
-                              fuchsia::tracing::provider::Registry::Name_}},
-         .source = ParentRef(),
-         .targets = {target}},
-        {.capabilities = {Protocol{fuchsia::ui::scenic::Scenic::Name_}},
-         .source = kTestUIStackRef,
-         .targets = {target}},
-    };
-  }
-
-  std::vector<Route> GetTestRoutes() {
-    return merge(
-        {GetFlutterRoutes(ChildRef{kFlutterRealm}),
-         {
-             {.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-              .source = ChildRef{kFlutterRealm},
-              .targets = {ParentRef()}},
-         }});
-  }
-
-  std::vector<std::pair<ChildName, LegacyUrl>> GetTestV2Components() {
-    return {
-        std::make_pair(kFlutterRealm, kFlutterRealmUrl),
-    };
-  };
-
   bool LastEventReceivedMatches(float expected_x,
                                 float expected_y,
                                 std::string component_name) {
     const auto& events_received = response_listener_server_->events_received();
+
     if (events_received.empty()) {
+      // FML_LOG(INFO) << "events_received is currently empty";
       return false;
     }
 
     const auto& last_event = events_received.back();
+    FML_LOG(INFO) << "Received event";
 
     auto pixel_scale = last_event.has_device_pixel_ratio()
                            ? last_event.device_pixel_ratio()
@@ -335,12 +306,30 @@ class FlutterTapTest : public PortableUITest,
   uint32_t display_width() const { return display_width_; }
   uint32_t display_height() const { return display_height_; }
 
-  static constexpr auto kFlutterRealm = "flutter-realm";
+  static constexpr auto kFlutterRealm = "two-flutter";
   static constexpr auto kFlutterRealmUrl =
-      "fuchsia-pkg://fuchsia.com/one-flutter#meta/one-flutter-realm.cm";
+      "fuchsia-pkg://fuchsia.com/two-flutter#meta/two-flutter.cm";
 
  private:
   void ExtendRealm() override {
+    realm_builder()->AddRoute(
+        Route{.capabilities =
+                  {
+                      Protocol{fuchsia::logger::LogSink::Name_},
+                      Protocol{fuchsia::sys::Environment::Name_},
+                      Protocol{fuchsia::sysmem::Allocator::Name_},
+                      Protocol{fuchsia::tracing::provider::Registry::Name_},
+                      Protocol{"fuchsia.posix.socket.Provider"},
+                      Protocol{"fuchsia.vulkan.loader.Loader"},
+                      Protocol{"fuchsia.ui.input.ImeService"},
+                      Protocol{"fuchsia.ui.pointerinjector.Registry"},
+                      // Protocol{"fuchsia.ui.test.input.TouchInputListener"},
+                      component_testing::Directory{"config-data"},
+                      // Protocol{kProfileProviderServiceName},
+                  },
+              .source = ParentRef(),
+              .targets = {kFlutterJitRunnerRef, kTestUIStackRef}});
+
     // Key part of service setup: have this test component vend the
     // |ResponseListener| service in the constructed realm.
     response_listener_server_ =
@@ -348,21 +337,27 @@ class FlutterTapTest : public PortableUITest,
     realm_builder()->AddLocalChild(kMockResponseListener,
                                    response_listener_server_.get());
 
-    realm_builder()->AddRoute(
-        {.capabilities = {Protocol{fuchsia::ui::scenic::Scenic::Name_}},
-         .source = kTestUIStackRef,
-         .targets = {ParentRef()}});
-
     // Add components specific for this test case to the realm.
-    for (const auto& [name, component] : GetTestV2Components()) {
-      realm_builder()->AddChild(name, component);
-    }
+    // for (const auto& [name, component] : GetTestV2Components()) {
+      realm_builder()->AddChild(kFlutterRealm, kFlutterRealmUrl,
+                                component_testing::ChildOptions{
+                                    .environment = kFlutterRunnerEnvironment,
+                                });
+    // }
+    realm_builder()->AddRoute(Route{
+      .capabilities = {Protocol{
+          fuchsia::ui::test::input::TouchInputListener::Name_}},
+      .source = ParentRef(),
+      .targets = {kFlutterJitRunnerRef, ChildRef{kFlutterRealm}}});
 
     // Add the necessary routing for each of the extra components added
     // above.
-    for (const auto& route : GetTestRoutes()) {
-      realm_builder()->AddRoute(route);
-    }
+    // for (const auto& route : GetTestRoutes()) {
+      realm_builder()->AddRoute(
+          Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
+           .source = ChildRef{kFlutterRealm},
+           .targets = {ParentRef()}});
+    // }
   }
 
   ParamType GetTestUIStackUrl() override { return GetParam(); };
@@ -392,7 +387,7 @@ TEST_P(FlutterTapTest, FlutterTap) {
     return LastEventReceivedMatches(
         /*expected_x=*/static_cast<float>(display_height()) / 4.f,
         /*expected_y=*/static_cast<float>(display_width()) / 4.f,
-        /*component_name=*/"one-flutter");
+        /*component_name=*/"two-flutter");
   });
 }
 

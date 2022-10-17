@@ -6,6 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_TESTS_INTEGRATION_UTILS_PORTABLE_UI_TEST_H_
 
 #include <fuchsia/sysmem/cpp/fidl.h>
+#include <fuchsia/ui/app/cpp/fidl.h>
+#include <fuchsia/ui/input/cpp/fidl.h>
+#include <fuchsia/ui/policy/cpp/fidl.h>
+#include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <fuchsia/ui/test/input/cpp/fidl.h>
 #include <fuchsia/ui/test/scene/cpp/fidl.h>
 #include <lib/async-loop/testing/cpp/real_loop.h>
@@ -28,6 +32,10 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   static constexpr auto kTestUIStack = "ui";
   static constexpr auto kTestUIStackRef =
       component_testing::ChildRef{kTestUIStack};
+  static constexpr auto kFlutterJitRunner = "flutter_jit_runner";
+  static constexpr auto kFlutterJitRunnerRef = component_testing::ChildRef{kFlutterJitRunner};
+  static constexpr auto kFlutterJitRunnerUrl = "fuchsia-pkg://fuchsia.com/oot_flutter_jit_runner#meta/flutter_jit_runner.cm";
+  static constexpr auto kFlutterRunnerEnvironment = "flutter_runner_env";
 
   void SetUp();
 
