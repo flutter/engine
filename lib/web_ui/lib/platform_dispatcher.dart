@@ -78,7 +78,7 @@ abstract class PlatformDispatcher {
 
   // Since Dart Web uses JavaScript instead of Dart VM, there is no
   // such thing as Dart GC, so this is no-op.
-  bool notifyIdle(Duration deadline) {}
+  bool notifyIdle(Duration deadline) => false;
 
   void render(Scene scene, [FlutterView view]);
 
