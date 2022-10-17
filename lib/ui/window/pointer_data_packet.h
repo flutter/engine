@@ -20,6 +20,8 @@ class PointerDataPacket {
   ~PointerDataPacket();
 
   void SetPointerData(size_t i, const PointerData& data);
+  PointerData GetPointerData(size_t i);
+  size_t Size();
   const std::vector<uint8_t>& data() const { return data_; }
 
  private:
