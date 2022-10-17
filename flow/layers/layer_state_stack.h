@@ -12,6 +12,98 @@
 
 namespace flutter {
 
+/// The LayerStateStack manages the inherited state passed down between
+/// |Layer| objects in a |LayerTree| during |Preroll| and |Paint|.
+///
+/// More specifically, it manages the clip and transform state during
+/// recursive rendering and will hold and lazily apply opacity, ImageFilter
+/// and ColorFilter attributes to recursive content. This is not a truly
+/// general state management mechnanism as it makes assumptions that code
+/// will be applying the attributes to rendered content that happens in
+/// recursive calls. The automatic save/restore mechanisms only work in
+/// a context where C++ auto-destruct calls will engage the restore at
+/// the end of a code block and that any applied attributes will only
+/// be applied to the content rendered inside that block. These restrictions
+/// match the organization of the |LayerTree| precisely.
+///
+/// The stack can manage a single state delegate. The stack will both
+/// record the state internally regardless of any delegate and will also
+/// apply it to a delegate as needed. The delegate can be swapped out
+/// on the fly (as is typically done by PlatformViewLayer when recording
+/// the state for multiple inter-embedded-view sub-trees) and the old
+/// delegate will be restored to its original state (before it became a
+/// delegate) and the new delegate will have all of the state recorded
+/// by the stack replayed into it to bring it up to speed with the
+/// current rendering context.
+///
+/// The delegate can be any one of:
+///   - MutatorsStack: used during Preroll to remember the outstanding
+///                    state for embedded platform layers
+///   - SkCanvas: used during Paint for the default output to a Skia
+///               surface
+///   - DisplayListBuilder: used during Paint to construct a DisplayList
+///                         for Impeller output
+/// The stack will know which state needs to be conveyed to any of these
+/// delegates and when is the best time to convey that state (i.e. lazy
+/// saveLayer calls for example).
+///
+/// The rendering state attributes will be automatically applied to the
+/// nested content using a |saveLayer| call at the point at which we
+/// encounter rendered content (i.e. various nested layers that exist only
+/// to apply new state will not trigger the |saveLayer| and the attributes
+/// can accumulate until we reach actual content that is rendered.) Some
+/// rendered content can avoid the |saveLayer| if it reports to the object
+/// that it is able to apply all of the attributes that happen to be
+/// outstanding (accumulated from parent state-modifiers). A |ContainerLayer|
+/// can also monitor the attribute rendering capabilities of a list of
+/// children and can ask the object to apply a protective |saveLayer| or
+/// not based on the negotiated capabilities of the entire group.
+///
+/// Any code that is planning to modify the clip, transform, or rendering
+/// attributes for its child content must start by calling the |save| method
+/// which returns a MutatorContext object. The methods that modify such
+/// state only exist on the MutatorContext object so it is difficult to get
+/// that wrong, but the caller must make sure that the call happens within
+/// a C++ code block that will define the "rendering scope" of those
+/// state changes as they will be automatically restored on exit from that
+/// block. Note that the layer might make similar state calls directly on
+/// the canvas or builder during the Paint cycle (via saveLayer, transform,
+/// or clip calls), but should avoid doing so if there is any nested content
+/// that needs to track or react to those state calls.
+///
+/// Code that needs to render content can simply inform the parent of their
+/// abilities by setting the |PrerollContext::renderable_state_flags| during
+/// |Preroll| and then render with those attributes during |Paint| by
+/// requesting the outstanding values of those attributes from the state_stack
+/// object. Individual leaf layers can ignore this feature as the default
+/// behavior during |Preroll| will have their parent |ContainerLayer| assume
+/// that they cannot render any outstanding state attributes and will apply
+/// the protective saveLayer on their behalf if needed. As such, this object
+/// only provides "opt-in" features for leaf layers and no responsibilities
+/// otherwise.
+/// See |LayerStateStack::fill|
+/// See |LayerStateStack::outstanding_opacity|
+/// See |LayerStateStack::outstanding_color_filter|
+/// See |LayerStateStack::outstanding_image_filter|
+///
+/// State-modifying layers should contain code similar to this pattern in both
+/// their |Preroll| and |Paint| methods.
+///
+/// void [LayerType]::[Preroll/Paint](context) {
+///   auto mutator = context.state_stack.save();
+///   mutator.translate(origin.x, origin.y);
+///   mutator.applyOpacity(content_bounds, opacity_value);
+///   mutator.applyColorFilter(content_bounds, color_filter);
+///
+///   // Children will react to the state applied above during their
+///   // Preroll/Paint methods or ContainerLayer will protect them
+///   // conservatively by default.
+///   [Preroll/Paint]Children(context);
+///
+///   // here the mutator will be auto-destructed and the state accumulated
+///   // by it will be restored out of the state_stack and its associated
+///   // delegates.
+/// }
 class LayerStateStack {
  public:
   explicit LayerStateStack(const SkRect* cull_rect = nullptr);
