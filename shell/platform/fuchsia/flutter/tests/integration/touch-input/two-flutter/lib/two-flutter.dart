@@ -86,7 +86,7 @@ class MyApp {
       print('two-flutter received tap: ${data.toStringFull()}');
 
       if (data.change == PointerChange.down) {
-        _touchCounter++;        
+        _touchCounter++;
       }
 
       if (data.change == PointerChange.down || data.change == PointerChange.move) {
