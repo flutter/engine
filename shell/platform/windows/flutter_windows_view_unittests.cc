@@ -859,7 +859,8 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
                        ->GetFlutterPlatformNodeDelegateFromID(
                            AccessibilityBridge::kRootNodeId)
                        .lock();
-  std::string tooltip = root_node->GetData().GetStringAttribute(ax::mojom::StringAttribute::kTooltip);
+  std::string tooltip = root_node->GetData().GetStringAttribute(
+      ax::mojom::StringAttribute::kTooltip);
   EXPECT_EQ(tooltip, "tooltip");
 }
 

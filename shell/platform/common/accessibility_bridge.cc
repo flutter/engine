@@ -517,8 +517,9 @@ void AccessibilityBridge::SetValueFromFlutterUpdate(ui::AXNodeData& node_data,
   node_data.SetValue(node.value);
 }
 
-void AccessibilityBridge::SetTooltipFromFlutterUpdate(ui::AXNodeData& node_data,
-                                                      const SemanticsNode& node) {
+void AccessibilityBridge::SetTooltipFromFlutterUpdate(
+    ui::AXNodeData& node_data,
+    const SemanticsNode& node) {
   node_data.SetTooltip(node.tooltip);
 }
 

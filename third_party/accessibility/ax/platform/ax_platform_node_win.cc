@@ -1019,7 +1019,8 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accName(VARIANT var_id, BSTR* name_bstr) {
   std::u16string name = target->GetNameAsString16();
 
   // Simply appends the tooltip, if any, to the end of the MSAA name.
-  const std::u16string tooltip = target->GetString16Attribute(ax::mojom::StringAttribute::kTooltip);
+  const std::u16string tooltip =
+      target->GetString16Attribute(ax::mojom::StringAttribute::kTooltip);
   if (!tooltip.empty()) {
     AppendTextToString(tooltip, &name);
   }
