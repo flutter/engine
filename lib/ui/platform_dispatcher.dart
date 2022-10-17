@@ -724,7 +724,7 @@ class PlatformDispatcher {
 
   // prototype, should not really name/place here
   @FfiNative<Bool Function(Int64)>('PlatformConfigurationNativeApi::NotifyIdle')
-  external static bool _notifyIdle();
+  external static bool _notifyIdle(int deadlineMicroseconds);
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
