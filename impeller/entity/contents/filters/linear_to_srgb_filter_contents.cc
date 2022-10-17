@@ -61,9 +61,14 @@ std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
 
+    FS::FragInfo frag_info;
+    frag_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
+    frag_info.input_alpha = GetAbsorbOpacity() ? input_snapshot->opacity : 1.0f;
+
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
-
+    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
     return pass.AddCommand(std::move(cmd));
@@ -76,9 +81,11 @@ std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
   }
   out_texture->SetLabel("LinearToSrgb Texture");
 
-  return Snapshot{.texture = out_texture,
-                  .transform = input_snapshot->transform,
-                  .sampler_descriptor = input_snapshot->sampler_descriptor};
+  return Snapshot{
+      .texture = out_texture,
+      .transform = input_snapshot->transform,
+      .sampler_descriptor = input_snapshot->sampler_descriptor,
+      .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity};
 }
 
 }  // namespace impeller

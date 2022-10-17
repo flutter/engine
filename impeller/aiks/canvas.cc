@@ -15,6 +15,7 @@
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/vertices.h"
 
@@ -208,7 +209,7 @@ void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
 
 void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
   auto contents = std::make_shared<ClipContents>();
-  contents->SetPath(std::move(path));
+  contents->SetGeometry(Geometry::MakePath(std::move(path)));
   contents->SetClipOperation(clip_op);
 
   Entity entity;
@@ -355,9 +356,10 @@ void Canvas::DrawVertices(Vertices vertices,
                           BlendMode blend_mode,
                           Paint paint) {
   std::shared_ptr<VerticesContents> contents =
-      std::make_shared<VerticesContents>(std::move(vertices));
+      std::make_shared<VerticesContents>();
   contents->SetColor(paint.color);
   contents->SetBlendMode(blend_mode);
+  contents->SetGeometry(Geometry::MakeVertices(std::move(vertices)));
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());

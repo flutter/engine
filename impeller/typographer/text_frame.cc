@@ -25,11 +25,12 @@ std::optional<Rect> TextFrame::GetBounds() const {
   return result;
 }
 
-bool TextFrame::AddTextRun(TextRun run) {
+bool TextFrame::AddTextRun(const TextRun& run) {
   if (!run.IsValid()) {
     return false;
   }
-  runs_.emplace_back(std::move(run));
+  has_color_ |= run.HasColor();
+  runs_.emplace_back(run);
   return true;
 }
 
@@ -39,6 +40,10 @@ size_t TextFrame::GetRunCount() const {
 
 const std::vector<TextRun>& TextFrame::GetRuns() const {
   return runs_;
+}
+
+bool TextFrame::HasColor() const {
+  return has_color_;
 }
 
 }  // namespace impeller

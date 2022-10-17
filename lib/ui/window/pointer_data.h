@@ -9,7 +9,8 @@
 
 namespace flutter {
 
-// If this value changes, update the pointer data unpacking code in hooks.dart.
+// If this value changes, update the pointer data unpacking code in
+// platform_dispatcher.dart.
 static constexpr int kPointerDataFieldCount = 35;
 static constexpr int kBytesPerField = sizeof(int64_t);
 // Must match the button constants in events.dart.
@@ -61,6 +62,7 @@ struct alignas(8) PointerData {
     kNone,
     kScroll,
     kScrollInertiaCancel,
+    kScale,
   };
 
   int64_t embedder_id;
