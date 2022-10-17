@@ -10,7 +10,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "lib/ui/painting/image_decoder_impeller.h"
-#endif
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/tonic/logging/dart_invoke.h"
@@ -135,13 +135,11 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   if (is_impeller_enabled_) {
     sk_sp<DlImage> result;
     // impeller, transfer to DlImageImpeller
-    gpu_disable_sync_switch->Execute(
-        fml::SyncSwitch::Handlers()
-            .SetIfTrue([&result] { result = NULL; })
-            .SetIfFalse([&result, &bitmap, &impeller_context_] {
-              result = ImageDecoderImpeller::UploadTexture(
-                  impeller_context_, std::make_shared<SkBitmap>(bitmap));
-            }));
+    gpu_disable_sync_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
+        [&result, &bitmap, &impeller_context_] {
+          result = ImageDecoderImpeller::UploadTexture(
+              impeller_context_, std::make_shared<SkBitmap>(bitmap));
+        }));
 
     return result;
   }
@@ -179,12 +177,12 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
     size_t trace_id,
-    std::shared_ptr<impeller::Context> impeller_context_) {
+    std::shared_ptr<impeller::Context> impeller_context) {
   fml::RefPtr<CanvasImage> image = nullptr;
   int duration = 0;
   sk_sp<DlImage> dlImage =
       GetNextFrameImage(std::move(resourceContext), gpu_disable_sync_switch,
-                        impeller_context_, unref_queue);
+                        impeller_context, unref_queue);
   if (dlImage) {
     image = CanvasImage::Create();
     image->set_image(dlImage);
