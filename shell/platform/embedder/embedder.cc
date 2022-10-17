@@ -1452,7 +1452,6 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                   node.value.c_str(),
                   node.increasedValue.c_str(),
                   node.decreasedValue.c_str(),
-                  node.tooltip.c_str(),
                   static_cast<FlutterTextDirection>(node.textDirection),
                   FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
                               node.rect.fBottom},
@@ -1463,6 +1462,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                   node.customAccessibilityActions.size(),
                   node.customAccessibilityActions.data(),
                   node.platformViewId,
+                  node.tooltip.c_str(),
               };
               update_semantics_node_callback(&embedder_node, user_data);
             }
