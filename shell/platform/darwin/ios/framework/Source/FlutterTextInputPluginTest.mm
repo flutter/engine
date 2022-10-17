@@ -406,7 +406,6 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
 }
 
-
 // This tests the workaround to fix an iOS 16 bug
 // See: https://github.com/flutter/flutter/issues/111494
 - (void)testSystemOnlyAddingPartialComposedCharacter {
