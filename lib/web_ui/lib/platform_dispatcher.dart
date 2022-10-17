@@ -76,6 +76,10 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
+  // Since Dart Web uses JavaScript instead of Dart VM, there is no
+  // such thing as Dart GC, so this is no-op.
+  void notifyIdle() {}
+
   void render(Scene scene, [FlutterView view]);
 
   AccessibilityFeatures get accessibilityFeatures;
