@@ -333,3 +333,35 @@ void verifyLayoutStoreEqual(LayoutStore store1, LayoutStore store2) {
         });
     });
 }
+
+String _layoutPlatformToString(LayoutPlatform platform) {
+  switch (platform) {
+    case LayoutPlatform.win:
+      return 'win';
+    case LayoutPlatform.linux:
+      return 'linux';
+    case LayoutPlatform.darwin:
+      return 'darwin';
+  }
+}
+
+/// Marshall a store into a JSON.
+///
+/// The JSON is not to be parsed by scripts, but read by human.
+Map<String, dynamic> jsonifyStore(LayoutStore store) {
+  final Map<String, dynamic> storeJson = <String, dynamic>{};
+  storeJson['goals'] = Map<String, dynamic>.from(store.goals);
+  storeJson['layouts'] = store.layouts.map((Layout layout) {
+    final Map<String, dynamic> layoutJson = <String, dynamic>{};
+    layoutJson['language'] = layout.language;
+    layoutJson['platform'] = _layoutPlatformToString(layout.platform);
+    layoutJson['entries'] = Map<String, dynamic>.fromIterables(
+      layout.entries.keys,
+      layout.entries.values.map((LayoutEntry entry) =>
+        <dynamic>[...entry.printables, entry.deadMasks]
+      ),
+    );
+    return layoutJson;
+  }).toList();
+  return storeJson;
+}

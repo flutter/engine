@@ -40,7 +40,7 @@ JsonContext<T> jsonGetIndex<T>(JsonContext<JsonArray> context, int index) {
   return JsonContext<T>(result, <String>[...context.path, '$index']);
 }
 
-JsonContext<T> jsonGetPath<T>(JsonContext<dynamic> context, List<dynamic> path) {
+JsonContext<T> jsonGetPath<T>(JsonContext<dynamic> context, String path) {
   JsonContext<dynamic> current = context;
   void jsonGetKeyOrIndex<M>(dynamic key, int depth) {
     assert(key is String || key is int, 'Key at $depth is a ${key.runtimeType}.');
@@ -63,17 +63,18 @@ JsonContext<T> jsonGetPath<T>(JsonContext<dynamic> context, List<dynamic> path) 
     }
   }
 
-  for (int depth = 0; depth < path.length; depth += 1) {
-    if (depth != path.length - 1) {
-      jsonGetKeyOrIndexForNext(path[depth], path[depth + 1], depth);
+  final List<dynamic> pathSegments = _jsonPathSplit(path);
+  for (int depth = 0; depth < pathSegments.length; depth += 1) {
+    if (depth != pathSegments.length - 1) {
+      jsonGetKeyOrIndexForNext(pathSegments[depth], pathSegments[depth + 1], depth);
     } else {
-      jsonGetKeyOrIndex<T>(path[depth], depth);
+      jsonGetKeyOrIndex<T>(pathSegments[depth], depth);
     }
   }
   return current as JsonContext<T>;
 }
 
-List<dynamic> jsonPathSplit(String path) {
+List<dynamic> _jsonPathSplit(String path) {
   return path.split('.').map((String key) {
     final int? index = int.tryParse(key);
     if (index != null) {

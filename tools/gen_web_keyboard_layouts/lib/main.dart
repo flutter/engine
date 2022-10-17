@@ -164,7 +164,7 @@ _GitHubFile _jsonGetGithubFile(JsonContext<JsonArray> files, int index) {
   final JsonContext<JsonObject> file = jsonGetIndex<JsonObject>(files, index);
   return _GitHubFile(
     name: jsonGetKey<String>(file, 'name').current,
-    content: jsonGetPath<String>(file, <String>['object', 'text']).current,
+    content: jsonGetPath<String>(file, 'object.text').current,
   );
 }
 
@@ -288,17 +288,6 @@ LayoutPlatform _platformFromGithubString(String origin) {
   }
 }
 
-String _platformToString(LayoutPlatform value) {
-  switch (value) {
-    case LayoutPlatform.win:
-      return 'win';
-    case LayoutPlatform.linux:
-      return 'linux';
-    case LayoutPlatform.darwin:
-      return 'darwin';
-  }
-}
-
 int _sortLayout(Layout a, Layout b) {
   int result = a.language.compareTo(b.language);
   if (result == 0) {
@@ -351,12 +340,12 @@ Future<void> generate(Options options) async {
   // Parse the result from GitHub.
   final JsonContext<JsonObject> commitJson = jsonGetPath<JsonObject>(
     JsonContext.root(githubBody),
-    jsonPathSplit('data.repository.defaultBranchRef.target.history.nodes.0'),
+    'data.repository.defaultBranchRef.target.history.nodes.0',
   );
   final String commitId = jsonGetKey<String>(commitJson, 'oid').current;
   final JsonContext<JsonArray> fileListJson = jsonGetPath<JsonArray>(
     commitJson,
-    jsonPathSplit('file.object.entries'),
+    'file.object.entries',
   );
   final Iterable<_GitHubFile> files = Iterable<_GitHubFile>.generate(
     fileListJson.current.length,
@@ -404,5 +393,12 @@ Future<void> generate(Options options) async {
         'BODY': _readSharedSegment(path.join(options.libRoot, 'layout_types.dart')),
       },
     ),
+  );
+
+  // Generate the JSON file.
+  _writeFileTo(
+    options.dataRoot,
+    'definitions_uncompressed.g.json',
+    const JsonEncoder.withIndent('  ').convert(jsonifyStore(store)),
   );
 }
