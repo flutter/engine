@@ -17,119 +17,141 @@ Future<void> testMain() async {
   group('$BidiFragmenter', () {
     test('empty string', () {
       expect(split(''), <_Bidi>[
-        _Bidi('', null, previous),
+        _Bidi('', null, ffPrevious),
       ]);
     });
 
     test('basic cases', () {
       expect(split('Lorem 11 $rtlWord1  22 ipsum'), <_Bidi>[
-        _Bidi('Lorem', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('11', ltr, previous),
-        _Bidi(' ', null, sandwich),
-        _Bidi(rtlWord1, rtl, own),
-        _Bidi('  ', null, sandwich),
-        _Bidi('22', ltr, previous),
-        _Bidi(' ', null, sandwich),
-        _Bidi('ipsum', ltr, own),
+        _Bidi('Lorem', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('11', ltr, ffPrevious),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi(rtlWord1, rtl, ffRtl),
+        _Bidi('  ', null, ffSandwich),
+        _Bidi('22', ltr, ffPrevious),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('ipsum', ltr, ffLtr),
       ]);
     });
 
     test('text and digits', () {
       expect(split('Lorem11 ${rtlWord1}22 33ipsum44dolor ${rtlWord2}55$rtlWord1'), <_Bidi>[
-        _Bidi('Lorem11', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi(rtlWord1, rtl, own),
-        _Bidi('22', ltr, previous),
-        _Bidi(' ', null, sandwich),
-        _Bidi('33ipsum44dolor', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi(rtlWord2, rtl, own),
-        _Bidi('55', ltr, previous),
-        _Bidi(rtlWord1, rtl, own),
+        _Bidi('Lorem11', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi(rtlWord1, rtl, ffRtl),
+        _Bidi('22', ltr, ffPrevious),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('33ipsum44dolor', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi(rtlWord2, rtl, ffRtl),
+        _Bidi('55', ltr, ffPrevious),
+        _Bidi(rtlWord1, rtl, ffRtl),
+      ]);
+    });
+
+    test('Mashriqi digits', () {
+      expect(split('foo ١١ ٢٢ bar'), <_Bidi>[
+        _Bidi('foo', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('١١', ltr, ffRtl),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('٢٢', ltr, ffRtl),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('bar', ltr, ffLtr),
+      ]);
+
+      expect(split('$rtlWord1 ١١ ٢٢ $rtlWord2'), <_Bidi>[
+        _Bidi(rtlWord1, rtl, ffRtl),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('١١', ltr, ffRtl),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('٢٢', ltr, ffRtl),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi(rtlWord2, rtl, ffRtl),
       ]);
     });
 
     test('spaces', () {
       expect(split('    '), <_Bidi>[
-        _Bidi('    ', null, sandwich),
+        _Bidi('    ', null, ffSandwich),
       ]);
     });
 
     test('symbols', () {
       expect(split('Calculate 2.2 + 4.5 and write the result'), <_Bidi>[
-        _Bidi('Calculate', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('2', ltr, previous),
-        _Bidi('.', null, sandwich),
-        _Bidi('2', ltr, previous),
-        _Bidi(' + ', null, sandwich),
-        _Bidi('4', ltr, previous),
-        _Bidi('.', null, sandwich),
-        _Bidi('5', ltr, previous),
-        _Bidi(' ', null, sandwich),
-        _Bidi('and', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('write', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('the', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('result', ltr, own),
+        _Bidi('Calculate', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('2', ltr, ffPrevious),
+        _Bidi('.', null, ffSandwich),
+        _Bidi('2', ltr, ffPrevious),
+        _Bidi(' + ', null, ffSandwich),
+        _Bidi('4', ltr, ffPrevious),
+        _Bidi('.', null, ffSandwich),
+        _Bidi('5', ltr, ffPrevious),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('and', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('write', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('the', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('result', ltr, ffLtr),
       ]);
 
       expect(split('Calculate $rtlWord1 2.2 + 4.5 and write the result'), <_Bidi>[
-        _Bidi('Calculate', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi(rtlWord1, rtl, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('2', ltr, previous),
-        _Bidi('.', null, sandwich),
-        _Bidi('2', ltr, previous),
-        _Bidi(' + ', null, sandwich),
-        _Bidi('4', ltr, previous),
-        _Bidi('.', null, sandwich),
-        _Bidi('5', ltr, previous),
-        _Bidi(' ', null, sandwich),
-        _Bidi('and', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('write', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('the', ltr, own),
-        _Bidi(' ', null, sandwich),
-        _Bidi('result', ltr, own),
+        _Bidi('Calculate', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi(rtlWord1, rtl, ffRtl),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('2', ltr, ffPrevious),
+        _Bidi('.', null, ffSandwich),
+        _Bidi('2', ltr, ffPrevious),
+        _Bidi(' + ', null, ffSandwich),
+        _Bidi('4', ltr, ffPrevious),
+        _Bidi('.', null, ffSandwich),
+        _Bidi('5', ltr, ffPrevious),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('and', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('write', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('the', ltr, ffLtr),
+        _Bidi(' ', null, ffSandwich),
+        _Bidi('result', ltr, ffLtr),
       ]);
 
       expect(split('12 + 24 = 36'), <_Bidi>[
-        _Bidi('12', ltr, previous),
-        _Bidi(' + ', null, sandwich),
-        _Bidi('24', ltr, previous),
-        _Bidi(' = ', null, sandwich),
-        _Bidi('36', ltr, previous),
+        _Bidi('12', ltr, ffPrevious),
+        _Bidi(' + ', null, ffSandwich),
+        _Bidi('24', ltr, ffPrevious),
+        _Bidi(' = ', null, ffSandwich),
+        _Bidi('36', ltr, ffPrevious),
       ]);
     });
 
     test('handles new lines', () {
       expect(split('Lorem\n12\nipsum  \n'), <_Bidi>[
-        _Bidi('Lorem', ltr, own),
-        _Bidi('\n', null, sandwich),
-        _Bidi('12', ltr, previous),
-        _Bidi('\n', null, sandwich),
-        _Bidi('ipsum', ltr, own),
-        _Bidi('  \n', null, sandwich),
+        _Bidi('Lorem', ltr, ffLtr),
+        _Bidi('\n', null, ffSandwich),
+        _Bidi('12', ltr, ffPrevious),
+        _Bidi('\n', null, ffSandwich),
+        _Bidi('ipsum', ltr, ffLtr),
+        _Bidi('  \n', null, ffSandwich),
       ]);
 
       expect(split('$rtlWord1\n  $rtlWord2 \n'), <_Bidi>[
-        _Bidi(rtlWord1, rtl, own),
-        _Bidi('\n  ', null, sandwich),
-        _Bidi(rtlWord2, rtl, own),
-        _Bidi(' \n', null, sandwich),
+        _Bidi(rtlWord1, rtl, ffRtl),
+        _Bidi('\n  ', null, ffSandwich),
+        _Bidi(rtlWord2, rtl, ffRtl),
+        _Bidi(' \n', null, ffSandwich),
       ]);
     });
 
     test('surrogates', () {
       expect(split('A\u{1F600}'), <_Bidi>[
-        _Bidi('A', ltr, own),
-        _Bidi('\u{1F600}', null, sandwich),
+        _Bidi('A', ltr, ffLtr),
+        _Bidi('\u{1F600}', null, ffSandwich),
       ]);
     });
   });

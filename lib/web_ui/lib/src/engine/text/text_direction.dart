@@ -8,9 +8,10 @@ import 'fragmenter.dart';
 import 'unicode_range.dart';
 
 enum FragmentFlow {
-  /// The fragment flows the same as its own text direction regardless of its
-  /// surroundings.
-  own,
+  /// The fragment flows from left to right regardless of its surroundings.
+  ltr,
+  /// The fragment flows from right to left regardless of its surroundings.
+  rtl,
   /// The fragment flows the same as the previous fragment.
   ///
   /// If it's the first fragment in a line, then it flows the same as the
@@ -139,37 +140,47 @@ List<BidiFragment> _computeBidiFragments(String text) {
 }
 
 ui.TextDirection? _getTextDirection(String text, int i) {
-  final ui.TextDirection? textDirection = _textDirectionLookup.find(text, i);
+  final int codePoint = getCodePoint(text, i)!;
+  if (_isDigit(codePoint) || _isMashriqiDigit(codePoint)) {
+    // A sequence of regular digits or Mashriqi digits always goes from left to
+    // regardless of their fragment flow direction.
+    return ui.TextDirection.ltr;
+  }
+
+  final ui.TextDirection? textDirection = _textDirectionLookup.findForChar(codePoint);
   if (textDirection != null) {
     return textDirection;
   }
 
-  final int codeUnit = text.codeUnitAt(i);
-  // No matter what box direction it ends up being, a sequence of digits is
-  // always flows from left to right.
-  if (_isDigit(codeUnit)) {
-    return ui.TextDirection.ltr;
-  }
   return null;
 }
 
 FragmentFlow _getFragmentFlow(String text, int i) {
-  final ui.TextDirection? textDirection = _textDirectionLookup.find(text, i);
+  final int codePoint = getCodePoint(text, i)!;
+  if (_isDigit(codePoint)) {
+    return FragmentFlow.previous;
+  }
+  if (_isMashriqiDigit(codePoint)) {
+    return FragmentFlow.rtl;
+  }
 
+  final ui.TextDirection? textDirection = _textDirectionLookup.findForChar(codePoint);
   switch (textDirection) {
     case ui.TextDirection.ltr:
+      return FragmentFlow.ltr;
+
     case ui.TextDirection.rtl:
-      return FragmentFlow.own;
+      return FragmentFlow.rtl;
 
     case null:
-      final int codeUnit = text.codeUnitAt(i);
-      if (_isDigit(codeUnit)) {
-        return FragmentFlow.previous;
-      }
       return FragmentFlow.sandwich;
   }
 }
 
-bool _isDigit(int codeUnit) {
-  return codeUnit >= kChar_0 && codeUnit <= kChar_9;
+bool _isDigit(int codePoint) {
+  return codePoint >= kChar_0 && codePoint <= kChar_9;
+}
+
+bool _isMashriqiDigit(int codePoint) {
+  return codePoint >= kMashriqi_0 && codePoint <= kMashriqi_9;
 }

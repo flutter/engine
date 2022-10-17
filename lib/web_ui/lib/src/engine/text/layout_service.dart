@@ -242,11 +242,15 @@ class TextLayoutService {
         }
 
 
-        assert(fragment.fragmentFlow == FragmentFlow.own);
+        assert(fragment.fragmentFlow == FragmentFlow.ltr ||
+            fragment.fragmentFlow == FragmentFlow.rtl);
 
-        final ui.TextDirection textDirection = fragment.textDirection!;
+        final ui.TextDirection currentDirection =
+            fragment.fragmentFlow == FragmentFlow.ltr
+                ? ui.TextDirection.ltr
+                : ui.TextDirection.rtl;
 
-        if (textDirection == previousDirection) {
+        if (currentDirection == previousDirection) {
           sandwichStart = null;
           continue;
         }

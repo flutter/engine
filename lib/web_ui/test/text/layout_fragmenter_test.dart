@@ -30,7 +30,7 @@ Future<void> testMain() async {
         (CanvasParagraphBuilder builder) {},
       );
       expect(split(paragraph1), <_Fragment>[
-        _Fragment('', endOfText, null, previous, defaultStyle),
+        _Fragment('', endOfText, null, ffPrevious, defaultStyle),
       ]);
 
       final CanvasParagraph paragraph2 = rich(
@@ -40,7 +40,7 @@ Future<void> testMain() async {
         },
       );
       expect(split(paragraph2), <_Fragment>[
-        _Fragment('', endOfText, null, previous, defaultStyle),
+        _Fragment('', endOfText, null, ffPrevious, defaultStyle),
       ]);
 
       final CanvasParagraph paragraph3 = rich(
@@ -51,7 +51,7 @@ Future<void> testMain() async {
         },
       );
       expect(split(paragraph3), <_Fragment>[
-        _Fragment('', endOfText, null, previous, style1),
+        _Fragment('', endOfText, null, ffPrevious, style1),
       ]);
     });
 
@@ -59,13 +59,13 @@ Future<void> testMain() async {
       final CanvasParagraph paragraph =
           plain(EngineParagraphStyle(), 'Lorem 12 $rtlWord1   ipsum34');
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lorem', prohibited, ltr, own, defaultStyle),
-        _Fragment(' ', opportunity, null, sandwich, defaultStyle, sp: 1),
-        _Fragment('12', prohibited, ltr, previous, defaultStyle),
-        _Fragment(' ', opportunity, null, sandwich, defaultStyle, sp: 1),
-        _Fragment(rtlWord1, prohibited, rtl, own, defaultStyle),
-        _Fragment('   ', opportunity, null, sandwich, defaultStyle, sp: 3),
-        _Fragment('ipsum34', endOfText, ltr, own, defaultStyle),
+        _Fragment('Lorem', prohibited, ltr, ffLtr, defaultStyle),
+        _Fragment(' ', opportunity, null, ffSandwich, defaultStyle, sp: 1),
+        _Fragment('12', prohibited, ltr, ffPrevious, defaultStyle),
+        _Fragment(' ', opportunity, null, ffSandwich, defaultStyle, sp: 1),
+        _Fragment(rtlWord1, prohibited, rtl, ffRtl, defaultStyle),
+        _Fragment('   ', opportunity, null, ffSandwich, defaultStyle, sp: 3),
+        _Fragment('ipsum34', endOfText, ltr, ffLtr, defaultStyle),
       ]);
     });
 
@@ -86,17 +86,17 @@ Future<void> testMain() async {
       );
 
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lorem', prohibited, ltr, own, style1),
-        _Fragment(' ', opportunity, null, sandwich, style2, sp: 1),
-        _Fragment('ipsum', prohibited, ltr, own, style2),
-        _Fragment(' ', opportunity, null, sandwich, style2, sp: 1),
-        _Fragment('12', prohibited, ltr, previous, style2),
-        _Fragment(' ', prohibited, null, sandwich, style2, sp: 1),
-        _Fragment(' ', opportunity, null, sandwich, style3, sp: 1),
-        _Fragment(rtlWord1, prohibited, rtl, own, style3),
-        _Fragment(' ', opportunity, null, sandwich, style3, sp: 1),
-        _Fragment('foo', prohibited, ltr, own, style3),
-        _Fragment('.', endOfText, null, sandwich, style3),
+        _Fragment('Lorem', prohibited, ltr, ffLtr, style1),
+        _Fragment(' ', opportunity, null, ffSandwich, style2, sp: 1),
+        _Fragment('ipsum', prohibited, ltr, ffLtr, style2),
+        _Fragment(' ', opportunity, null, ffSandwich, style2, sp: 1),
+        _Fragment('12', prohibited, ltr, ffPrevious, style2),
+        _Fragment(' ', prohibited, null, ffSandwich, style2, sp: 1),
+        _Fragment(' ', opportunity, null, ffSandwich, style3, sp: 1),
+        _Fragment(rtlWord1, prohibited, rtl, ffRtl, style3),
+        _Fragment(' ', opportunity, null, ffSandwich, style3, sp: 1),
+        _Fragment('foo', prohibited, ltr, ffLtr, style3),
+        _Fragment('.', endOfText, null, ffSandwich, style3),
       ]);
     });
 
@@ -120,22 +120,22 @@ Future<void> testMain() async {
       );
 
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lor', prohibited, ltr, own, style1),
-        _Fragment('\n', mandatory, null, sandwich, style1, nl: 1, sp: 1),
-        _Fragment('em', prohibited, ltr, own, style1),
-        _Fragment(' \n', mandatory, null, sandwich, style1, nl: 1, sp: 2),
-        _Fragment(' \n', mandatory, null, sandwich, style2, nl: 1, sp: 2),
-        _Fragment('  ', opportunity, null, sandwich, style2, sp: 2),
-        _Fragment('ipsum', prohibited, ltr, own, style2),
-        _Fragment(' ', opportunity, null, sandwich, style2, sp: 1),
-        _Fragment('12', prohibited, ltr, previous, style2),
-        _Fragment(' ', prohibited, null, sandwich, style2, sp: 1),
-        _Fragment(' ', opportunity, null, sandwich, style3, sp: 1),
-        _Fragment(rtlWord1, prohibited, rtl, own, style3),
-        _Fragment(' ', opportunity, null, sandwich, style3, sp: 1),
-        _Fragment('fo', prohibited, ltr, own, style3),
-        _Fragment('o', prohibited, ltr, own, style1),
-        _Fragment('.', endOfText, null, sandwich, style1),
+        _Fragment('Lor', prohibited, ltr, ffLtr, style1),
+        _Fragment('\n', mandatory, null, ffSandwich, style1, nl: 1, sp: 1),
+        _Fragment('em', prohibited, ltr, ffLtr, style1),
+        _Fragment(' \n', mandatory, null, ffSandwich, style1, nl: 1, sp: 2),
+        _Fragment(' \n', mandatory, null, ffSandwich, style2, nl: 1, sp: 2),
+        _Fragment('  ', opportunity, null, ffSandwich, style2, sp: 2),
+        _Fragment('ipsum', prohibited, ltr, ffLtr, style2),
+        _Fragment(' ', opportunity, null, ffSandwich, style2, sp: 1),
+        _Fragment('12', prohibited, ltr, ffPrevious, style2),
+        _Fragment(' ', prohibited, null, ffSandwich, style2, sp: 1),
+        _Fragment(' ', opportunity, null, ffSandwich, style3, sp: 1),
+        _Fragment(rtlWord1, prohibited, rtl, ffRtl, style3),
+        _Fragment(' ', opportunity, null, ffSandwich, style3, sp: 1),
+        _Fragment('fo', prohibited, ltr, ffLtr, style3),
+        _Fragment('o', prohibited, ltr, ffLtr, style1),
+        _Fragment('.', endOfText, null, ffSandwich, style1),
       ]);
     });
 
@@ -153,13 +153,13 @@ Future<void> testMain() async {
       );
 
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lorem', prohibited, ltr, own, style1),
-        _Fragment(' \n', mandatory, null, sandwich, style1, nl: 1, sp: 2),
-        _Fragment(' \n', mandatory, null, sandwich, style2, nl: 1, sp: 2),
-        _Fragment('  ', opportunity, null, sandwich, style2, sp: 2),
-        _Fragment('ipsum', prohibited, ltr, own, style2),
-        _Fragment(' \n', mandatory, null, sandwich, style2, nl: 1, sp: 2),
-        _Fragment('', endOfText, null, sandwich, style2),
+        _Fragment('Lorem', prohibited, ltr, ffLtr, style1),
+        _Fragment(' \n', mandatory, null, ffSandwich, style1, nl: 1, sp: 2),
+        _Fragment(' \n', mandatory, null, ffSandwich, style2, nl: 1, sp: 2),
+        _Fragment('  ', opportunity, null, ffSandwich, style2, sp: 2),
+        _Fragment('ipsum', prohibited, ltr, ffLtr, style2),
+        _Fragment(' \n', mandatory, null, ffSandwich, style2, nl: 1, sp: 2),
+        _Fragment('', endOfText, null, ffSandwich, style2),
       ]);
     });
 
@@ -179,11 +179,11 @@ Future<void> testMain() async {
       );
 
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lorem', prohibited, ltr, own, defaultStyle),
-        _Fragment(' ', prohibited, null, sandwich, defaultStyle, sp: 1),
-        _Fragment('   ', prohibited, null, sandwich, style1, sp: 3),
-        _Fragment('  ', opportunity, null, sandwich, style2, sp: 2),
-        _Fragment('ipsum', endOfText, ltr, own, defaultStyle),
+        _Fragment('Lorem', prohibited, ltr, ffLtr, defaultStyle),
+        _Fragment(' ', prohibited, null, ffSandwich, defaultStyle, sp: 1),
+        _Fragment('   ', prohibited, null, ffSandwich, style1, sp: 3),
+        _Fragment('  ', opportunity, null, ffSandwich, style2, sp: 2),
+        _Fragment('ipsum', endOfText, ltr, ffLtr, defaultStyle),
       ]);
     });
 
@@ -210,18 +210,18 @@ Future<void> testMain() async {
       final String placeholderChar = String.fromCharCode(0xFFFC);
 
       expect(split(paragraph), <_Fragment>[
-        _Fragment(placeholderChar, opportunity, ltr, own, null),
-        _Fragment('Lorem', opportunity, ltr, own, style1),
-        _Fragment(placeholderChar, opportunity, ltr, own, null),
-        _Fragment('ipsum', prohibited, ltr, own, style1),
-        _Fragment('\n', mandatory, null, sandwich, style1, nl: 1, sp: 1),
-        _Fragment(placeholderChar, opportunity, ltr, own, null),
-        _Fragment(rtlWord1, prohibited, rtl, own, style2),
-        _Fragment(' ', opportunity, null, sandwich, style2, sp: 1),
-        _Fragment(placeholderChar, prohibited, ltr, own, null),
-        _Fragment('\n', mandatory, null, sandwich, style2, nl: 1, sp: 1),
-        _Fragment('sit', opportunity, ltr, own, style2),
-        _Fragment(placeholderChar, endOfText, ltr, own, null),
+        _Fragment(placeholderChar, opportunity, ltr, ffLtr, null),
+        _Fragment('Lorem', opportunity, ltr, ffLtr, style1),
+        _Fragment(placeholderChar, opportunity, ltr, ffLtr, null),
+        _Fragment('ipsum', prohibited, ltr, ffLtr, style1),
+        _Fragment('\n', mandatory, null, ffSandwich, style1, nl: 1, sp: 1),
+        _Fragment(placeholderChar, opportunity, ltr, ffLtr, null),
+        _Fragment(rtlWord1, prohibited, rtl, ffRtl, style2),
+        _Fragment(' ', opportunity, null, ffSandwich, style2, sp: 1),
+        _Fragment(placeholderChar, prohibited, ltr, ffLtr, null),
+        _Fragment('\n', mandatory, null, ffSandwich, style2, nl: 1, sp: 1),
+        _Fragment('sit', opportunity, ltr, ffLtr, style2),
+        _Fragment(placeholderChar, endOfText, ltr, ffLtr, null),
       ]);
     });
   });

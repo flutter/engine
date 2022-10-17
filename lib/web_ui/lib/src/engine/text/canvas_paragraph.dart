@@ -678,25 +678,26 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   }
 
   void _updateCanDrawOnCanvas(EngineTextStyle style) {
-    if (_canDrawOnCanvas) {
-      final ui.TextDecoration? decoration = style.decoration;
-      if (decoration != null && decoration != ui.TextDecoration.none) {
-        _canDrawOnCanvas = false;
-      }
+    if (!_canDrawOnCanvas) {
+      return;
     }
 
-    if (_canDrawOnCanvas) {
-      final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
-      if (fontFeatures != null && fontFeatures.isNotEmpty) {
-        _canDrawOnCanvas = false;
-      }
+    final ui.TextDecoration? decoration = style.decoration;
+    if (decoration != null && decoration != ui.TextDecoration.none) {
+      _canDrawOnCanvas = false;
+      return;
     }
 
-    if (_canDrawOnCanvas) {
-      final List<ui.FontVariation>? fontVariations = style.fontVariations;
-      if (fontVariations != null && fontVariations.isNotEmpty) {
-        _canDrawOnCanvas = false;
-      }
+    final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
+    if (fontFeatures != null && fontFeatures.isNotEmpty) {
+      _canDrawOnCanvas = false;
+      return;
+    }
+
+    final List<ui.FontVariation>? fontVariations = style.fontVariations;
+    if (fontVariations != null && fontVariations.isNotEmpty) {
+      _canDrawOnCanvas = false;
+      return;
     }
   }
 
@@ -704,6 +705,9 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   CanvasParagraph build() {
     if (_spans.isEmpty) {
       // In case `addText` and `addPlaceholder` were never called.
+      //
+      // We want the paragraph to always have a non-empty list of spans to match
+      // the expectations of the [LayoutFragmenter].
       _spans.add(FlatTextSpan(
         style: _rootStyleNode.resolveStyle(),
         start: 0,
