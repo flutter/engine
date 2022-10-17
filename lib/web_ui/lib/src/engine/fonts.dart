@@ -10,6 +10,7 @@ abstract class FontCollection {
   Future<void> loadFontFromList(Uint8List list, {String? fontFamily});
   Future<void> ensureFontsLoaded();
   Future<void> registerFonts(AssetManager assetManager);
+  Future<void> addPendingFonts();
   void debugRegisterTestFonts();
   void clear();
 }

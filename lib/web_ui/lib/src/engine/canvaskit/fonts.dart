@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -35,6 +36,12 @@ class SkiaFontCollection implements FontCollection {
   /// These fonts may not yet have been registered with the [fontProvider]. This
   /// happens after [ensureFontsLoaded] completes.
   final List<RegisteredFont> _downloadedFonts = <RegisteredFont>[];
+
+  /// Font ByteBuffer information and corresponding url and family are
+  /// temporarily stored here while waiting for canvaskit field to be initialized.
+  final List<List<dynamic>> _pendingFontInfo = List<List<dynamic>>.empty(
+    growable: true
+  );
 
   /// Returns fonts that have been downloaded and parsed.
   ///
@@ -141,7 +148,7 @@ class SkiaFontCollection implements FontCollection {
       for (final dynamic fontAssetItem in fontAssets) {
         final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
         final String asset = fontAsset.readString('asset');
-        _registerFont(assetManager.getAssetUrl(asset), family);
+        unawaited(_registerFont(assetManager.getAssetUrl(asset), family));
       }
     }
 
@@ -150,8 +157,36 @@ class SkiaFontCollection implements FontCollection {
     /// Roboto to match Android.
     if (!_isFontFamilyRegistered('Roboto')) {
       // Download Roboto and add it to the font buffers.
-      _registerFont(_robotoUrl, 'Roboto');
+      unawaited(_registerFont(_robotoUrl, 'Roboto'));
     }
+  }
+
+  /// Make typefaces for each font and if successful, adds them to pendingFonts
+  /// to be resolved in _loadFonts.
+  @override
+  Future<void> addPendingFonts() async {
+    Future<RegisteredFont?> addFont(ByteBuffer buffer, String url, String family) async {
+      final Uint8List bytes = buffer.asUint8List();
+      final SkTypeface? typeface =
+          canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
+      if (typeface != null) {
+        return RegisteredFont(bytes, family, typeface);
+      } else {
+        printWarning('Failed to load font $family at $url');
+        printWarning('Verify that $url contains a valid font.');
+        return null;
+      }
+    }
+
+    for (final List<dynamic> fontInfo in _pendingFontInfo) {
+      final ByteBuffer buffer = fontInfo[0] as ByteBuffer;
+      final String url = fontInfo[1] as String;
+      final String family = fontInfo[2] as String;
+      if (buffer != null) {
+        _pendingFonts.add(addFont(buffer, url, family));
+      }
+    }
+    _pendingFontInfo.clear();
   }
 
   /// Whether the [fontFamily] was registered and/or loaded.
@@ -182,31 +217,22 @@ class SkiaFontCollection implements FontCollection {
     FontFallbackData.instance.globalFontFallbacks.add(ahemFontFamily);
   }
 
-  void _registerFont(String url, String family) {
-    Future<RegisteredFont?> downloadFont() async {
+  Future<void> _registerFont(String url, String family) async {
+    Future<ByteBuffer?> downloadFont() async {
       ByteBuffer buffer;
       try {
         buffer = await httpFetch(url).then(_getArrayBuffer);
+        return buffer;
       } catch (e) {
         printWarning('Failed to load font $family at $url');
         printWarning(e.toString());
         return null;
       }
-
-      final Uint8List bytes = buffer.asUint8List();
-      final SkTypeface? typeface =
-          canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
-      if (typeface != null) {
-        return RegisteredFont(bytes, family, typeface);
-      } else {
-        printWarning('Failed to load font $family at $url');
-        printWarning('Verify that $url contains a valid font.');
-        return null;
-      }
     }
 
     _registeredFontFamilies.add(family);
-    _pendingFonts.add(downloadFont());
+    final ByteBuffer? finishedLoadedFont = await downloadFont();
+    _pendingFontInfo.add(<dynamic>[finishedLoadedFont, url, family]);
   }
 
 

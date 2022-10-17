@@ -204,10 +204,10 @@ Future<void> initializeEngineServices({
     }
   };
 
-  await renderer.initialize();
-
   assetManager ??= const AssetManager();
-  await _setAssetManager(assetManager);
+  Future<void> rendererCallback () async => renderer.initialize();
+  await Future.wait<void>(<Future<void>>[rendererCallback(), _setAssetManager(assetManager)]);
+  await renderer.fontCollection.addPendingFonts();
   await renderer.fontCollection.ensureFontsLoaded();
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
