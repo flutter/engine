@@ -7,6 +7,8 @@
 
 #import <UIKit/UIKit.h>
 
+#include "unicode/uchar.h"
+
 #import "flutter/fml/memory/weak_ptr.h"
 #import "flutter/shell/platform/common/text_editing_delta.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
