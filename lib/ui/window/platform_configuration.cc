@@ -399,6 +399,14 @@ void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
+bool PlatformConfigurationNativeApi::NotifyIdle(int64_t deadline_microseconds) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  fml::TimePoint deadline =
+      fml::TimePoint::FromTicks(deadline_microseconds * 1000);
+  return UIDartState::Current()->platform_configuration()->client()->NotifyIdle(
+      deadline);
+}
+
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->UpdateSemantics(

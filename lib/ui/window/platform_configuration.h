@@ -65,6 +65,17 @@ class PlatformConfigurationClient {
   virtual void ScheduleFrame() = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief      Notify the Dart VM that no frame workloads are expected on the
+  ///             UI task runner till the specified deadline. The VM uses this
+  ///             opportunity to perform garbage collection operations is a
+  ///             manner that interferes as little as possible with frame
+  ///             rendering.
+  ///
+  /// @see        `RuntimeController::NotifyIdle`
+  ///
+  virtual bool NotifyIdle(fml::TimePoint deadline) = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
@@ -474,6 +485,8 @@ class PlatformConfigurationNativeApi {
   static void ScheduleFrame();
 
   static void Render(Scene* scene);
+
+  static bool NotifyIdle(int64_t deadline_microseconds);
 
   static void UpdateSemantics(SemanticsUpdate* update);
 
