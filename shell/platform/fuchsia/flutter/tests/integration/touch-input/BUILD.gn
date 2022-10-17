@@ -39,7 +39,6 @@ executable("touch-input-test-bin") {
     "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.test.input",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.test.scene",
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.test.scene",
     "$fuchsia_sdk_root/fidl:fuchsia.web",
     "$fuchsia_sdk_root/pkg:async",
     "$fuchsia_sdk_root/pkg:async-loop-testing",
@@ -58,10 +57,7 @@ executable("touch-input-test-bin") {
 
 fuchsia_test_archive("touch-input-test") {
   testonly = true
-  deps = [
-    ":touch-input-test-bin",
-    "two-flutter:package",
-  ]
+  deps = [ ":touch-input-test-bin" ]
 
   binary = "$target_name"
   cml_file = rebase_path("meta/$target_name.cml")

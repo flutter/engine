@@ -30,7 +30,7 @@ UIDartState::Context::Context(const TaskRunners& task_runners)
 
 UIDartState::Context::Context(
     const TaskRunners& task_runners,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<IOManager> io_manager,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
     fml::WeakPtr<ImageDecoder> image_decoder,
@@ -38,6 +38,7 @@ UIDartState::Context::Context(
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+    std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     bool enable_impeller)
     : task_runners(task_runners),
       snapshot_delegate(std::move(snapshot_delegate)),
@@ -48,6 +49,7 @@ UIDartState::Context::Context(
       advisory_script_uri(std::move(advisory_script_uri)),
       advisory_script_entrypoint(std::move(advisory_script_entrypoint)),
       volatile_path_tracker(std::move(volatile_path_tracker)),
+      concurrent_task_runner(concurrent_task_runner),
       enable_impeller(enable_impeller) {}
 
 UIDartState::UIDartState(
@@ -145,6 +147,11 @@ std::shared_ptr<VolatilePathTracker> UIDartState::GetVolatilePathTracker()
   return context_.volatile_path_tracker;
 }
 
+std::shared_ptr<fml::ConcurrentTaskRunner>
+UIDartState::GetConcurrentTaskRunner() const {
+  return context_.concurrent_task_runner;
+}
+
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
   if (tonic::CheckAndHandleError(closure) || !Dart_IsClosure(closure)) {
     return;
@@ -173,7 +180,8 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
   }
 }
 
-fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
+fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>
+UIDartState::GetSnapshotDelegate() const {
   return context_.snapshot_delegate;
 }
 
