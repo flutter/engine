@@ -241,13 +241,11 @@ DomHTMLElement buildDrawRectElement(
   String effectiveTransform;
   final bool isStroke = paint.style == ui.PaintingStyle.stroke;
   final double strokeWidth = paint.strokeWidth ?? 0.0;
-  final double left = math.min(rect.left, rect.right);
-  final double top = math.min(rect.top, rect.bottom);
   if (transform.isIdentity()) {
-    effectiveTransform = 'translate(${left}px, ${top}px)';
+    effectiveTransform = 'translate(${rect.left}px, ${rect.top}px)';
   } else {
     // Clone to avoid mutating `transform`.
-    final Matrix4 translated = transform.clone()..translate(left, top);
+    final Matrix4 translated = transform.clone()..translate(rect.left, rect.top);
     effectiveTransform = matrix4ToCssTransform(translated);
   }
   final DomCSSStyleDeclaration style = rectangle.style;
