@@ -1,4 +1,4 @@
-Signature: cdf9ea573d9b11406a6cdafa1071c3b4
+Signature: d5631fc07e32d129436a1ff0d719cb24
 
 UNUSED LICENSES:
 
@@ -742,10 +742,14 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-GCC-x86_64-Release-NoGPU_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-GCC-x86_64-Release-Shared_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Android_Vulkan.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_Dawn.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_Dawn_NoGpu.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_Dawn_NoPrecompile.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_Metal.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_Metal_NoGpu.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_Metal_NoPrecompile.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-iOS.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Release-Graphite_Dawn.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Release-Graphite_Metal.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-Metal.json
@@ -6708,8 +6712,6 @@ FILE: ../../../third_party/skia/src/ports/SkImageGeneratorNDK.cpp
 FILE: ../../../third_party/skia/src/ports/SkNDKConversions.cpp
 FILE: ../../../third_party/skia/src/ports/SkNDKConversions.h
 FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.h
-FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinMap.cpp
-FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinMap.h
 FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.h
 FILE: ../../../third_party/skia/src/sksl/SkSLInliner.cpp
