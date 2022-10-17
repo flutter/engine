@@ -1932,7 +1932,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       // We should check if the last character is a part of emoji.
       // If so, we must delete the entire emoji to prevent the text from being malformed.
       NSRange charRange = fml::RangeForCharacterAtIndex(self.text, oldRange.location - 1);
-      if (IsEmoji(self.text, charRange)) {
+      UChar32 codePoint;
+      BOOL gotCodePoint = [self.text getBytes:&codePoint
+                                    maxLength:sizeof(codePoint)
+                                   usedLength:NULL
+                                     encoding:NSUTF32StringEncoding
+                                      options:kNilOptions
+                                        range:charRange
+                               remainingRange:NULL];
+      if (gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI)) {
         newRange = NSMakeRange(charRange.location, oldRange.location - charRange.location);
       }
 
