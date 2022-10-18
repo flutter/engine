@@ -96,8 +96,10 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
       CreateSimplePointerDataPacket({1.0, 2.0, 3.0}),
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) {
-        EXPECT_EQ(ExtractDxValuesFromPointerDataPacket(std::move(packet)),
-                  std::vector<double>{1.0, 2.0, 3.0});
+        std::vector<double> actual_dx_values =
+            ExtractDxValuesFromPointerDataPacket(std::move(packet));
+        std::vector<double> expect_dx_values = {1.0, 2.0, 3.0};
+        EXPECT_EQ(actual_dx_values, expect_dx_values);
         callback_latch.Signal();
       });
 
@@ -107,8 +109,10 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
       CreateSimplePointerDataPacket({4.0, 5.0}),
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) {
-        EXPECT_EQ(ExtractDxValuesFromPointerDataPacket(std::move(packet)),
-                  std::vector<double>{4.0, 5.0});
+        std::vector<double> actual_dx_values =
+            ExtractDxValuesFromPointerDataPacket(std::move(packet));
+        std::vector<double> expect_dx_values = {4.0, 5.0};
+        EXPECT_EQ(actual_dx_values, expect_dx_values);
         callback_latch.Signal();
       });
 
@@ -132,8 +136,10 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithExtra) {
       CreateSimplePointerDataPacket({1.0, 2.0, 3.0}),
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) {
-        EXPECT_EQ(ExtractDxValuesFromPointerDataPacket(std::move(packet)),
-                  std::vector<double>{1.0, 2.0, 3.0, 4.0, 5.0});
+        std::vector<double> actual_dx_values =
+            ExtractDxValuesFromPointerDataPacket(std::move(packet));
+        std::vector<double> expect_dx_values = {1.0, 2.0, 3.0, 4.0, 5.0};
+        EXPECT_EQ(actual_dx_values, expect_dx_values);
         callback_latch.Signal();
       });
 
