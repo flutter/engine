@@ -5,6 +5,7 @@
 #ifndef SHELL_COMMON_SHELL_H_
 #define SHELL_COMMON_SHELL_H_
 
+#include <lib/ui/window/pointer_data_packet_merged_dispatcher.h>
 #include <functional>
 #include <mutex>
 #include <string_view>
@@ -425,6 +426,7 @@ class Shell final : public PlatformView::Delegate,
   std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
   std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
   std::atomic<bool> route_messages_through_platform_thread_ = false;
+  PointerDataPacketMergedDispatcher pointer_data_packet_merged_dispatcher_;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
   fml::TaskRunnerAffineWeakPtr<Rasterizer>

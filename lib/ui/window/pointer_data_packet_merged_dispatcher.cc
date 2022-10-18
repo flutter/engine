@@ -8,6 +8,18 @@
 
 namespace flutter {
 
-// TODO
+void PointerDataPacketMergedDispatcher::Dispatch(
+    std::unique_ptr<PointerDataPacket> packet,
+    uint64_t flow_id,
+    const TaskRunners& task_runners,
+    const fml::WeakPtr<Engine>& weak_engine) {
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_]() mutable {
+        if (engine) {
+          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
+        }
+      }));
+}
 
 }  // namespace flutter

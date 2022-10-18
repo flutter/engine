@@ -11,7 +11,10 @@
 namespace flutter {
 
 class PointerDataPacketMergedDispatcher {
-  // TODO
+  void Dispatch(std::unique_ptr<PointerDataPacket> packet,
+                uint64_t flow_id,
+                const TaskRunners& task_runners,
+                const fml::WeakPtr<Engine>& weak_engine);
 };
 
 }  // namespace flutter
