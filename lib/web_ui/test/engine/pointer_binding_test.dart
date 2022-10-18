@@ -234,6 +234,19 @@ void testMain() {
     expect(events[1].buttons, equals(0));
     expect(events[1].client.x, equals(0));
     expect(events[1].client.y, equals(0));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), true);
+    expect(event.getModifierState('Control'), true);
+    expect(event.getModifierState('Meta'), true);
+    expect(event.getModifierState('Shift'), true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), false);
+    expect(event.getModifierState('Control'), false);
+    expect(event.getModifierState('Meta'), false);
+    expect(event.getModifierState('Shift'), false);
   });
 
   test('_TouchEventContext generates expected events', () {
@@ -330,6 +343,19 @@ void testMain() {
     expect(events[0].changedTouches![1].identifier, equals(105));
     expect(events[0].changedTouches![1].client.x, equals(322));
     expect(events[0].changedTouches![1].client.y, equals(323));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.altKey, true);
+    expect(event.ctrlKey, true);
+    expect(event.metaKey, true);
+    expect(event.shiftKey, true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.altKey, false);
+    expect(event.ctrlKey, false);
+    expect(event.metaKey, false);
+    expect(event.shiftKey, false);
   });
 
   test('_MouseEventContext generates expected events', () {
@@ -419,6 +445,19 @@ void testMain() {
     expect(event.buttons, equals(0));
     expect(event.client.x, equals(400));
     expect(event.client.y, equals(401));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), true);
+    expect(event.getModifierState('Control'), true);
+    expect(event.getModifierState('Meta'), true);
+    expect(event.getModifierState('Shift'), true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), false);
+    expect(event.getModifierState('Control'), false);
+    expect(event.getModifierState('Meta'), false);
+    expect(event.getModifierState('Shift'), false);
   });
 
   // ALL ADAPTERS
@@ -2571,10 +2610,35 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 }
 
+mixin _KeyboardModifiersMixin on _BasicEventContext {
+  // Accepted modifier keys are 'Alt', 'Control', 'Meta' and 'Shift'.
+  // https://www.w3.org/TR/uievents-key/#keys-modifier defines more modifiers,
+  // but only the four main modifiers could be set from MouseEvent, PointerEvent
+  // and TouchEvent constructors.
+  bool altPressed = false;
+  bool ctrlPressed = false;
+  bool metaPressed = false;
+  bool shitPressed = false;
+
+  void pressAllModifiers() {
+    altPressed = true;
+    ctrlPressed = true;
+    metaPressed = true;
+    shitPressed = true;
+  }
+
+  void unpressAllModifiers() {
+    altPressed = false;
+    ctrlPressed = false;
+    metaPressed = false;
+    shitPressed = false;
+  }
+}
+
 // A test context for `_TouchAdapter`, including its name, PointerSupportDetector
 // to override, and how to generate events.
 class _TouchEventContext extends _BasicEventContext
-    with _MultiPointerEventMixin
+    with _MultiPointerEventMixin, _KeyboardModifiersMixin
     implements PointerSupportDetector {
   _TouchEventContext() : _target = domDocument.createElement('div');
 
@@ -2622,6 +2686,10 @@ class _TouchEventContext extends _BasicEventContext
               ),
             )
             .toList(),
+        'altKey': altPressed,
+        'ctrlKey': ctrlPressed,
+        'metaKey': metaPressed,
+        'shiftKey': shitPressed,
       },
     );
   }
@@ -2652,7 +2720,7 @@ class _TouchEventContext extends _BasicEventContext
 //
 // For the difference between MouseEvent and PointerEvent, see _MouseAdapter.
 class _MouseEventContext extends _BasicEventContext
-    with _ButtonedEventMixin
+    with _ButtonedEventMixin, _KeyboardModifiersMixin
     implements PointerSupportDetector {
   @override
   String get name => 'MouseAdapter';
@@ -2757,6 +2825,10 @@ class _MouseEventContext extends _BasicEventContext
         'button': button,
         'clientX': clientX,
         'clientY': clientY,
+        'altKey': altPressed,
+        'ctrlKey': ctrlPressed,
+        'metaKey': metaPressed,
+        'shiftKey': shitPressed,
       }
     ];
     return js_util.callConstructor<DomMouseEvent>(
@@ -2771,7 +2843,7 @@ class _MouseEventContext extends _BasicEventContext
 //
 // For the difference between MouseEvent and PointerEvent, see _MouseAdapter.
 class _PointerEventContext extends _BasicEventContext
-    with _ButtonedEventMixin
+    with _ButtonedEventMixin, _KeyboardModifiersMixin
     implements PointerSupportDetector, _MultiPointerEventMixin {
   @override
   String get name => 'PointerAdapter';
@@ -2835,6 +2907,10 @@ class _PointerEventContext extends _BasicEventContext
       'clientX': clientX,
       'clientY': clientY,
       'pointerType': pointerType,
+      'altKey': altPressed,
+      'ctrlKey': ctrlPressed,
+      'metaKey': metaPressed,
+      'shiftKey': shitPressed,
     });
   }
 

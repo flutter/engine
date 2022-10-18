@@ -1142,6 +1142,10 @@ extension DomWheelEventExtension on DomWheelEvent {
 class DomTouchEvent extends DomUIEvent {}
 
 extension DomTouchEventExtension on DomTouchEvent {
+  external bool get altKey;
+  external bool get ctrlKey;
+  external bool get metaKey;
+  external bool get shiftKey;
   List<DomTouch>? get changedTouches => js_util
       .getProperty<List<Object?>?>(this, 'changedTouches')
       ?.cast<DomTouch>();
