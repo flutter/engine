@@ -20,10 +20,7 @@ class PointerDataPacketMergedTaskPoster {
  private:
   std::mutex mutex_;
   std::vector<std::unique_ptr<PointerDataPacket>> sidecar_packets_;
-  // 0:  No pending PostTask at all
-  // 1:  Has a PostTask, without sidecar_packets_
-  // N(>1): Has a PostTask, and have (N-1) sidecar_packets_
-  std::atomic<int32_t> pending_packet_count_;
+  bool pending_post_task_;
   FML_DISALLOW_COPY_AND_ASSIGN(PointerDataPacketMergedTaskPoster);
 };
 
