@@ -9,20 +9,45 @@ import 'package:ui/src/engine.dart';
 import '../matchers.dart';
 import 'canvaskit_api_test.dart';
 
+final bool isBlink = browserEngine == BrowserEngine.blink;
+
+const String goodUrl = 'https://www.unpkg.com/blah-blah/33.x/canvaskit.js';
+const String badUrl = 'https://www.unpkg.com/soemthing/not-canvaskit.js';
+
 // These tests need to happen in a separate file, because a Content Security
 // Policy cannot be relaxed once set, only made more strict.
 void main() {
-  enableTrustedTypes();
-  internalBootstrapBrowserTest(() => () {
-    // Run all standard canvaskit tests, with TT on...
-    testMain();
+  internalBootstrapBrowserTest(() => testMainWithTTOn);
+}
 
-    test('rejects wrong canvaskit.js URL', () async {
+// Enables Trusted Types, runs all `canvaskit_api_test.dart`, then tests the
+// createTrustedScriptUrl function.
+void testMainWithTTOn() {
+  enableTrustedTypes();
+
+  // Run all standard canvaskit tests, with TT on...
+  testMain();
+
+  group('TrustedTypes API supported', () {
+    test('createTrustedScriptUrl - returns TrustedScriptURL object', () async {
+      final Object trusted = createTrustedScriptUrl(goodUrl);
+
+      expect(trusted, isA<DomTrustedScriptURL>());
+      expect((trusted as DomTrustedScriptURL).url, goodUrl);
+    });
+
+    test('createTrustedScriptUrl - rejects bad canvaskit.js URL', () async {
       expect(() {
-        createTrustedScriptUrl('https://www.unpkg.com/soemthing/not-canvaskit.js');
+        createTrustedScriptUrl(badUrl);
       }, throwsAssertionError);
-    }, skip: isSafari || isFirefox);
-  });
+    });
+  }, skip: !isBlink);
+
+  group('Trusted Types API NOT supported', () {
+    test('createTrustedScriptUrl - returns unmodified url', () async {
+      expect(createTrustedScriptUrl(badUrl), badUrl);
+    });
+  }, skip: isBlink);
 }
 
 /// Enables Trusted Types by setting the appropriate meta tag in the DOM:
