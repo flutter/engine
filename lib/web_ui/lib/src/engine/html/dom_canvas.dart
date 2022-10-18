@@ -214,8 +214,10 @@ ui.Rect adjustRectForDom(ui.Rect rect, SurfacePaintData paint) {
   if (isStroke && strokeWidth > 0.0) {
     left -= strokeWidth / 2.0;
     top -= strokeWidth / 2.0;
-    width -= strokeWidth;
-    height -= strokeWidth;
+
+    // width and height shouldn't go below zero.
+    width = math.max(0, width - strokeWidth);
+    height = math.max(0, height - strokeWidth);
   }
 
   if (left != rect.left ||
