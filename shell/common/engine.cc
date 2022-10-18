@@ -486,6 +486,10 @@ void Engine::SetNeedsReportTimings(bool needs_reporting) {
   delegate_.SetNeedsReportTimings(needs_reporting);
 }
 
+void Engine::SetAfterFrameNotifyIdleExtra(fml::TimeDelta delta) {
+  delegate_.SetAfterFrameNotifyIdleExtra(delta);
+}
+
 FontCollection& Engine::GetFontCollection() {
   return *font_collection_;
 }

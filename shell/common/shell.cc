@@ -1130,7 +1130,7 @@ void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (engine_) {
-    engine_->NotifyIdle(deadline);
+    engine_->NotifyIdle(deadline + animator_notify_idle_extra_);
     volatile_path_tracker_->OnFrame();
   }
 }
@@ -1352,6 +1352,10 @@ void Shell::UpdateIsolateDescription(const std::string isolate_name,
 
 void Shell::SetNeedsReportTimings(bool value) {
   needs_report_timings_ = value;
+}
+
+void Shell::SetAfterFrameNotifyIdleExtra(fml::TimeDelta delta) {
+  animator_notify_idle_extra_ = delta;
 }
 
 // |Engine::Delegate|

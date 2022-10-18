@@ -31,6 +31,7 @@ class MockDelegate : public Engine::Delegate {
   MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
+  MOCK_METHOD1(SetAfterFrameNotifyIdleExtra, void(fml::TimeDelta));
   MOCK_METHOD1(ComputePlatformResolvedLocale,
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
@@ -59,6 +60,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
+  MOCK_METHOD1(SetAfterFrameNotifyIdleExtra, void(fml::TimeDelta));
   MOCK_METHOD1(ComputePlatformResolvedLocale,
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));

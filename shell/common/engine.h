@@ -244,6 +244,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     virtual void SetNeedsReportTimings(bool needs_reporting) = 0;
 
     //--------------------------------------------------------------------------
+    /// @brief      When the system wants to NotifyIdle after frame ends,
+    ///             it will report that it plan to be idle not only until the
+    ///             next vsync, but also adding `delta` time.
+    virtual void SetAfterFrameNotifyIdleExtra(fml::TimeDelta delta) = 0;
+
+    //--------------------------------------------------------------------------
     /// @brief      Directly invokes platform-specific APIs to compute the
     ///             locale the platform would have natively resolved to.
     ///
@@ -913,6 +919,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       const override;
 
   void SetNeedsReportTimings(bool value) override;
+
+  void SetAfterFrameNotifyIdleExtra(fml::TimeDelta delta) override;
 
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 

@@ -451,6 +451,8 @@ class Shell final : public PlatformView::Delegate,
   // atomic.
   std::atomic<bool> needs_report_timings_{false};
 
+  std::atomic<fml::TimeDelta> animator_notify_idle_extra_{};
+
   // Whether there's a task scheduled to report the timings to Dart through
   // ui.Window.onReportTimings.
   bool frame_timings_report_scheduled_ = false;
@@ -627,6 +629,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void SetNeedsReportTimings(bool value) override;
+
+  // |Engine::Delegate|
+  void SetAfterFrameNotifyIdleExtra(fml::TimeDelta delta) override;
 
   // |Engine::Delegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(

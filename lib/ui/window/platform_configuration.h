@@ -150,6 +150,12 @@ class PlatformConfigurationClient {
   virtual void SetNeedsReportTimings(bool value) = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief      When the system wants to NotifyIdle after frame ends,
+  ///             it will report that it plan to be idle not only until the
+  ///             next vsync, but also adding `delta` time.
+  virtual void SetAfterFrameNotifyIdleExtra(fml::TimeDelta delta) = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      The embedder can specify data that the isolate can request
   ///             synchronously on launch. This accessor fetches that data.
   ///
@@ -478,6 +484,8 @@ class PlatformConfigurationNativeApi {
   static void UpdateSemantics(SemanticsUpdate* update);
 
   static void SetNeedsReportTimings(bool value);
+
+  static void SetAfterFrameNotifyIdleExtra(int64_t delta);
 
   static Dart_Handle GetPersistentIsolateData();
 

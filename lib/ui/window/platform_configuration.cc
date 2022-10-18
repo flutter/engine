@@ -285,6 +285,15 @@ void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {
       ->SetNeedsReportTimings(value);
 }
 
+void PlatformConfigurationNativeApi::SetAfterFrameNotifyIdleExtra(
+    int64_t delta) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->SetAfterFrameNotifyIdleExtra(fml::TimeDelta::FromMicroseconds(delta));
+}
+
 namespace {
 Dart_Handle HandlePlatformMessage(
     UIDartState* dart_state,

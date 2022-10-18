@@ -95,6 +95,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::Render, 1)                        \
   V(PlatformConfigurationNativeApi::UpdateSemantics, 1)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings, 1)         \
+  V(PlatformConfigurationNativeApi::SetAfterFrameNotifyIdleExtra, 1)  \
   V(PlatformConfigurationNativeApi::SetIsolateDebugName, 1)           \
   V(PlatformConfigurationNativeApi::RequestDartPerformanceMode, 1)    \
   V(PlatformConfigurationNativeApi::GetPersistentIsolateData, 0)      \
