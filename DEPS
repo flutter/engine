@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '8c73a59cd417b3f8fae08dd2919840ca5a0848cc',
+  'skia_revision': '87d97e03342cc357c13c8796ac6a9b9bd4abff2b',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -35,7 +35,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:039b969b32b64b64123dce30dd28ec4e343d893f',
+  'clang_version': 'git_revision:a93d03310e2c02fa5e24544df4706650f85788f7',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
