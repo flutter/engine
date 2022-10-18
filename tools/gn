@@ -637,6 +637,7 @@ def to_gn_wasm_args(args, gn_args):
 
   # TODO(jacksongardner): Make this based off of the input argument rather
   # than forced to true, once the recipes are updated.
+  # https://github.com/flutter/flutter/issues/113303
   gn_args['build_canvaskit'] = True
   gn_args['build_flutter_web_sdk'] = True
 
@@ -854,7 +855,6 @@ def parse_args(args):
       action='store_true',
       help='build canvaskit from source'
   )
-
   parser.add_argument(
       '--no-build-canvaskit', dest='build_canvaskit', action='store_false'
   )

@@ -27,6 +27,11 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
           'by default.',
       defaultsTo: true
     );
+    argParser.addFlag(
+      'host',
+      help: 'Build the host build instead of the wasm build, which is currently'
+          'needed for `flutter run --local-engine` to work'
+    );
   }
 
   @override
@@ -39,12 +44,14 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get buildCanvasKit => boolArg('build-canvaskit');
 
+  bool get host => boolArg('host');
+
   @override
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(buildCanvasKit: buildCanvasKit),
-      NinjaPipelineStep(target: environment.wasmReleaseOutDir),
+      GnPipelineStep(buildCanvasKit: buildCanvasKit, host: host),
+      NinjaPipelineStep(target: host ? environment.hostDebugUnoptDir : environment.wasmReleaseOutDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
     await buildPipeline.run();
@@ -68,9 +75,10 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 /// Not safe to interrupt as it may leave the `out/` directory in a corrupted
 /// state. GN is pretty quick though, so it's OK to not support interruption.
 class GnPipelineStep extends ProcessStep {
-  GnPipelineStep({required this.buildCanvasKit});
+  GnPipelineStep({required this.buildCanvasKit, required this.host});
 
   final bool buildCanvasKit;
+  final bool host;
 
   @override
   String get description => 'gn';
@@ -78,17 +86,27 @@ class GnPipelineStep extends ProcessStep {
   @override
   bool get isSafeToInterrupt => false;
 
+  List<String> get _gnArgs {
+    if (host) {
+      return <String>[
+        '--unoptimized',
+        '--full-dart-sdk',
+      ];
+    } else {
+      return <String>[
+        '--web',
+        '--runtime-mode=release',
+        if (buildCanvasKit) '--build-canvaskit',
+      ];
+    }
+  }
+
   @override
   Future<ProcessManager> createProcess() {
     print('Running gn...');
-    final List<String> gnArgs = <String>[
-      '--web',
-      '--runtime-mode=release',
-      if (buildCanvasKit) '--build-canvaskit',
-    ];
     return startProcess(
       path.join(environment.flutterDirectory.path, 'tools', 'gn'),
-      gnArgs,
+      _gnArgs,
     );
   }
 }

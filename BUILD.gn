@@ -13,7 +13,7 @@ import("//third_party/dart/build/dart/copy_tree.gni")
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
 # TODO(jacksongardner): remove this poorly named argument once the recipes stop
-# using it.
+# using it. https://github.com/flutter/flutter/issues/113303
 declare_args() {
   full_dart_sdk = false
 }
@@ -74,7 +74,7 @@ group("flutter") {
 
     if (build_engine_artifacts) {
       public_deps += [
-        "//flutter/dart_sdk",
+        "//flutter/build/dart:dart_sdk",
         "//flutter/flutter_frontend_server:frontend_server",
 
         # This must be listed explicitly for desktop cross-builds since
