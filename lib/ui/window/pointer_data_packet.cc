@@ -20,13 +20,13 @@ void PointerDataPacket::SetPointerData(size_t i, const PointerData& data) {
   memcpy(&data_[i * sizeof(PointerData)], &data, sizeof(PointerData));
 }
 
-PointerData PointerDataPacket::GetPointerData(size_t i) {
+PointerData PointerDataPacket::GetPointerData(size_t i) const {
   PointerData result;
   memcpy(&result, &data_[i * sizeof(PointerData)], sizeof(PointerData));
   return result;
 }
 
-size_t PointerDataPacket::Size() {
+size_t PointerDataPacket::Size() const {
   return data_.size() / sizeof(PointerData);
 }
 
