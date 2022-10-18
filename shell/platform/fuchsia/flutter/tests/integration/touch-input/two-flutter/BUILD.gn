@@ -30,22 +30,12 @@ flutter_component("component") {
   deps = [ ":lib" ]
 }
 
-#fuchsia_component("realm") {
-#  testonly = true
-#  manifest = "meta/two-flutter-realm.cml"
-#  manifest_output_name = "two-flutter-realm.cml"
-
-#  deps = [ ":component" ]
-#}
-
 fuchsia_package("package") {
   testonly = true
   package_name = "two-flutter"
 
   deps = [
     ":component",
-
-    #    ":realm",
 
     # "OOT" copies of the runners used by tests, to avoid conflicting with the
     # runners in the base fuchsia image.

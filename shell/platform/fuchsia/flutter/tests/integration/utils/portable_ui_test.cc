@@ -70,20 +70,21 @@ void PortableUITest::SetUpRealmBase() {
   realm_builder_.AddChild(kTestUIStack, GetTestUIStackUrl());
 
   // // Route base system services to flutter and the test UI stack.
-  // realm_builder_.AddRoute(
-  //     Route{.capabilities =
-  //               {
-  //                   Protocol{fuchsia::logger::LogSink::Name_},
-  //                   Protocol{fuchsia::sys::Environment::Name_},
-  //                   Protocol{fuchsia::sysmem::Allocator::Name_},
-  //                   Protocol{fuchsia::tracing::provider::Registry::Name_},
-  //                   Protocol{"fuchsia.posix.socket.Provider"},
-  //                   Protocol{kVulkanLoaderServiceName},
-  //                   component_testing::Directory{"config-data"},
-  //                   // Protocol{kProfileProviderServiceName},
-  //               },
-  //           .source = ParentRef(),
-  //           .targets = {kFlutterJitRunnerRef, kTestUIStackRef}});
+  realm_builder_.AddRoute(
+      Route{.capabilities =
+                {
+                    Protocol{fuchsia::logger::LogSink::Name_},
+                    Protocol{fuchsia::sys::Environment::Name_},
+                    Protocol{fuchsia::sysmem::Allocator::Name_},
+                    Protocol{fuchsia::tracing::provider::Registry::Name_},
+                    Protocol{"fuchsia.posix.socket.Provider"},
+                    Protocol{"fuchsia.ui.input.ImeService"},
+                    Protocol{"fuchsia.ui.pointerinjector.Registry"},
+                    Protocol{kVulkanLoaderServiceName},
+                    component_testing::Directory{"config-data"},
+                },
+            .source = ParentRef(),
+            .targets = {kFlutterJitRunnerRef, kTestUIStackRef}});
 
   // Capabilities routed to test driver.
   realm_builder_.AddRoute(Route{

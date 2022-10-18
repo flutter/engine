@@ -245,18 +245,51 @@ class FlutterTapTest : public PortableUITest,
     RegisterTouchScreen();
   }
 
+  // Routes needed to setup Flutter client.
+  static std::vector<Route> GetFlutterRoutes(ChildRef target) {
+    return {
+        {.capabilities = {Protocol{
+             fuchsia::ui::test::input::TouchInputListener::Name_}},
+         .source = ChildRef{kMockResponseListener},
+         .targets = {target}},
+        // {.capabilities = {Protocol{fuchsia::logger::LogSink::Name_},
+        //                   Protocol{fuchsia::sysmem::Allocator::Name_},
+        //                   Protocol{
+        //                       fuchsia::tracing::provider::Registry::Name_}},
+        //  .source = ParentRef(),
+        //  .targets = {target}},
+        // {.capabilities = {Protocol{fuchsia::ui::scenic::Scenic::Name_}},
+        //  .source = kTestUIStackRef,
+        //  .targets = {target}},
+    };
+  }
+
+  std::vector<Route> GetTestRoutes() {
+    return merge(
+        {GetFlutterRoutes(ChildRef{kFlutterRealm}),
+         {
+             {.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
+              .source = ChildRef{kFlutterRealm},
+              .targets = {ParentRef()}},
+         }});
+  }
+
+  std::vector<std::pair<ChildName, LegacyUrl>> GetTestV2Components() {
+    return {
+        std::make_pair(kFlutterRealm, kFlutterRealmUrl),
+    };
+  };
+
   bool LastEventReceivedMatches(float expected_x,
                                 float expected_y,
                                 std::string component_name) {
     const auto& events_received = response_listener_server_->events_received();
 
     if (events_received.empty()) {
-      // FML_LOG(INFO) << "events_received is currently empty";
       return false;
     }
 
     const auto& last_event = events_received.back();
-    FML_LOG(INFO) << "Received event";
 
     auto pixel_scale = last_event.has_device_pixel_ratio()
                            ? last_event.device_pixel_ratio()
@@ -276,32 +309,6 @@ class FlutterTapTest : public PortableUITest,
            last_event.component_name() == component_name;
   }
 
-  void InjectInput(TapLocation tap_location) {
-    // The /config/data/display_rotation (90) specifies how many degrees to
-    // rotate the presentation child view, counter-clockwise, in a
-    // right-handed coordinate system. Thus, the user observes the child
-    // view to rotate *clockwise* by that amount (90).
-    //
-    // Hence, a tap in the center of the display's top-right quadrant is
-    // observed by the child view as a tap in the center of its top-left
-    // quadrant.
-    auto touch = std::make_unique<fuchsia::ui::input::TouchscreenReport>();
-    switch (tap_location) {
-      case TapLocation::kTopLeft:
-        // center of top right quadrant -> ends up as center of top left
-        // quadrant
-        InjectTap(/* x = */ 500, /* y = */ -500);
-        break;
-      case TapLocation::kTopRight:
-        // center of bottom right quadrant -> ends up as center of top right
-        // quadrant
-        InjectTap(/* x = */ 500, /* y = */ 500);
-        break;
-      default:
-        FML_CHECK(false) << "Received invalid TapLocation";
-    }
-  }
-
   // Guaranteed to be initialized after SetUp().
   uint32_t display_width() const { return display_width_; }
   uint32_t display_height() const { return display_height_; }
@@ -312,24 +319,6 @@ class FlutterTapTest : public PortableUITest,
 
  private:
   void ExtendRealm() override {
-    realm_builder()->AddRoute(
-        Route{.capabilities =
-                  {
-                      Protocol{fuchsia::logger::LogSink::Name_},
-                      Protocol{fuchsia::sys::Environment::Name_},
-                      Protocol{fuchsia::sysmem::Allocator::Name_},
-                      Protocol{fuchsia::tracing::provider::Registry::Name_},
-                      Protocol{"fuchsia.posix.socket.Provider"},
-                      Protocol{"fuchsia.vulkan.loader.Loader"},
-                      Protocol{"fuchsia.ui.input.ImeService"},
-                      Protocol{"fuchsia.ui.pointerinjector.Registry"},
-                      // Protocol{"fuchsia.ui.test.input.TouchInputListener"},
-                      component_testing::Directory{"config-data"},
-                      // Protocol{kProfileProviderServiceName},
-                  },
-              .source = ParentRef(),
-              .targets = {kFlutterJitRunnerRef, kTestUIStackRef}});
-
     // Key part of service setup: have this test component vend the
     // |ResponseListener| service in the constructed realm.
     response_listener_server_ =
@@ -343,11 +332,11 @@ class FlutterTapTest : public PortableUITest,
                               component_testing::ChildOptions{
                                   .environment = kFlutterRunnerEnvironment,
                               });
-    // }
+
     realm_builder()->AddRoute(
         Route{.capabilities = {Protocol{
                   fuchsia::ui::test::input::TouchInputListener::Name_}},
-              .source = ParentRef(),
+              .source = ChildRef{kMockResponseListener},
               .targets = {kFlutterJitRunnerRef, ChildRef{kFlutterRealm}}});
 
     // Add the necessary routing for each of the extra components added
@@ -382,11 +371,11 @@ TEST_P(FlutterTapTest, FlutterTap) {
   LaunchClient();
   FML_LOG(INFO) << "Client launched";
 
-  InjectInput(TapLocation::kTopLeft);
+  InjectTap(-500, -500);
   RunLoopUntil([this] {
     return LastEventReceivedMatches(
-        /*expected_x=*/static_cast<float>(display_height()) / 4.f,
-        /*expected_y=*/static_cast<float>(display_width()) / 4.f,
+        /*expected_x=*/static_cast<float>(display_width() / 4.0f),
+        /*expected_y=*/static_cast<float>(display_height() / 4.0f),
         /*component_name=*/"two-flutter");
   });
 }
