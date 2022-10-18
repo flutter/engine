@@ -1533,19 +1533,19 @@ const Set<String> _expectedFilesForTT = <String>{
 
 // The definition of the `flutter-engine` TrustedType policy.
 // Only accessible if the Trusted Types API is available.
-final DomTrustedTypePolicy _ttPolicy = domWindow
-  .trustedTypes!
-  .createPolicy('flutter-engine',
-    DomTrustedTypePolicyOptions(
-      // Validates the given [url].
-      createScriptURL: allowInterop((String url) {
+final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
+  'flutter-engine',
+  DomTrustedTypePolicyOptions(
+    // Validates the given [url].
+    createScriptURL: allowInterop(
+      (String url) {
         final Uri uri = Uri.parse(url);
         if (_expectedFilesForTT.contains(uri.pathSegments.last)) {
           return uri.toString();
         }
-        domWindow.console.error(
-          'URL rejected by TrustedTypes policy flutter-engine: $url'
-          '(download prevented)');
+        domWindow.console
+            .error('URL rejected by TrustedTypes policy flutter-engine: $url'
+                '(download prevented)');
 
         return null;
       },
@@ -1561,10 +1561,10 @@ Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
     final DomTrustedScriptURL trustedCanvasKitUrl =
-      _ttPolicy.createScriptURL(url);
+        _ttPolicy.createScriptURL(url);
 
     assert(trustedCanvasKitUrl.url != '',
-      'URL: $url rejected by TrustedTypePolicy');
+        'URL: $url rejected by TrustedTypePolicy');
 
     return trustedCanvasKitUrl;
   }
