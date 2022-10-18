@@ -74,6 +74,8 @@ static void TestSimulatedInputEvents(
         tonic::DartConverter<std::vector<int64_t>>::FromArguments(args, 0,
                                                                   exception);
     EXPECT_EQ(exception, nullptr);
+    FML_LOG(ERROR) << "TestSimulatedInputEvents callback"
+                   << "sequence.size=" << sequence.size();
 
     events_consumed += sequence.size();
     if (will_draw_new_frame) {
@@ -119,14 +121,16 @@ static void TestSimulatedInputEvents(
 
   // This has to be running on a different thread than Platform thread to avoid
   // dead locks.
+  int fake_pointer_index = 0;
   auto simulation = std::async(std::launch::async, [&]() {
     // i is the input event's index.
     // j is the frame's index.
     for (int i = 0, j = 0; i < num_events; j += 1) {
       double t = j * frame_time;
       while (i < num_events && delivery_time(i) <= t) {
-        ShellTest::DispatchFakePointerData(shell.get());
+        ShellTest::DispatchFakePointerData(shell.get(), fake_pointer_index);
         i += 1;
+        fake_pointer_index += 1;
       }
       ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
     }

@@ -214,8 +214,16 @@ void ShellTest::PumpOneFrame(Shell* shell,
   latch.Wait();
 }
 
-void ShellTest::DispatchFakePointerData(Shell* shell) {
+void ShellTest::DispatchFakePointerData(Shell* shell, int fake_pointer_index) {
   auto packet = std::make_unique<PointerDataPacket>(1);
+
+  // Must set a few necessary fields to make it look realistic.
+  // Otherwise, [PointerDataPacketConverter] will throw away the pointer event
+  PointerData data{};
+  data.change = PointerData::Change::kHover;
+  data.physical_x = fake_pointer_index;
+  packet->SetPointerData(0, data);
+
   DispatchPointerData(shell, std::move(packet));
 }
 

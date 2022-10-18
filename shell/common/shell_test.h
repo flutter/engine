@@ -83,7 +83,7 @@ class ShellTest : public FixtureTest {
   static void PumpOneFrame(Shell* shell,
                            const flutter::ViewportMetrics& viewport_metrics,
                            LayerTreeBuilder = {});
-  static void DispatchFakePointerData(Shell* shell);
+  static void DispatchFakePointerData(Shell* shell, int fake_pointer_index);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
   // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and

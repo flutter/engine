@@ -83,6 +83,7 @@ void onBeginFrameMain() {
 @pragma('vm:entry-point')
 void onPointerDataPacketMain() {
   PlatformDispatcher.instance.onPointerDataPacket = (PointerDataPacket packet) {
+    print('hi dart onPointerDataPacket ${packet.data}');
     List<int> sequence = <int>[];
     for (PointerData data in packet.data) {
       sequence.add(PointerChange.values.indexOf(data.change));

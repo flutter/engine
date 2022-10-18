@@ -31,6 +31,10 @@ std::unique_ptr<PointerDataPacket> PointerDataPacketConverter::Convert(
     ConvertPointerData(pointer_data, converted_pointers);
   }
 
+  FML_LOG(ERROR) << "PointerDataPacketConverter::Convert "
+                 << "buffer_length=" << buffer_length
+                 << " converted_pointers.size=" << converted_pointers.size();
+
   // Writes converted_pointers into converted_packet.
   auto converted_packet =
       std::make_unique<flutter::PointerDataPacket>(converted_pointers.size());
