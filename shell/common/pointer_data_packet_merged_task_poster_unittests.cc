@@ -11,7 +11,9 @@
 namespace flutter {
 namespace testing {
 
-// TODO
+TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
+  // TODO
+}
 
 }  // namespace testing
 }  // namespace flutter

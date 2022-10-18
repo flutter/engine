@@ -5,12 +5,12 @@
 #ifndef POINTER_DATA_PACKET_MERGED_TASK_POSTER_H_
 #define POINTER_DATA_PACKET_MERGED_TASK_POSTER_H_
 
-#include <buildtools/mac-x64/clang/include/c++/v1/cstring>
-#include <buildtools/mac-x64/clang/include/c++/v1/vector>
+#include "engine.h"
 
 namespace flutter {
 
 class PointerDataPacketMergedTaskPoster {
+ public:
   void Dispatch(std::unique_ptr<PointerDataPacket> packet,
                 uint64_t flow_id,
                 const TaskRunners& task_runners,
