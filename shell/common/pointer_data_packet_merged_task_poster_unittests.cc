@@ -15,5 +15,9 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
   // TODO
 }
 
+TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithExtra) {
+  // TODO
+}
+
 }  // namespace testing
 }  // namespace flutter
