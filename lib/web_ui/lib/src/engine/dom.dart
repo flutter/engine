@@ -62,6 +62,9 @@ extension DomWindowExtension on DomWindow {
         targetOrigin,
         if (messagePorts != null) js_util.jsify(messagePorts)
       ]);
+
+  /// The Trusted Types API (when available).
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
   external DomTrustedTypePolicyFactory? get trustedTypes;
 }
 
@@ -518,7 +521,7 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
 class DomHTMLScriptElement extends DomHTMLElement {}
 
 extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
-  external set src(Object /*String|TrustedScriptURL?*/ value);
+  external set src(Object /* String|TrustedScriptURL */ value);
 }
 
 DomHTMLScriptElement createDomHTMLScriptElement() =>
@@ -1441,21 +1444,16 @@ extension DomCSSRuleListExtension on DomCSSRuleList {
       js_util.getProperty<double>(this, 'length').toInt();
 }
 
-/// Trusted Types API
-
-/*
-// Trusted Types API (TrustedTypePolicy, TrustedScript, TrustedScriptURL)
-// https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypesAPI
-*/
-
 /// A factory to create `TrustedTypePolicy` objects.
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory
 @JS()
 @staticInterop
 abstract class DomTrustedTypePolicyFactory {}
 
-/// (Some) methods of the [DomTrustedTypePolicyFactory]:
+/// A subset of TrustedTypePolicyFactory methods.
 extension DomTrustedTypePolicyFactoryExtension on DomTrustedTypePolicyFactory {
-  /// createPolicy
+  /// Creates a TrustedTypePolicy object named `policyName` that implements the
+  /// rules passed as `policyOptions`.
   external DomTrustedTypePolicy createPolicy(
     String policyName,
     DomTrustedTypePolicyOptions? policyOptions,
@@ -1463,11 +1461,19 @@ extension DomTrustedTypePolicyFactoryExtension on DomTrustedTypePolicyFactory {
 }
 
 /// Options to create a trusted type policy.
+///
+/// The options are user-defined functions for converting strings into trusted
+/// values.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory/createPolicy#policyoptions
 @JS()
 @staticInterop
 @anonymous
 abstract class DomTrustedTypePolicyOptions {
-  /// Constructs a TrustedPolicyOptions object in JavaScript.
+  /// Constructs a TrustedTypePolicyOptions object in JavaScript.
+  ///
+  /// `createScriptURL` is a callback function that contains code to run when
+  /// creating a TrustedScriptURL object.
   ///
   /// The following properties need to be manually wrapped in [allowInterop]
   /// before being passed to this constructor: [createScriptURL].
@@ -1476,27 +1482,46 @@ abstract class DomTrustedTypePolicyOptions {
   });
 }
 
-/// Type of the function to configure createScriptURL
+/// Type of the function to configure createScriptURL.
 typedef DomCreateScriptUrlOptionFn = String? Function(String input);
 
-/// An instance of a TrustedTypePolicy
+/// Dart binding of a JavaScript TrustedTypePolicy instance.
+///
+/// A TrustedTypePolicy defines a group of functions which create TrustedType
+/// objects.
+///
+/// TrustedTypePolicy objects are created by `TrustedTypePolicyFactory.createPolicy`,
+/// therefore this class has no constructor.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicy
 @JS()
 @staticInterop
 abstract class DomTrustedTypePolicy {}
 
-/// (Some) methods of the [DomTrustedTypePolicy]
+/// A subset of TrustedTypePolicy methods.
 extension DomTrustedTypePolicyExtension on DomTrustedTypePolicy {
-  /// Create a `TrustedScriptURL` for the given [input].
-  external DomTrustedScriptUrl createScriptURL(String input);
+  /// Creates a `TrustedScriptURL` for the given [input].
+  ///
+  /// `input` is a string containing the data to be _sanitized_ by the policy.
+  external DomTrustedScriptURL createScriptURL(String input);
 }
 
-/// An instance of a DomTrustedScriptUrl
+/// Dart binding of a JavaScript TrustedScriptURL instance.
+///
+/// Represents a string that a developer can insert into an _injection sink_
+/// that will parse it as an external script.
+///
+/// These objects are created via `createScriptURL` and therefore have no
+/// constructor.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedScriptURL
 @JS()
 @staticInterop
-abstract class DomTrustedScriptUrl {}
+abstract class DomTrustedScriptURL {}
 
-/// (Some) methods of the [DomTrustedTypePolicy]
-extension DomTrustedScriptUrlExtension on DomTrustedScriptUrl {
+/// A subset of TrustedScriptURL methods.
+extension DomTrustedScriptUrlExtension on DomTrustedScriptURL {
+  /// Exposes the `toString` JS method of TrustedScriptURL.
   String get url => js_util.callMethod<String>(this, 'toString', <String>[]);
 }
 
@@ -1507,8 +1532,10 @@ const Set<String> _expectedFilesForTT = <String>{
 };
 
 // The definition of the `flutter-engine` TrustedType policy.
-DomTrustedTypePolicy get _ttPolicy {
-  return domWindow.trustedTypes!.createPolicy('flutter-engine',
+// Only accessible if the Trusted Types API is available.
+final DomTrustedTypePolicy _ttPolicy = domWindow
+  .trustedTypes!
+  .createPolicy('flutter-engine',
     DomTrustedTypePolicyOptions(
       // Validates the given [url].
       createScriptURL: allowInterop((String url) {
@@ -1519,16 +1546,21 @@ DomTrustedTypePolicy get _ttPolicy {
         domWindow.console.error(
           'URL rejected by TrustedTypes policy flutter-engine: $url'
           '(download prevented)');
-        return null; // Ends up in JS as an empty string
-      }
-    )));
-}
 
-/// Converts a String [url] into a [DomTrustedScriptUrl] object (if available).
+        return null;
+      },
+    ),
+  ),
+);
+
+/// Converts a String `url` into a [DomTrustedScriptURL] object, when the
+/// Trusted Types API is available.
+///
+/// Else returns the unmodified `url`.
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptUrl trustedCanvasKitUrl =
+    final DomTrustedScriptURL trustedCanvasKitUrl =
       _ttPolicy.createScriptURL(url);
 
     assert(trustedCanvasKitUrl.url != '',
@@ -1538,8 +1570,6 @@ Object createTrustedScriptUrl(String url) {
   }
   return url;
 }
-
-// Utility methods below
 
 DomMessageChannel createDomMessageChannel() =>
     domCallConstructorString('MessageChannel', <Object>[])!
