@@ -108,8 +108,7 @@ chmod -R +w "$FUCHSIA_DIR"/prebuilt/third_party/flutter
 engine-info "Copying the patched SDK (dart:ui, dart:zircon, dart:fuchsia) to Fuchsia..."
 cp -ra "${fuchsia_out_dir}"/flutter_runner_patched_sdk/* "$FUCHSIA_DIR"/prebuilt/third_party/flutter/"${fuchsia_cpu}"/release/aot/flutter_runner_patched_sdk/
 
-engine-info "Registering debug symbols..."
-"$ENGINE_DIR"/fuchsia/sdk/linux/tools/x64/symbol-index add "${fuchsia_out_dir}"/.build-id "${fuchsia_out_dir}"
+# TODO(akbiggs): Register debug symbols.
 
 if [[ "${runtime_mode}" == release ]]
 then
