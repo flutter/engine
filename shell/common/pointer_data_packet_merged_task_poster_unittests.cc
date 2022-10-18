@@ -83,7 +83,7 @@ static std::vector<double> ExtractDxValuesFromPointerDataPacket(
   return dx_values;
 }
 
-TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
+TEST(PointerDataPacketMergedTaskPosterTest, DispatchOneByOne) {
   std::unique_ptr<ThreadHost> thread_host =
       std::make_unique<ThreadHost>(ThreadHost::ThreadHostConfig(
           "io.flutter.bench.",
@@ -96,6 +96,7 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
       CreateSimplePointerDataPacket({1.0, 2.0, 3.0}),
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) {
+        FML_LOG(ERROR) << "callback 1 called";
         std::vector<double> actual_dx_values =
             ExtractDxValuesFromPointerDataPacket(std::move(packet));
         std::vector<double> expect_dx_values = {1.0, 2.0, 3.0};
@@ -103,12 +104,14 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
         callback_latch.Signal();
       });
 
+  FML_LOG(ERROR) << "main thread wait latch 1";
   callback_latch.Wait();
 
   task_poster.Dispatch(
       CreateSimplePointerDataPacket({4.0, 5.0}),
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) {
+        FML_LOG(ERROR) << "callback 2 called";
         std::vector<double> actual_dx_values =
             ExtractDxValuesFromPointerDataPacket(std::move(packet));
         std::vector<double> expect_dx_values = {4.0, 5.0};
@@ -116,10 +119,11 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithoutExtra) {
         callback_latch.Signal();
       });
 
+  FML_LOG(ERROR) << "main thread wait latch 2";
   callback_latch.Wait();
 }
 
-TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithExtra) {
+TEST(PointerDataPacketMergedTaskPosterTest, DispatchTwice) {
   std::unique_ptr<ThreadHost> thread_host =
       std::make_unique<ThreadHost>(ThreadHost::ThreadHostConfig(
           "io.flutter.bench.",
@@ -129,13 +133,17 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithExtra) {
   fml::AutoResetWaitableEvent callback_latch;
 
   fml::AutoResetWaitableEvent blocker_task_latch;
-  thread_host->ui_thread->GetTaskRunner()->PostTask(
-      [&] { blocker_task_latch.Wait(); });
+  thread_host->ui_thread->GetTaskRunner()->PostTask([&] {
+    FML_LOG(ERROR) << "blocker_task_latch wait start";
+    blocker_task_latch.Wait();
+    FML_LOG(ERROR) << "blocker_task_latch wait end";
+  });
 
   task_poster.Dispatch(
       CreateSimplePointerDataPacket({1.0, 2.0, 3.0}),
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) {
+        FML_LOG(ERROR) << "callback called";
         std::vector<double> actual_dx_values =
             ExtractDxValuesFromPointerDataPacket(std::move(packet));
         std::vector<double> expect_dx_values = {1.0, 2.0, 3.0, 4.0, 5.0};
@@ -148,7 +156,10 @@ TEST(PointerDataPacketMergedTaskPosterTest, DispatchWithExtra) {
       thread_host->ui_thread->GetTaskRunner(),
       [&](std::unique_ptr<PointerDataPacket> packet) { FAIL(); });
 
+  FML_LOG(ERROR) << "main thread signal blocker_task_latch";
   blocker_task_latch.Signal();
+
+  FML_LOG(ERROR) << "main thread wait latch";
   callback_latch.Wait();
 }
 
