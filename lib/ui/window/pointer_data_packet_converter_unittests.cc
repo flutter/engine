@@ -133,7 +133,7 @@ void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
 
 void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT
                          std::unique_ptr<PointerDataPacket> packet) {
-  for (size_t i = 0; i < packet->Size(); i++) {
+  for (size_t i = 0; i < packet->GetLength(); i++) {
     PointerData pointer_data = packet->GetPointerData(i);
     output.push_back(pointer_data);
   }

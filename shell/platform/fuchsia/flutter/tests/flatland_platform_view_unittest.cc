@@ -484,7 +484,7 @@ std::string ToString(const fml::Mapping& mapping) {
 // Stolen from pointer_data_packet_converter_unittests.cc.
 void UnpackPointerPacket(std::vector<flutter::PointerData>& output,  // NOLINT
                          std::unique_ptr<flutter::PointerDataPacket> packet) {
-  for (size_t i = 0; i < packet->Size(); i++) {
+  for (size_t i = 0; i < packet->GetLength(); i++) {
     flutter::PointerData pointer_data = packet->GetPointerData(i);
     output.push_back(pointer_data);
   }

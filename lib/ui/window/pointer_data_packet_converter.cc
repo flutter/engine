@@ -20,7 +20,7 @@ std::unique_ptr<PointerDataPacket> PointerDataPacketConverter::Convert(
   std::vector<PointerData> converted_pointers;
   // Converts each pointer data in the buffer and stores it in the
   // converted_pointers.
-  for (size_t i = 0; i < packet->Size(); i++) {
+  for (size_t i = 0; i < packet->GetLength(); i++) {
     PointerData pointer_data = packet->GetPointerData(i);
     ConvertPointerData(pointer_data, converted_pointers);
   }

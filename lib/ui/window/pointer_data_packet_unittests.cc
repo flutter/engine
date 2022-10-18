@@ -60,9 +60,9 @@ TEST(PointerDataPacketTest, CanGetPointerData) {
   ASSERT_EQ(data_recovered.physical_y, 3.0);
 }
 
-TEST(PointerDataPacketTest, CanGetSize) {
+TEST(PointerDataPacketTest, CanGetLength) {
   auto packet = std::make_unique<PointerDataPacket>(6);
-  ASSERT_EQ(packet->Size(), (size_t)6);
+  ASSERT_EQ(packet->GetLength(), (size_t)6);
 }
 
 }  // namespace testing

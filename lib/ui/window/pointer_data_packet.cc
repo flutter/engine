@@ -26,7 +26,7 @@ PointerData PointerDataPacket::GetPointerData(size_t i) const {
   return result;
 }
 
-size_t PointerDataPacket::Size() const {
+size_t PointerDataPacket::GetLength() const {
   return data_.size() / sizeof(PointerData);
 }
 
