@@ -763,7 +763,7 @@ public class PlatformViewsControllerTest {
         /* viewHeight=*/ 10,
         /* mutatorsStack=*/ new FlutterMutatorsStack());
 
-    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    final PlatformOverlayView overlayImageView = mock(PlatformOverlayView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
     final FlutterOverlaySurface overlaySurface =
@@ -906,7 +906,7 @@ public class PlatformViewsControllerTest {
         /* viewHeight=*/ 10,
         /* mutatorsStack=*/ new FlutterMutatorsStack());
 
-    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    final PlatformOverlayView overlayImageView = mock(PlatformOverlayView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
     final FlutterOverlaySurface overlaySurface =
@@ -943,7 +943,7 @@ public class PlatformViewsControllerTest {
     final FlutterView flutterView = mock(FlutterView.class);
     platformViewsController.attachToView(flutterView);
 
-    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    final PlatformOverlayView overlayImageView = mock(PlatformOverlayView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
     final FlutterOverlaySurface overlaySurface =
@@ -981,7 +981,7 @@ public class PlatformViewsControllerTest {
     final FlutterView flutterView = mock(FlutterView.class);
     platformViewsController.attachToView(flutterView);
 
-    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    final PlatformOverlayView overlayImageView = mock(PlatformOverlayView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
     final FlutterOverlaySurface overlaySurface =
@@ -1019,7 +1019,7 @@ public class PlatformViewsControllerTest {
     final FlutterView flutterView = mock(FlutterView.class);
     platformViewsController.attachToView(flutterView);
 
-    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    final PlatformOverlayView overlayImageView = mock(PlatformOverlayView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
     final FlutterOverlaySurface overlaySurface =
@@ -1079,7 +1079,7 @@ public class PlatformViewsControllerTest {
     assertEquals(flutterView.getChildCount(), 3);
 
     final View view = flutterView.getChildAt(1);
-    assertTrue(view instanceof FlutterImageView);
+    assertTrue(view instanceof PlatformOverlayView);
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
@@ -1126,7 +1126,7 @@ public class PlatformViewsControllerTest {
         /* mutatorsStack=*/ new FlutterMutatorsStack());
 
     assertEquals(flutterView.getChildCount(), 2);
-    assertTrue(!(flutterView.getChildAt(0) instanceof FlutterImageView));
+    assertTrue(!(flutterView.getChildAt(0) instanceof PlatformOverlayView));
     assertTrue(flutterView.getChildAt(1) instanceof FlutterMutatorView);
 
     // Simulate dispose call from the framework.
