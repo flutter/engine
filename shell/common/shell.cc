@@ -977,7 +977,7 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   pointer_data_packet_task_poster_.Dispatch(
-      std::move(packet), task_runners_,
+      std::move(packet), task_runners_.GetUITaskRunner(),
       [engine = weak_engine_, flow_id = next_pointer_flow_id_](
           std::unique_ptr<PointerDataPacket> packet) {
         if (engine) {

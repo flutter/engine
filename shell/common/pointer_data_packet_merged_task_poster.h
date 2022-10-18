@@ -14,7 +14,7 @@ class PointerDataPacketMergedTaskPoster {
   using Callback = std::function<void(std::unique_ptr<PointerDataPacket>)>;
 
   void Dispatch(std::unique_ptr<PointerDataPacket> packet,
-                const TaskRunners& task_runners,
+                const fml::RefPtr<fml::TaskRunner>& task_runner,
                 const Callback& callback);
 };
 
