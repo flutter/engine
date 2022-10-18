@@ -11,10 +11,11 @@ namespace flutter {
 
 class PointerDataPacketMergedTaskPoster {
  public:
+  using Callback = std::function<void(std::unique_ptr<PointerDataPacket>)>;
+
   void Dispatch(std::unique_ptr<PointerDataPacket> packet,
-                uint64_t flow_id,
                 const TaskRunners& task_runners,
-                const fml::WeakPtr<Engine>& weak_engine);
+                const Callback& callback);
 };
 
 }  // namespace flutter

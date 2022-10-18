@@ -11,14 +11,11 @@ namespace flutter {
 
 void PointerDataPacketMergedTaskPoster::Dispatch(
     std::unique_ptr<PointerDataPacket> packet,
-    uint64_t flow_id,
     const TaskRunners& task_runners,
-    const fml::WeakPtr<Engine>& weak_engine) {
-  task_runners.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = weak_engine, packet = std::move(packet), flow_id]() mutable {
-        if (engine) {
-          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
-        }
+    const PointerDataPacketMergedTaskPoster::Callback& callback) {
+  task_runners.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([packet = std::move(packet), callback]() mutable {
+        callback(std::move(packet));
       }));
 }
 
