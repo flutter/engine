@@ -13,34 +13,23 @@ void _debugLog(String message) {
   }
 }
 
-bool _isEascii(int clue) {
-  // This also excludes kDeadKey.
-  return clue < 256;
-}
+// bool _isEascii(String clue) {
+//   return clue.length == 1 && clue.codeUnitAt(0) < 256;
+// }
 
 class KeyboardLayoutDetector {
-  KeyboardLayoutDetector() {
-    int index = 0;
-    for (final String code in keyboard_layouts.kLayoutGoals.keys) {
-      _goalToIndex[code] = index;
-      index += 1;
-    }
-    print('Goal: $_goalToIndex');
-  }
-
   void update(DomKeyboardEvent event) {
     if (event.type != 'keydown') {
       return;
     }
-    final int? goalIndex = _goalToIndex[event.code];
-    if (goalIndex == null) {
+    if (!keyboard_layouts.kLayoutStore.goals.containsKey(event.code)) {
       return;
     }
-    print('Cue ${event.code} index $goalIndex key ${event.key}');
+    print('Cue ${event.code} key ${event.key}');
 
     // There is an existing candidate list. Filter based on it.
     if (_candidates.isNotEmpty) {
-      final bool effectiveCue = _filterCandidates(_candidates, event, goalIndex);
+      final bool effectiveCue = _filterCandidates(_candidates, event);
       if (effectiveCue) {
         _debugCues.add(event);
       }
@@ -49,20 +38,20 @@ class KeyboardLayoutDetector {
         return;
       } else {
         _debugLog('[Debug] Keyboard layout: Candidates exhausted. Past cues:'
-          + _debugCuesToString(_debugCues));
+          '${_debugCuesToString(_debugCues)}');
       }
     }
 
     // Start anew: Filter based on the entire list.
     _candidates.addAll(_fullCandidates);
     _debugCues.clear();
-    final bool effectiveCue = _filterCandidates(_candidates, event, goalIndex);
+    final bool effectiveCue = _filterCandidates(_candidates, event);
     if (effectiveCue) {
       _debugCues.add(event);
     }
     if (_candidates.isEmpty) {
       _debugLog('[Debug] Keyboard layout: Candidates exhausted on first try. Past cues:'
-        + _debugCuesToString(_debugCues));
+        '${_debugCuesToString(_debugCues)}');
     }
   }
 
@@ -70,32 +59,30 @@ class KeyboardLayoutDetector {
     if (_candidates.isEmpty) {
       return null;
     }
-    final keyboard_layouts.LayoutInfo candidate = _candidates.first;
-    if (candidate.name != _debugLastLayout) {
-      _debugLog('[Debug] Switching to layout ${candidate.name}.');
-      _debugLastLayout = candidate.name;
+    final keyboard_layouts.Layout candidate = _candidates.first;
+    if (candidate.language != _debugLastLayout) {
+      _debugLog('[Debug] Switching to layout ${candidate.language}.');
+      _debugLastLayout = candidate.language;
     }
-    if (!_calculatedLayouts.containsKey(candidate.name)) {
-      _calculatedLayouts[candidate.name] = _buildLayout(candidate.mapping, candidate.name);
-    }
-    final Map<String, int> map = _calculatedLayouts[candidate.name]!;
+    final Map<String, int> map = _calculatedLayouts.putIfAbsent(
+        candidate.language,
+        () => _buildLayout(candidate.entries, candidate.language));
     return map[code];
   }
 
-  static bool _filterCandidates(List<keyboard_layouts.LayoutInfo> candidates, DomKeyboardEvent event, int goalIndex) {
+  static bool _filterCandidates(List<keyboard_layouts.Layout> candidates, DomKeyboardEvent event) {
     final int beforeCandidateNum = candidates.length;
     final bool thisIsDead = event.key == 'Dead';
     final bool thisHasAltGr = event.getModifierState('AltGraph');
     final bool thisHasShift = event.shiftKey;
-    final int index = (thisHasShift ? 1 : 0) + (thisHasAltGr ? 2 : 0);
-    candidates.retainWhere((keyboard_layouts.LayoutInfo element) {
-      final int expected = element.mapping[goalIndex][index];
+    final int printableIndex = (thisHasShift ? 1 : 0) + (thisHasAltGr ? 2 : 0);
+    final int deadMask = 1 << printableIndex;
+    candidates.retainWhere((keyboard_layouts.Layout layout) {
+      final keyboard_layouts.LayoutEntry entry = layout.entries[event.code!]!;
       if (thisIsDead) {
-        return expected == keyboard_layouts.kDeadKey;
+        return (entry.deadMasks & deadMask) != 0;
       } else {
-        final String key = event.key ?? '';
-        // TODO: Correctly process Utf16
-        return key.length == 1 && key.codeUnitAt(0) == expected;
+        return entry.printables[printableIndex] == event.key;
       }
     });
     final int afterCandidateNum = candidates.length;
@@ -103,46 +90,52 @@ class KeyboardLayoutDetector {
     return afterCandidateNum < beforeCandidateNum;
   }
 
-  static Map<String, int> _buildLayout(List<List<int>> clueMap, String debugLayoutName) {
+  static Map<String, int> _buildLayout(Map<String, keyboard_layouts.LayoutEntry> entries, String debugLayoutName) {
     _debugLog('Building layout for $debugLayoutName');
-    final Map<int, String> mandatoryGoalsByChar = <int, String>{..._mandatoryGoalsByChar};
+    // Unresolved mandatory goals, mapped from printables to KeyboardEvent.code.
+    // This map will be modified during this function and thus is a clone.
+    final Map<String, String> mandatoryGoalsByChar = <String, String>{..._mandatoryGoalsByChar};
+    // The result mapping from KeyboardEvent.code to logical key.
     final Map<String, int> result = <String, int>{};
     // The logical key should be the first available clue from below:
     //
-    //  - Mandatory goal, if it matches any clue. This ensures that all alnum
-    //    keys can be found somewhere.
-    //  - US layout, if neither clue of the key is EASCII. This ensures that
-    //    there are no non-latin logical keys.
-    //  - Derived on the fly from keyCode & characters.
-    int goalIndex = 0;
-    keyboard_layouts.kLayoutGoals.forEach((String code, String? goalKey) {
-      // Skip optional goals.
-      if (goalKey == null) {
-        return;
-      }
-      final List<int> clues = clueMap[goalIndex];
-      // See if any clue on this key matches a mandatory char.
-      for (final int clue in clues) {
-        final String? foundCode = mandatoryGoalsByChar[clue];
-        if (foundCode != null) {
-          result[code] = clue;
-          mandatoryGoalsByChar.remove(foundCode);
-          return;
+    //  1. Mandatory goal, if it matches any clue. This ensures that all alnum
+    //     keys can be found somewhere.
+    //  2. US layout, if neither clue of the key is EASCII. This ensures that
+    //     there are no non-latin logical keys.
+    //  3. Derived on the fly from keyCode & characters.
+
+    entries.forEach((String eventCode, keyboard_layouts.LayoutEntry entry) {
+      // bool anyEascii = false;
+      for (int index = 0; index < 4; index += 1) {
+        // Ignore dead keys.
+        if (entry.deadMasks & (1 << index) != 0) {
+          continue;
         }
-      }
-      // See if all clues on this key are non-EASCII. If not, use the verbatim key.
-      if (!clues.any(_isEascii)) {
-        final int character = keyboard_layouts.kLayoutGoals[code]!.codeUnitAt(0);
-        result[code] = character;
-        mandatoryGoalsByChar.remove(character);
+        // A printable of this key is a mandatory goal: Use it.
+        final String printable = entry.printables[index];
+        if (mandatoryGoalsByChar.containsKey(printable)) {
+          result[eventCode] = printable.codeUnitAt(0);
+          mandatoryGoalsByChar.remove(printable);
+        }
+        // if (_isEascii(entry.printables[index])) {
+        //   anyEascii = true;
+        // }
       }
 
-      goalIndex += 1;
+      // // If all clues on this key are non-EASCII, use the verbatim key.
+      // if (!anyEascii) {
+      //   final String? verbatimPrintable = kLayoutStore.goals[eventCode];
+      //   if (verbatimPrintable != null
+      //       && mandatoryGoalsByChar.remove(verbatimPrintable) != null) {
+      //     result[eventCode] = verbatimPrintable.codeUnitAt(0);
+      //   }
+      // }
     });
 
     // Ensure all mandatory goals are assigned.
-    mandatoryGoalsByChar.forEach((int character, String code) {
-      result[code] = character;
+    mandatoryGoalsByChar.forEach((String character, String code) {
+      result[code] = character.codeUnitAt(0);
     });
     assert(() {
       print(result);
@@ -151,8 +144,7 @@ class KeyboardLayoutDetector {
     return result;
   }
 
-  final Map<String, int> _goalToIndex = <String, int>{};
-  final List<keyboard_layouts.LayoutInfo> _candidates = <keyboard_layouts.LayoutInfo>[];
+  final List<keyboard_layouts.Layout> _candidates = <keyboard_layouts.Layout>[];
   final Map<String, Map<String, int>> _calculatedLayouts = <String, Map<String, int>>{};
 
   // Record all effective cues since the last reset. That is, cues that filtered
@@ -160,19 +152,18 @@ class KeyboardLayoutDetector {
   final List<DomKeyboardEvent> _debugCues = <DomKeyboardEvent>[];
   String _debugLastLayout = '';
 
-  static late final List<keyboard_layouts.LayoutInfo> _fullCandidates = keyboard_layouts.kLayouts.where(
-    (keyboard_layouts.LayoutInfo layout) => layout.platform == _currentPlatform,
+  static final List<keyboard_layouts.Layout> _fullCandidates = keyboard_layouts.kLayoutStore.layouts.where(
+    (keyboard_layouts.Layout layout) => layout.platform == _currentPlatform,
   ).toList();
-  static late final keyboard_layouts.LayoutPlatform _currentPlatform = () {
+  static final keyboard_layouts.LayoutPlatform _currentPlatform = () {
     // TODO
     return keyboard_layouts.LayoutPlatform.win;
   }();
-  static late final Map<int, String> _mandatoryGoalsByChar = Map<int, String>.fromEntries(
-    keyboard_layouts.kLayoutGoals
+  static final Map<String, String> _mandatoryGoalsByChar = Map<String, String>.fromEntries(
+    keyboard_layouts.kLayoutStore.goals
       .entries
       .where((MapEntry<String, String?> entry) => entry.value != null)
-      // TODO: correctly handle UTF
-      .map((MapEntry<String, String?> entry) => MapEntry<int, String>(entry.value!.codeUnitAt(0), entry.key))
+      .map((MapEntry<String, String?> entry) => MapEntry<String, String>(entry.value!, entry.key))
   );
 
   static String _debugEventToString(DomKeyboardEvent event) {
@@ -190,6 +181,6 @@ class KeyboardLayoutDetector {
 
   static String _debugCuesToString(List<DomKeyboardEvent> cues) {
     return cues.map((DomKeyboardEvent event) =>
-        '\n  ${_debugEventToString(event)}').join('');
+        '\n  ${_debugEventToString(event)}').join();
   }
 }

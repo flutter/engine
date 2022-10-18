@@ -8,6 +8,8 @@ environment:
 dependencies:
   js: 0.6.4
   meta: 1.3.0
+  web_keyboard_layouts:
+    path: ../../third_party/web_keyboard_layouts
 
 dev_dependencies:
   archive: 3.1.2
@@ -43,5 +45,3 @@ dev_dependencies:
     path: ../../web_sdk/web_engine_tester
   skia_gold_client:
     path: ../../testing/skia_gold_client
-  web_keyboard_layouts:
-    path: ../../third_party/web_keyboard_layouts

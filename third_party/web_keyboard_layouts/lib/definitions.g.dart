@@ -15,7 +15,7 @@
 
 part of web_keyboard_layouts;
 
-final LayoutStore kCompressedBody = unmarshallStoreCompressed(
+final LayoutStore kLayoutStore = unmarshallStoreCompressed(
   'H4sIAAAAAAAAE+1c+XdUVba+51ShdPf7IwTbdgAEBRnUVpzneRaliRolgoAh2N2K'
   'rCSEDBBkFEgCARJCGAIkjEkgsFbdKn/o1Hqv+A+e+Af4L7z9ffucW7cqlQHa99S3'
   'WIuz7qnKpVK1v29/ezi7MjP5Qvk/HzOP4fK4eRyXJ8wTuDxpnsTlKfMULk+bp3F5'

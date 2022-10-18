@@ -71,7 +71,7 @@ class Layout {
   /// The platform that the browser is running on.
   final LayoutPlatform platform;
 
-  /// Maps from DOM `KeyboardKey.key`s to the characters they produce.
+  /// Maps from DOM `KeyboardKey.code`s to the characters they produce.
   final Map<String, LayoutEntry> entries;
 }
 
@@ -81,7 +81,7 @@ class LayoutStore {
   /// Create a [LayoutStore].
   const LayoutStore(this.goals, this.layouts);
 
-  /// The list of goals, mapping from DOM `KeyboardKey.key` to their mandatory
+  /// The list of goals, mapping from DOM `KeyboardKey.code` to their mandatory
   /// goal characters, or null if this goal is optional.
   ///
   /// Mandatory goals are characters that must be fulfilled during keyboard
@@ -197,4 +197,3 @@ LayoutEntry _unmarshallLayoutEntry(_ByteStream stream) {
   final int deadMasks = stream.readUint8();
   return LayoutEntry(printables, deadMasks);
 }
-;

@@ -326,7 +326,7 @@ String _readSharedSegment(String path) {
     }
   }
   assert(startLine < endLine);
-  return lines.sublist(startLine + 1, endLine).join('\n');
+  return lines.sublist(startLine + 1, endLine).join('\n').trimRight();
 }
 
 Future<void> generate(Options options) async {
