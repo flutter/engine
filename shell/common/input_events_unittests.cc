@@ -149,6 +149,8 @@ static void TestSimulatedInputEvents(
   });
   latch.Wait();
 
+  // to avoid accessing `back` on empty vector
+  ASSERT_GE(events_consumed_at_frame.size(), (size_t)1);
   // Make sure that all events have been consumed so
   // https://github.com/flutter/flutter/issues/40863 won't happen again.
   ASSERT_EQ(events_consumed_at_frame.back(), num_events);
