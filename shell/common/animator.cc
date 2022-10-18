@@ -250,7 +250,7 @@ void Animator::AwaitVSync() {
         }
       });
   if (has_rendered_) {
-    delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
+    delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_ + TODO);
   }
 }
 
