@@ -2025,9 +2025,9 @@ FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
-FILE: ../../../flutter/shell/common/pointer_data_packet_merged_dispatcher.cc
-FILE: ../../../flutter/shell/common/pointer_data_packet_merged_dispatcher.h
-FILE: ../../../flutter/shell/common/pointer_data_packet_merged_dispatcher_unittests.cc
+FILE: ../../../flutter/shell/common/pointer_data_packet_merged_task_poster.cc
+FILE: ../../../flutter/shell/common/pointer_data_packet_merged_task_poster.h
+FILE: ../../../flutter/shell/common/pointer_data_packet_merged_task_poster_unittests.cc
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/rasterizer_unittests.cc
