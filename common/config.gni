@@ -24,7 +24,7 @@ declare_args() {
   flutter_prebuilt_dart_sdk = false
 
   # Whether to build the flutter web sdk outline/DDC artifacts.
-  build_flutter_web_sdk = false
+  flutter_build_web_sdk = false
 }
 
 # feature_defines_list ---------------------------------------------------------
