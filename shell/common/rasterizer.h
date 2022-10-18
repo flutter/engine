@@ -487,6 +487,8 @@ class Rasterizer final : public SnapshotDelegate,
   /// See: `DisplayManager::GetMainDisplayRefreshRate`.
   fml::Milliseconds GetFrameBudget() const override;
 
+  void MaybeSleepBeforeSubmit(FrameTimingsRecorder& frame_timings_recorder);
+
   // |SnapshotController::Delegate|
   const std::unique_ptr<Surface>& GetSurface() const override {
     return surface_;
@@ -543,6 +545,7 @@ class Rasterizer final : public SnapshotDelegate,
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<SnapshotController> snapshot_controller_;
+  std::deque<int> history_latencies_;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;

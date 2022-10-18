@@ -36,7 +36,9 @@ class GPUSurfaceGLSkia : public Surface {
   bool IsValid() override;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(
+      const SkISize& size,
+      Surface::BeforePresentCallback before_present_callback) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;
@@ -60,7 +62,9 @@ class GPUSurfaceGLSkia : public Surface {
       const SkISize& untransformed_size,
       const SkMatrix& root_surface_transformation);
 
-  bool PresentSurface(const SurfaceFrame& frame, SkCanvas* canvas);
+  bool PresentSurface(const SurfaceFrame& frame,
+                      SkCanvas* canvas,
+                      Surface::BeforePresentCallback before_present_callback);
 
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;

@@ -208,7 +208,8 @@ SkMatrix GPUSurfaceGLSkia::GetRootTransformation() const {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
-    const SkISize& size) {
+    const SkISize& size,
+    Surface::BeforePresentCallback before_present_callback) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
@@ -244,9 +245,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
 
   surface->getCanvas()->setMatrix(root_surface_transformation);
   SurfaceFrame::SubmitCallback submit_callback =
-      [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) {
-        return weak ? weak->PresentSurface(surface_frame, canvas) : false;
+      [weak = weak_factory_.GetWeakPtr(), before_present_callback](
+          const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        return weak ? weak->PresentSurface(surface_frame, canvas,
+                                           before_present_callback)
+                    : false;
       };
 
   framebuffer_info = delegate_->GLContextFramebufferInfo();
@@ -258,8 +261,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
                                         std::move(context_switch));
 }
 
-bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
-                                      SkCanvas* canvas) {
+bool GPUSurfaceGLSkia::PresentSurface(
+    const SurfaceFrame& frame,
+    SkCanvas* canvas,
+    Surface::BeforePresentCallback before_present_callback) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }
@@ -270,6 +275,8 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
     onscreen_surface_->getCanvas()->flush();
   }
+
+  before_present_callback();
 
   GLPresentInfo present_info = {
       .fbo_id = fbo_id_,

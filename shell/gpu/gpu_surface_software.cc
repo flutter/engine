@@ -24,7 +24,8 @@ bool GPUSurfaceSoftware::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
-    const SkISize& logical_size) {
+    const SkISize& logical_size,
+    Surface::BeforePresentCallback before_present_callback) {
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 

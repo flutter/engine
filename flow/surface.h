@@ -21,13 +21,17 @@ namespace flutter {
 /// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
+  using BeforePresentCallback = std::function<void()>;
+
   Surface();
 
   virtual ~Surface();
 
   virtual bool IsValid() = 0;
 
-  virtual std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) = 0;
+  virtual std::unique_ptr<SurfaceFrame> AcquireFrame(
+      const SkISize& size,
+      BeforePresentCallback before_present_callback) = 0;
 
   virtual SkMatrix GetRootTransformation() const = 0;
 

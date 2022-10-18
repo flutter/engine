@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <thread>
 #include <utility>
 
 #include "flow/frame_timings.h"
@@ -507,7 +508,14 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
-  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
+  auto frame = surface_->AcquireFrame(
+      layer_tree.frame_size(),
+      fml::MakeCopyable([weak_this = weak_factory_.GetWeakPtr(),
+                         &frame_timings_recorder]() mutable {
+        if (weak_this) {
+          weak_this->MaybeSleepBeforeSubmit(frame_timings_recorder);
+        }
+      }));
   if (frame == nullptr) {
     return RasterStatus::kFailed;
   }
@@ -800,6 +808,56 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
     return context->getResourceCacheLimit();
   }
   return std::nullopt;
+}
+
+void Rasterizer::MaybeSleepBeforeSubmit(
+    FrameTimingsRecorder& frame_timings_recorder) {
+  // A simple threshold. Can change to fancier approaches later.
+  static const int MAX_HISTORY = 10;
+  static const int HISTORY_THRESH = 2;
+  // a bit more than enough to allow errors
+  static const fml::TimeDelta SAFE_MARGIN =
+      fml::TimeDelta::FromMicroseconds(500);
+
+  // TODO should not assume 60FPS - fix it before PR merged
+  fml::TimeDelta FRAME_DURATION = fml::TimeDelta::FromMicroseconds(16777);
+
+  fml::TimePoint vsync_target_time =
+      frame_timings_recorder.GetVsyncTargetTime();
+  fml::TimePoint now = fml::TimePoint::Now();
+
+  int curr_latency = static_cast<int>(
+      (now - vsync_target_time + FRAME_DURATION * 2).ToMicroseconds() /
+      FRAME_DURATION.ToMicroseconds());
+
+  // naive heuristics currently
+  int history_larger_latency_count = 0;
+  for (int history_latency : history_latencies_) {
+    if (history_latency > curr_latency) {
+      history_larger_latency_count++;
+    }
+  }
+  bool should_sleep = history_larger_latency_count >= HISTORY_THRESH;
+
+  // Again, this is very naive and can be fancier later
+  int expect_latency = curr_latency + 1;
+  // we want to wake up at the *beginning* of that vsync interval
+  fml::TimePoint wakeup_time =
+      vsync_target_time + FRAME_DURATION * (expect_latency - 2) + SAFE_MARGIN;
+
+  fml::TimeDelta sleep_duration = wakeup_time - now;
+
+  {
+    history_latencies_.push_back(curr_latency);
+    while (history_latencies_.size() > MAX_HISTORY) {
+      history_latencies_.pop_front();
+    }
+  }
+
+  if (should_sleep) {
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(sleep_duration.ToMicroseconds()));
+  }
 }
 
 Rasterizer::Screenshot::Screenshot() {}
