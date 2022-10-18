@@ -69,7 +69,13 @@ static void TestSimulatedInputEvents(
   auto nativeOnPointerDataPacket = [&events_consumed_at_frame,
                                     &will_draw_new_frame, &events_consumed,
                                     &frame_drawn](Dart_NativeArguments args) {
-    events_consumed += 1;
+    Dart_Handle exception = nullptr;
+    std::vector<int64_t> sequence =
+        tonic::DartConverter<std::vector<int64_t>>::FromArguments(args, 0,
+                                                                  exception);
+    EXPECT_EQ(exception, nullptr);
+
+    events_consumed += sequence.size();
     if (will_draw_new_frame) {
       frame_drawn += 1;
       will_draw_new_frame = false;
@@ -312,6 +318,7 @@ TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
     Dart_Handle exception = nullptr;
     result_sequence = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
         args, 0, exception);
+    EXPECT_EQ(exception, nullptr);
     reportLatch.Signal();
   };
   // Starts engine.
@@ -373,6 +380,7 @@ TEST_F(ShellTest, CanCorrectlySynthesizePointerPacket) {
     Dart_Handle exception = nullptr;
     result_sequence = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
         args, 0, exception);
+    EXPECT_EQ(exception, nullptr);
     reportLatch.Signal();
   };
   // Starts engine.
