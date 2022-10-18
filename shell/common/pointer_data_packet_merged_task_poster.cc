@@ -7,6 +7,47 @@
 
 namespace flutter {
 
+// Consider all possible concurrency cases.
+//
+// Generally speaking, we have the following interleave-able code
+// * Body's sync code
+//    * atomic pending_packet_count_++
+//    * lock mutex and sidecar_packets_ push_back
+// * PostTask's sync callback code
+//    * atomic pending_packet_count_ := 0
+//    * lock mutex and sidecar_packets_ read-and-clear
+//
+// By enumeration, we know there can only be 6 cases. Among them, 2 cases
+// are trivial since there is no code interleave. So only consider following 4
+// cases.
+//
+// Case 1:
+// * Body.AtomicIncr
+// * Callback.AtomicReset
+// * Body.VectorPush
+// * Callback.VectorReset
+// TODO
+//
+// Case 2:
+// * Body.AtomicIncr
+// * Callback.AtomicReset
+// * Callback.VectorReset
+// * Body.VectorPush
+// TODO
+//
+// Case 3:
+// * Callback.AtomicReset
+// * Body.AtomicIncr
+// * Body.VectorPush
+// * Callback.VectorReset
+// TODO
+//
+// Case 4:
+// * Callback.AtomicReset
+// * Body.AtomicIncr
+// * Callback.VectorReset
+// * Body.VectorPush
+// TODO
 void PointerDataPacketMergedTaskPoster::Dispatch(
     std::unique_ptr<PointerDataPacket> packet,
     const fml::RefPtr<fml::TaskRunner>& task_runner,
@@ -20,7 +61,6 @@ void PointerDataPacketMergedTaskPoster::Dispatch(
   } else {
     task_runner->PostTask(fml::MakeCopyable([main_packet = std::move(packet),
                                              callback, this]() mutable {
-      // TODO reason about mutex and atomic variable ordering
       int previous_pending_packet_count = pending_packet_count_.exchange(0);
 
       if (previous_pending_packet_count <= 1) {
