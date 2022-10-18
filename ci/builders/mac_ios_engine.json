@@ -102,11 +102,13 @@
     "archives": [
         {
             "source": "out/debug/artifacts.zip",
-            "destination": "ios/artifacts.zip"
+            "destination": "ios/artifacts.zip",
+            "mac_codesign": true
         },
         {
             "source": "out/debug/ios-objcdoc.zip",
-            "destination": "ios-objcdoc.zip"
+            "destination": "ios-objcdoc.zip",
+            "mac_codesign": false
         }
     ]
 }

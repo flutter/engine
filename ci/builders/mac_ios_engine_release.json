@@ -124,19 +124,23 @@
     "archives": [
         {
             "source": "out/release/artifacts.zip",
-            "destination": "ios-release/artifacts.zip"
+            "destination": "ios-release/artifacts.zip",
+            "mac_codesign": true
         },
         {
             "source": "out/release/Flutter.dSYM.zip",
-            "destination": "ios-release/Flutter.dSYM.zip"
+            "destination": "ios-release/Flutter.dSYM.zip",
+            "mac_codesign": false
         },
         {
             "source": "out/release-nobitcode/artifacts.zip",
-            "destination": "ios-release-nobitcode/artifacts.zip"
+            "destination": "ios-release-nobitcode/artifacts.zip",
+            "mac_codesign": false
         },
         {
             "source": "out/release-nobitcode/Flutter.dSYM.zip",
-            "destination": "ios-release-nobitcode/Flutter.dSYM.zip"
+            "destination": "ios-release-nobitcode/Flutter.dSYM.zip",
+            "mac_codesign": false
         }
     ]
 }

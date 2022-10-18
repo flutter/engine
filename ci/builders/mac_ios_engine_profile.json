@@ -91,7 +91,8 @@
     "archives": [
         {
             "source": "out/profile/artifacts.zip",
-            "destination": "ios-profile/artifacts.zip"
+            "destination": "ios-profile/artifacts.zip",
+            "mac_codesign": true
         }
     ]
 }
