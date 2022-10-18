@@ -523,10 +523,10 @@ class PlatformDispatcher {
   @FfiNative<Void Function(Bool)>('PlatformConfigurationNativeApi::SetNeedsReportTimings')
   external static void __nativeSetNeedsReportTimings(bool value);
 
-  void setAfterFrameNotifyIdle(Duration delta) => _setAfterFrameNotifyIdle(delta.inMicroseconds);
+  void setAfterFrameNotifyIdleExtra(Duration delta) => _setAfterFrameNotifyIdleExtra(delta.inMicroseconds);
 
   @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::SetAfterFrameNotifyIdleExtra')
-  external static void _setAfterFrameNotifyIdle(int delta);
+  external static void _setAfterFrameNotifyIdleExtra(int delta);
 
   // Called from the engine, via hooks.dart
   void _reportTimings(List<int> timings) {

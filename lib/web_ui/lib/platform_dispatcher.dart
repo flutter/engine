@@ -51,6 +51,9 @@ abstract class PlatformDispatcher {
   TimingsCallback? get onReportTimings;
   set onReportTimings(TimingsCallback? callback);
 
+  // no-op on web
+  void setAfterFrameNotifyIdleExtra(Duration delta) {}
+
   void sendPlatformMessage(
       String name,
       ByteData? data,
