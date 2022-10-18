@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_WINDOW_POINTER_DATA_PACKET_MERGED_DISPATCHER_H_
-#define FLUTTER_LIB_UI_WINDOW_POINTER_DATA_PACKET_MERGED_DISPATCHER_H_
+#ifndef POINTER_DATA_PACKET_MERGED_TASK_POSTER_H_
+#define POINTER_DATA_PACKET_MERGED_TASK_POSTER_H_
 
-#include <cstring>
-#include <vector>
+#include <buildtools/mac-x64/clang/include/c++/v1/cstring>
+#include <buildtools/mac-x64/clang/include/c++/v1/vector>
 
 namespace flutter {
 
-class PointerDataPacketMergedDispatcher {
+class PointerDataPacketMergedTaskPoster {
   void Dispatch(std::unique_ptr<PointerDataPacket> packet,
                 uint64_t flow_id,
                 const TaskRunners& task_runners,
@@ -19,4 +19,4 @@ class PointerDataPacketMergedDispatcher {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_LIB_UI_WINDOW_POINTER_DATA_PACKET_MERGED_DISPATCHER_H_
+#endif  // POINTER_DATA_PACKET_MERGED_TASK_POSTER_H_

@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/lib/ui/window/pointer_data_packet_merged_dispatcher.h"
+#include "pointer_data_packet_merged_task_poster.h"
 
 #include <cstring>
 
 namespace flutter {
 
-void PointerDataPacketMergedDispatcher::Dispatch(
+void PointerDataPacketMergedTaskPoster::Dispatch(
     std::unique_ptr<PointerDataPacket> packet,
     uint64_t flow_id,
     const TaskRunners& task_runners,

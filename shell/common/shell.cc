@@ -976,7 +976,7 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  pointer_data_packet_merged_dispatcher_.Dispatch(
+  pointer_data_packet_task_poster_.Dispatch(
       std::move(packet), next_pointer_flow_id_, task_runners_, weak_engine_);
   next_pointer_flow_id_++;
 }
