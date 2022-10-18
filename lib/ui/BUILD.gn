@@ -132,6 +132,8 @@ source_set("ui") {
     "window/pointer_data_packet.h",
     "window/pointer_data_packet_converter.cc",
     "window/pointer_data_packet_converter.h",
+    "window/pointer_data_packet_merged_dispatcher.cc",
+    "window/pointer_data_packet_merged_dispatcher.h",
     "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
     "window/window.cc",
@@ -239,6 +241,7 @@ if (enable_unittests) {
       "window/platform_message_response_dart_port_unittests.cc",
       "window/platform_message_response_dart_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
+      "window/pointer_data_packet_merged_dispatcher_unittests.cc",
     ]
 
     deps = [
