@@ -269,6 +269,9 @@
                     "--strip",
                     "--zip"
                 ],
+                "include_paths": [
+                    "out/release/framework/FlutterMacOS.framework.zip"
+                ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
             {
@@ -282,6 +285,9 @@
                     "out/host_debug",
                     "--zip"
                 ],
+                "include_paths": [
+                    "out/debug/framework/FlutterMacOS.framework.zip"
+                ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
             {
@@ -294,6 +300,9 @@
                     "--x64-out-dir",
                     "out/host_profile",
                     "--zip"
+                ],
+                "include_paths": [
+                    "out/profile/framework/FlutterMacOS.framework.zip"
                 ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
             },
@@ -316,6 +325,9 @@
                     "out/host_debug",
                     "--zip"
                 ],
+                "include_paths": [
+                    "out/debug/snapshot/gen_snapshot.zip"
+                ],
                 "script": "flutter/sky/tools/create_macos_gen_snapshots.py"
             },
             {
@@ -329,6 +341,9 @@
                     "out/host_profile",
                     "--zip"
                 ],
+                "include_paths": [
+                    "out/profile/snapshot/gen_snapshot.zip"
+                ],
                 "script": "flutter/sky/tools/create_macos_gen_snapshots.py"
             },
             {
@@ -341,6 +356,9 @@
                     "--x64-out-dir",
                     "out/host_release",
                     "--zip"
+                ],
+                "include_paths": [
+                    "out/release/snapshot/gen_snapshot.zip"
                 ],
                 "script": "flutter/sky/tools/create_macos_gen_snapshots.py"
             }
