@@ -1,4 +1,4 @@
-Signature: d5631fc07e32d129436a1ff0d719cb24
+Signature: bf32dc4e641bcacc28f75679e2d6849d
 
 UNUSED LICENSES:
 
@@ -7707,6 +7707,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputeCommandEncoder.h
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_hmtx.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLInterfaceBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLLiteral.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h
 FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
