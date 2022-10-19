@@ -47,6 +47,10 @@ class EventChannel {
   // Registers a stream handler on this channel.
   // If no handler has been registered, any incoming stream setup requests will
   // be handled silently by providing an empty stream.
+  //
+  // Note that the EventChannel does not own the handler and will not
+  // unregister it on destruction. The caller is responsible for unregistering
+  // the handler if it should no longer be called.
   void SetStreamHandler(std::unique_ptr<StreamHandler<T>> handler) {
     if (!handler) {
       messenger_->SetMessageHandler(name_, nullptr);
