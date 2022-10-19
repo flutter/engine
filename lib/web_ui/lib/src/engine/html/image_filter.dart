@@ -7,15 +7,40 @@ import 'package:ui/ui.dart' as ui;
 import '../color_filter.dart';
 import '../dom.dart';
 import '../embedder.dart';
+import '../util.dart';
+import '../vector_math.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
 
 /// A surface that applies an [imageFilter] to its children.
 class PersistedImageFilter extends PersistedContainerSurface
     implements ui.ImageFilterEngineLayer {
-  PersistedImageFilter(PersistedImageFilter? super.oldLayer, this.filter);
+  PersistedImageFilter(PersistedImageFilter? super.oldLayer, this.filter, this.offset);
 
   final ui.ImageFilter filter;
+  final ui.Offset offset;
+
+  @override
+  void recomputeTransformAndClip() {
+    transform = parent!.transform;
+
+    final double dx = offset.dx;
+    final double dy = offset.dy;
+
+    if (dx != 0.0 || dy != 0.0) {
+      transform = transform!.clone();
+      transform!.translate(dx, dy);
+    }
+    projectedClip = null;
+  }
+
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
+
+  @override
+  Matrix4 get localTransformInverse => _localTransformInverse ??=
+      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   DomElement? _svgFilter;
 
@@ -34,7 +59,10 @@ class PersistedImageFilter extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    return defaultCreateElement('flt-image-filter');
+    final DomElement element = defaultCreateElement('flt-image-filter');
+    setElementStyle(element, 'position', 'absolute');
+    setElementStyle(element, 'transform-origin', '0 0 0');
+    return element;
   }
 
   @override
@@ -65,7 +93,7 @@ class PersistedImageFilter extends PersistedContainerSurface
   void update(PersistedImageFilter oldSurface) {
     super.update(oldSurface);
 
-    if (oldSurface.filter != filter) {
+    if (oldSurface.filter != filter || oldSurface.offset != offset) {
       apply();
     }
   }
