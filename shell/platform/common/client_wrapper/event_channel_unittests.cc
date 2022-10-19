@@ -251,7 +251,10 @@ TEST(EventChannelTest, HandlerOutlivesEventChannel) {
     channel.SetStreamHandler(std::move(handler));
   }
 
-  // The event channel is now destroyed.
+  // The event channel was destroyed but the handler should still be alive.
+  EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
+  EXPECT_NE(messenger.last_message_handler(), nullptr);
+
   // Send test listen message.
   MethodCall<> call_listen("listen", nullptr);
   auto message = codec.EncodeMethodCall(call_listen);
