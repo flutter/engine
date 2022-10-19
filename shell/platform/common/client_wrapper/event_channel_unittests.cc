@@ -226,8 +226,8 @@ TEST(EventChannelTest, ReRegistration) {
   EXPECT_EQ(on_listen_called, true);
 }
 
-// Test that the handler's lifetime can exceed its event channel.
-TEST(EventChannelTest, HandlerCanOutliveEventChannel) {
+// Test that the handler is called even if the event channel is destroyed.
+TEST(EventChannelTest, HandlerOutlivesEventChannel) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
   const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
