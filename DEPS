@@ -386,7 +386,7 @@ deps = {
       }
     ],
     'dep_type': 'cipd',
-    'condition': 'host_os == "mac" and download_dart_sdk and use_dart_sdk_dep'
+    'condition': 'host_os == "mac" and download_dart_sdk'
   },
   'src/flutter/prebuilts/windows-x64/dart-sdk': {
     'packages': [
@@ -406,7 +406,7 @@ deps = {
       }
     ],
     'dep_type': 'cipd',
-    'condition': 'host_os == "win" and download_dart_sdk'
+    'condition': 'host_os == "win" and download_dart_sdk and use_dart_sdk_dep'
   },
 
   'src/third_party/colorama/src':
