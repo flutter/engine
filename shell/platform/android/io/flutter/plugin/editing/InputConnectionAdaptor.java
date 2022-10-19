@@ -541,7 +541,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
     return false;
   }
 
-  public byte[] readStreamFully(InputStream is, int blocksize) {
+  private byte[] readStreamFully(InputStream is, int blocksize) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     byte[] buffer = new byte[blocksize];
