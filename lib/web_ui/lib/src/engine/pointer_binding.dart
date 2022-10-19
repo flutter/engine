@@ -603,20 +603,23 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     String eventName,
     _PointerEventListener handler, {
     bool useCapture = true,
+    bool checkModifiers = true,
   }) {
     addEventListener(target, eventName, (DomEvent event) {
       final DomPointerEvent pointerEvent = event as DomPointerEvent;
+      if (checkModifiers) {
+        _checkModifiersState(event);
+      }
       handler(pointerEvent);
     }, useCapture: useCapture);
   }
 
-  void _checkModifiersState(DomEvent event) {
-    // TODO(bleroux): add support for 'Meta', 'Ctrl' and 'Alt'
-    final DomPointerEvent pointerEvent = event as DomPointerEvent;
-
-    final bool shiftPressed = pointerEvent.getModifierState('Shift');
-    KeyboardBinding.instance!.synthesizeShiftKeyIfNeeded(
-      shiftPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+  void _checkModifiersState(DomPointerEvent event) {
+    KeyboardBinding.instance!.synthesizeModifiersIfNeeded(
+      event.getModifierState('Alt'),
+      event.getModifierState('Control'),
+      event.getModifierState('Meta'),
+      event.getModifierState('Shift'),
       event.timeStamp!,
     );
   }
@@ -624,7 +627,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   @override
   void setup() {
     _addPointerEventListener(glassPaneElement, 'pointerdown', (DomPointerEvent event) {
-      _checkModifiersState(event);
       final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
@@ -643,7 +645,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
 
     _addPointerEventListener(domWindow, 'pointermove', (DomPointerEvent event) {
-      _checkModifiersState(event);
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -668,10 +669,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
         _callback(pointerData);
       }
-    }, useCapture: false);
+    }, useCapture: false, checkModifiers: false);
 
     _addPointerEventListener(domWindow, 'pointerup', (DomPointerEvent event) {
-      _checkModifiersState(event);
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -695,7 +695,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
         _callback(pointerData);
       }
-    });
+    }, checkModifiers: false);
 
     _addWheelEventListener((DomEvent event) {
       _handleWheelEvent(event);
@@ -790,11 +790,24 @@ class _TouchAdapter extends _BaseAdapter {
   void _pressTouch(int identifier) { _pressedTouches.add(identifier); }
   void _unpressTouch(int identifier) { _pressedTouches.remove(identifier); }
 
-  void _addTouchEventListener(DomEventTarget target, String eventName, _TouchEventListener handler) {
+  void _addTouchEventListener(DomEventTarget target, String eventName, _TouchEventListener handler, {bool checkModifiers = true,}) {
     addEventListener(target, eventName, (DomEvent event) {
       final DomTouchEvent touchEvent = event as DomTouchEvent;
+      if (checkModifiers) {
+        _checkModifiersState(event);
+      }
       handler(touchEvent);
     });
+  }
+
+  void _checkModifiersState(DomTouchEvent event) {
+    KeyboardBinding.instance!.synthesizeModifiersIfNeeded(
+      event.altKey,
+      event.ctrlKey,
+      event.metaKey,
+      event.shiftKey,
+      event.timeStamp!,
+    );
   }
 
   @override
@@ -935,11 +948,25 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     String eventName,
     _MouseEventListener handler, {
     bool useCapture = true,
+    bool checkModifiers = true,
   }) {
     addEventListener(target, eventName, (DomEvent event) {
       final DomMouseEvent mouseEvent = event as DomMouseEvent;
+      if (checkModifiers) {
+        _checkModifiersState(event);
+      }
       handler(mouseEvent);
     }, useCapture: useCapture);
+  }
+
+  void _checkModifiersState(DomMouseEvent event) {
+    KeyboardBinding.instance!.synthesizeModifiersIfNeeded(
+      event.getModifierState('Alt'),
+      event.getModifierState('Control'),
+      event.getModifierState('Meta'),
+      event.getModifierState('Shift'),
+      event.timeStamp!,
+    );
   }
 
   @override
