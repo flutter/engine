@@ -234,7 +234,8 @@ class FlutterTapTest : public PortableUITest,
   bool LastEventReceivedMatches(float expected_x,
                                 float expected_y,
                                 std::string component_name) {
-    const auto& events_received = touch_input_listener_server_->events_received();
+    const auto& events_received =
+        touch_input_listener_server_->events_received();
 
     if (events_received.empty()) {
       return false;
@@ -301,9 +302,9 @@ class FlutterTapTest : public PortableUITest,
 };
 
 // Makes use of gtest's parameterized testing, allowing us
-// to test different combinations of test-ui-stack + runners. Currently, there is just one
-// combination.
-// Documentation: http://go/gunitadvanced#value-parameterized-tests
+// to test different combinations of test-ui-stack + runners. Currently, there
+// is just one combination. Documentation:
+// http://go/gunitadvanced#value-parameterized-tests
 INSTANTIATE_TEST_SUITE_P(
     FlutterTapTestParameterized,
     FlutterTapTest,
@@ -317,12 +318,13 @@ TEST_P(FlutterTapTest, FlutterTap) {
   LaunchClient();
   FML_LOG(INFO) << "Client launched";
 
-  // touch-input-view logical coordinate space doesn't match the fake touch screen injector's coordinate space,
-  // which spans [-1000, 1000] on both axes. Scenic handles figuring out where in the coordinate space
+  // touch-input-view logical coordinate space doesn't match the fake touch
+  // screen injector's coordinate space, which spans [-1000, 1000] on both axes.
+  // Scenic handles figuring out where in the coordinate space
   //  to inject a touch event (this is fixed to a display's bounds).
   InjectTap(-500, -500);
-  // For a (-500 [x], -500 [y]) tap, we expect a touch event in the middle of the upper-left quadrant
-  // of the screen.
+  // For a (-500 [x], -500 [y]) tap, we expect a touch event in the middle of
+  // the upper-left quadrant of the screen.
   RunLoopUntil([this] {
     return LastEventReceivedMatches(
         /*expected_x=*/static_cast<float>(display_width() / 4.0f),
