@@ -129,7 +129,9 @@ using RealmBuilder = component_testing::RealmBuilder;
 constexpr zx::duration kTimeout = zx::min(5);
 
 constexpr auto kMockTouchInputListener = "touch_input_listener";
+constexpr auto kMockTouchInputListenerRef = ChildRef{kMockTouchInputListener};
 constexpr auto kTouchInputView = "touch-input-view";
+constexpr auto kTouchInputViewRef = ChildRef{kTouchInputView};
 constexpr auto kTouchInputViewUrl =
     "fuchsia-pkg://fuchsia.com/touch-input-view#meta/touch-input-view.cm";
 
@@ -283,12 +285,12 @@ class FlutterTapTest : public PortableUITest,
     realm_builder()->AddRoute(
         Route{.capabilities = {Protocol{
                   fuchsia::ui::test::input::TouchInputListener::Name_}},
-              .source = ChildRef{kMockTouchInputListener},
-              .targets = {kFlutterJitRunnerRef, ChildRef{kTouchInputView}}});
+              .source = kMockTouchInputListenerRef,
+              .targets = {kFlutterJitRunnerRef, kTouchInputViewRef}});
 
     realm_builder()->AddRoute(
         Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-              .source = ChildRef{kTouchInputView},
+              .source = kTouchInputViewRef,
               .targets = {ParentRef()}});
   }
 

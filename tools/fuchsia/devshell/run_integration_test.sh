@@ -57,6 +57,9 @@ case $test_name in
     engine-warning "This test currently hangs because the Dart view hasn't been implemented yet. https://fxbug.dev/107917"
     test_packages=("text-input-test-0.far" "text-input-view.far")
     ;;
+  touch-input)
+    test_packages=("touch-input-test-0.far" "touch-input-view.far" "oot_flutter_jit_runner-0.far")
+    ;;
   *)
     engine-error "Unknown test name $test_name. You may need to add it to $0"
     exit 1
