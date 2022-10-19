@@ -5,6 +5,8 @@
 #include "impeller/display_list/display_list_dispatcher.h"
 
 #include <algorithm>
+#include <cstring>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 
@@ -22,6 +24,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -430,8 +433,22 @@ void DisplayListDispatcher::setColorSource(
     case flutter::DlColorSourceType::kRuntimeEffect: {
       const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
           source->asRuntimeEffect();
-      const auto effect = runtime_effect_color_source->runtime_effect();
-      auto runtime_stage = effect->runtime_stage();
+      auto runtime_stage =
+          runtime_effect_color_source->runtime_effect()->runtime_stage();
+      auto uniform_data_sk = runtime_effect_color_source->uniform_data();
+
+      paint_.color_source = [runtime_stage, uniform_data_sk]() {
+        // TODO(bdero): Get rid of the allocation + copy for uniform data.
+        std::vector<uint8_t> uniform_data;
+        uniform_data.resize(uniform_data_sk->size());
+        memcpy(uniform_data.data(), uniform_data_sk->bytes(),
+               uniform_data.size());
+
+        auto contents = std::make_shared<RuntimeEffectContents>();
+        contents->SetRuntimeStage(runtime_stage);
+        contents->SetUniformData(std::move(uniform_data));
+        return contents;
+      };
     }
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;

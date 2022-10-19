@@ -1282,6 +1282,7 @@ FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
+FILE: ../../../flutter/impeller/entity/shaders/position_no_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
@@ -1557,6 +1558,7 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
+FILE: ../../../flutter/impeller/runtime_stage/runtime_types.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_types.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h

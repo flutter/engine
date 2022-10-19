@@ -44,6 +44,10 @@ impeller_shaders("entity_shaders") {
     "shaders/linear_gradient_fill.frag",
     "shaders/morphology_filter.frag",
     "shaders/morphology_filter.vert",
+    "shaders/position_color.vert",
+    "shaders/position_no_color.vert",
+    "shaders/position_uv.vert",
+    "shaders/position.vert",
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
@@ -57,9 +61,6 @@ impeller_shaders("entity_shaders") {
     "shaders/tiled_texture_fill.frag",
     "shaders/tiled_texture_fill.vert",
     "shaders/vertices.frag",
-    "shaders/position_color.vert",
-    "shaders/position.vert",
-    "shaders/position_uv.vert",
   ]
 }
 
