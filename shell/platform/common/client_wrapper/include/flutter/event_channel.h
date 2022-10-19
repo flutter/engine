@@ -50,7 +50,6 @@ class EventChannel {
   void SetStreamHandler(std::unique_ptr<StreamHandler<T>> handler) {
     if (!handler) {
       messenger_->SetMessageHandler(name_, nullptr);
-      is_listening_ = false;
       return;
     }
 
@@ -61,11 +60,12 @@ class EventChannel {
     const MethodCodec<T>* codec = codec_;
     const std::string channel_name = name_;
     const BinaryMessenger* messenger = messenger_;
+    bool is_listening = false;
     BinaryMessageHandler binary_handler = [shared_handler, codec, channel_name,
-                                           messenger,
-                                           this](const uint8_t* message,
-                                                 const size_t message_size,
-                                                 BinaryReply reply) {
+                                           messenger, is_listening](
+                                              const uint8_t* message,
+                                              const size_t message_size,
+                                              BinaryReply reply) mutable {
       constexpr char kOnListenMethod[] = "listen";
       constexpr char kOnCancelMethod[] = "cancel";
 
@@ -80,7 +80,7 @@ class EventChannel {
 
       const std::string& method = method_call->method_name();
       if (method.compare(kOnListenMethod) == 0) {
-        if (is_listening_) {
+        if (is_listening) {
           std::unique_ptr<StreamHandlerError<T>> error =
               shared_handler->OnCancel(nullptr);
           if (error) {
@@ -89,7 +89,7 @@ class EventChannel {
                       << ", " << (error->error_details);
           }
         }
-        is_listening_ = true;
+        is_listening = true;
 
         std::unique_ptr<std::vector<uint8_t>> result;
         auto sink = std::make_unique<EventSinkImplementation>(
@@ -105,7 +105,7 @@ class EventChannel {
         reply(result->data(), result->size());
       } else if (method.compare(kOnCancelMethod) == 0) {
         std::unique_ptr<std::vector<uint8_t>> result;
-        if (is_listening_) {
+        if (is_listening) {
           std::unique_ptr<StreamHandlerError<T>> error =
               shared_handler->OnCancel(method_call->arguments());
           if (error) {
@@ -114,7 +114,7 @@ class EventChannel {
           } else {
             result = codec->EncodeSuccessEnvelope();
           }
-          is_listening_ = false;
+          is_listening = false;
         } else {
           result = codec->EncodeErrorEnvelope(
               "error", "No active stream to cancel", nullptr);
@@ -165,7 +165,6 @@ class EventChannel {
   BinaryMessenger* messenger_;
   const std::string name_;
   const MethodCodec<T>* codec_;
-  bool is_listening_ = false;
 };
 
 }  // namespace flutter
