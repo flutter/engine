@@ -112,7 +112,7 @@ class TestResponseListenerServer
     return match;
   }
 
-  // fuchsia::ui::test::input::KeyboardInputListene override
+  // KeyboardInputListener override
   void ReportReady(ReportReadyCallback) override {}
 
  private:
