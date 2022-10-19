@@ -129,9 +129,9 @@ using RealmBuilder = component_testing::RealmBuilder;
 constexpr zx::duration kTimeout = zx::min(5);
 
 constexpr auto kMockTouchInputListener = "touch_input_listener";
-constexpr auto kFlutterRealm = "two-flutter";
-constexpr auto kFlutterRealmUrl =
-    "fuchsia-pkg://fuchsia.com/two-flutter#meta/two-flutter.cm";
+constexpr auto kTouchInputView = "touch-input-view";
+constexpr auto kTouchInputViewUrl =
+    "fuchsia-pkg://fuchsia.com/touch-input-view#meta/touch-input-view.cm";
 
 bool CompareDouble(double f0, double f1, double epsilon) {
   return std::abs(f0 - f1) <= epsilon;
@@ -273,7 +273,7 @@ class FlutterTapTest : public PortableUITest,
     realm_builder()->AddLocalChild(kMockTouchInputListener,
                                    touch_input_listener_server_.get());
 
-    realm_builder()->AddChild(kFlutterRealm, kFlutterRealmUrl,
+    realm_builder()->AddChild(kTouchInputView, kTouchInputViewUrl,
                               component_testing::ChildOptions{
                                   .environment = kFlutterRunnerEnvironment,
                               });
@@ -283,11 +283,11 @@ class FlutterTapTest : public PortableUITest,
         Route{.capabilities = {Protocol{
                   fuchsia::ui::test::input::TouchInputListener::Name_}},
               .source = ChildRef{kMockTouchInputListener},
-              .targets = {kFlutterJitRunnerRef, ChildRef{kFlutterRealm}}});
+              .targets = {kFlutterJitRunnerRef, ChildRef{kTouchInputView}}});
 
     realm_builder()->AddRoute(
         Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-              .source = ChildRef{kFlutterRealm},
+              .source = ChildRef{kTouchInputView},
               .targets = {ParentRef()}});
   }
 
@@ -317,7 +317,7 @@ TEST_P(FlutterTapTest, FlutterTap) {
   LaunchClient();
   FML_LOG(INFO) << "Client launched";
 
-  // two-flutter logical coordinate space doesn't match the fake touch screen injector's coordinate space,
+  // touch-input-view logical coordinate space doesn't match the fake touch screen injector's coordinate space,
   // which spans [-1000, 1000] on both axes. Scenic handles figuring out where in the coordinate space
   //  to inject a touch event (this is fixed to a display's bounds).
   InjectTap(-500, -500);
@@ -327,7 +327,7 @@ TEST_P(FlutterTapTest, FlutterTap) {
     return LastEventReceivedMatches(
         /*expected_x=*/static_cast<float>(display_width() / 4.0f),
         /*expected_y=*/static_cast<float>(display_height() / 4.0f),
-        /*component_name=*/"two-flutter");
+        /*component_name=*/"touch-input-view");
   });
 }
 

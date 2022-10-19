@@ -4,7 +4,7 @@
 {
     include: [ "syslog/client.shard.cml" ],
     program: {
-        data: "data/two-flutter",
+        data: "data/touch-input-view",
 
         // Always use the jit runner for now.
         // TODO(fxbug.dev/106577): Implement manifest merging build rules for V2 components.

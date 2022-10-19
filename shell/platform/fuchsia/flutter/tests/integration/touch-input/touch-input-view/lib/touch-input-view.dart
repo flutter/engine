@@ -61,16 +61,15 @@ class MyApp {
   void beginFrame(Duration duration) {
     // Convert physical screen size of device to values
     final pixelRatio = window.devicePixelRatio;
-    print('beginFrame pixelRatio: $pixelRatio');
     final size = window.physicalSize / pixelRatio;
-    print('beginFrame size: $size');
     final physicalBounds = Offset.zero & size * pixelRatio;
-    print('beginFrame physicalBounds: $physicalBounds');
     // Set up Canvas that uses the screen size
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder, physicalBounds);
     canvas.scale(pixelRatio, pixelRatio);
     // Draw something
+    // Color of the screen is set initially to the first value in _colors
+    // Incrementing _touchCounter will change screen color
     final paint = Paint()..color = _colors[_touchCounter % _colors.length];
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
     // Build the scene
@@ -101,7 +100,7 @@ class MyApp {
           localX: data.physicalX,
           localY: data.physicalY,
           timeReceived: nowNanos,
-          componentName: 'two-flutter',
+          componentName: 'touch-input-view',
         ));
       }
     }

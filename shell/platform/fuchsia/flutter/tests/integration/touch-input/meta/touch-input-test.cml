@@ -13,9 +13,6 @@
     program: {
         binary: "bin/app",
     },
-    facets: {
-        "fuchsia.test.deprecated-allowed-packages": [ "test_manager", "gfx-root-presenter-test-ui-stack", "oot_flutter_jit_runner", "two-flutter" ],
-    },
     use: [
         {
             protocol: [
