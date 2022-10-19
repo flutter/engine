@@ -115,7 +115,7 @@ void AndroidImageGenerator::DoDecodeImage() {
   auto bitmap = std::make_unique<fml::jni::ScopedJavaGlobalRef<jobject>>(
       env, env->CallStaticObjectMethod(g_flutter_jni_class->obj(),
                                        g_decode_image_method, direct_buffer,
-                                       Pointer2Jlong(this));
+                                       Pointer2Jlong(this)));
   FML_CHECK(fml::jni::CheckException(env));
 
   if (bitmap->is_null()) {
