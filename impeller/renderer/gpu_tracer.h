@@ -12,10 +12,10 @@ namespace impeller {
 struct GPUTracerConfiguration {
   /// This param is for metal backend.
   /// When this value is true, a gpu trace file will be saved in devices when
-  /// capture finishes. Otherwise, the Xcode will automatically open and show
-  /// trace result.
+  /// metal frame capture finishes. Otherwise, the Xcode will automatically open
+  /// and show trace result.
   ///
-  bool mtl_save_gpu_trace_as_document = false;
+  bool mtl_frame_capture_save_trace_as_document = false;
 };
 
 //------------------------------------------------------------------------------

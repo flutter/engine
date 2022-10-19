@@ -26,7 +26,7 @@ bool GPUTracerMTL::StartCapturingFrame(GPUTracerConfiguration configuration) {
     desc.captureObject = device_;
 
     MTLCaptureDestination targetDestination =
-        configuration.mtl_save_gpu_trace_as_document
+        configuration.mtl_frame_capture_save_trace_as_document
             ? MTLCaptureDestinationGPUTraceDocument
             : MTLCaptureDestinationDeveloperTools;
     if (![captureManager supportsDestination:targetDestination]) {
@@ -34,7 +34,7 @@ bool GPUTracerMTL::StartCapturingFrame(GPUTracerConfiguration configuration) {
     }
     desc.destination = targetDestination;
 
-    if (configuration.mtl_save_gpu_trace_as_document) {
+    if (configuration.mtl_frame_capture_save_trace_as_document) {
       if (!CreateGPUTraceSavedDictionaryIfNeeded()) {
         return false;
       }
