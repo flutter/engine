@@ -53,7 +53,6 @@ test_fixtures("file_fixtures") {
     "blue_noise.png",
     "boston.jpg",
     "embarcadero.jpg",
-    "example.frag.metal.iplr",
     "kalimba.jpg",
     "resources_limit.vert",
     "sample.comp",
