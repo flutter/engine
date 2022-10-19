@@ -82,7 +82,8 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
   // Setup the gpu tracer.
   { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
 #endif
