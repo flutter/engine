@@ -1,4 +1,4 @@
-Signature: 4b579e75abef7ea9032914237b478fd9
+Signature: 59c53180140c4b0566e5f0f0d52199a0
 
 UNUSED LICENSES:
 
@@ -561,6 +561,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/media_cpp/type_converters.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/id.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_token_pair.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/optional.h
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/queue.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/type_traits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/variant.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/vector.h
@@ -713,6 +714,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ioctl.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ipc.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/limits.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/msg.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
@@ -916,6 +918,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ioctl.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ipc.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/limits.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/msg.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
@@ -1226,6 +1229,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.version/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
@@ -2176,6 +2180,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.unknown/unknown.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.version/version.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/driver_features.fidl
@@ -2204,6 +2209,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_absolute.shard.
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/syslog/offer.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/syslog/use.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/arm-neon.h
 FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/generic-simd.h
 FILE: ../../../fuchsia/sdk/linux/pkg/utf-utils/include/lib/utf-utils/internal/scalar.h
@@ -2238,20 +2245,6 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: fuchsia_sdk
-ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
-TYPE: LicenseType.mit
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
-----------------------------------------------------------------------------------------------------
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -2306,6 +2299,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ioctl.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ipc.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/limits.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/msg.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
@@ -2509,6 +2503,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ioctl.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ipc.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/limits.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/msg.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
@@ -2819,6 +2814,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.version/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
@@ -3141,6 +3137,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ioctl.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ipc.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/limits.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/msg.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
@@ -3344,6 +3341,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ioctl.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ipc.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/limits.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/msg.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
@@ -3654,6 +3652,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.version/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
@@ -3843,4 +3842,4 @@ negated the permissions granted in the license. In the spirit of
 permissive licensing, and of not having licensing issues being an
 obstacle to adoption, that text has been removed.
 ====================================================================================================
-Total license count: 16
+Total license count: 15
