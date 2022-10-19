@@ -109,7 +109,7 @@ class MyApp {
   }
 
   void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
-    print('reporting touch input to responseListener');
+    print('touch-input-view reporting touch input to TouchInputListener');
     await _responseListener.reportTouchInput(request);
   }
 }
