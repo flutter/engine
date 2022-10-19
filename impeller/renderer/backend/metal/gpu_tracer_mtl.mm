@@ -2,17 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/backend/metal/frame_captor_mtl.h"
+#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include <fml/logging.h>
 
 namespace impeller {
 
-FrameCaptorMTL::FrameCaptorMTL(id<MTLDevice> device) : device_(device) {}
+GPUTracerMTL::GPUTracerMTL(id<MTLDevice> device) : device_(device) {}
 
-FrameCaptorMTL::~FrameCaptorMTL() = default;
+GPUTracerMTL::~GPUTracerMTL() = default;
 
-bool FrameCaptorMTL::StartCapturingFrame(
-    FrameCaptorConfiguration configuration) {
+bool GPUTracerMTL::StartCapturingFrame(GPUTracerConfiguration configuration) {
   if (!device_) {
     return false;
   }
@@ -27,7 +26,7 @@ bool FrameCaptorMTL::StartCapturingFrame(
     desc.captureObject = device_;
 
     MTLCaptureDestination targetDestination =
-        configuration.mtlSaveGPUTraceDocument
+        configuration.mtl_save_gpu_trace_as_document
             ? MTLCaptureDestinationGPUTraceDocument
             : MTLCaptureDestinationDeveloperTools;
     if (![captureManager supportsDestination:targetDestination]) {
@@ -35,7 +34,7 @@ bool FrameCaptorMTL::StartCapturingFrame(
     }
     desc.destination = targetDestination;
 
-    if (configuration.mtlSaveGPUTraceDocument) {
+    if (configuration.mtl_save_gpu_trace_as_document) {
       if (!CreateGPUTraceSavedDictionaryIfNeeded()) {
         return false;
       }
@@ -49,7 +48,7 @@ bool FrameCaptorMTL::StartCapturingFrame(
   return captureManager.isCapturing;
 }
 
-bool FrameCaptorMTL::StopCapturingFrame() {
+bool GPUTracerMTL::StopCapturingFrame() {
   if (!device_) {
     return false;
   }
@@ -63,14 +62,14 @@ bool FrameCaptorMTL::StopCapturingFrame() {
   return !captureManager.isCapturing;
 }
 
-NSURL* FrameCaptorMTL::GetUniqueGPUTraceSavedURL() const {
+NSURL* GPUTracerMTL::GetUniqueGPUTraceSavedURL() const {
   NSURL* savedDictionaryURL = GetGPUTraceSavedDictionaryURL();
   NSString* uniqueID = [NSUUID UUID].UUIDString;
   return [[savedDictionaryURL URLByAppendingPathComponent:uniqueID]
       URLByAppendingPathExtension:@"gputrace"];
 }
 
-bool FrameCaptorMTL::CreateGPUTraceSavedDictionaryIfNeeded() const {
+bool GPUTracerMTL::CreateGPUTraceSavedDictionaryIfNeeded() const {
   NSFileManager* fileManager = [NSFileManager defaultManager];
   NSURL* gpuTraceSavedDictionaryURL = GetGPUTraceSavedDictionaryURL();
   if ([fileManager fileExistsAtPath:gpuTraceSavedDictionaryURL.path]) {
@@ -90,7 +89,7 @@ bool FrameCaptorMTL::CreateGPUTraceSavedDictionaryIfNeeded() const {
   return true;
 }
 
-NSURL* FrameCaptorMTL::GetGPUTraceSavedDictionaryURL() const {
+NSURL* GPUTracerMTL::GetGPUTraceSavedDictionaryURL() const {
   NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
                                                        NSUserDomainMask, YES);
   NSString* docPath = [paths objectAtIndex:0];

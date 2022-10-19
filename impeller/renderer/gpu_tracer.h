@@ -7,26 +7,23 @@
 namespace impeller {
 
 //------------------------------------------------------------------------------
-/// @brief      Frame capture configuration.
+/// @brief      GPU tracer configuration.
 ///
-struct FrameCaptorConfiguration {
+struct GPUTracerConfiguration {
   /// This param is for metal backend.
   /// When this value is true, a gpu trace file will be saved in devices when
   /// capture finishes. Otherwise, the Xcode will automatically open and show
   /// trace result.
   ///
-  bool mtlSaveGPUTraceDocument = false;
+  bool mtl_save_gpu_trace_as_document = false;
 };
 
 //------------------------------------------------------------------------------
-/// @brief      A class used for frame capture during rendering. Backend like
-///             Metal, has a ability to capture frame programmatically.
-///             The frame capture should only be used in development for frame
-///             offline analysis.
+/// @brief      A GPU tracer to trace gpu workflow during rendering.
 ///
-class FrameCaptor {
+class GPUTracer {
  public:
-  virtual ~FrameCaptor();
+  virtual ~GPUTracer();
 
   //----------------------------------------------------------------------------
   /// @brief      Start capturing frame. This method should only be called when
@@ -36,7 +33,7 @@ class FrameCaptor {
   ///
   /// @return The operation successful or not.
   ///
-  virtual bool StartCapturingFrame(FrameCaptorConfiguration configuration);
+  virtual bool StartCapturingFrame(GPUTracerConfiguration configuration);
 
   //----------------------------------------------------------------------------
   /// @brief      Stop capturing frame. This should only be called when
@@ -47,10 +44,10 @@ class FrameCaptor {
   virtual bool StopCapturingFrame();
 
  protected:
-  FrameCaptor();
+  GPUTracer();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(FrameCaptor);
+  FML_DISALLOW_COPY_AND_ASSIGN(GPUTracer);
 };
 
 }  // namespace impeller

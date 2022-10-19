@@ -14,7 +14,7 @@ bool Context::HasThreadingRestrictions() const {
   return false;
 }
 
-std::shared_ptr<FrameCaptor> Context::GetFrameCaptor() const {
+std::shared_ptr<GPUTracer> Context::GetGPUTracer() const {
   return nullptr;
 }
 

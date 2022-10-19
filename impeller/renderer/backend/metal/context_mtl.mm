@@ -83,11 +83,8 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
   }
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  // Setup the frame captor.
-  {
-    frame_captor_ =
-        std::shared_ptr<FrameCaptorMTL>(new FrameCaptorMTL(device_));
-  }
+  // Setup the gpu tracer.
+  { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
 #endif
 
   is_valid_ = true;
@@ -218,8 +215,8 @@ std::shared_ptr<WorkQueue> ContextMTL::GetWorkQueue() const {
   return work_queue_;
 }
 
-std::shared_ptr<FrameCaptor> ContextMTL::GetFrameCaptor() const {
-  return frame_captor_;
+std::shared_ptr<GPUTracer> ContextMTL::GetGPUTracer() const {
+  return gpu_tracer_;
 }
 
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(

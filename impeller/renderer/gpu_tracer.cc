@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "frame_captor.h"
+#include "gpu_tracer.h"
 
 namespace impeller {
 
-FrameCaptor::FrameCaptor() = default;
+GPUTracer::GPUTracer() = default;
 
-FrameCaptor::~FrameCaptor() = default;
+GPUTracer::~GPUTracer() = default;
 
-bool FrameCaptor::StartCapturingFrame(FrameCaptorConfiguration configuration) {
+bool GPUTracer::StartCapturingFrame(GPUTracerConfiguration configuration) {
   return false;
 }
 
-bool FrameCaptor::StopCapturingFrame() {
+bool GPUTracer::StopCapturingFrame() {
   return false;
 }
 

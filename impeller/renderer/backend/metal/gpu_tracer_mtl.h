@@ -8,33 +8,33 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/frame_captor.h"
+#include "impeller/renderer/gpu_tracer.h"
 
 namespace impeller {
 
-class FrameCaptorMTL final : public FrameCaptor,
-                             public BackendCast<FrameCaptorMTL, FrameCaptor> {
+class GPUTracerMTL final : public GPUTracer,
+                           public BackendCast<GPUTracerMTL, GPUTracer> {
  public:
-  // |FrameCaptor|
-  ~FrameCaptorMTL() override;
+  // |GPUTracer|
+  ~GPUTracerMTL() override;
 
-  // |FrameCaptor|
-  bool StartCapturingFrame(FrameCaptorConfiguration configuration) override;
+  // |GPUTracer|
+  bool StartCapturingFrame(GPUTracerConfiguration configuration) override;
 
-  // |FrameCaptor|
+  // |GPUTracer|
   bool StopCapturingFrame() override;
 
  private:
   friend class ContextMTL;
 
   id<MTLDevice> device_;
-  FrameCaptorMTL(id<MTLDevice> device);
+  GPUTracerMTL(id<MTLDevice> device);
 
   NSURL* GetUniqueGPUTraceSavedURL() const;
   NSURL* GetGPUTraceSavedDictionaryURL() const;
   bool CreateGPUTraceSavedDictionaryIfNeeded() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FrameCaptorMTL);
+  FML_DISALLOW_COPY_AND_ASSIGN(GPUTracerMTL);
 };
 
 }  // namespace impeller

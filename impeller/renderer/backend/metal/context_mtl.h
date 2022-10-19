@@ -13,7 +13,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
-#include "impeller/renderer/backend/metal/frame_captor_mtl.h"
+#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/context.h"
@@ -44,7 +44,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<SamplerLibrary> sampler_library_;
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<WorkQueue> work_queue_;
-  std::shared_ptr<FrameCaptorMTL> frame_captor_;
+  std::shared_ptr<GPUTracerMTL> gpu_tracer_;
   bool is_valid_ = false;
 
   ContextMTL(id<MTLDevice> device, NSArray<id<MTLLibrary>>* shader_libraries);
@@ -71,7 +71,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
-  std::shared_ptr<FrameCaptor> GetFrameCaptor() const override;
+  std::shared_ptr<GPUTracer> GetGPUTracer() const override;
 
   // |Context|
   bool SupportsOffscreenMSAA() const override;

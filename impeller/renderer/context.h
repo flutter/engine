@@ -16,7 +16,7 @@ class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 class Allocator;
-class FrameCaptor;
+class GPUTracer;
 class WorkQueue;
 
 class Context : public std::enable_shared_from_this<Context> {
@@ -41,11 +41,9 @@ class Context : public std::enable_shared_from_this<Context> {
   virtual std::shared_ptr<WorkQueue> GetWorkQueue() const = 0;
 
   //----------------------------------------------------------------------------
-  /// @return A frame captor for offline frame analysis during development.
-  /// Importantly, for rendering backends can't capture frame, this method will
-  /// return nullptr.
+  /// @return A GPU Tracer to trace gpu rendering.
   ///
-  virtual std::shared_ptr<FrameCaptor> GetFrameCaptor() const;
+  virtual std::shared_ptr<GPUTracer> GetGPUTracer() const;
 
   virtual bool HasThreadingRestrictions() const;
 

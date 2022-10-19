@@ -1401,8 +1401,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm
-FILE: ../../../flutter/impeller/renderer/backend/metal/frame_captor_mtl.h
-FILE: ../../../flutter/impeller/renderer/backend/metal/frame_captor_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
@@ -1499,8 +1499,8 @@ FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
-FILE: ../../../flutter/impeller/renderer/frame_captor.cc
-FILE: ../../../flutter/impeller/renderer/frame_captor.h
+FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
+FILE: ../../../flutter/impeller/renderer/gpu_tracer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer.cc
 FILE: ../../../flutter/impeller/renderer/host_buffer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer_unittests.cc
