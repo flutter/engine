@@ -108,7 +108,8 @@ struct CubicPathComponent {
 
   std::vector<Point> Extrema() const;
 
-  std::vector<QuadraticPathComponent> ToQuadratics(Scalar accuracy) const;
+  std::vector<QuadraticPathComponent> ToQuadraticPathComponents(
+      Scalar accuracy) const;
 
   CubicPathComponent Subsegment(Scalar t0, Scalar t1) const;
 
