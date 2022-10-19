@@ -57,7 +57,6 @@ source_set("portable_ui_test") {
     "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.test.input",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.test.scene",
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.test.scene",
     "$fuchsia_sdk_root/pkg:async-loop-testing",
     "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
     "//flutter/fml",

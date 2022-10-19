@@ -123,46 +123,34 @@ using component_testing::Route;
 using fuchsia_test_utils::PortableUITest;
 
 using RealmBuilder = component_testing::RealmBuilder;
-// Alias for Component child name as provided to Realm Builder.
-using ChildName = std::string;
-// Alias for Component Legacy URL as provided to Realm Builder.
-using LegacyUrl = std::string;
 
 // Max timeout in failure cases.
 // Set this as low as you can that still works across all test platforms.
 constexpr zx::duration kTimeout = zx::min(5);
 
-constexpr auto kMockResponseListener = "response_listener";
-
-enum class TapLocation { kTopLeft, kTopRight };
-
-// Combines all vectors in `vecs` into one.
-template <typename T>
-std::vector<T> merge(std::initializer_list<std::vector<T>> vecs) {
-  std::vector<T> result;
-  for (auto v : vecs) {
-    result.insert(result.end(), v.begin(), v.end());
-  }
-  return result;
-}
+constexpr auto kMockTouchInputListener = "touch_input_listener";
+constexpr auto kFlutterRealm = "two-flutter";
+constexpr auto kFlutterRealmUrl =
+    "fuchsia-pkg://fuchsia.com/two-flutter#meta/two-flutter.cm";
 
 bool CompareDouble(double f0, double f1, double epsilon) {
   return std::abs(f0 - f1) <= epsilon;
 }
 
-// // This component implements the test.touch.ResponseListener protocol
-// // and the interface for a RealmBuilder LocalComponent. A LocalComponent
-// // is a component that is implemented here in the test, as opposed to
-// elsewhere
-// // in the system. When it's inserted to the realm, it will act like a proper
-// // component. This is accomplished, in part, because the realm_builder
-// // library creates the necessary plumbing. It creates a manifest for the
-// // component and routes all capabilities to and from it.
-class ResponseListenerServer
+// This component implements the TouchInput protocol
+// and the interface for a RealmBuilder LocalComponent. A LocalComponent
+// is a component that is implemented here in the test, as opposed to
+// elsewhere in the system. When it's inserted to the realm, it will act
+// like a proper component. This is accomplished, in part, because the
+// realm_builder library creates the necessary plumbing. It creates a manifest
+// for the component and routes all capabilities to and from it.
+// LocalComponent:
+// https://fuchsia.dev/fuchsia-src/development/testing/components/realm_builder#mock-components
+class TouchInputListenerServer
     : public fuchsia::ui::test::input::TouchInputListener,
       public LocalComponent {
  public:
-  explicit ResponseListenerServer(async_dispatcher_t* dispatcher)
+  explicit TouchInputListenerServer(async_dispatcher_t* dispatcher)
       : dispatcher_(dispatcher) {}
 
   // |fuchsia::ui::test::input::TouchInputListener|
@@ -177,10 +165,9 @@ class ResponseListenerServer
   // When the component framework requests for this component to start, this
   // method will be invoked by the realm_builder library.
   void Start(std::unique_ptr<LocalComponentHandles> local_handles) override {
-    FML_LOG(INFO) << "Starting ResponseListenerServer";
+    FML_LOG(INFO) << "Starting TouchInputListenerServer";
     // When this component starts, add a binding to the
-    // test.touch.ResponseListener protocol to this component's outgoing
-    // directory.
+    // protocol to this component's outgoing directory.
     ASSERT_EQ(ZX_OK, local_handles->outgoing()->AddPublicService(
                          fidl::InterfaceRequestHandler<
                              fuchsia::ui::test::input::TouchInputListener>(
@@ -188,7 +175,6 @@ class ResponseListenerServer
                                bindings_.AddBinding(this, std::move(request),
                                                     dispatcher_);
                              })));
-    FML_LOG(INFO) << "Handle added for ResponseListenerServer";
     local_handles_.emplace_back(std::move(local_handles));
   }
 
@@ -245,45 +231,10 @@ class FlutterTapTest : public PortableUITest,
     RegisterTouchScreen();
   }
 
-  // Routes needed to setup Flutter client.
-  static std::vector<Route> GetFlutterRoutes(ChildRef target) {
-    return {
-        {.capabilities = {Protocol{
-             fuchsia::ui::test::input::TouchInputListener::Name_}},
-         .source = ChildRef{kMockResponseListener},
-         .targets = {target}},
-        // {.capabilities = {Protocol{fuchsia::logger::LogSink::Name_},
-        //                   Protocol{fuchsia::sysmem::Allocator::Name_},
-        //                   Protocol{
-        //                       fuchsia::tracing::provider::Registry::Name_}},
-        //  .source = ParentRef(),
-        //  .targets = {target}},
-        // {.capabilities = {Protocol{fuchsia::ui::scenic::Scenic::Name_}},
-        //  .source = kTestUIStackRef,
-        //  .targets = {target}},
-    };
-  }
-
-  std::vector<Route> GetTestRoutes() {
-    return merge(
-        {GetFlutterRoutes(ChildRef{kFlutterRealm}),
-         {
-             {.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-              .source = ChildRef{kFlutterRealm},
-              .targets = {ParentRef()}},
-         }});
-  }
-
-  std::vector<std::pair<ChildName, LegacyUrl>> GetTestV2Components() {
-    return {
-        std::make_pair(kFlutterRealm, kFlutterRealmUrl),
-    };
-  };
-
   bool LastEventReceivedMatches(float expected_x,
                                 float expected_y,
                                 std::string component_name) {
-    const auto& events_received = response_listener_server_->events_received();
+    const auto& events_received = touch_input_listener_server_->events_received();
 
     if (events_received.empty()) {
       return false;
@@ -313,51 +264,46 @@ class FlutterTapTest : public PortableUITest,
   uint32_t display_width() const { return display_width_; }
   uint32_t display_height() const { return display_height_; }
 
-  static constexpr auto kFlutterRealm = "two-flutter";
-  static constexpr auto kFlutterRealmUrl =
-      "fuchsia-pkg://fuchsia.com/two-flutter#meta/two-flutter.cm";
-
  private:
   void ExtendRealm() override {
     // Key part of service setup: have this test component vend the
-    // |ResponseListener| service in the constructed realm.
-    response_listener_server_ =
-        std::make_unique<ResponseListenerServer>(dispatcher());
-    realm_builder()->AddLocalChild(kMockResponseListener,
-                                   response_listener_server_.get());
+    // |TouchInputListener| service in the constructed realm.
+    touch_input_listener_server_ =
+        std::make_unique<TouchInputListenerServer>(dispatcher());
+    realm_builder()->AddLocalChild(kMockTouchInputListener,
+                                   touch_input_listener_server_.get());
 
-    // Add components specific for this test case to the realm.
-    // for (const auto& [name, component] : GetTestV2Components()) {
     realm_builder()->AddChild(kFlutterRealm, kFlutterRealmUrl,
                               component_testing::ChildOptions{
                                   .environment = kFlutterRunnerEnvironment,
                               });
 
+    // Route the TouchInput protocol capability to the Dart component
     realm_builder()->AddRoute(
         Route{.capabilities = {Protocol{
                   fuchsia::ui::test::input::TouchInputListener::Name_}},
-              .source = ChildRef{kMockResponseListener},
+              .source = ChildRef{kMockTouchInputListener},
               .targets = {kFlutterJitRunnerRef, ChildRef{kFlutterRealm}}});
 
-    // Add the necessary routing for each of the extra components added
-    // above.
-    // for (const auto& route : GetTestRoutes()) {
     realm_builder()->AddRoute(
         Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
               .source = ChildRef{kFlutterRealm},
               .targets = {ParentRef()}});
-    // }
   }
 
   ParamType GetTestUIStackUrl() override { return GetParam(); };
 
-  std::unique_ptr<ResponseListenerServer> response_listener_server_;
+  std::unique_ptr<TouchInputListenerServer> touch_input_listener_server_;
 
   fuchsia::ui::scenic::ScenicPtr scenic_;
   uint32_t display_width_ = 0;
   uint32_t display_height_ = 0;
 };
 
+// Makes use of gtest's parameterized testing, allowing us
+// to test different combinations of test-ui-stack + runners. Currently, there is just one
+// combination.
+// Documentation: http://go/gunitadvanced#value-parameterized-tests
 INSTANTIATE_TEST_SUITE_P(
     FlutterTapTestParameterized,
     FlutterTapTest,
@@ -371,7 +317,12 @@ TEST_P(FlutterTapTest, FlutterTap) {
   LaunchClient();
   FML_LOG(INFO) << "Client launched";
 
+  // two-flutter logical coordinate space doesn't match the fake touch screen injector's coordinate space,
+  // which spans [-1000, 1000] on both axes. Scenic handles figuring out where in the coordinate space
+  //  to inject a touch event (this is fixed to a display's bounds).
   InjectTap(-500, -500);
+  // For a (-500 [x], -500 [y]) tap, we expect a touch event in the middle of the upper-left quadrant
+  // of the screen.
   RunLoopUntil([this] {
     return LastEventReceivedMatches(
         /*expected_x=*/static_cast<float>(display_width() / 4.0f),

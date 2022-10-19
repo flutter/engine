@@ -61,8 +61,11 @@ class MyApp {
   void beginFrame(Duration duration) {
     // Convert physical screen size of device to values
     final pixelRatio = window.devicePixelRatio;
+    print('beginFrame pixelRatio: $pixelRatio');
     final size = window.physicalSize / pixelRatio;
+    print('beginFrame size: $size');
     final physicalBounds = Offset.zero & size * pixelRatio;
+    print('beginFrame physicalBounds: $physicalBounds');
     // Set up Canvas that uses the screen size
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder, physicalBounds);
@@ -108,11 +111,6 @@ class MyApp {
 
   void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
     print('reporting touch input to responseListener');
-    try {
-      await _responseListener.reportTouchInput(request);
-    } catch(e) {
-      print('received error while attempting to report touch input');
-      print(e);
-    }
+    await _responseListener.reportTouchInput(request);
   }
 }
