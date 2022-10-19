@@ -1112,6 +1112,8 @@ class Paint {
   //
   // The binary format must match the deserialization code in paint.cc.
 
+  // C++ unit tests access this.
+  @pragma('vm:entry-point')
   final ByteData _data = ByteData(_kDataByteCount);
 
   static const int _kIsAntiAliasIndex = 0;
@@ -1147,6 +1149,8 @@ class Paint {
   static const int _kDataByteCount = 56;
 
   // Binary format must match the deserialization code in paint.cc.
+  // C++ unit tests access this.
+  @pragma('vm:entry-point')
   List<Object?>? _objects;
 
   List<Object?> _ensureObjectsInitialized() {
@@ -4184,7 +4188,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
       <String, WeakReference<FragmentProgram>>{};
 
   static void _reinitializeShader(String assetKey) {
-    // If a shader for the assent isn't already registered, then there's no
+    // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
     final WeakReference<FragmentProgram>? programRef = _shaderRegistry == null
