@@ -429,7 +429,6 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
-    case flutter::DlColorSourceType::kConicalGradient:
     case flutter::DlColorSourceType::kRuntimeEffect: {
       const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
           source->asRuntimeEffect();
@@ -451,6 +450,7 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
+    case flutter::DlColorSourceType::kConicalGradient:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;
