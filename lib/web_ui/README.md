@@ -8,9 +8,9 @@ If you are setting up a workspace for the first time, start by following the
 instructions at [Setting up the Engine development environment][1]. In addition,
 it is useful to add the following to your `PATH` environment variable:
 
-- `ENGINE_ROOT/src/flutter/lib/web_ui/dev`, so you can run the `felt` command
+- `ENGINE_ROOT=/src/flutter/lib/web_ui/dev`, so you can run the `felt` command
   from anywhere.
-- `FLUTTER_ROOT/bin`, so you can run `dart` and `flutter` commands from
+- `FLUTTER_ROOT=/bin`, so you can run `dart` and `flutter` commands from
   anywhere.
 
 ### Using `felt`
