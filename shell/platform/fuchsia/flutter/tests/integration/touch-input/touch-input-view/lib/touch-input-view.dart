@@ -85,7 +85,7 @@ class MyApp {
     int nowNanos = System.clockGetMonotonic();
 
     for (PointerData data in packet.data) {
-      print('two-flutter received tap: ${data.toStringFull()}');
+      print('touch-input-view received tap: ${data.toStringFull()}');
 
       if (data.change == PointerChange.down) {
         _touchCounter++;
