@@ -91,27 +91,6 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
     );
   }
 
-  //----------------------------------------------------------------------------
-  /// @brief      Emplace data onto the host buffer with a custom alignment.
-  ///
-  /// @param[in]  buffer        The buffer data.
-  ///
-  /// @tparam     BufferType    The type of the buffer data.
-  ///
-  /// @tparam     size_t        The byte alignment to use when emplacing the
-  ///                           data.
-  ///
-  /// @return     The buffer view.
-  ///
-  template <class BufferType,
-            class = std::enable_if_t<std::is_standard_layout_v<BufferType>>>
-  [[nodiscard]] BufferView Emplace(const BufferType& buffer, size_t alignment) {
-    return Emplace(reinterpret_cast<const void*>(&buffer),  // buffer
-                   sizeof(BufferType),                      // size
-                   alignment                                // alignment
-    );
-  }
-
   [[nodiscard]] BufferView Emplace(const void* buffer,
                                    size_t length,
                                    size_t align);
