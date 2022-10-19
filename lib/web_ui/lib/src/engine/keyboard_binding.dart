@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart'  show registerHotRestartListener;
@@ -116,6 +117,7 @@ class KeyboardBinding {
     }
   }
 
+  KeyboardConverter get converter => _converter;
   late final KeyboardConverter _converter;
   final Map<String, DomEventListener> _listeners = <String, DomEventListener>{};
 
@@ -160,104 +162,6 @@ class KeyboardBinding {
       return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
     }));
     _converter = KeyboardConverter(_onKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
-  }
-
-  // Synthesize modifier keys up or down events only when the known pressing states are different.
-  void synthesizeModifiersIfNeeded(
-    bool altPressed,
-    bool controlPressed,
-    bool metaPressed,
-    bool shiftPressed,
-    num eventTimestamp,
-  ) {
-    _synthesizeModifierIfNeeded(
-      _kPhysicalAltLeft,
-      _kPhysicalAltRight,
-      _kLogicalAltLeft,
-      _kLogicalAltRight,
-      altPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
-      eventTimestamp,
-    );
-    _synthesizeModifierIfNeeded(
-      _kPhysicalControlLeft,
-      _kPhysicalControlRight,
-      _kLogicalControlLeft,
-      _kLogicalControlRight,
-      controlPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
-      eventTimestamp,
-    );
-    _synthesizeModifierIfNeeded(
-      _kPhysicalMetaLeft,
-      _kPhysicalMetaRight,
-      _kLogicalMetaLeft,
-      _kLogicalMetaRight,
-      metaPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
-      eventTimestamp,
-    );
-    _synthesizeModifierIfNeeded(
-      _kPhysicalShiftLeft,
-      _kPhysicalShiftRight,
-      _kLogicalShiftLeft,
-      _kLogicalShiftRight,
-      shiftPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
-      eventTimestamp,
-    );
-  }
-
-  void _synthesizeModifierIfNeeded(
-    int physicalLeft,
-    int physicalRight,
-    int logicalLeft,
-    int logicalRight,
-    ui.KeyEventType type,
-    num domTimestamp,
-  ) {
-    final bool leftPressed = _converter._pressingRecords.containsKey(physicalLeft);
-    final bool rightPressed = _converter._pressingRecords.containsKey(physicalRight);
-    final bool alreadyPressed = leftPressed || rightPressed;
-    final bool synthesizeDown = type == ui.KeyEventType.down && !alreadyPressed;
-    final bool synthesizeUp = type == ui.KeyEventType.up && alreadyPressed;
-
-    // Synthesize a down event only for the left key if right and left are not pressed
-    if (synthesizeDown) {
-      _synthesizeKeyDownEvent(domTimestamp, physicalLeft, logicalLeft);
-    }
-
-    // Synthesize an up event for left key if pressed
-    if (synthesizeUp && leftPressed) {
-      _synthesizeKeyUpEvent(domTimestamp, physicalLeft, logicalLeft);
-    }
-
-    // Synthesize an up event for right key if pressed
-    if (synthesizeUp && rightPressed) {
-      _synthesizeKeyUpEvent(domTimestamp, physicalRight, logicalRight);
-    }
-  }
-
-  void _synthesizeKeyDownEvent(num domTimestamp, int physical, int logical) {
-    _converter.performDispatchKeyData(ui.KeyData(
-      timeStamp: _eventTimeStampToDuration(domTimestamp),
-      type: ui.KeyEventType.down,
-      physical: physical,
-      logical: logical,
-      character: null,
-      synthesized: true,
-    ));
-    // Update pressing state
-    _converter._pressingRecords[physical] = logical;
-  }
-
-  void _synthesizeKeyUpEvent(num domTimestamp, int physical, int logical) {
-    _converter.performDispatchKeyData(ui.KeyData(
-      timeStamp: _eventTimeStampToDuration(domTimestamp),
-      type: ui.KeyEventType.up,
-      physical: physical,
-      logical: logical,
-      character: null,
-      synthesized: true,
-    ));
-    // Update pressing states
-    _converter._pressingRecords.remove(physical);
   }
 
   void _reset() {
@@ -666,5 +570,108 @@ class KeyboardConverter {
       }
       _dispatchKeyData = null;
     }
+  }
+
+  // Synthesize modifier keys up or down events only when the known pressing states are different.
+  void synthesizeModifiersIfNeeded(
+    bool altPressed,
+    bool controlPressed,
+    bool metaPressed,
+    bool shiftPressed,
+    num eventTimestamp,
+  ) {
+    _synthesizeModifierIfNeeded(
+      _kPhysicalAltLeft,
+      _kPhysicalAltRight,
+      _kLogicalAltLeft,
+      _kLogicalAltRight,
+      altPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+      eventTimestamp,
+    );
+    _synthesizeModifierIfNeeded(
+      _kPhysicalControlLeft,
+      _kPhysicalControlRight,
+      _kLogicalControlLeft,
+      _kLogicalControlRight,
+      controlPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+      eventTimestamp,
+    );
+    _synthesizeModifierIfNeeded(
+      _kPhysicalMetaLeft,
+      _kPhysicalMetaRight,
+      _kLogicalMetaLeft,
+      _kLogicalMetaRight,
+      metaPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+      eventTimestamp,
+    );
+    _synthesizeModifierIfNeeded(
+      _kPhysicalShiftLeft,
+      _kPhysicalShiftRight,
+      _kLogicalShiftLeft,
+      _kLogicalShiftRight,
+      shiftPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
+      eventTimestamp,
+    );
+  }
+
+  void _synthesizeModifierIfNeeded(
+    int physicalLeft,
+    int physicalRight,
+    int logicalLeft,
+    int logicalRight,
+    ui.KeyEventType type,
+    num domTimestamp,
+  ) {
+    final bool leftPressed = _pressingRecords.containsKey(physicalLeft);
+    final bool rightPressed = _pressingRecords.containsKey(physicalRight);
+    final bool alreadyPressed = leftPressed || rightPressed;
+    final bool synthesizeDown = type == ui.KeyEventType.down && !alreadyPressed;
+    final bool synthesizeUp = type == ui.KeyEventType.up && alreadyPressed;
+
+    // Synthesize a down event only for the left key if right and left are not pressed
+    if (synthesizeDown) {
+      _synthesizeKeyDownEvent(domTimestamp, physicalLeft, logicalLeft);
+    }
+
+    // Synthesize an up event for left key if pressed
+    if (synthesizeUp && leftPressed) {
+      _synthesizeKeyUpEvent(domTimestamp, physicalLeft, logicalLeft);
+    }
+
+    // Synthesize an up event for right key if pressed
+    if (synthesizeUp && rightPressed) {
+      _synthesizeKeyUpEvent(domTimestamp, physicalRight, logicalRight);
+    }
+  }
+
+  void _synthesizeKeyDownEvent(num domTimestamp, int physical, int logical) {
+    performDispatchKeyData(ui.KeyData(
+      timeStamp: _eventTimeStampToDuration(domTimestamp),
+      type: ui.KeyEventType.down,
+      physical: physical,
+      logical: logical,
+      character: null,
+      synthesized: true,
+    ));
+    // Update pressing state
+    _pressingRecords[physical] = logical;
+  }
+
+  void _synthesizeKeyUpEvent(num domTimestamp, int physical, int logical) {
+    performDispatchKeyData(ui.KeyData(
+      timeStamp: _eventTimeStampToDuration(domTimestamp),
+      type: ui.KeyEventType.up,
+      physical: physical,
+      logical: logical,
+      character: null,
+      synthesized: true,
+    ));
+    // Update pressing states
+    _pressingRecords.remove(physical);
+  }
+
+  @visibleForTesting
+  bool debugKeyIsPressed(int physical) {
+    return _pressingRecords.containsKey(physical);
   }
 }

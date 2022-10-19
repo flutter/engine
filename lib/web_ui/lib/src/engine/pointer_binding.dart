@@ -74,7 +74,7 @@ class SafariPointerEventWorkaround {
 }
 
 class PointerBinding {
-  PointerBinding(this.glassPaneElement)
+  PointerBinding(this.glassPaneElement, this._keyboardConverter)
     : _pointerDataConverter = PointerDataConverter(),
       _detector = const PointerSupportDetector() {
     if (isIosSafari) {
@@ -87,9 +87,9 @@ class PointerBinding {
   static PointerBinding? get instance => _instance;
   static PointerBinding? _instance;
 
-  static void initInstance(DomElement glassPaneElement) {
+  static void initInstance(DomElement glassPaneElement, KeyboardConverter keyboardConverter) {
     if (_instance == null) {
-      _instance = PointerBinding(glassPaneElement);
+      _instance = PointerBinding(glassPaneElement, keyboardConverter);
       assert(() {
         registerHotRestartListener(_instance!.dispose);
         return true;
@@ -108,6 +108,7 @@ class PointerBinding {
 
   PointerSupportDetector _detector;
   final PointerDataConverter _pointerDataConverter;
+  KeyboardConverter _keyboardConverter;
   late _BaseAdapter _adapter;
 
   /// Should be used in tests to define custom detection of pointer support.
@@ -138,15 +139,23 @@ class PointerBinding {
     }
   }
 
+  @visibleForTesting
+  void debugOverrideKeyboardConverter(KeyboardConverter keyboardConverter) {
+    _keyboardConverter = keyboardConverter;
+    _adapter.clearListeners();
+    _adapter = _createAdapter();
+    _pointerDataConverter.clearPointerState();
+  }
+
   _BaseAdapter _createAdapter() {
     if (_detector.hasPointerEvents) {
-      return _PointerAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
+      return _PointerAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
     }
     if (_detector.hasTouchEvents) {
-      return _TouchAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
+      return _TouchAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
     }
     if (_detector.hasMouseEvents) {
-      return _MouseAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
+      return _MouseAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
     }
     throw UnsupportedError('This browser does not support pointer, touch, or mouse events.');
   }
@@ -240,7 +249,12 @@ class _Listener {
 
 /// Common functionality that's shared among adapters.
 abstract class _BaseAdapter {
-  _BaseAdapter(this._callback, this.glassPaneElement, this._pointerDataConverter) {
+  _BaseAdapter(
+    this._callback,
+    this.glassPaneElement,
+    this._pointerDataConverter,
+    this._keyboardConverter,
+  ) {
     setup();
   }
 
@@ -248,6 +262,7 @@ abstract class _BaseAdapter {
   final DomElement glassPaneElement;
   final _PointerDataCallback _callback;
   final PointerDataConverter _pointerDataConverter;
+  final KeyboardConverter _keyboardConverter;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
@@ -571,7 +586,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _PointerAdapter(
     super.callback,
     super.glassPaneElement,
-    super.pointerDataConverter
+    super.pointerDataConverter,
+    super.keyboardConverter,
   );
 
   final Map<int, _ButtonSanitizer> _sanitizers = <int, _ButtonSanitizer>{};
@@ -615,7 +631,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   }
 
   void _checkModifiersState(DomPointerEvent event) {
-    KeyboardBinding.instance!.synthesizeModifiersIfNeeded(
+    _keyboardConverter.synthesizeModifiersIfNeeded(
       event.getModifierState('Alt'),
       event.getModifierState('Control'),
       event.getModifierState('Meta'),
@@ -782,7 +798,8 @@ class _TouchAdapter extends _BaseAdapter {
   _TouchAdapter(
     super.callback,
     super.glassPaneElement,
-    super.pointerDataConverter
+    super.pointerDataConverter,
+    super.keyboardConverter,
   );
 
   final Set<int> _pressedTouches = <int>{};
@@ -801,7 +818,7 @@ class _TouchAdapter extends _BaseAdapter {
   }
 
   void _checkModifiersState(DomTouchEvent event) {
-    KeyboardBinding.instance!.synthesizeModifiersIfNeeded(
+    _keyboardConverter.synthesizeModifiersIfNeeded(
       event.altKey,
       event.ctrlKey,
       event.metaKey,
@@ -938,7 +955,8 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
     super.callback,
     super.glassPaneElement,
-    super.pointerDataConverter
+    super.pointerDataConverter,
+    super.keyboardConverter,
   );
 
   final _ButtonSanitizer _sanitizer = _ButtonSanitizer();
@@ -960,7 +978,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   }
 
   void _checkModifiersState(DomMouseEvent event) {
-    KeyboardBinding.instance!.synthesizeModifiersIfNeeded(
+    _keyboardConverter.synthesizeModifiersIfNeeded(
       event.getModifierState('Alt'),
       event.getModifierState('Control'),
       event.getModifierState('Meta'),
