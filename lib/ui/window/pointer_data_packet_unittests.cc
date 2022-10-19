@@ -65,24 +65,5 @@ TEST(PointerDataPacketTest, CanGetLength) {
   ASSERT_EQ(packet->GetLength(), (size_t)6);
 }
 
-TEST(PointerDataPacketDeathTest, DeathWhenGetPointerDataIndexOutOfBound) {
-  auto packet = std::make_unique<PointerDataPacket>(1);
-  PointerData data;
-  CreateSimpleSimulatedPointerData(data, PointerData::Change::kAdd, 1, 2.0, 3.0,
-                                   4);
-  packet->SetPointerData(0, data);
-
-  ASSERT_DEATH({ packet->GetPointerData(1); }, "");
-}
-
-TEST(PointerDataPacketDeathTest, DeathWhenSetPointerDataIndexOutOfBound) {
-  auto packet = std::make_unique<PointerDataPacket>(1);
-  PointerData data;
-  CreateSimpleSimulatedPointerData(data, PointerData::Change::kAdd, 1, 2.0, 3.0,
-                                   4);
-
-  ASSERT_DEATH({ packet->SetPointerData(1, data); }, "");
-}
-
 }  // namespace testing
 }  // namespace flutter
