@@ -1482,11 +1482,9 @@ abstract class DomTrustedTypePolicyOptions {
   });
 }
 
-/// Type of the function to configure createScriptURL.
+/// Type of the function used to configure createScriptURL.
 typedef DomCreateScriptUrlOptionFn = String? Function(String input);
 
-/// Dart binding of a JavaScript TrustedTypePolicy instance.
-///
 /// A TrustedTypePolicy defines a group of functions which create TrustedType
 /// objects.
 ///
@@ -1506,8 +1504,6 @@ extension DomTrustedTypePolicyExtension on DomTrustedTypePolicy {
   external DomTrustedScriptURL createScriptURL(String input);
 }
 
-/// Dart binding of a JavaScript TrustedScriptURL instance.
-///
 /// Represents a string that a developer can insert into an _injection sink_
 /// that will parse it as an external script.
 ///
@@ -1553,10 +1549,8 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
   ),
 );
 
-/// Converts a String `url` into a [DomTrustedScriptURL] object, when the
-/// Trusted Types API is available.
-///
-/// Else returns the unmodified `url`.
+/// Converts a String `url` into a [DomTrustedScriptURL] object when the
+/// Trusted Types API is available, else returns the unmodified `url`.
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
