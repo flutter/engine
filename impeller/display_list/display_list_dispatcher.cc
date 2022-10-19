@@ -438,7 +438,7 @@ void DisplayListDispatcher::setColorSource(
       auto uniform_data_sk = runtime_effect_color_source->uniform_data();
 
       paint_.color_source = [runtime_stage, uniform_data_sk]() {
-        // TODO(bdero): Get rid of the allocation + copy for uniform data.
+        // TODO(113714): Get rid of the allocation + copy for uniform data.
         std::vector<uint8_t> uniform_data;
         uniform_data.resize(uniform_data_sk->size());
         memcpy(uniform_data.data(), uniform_data_sk->bytes(),
@@ -449,6 +449,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetUniformData(std::move(uniform_data));
         return contents;
       };
+      return;
     }
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;

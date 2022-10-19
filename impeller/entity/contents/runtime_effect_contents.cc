@@ -40,6 +40,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or register shader.
   ///
 
+  // TODO(113719): Register the shader function earlier.
+
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
@@ -135,8 +137,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   size_t buffer_index = 0;
   for (auto uniform : runtime_stage_->GetUniforms()) {
-    // TODO(bdero): Populate this metadata once GLES is able to handle
-    //              non-struct uniform names.
+    // TODO(113715): Populate this metadata once GLES is able to handle
+    //               non-struct uniform names.
     ShaderMetadata metadata;
 
     size_t alignment =
