@@ -67,6 +67,9 @@ vars = {
   # Download a prebuilt Dart SDK by default
   'download_dart_sdk': True,
 
+  # Use dependency
+  'use_dart_sdk_dep': False,
+
   # Checkout Android dependencies only on platforms where we build for Android targets.
   'download_android_deps': 'host_os == "mac" or (host_os == "linux" and host_cpu == "x64")',
 
@@ -383,7 +386,7 @@ deps = {
       }
     ],
     'dep_type': 'cipd',
-    'condition': 'host_os == "mac" and download_dart_sdk'
+    'condition': 'host_os == "mac" and download_dart_sdk and use_dart_sdk_dep'
   },
   'src/flutter/prebuilts/windows-x64/dart-sdk': {
     'packages': [
