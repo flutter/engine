@@ -41,7 +41,7 @@ cd "$FUCHSIA_DIR"
 fx serve
 ```
 
-Start the Fuchsia emulator in a graphical environment (go/crd)
+Start the Fuchsia emulator in a graphical environment
 ```shell
 ffx emu start
 ```
@@ -72,7 +72,7 @@ $FUCHSIA_DIR/.jiri_root/bin/fx pm publish -a -repo $FUCHSIA_DIR/$(cat $FUCHSIA_D
 fuchsia_debug_x64/gen/flutter/shell/platform/fuchsia/flutter/tests/integration/touch-input/touch-input-view/touch-input-view/touch-input-view.far
 ```
 
-Launch Fuchsia emulator in a graphical environment (go/crd)
+Launch Fuchsia emulator in a graphical environment
 ```shell
 ffx emu start
 ```
