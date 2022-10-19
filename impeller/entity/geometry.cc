@@ -186,7 +186,7 @@ GeometryResult PathGeometry::GetPositionBuffer(
     ISize render_target_size,
     Scalar max_basis_length) {
   VertexBuffer vertex_buffer;
-  auto tesselation_result = tessellator->TessellateBuilder(
+  auto tesselation_result = tessellator->Tessellate(
       path_.GetFillType(),
       path_.CreatePolyline(kDefaultCurveTolerance / max_basis_length),
       [&vertex_buffer, &host_buffer](

@@ -397,18 +397,25 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   VertexBufferBuilder<VS::PerVertexData> builder;
 
-  ASSERT_EQ(
-      Tessellator::Result::kSuccess,
-      Tessellator{}.Tessellate(FillType::kPositive,
-                               PathBuilder{}
-                                   .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                                   .TakePath()
-                                   .CreatePolyline(),
-                               [&builder](Point vtx) {
-                                 VS::PerVertexData data;
-                                 data.vtx = vtx;
-                                 builder.AppendVertex(data);
-                               }));
+  ASSERT_EQ(Tessellator::Result::kSuccess,
+            Tessellator{}.Tessellate(
+                FillType::kPositive,
+                PathBuilder{}
+                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
+                    .TakePath()
+                    .CreatePolyline(),
+                [&builder](const float* vertices, size_t vertices_size,
+                           const uint16_t* indices, size_t indices_size) {
+                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    VS::PerVertexData data;
+                    data.vtx = {vertices[i], vertices[i + 1]};
+                    builder.AppendVertex(data);
+                  }
+                  for (auto i = 0u; i < indices_size; i++) {
+                    builder.AppendIndex(indices[i]);
+                  }
+                  return true;
+                }));
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -425,11 +432,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   cmd.label = "InstancedDraw";
 
   static constexpr size_t kInstancesCount = 5u;
-  std::vector<VS::InstanceInfo> instances;
+  VS::InstanceInfo<kInstancesCount> instances;
   for (size_t i = 0; i < kInstancesCount; i++) {
-    VS::InstanceInfo info;
-    info.colors = Color::Random();
-    instances.emplace_back(info);
+    instances.colors[i] = Color::Random();
   }
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
