@@ -304,8 +304,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
          std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
-         TaskRunners task_runners,
-         Settings settings,
+         const TaskRunners& task_runners,
+         const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
@@ -357,13 +357,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          const PointerDataDispatcherMaker& dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
-         TaskRunners task_runners,
+         const TaskRunners& task_runners,
          const PlatformData& platform_data,
-         Settings settings,
+         const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
-         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   //----------------------------------------------------------------------------
@@ -378,11 +378,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::unique_ptr<Engine> Spawn(
       Delegate& delegate,
       const PointerDataDispatcherMaker& dispatcher_maker,
-      Settings settings,
+      const Settings& settings,
       std::unique_ptr<Animator> animator,
       const std::string& initial_route,
-      fml::WeakPtr<IOManager> io_manager,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const;
+      const fml::WeakPtr<IOManager>& io_manager,
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -465,7 +465,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @return     If the asset manager was successfully replaced. This may fail
   ///             if the new asset manager is invalid.
   ///
-  bool UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
+  bool UpdateAssetManager(const std::shared_ptr<AssetManager>& asset_manager);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that it is time to begin working on a new
@@ -868,7 +868,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              re-request the library will instantly
   ///                              complete with an error.
   void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                    const std::string error_message,
+                                    const std::string& error_message,
                                     bool transient);
 
   //--------------------------------------------------------------------------

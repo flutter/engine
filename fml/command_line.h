@@ -38,6 +38,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -221,9 +222,30 @@ inline CommandLine CommandLineFromIteratorsWithArgv0(const std::string& argv0,
   return builder.Build();
 }
 
+// Builds a |CommandLine| by obtaining the arguments of the process using host
+// platform APIs. The resulting |CommandLine| will be encoded in UTF-8.
+// Returns an empty optional if this is not supported on the host platform.
+//
+// This can be useful on platforms where argv may not be provided as UTF-8.
+std::optional<CommandLine> CommandLineFromPlatform();
+
 // Builds a |CommandLine| from the usual argc/argv.
 inline CommandLine CommandLineFromArgcArgv(int argc, const char* const* argv) {
   return CommandLineFromIterators(argv, argv + argc);
+}
+
+// Builds a |CommandLine| by first trying the platform specific implementation,
+// and then falling back to the argc/argv.
+//
+// If the platform provides a special way of getting arguments, this method may
+// discard the values passed in to argc/argv.
+inline CommandLine CommandLineFromPlatformOrArgcArgv(int argc,
+                                                     const char* const* argv) {
+  auto command_line = CommandLineFromPlatform();
+  if (command_line.has_value()) {
+    return *command_line;
+  }
+  return CommandLineFromArgcArgv(argc, argv);
 }
 
 // Builds a |CommandLine| from an initializer list of |std::string|s or things

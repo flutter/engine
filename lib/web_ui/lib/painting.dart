@@ -728,6 +728,10 @@ class ImmutableBuffer {
     throw UnsupportedError('ImmutableBuffer.fromAsset is not supported on the web.');
   }
 
+  static Future<ImmutableBuffer> fromFilePath(String path) async {
+    throw UnsupportedError('ImmutableBuffer.fromFilePath is not supported on the web.');
+  }
+
   Uint8List? _list;
 
   int get length => _length;
@@ -813,11 +817,6 @@ class FragmentProgram {
   FragmentShader fragmentShader() {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
-
-  Shader shader({
-    Float32List? floatUniforms,
-    List<ImageShader>? samplerUniforms,
-  }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
 }
 
 class FragmentShader extends Shader {

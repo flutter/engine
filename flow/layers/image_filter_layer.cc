@@ -52,14 +52,13 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
+  SkMatrix child_matrix = matrix;
 
-  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
+  AutoCache cache =
+      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
 
   SkRect child_bounds = SkRect::MakeEmpty();
-  SkMatrix child_matrix = matrix;
-  if (context->raster_cache) {
-    child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix);
-  }
+
   PrerollChildren(context, child_matrix, &child_bounds);
 
   // We always paint with a saveLayer (or a cached rendering),

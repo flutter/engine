@@ -44,66 +44,66 @@ DisplayListDispatcher::DisplayListDispatcher() = default;
 
 DisplayListDispatcher::~DisplayListDispatcher() = default;
 
-static Entity::BlendMode ToBlendMode(flutter::DlBlendMode mode) {
+static BlendMode ToBlendMode(flutter::DlBlendMode mode) {
   switch (mode) {
     case flutter::DlBlendMode::kClear:
-      return Entity::BlendMode::kClear;
+      return BlendMode::kClear;
     case flutter::DlBlendMode::kSrc:
-      return Entity::BlendMode::kSource;
+      return BlendMode::kSource;
     case flutter::DlBlendMode::kDst:
-      return Entity::BlendMode::kDestination;
+      return BlendMode::kDestination;
     case flutter::DlBlendMode::kSrcOver:
-      return Entity::BlendMode::kSourceOver;
+      return BlendMode::kSourceOver;
     case flutter::DlBlendMode::kDstOver:
-      return Entity::BlendMode::kDestinationOver;
+      return BlendMode::kDestinationOver;
     case flutter::DlBlendMode::kSrcIn:
-      return Entity::BlendMode::kSourceIn;
+      return BlendMode::kSourceIn;
     case flutter::DlBlendMode::kDstIn:
-      return Entity::BlendMode::kDestinationIn;
+      return BlendMode::kDestinationIn;
     case flutter::DlBlendMode::kSrcOut:
-      return Entity::BlendMode::kSourceOut;
+      return BlendMode::kSourceOut;
     case flutter::DlBlendMode::kDstOut:
-      return Entity::BlendMode::kDestinationOut;
+      return BlendMode::kDestinationOut;
     case flutter::DlBlendMode::kSrcATop:
-      return Entity::BlendMode::kSourceATop;
+      return BlendMode::kSourceATop;
     case flutter::DlBlendMode::kDstATop:
-      return Entity::BlendMode::kDestinationATop;
+      return BlendMode::kDestinationATop;
     case flutter::DlBlendMode::kXor:
-      return Entity::BlendMode::kXor;
+      return BlendMode::kXor;
     case flutter::DlBlendMode::kPlus:
-      return Entity::BlendMode::kPlus;
+      return BlendMode::kPlus;
     case flutter::DlBlendMode::kModulate:
-      return Entity::BlendMode::kModulate;
+      return BlendMode::kModulate;
     case flutter::DlBlendMode::kScreen:
-      return Entity::BlendMode::kScreen;
+      return BlendMode::kScreen;
     case flutter::DlBlendMode::kOverlay:
-      return Entity::BlendMode::kOverlay;
+      return BlendMode::kOverlay;
     case flutter::DlBlendMode::kDarken:
-      return Entity::BlendMode::kDarken;
+      return BlendMode::kDarken;
     case flutter::DlBlendMode::kLighten:
-      return Entity::BlendMode::kLighten;
+      return BlendMode::kLighten;
     case flutter::DlBlendMode::kColorDodge:
-      return Entity::BlendMode::kColorDodge;
+      return BlendMode::kColorDodge;
     case flutter::DlBlendMode::kColorBurn:
-      return Entity::BlendMode::kColorBurn;
+      return BlendMode::kColorBurn;
     case flutter::DlBlendMode::kHardLight:
-      return Entity::BlendMode::kHardLight;
+      return BlendMode::kHardLight;
     case flutter::DlBlendMode::kSoftLight:
-      return Entity::BlendMode::kSoftLight;
+      return BlendMode::kSoftLight;
     case flutter::DlBlendMode::kDifference:
-      return Entity::BlendMode::kDifference;
+      return BlendMode::kDifference;
     case flutter::DlBlendMode::kExclusion:
-      return Entity::BlendMode::kExclusion;
+      return BlendMode::kExclusion;
     case flutter::DlBlendMode::kMultiply:
-      return Entity::BlendMode::kMultiply;
+      return BlendMode::kMultiply;
     case flutter::DlBlendMode::kHue:
-      return Entity::BlendMode::kHue;
+      return BlendMode::kHue;
     case flutter::DlBlendMode::kSaturation:
-      return Entity::BlendMode::kSaturation;
+      return BlendMode::kSaturation;
     case flutter::DlBlendMode::kColor:
-      return Entity::BlendMode::kColor;
+      return BlendMode::kColor;
     case flutter::DlBlendMode::kLuminosity:
-      return Entity::BlendMode::kLuminosity;
+      return BlendMode::kLuminosity;
   }
   FML_UNREACHABLE();
 }
@@ -290,6 +290,30 @@ static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
   return result;
 }
 
+// Convert display list colors + stops into impeller colors and stops, taking
+// care to ensure that the stops always start with 0.0 and end with 1.0.
+template <typename T>
+static void ConvertStops(T* gradient,
+                         std::vector<Color>* colors,
+                         std::vector<float>* stops) {
+  FML_DCHECK(gradient->stop_count() >= 2);
+
+  auto* dl_colors = gradient->colors();
+  auto* dl_stops = gradient->stops();
+  if (dl_stops[0] != 0.0) {
+    colors->emplace_back(ToColor(dl_colors[0]));
+    stops->emplace_back(0);
+  }
+  for (auto i = 0; i < gradient->stop_count(); i++) {
+    colors->emplace_back(ToColor(dl_colors[i]));
+    stops->emplace_back(dl_stops[i]);
+  }
+  if (stops->back() != 1.0) {
+    colors->emplace_back(colors->back());
+    stops->emplace_back(1.0);
+  }
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
@@ -314,10 +338,8 @@ void DisplayListDispatcher::setColorSource(
       auto end_point = ToPoint(linear->end_point());
       std::vector<Color> colors;
       std::vector<float> stops;
-      for (auto i = 0; i < linear->stop_count(); i++) {
-        colors.emplace_back(ToColor(linear->colors()[i]));
-        stops.emplace_back(linear->stops()[i]);
-      }
+      ConvertStops(linear, &colors, &stops);
+
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
       paint_.color_source = [start_point, end_point, colors = std::move(colors),
@@ -340,10 +362,8 @@ void DisplayListDispatcher::setColorSource(
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      for (auto i = 0; i < radialGradient->stop_count(); i++) {
-        colors.emplace_back(ToColor(radialGradient->colors()[i]));
-        stops.emplace_back(radialGradient->stops()[i]);
-      }
+      ConvertStops(radialGradient, &colors, &stops);
+
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
       paint_.color_source = [center, radius, colors = std::move(colors),
@@ -367,11 +387,9 @@ void DisplayListDispatcher::setColorSource(
       auto start_angle = Degrees(sweepGradient->start());
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
-      std::vector<Scalar> stops;
-      for (auto i = 0; i < sweepGradient->stop_count(); i++) {
-        colors.emplace_back(ToColor(sweepGradient->colors()[i]));
-        stops.emplace_back(sweepGradient->stops()[i]);
-      }
+      std::vector<float> stops;
+      ConvertStops(sweepGradient, &colors, &stops);
+
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
       paint_.color_source = [center, start_angle, end_angle,
@@ -429,7 +447,7 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       auto blend_mode = ToBlendMode(dl_blend->mode());
       auto color = ToColor(dl_blend->color());
       return [blend_mode, color](FilterInput::Ref input) {
-        return FilterContents::MakeBlend(blend_mode, {input}, color);
+        return ColorFilterContents::MakeBlend(blend_mode, {input}, color);
       };
     }
     case flutter::DlColorFilterType::kMatrix: {
@@ -437,16 +455,16 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       impeller::FilterContents::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
       return [color_matrix](FilterInput::Ref input) {
-        return FilterContents::MakeColorMatrix({input}, color_matrix);
+        return ColorFilterContents::MakeColorMatrix({input}, color_matrix);
       };
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
       return [](FilterInput::Ref input) {
-        return FilterContents::MakeSrgbToLinearFilter({input});
+        return ColorFilterContents::MakeSrgbToLinearFilter({input});
       };
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
       return [](FilterInput::Ref input) {
-        return FilterContents::MakeLinearToSrgbFilter({input});
+        return ColorFilterContents::MakeLinearToSrgbFilter({input});
       };
     case flutter::DlColorFilterType::kUnknown:
       FML_LOG(ERROR) << "requested DlColorFilterType::kUnknown";
@@ -578,8 +596,10 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto matrix_filter = filter->asMatrix();
       FML_DCHECK(matrix_filter);
       auto matrix = ToMatrix(matrix_filter->matrix());
-      return [matrix](FilterInput::Ref input, const Matrix& effect_transform) {
-        return FilterContents::MakeMatrixFilter(input, matrix);
+      auto desc = ToSamplerDescriptor(matrix_filter->sampling());
+      return [matrix, desc](FilterInput::Ref input,
+                            const Matrix& effect_transform) {
+        return FilterContents::MakeMatrixFilter(input, matrix, desc);
       };
       break;
     }
@@ -620,7 +640,28 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       };
       break;
     }
-    case flutter::DlImageFilterType::kLocalMatrixFilter:
+    case flutter::DlImageFilterType::kLocalMatrixFilter: {
+      auto local_matrix_filter = filter->asLocalMatrix();
+      FML_DCHECK(local_matrix_filter);
+      auto internal_filter = local_matrix_filter->image_filter();
+      FML_DCHECK(internal_filter);
+
+      auto image_filter_proc = ToImageFilterProc(internal_filter.get());
+      if (!image_filter_proc.has_value()) {
+        return std::nullopt;
+      }
+
+      auto matrix = ToMatrix(local_matrix_filter->matrix());
+
+      return [matrix, filter_proc = image_filter_proc.value()](
+                 FilterInput::Ref input, const Matrix& effect_transform) {
+        std::shared_ptr<FilterContents> filter =
+            filter_proc(input, effect_transform);
+        return FilterContents::MakeLocalMatrixFilter(FilterInput::Make(filter),
+                                                     matrix);
+      };
+      break;
+    }
     case flutter::DlImageFilterType::kUnknown:
       return std::nullopt;
   }
@@ -719,7 +760,8 @@ void DisplayListDispatcher::transformFullPerspective(SkScalar mxx,
                                                      SkScalar mwy,
                                                      SkScalar mwz,
                                                      SkScalar mwt) {
-  // The order of arguments is row-major but Impeller matrices are column-major.
+  // The order of arguments is row-major but Impeller matrices are
+  // column-major.
   // clang-format off
   auto xformation = Matrix{
     mxx, myx, mzx, mwx,

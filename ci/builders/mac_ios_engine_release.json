@@ -32,7 +32,6 @@
                 "--ios",
                 "--runtime-mode",
                 "release",
-                "--bitcode",
                 "--no-goma"
             ],
             "name": "ios_release",
@@ -103,7 +102,6 @@
                     "out/ios_debug_sim",
                     "--simulator-arm64-out-dir",
                     "out/ios_debug_sim_arm64",
-                    "--strip-bitcode",
                     "--dsym",
                     "--strip"
                 ],

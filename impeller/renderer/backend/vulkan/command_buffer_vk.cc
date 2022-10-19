@@ -33,15 +33,17 @@ std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
 
   vk::UniqueCommandBuffer cmd = std::move(res.value[0]);
   return std::make_shared<CommandBufferVK>(context, device, surface_producer,
-                                           std::move(cmd));
+                                           command_pool, std::move(cmd));
 }
 
 CommandBufferVK::CommandBufferVK(std::weak_ptr<const Context> context,
                                  vk::Device device,
                                  SurfaceProducerVK* surface_producer,
+                                 vk::CommandPool command_pool,
                                  vk::UniqueCommandBuffer command_buffer)
     : CommandBuffer(context),
       device_(device),
+      command_pool_(command_pool),
       command_buffer_(std::move(command_buffer)),
       surface_producer_(surface_producer) {
   is_valid_ = true;
@@ -61,25 +63,20 @@ bool CommandBufferVK::IsValid() const {
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  bool result = surface_producer_->Submit(*command_buffer_);
+  // TODO(https://github.com/flutter/flutter/issues/112387)
+  // This needs to be the place where the command buffer, renderpass,
+  // and the various descriptor sets in use by the command buffer are
+  // disposed of.
 
   if (callback) {
-    callback(result ? CommandBuffer::Status::kCompleted
-                    : CommandBuffer::Status::kError);
+    callback(CommandBuffer::Status::kCompleted);
   }
 
-  return result;
+  return true;
 }
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
-    RenderTarget target) const {
-  vk::CommandBufferBeginInfo begin_info;
-  auto res = command_buffer_->begin(begin_info);
-  if (res != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Failed to begin command buffer: " << vk::to_string(res);
-    return nullptr;
-  }
-
+    RenderTarget target) {
   std::vector<vk::AttachmentDescription> color_attachments;
   for (const auto& [k, attachment] : target.GetColorAttachments()) {
     const TextureDescriptor& tex_desc =
@@ -93,7 +90,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
 
     color_attachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
     color_attachment.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-    color_attachment.setInitialLayout(vk::ImageLayout::eUndefined);
+    color_attachment.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal);
     color_attachment.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
     color_attachments.push_back(color_attachment);
@@ -125,8 +122,8 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
   }
 
   return std::make_shared<RenderPassVK>(
-      context_, std::move(target), *command_buffer_,
-      std::move(render_pass_create_res.value));
+      context_, device_, std::move(target), std::move(command_buffer_),
+      std::move(render_pass_create_res.value), surface_producer_);
 }
 
 std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {

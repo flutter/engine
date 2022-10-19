@@ -100,7 +100,7 @@ engine-info "GN args: ${all_gn_args}"
 fuchsia_out_dir_name=fuchsia_${runtime_mode}${unoptimized_suffix}_${fuchsia_cpu}
 fuchsia_out_dir="$ENGINE_DIR"/out/"${fuchsia_out_dir_name}"
 engine-info "Building ${fuchsia_out_dir_name}..."
-${ninja_cmd} -C "${fuchsia_out_dir}" flutter/shell/platform/fuchsia
+${ninja_cmd} -C "${fuchsia_out_dir}" flutter/shell/platform/fuchsia fuchsia_tests
 
 engine-info "Making Fuchsia's Flutter prebuilts writable..."
 chmod -R +w "$FUCHSIA_DIR"/prebuilt/third_party/flutter
@@ -109,7 +109,10 @@ engine-info "Copying the patched SDK (dart:ui, dart:zircon, dart:fuchsia) to Fuc
 cp -ra "${fuchsia_out_dir}"/flutter_runner_patched_sdk/* "$FUCHSIA_DIR"/prebuilt/third_party/flutter/"${fuchsia_cpu}"/release/aot/flutter_runner_patched_sdk/
 
 engine-info "Registering debug symbols..."
-"$ENGINE_DIR"/fuchsia/sdk/linux/tools/x64/symbol-index add "${fuchsia_out_dir}"/.build-id "${fuchsia_out_dir}"
+# .jiri_root/bin/ffx needs to run from $FUCHSIA_DIR.
+pushd $FUCHSIA_DIR
+"$FUCHSIA_DIR"/.jiri_root/bin/ffx debug symbol-index add "${fuchsia_out_dir}"/.build-id --build-dir "${fuchsia_out_dir}"
+popd  # $FUCHSIA_DIR
 
 if [[ "${runtime_mode}" == release ]]
 then

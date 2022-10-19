@@ -30,6 +30,34 @@ TEST(GeometryTest, ScalarNearlyEqual) {
       1.0f, 1.0f + std::numeric_limits<float>::epsilon() * 4));
 }
 
+TEST(GeometryTest, MakeColumn) {
+  auto matrix = Matrix::MakeColumn(1, 2, 3, 4,     //
+                                   5, 6, 7, 8,     //
+                                   9, 10, 11, 12,  //
+                                   13, 14, 15, 16);
+
+  auto expect = Matrix{1,  2,  3,  4,   //
+                       5,  6,  7,  8,   //
+                       9,  10, 11, 12,  //
+                       13, 14, 15, 16};
+
+  ASSERT_TRUE(matrix == expect);
+}
+
+TEST(GeometryTest, MakeRow) {
+  auto matrix = Matrix::MakeRow(1, 2, 3, 4,     //
+                                5, 6, 7, 8,     //
+                                9, 10, 11, 12,  //
+                                13, 14, 15, 16);
+
+  auto expect = Matrix{1, 5, 9,  13,  //
+                       2, 6, 10, 14,  //
+                       3, 7, 11, 15,  //
+                       4, 8, 12, 16};
+
+  ASSERT_TRUE(matrix == expect);
+}
+
 TEST(GeometryTest, RotationMatrix) {
   auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
   auto expect = Matrix{0.707,  0.707, 0, 0,  //
@@ -204,6 +232,36 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
     auto expected = Point(60, 120);
     ASSERT_POINT_NEAR(result, expected);
   }
+
+  // Matrix Vector ops should respect perspective transforms.
+  {
+    auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100);
+    auto vector = Vector3(3, 3, -3);
+
+    Vector3 result = matrix * vector;
+    auto expected = Vector3(1, 1, 0.673401);
+    ASSERT_VECTOR3_NEAR(result, expected);
+  }
+
+  {
+    auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100) *
+                  Matrix::MakeTranslation(Vector3(0, 0, -3));
+    auto point = Point(3, 3);
+
+    Point result = matrix * point;
+    auto expected = Point(1, 1);
+    ASSERT_POINT_NEAR(result, expected);
+  }
+
+  // Resolves to 0 on perspective singularity.
+  {
+    auto matrix = Matrix::MakePerspective(Radians(kPiOver2), 1, 1, 100);
+    auto point = Point(3, 3);
+
+    Point result = matrix * point;
+    auto expected = Point(0, 0);
+    ASSERT_POINT_NEAR(result, expected);
+  }
 }
 
 TEST(GeometryTest, MatrixTransformDirection) {
@@ -374,6 +432,48 @@ TEST(GeometryTest, QuaternionLerp) {
   auto expected = Quaternion{{0.0, 0.0, 1.0}, kPiOver4 / 2.0};
 
   ASSERT_QUATERNION_NEAR(q3, expected);
+}
+
+TEST(GeometryTest, QuaternionVectorMultiply) {
+  {
+    Quaternion q({0, 0, 1}, 0);
+    Vector3 v(0, 1, 0);
+
+    Vector3 result = q * v;
+    Vector3 expected(0, 1, 0);
+
+    ASSERT_VECTOR3_NEAR(result, expected);
+  }
+
+  {
+    Quaternion q({0, 0, 1}, k2Pi);
+    Vector3 v(1, 0, 0);
+
+    Vector3 result = q * v;
+    Vector3 expected(1, 0, 0);
+
+    ASSERT_VECTOR3_NEAR(result, expected);
+  }
+
+  {
+    Quaternion q({0, 0, 1}, kPiOver4);
+    Vector3 v(0, 1, 0);
+
+    Vector3 result = q * v;
+    Vector3 expected(-k1OverSqrt2, k1OverSqrt2, 0);
+
+    ASSERT_VECTOR3_NEAR(result, expected);
+  }
+
+  {
+    Quaternion q(Vector3(1, 0, 1).Normalize(), kPi);
+    Vector3 v(0, 0, -1);
+
+    Vector3 result = q * v;
+    Vector3 expected(-1, 0, 0);
+
+    ASSERT_VECTOR3_NEAR(result, expected);
+  }
 }
 
 TEST(GeometryTest, EmptyPath) {
@@ -865,6 +965,27 @@ TEST(GeometryTest, PointAngleTo) {
   }
 }
 
+TEST(GeometryTest, PointLerp) {
+  Point p(1, 2);
+  Point result = p.Lerp({5, 10}, 0.75);
+  Point expected(4, 8);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Lerp) {
+  Vector3 p(1, 2, 3);
+  Vector3 result = p.Lerp({5, 10, 15}, 0.75);
+  Vector3 expected(4, 8, 12);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Lerp) {
+  Vector4 p(1, 2, 3, 4);
+  Vector4 result = p.Lerp({5, 10, 15, 20}, 0.75);
+  Vector4 expected(4, 8, 12, 16);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
   {
     Vector3 p(1, 2, 4);
@@ -891,11 +1012,97 @@ TEST(GeometryTest, CanUseVector3AssignmentOperators) {
   }
 
   {
+    Vector3 p(1, 2, 3);
+    p *= 2;
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 4u);
+    ASSERT_EQ(p.z, 6u);
+  }
+
+  {
     Vector3 p(2, 6, 12);
     p /= Vector3(2, 3, 4);
     ASSERT_EQ(p.x, 1u);
     ASSERT_EQ(p.y, 2u);
     ASSERT_EQ(p.z, 3u);
+  }
+
+  {
+    Vector3 p(2, 6, 12);
+    p /= 2;
+    ASSERT_EQ(p.x, 1u);
+    ASSERT_EQ(p.y, 3u);
+    ASSERT_EQ(p.z, 6u);
+  }
+}
+
+TEST(GeometryTest, CanPerformAlgebraicVector3Ops) {
+  {
+    Vector3 p1(1, 2, 3);
+    Vector3 p2 = p1 + Vector3(1, 2, 3);
+    ASSERT_EQ(p2.x, 2u);
+    ASSERT_EQ(p2.y, 4u);
+    ASSERT_EQ(p2.z, 6u);
+  }
+
+  {
+    Vector3 p1(3, 6, 9);
+    Vector3 p2 = p1 - Vector3(1, 2, 3);
+    ASSERT_EQ(p2.x, 2u);
+    ASSERT_EQ(p2.y, 4u);
+    ASSERT_EQ(p2.z, 6u);
+  }
+
+  {
+    Vector3 p1(1, 2, 3);
+    Vector3 p2 = p1 * Vector3(2, 3, 4);
+    ASSERT_EQ(p2.x, 2u);
+    ASSERT_EQ(p2.y, 6u);
+    ASSERT_EQ(p2.z, 12u);
+  }
+
+  {
+    Vector3 p1(2, 6, 12);
+    Vector3 p2 = p1 / Vector3(2, 3, 4);
+    ASSERT_EQ(p2.x, 1u);
+    ASSERT_EQ(p2.y, 2u);
+    ASSERT_EQ(p2.z, 3u);
+  }
+}
+
+TEST(GeometryTest, CanPerformAlgebraicVector3OpsWithArithmeticTypes) {
+  // LHS
+  {
+    Vector3 p1(1, 2, 3);
+    Vector3 p2 = p1 * 2.0f;
+    ASSERT_EQ(p2.x, 2u);
+    ASSERT_EQ(p2.y, 4u);
+    ASSERT_EQ(p2.z, 6u);
+  }
+
+  {
+    Vector3 p1(2, 6, 12);
+    Vector3 p2 = p1 / 2.0f;
+    ASSERT_EQ(p2.x, 1u);
+    ASSERT_EQ(p2.y, 3u);
+    ASSERT_EQ(p2.z, 6u);
+  }
+
+  // RHS
+  {
+    Vector3 p1(1, 2, 3);
+    Vector3 p2 = 2.0f * p1;
+    ASSERT_EQ(p2.x, 2u);
+    ASSERT_EQ(p2.y, 4u);
+    ASSERT_EQ(p2.z, 6u);
+  }
+
+  {
+    Vector3 p1(2, 6, 12);
+    Vector3 p2 = 12.0f / p1;
+    ASSERT_EQ(p2.x, 6u);
+    ASSERT_EQ(p2.y, 2u);
+    ASSERT_EQ(p2.z, 1u);
   }
 }
 
@@ -961,6 +1168,26 @@ TEST(GeometryTest, ColorLerp) {
     ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.0), a);
     ASSERT_COLOR_NEAR(Color::lerp(a, b, 1.0), b);
     ASSERT_COLOR_NEAR(Color::lerp(a, b, 0.2), Color(0.24, 0.52, 0.84, 0.46));
+  }
+}
+
+TEST(GeometryTest, ColorMakeRGBA8) {
+  {
+    Color a = Color::MakeRGBA8(0, 0, 0, 0);
+    Color b = Color::BlackTransparent();
+    ASSERT_COLOR_NEAR(a, b);
+  }
+
+  {
+    Color a = Color::MakeRGBA8(255, 255, 255, 255);
+    Color b = Color::White();
+    ASSERT_COLOR_NEAR(a, b);
+  }
+
+  {
+    Color a = Color::MakeRGBA8(63, 127, 191, 127);
+    Color b(0.247059, 0.498039, 0.74902, 0.498039);
+    ASSERT_COLOR_NEAR(a, b);
   }
 }
 
@@ -1423,12 +1650,21 @@ TEST(GeometryTest, Gradient) {
     // values.
     std::vector<Color> colors = {Color::Red(), Color::Blue()};
     std::vector<Scalar> stops = {0.0, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
-    ASSERT_EQ(texture_size, 2u);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, colors);
+    ASSERT_EQ(gradient.texture_size, 2u);
+  }
+
+  {
+    // Gradient with duplicate stops does not create an empty texture.
+    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
+                                 Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
+
+    auto gradient = CreateGradientBuffer(colors, stops);
+    ASSERT_EQ(gradient.texture_size, 5u);
   }
 
   {
@@ -1437,21 +1673,19 @@ TEST(GeometryTest, Gradient) {
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
                                  Color::White()};
     std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_COLOR_BUFFER_NEAR(gradient, colors);
-    ASSERT_EQ(texture_size, 4u);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, colors);
+    ASSERT_EQ(gradient.texture_size, 4u);
   }
 
   {
     // Gradient with color stops will lerp and scale buffer.
     std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
     std::vector<Scalar> stops = {0.0, 0.25, 1.0};
-    uint32_t texture_size;
 
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
     std::vector<Color> lerped_colors = {
         Color::Red(),
@@ -1460,24 +1694,22 @@ TEST(GeometryTest, Gradient) {
         Color::lerp(Color::Blue(), Color::Green(), 0.6666),
         Color::Green(),
     };
-    ASSERT_COLOR_BUFFER_NEAR(gradient, lerped_colors);
-    ASSERT_EQ(texture_size, 5u);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, lerped_colors);
+    ASSERT_EQ(gradient.texture_size, 5u);
   }
 
   {
     // Gradient size is capped at 1024.
     std::vector<Color> colors = {};
     std::vector<Scalar> stops = {};
-    for (auto i = 0u; i < 2000; i++) {
+    for (auto i = 0u; i < 1025; i++) {
       colors.push_back(Color::Blue());
-      stops.push_back(i / 2000.0);
+      stops.push_back(i / 1025.0);
     }
-    stops[1999] = 1.0;
 
-    uint32_t texture_size;
-    auto gradient = CreateGradientBuffer(colors, stops, &texture_size);
+    auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_EQ(texture_size, 1024u);
+    ASSERT_EQ(gradient.texture_size, 1024u);
   }
 }
 

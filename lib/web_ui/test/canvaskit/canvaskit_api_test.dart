@@ -695,8 +695,7 @@ void _matrix4x4CompositionTests() {
     final bool areEqual =
         await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
     expect(areEqual, true);
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 void _toSkRectTests() {
@@ -1342,6 +1341,22 @@ void _canvasTests() {
     );
   });
 
+  test('Paragraph converts caret position to charactor position', () {
+    final CkParagraphBuilder builder = CkParagraphBuilder(
+      CkParagraphStyle(),
+    );
+    builder.addText('Hello there');
+    final CkParagraph paragraph = builder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: 100));
+    ui.TextRange range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream));
+    expect(range.start, 0);
+    expect(range.end, 5);
+
+    range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5));
+    expect(range.start, 5);
+    expect(range.end, 6);
+  });
+
   test('Paragraph dispose', () {
     final CkParagraphBuilder builder = CkParagraphBuilder(
       CkParagraphStyle(),
@@ -1386,8 +1401,7 @@ void _canvasTests() {
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 void _textStyleTests() {

@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
 #include "fml/logging.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -20,7 +21,9 @@ DeviceBufferAllocationVK::DeviceBufferAllocationVK(
 
 DeviceBufferAllocationVK::~DeviceBufferAllocationVK() {
   if (buffer_) {
-    vmaDestroyBuffer(allocator_, buffer_, allocation_);
+    // https://github.com/flutter/flutter/issues/112387
+    // This buffer can be freed once the command buffer is disposed.
+    // vmaDestroyBuffer(allocator_, buffer_, allocation_);
   }
 }
 
@@ -41,6 +44,10 @@ DeviceBufferVK::DeviceBufferVK(
       device_allocation_(std::move(device_allocation)) {}
 
 DeviceBufferVK::~DeviceBufferVK() = default;
+
+uint8_t* DeviceBufferVK::OnGetContents() const {
+  return reinterpret_cast<uint8_t*>(device_allocation_->GetMapping());
+}
 
 bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
                                       Range source_range,
@@ -65,6 +72,10 @@ bool DeviceBufferVK::SetLabel(const std::string& label) {
 
 bool DeviceBufferVK::SetLabel(const std::string& label, Range range) {
   return SetLabel(label);
+}
+
+vk::Buffer DeviceBufferVK::GetVKBufferHandle() const {
+  return device_allocation_->GetBufferHandle();
 }
 
 }  // namespace impeller

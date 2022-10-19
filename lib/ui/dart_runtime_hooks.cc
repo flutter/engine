@@ -138,13 +138,13 @@ void DartRuntimeHooks::Install(bool is_ui_isolate,
   InitDartIO(builtin, script_uri);
 }
 
-void DartRuntimeHooks::Logger_PrintDebugString(std::string message) {
+void DartRuntimeHooks::Logger_PrintDebugString(const std::string& message) {
 #ifndef NDEBUG
   DartRuntimeHooks::Logger_PrintString(message);
 #endif
 }
 
-void DartRuntimeHooks::Logger_PrintString(std::string message) {
+void DartRuntimeHooks::Logger_PrintString(const std::string& message) {
   const auto& tag = UIDartState::Current()->logger_prefix();
   UIDartState::Current()->LogMessage(tag, message);
 
@@ -259,7 +259,9 @@ Dart_Handle DartRuntimeHooks::GetCallbackHandle(Dart_Handle func) {
 }
 
 Dart_Handle DartRuntimeHooks::GetCallbackFromHandle(int64_t handle) {
-  return DartCallbackCache::GetCallback(handle);
+  Dart_Handle result = DartCallbackCache::GetCallback(handle);
+  PropagateIfError(result);
+  return result;
 }
 
 void DartPluginRegistrant_EnsureInitialized() {
