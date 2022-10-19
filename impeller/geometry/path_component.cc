@@ -108,7 +108,7 @@ void QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
   auto a0 = ApproximateParabolaIntegral(x0);
   auto a2 = ApproximateParabolaIntegral(x2);
   Scalar val = 0.f;
-  if (isfinite(scale)) {
+  if (std::isfinite(scale)) {
     auto da = abs(a2 - a0);
     auto sqrt_scale = sqrt(scale);
     if ((x0 < 0 && x2 < 0) || (x0 >= 0 && x2 >= 0)) {
@@ -154,7 +154,7 @@ Point CubicPathComponent::SolveDerivative(Scalar time) const {
 }
 
 std::vector<Point> CubicPathComponent::CreatePolyline(Scalar tolerance) const {
-  auto quads = ToQuadratics(.1);
+  auto quads = ToQuadraticPathComponents(.1);
   std::vector<Point> points;
   for (const auto& quad : quads) {
     quad.FillPointsForPolyline(points, tolerance);
@@ -177,8 +177,8 @@ CubicPathComponent CubicPathComponent::Subsegment(Scalar t0, Scalar t1) const {
   return CubicPathComponent(p0, p1, p2, p3);
 }
 
-std::vector<QuadraticPathComponent> CubicPathComponent::ToQuadratics(
-    Scalar accuracy) const {
+std::vector<QuadraticPathComponent>
+CubicPathComponent::ToQuadraticPathComponents(Scalar accuracy) const {
   std::vector<QuadraticPathComponent> quads;
   // The maximum error, as a vector from the cubic to the best approximating
   // quadratic, is proportional to the third derivative, which is constant
