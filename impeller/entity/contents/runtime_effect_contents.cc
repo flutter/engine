@@ -80,7 +80,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   auto geometry_result = GetGeometry()->GetPositionBuffer(
       context->GetResourceAllocator(), pass.GetTransientsBuffer(),
-      renderer.GetTessellator(), pass.GetRenderTargetSize());
+      renderer.GetTessellator(), pass.GetRenderTargetSize(),
+      entity.GetTransformation().GetMaxBasisLength());
 
   //--------------------------------------------------------------------------
   /// Get or create runtime stage pipeline.
