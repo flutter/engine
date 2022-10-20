@@ -17,9 +17,10 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
                        : Geometry::MakeFillPath(std::move(path));
       break;
     case Style::kStroke:
-      FML_DCHECK(!cover);
-      geometry = Geometry::MakeStrokePath(
-          std::move(path), stroke_width, stroke_miter, stroke_cap, stroke_join);
+      geometry = cover ? Geometry::MakeCover()
+                       : Geometry::MakeStrokePath(std::move(path), stroke_width,
+                                                  stroke_miter, stroke_cap,
+                                                  stroke_join);
       break;
   }
 
