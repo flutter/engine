@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_COMMON_PUBLIC_FLUTTER_MESSENGER_H_
 #define FLUTTER_SHELL_PLATFORM_COMMON_PUBLIC_FLUTTER_MESSENGER_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -86,6 +87,21 @@ FLUTTER_EXPORT void FlutterDesktopMessengerSetCallback(
     const char* channel,
     FlutterDesktopMessageCallback callback,
     void* user_data);
+
+FLUTTER_EXPORT FlutterDesktopMessengerRef
+FlutterDesktopMessengerAddRef(FlutterDesktopMessengerRef messenger);
+
+FLUTTER_EXPORT void FlutterDesktopMessengerRelease(
+    FlutterDesktopMessengerRef messenger);
+
+FLUTTER_EXPORT bool FlutterDesktopMessengerIsAvailable(
+    FlutterDesktopMessengerRef messenger);
+
+FLUTTER_EXPORT FlutterDesktopMessengerRef
+FlutterDesktopMessengerLock(FlutterDesktopMessengerRef messenger);
+
+FLUTTER_EXPORT void FlutterDesktopMessengerUnlock(
+    FlutterDesktopMessengerRef messenger);
 
 #if defined(__cplusplus)
 }  // extern "C"

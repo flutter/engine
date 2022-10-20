@@ -283,7 +283,7 @@ class FlutterWindowsEngine {
   std::unique_ptr<TaskRunner> task_runner_;
 
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterDesktopMessenger> messenger_;
+  fml::RefPtr<FlutterDesktopMessenger> messenger_;
 
   // A wrapper around messenger_ for interacting with client_wrapper-level APIs.
   std::unique_ptr<BinaryMessengerImpl> messenger_wrapper_;

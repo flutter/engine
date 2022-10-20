@@ -36,17 +36,30 @@ void ForwardToHandler(FlutterDesktopMessengerRef messenger,
                       const FlutterDesktopMessage* message,
                       void* user_data) {
   auto* response_handle = message->response_handle;
-  BinaryReply reply_handler = [messenger, response_handle](
+  auto messenger_ptr = std::shared_ptr<FlutterDesktopMessenger>(
+      FlutterDesktopMessengerAddRef(messenger),
+      &FlutterDesktopMessengerRelease);
+  BinaryReply reply_handler = [messenger_ptr, response_handle](
                                   const uint8_t* reply,
                                   size_t reply_size) mutable {
+    auto lock = std::unique_ptr<FlutterDesktopMessenger,
+                                decltype(&FlutterDesktopMessengerUnlock)>(
+        FlutterDesktopMessengerLock(messenger_ptr.get()),
+        &FlutterDesktopMessengerUnlock);
+    if (!FlutterDesktopMessengerIsAvailable(messenger_ptr.get())) {
+      std::cerr << "Error: Responding to platform channel after the engine has"
+                   "been deleted."
+                << std::endl;
+      return;
+    }
     if (!response_handle) {
       std::cerr << "Error: Response can be set only once. Ignoring "
                    "duplicate response."
                 << std::endl;
       return;
     }
-    FlutterDesktopMessengerSendResponse(messenger, response_handle, reply,
-                                        reply_size);
+    FlutterDesktopMessengerSendResponse(messenger_ptr.get(), response_handle,
+                                        reply, reply_size);
     // The engine frees the response handle once
     // FlutterDesktopSendMessageResponse is called.
     response_handle = nullptr;

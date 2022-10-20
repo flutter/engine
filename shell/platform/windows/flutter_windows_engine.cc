@@ -179,8 +179,9 @@ FlutterWindowsEngine::FlutterWindowsEngine(
           });
 
   // Set up the legacy structs backing the API handles.
-  messenger_ = std::make_unique<FlutterDesktopMessenger>();
-  messenger_->engine = this;
+  messenger_ =
+      fml::RefPtr<FlutterDesktopMessenger>(new FlutterDesktopMessenger());
+  messenger_->SetEngine(this);
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
@@ -210,6 +211,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
+  messenger_->SetEngine(nullptr);
   Stop();
 }
 
