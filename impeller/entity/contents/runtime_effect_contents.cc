@@ -78,9 +78,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Resolve geometry.
   ///
 
-  auto geometry_result = GetGeometry()->GetPositionBuffer(
-      context->GetResourceAllocator(), pass.GetTransientsBuffer(),
-      renderer.GetTessellator(), pass.GetRenderTargetSize());
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   //--------------------------------------------------------------------------
   /// Get or create runtime stage pipeline.

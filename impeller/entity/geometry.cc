@@ -308,7 +308,7 @@ StrokePathGeometry::JoinProc StrokePathGeometry::GetJoinProc(Join stroke_join) {
       join_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                      const Point& position, const Point& start_offset,
                      const Point& end_offset, Scalar miter_limit,
-                     const SmoothingApproximation& smoothing) {
+                     Scalar tolerance) {
         CreateBevelAndGetDirection(vtx_builder, position, start_offset,
                                    end_offset);
       };
@@ -317,7 +317,7 @@ StrokePathGeometry::JoinProc StrokePathGeometry::GetJoinProc(Join stroke_join) {
       join_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                      const Point& position, const Point& start_offset,
                      const Point& end_offset, Scalar miter_limit,
-                     const SmoothingApproximation& smoothing) {
+                     Scalar tolerance) {
         Point start_normal = start_offset.Normalize();
         Point end_normal = end_offset.Normalize();
 
@@ -346,7 +346,7 @@ StrokePathGeometry::JoinProc StrokePathGeometry::GetJoinProc(Join stroke_join) {
       join_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                      const Point& position, const Point& start_offset,
                      const Point& end_offset, Scalar miter_limit,
-                     const SmoothingApproximation& smoothing) {
+                     Scalar tolerance) {
         Point start_normal = start_offset.Normalize();
         Point end_normal = end_offset.Normalize();
 
@@ -373,7 +373,7 @@ StrokePathGeometry::JoinProc StrokePathGeometry::GetJoinProc(Join stroke_join) {
 
         auto arc_points = CubicPathComponent(start_offset, start_handle,
                                              middle_handle, middle)
-                              .CreatePolyline(smoothing);
+                              .CreatePolyline(tolerance);
 
         VS::PerVertexData vtx;
         for (const auto& point : arc_points) {
@@ -396,12 +396,12 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
     case Cap::kButt:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                     const Point& position, const Point& offset,
-                    const SmoothingApproximation& smoothing) {};
+                    Scalar tolerance) {};
       break;
     case Cap::kRound:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                     const Point& position, const Point& offset,
-                    const SmoothingApproximation& smoothing) {
+                    Scalar tolerance) {
         VS::PerVertexData vtx;
 
         Point forward(offset.y, -offset.x);
@@ -411,7 +411,7 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
             CubicPathComponent(
                 offset, offset + forward * PathBuilder::kArcApproximationMagic,
                 forward + offset * PathBuilder::kArcApproximationMagic, forward)
-                .CreatePolyline(smoothing);
+                .CreatePolyline(tolerance);
 
         vtx.position = position + offset;
         vtx_builder.AppendVertex(vtx);
@@ -428,7 +428,7 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
     case Cap::kSquare:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                     const Point& position, const Point& offset,
-                    const SmoothingApproximation& smoothing) {
+                    Scalar tolerance) {
         VS::PerVertexData vtx;
         vtx.position = position;
 
@@ -456,7 +456,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     Scalar scaled_miter_limit,
     const StrokePathGeometry::JoinProc& join_proc,
     const StrokePathGeometry::CapProc& cap_proc,
-    const SmoothingApproximation& smoothing) {
+    Scalar tolerance) {
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   auto polyline = path.CreatePolyline();
 
@@ -483,8 +483,8 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     switch (contour_end_point_i - contour_start_point_i) {
       case 1: {
         Point p = polyline.points[contour_start_point_i];
-        cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, smoothing);
-        cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, smoothing);
+        cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, tolerance);
+        cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, tolerance);
         continue;
       }
       case 0:
@@ -522,7 +522,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     // Generate start cap.
     if (!polyline.contours[contour_i].is_closed) {
       cap_proc(vtx_builder, polyline.points[contour_start_point_i], -offset,
-               smoothing);
+               tolerance);
     }
 
     // Generate contour geometry.
@@ -544,7 +544,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
           // Generate join from the current line to the next line.
           join_proc(vtx_builder, polyline.points[point_i], previous_offset,
-                    offset, scaled_miter_limit, smoothing);
+                    offset, scaled_miter_limit, tolerance);
         }
       }
     }
@@ -552,10 +552,10 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     // Generate end cap or join.
     if (!polyline.contours[contour_i].is_closed) {
       cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1], offset,
-               smoothing);
+               tolerance);
     } else {
       join_proc(vtx_builder, polyline.points[contour_start_point_i], offset,
-                contour_first_offset, scaled_miter_limit, smoothing);
+                contour_first_offset, scaled_miter_limit, tolerance);
     }
   }
 
@@ -574,16 +574,17 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
     return {};
   }
 
-  auto smoothing = SmoothingApproximation(
-      60.0 / (stroke_width_ * entity.GetTransformation().GetMaxBasisLength()),
-      0.0, 0.0);
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
+
+  auto tolerance =
+      kDefaultCurveTolerance /
+      (stroke_width_ * entity.GetTransformation().GetMaxBasisLength());
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto vertex_buffer = CreateSolidStrokeVertices(
       path_, host_buffer, stroke_width, miter_limit_ * stroke_width_ * 0.5,
-      GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), smoothing);
+      GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), tolerance);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,

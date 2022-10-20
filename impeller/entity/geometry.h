@@ -178,14 +178,14 @@ class StrokePathGeometry : public Geometry {
       std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                          const Point& position,
                          const Point& offset,
-                         const SmoothingApproximation& smoothing)>;
+                         Scalar tolerance)>;
   using JoinProc =
       std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                          const Point& position,
                          const Point& start_offset,
                          const Point& end_offset,
                          Scalar miter_limit,
-                         const SmoothingApproximation& smoothing)>;
+                         Scalar tolerance)>;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -216,14 +216,13 @@ class StrokePathGeometry : public Geometry {
       const Point& start_offset,
       const Point& end_offset);
 
-  static VertexBuffer CreateSolidStrokeVertices(
-      const Path& path,
-      HostBuffer& buffer,
-      Scalar stroke_width,
-      Scalar scaled_miter_limit,
-      const JoinProc& join_proc,
-      const CapProc& cap_proc,
-      const SmoothingApproximation& smoothing);
+  static VertexBuffer CreateSolidStrokeVertices(const Path& path,
+                                                HostBuffer& buffer,
+                                                Scalar stroke_width,
+                                                Scalar scaled_miter_limit,
+                                                const JoinProc& join_proc,
+                                                const CapProc& cap_proc,
+                                                Scalar tolerance);
 
   static StrokePathGeometry::JoinProc GetJoinProc(Join stroke_join);
 
