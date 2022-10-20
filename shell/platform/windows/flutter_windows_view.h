@@ -335,9 +335,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                   int32_t device_id);
 
   // Reports scroll inertia cancel events to Flutter engine.
-  void SendScrollInertiaCancel(int32_t device_id,
-                               double x,
-                               double y);
+  void SendScrollInertiaCancel(int32_t device_id, double x, double y);
 
   // Creates a PointerState object unless it already exists.
   PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,

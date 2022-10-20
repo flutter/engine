@@ -114,7 +114,8 @@ class DirectManipulationEventHandler
   // A flag is needed to ensure that false events created as the reset occurs
   // are not sent to the flutter framework.
   bool during_synthesized_reset_ = false;
-  // Store whether current events are from synthetic inertia rather than user input.
+  // Store whether current events are from synthetic inertia rather than user
+  // input.
   bool during_inertia_ = false;
   // Store the difference between the last pan offsets to determine if inertia
   // has been cancelled in the middle of an animation.

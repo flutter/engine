@@ -505,13 +505,17 @@ void FlutterWindowsView::SendScroll(double x,
   SendPointerEventWithData(event, state);
 }
 
-void FlutterWindowsView::SendScrollInertiaCancel(int32_t device_id, double x, double y) {
-  auto state = GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+void FlutterWindowsView::SendScrollInertiaCancel(int32_t device_id,
+                                                 double x,
+                                                 double y) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
 
   FlutterPointerEvent event = {};
   event.x = x;
   event.y = y;
-  event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScrollInertiaCancel;
+  event.signal_kind =
+      FlutterPointerSignalKind::kFlutterPointerSignalKindScrollInertiaCancel;
   SetEventPhaseFromCursorButtonState(&event, state);
   SendPointerEventWithData(event, state);
 }

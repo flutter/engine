@@ -66,7 +66,9 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
       owner_->binding_handler_delegate->OnPointerPanZoomEnd(GetDeviceId());
     }
   } else if (previous == DIRECTMANIPULATION_INERTIA) {
-    if (owner_->binding_handler_delegate && std::max(std::abs(last_pan_delta_x_), std::abs(last_pan_delta_y_)) > 0.01) {
+    if (owner_->binding_handler_delegate &&
+        (std::max)(std::abs(last_pan_delta_x_), std::abs(last_pan_delta_y_)) >
+            0.01) {
       owner_->binding_handler_delegate->OnScrollInertiaCancel(GetDeviceId());
     }
     // Need to reset the content transform to its original position

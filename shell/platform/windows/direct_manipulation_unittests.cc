@@ -287,26 +287,25 @@ TEST(DirectManipulationTest, TestInertiaCancelSentForUserCancel) {
                                    DIRECTMANIPULATION_RUNNING);
   // Have pan_y change by 10 between inertia updates.
   EXPECT_CALL(content, GetContentTransform(_, 6))
-      .WillOnce(::testing::Invoke(
-          [](float* transform, DWORD size) {
-            transform[0] = 1;
-            transform[4] = 0;
-            transform[5] = 100;
-            return S_OK;
-          }));
+      .WillOnce(::testing::Invoke([](float* transform, DWORD size) {
+        transform[0] = 1;
+        transform[4] = 0;
+        transform[5] = 100;
+        return S_OK;
+      }));
   handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
                             (IDirectManipulationContent*)&content);
   EXPECT_CALL(content, GetContentTransform(_, 6))
-      .WillOnce(::testing::Invoke(
-          [](float* transform, DWORD size) {
-            transform[0] = 1;
-            transform[4] = 0;
-            transform[5] = 110;
-            return S_OK;
-          }));
+      .WillOnce(::testing::Invoke([](float* transform, DWORD size) {
+        transform[0] = 1;
+        transform[4] = 0;
+        transform[5] = 110;
+        return S_OK;
+      }));
   handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
                             (IDirectManipulationContent*)&content);
-  // This looks like an interruption in the middle of synthetic inertia because of user input.
+  // This looks like an interruption in the middle of synthetic inertia because
+  // of user input.
   EXPECT_CALL(delegate, OnScrollInertiaCancel(device_id));
   handler->OnViewportStatusChanged((IDirectManipulationViewport*)&viewport,
                                    DIRECTMANIPULATION_READY,
@@ -341,23 +340,21 @@ TEST(DirectManipulationTest, TestInertiaCamcelNotSentAtInertiaEnd) {
                                    DIRECTMANIPULATION_RUNNING);
   // Have no change in pan between events.
   EXPECT_CALL(content, GetContentTransform(_, 6))
-      .WillOnce(::testing::Invoke(
-          [](float* transform, DWORD size) {
-            transform[0] = 1;
-            transform[4] = 0;
-            transform[5] = 140;
-            return S_OK;
-          }));
+      .WillOnce(::testing::Invoke([](float* transform, DWORD size) {
+        transform[0] = 1;
+        transform[4] = 0;
+        transform[5] = 140;
+        return S_OK;
+      }));
   handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
                             (IDirectManipulationContent*)&content);
   EXPECT_CALL(content, GetContentTransform(_, 6))
-      .WillOnce(::testing::Invoke(
-          [](float* transform, DWORD size) {
-            transform[0] = 1;
-            transform[4] = 0;
-            transform[5] = 140;
-            return S_OK;
-          }));
+      .WillOnce(::testing::Invoke([](float* transform, DWORD size) {
+        transform[0] = 1;
+        transform[4] = 0;
+        transform[5] = 140;
+        return S_OK;
+      }));
   handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
                             (IDirectManipulationContent*)&content);
   // OnScrollInertiaCancel should not be called.
