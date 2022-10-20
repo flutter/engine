@@ -35,35 +35,26 @@ coordinate space onto the client view's space.
 For example, if we inject at (-500, -500) `touch-input-view` will see a touch event at the middle of the upper-left quadrant of the screen.
 
 ## Running the Test
-Start a Fuchsia package server
-```shell
-cd "$FUCHSIA_DIR"
-fx serve
-```
 
-Start the Fuchsia emulator in a graphical environment
-```shell
-ffx emu start
-```
-
-Run the integration test
-```shell
-$ENGINE_DIR/flutter/tools/fuchsia/devshell/run_integration_test.sh touch-input --no-lto --skip-fuchsia-emu
-```
+Reference the Flutter integration test [documentation](https://github.com/flutter/engine/blob/main/shell/platform/fuchsia/flutter/tests/integration/README.md) at //flutter/shell/platform/fuchsia/flutter/tests/integration/README.md
 
 ## Playing around with `touch-input-view`
 
-This requires `tiles-session` (//src/session/examples/tiles-session), a simple graphical session with basic window management functionality.
-
-Build Fuchsia with `tiles-session` in the GN build args
+Build Fuchsia with `workstation_eng.qemu-x64`
 ```shell
-fx set workstation_eng.qemu-x64 --with //src/session/examples/tiles-session --with-base=//src/session/bin/session_manager && fx build
+fx set workstation_eng.qemu-x64 --with-base=//src/session/bin/session_manager && fx build
 ```
 
 Build flutter/engine
 ```shell
 $ENGINE_DIR/flutter/tools/gn --fuchsia --no-lto && ninja -C $ENGINE_DIR/out/fuchsia_debug_x64 flutter/shell/platform/fuchsia/flutter/tests/
 integration/touch_input:tests
+```
+
+Start a Fuchsia package server
+```shell
+cd "$FUCHSIA_DIR"
+fx serve
 ```
 
 Publish `touch-input-view`
@@ -77,10 +68,7 @@ Launch Fuchsia emulator in a graphical environment
 ffx emu start
 ```
 
-Launch `tiles-session`
-```shell
-ffx session launch fuchsia-pkg://fuchsia.com/tiles-session#meta/tiles-session.cm
-```
+**Before proceeding, make sure you have successfully completed the "Set a Password" screen**
 
 Add `touch-input-view`
 ```shell
