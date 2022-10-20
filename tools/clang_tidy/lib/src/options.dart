@@ -10,6 +10,16 @@ import 'package:path/path.dart' as path;
 // Path to root of the flutter/engine repository containing this script.
 final String _engineRoot = path.dirname(path.dirname(path.dirname(path.dirname(path.fromUri(io.Platform.script)))));
 
+
+/// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
+String? _platformSpecificWarningsAsErrors(String targetVariant) {
+  if (targetVariant == 'host_debug' && io.Platform.isMacOS) {
+    return 'performance-move-const-arg,performance-unnecessary-value-param';
+  }
+  return null;
+}
+
+
 /// A class for organizing the options to the Engine linter, and the files
 /// that it operates on.
 class Options {
@@ -23,6 +33,7 @@ class Options {
     this.lintHead = false,
     this.fix = false,
     this.errorMessage,
+    this.warningsAsErrors,
     StringSink? errSink,
   }) : checks = checksArg.isNotEmpty ? '--checks=$checksArg' : null,
        _errSink = errSink ?? io.stderr;
@@ -64,6 +75,7 @@ class Options {
       lintHead: options['lint-head'] as bool,
       fix: options['fix'] as bool,
       errSink: errSink,
+      warningsAsErrors: _platformSpecificWarningsAsErrors(options['target-variant'] as String),
     );
   }
 
@@ -159,11 +171,13 @@ class Options {
   /// The root of the flutter/engine repository.
   final io.Directory repoPath = io.Directory(_engineRoot);
 
-  /// Arguments to plumb through to clang-tidy formatted as a command line
-  /// argument.
+  /// Argument sent as `warnings-as-errors` to clang-tidy.
+  final String? warningsAsErrors;
+
+  /// Checks argument as supplied to the command-line.
   final String checksArg;
 
-  /// Check arguments to plumb through to clang-tidy.
+  /// Check argument to be supplied to the clang-tidy subprocess.
   final String? checks;
 
   /// Whether all files should be linted.
