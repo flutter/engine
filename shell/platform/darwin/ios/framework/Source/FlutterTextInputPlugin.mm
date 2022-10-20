@@ -1592,6 +1592,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   NSInteger index = ((FlutterTextPosition*)position).index;
+  // Get the bounds of the characters before and after the requested caret position.
   NSArray<UITextSelectionRect*>* rects =
       [self selectionRectsForRange:[FlutterTextRange
                                        rangeWithNSRange:fml::RangeForCharactersInRange(
@@ -1601,10 +1602,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     return CGRectZero;
   }
   if (index == 0) {
-    return CGRectMake(rects[0].rect.origin.x, rects[0].rect.origin.y, 0, rects[0].rect.size.height);
+    // There is no character before the caret, so this will be the bounds of the character after the
+    // caret position.
+    CGRect characterAfterCaret = rects[0].rect;
+    // Return a zero-width rectangle along the left edge of the character after the caret position.
+    return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
+                      characterAfterCaret.size.height);
   }
-  return CGRectMake(rects[0].rect.origin.x + rects[0].rect.size.width, rects[0].rect.origin.y, 0,
-                    rects[0].rect.size.height);
+  CGRect characterBeforeCaret = rects[0].rect;
+  // Return a zero-width rectangle along the right edge of the character before the caret position.
+  return CGRectMake(characterBeforeCaret.origin.x + characterBeforeCaret.size.width,
+                    characterBeforeCaret.origin.y, 0, characterBeforeCaret.size.height);
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
@@ -1724,7 +1732,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
-                                  withPosition:@{@"X" : @(0), @"Y" : @(0)}];
+                                  withPosition:@{@"X" : @0, @"Y" : @0}];
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
@@ -1743,7 +1751,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient
-                                  withPosition:@{@"X" : @(0), @"Y" : @(0)}];
+                                  withPosition:@{@"X" : @0, @"Y" : @0}];
 }
 
 #pragma mark - UIKeyInput Overrides
