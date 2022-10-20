@@ -463,9 +463,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
           CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
           if (CGRectContainsRect(clipView.frame, intersection)) {
             CGRect frameInClipView = [flutter_view_.get() convertRect:intersection toView:clipView];
+            UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
+                initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
             PlatformViewFilter* filter =
                 [[[PlatformViewFilter alloc] initWithFrame:frameInClipView
-                                                blurRadius:blurRadius] autorelease];
+                                                blurRadius:blurRadius
+                                          visualEffectView:visualEffectView] autorelease];
             [blurFilters addObject:filter];
           }
         }

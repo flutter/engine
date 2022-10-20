@@ -45,23 +45,41 @@
 
 @end
 
-// An object represents a filter.
+// An object represents a blur filter.
+//
+// This object produces a `backdropFilterView`.
+// To blur a View, add `backdropFilterView` as a subView of the View.
 @interface PlatformViewFilter : NSObject
 
+// Determines the rect of the blur effect in the coordinate system of `backdropFilterView`'s
+// parentView.
 @property(assign, nonatomic, readonly) CGRect frame;
-@property(assign, nonatomic, readonly) CGFloat blurRadius;
-// The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
-// initalized with UIBlurEffect to extract the correct filter. Made a public property
-// for custom unit tests.
-@property(nonatomic, retain) UIView* blurEffectView;
 
-- (instancetype)initWithFrame:(CGRect)frame blurRadius:(CGFloat)blurRadius;
-// Returns the blur backdrop filter view based on the `frame` and `blurRadius` property.
-- (UIView*)backdropFilterView;
+// Determines the blur intensity.
+//
+// It is set as the value of `inputRadius` of the `gaussianFilter` that is internally used.
+@property(assign, nonatomic, readonly) CGFloat blurRadius;
+
+// This is the view to use to blur the PlatformView.
+//
+// It is a modified version of UIKit's `UIVisualEffectView`.
+// The inputRadius can be customized and it doesn't add any color saturation to the blurred view.
+@property(nonatomic, retain, readonly) UIVisualEffectView* backdropFilterView;
+
+// Initialize the filter object.
+//
+// The `frame` determines the rect of the blur effect in the coordinate system of
+// `backdropFilterView`'s parentView. The `blurRadius` determines the blur intensity. It is set as
+// the value of `inputRadius` of the `gaussianFilter` that is internally used. The
+// `UIVisualEffectView` is the view that is used to add the blur effects. It is modified to become
+// `backdropFilterView`, which better supports the need of Flutter.
+- (instancetype)initWithFrame:(CGRect)frame
+                   blurRadius:(CGFloat)blurRadius
+             visualEffectView:(UIVisualEffectView*)visualEffectView;
 
 @end
 
-// The parent view handles clipping to its subviews.
+// The parent view handles clipping to its subViews.
 @interface ChildClippingView : UIView
 
 // Applies blur backdrop filters to the ChildClippingView with blur radius values from

@@ -69,60 +69,47 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
 
 @implementation PlatformViewFilter
 
-- (instancetype)initWithFrame:(CGRect)frame blurRadius:(CGFloat)blurRadius {
+- (instancetype)initWithFrame:(CGRect)frame
+                   blurRadius:(CGFloat)blurRadius
+             visualEffectView:(UIVisualEffectView*)visualEffectView {
   if (self = [super init]) {
     _frame = frame;
     _blurRadius = blurRadius;
+    BOOL isUIVisualEffectViewImplementationValid = NO;
+    for (UIView* view in visualEffectView.subviews) {
+      if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+        for (NSObject* filter in view.layer.filters) {
+          if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
+              [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
+            isUIVisualEffectViewImplementationValid = YES;
+            [filter setValue:@(_blurRadius) forKey:@"inputRadius"];
+            view.layer.filters = @[ filter ];
+
+            // Stop looping through other filters because the filter array is changed.
+            break;
+          }
+        }
+      } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
+        // Make `_UIVisualEffectSubview` transparanet so it does not add addtional color to the
+        // blurred PlatformView.
+        view.layer.backgroundColor = UIColor.clearColor.CGColor;
+      }
+    }
+    if (isUIVisualEffectViewImplementationValid) {
+      _backdropFilterView = [visualEffectView retain];
+      _backdropFilterView.frame = _frame;
+    } else {
+      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                         "access the gaussianBlur CAFilter.";
+      _backdropFilterView = nil;
+    }
   }
   return self;
 }
 
-- (UIView*)backdropFilterView {
-  BOOL validVisualEffectViewImplementation = NO;
-  for (UIView* view in self.blurEffectView.subviews) {
-    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      for (NSObject* filter in view.layer.filters) {
-        if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-          validVisualEffectViewImplementation = YES;
-          // Sets the new blur radius value if necesasry.
-          [filter setValue:@(_blurRadius) forKey:@"inputRadius"];
-          view.layer.filters = @[ filter ];
-
-          // Stop looping through other filters because the filter array is changed.
-          break;
-        }
-      }
-    } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
-      // Make `_UIVisualEffectSubview` transparanet so it does not add addtional color to the
-      // blurred PlatformView.
-      view.layer.backgroundColor = UIColor.clearColor.CGColor;
-    }
-  }
-  if (!validVisualEffectViewImplementation) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                       "access the gaussianBlur CAFilter.";
-    return nil;
-  }
-  _blurEffectView.frame = _frame;
-  return _blurEffectView;
-}
-
-// Lazy initializes blurEffectView as the expected UIVisualEffectView. The backdropFilter blur
-// requires this UIVisualEffectView initialization. The lazy initalization is only used to allow
-// custom unit tests.
-- (UIView*)blurEffectView {
-  if (!_blurEffectView) {
-    // blurEffectView is only needed to extract its gaussianBlur filter. It is released after
-    // searching its subviews and extracting the filter.
-    _blurEffectView = [[[UIVisualEffectView alloc]
-        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] retain];
-  }
-  return _blurEffectView;
-}
-
 - (void)dealloc {
-  [_blurEffectView release];
-  _blurEffectView = nil;
+  [_backdropFilterView release];
+  _backdropFilterView = nil;
 
   [super dealloc];
 }

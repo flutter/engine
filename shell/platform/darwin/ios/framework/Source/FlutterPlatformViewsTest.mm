@@ -1097,23 +1097,21 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   // The gaussianBlur filter is extracted from UIVisualEffectView.
   // Each test requires a new PlatformViewFilter
   // Valid UIVisualEffectView API
-  PlatformViewFilter* platformViewFilter1 =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10) blurRadius:5];
-  platformViewFilter1.blurEffectView = [[UIVisualEffectView alloc]
+  UIVisualEffectView* visualEffectView1 = [[UIVisualEffectView alloc]
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+  PlatformViewFilter* platformViewFilter1 =
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:visualEffectView1];
   XCTAssertNotNil([platformViewFilter1 backdropFilterView]);
 
   // Invalid UIVisualEffectView initialization
+  UIVisualEffectView* visualEffectView2 = [[UIVisualEffectView alloc] init];
   PlatformViewFilter* platformViewFilter2 =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10) blurRadius:5];
-  platformViewFilter2.blurEffectView = [[UIVisualEffectView alloc] init];
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:visualEffectView2];
   XCTAssertNil([platformViewFilter2 backdropFilterView]);
-
-  // Invalid UIView
-  PlatformViewFilter* platformViewFilter3 =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10) blurRadius:5];
-  platformViewFilter3.blurEffectView = [[UIView alloc] init];
-  XCTAssertNil([platformViewFilter3 backdropFilterView]);
 
   // Invalid UIVisualEffectView API for "name"
   UIVisualEffectView* editedUIVisualEffectView1 = [[UIVisualEffectView alloc]
@@ -1132,8 +1130,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   }
 
   PlatformViewFilter* platformViewFilter4 =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10) blurRadius:5];
-  platformViewFilter4.blurEffectView = editedUIVisualEffectView1;
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:editedUIVisualEffectView1];
   XCTAssertNil([platformViewFilter4 backdropFilterView]);
 
   // Invalid UIVisualEffectView API for "inputRadius"
@@ -1153,9 +1152,27 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   }
 
   PlatformViewFilter* platformViewFilter5 =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10) blurRadius:5];
-  platformViewFilter5.blurEffectView = editedUIVisualEffectView1;
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:editedUIVisualEffectView2];
   XCTAssertNil([platformViewFilter5 backdropFilterView]);
+}
+
+- (void)testBackdropFilterVisualEffectSubviewBackgroundColor {
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+  PlatformViewFilter* platformViewFilter =
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:visualEffectView];
+  CGColorRef visualEffectSubviewBackgroundColor;
+  for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
+    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
+      visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
+    }
+  }
+  XCTAssertTrue(
+      CGColorEqualToColor(visualEffectSubviewBackgroundColor, UIColor.clearColor.CGColor));
 }
 
 - (void)testCompositePlatformView {
