@@ -24,7 +24,6 @@ platform_properties:
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
-      no_bitcode: "false"
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -47,7 +46,6 @@ platform_properties:
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
-      no_bitcode: "false"
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -56,7 +54,6 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 14a5294e # xcode 14.0 beta 5
   windows:
     properties:
       build_host: "false"
@@ -70,7 +67,6 @@ platform_properties:
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
-      no_bitcode: "false"
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -336,7 +332,6 @@ targets:
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
       build_android_aot: "true"
-      jazzy_version: "0.14.1"
     timeout: 60
 
   - name: Mac Host Engine
@@ -346,7 +341,7 @@ targets:
         {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
-      jazzy_version: "0.14.1"
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac mac_android_aot_engine
@@ -370,11 +365,11 @@ targets:
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
-      jazzy_version: "0.14.1"
       runtime_versions: >-
         [
           "ios-16-0_14a5294e"
         ]
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac Host clang-tidy
@@ -382,7 +377,6 @@ targets:
     properties:
       add_recipes_cq: "true"
       cores: "12"
-      jazzy_version: "0.14.1"
       lint_host: "true"
       lint_ios: "false"
     timeout: 75
@@ -404,7 +398,6 @@ targets:
     recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
-      jazzy_version: "0.14.1"
       lint_host: "false"
       lint_ios: "true"
     timeout: 75
@@ -428,7 +421,7 @@ targets:
       add_recipes_cq: "true"
       build_ios: "true"
       ios_debug: "true"
-      jazzy_version: "0.14.1"
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 60
 
   - name: Mac Web Engine
@@ -464,6 +457,7 @@ targets:
         [
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
+      xcode: 14a5294e # xcode 14.0 beta 5
 
   - name:  Mac mac_ios_engine_profile
     recipe: engine_v2/engine_v2
@@ -472,6 +466,7 @@ targets:
       config_name: mac_ios_engine_profile
       $flutter/osx_sdk : >-
         { "sdk_version": "14a5294e" }
+      xcode: 14a5294e # xcode 14.0 beta 5
 
   - name:  Mac mac_ios_engine_release
     recipe: engine_v2/engine_v2
@@ -480,6 +475,7 @@ targets:
       config_name: mac_ios_engine_release
       $flutter/osx_sdk : >-
         { "sdk_version": "14a5294e" }
+      xcode: 14a5294e # xcode 14.0 beta 5
 
   - name: Windows Android AOT Engine
     recipe: engine/engine
@@ -548,7 +544,7 @@ targets:
     properties:
       build_ios: "true"
       ios_profile: "true"
-      jazzy_version: "0.14.1"
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 90
     runIf:
       - DEPS
@@ -560,7 +556,7 @@ targets:
     properties:
       build_ios: "true"
       ios_release: "true"
-      jazzy_version: "0.14.1"
+      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 90
     runIf:
       - DEPS
