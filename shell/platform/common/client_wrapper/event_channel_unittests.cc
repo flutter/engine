@@ -33,7 +33,9 @@ class TestBinaryMessenger : public BinaryMessenger {
     return last_message_handler_channel_;
   }
 
-  BinaryMessageHandler& last_message_handler() { return last_message_handler_; }
+  const BinaryMessageHandler& last_message_handler() {
+    return last_message_handler_;
+  }
 
  private:
   std::string last_message_handler_channel_;
