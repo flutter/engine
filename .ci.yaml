@@ -199,6 +199,7 @@ targets:
       - .ci.yaml
       - tools/**
       - ci/**
+      - "**.h"
       - "**.c"
       - "**.cc"
 
@@ -215,6 +216,7 @@ targets:
       - .ci.yaml
       - tools/**
       - ci/**
+      - "**.h"
       - "**.c"
       - "**.cc"
       - "**.py" # Run pylint on the fastest clang-tidy builder.
@@ -356,6 +358,7 @@ targets:
       - .ci.yaml
       - tools/**
       - ci/**
+      - "**.h"
       - "**.c"
       - "**.cc"
       - "**.m"
@@ -374,6 +377,7 @@ targets:
       - .ci.yaml
       - tools/**
       - ci/**
+      - "**.h"
       - "**.c"
       - "**.cc"
       - "**.m"
