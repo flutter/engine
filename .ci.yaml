@@ -217,6 +217,7 @@ targets:
       - ci/**
       - "**.c"
       - "**.cc"
+      - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
     recipe: engine/engine_arm
