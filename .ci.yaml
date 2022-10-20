@@ -351,6 +351,10 @@ targets:
       lint_ios: "false"
     timeout: 75
     runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
       - "**.c"
       - "**.cc"
       - "**.m"
