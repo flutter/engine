@@ -45,18 +45,29 @@
 
 @end
 
+// An object represents a filter.
+@interface PlatformViewFilter : NSObject
+
+@property(assign, nonatomic, readonly) CGRect frame;
+@property(assign, nonatomic, readonly) CGFloat blurRadius;
+// The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
+// initalized with UIBlurEffect to extract the correct filter. Made a public property
+// for custom unit tests.
+@property(nonatomic, retain) UIView* blurEffectView;
+
+- (instancetype)initWithFrame:(CGRect)frame blurRadius:(CGFloat)blurRadius;
+// Returns the blur backdrop filter view based on the `frame` and `blurRadius` property.
+- (UIView*)backdropFilterView;
+
+@end
+
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
 // Applies blur backdrop filters to the ChildClippingView with blur radius values from
 // blurRadii. Returns NO if Apple's API has changed and blurred backdrop filters cannot
 // be applied, otherwise returns YES.
-- (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
-
-// The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
-// initalized with UIBlurEffect to extract the correct filter. Made a public property
-// for custom unit tests.
-@property(nonatomic, retain) UIView* blurEffectView;
+- (BOOL)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters;
 
 @end
 
@@ -68,6 +79,9 @@ CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
 // Reset the anchor of `layer` to match the transform operation from flow.
 // The position of the `layer` should be unchanged after resetting the anchor.
 void ResetAnchor(CALayer* layer);
+
+CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
+BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2);
 
 class IOSContextGL;
 class IOSSurface;
@@ -197,7 +211,8 @@ class FlutterPlatformViewsController {
   long FindFirstResponderPlatformViewId();
 
   // Pushes backdrop filter mutation to the mutator stack of each visited platform view.
-  void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter);
+  void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter,
+                                        const SkRect& filter_rect);
 
   // Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
