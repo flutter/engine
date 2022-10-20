@@ -13,7 +13,7 @@
 
 FLUTTER_ASSERT_ARC
 
-static std::shared_ptr<impeller::Context> CreateImpellerContext() {
+static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext() {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
                                              impeller_entity_shaders_length),
@@ -34,31 +34,27 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext() {
   self = [super init];
   if (self != nil) {
     _context = CreateImpellerContext();
-    _device = impeller::ContextMTL::Cast(*_context).GetMTLDevice();
-
-    if (!_device) {
+    id<MTLDevice> device = _context->GetMTLDevice();
+    if (!device) {
       FML_DLOG(ERROR) << "Could not acquire Metal device.";
       return nil;
     }
 
+    CVMetalTextureCacheRef textureCache;
     CVReturn cvReturn = CVMetalTextureCacheCreate(kCFAllocatorDefault,  // allocator
-                                                  nil,      // cache attributes (nil default)
-                                                  _device,  // metal device
-                                                  nil,      // texture attributes (nil default)
-                                                  &_textureCache  // [out] cache
+                                                  nil,           // cache attributes (nil default)
+                                                  device,        // metal device
+                                                  nil,           // texture attributes (nil default)
+                                                  &textureCache  // [out] cache
     );
+
     if (cvReturn != kCVReturnSuccess) {
       FML_DLOG(ERROR) << "Could not create Metal texture cache.";
       return nil;
     }
+    _textureCache.Reset(textureCache);
   }
   return self;
-}
-
-- (void)dealloc {
-  if (_textureCache) {
-    CFRelease(_textureCache);
-  }
 }
 
 - (FlutterDarwinExternalTextureMetal*)

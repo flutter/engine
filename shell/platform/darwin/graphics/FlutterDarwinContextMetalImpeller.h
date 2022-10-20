@@ -9,9 +9,10 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
-#include "flutter/impeller/renderer/backend/metal/context_mtl.h"
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
+#include "impeller/renderer/backend/metal/context_mtl.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -33,19 +34,14 @@ NS_ASSUME_NONNULL_BEGIN
                                 texture:(NSObject<FlutterTexture>*)texture;
 
 /**
- * MTLDevice that is backing this context.s
- */
-@property(nonatomic, readonly) id<MTLDevice> device;
-
-/**
  * Impeller context;
  */
-@property(nonatomic, readonly) std::shared_ptr<impeller::Context> context;
+@property(nonatomic, readonly) std::shared_ptr<impeller::ContextMTL> context;
 
 /*
  * Texture cache for external textures.
  */
-@property(nonatomic, readonly) CVMetalTextureCacheRef textureCache;
+@property(nonatomic, readonly) fml::CFRef<CVMetalTextureCacheRef> textureCache;
 
 @end
 

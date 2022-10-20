@@ -4,13 +4,11 @@
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "flutter/display_list/display_list_image.h"
-#if IMPELLER_SUPPORTS_RENDERING
-#include "impeller/base/config.h"
-#include "impeller/display_list/display_list_image_impeller.h"
-#include "impeller/renderer/backend/metal/texture_mtl.h"
-#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#include "impeller/base/validation.h"
+#include "impeller/display_list/display_list_image_impeller.h"
+#include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkYUVAInfo.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
@@ -66,7 +64,6 @@ FLUTTER_ASSERT_ARC
   }
 
   if (_externalImage) {
-#if IMPELLER_SUPPORTS_RENDERING
     if (_enableImpeller) {
       context.builder->drawImageRect(
           _externalImage,                                       // image
@@ -78,7 +75,6 @@ FLUTTER_ASSERT_ARC
       );
       return;
     }
-#endif  // IMPELLER_SUPPORTS_RENDERING
 
     context.canvas->drawImageRect(
         _externalImage->skia_image(),                         // image
@@ -206,7 +202,6 @@ FLUTTER_ASSERT_ARC
   id<MTLTexture> uvTex = CVMetalTextureGetTexture(uvMetalTexture);
   CVBufferRelease(uvMetalTexture);
 
-#if IMPELLER_SUPPORTS_RENDERING
   if (_enableImpeller) {
     impeller::TextureDescriptor yDesc;
     yDesc.storage_mode = impeller::StorageMode::kHostVisible;
@@ -232,10 +227,13 @@ FLUTTER_ASSERT_ARC
     return impeller::DlImageImpeller::MakeFromYUVTextures(context.aiks_context, yTexture, uvTexture,
                                                           yuvColorSpace);
   }
-#endif  // IMPELLER_SUPPORTS_RENDERING
 
+  SkYUVColorSpace colorSpace = _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                                   ? kRec601_Limited_SkYUVColorSpace
+                                   : kJPEG_Full_SkYUVColorSpace;
   auto skImage = [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex
                                                                        UVTex:uvTex
+                                                               YUVColorSpace:colorSpace
                                                                    grContext:context.gr_context
                                                                        width:textureSize.width()
                                                                       height:textureSize.height()];
@@ -270,7 +268,6 @@ FLUTTER_ASSERT_ARC
   id<MTLTexture> rgbaTex = CVMetalTextureGetTexture(metalTexture);
   CVBufferRelease(metalTexture);
 
-#if IMPELLER_SUPPORTS_RENDERING
   if (_enableImpeller) {
     impeller::TextureDescriptor desc;
     desc.storage_mode = impeller::StorageMode::kHostVisible;
@@ -281,7 +278,6 @@ FLUTTER_ASSERT_ARC
     texture->SetIntent(impeller::TextureIntent::kUploadFromHost);
     return impeller::DlImageImpeller::Make(texture);
   }
-#endif  // IMPELLER_SUPPORTS_RENDERING
 
   auto skImage = [FlutterDarwinExternalTextureSkImageWrapper wrapRGBATexture:rgbaTex
                                                                    grContext:context.gr_context
@@ -299,6 +295,7 @@ FLUTTER_ASSERT_ARC
 
 + (sk_sp<SkImage>)wrapYUVATexture:(id<MTLTexture>)yTex
                             UVTex:(id<MTLTexture>)uvTex
+                    YUVColorSpace:(SkYUVColorSpace)colorSpace
                         grContext:(nonnull GrDirectContext*)grContext
                             width:(size_t)width
                            height:(size_t)height {
@@ -319,7 +316,7 @@ FLUTTER_ASSERT_ARC
                                             /*mipMapped=*/GrMipMapped::kNo,
                                             /*textureInfo=*/uvSkiaTextureInfo);
   SkYUVAInfo yuvaInfo(skiaBackendTextures[0].dimensions(), SkYUVAInfo::PlaneConfig::kY_UV,
-                      SkYUVAInfo::Subsampling::k444, kRec601_SkYUVColorSpace);
+                      SkYUVAInfo::Subsampling::k444, colorSpace);
   GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
                                             kTopLeft_GrSurfaceOrigin);
 
