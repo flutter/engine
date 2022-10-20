@@ -5,11 +5,14 @@
 #include "impeller/display_list/display_list_dispatcher.h"
 
 #include <algorithm>
+#include <cstring>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color_filter.h"
+#include "display_list/display_list_color_source.h"
 #include "display_list/display_list_path_effect.h"
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
@@ -21,6 +24,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -426,8 +430,28 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
+    case flutter::DlColorSourceType::kRuntimeEffect: {
+      const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
+          source->asRuntimeEffect();
+      auto runtime_stage =
+          runtime_effect_color_source->runtime_effect()->runtime_stage();
+      auto uniform_data_sk = runtime_effect_color_source->uniform_data();
+
+      paint_.color_source = [runtime_stage, uniform_data_sk]() {
+        // TODO(113714): Get rid of the allocation + copy for uniform data.
+        std::vector<uint8_t> uniform_data;
+        uniform_data.resize(uniform_data_sk->size());
+        memcpy(uniform_data.data(), uniform_data_sk->bytes(),
+               uniform_data.size());
+
+        auto contents = std::make_shared<RuntimeEffectContents>();
+        contents->SetRuntimeStage(runtime_stage);
+        contents->SetUniformData(std::move(uniform_data));
+        return contents;
+      };
+      return;
+    }
     case flutter::DlColorSourceType::kConicalGradient:
-    case flutter::DlColorSourceType::kRuntimeEffect:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;
@@ -448,7 +472,7 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       auto blend_mode = ToBlendMode(dl_blend->mode());
       auto color = ToColor(dl_blend->color());
       return [blend_mode, color](FilterInput::Ref input) {
-        return FilterContents::MakeBlend(blend_mode, {input}, color);
+        return ColorFilterContents::MakeBlend(blend_mode, {input}, color);
       };
     }
     case flutter::DlColorFilterType::kMatrix: {
@@ -456,16 +480,16 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       impeller::FilterContents::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
       return [color_matrix](FilterInput::Ref input) {
-        return FilterContents::MakeColorMatrix({input}, color_matrix);
+        return ColorFilterContents::MakeColorMatrix({input}, color_matrix);
       };
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
       return [](FilterInput::Ref input) {
-        return FilterContents::MakeSrgbToLinearFilter({input});
+        return ColorFilterContents::MakeSrgbToLinearFilter({input});
       };
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
       return [](FilterInput::Ref input) {
-        return FilterContents::MakeLinearToSrgbFilter({input});
+        return ColorFilterContents::MakeLinearToSrgbFilter({input});
       };
     case flutter::DlColorFilterType::kUnknown:
       FML_LOG(ERROR) << "requested DlColorFilterType::kUnknown";
@@ -1072,7 +1096,7 @@ void DisplayListDispatcher::drawImageRect(
       std::make_shared<Image>(image->impeller_texture()),  // image
       ToRect(src),                                         // source rect
       ToRect(dst),                                         // destination rect
-      paint_,                                              // paint
+      render_with_attributes ? paint_ : Paint(),           // paint
       ToSamplerDescriptor(sampling)                        // sampling
   );
 }

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -10,14 +11,17 @@
 
 #include "flutter/testing/testing.h"
 #include "fml/logging.h"
+#include "fml/time/time_point.h"
 #include "gtest/gtest.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/text_contents.h"
@@ -36,6 +40,7 @@
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
@@ -151,8 +156,8 @@ TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
 
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   auto image = CreateTextureForFixture("boston.jpg");
-  auto filter = FilterContents::MakeBlend(BlendMode::kSoftLight,
-                                          FilterInput::Make({image}));
+  auto filter = ColorFilterContents::MakeBlend(BlendMode::kSoftLight,
+                                               FilterInput::Make({image}));
 
   // Without the crop rect (default behavior).
   {
@@ -841,10 +846,10 @@ TEST_P(EntityTest, Filters) {
     auto fi_boston = FilterInput::Make(boston);
     auto fi_kalimba = FilterInput::Make(kalimba);
 
-    auto blend0 = FilterContents::MakeBlend(BlendMode::kModulate,
-                                            {fi_kalimba, fi_boston});
+    std::shared_ptr<FilterContents> blend0 = ColorFilterContents::MakeBlend(
+        BlendMode::kModulate, {fi_kalimba, fi_boston});
 
-    auto blend1 = FilterContents::MakeBlend(
+    auto blend1 = ColorFilterContents::MakeBlend(
         BlendMode::kScreen,
         {fi_bridge, FilterInput::Make(blend0), fi_bridge, fi_bridge});
 
@@ -1586,7 +1591,7 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   };
 
   auto filter =
-      FilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
+      ColorFilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1643,8 +1648,8 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
     ImGui::End();
 
     // Set the color matrix filter.
-    auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(bay_bridge),
-                                                  color_matrix);
+    auto filter = ColorFilterContents::MakeColorMatrix(
+        FilterInput::Make(bay_bridge), color_matrix);
 
     // Define the entity with the color matrix filter.
     Entity entity;
@@ -1671,7 +1676,8 @@ TEST_P(EntityTest, LinearToSrgbFilterCoverageIsCorrect) {
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath()));
   fill->SetColor(Color::MintCream());
 
-  auto filter = FilterContents::MakeLinearToSrgbFilter(FilterInput::Make(fill));
+  auto filter =
+      ColorFilterContents::MakeLinearToSrgbFilter(FilterInput::Make(fill));
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1690,7 +1696,7 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     auto filtered =
-        FilterContents::MakeLinearToSrgbFilter(FilterInput::Make(image));
+        ColorFilterContents::MakeLinearToSrgbFilter(FilterInput::Make(image));
 
     // Define the entity that will serve as the control image as a Gaussian blur
     // filter with no filter at all.
@@ -1722,7 +1728,8 @@ TEST_P(EntityTest, SrgbToLinearFilterCoverageIsCorrect) {
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath()));
   fill->SetColor(Color::DeepPink());
 
-  auto filter = FilterContents::MakeSrgbToLinearFilter(FilterInput::Make(fill));
+  auto filter =
+      ColorFilterContents::MakeSrgbToLinearFilter(FilterInput::Make(fill));
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1741,7 +1748,7 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     auto filtered =
-        FilterContents::MakeSrgbToLinearFilter(FilterInput::Make(image));
+        ColorFilterContents::MakeSrgbToLinearFilter(FilterInput::Make(image));
 
     // Define the entity that will serve as the control image as a Gaussian blur
     // filter with no filter at all.
@@ -2022,6 +2029,39 @@ TEST_P(EntityTest, SdfText) {
 
     // Force SDF rendering.
     return text_contents->RenderSdf(context, entity, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, RuntimeEffect) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This test only has a Metal fixture at the moment.");
+  }
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    auto contents = std::make_shared<RuntimeEffectContents>();
+    contents->SetGeometry(Geometry::MakeCover());
+
+    auto runtime_stage =
+        LoadFixtureRuntimeStage("runtime_stage_example.frag.iplr");
+    contents->SetRuntimeStage(runtime_stage);
+
+    struct FragUniforms {
+      Scalar iTime;
+      Vector2 iResolution;
+    } frag_uniforms = {
+        .iTime = static_cast<Scalar>(
+            fml::TimePoint::Now().ToEpochDelta().ToSecondsF()),
+        .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
+    };
+    std::vector<uint8_t> uniform_data;
+    uniform_data.resize(sizeof(FragUniforms));
+    memcpy(uniform_data.data(), &frag_uniforms, sizeof(FragUniforms));
+    contents->SetUniformData(uniform_data);
+
+    Entity entity;
+    entity.SetContents(contents);
+    return contents->Render(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }

@@ -199,7 +199,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     RenderPass& pass) {
   VertexBuffer vertex_buffer;
   auto& host_buffer = pass.GetTransientsBuffer();
-  auto tesselation_result = renderer.GetTessellator()->TessellateBuilder(
+  auto tesselation_result = renderer.GetTessellator()->Tessellate(
       path_.GetFillType(), path_.CreatePolyline(),
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
