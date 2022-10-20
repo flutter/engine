@@ -5,11 +5,14 @@
 #include "impeller/display_list/display_list_dispatcher.h"
 
 #include <algorithm>
+#include <cstring>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color_filter.h"
+#include "display_list/display_list_color_source.h"
 #include "display_list/display_list_path_effect.h"
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
@@ -21,10 +24,12 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
@@ -223,13 +228,13 @@ void DisplayListDispatcher::setStrokeMiter(SkScalar limit) {
 void DisplayListDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
   switch (cap) {
     case flutter::DlStrokeCap::kButt:
-      paint_.stroke_cap = SolidStrokeContents::Cap::kButt;
+      paint_.stroke_cap = Cap::kButt;
       break;
     case flutter::DlStrokeCap::kRound:
-      paint_.stroke_cap = SolidStrokeContents::Cap::kRound;
+      paint_.stroke_cap = Cap::kRound;
       break;
     case flutter::DlStrokeCap::kSquare:
-      paint_.stroke_cap = SolidStrokeContents::Cap::kSquare;
+      paint_.stroke_cap = Cap::kSquare;
       break;
   }
 }
@@ -238,13 +243,13 @@ void DisplayListDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
 void DisplayListDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
   switch (join) {
     case flutter::DlStrokeJoin::kMiter:
-      paint_.stroke_join = SolidStrokeContents::Join::kMiter;
+      paint_.stroke_join = Join::kMiter;
       break;
     case flutter::DlStrokeJoin::kRound:
-      paint_.stroke_join = SolidStrokeContents::Join::kRound;
+      paint_.stroke_join = Join::kRound;
       break;
     case flutter::DlStrokeJoin::kBevel:
-      paint_.stroke_join = SolidStrokeContents::Join::kBevel;
+      paint_.stroke_join = Join::kBevel;
       break;
   }
 }
@@ -425,8 +430,28 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
+    case flutter::DlColorSourceType::kRuntimeEffect: {
+      const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
+          source->asRuntimeEffect();
+      auto runtime_stage =
+          runtime_effect_color_source->runtime_effect()->runtime_stage();
+      auto uniform_data_sk = runtime_effect_color_source->uniform_data();
+
+      paint_.color_source = [runtime_stage, uniform_data_sk]() {
+        // TODO(113714): Get rid of the allocation + copy for uniform data.
+        std::vector<uint8_t> uniform_data;
+        uniform_data.resize(uniform_data_sk->size());
+        memcpy(uniform_data.data(), uniform_data_sk->bytes(),
+               uniform_data.size());
+
+        auto contents = std::make_shared<RuntimeEffectContents>();
+        contents->SetRuntimeStage(runtime_stage);
+        contents->SetUniformData(std::move(uniform_data));
+        return contents;
+      };
+      return;
+    }
     case flutter::DlColorSourceType::kConicalGradient:
-    case flutter::DlColorSourceType::kRuntimeEffect:
     case flutter::DlColorSourceType::kUnknown:
       UNIMPLEMENTED;
       break;
@@ -986,8 +1011,8 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
   paint.style = Paint::Style::kStroke;
   switch (mode) {
     case SkCanvas::kPoints_PointMode:
-      if (paint.stroke_cap == SolidStrokeContents::Cap::kButt) {
-        paint.stroke_cap = SolidStrokeContents::Cap::kSquare;
+      if (paint.stroke_cap == Cap::kButt) {
+        paint.stroke_cap = Cap::kSquare;
       }
       for (uint32_t i = 0; i < count; i++) {
         Point p0 = ToPoint(points[i]);
@@ -1071,7 +1096,7 @@ void DisplayListDispatcher::drawImageRect(
       std::make_shared<Image>(image->impeller_texture()),  // image
       ToRect(src),                                         // source rect
       ToRect(dst),                                         // destination rect
-      paint_,                                              // paint
+      render_with_attributes ? paint_ : Paint(),           // paint
       ToSamplerDescriptor(sampling)                        // sampling
   );
 }
