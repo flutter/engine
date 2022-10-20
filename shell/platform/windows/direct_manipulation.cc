@@ -4,6 +4,8 @@
 
 #include "flutter/fml/logging.h"
 
+#include <algorithm>
+
 #include "flutter/shell/platform/windows/direct_manipulation.h"
 #include "flutter/shell/platform/windows/window.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
