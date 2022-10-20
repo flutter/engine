@@ -2030,10 +2030,12 @@ static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {
       yuv.x = rgb.x * 0.299 + rgb.y * 0.587 + rgb.z * 0.114;
       yuv.y = rgb.x * -0.169 + rgb.y * -0.331 + rgb.z * 0.5 + 0.5;
       yuv.z = rgb.x * 0.5 + rgb.y * -0.419 + rgb.z * -0.081 + 0.5;
+      break;
     case YUVColorSpace::kBT601LimitedRange:
       yuv.x = rgb.x * 0.257 + rgb.y * 0.516 + rgb.z * 0.100 + 0.063;
       yuv.y = rgb.x * -0.145 + rgb.y * -0.291 + rgb.z * 0.439 + 0.5;
       yuv.z = rgb.x * 0.429 + rgb.y * -0.368 + rgb.z * -0.071 + 0.5;
+      break;
   }
   return yuv;
 }
