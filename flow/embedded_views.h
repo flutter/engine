@@ -86,7 +86,7 @@ class Mutator {
         alpha_ = other.alpha_;
         break;
       case kBackdropFilter:
-        filter_ = other.filter_;
+        filter_mutation_ = other.filter_mutation_;
         break;
       default:
         break;
@@ -103,14 +103,17 @@ class Mutator {
   explicit Mutator(std::shared_ptr<const DlImageFilter> filter,
                    const SkRect& filter_rect)
       : type_(kBackdropFilter),
-        filter_(std::make_shared<ImageFilterMutation>(filter, filter_rect)) {}
+        filter_mutation_(
+            std::make_shared<ImageFilterMutation>(filter, filter_rect)) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const ImageFilterMutation& GetFilter() const { return *filter_; }
+  const ImageFilterMutation& GetFilterMutation() const {
+    return *filter_mutation_;
+  }
   const int& GetAlpha() const { return alpha_; }
   float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
@@ -130,7 +133,7 @@ class Mutator {
       case kOpacity:
         return alpha_ == other.alpha_;
       case kBackdropFilter:
-        return *filter_ == *other.filter_;
+        return *filter_mutation_ == *other.filter_mutation_;
     }
 
     return false;
@@ -161,7 +164,7 @@ class Mutator {
     int alpha_;
   };
 
-  std::shared_ptr<ImageFilterMutation> filter_;
+  std::shared_ptr<ImageFilterMutation> filter_mutation_;
 };  // Mutator
 
 // A stack of mutators that can be applied to an embedded platform view.

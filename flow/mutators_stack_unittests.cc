@@ -94,14 +94,19 @@ TEST(MutatorsStack, PushBackdropFilter) {
   const int num_of_mutators = 10;
   for (int i = 0; i < num_of_mutators; i++) {
     auto filter = std::make_shared<DlBlurImageFilter>(i, 5, DlTileMode::kClamp);
-    stack.PushBackdropFilter(filter, SkRect::MakeEmpty());
+    stack.PushBackdropFilter(filter, SkRect::MakeXYWH(i, i, i, i));
   }
 
   auto iter = stack.Begin();
   int i = 0;
   while (iter != stack.End()) {
     ASSERT_EQ(iter->get()->GetType(), MutatorType::kBackdropFilter);
-    ASSERT_EQ(iter->get()->GetFilter().GetFilter().asBlur()->sigma_x(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilter().asBlur()->sigma_x(),
+              i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().x(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().x(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().width(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().height(), i);
     ++iter;
     ++i;
   }
@@ -213,7 +218,7 @@ TEST(Mutator, Initialization) {
   auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
   Mutator mutator6 = Mutator(filter, SkRect::MakeEmpty());
   ASSERT_TRUE(mutator6.GetType() == MutatorType::kBackdropFilter);
-  ASSERT_TRUE(mutator6.GetFilter().GetFilter() == *filter);
+  ASSERT_TRUE(mutator6.GetFilterMutation().GetFilter() == *filter);
 }
 
 TEST(Mutator, CopyConstructor) {

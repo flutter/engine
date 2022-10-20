@@ -450,13 +450,14 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       case kBackdropFilter: {
         // Only support DlBlurImageFilter for BackdropFilter.
-        if ((*iter)->GetFilter().GetFilter().asBlur() && canApplyBlurBackdrop) {
+        if ((*iter)->GetFilterMutation().GetFilter().asBlur() && canApplyBlurBackdrop) {
           // sigma_x is arbitrarily chosen as the radius value because Quartz sets
           // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
           // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
           // to blur the PlatformView.
-          CGFloat blurRadius = (*iter)->GetFilter().GetFilter().asBlur()->sigma_x();
-          CGRect filterRect = flutter::GetCGRectFromSkRect((*iter)->GetFilter().GetFilterRect());
+          CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
+          CGRect filterRect =
+              flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
           // `filterRect` reprents the rect that shouuld be filtered inside the `flutter_view_`.
           // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
           // filtered.
