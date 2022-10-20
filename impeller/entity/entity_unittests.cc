@@ -20,6 +20,7 @@
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
@@ -1231,6 +1232,37 @@ TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
   contents->SetGeometry(Geometry::MakeVertices(vertices));
   contents->SetBlendMode(BlendMode::kSourceOver);
   contents->SetColor(Color::Red().WithAlpha(0.5));
+
+  Entity e;
+  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(e));
+}
+
+TEST_P(EntityTest, DrawVerticesLinearGradientWithoutIndices) {
+  std::vector<Point> positions = {Point(100, 300), Point(200, 100),
+                                  Point(300, 300)};
+
+  Vertices vertices = Vertices(positions, {} /* indices */, {} /* colors */,
+                               VertexMode::kTriangle, Rect(100, 100, 300, 300));
+
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+  Matrix matrix = {
+      1, 0, 0, 0,  //
+      0, 1, 0, 0,  //
+      0, 0, 1, 0,  //
+      0, 0, 0, 1   //
+  };
+  auto contents = std::make_shared<LinearGradientContents>();
+  contents->SetEndPoints({100, 100}, {300, 300});
+  contents->SetColors(std::move(colors));
+  contents->SetStops(std::move(stops));
+  contents->SetTileMode(Entity::TileMode::kRepeat);
+  contents->SetMatrix(matrix);
+  contents->SetGeometry(Geometry::MakeVertices(vertices));
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
