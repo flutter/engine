@@ -12,9 +12,9 @@ final String _engineRoot = path.dirname(path.dirname(path.dirname(path.dirname(p
 
 
 /// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
-String? _platformSpecificWarningsAsErrors(String targetVariant) {
-  if (targetVariant == 'host_debug' && io.Platform.isMacOS) {
-    return 'performance-move-const-arg,performance-unnecessary-value-param';
+String? _platformSpecificWarningsAsErrors(ArgResults options) {
+  if (options['target-variant'] == 'host_debug' && io.Platform.isMacOS) {
+    return options['mac-host-warnings-as-errors'] as String?;
   }
   return null;
 }
@@ -75,7 +75,7 @@ class Options {
       lintHead: options['lint-head'] as bool,
       fix: options['fix'] as bool,
       errSink: errSink,
-      warningsAsErrors: _platformSpecificWarningsAsErrors(options['target-variant'] as String),
+      warningsAsErrors: _platformSpecificWarningsAsErrors(options),
     );
   }
 
@@ -146,6 +146,9 @@ class Options {
       valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
       defaultsTo: 'host_debug',
     )
+    ..addOption('mac-host-warnings-as-errors',
+        help:
+            'checks that will be treated as errors when running debug_host on mac.')
     ..addOption(
       'src-dir',
       help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
