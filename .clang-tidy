@@ -1,4 +1,6 @@
 # Prefix check with "-" to ignore.
+# Note: Some of the checks here are used as errors selectively, see
+# //ci/lint.sh
 Checks: "bugprone-use-after-move,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
