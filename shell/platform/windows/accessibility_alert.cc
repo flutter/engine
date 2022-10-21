@@ -66,8 +66,8 @@ IFACEMETHODIMP AccessibilityAlert::get_accDefaultAction(VARIANT var_id,
 
 // Retrieves the tooltip description.
 IFACEMETHODIMP AccessibilityAlert::get_accDescription(VARIANT var_id, BSTR* desc) {
-  *desc = nullptr;
-  return E_NOTIMPL;
+  *desc = SysAllocString(text_.c_str());
+  return S_OK;
 }
 
 // Retrieves the object that has the keyboard focus.
@@ -91,10 +91,13 @@ IFACEMETHODIMP AccessibilityAlert::get_accName(VARIANT var_id, BSTR* name) {
 
 // Retrieves the IDispatch interface of the object's parent.
 IFACEMETHODIMP AccessibilityAlert::get_accParent(IDispatch** disp_parent) {
-  //*disp_parent = parent_;
-  //return S_OK;
-  *disp_parent = nullptr;
-  return E_NOTIMPL;
+  *disp_parent = parent_;
+  if (*disp_parent) {
+    (*disp_parent)->AddRef();
+  }
+  return S_OK;
+  //*disp_parent = nullptr;
+  //return E_NOTIMPL;
 }
 
 // Retrieves information describing the role of the specified object.

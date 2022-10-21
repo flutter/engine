@@ -673,46 +673,10 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(FlutterDesktopMessengerRef
   auto data = codec.DecodeMessage(message->message, message->message_size);
   EncodableMap map = std::get<EncodableMap>(*data);
   std::string type = std::get<std::string>(map.at(EncodableValue("type")));
-  FML_LOG(ERROR) << "Handling a11y call of type " << type;
   if (type.compare("announce") == 0) {
     if (semantics_enabled_) {
       EncodableMap data_map = std::get<EncodableMap>(map.at(EncodableValue("data")));
       std::string text = std::get<std::string>(data_map.at(EncodableValue("message")));
-      FML_LOG(ERROR) << "Announcing " << text;
-      /*FlutterSemanticsNode announcement = {
-        .struct_size = sizeof(FlutterSemanticsNode),
-        .id = -1,
-        .flags = static_cast<FlutterSemanticsFlag>(0),
-        .actions = static_cast<FlutterSemanticsAction>(0),
-        .text_selection_base = -1,
-        .text_selection_extent = -1,
-        .label = text.c_str(),
-        .hint = "",
-        .value = "",
-        .increased_value = "",
-        .decreased_value = "",
-        .child_count = 0,
-        .children_in_traversal_order = nullptr,
-        .custom_accessibility_actions_count = 0,
-        .tooltip = ""
-      };
-      accessibility_bridge_->AddFlutterSemanticsNodeUpdate(&announcement);
-      accessibility_bridge_->CommitUpdates();
-      auto root = std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock());
-      FML_LOG(ERROR) << "Got root? " << (!!root);
-      auto root_node = root->GetAXNode();
-      int32_t root_id = root_node->id();
-      FML_LOG(ERROR) << "Root id = " << root_id;
-      for (auto it = root_node->UnignoredChildrenBegin(); it != root_node->UnignoredChildrenEnd(); ++it) {
-        FML_LOG(ERROR) << "ID of child: " << it->id();
-      }
-      auto owner_tree = root_node->tree();
-      auto siblings = root_node->children();
-      int32_t index_in_parent = siblings.size();
-      int32_t uindex = root_node->GetUnignoredChildCount();
-      ui::AXNode* node = new ui::AXNode(owner_tree, root_node, -1, index_in_parent, uindex);
-      siblings.push_back(node);
-      root_node->SwapChildren(&siblings);*/
       std::wstring wide_text = fml::Utf8ToWideString(text);
       view_->AnnounceAlert(wide_text);
     }

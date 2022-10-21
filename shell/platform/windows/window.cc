@@ -222,7 +222,6 @@ LRESULT Window::OnGetObject(UINT const message,
       }
       instance->AddRef();
       accessibility_root_ = instance;
-      FML_LOG(ERROR) << "Creating accessibility root";
     }
     // Return the IAccessible for the root view.
     //Microsoft::WRL::ComPtr<IAccessible> root(root_view);
@@ -614,7 +613,6 @@ void Window::Destroy() {
   }
 
   if (accessibility_root_) {
-    FML_LOG(ERROR) << "Destroying accessibility_root_!!\n";
     accessibility_root_->Release();
     accessibility_root_ = nullptr;
   }

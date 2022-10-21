@@ -253,6 +253,7 @@ AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
     if (!SUCCEEDED(hr)) {
       FML_LOG(FATAL) << "Failed to create alert accessible";
     }
+    instance->AddRef();
     instance->SetParent(this);
     alert_accessible_ = instance;
   }

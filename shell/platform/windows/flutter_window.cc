@@ -292,7 +292,6 @@ void FlutterWindow::SendInitialAccessibilityFeatures() {
 }
 
 AccessibilityRootNode* FlutterWindow::GetAccessibilityRootNode() {
-  FML_LOG(ERROR) << "Returning accessibility_root_";
   return accessibility_root_;
 }
 
