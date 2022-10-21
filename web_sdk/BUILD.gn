@@ -36,6 +36,10 @@ group("web_sdk") {
     ":flutter_dartdevc_kernel_sdk_sound",
   ]
 
+  if (flutter_prebuilt_dart_sdk) {
+    deps += [ ":dart_sdk_libraries_json" ]
+  }
+
   if (archive_flutter_web_sdk && !is_fuchsia) {
     deps += [ ":flutter_web_sdk_archive" ]
   }
@@ -141,6 +145,12 @@ copy("web_ui_library") {
   sources = [ "//flutter/web_sdk/libraries.json" ]
 
   outputs = [ "$root_out_dir/flutter_web_sdk/{{source_file_part}}" ]
+}
+
+copy("dart_sdk_libraries_json") {
+  sources = [ "$host_prebuilt_dart_sdk/lib/libraries.json" ]
+
+  outputs = [ "$root_out_dir/dart-sdk/lib/{{source_file_part}}" ]
 }
 
 # Compiles a Dart program with dartdevc
@@ -432,6 +442,10 @@ if (!is_fuchsia) {
       ":web_ui_library_sources",
     ]
 
+    if (flutter_prebuilt_dart_sdk) {
+      deps += [ ":dart_sdk_libraries_json" ]
+    }
+
     if (build_canvaskit) {
       deps += [ "//third_party/skia/modules/canvaskit" ]
     }
@@ -450,6 +464,11 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":skwasm_stub_library")
     sources += get_target_outputs(":skwasm_impl_library")
     sources += get_target_outputs(":web_engine_library")
+
+    if (flutter_prebuilt_dart_sdk) {
+      sources += get_target_outputs(":dart_sdk_libraries_json")
+    }
+
     tmp_files = []
     foreach(source, sources) {
       tmp_files += [
