@@ -93,17 +93,13 @@ void Animator::BeginFrame(
 
     if (!producer_continuation_) {
       // If we still don't have valid continuation, the pipeline is currently
-      // full because the consumer is being too slow. Try again at the next
-      // frame interval.
+      // full because the consumer is being too slow. However, it will probably
+      // not be full at the end of current UI frame computation, so we continue
+      // and merely create an event.
       TRACE_EVENT0("flutter", "PipelineFull");
-      RequestFrame();
-      return;
     }
   }
 
-  // We have acquired a valid continuation from the pipeline and are ready
-  // to service potential frame.
-  FML_DCHECK(producer_continuation_);
   fml::tracing::TraceEventAsyncComplete(
       "flutter", "VsyncSchedulingOverhead",
       frame_timings_recorder_->GetVsyncStartTime(),
