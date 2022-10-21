@@ -392,9 +392,18 @@ Dart_Handle PlatformConfigurationNativeApi::GetPersistentIsolateData() {
                                      persistent_isolate_data->GetSize());
 }
 
-void PlatformConfigurationNativeApi::ScheduleFrame() {
+void PlatformConfigurationNativeApi::ScheduleFrame(
+    int64_t force_directly_call_next_vsync_target_time_microseconds) {
+  std::optional<fml::TimePoint> force_directly_call_next_vsync_target_time =
+      force_directly_call_next_vsync_target_time_microseconds <= 0
+          ? std::nullopt
+          : std::optional(fml::TimePoint::FromTicks(
+                force_directly_call_next_vsync_target_time_microseconds *
+                1000));
+
   UIDartState::ThrowIfUIOperationsProhibited();
-  UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
+  UIDartState::Current()->platform_configuration()->client()->ScheduleFrame(
+      force_directly_call_next_vsync_target_time);
 }
 
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {

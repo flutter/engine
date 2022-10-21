@@ -74,7 +74,7 @@ abstract class PlatformDispatcher {
 
   ByteData? getPersistentIsolateData() => null;
 
-  void scheduleFrame();
+  void scheduleFrame({Duration? forceDirectlyCallNextVsyncTargetTime});
 
   void render(Scene scene, [FlutterView view]);
 

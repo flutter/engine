@@ -603,7 +603,8 @@ class RuntimeController : public PlatformConfigurationClient {
   std::string DefaultRouteName() override;
 
   // |PlatformConfigurationClient|
-  void ScheduleFrame() override;
+  void ScheduleFrame(std::optional<fml::TimePoint>
+                         force_directly_call_next_vsync_target_time) override;
 
   // |PlatformConfigurationClient|
   void Render(Scene* scene) override;

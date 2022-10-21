@@ -101,7 +101,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
 
   String get defaultRouteName => platformDispatcher.defaultRouteName;
 
-  void scheduleFrame() => platformDispatcher.scheduleFrame();
+  void scheduleFrame({Duration? forceDirectlyCallNextVsyncTargetTime}) =>
+      platformDispatcher.scheduleFrame(forceDirectlyCallNextVsyncTargetTime: forceDirectlyCallNextVsyncTargetTime);
 
   @override
   void render(Scene scene) => platformDispatcher.render(scene, this);

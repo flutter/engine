@@ -627,7 +627,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
   @override
-  void scheduleFrame() {
+  void scheduleFrame({Duration? forceDirectlyCallNextVsyncTargetTime}) {
     if (scheduleFrameCallback == null) {
       throw Exception('scheduleFrameCallback must be initialized first.');
     }

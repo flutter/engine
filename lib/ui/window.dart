@@ -674,7 +674,9 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// * [SchedulerBinding], the Flutter framework class which manages the
   ///   scheduling of frames.
-  void scheduleFrame() => platformDispatcher.scheduleFrame();
+  void scheduleFrame({Duration? forceDirectlyCallNextVsyncTargetTime}) =>
+      platformDispatcher.scheduleFrame(
+          forceDirectlyCallNextVsyncTargetTime: forceDirectlyCallNextVsyncTargetTime);
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.

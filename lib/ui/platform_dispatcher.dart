@@ -715,10 +715,13 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  void scheduleFrame() => _scheduleFrame();
+  void scheduleFrame({Duration? forceDirectlyCallNextVsyncTargetTime}) =>
+      _scheduleFrame(forceDirectlyCallNextVsyncTargetTime == null
+          ? -1
+          : forceDirectlyCallNextVsyncTargetTime.inMicroseconds);
 
-  @FfiNative<Void Function()>('PlatformConfigurationNativeApi::ScheduleFrame')
-  external static void _scheduleFrame();
+  @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::ScheduleFrame')
+  external static void _scheduleFrame(int forceDirectlyCallNextVsyncTargetTime);
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
