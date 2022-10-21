@@ -38,6 +38,7 @@ class MockDelegate : public Engine::Delegate {
   MOCK_METHOD0(GetCurrentTimePoint, fml::TimePoint());
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
                      const std::shared_ptr<PlatformMessageHandler>&());
+  MOCK_METHOD0(PeekPointerDataPacket, std::unique_ptr<PointerDataPacket>());
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -50,6 +51,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD0(DefaultRouteName, std::string());
   MOCK_METHOD1(ScheduleFrame, void(bool));
+  MOCK_METHOD0(PeekPointerDataPacket, std::vector<uint8_t>());
   MOCK_METHOD1(Render, void(std::shared_ptr<flutter::LayerTree>));
   MOCK_METHOD2(UpdateSemantics,
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));

@@ -37,6 +37,7 @@
 #include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/common/pointer_data_peek.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/resource_cache_limit_calculator.h"
 #include "flutter/shell/common/shell_io_manager.h"
@@ -401,6 +402,9 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
       const override;
 
+  // |Engine::Delegate|
+  std::unique_ptr<PointerDataPacket> PeekPointerDataPacket() override;
+
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:
@@ -425,6 +429,7 @@ class Shell final : public PlatformView::Delegate,
   std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
   std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
   std::atomic<bool> route_messages_through_platform_thread_ = false;
+  PointerDataPeek pointer_data_peek_;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
   fml::TaskRunnerAffineWeakPtr<Rasterizer>

@@ -294,6 +294,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///        Flutter to the host platform (and its responses).
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Peek pointer data packets that have not been dispatched to
+    ///             Dart yet.
+    ///
+    virtual std::unique_ptr<PointerDataPacket> PeekPointerDataPacket() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -760,7 +766,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
-  PointerDataPacket PeekPointerDataPacket() override;
+  std::vector<uint8_t> PeekPointerDataPacket() override;
 
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;

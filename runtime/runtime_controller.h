@@ -606,7 +606,7 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
-  PointerDataPacket PeekPointerDataPacket() override;
+  std::vector<uint8_t> PeekPointerDataPacket() override;
 
   // |PlatformConfigurationClient|
   void Render(Scene* scene) override;

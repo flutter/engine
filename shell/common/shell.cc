@@ -976,11 +976,15 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
-                         flow_id = next_pointer_flow_id_]() mutable {
+
+  int64_t pointer_data_peek_id = pointer_data_peek_.AddPending(*packet);
+
+  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = weak_engine_, packet = std::move(packet),
+       flow_id = next_pointer_flow_id_, pointer_data_peek_id, this]() mutable {
         if (engine) {
           engine->DispatchPointerDataPacket(std::move(packet), flow_id);
+          pointer_data_peek_.RemovePending(pointer_data_peek_id);
         }
       }));
   next_pointer_flow_id_++;
@@ -2072,6 +2076,10 @@ fml::TimePoint Shell::GetCurrentTimePoint() {
 const std::shared_ptr<PlatformMessageHandler>&
 Shell::GetPlatformMessageHandler() const {
   return platform_message_handler_;
+}
+
+std::unique_ptr<PointerDataPacket> Shell::PeekPointerDataPacket() {
+  return pointer_data_peek_.Peek();
 }
 
 const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {

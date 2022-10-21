@@ -16,7 +16,7 @@ namespace flutter {
 class PointerDataPacket {
  public:
   explicit PointerDataPacket(size_t count);
-  PointerDataPacket(uint8_t* data, size_t num_bytes);
+  PointerDataPacket(const uint8_t* data, size_t num_bytes);
   ~PointerDataPacket();
 
   void SetPointerData(size_t i, const PointerData& data);

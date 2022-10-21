@@ -68,7 +68,7 @@ class PlatformConfigurationClient {
   /// @brief      Peek pointer data packets that have not been dispatched to
   ///             Dart yet.
   ///
-  virtual PointerDataPacket PeekPointerDataPacket() = 0;
+  virtual std::vector<uint8_t> PeekPointerDataPacket() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
@@ -479,7 +479,7 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
-  static PointerDataPacket PeekPointerDataPacket();
+  static Dart_Handle PeekPointerDataPacket();
 
   static void Render(Scene* scene);
 

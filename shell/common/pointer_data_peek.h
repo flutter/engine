@@ -10,8 +10,21 @@
 
 namespace flutter {
 
+// TODO should give enable/disable flags as well
 class PointerDataPeek {
-  // TODO
+ public:
+  PointerDataPeek() {}
+
+  int64_t AddPending(const PointerDataPacket& packet);
+  void RemovePending(int64_t id);
+  std::unique_ptr<PointerDataPacket> Peek();
+
+ private:
+  std::mutex mutex_;
+  int next_id_{0};
+  std::map<int64_t, PointerDataPacket> pending_packets_;
+
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(PointerDataPeek);
 };
 
 }  // namespace flutter

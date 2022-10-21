@@ -397,12 +397,13 @@ void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
-PointerDataPacket PlatformConfigurationNativeApi::PeekPointerDataPacket() {
+Dart_Handle PlatformConfigurationNativeApi::PeekPointerDataPacket() {
   UIDartState::ThrowIfUIOperationsProhibited();
-  return UIDartState::Current()
-      ->platform_configuration()
-      ->client()
-      ->PeekPointerDataPacket();
+  auto packet = UIDartState::Current()
+                    ->platform_configuration()
+                    ->client()
+                    ->PeekPointerDataPacket();
+  return tonic::DartByteData::Create(packet.data(), packet.size());
 }
 
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {

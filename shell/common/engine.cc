@@ -441,8 +441,8 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-PointerDataPacket Engine::PeekPointerDataPacket() {
-  return TODO;
+std::vector<uint8_t> Engine::PeekPointerDataPacket() {
+  return delegate_.PeekPointerDataPacket()->data();
 }
 
 void Engine::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {

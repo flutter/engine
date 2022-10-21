@@ -282,7 +282,7 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-PointerDataPacket RuntimeController::PeekPointerDataPacket() {
+std::vector<uint8_t> RuntimeController::PeekPointerDataPacket() {
   return client_.PeekPointerDataPacket();
 }
 
