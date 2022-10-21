@@ -238,7 +238,13 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
 }
 
 void Animator::AwaitVSync() {
-  waiter_->AsyncWaitForVsync(
+  // (hacky) implementation in the runnable prototype can be seen in:
+  // https://github.com/fzyzcjy/engine/blob/7e646656db8ac82d8436942e9f8e738999b0bdc4/shell/common/animator.cc#L371
+  // that one works well in the prototype, but is too hacky
+  // I will reimplement it if this PR looks acceptable
+  bool should_directly_call = TODO;
+
+  auto callback =
       [self = weak_factory_.GetWeakPtr()](
           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
         if (self) {
@@ -248,7 +254,22 @@ void Animator::AwaitVSync() {
             self->BeginFrame(std::move(frame_timings_recorder));
           }
         }
-      });
+      };
+
+  if (should_directly_call) {
+    // again, the original code is runnable but hacky
+    const fml::TimePoint next_vsync_target_time = TODO;
+    // mimic how [Animator::Render] fills the recorder
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+        std::make_unique<FrameTimingsRecorder>();
+    frame_timings_recorder->RecordVsync(
+        next_vsync_target_time - ONE_FRAME_DURATION, next_vsync_target_time);
+
+    callback(std::move(frame_timings_recorder));
+  } else {
+    waiter_->AsyncWaitForVsync(callback);
+  }
+
   if (has_rendered_) {
     delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
   }
