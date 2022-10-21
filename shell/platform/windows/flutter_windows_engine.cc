@@ -20,6 +20,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/third_party/accessibility/ax/ax_node.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -678,7 +679,7 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(FlutterDesktopMessengerRef
       EncodableMap data_map = std::get<EncodableMap>(map.at(EncodableValue("data")));
       std::string text = std::get<std::string>(data_map.at(EncodableValue("message")));
       FML_LOG(ERROR) << "Announcing " << text;
-      FlutterSemanticsNode announcement = {
+      /*FlutterSemanticsNode announcement = {
         .struct_size = sizeof(FlutterSemanticsNode),
         .id = -1,
         .flags = static_cast<FlutterSemanticsFlag>(0),
@@ -696,11 +697,22 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(FlutterDesktopMessengerRef
         .tooltip = ""
       };
       accessibility_bridge_->AddFlutterSemanticsNodeUpdate(&announcement);
-      accessibility_bridge_->CommitUpdates();
+      accessibility_bridge_->CommitUpdates();*/
       auto root = std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock());
       FML_LOG(ERROR) << "Got root? " << (!!root);
-      int32_t root_id = root->GetAXNode()->id();
+      auto root_node = root->GetAXNode();
+      int32_t root_id = root_node->id();
       FML_LOG(ERROR) << "Root id = " << root_id;
+      for (auto it = root_node->UnignoredChildrenBegin(); it != root_node->UnignoredChildrenEnd(); ++it) {
+        FML_LOG(ERROR) << "ID of child: " << it->id();
+      }
+      auto owner_tree = root_node->tree();
+      auto siblings = root_node->children();
+      int32_t index_in_parent = siblings.size();
+      int32_t uindex = root_node->GetUnignoredChildCount();
+      ui::AXNode* node = new ui::AXNode(owner_tree, root_node, -1, index_in_parent, uindex);
+      siblings.push_back(node);
+      root_node->SwapChildren(&siblings);
     }
   }
   SendPlatformMessageResponse(message->response_handle, reinterpret_cast<const uint8_t*>(""), 0);
