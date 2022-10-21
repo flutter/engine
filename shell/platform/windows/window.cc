@@ -212,6 +212,7 @@ LRESULT Window::OnGetObject(UINT const message,
   } else if (is_msaa_request && root_view) {
     // Return the IAccessible for the root view.
     Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    // TODO(schectman): wrap returned accessible in AccessibilityRootNode
     LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
     return lresult;
   }
@@ -594,6 +595,11 @@ void Window::Destroy() {
     text_input_manager_->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
+  }
+
+  if (accessibility_root_) {
+    accessibility_root_->Release();
+    accessibility_root_ = nullptr;
   }
 
   UnregisterClass(window_class_name_.c_str(), nullptr);

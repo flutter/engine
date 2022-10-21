@@ -291,4 +291,8 @@ void FlutterWindow::SendInitialAccessibilityFeatures() {
   OnThemeChange();
 }
 
+AccessibilityRootNode* FlutterWindow::GetAccessibilityRootNode() {
+  return accessibility_root_;
+}
+
 }  // namespace flutter
