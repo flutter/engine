@@ -626,7 +626,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_enable_matrix_helper'] = False
   gn_args['skia_canvaskit_enable_canvas_bindings'] = False
   gn_args['skia_canvaskit_enable_font'] = True
-  gn_args['skia_canvaskit_enable_embedded_font'] = True
+  gn_args['skia_canvaskit_enable_embedded_font'] = False
   gn_args['skia_canvaskit_enable_alias_font'] = True
   gn_args['skia_canvaskit_legacy_draw_vertices_blend_mode'] = False
   gn_args['skia_canvaskit_enable_debugger'] = False
