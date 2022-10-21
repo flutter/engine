@@ -656,4 +656,11 @@ FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
   return engine_.get();
 }
 
+void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
+  AccessibilityAlert* alert = binding_handler_->GetAccessibilityRootNode()->GetOrCreateAlert();
+  alert->SetText(text);
+  HWND hwnd = GetPlatformWindow();
+  NotifyWinEvent(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT, AccessibilityRootNode::kAlertChildId);
+}
+
 }  // namespace flutter

@@ -697,7 +697,7 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(FlutterDesktopMessengerRef
         .tooltip = ""
       };
       accessibility_bridge_->AddFlutterSemanticsNodeUpdate(&announcement);
-      accessibility_bridge_->CommitUpdates();*/
+      accessibility_bridge_->CommitUpdates();
       auto root = std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock());
       FML_LOG(ERROR) << "Got root? " << (!!root);
       auto root_node = root->GetAXNode();
@@ -712,7 +712,9 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(FlutterDesktopMessengerRef
       int32_t uindex = root_node->GetUnignoredChildCount();
       ui::AXNode* node = new ui::AXNode(owner_tree, root_node, -1, index_in_parent, uindex);
       siblings.push_back(node);
-      root_node->SwapChildren(&siblings);
+      root_node->SwapChildren(&siblings);*/
+      std::wstring wide_text = fml::Utf8ToWideString(text);
+      view_->AnnounceAlert(wide_text);
     }
   }
   SendPlatformMessageResponse(message->response_handle, reinterpret_cast<const uint8_t*>(""), 0);

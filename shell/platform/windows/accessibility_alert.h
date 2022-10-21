@@ -13,9 +13,11 @@
 
 namespace flutter {
 
+class AccessibilityRootNode;
+
 // An IAccessible node representing an alert read to the screen reader.
 class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
-                           public IAccessible {
+                           public IDispatchImpl<IAccessible> {
  public:
   BEGIN_COM_MAP(AccessibilityAlert)
   COM_INTERFACE_ENTRY(IAccessible)
@@ -94,11 +96,18 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
                                   LONG* topic_id) override;
   IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
 
+  AccessibilityAlert();
+  ~AccessibilityAlert() = default;
+
   // Sets the text of this alert to the provided message.
-  void SetText(const std::u16string& text);
+  void SetText(const std::wstring& text);
+
+  void SetParent(AccessibilityRootNode* parent);
 
  private:
-  std::u16string text_;
+  std::wstring text_;
+
+  AccessibilityRootNode* parent_;
 
 };
 

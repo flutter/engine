@@ -17,8 +17,9 @@ namespace flutter {
 
 // A parent node that wraps the window IAccessible node.
 class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
-                              public IAccessible {
+                              public IDispatchImpl<IAccessible> {
  public:
+  static constexpr LONG kAlertChildId = 2;
   BEGIN_COM_MAP(AccessibilityRootNode)
   COM_INTERFACE_ENTRY(IAccessible)
   END_COM_MAP()
@@ -97,14 +98,14 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
                                   LONG* topic_id) override;
   IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
 
-  AccessibilityRootNode() = default;
+  AccessibilityRootNode();
   ~AccessibilityRootNode();
 
   void SetWindow(IAccessible* window);
 
   void SetAlert(AccessibilityAlert* alert);
 
-  inline AccessibilityAlert* GetAlert() {return alert_accessible_;}
+  AccessibilityAlert* GetOrCreateAlert();
 
  private:
   // Helper method to redirect method calls to the contained window.

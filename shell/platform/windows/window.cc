@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include "flutter/shell/platform/windows/dpi_utils.h"
+#include "flutter/third_party/accessibility/base/win/atl_module.h"
 
 namespace flutter {
 
@@ -58,7 +59,8 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
                std::unique_ptr<TextInputManager> text_input_manager)
     : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
-      text_input_manager_(std::move(text_input_manager)) {
+      text_input_manager_(std::move(text_input_manager)),
+      accessibility_root_(nullptr) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
@@ -210,8 +212,22 @@ LRESULT Window::OnGetObject(UINT const message,
     // TODO(cbracken): https://github.com/flutter/flutter/issues/94782
     // Implement when we adopt UIA support.
   } else if (is_msaa_request && root_view) {
+    // Create the accessibility root if it does not already exist.
+    if (!accessibility_root_) {
+      ui::win::CreateATLModuleIfNeeded();
+      CComObject<AccessibilityRootNode>* instance = nullptr;
+      HRESULT hr = CComObject<AccessibilityRootNode>::CreateInstance(&instance);
+      if (!SUCCEEDED(hr)) {
+        FML_LOG(FATAL) << "Failed to create accessibility root node";
+      }
+      instance->AddRef();
+      accessibility_root_ = instance;
+      FML_LOG(ERROR) << "Creating accessibility root";
+    }
     // Return the IAccessible for the root view.
-    Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    //Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    accessibility_root_->SetWindow(root_view);
+    Microsoft::WRL::ComPtr<IAccessible> root(accessibility_root_);
     // TODO(schectman): wrap returned accessible in AccessibilityRootNode
     LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
     return lresult;
@@ -598,6 +614,7 @@ void Window::Destroy() {
   }
 
   if (accessibility_root_) {
+    FML_LOG(ERROR) << "Destroying accessibility_root_!!\n";
     accessibility_root_->Release();
     accessibility_root_ = nullptr;
   }

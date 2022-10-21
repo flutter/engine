@@ -90,6 +90,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Send the initial accessibility features to the window
   void SendInitialAccessibilityFeatures();
 
+  // Set the text of the alert, and create it if it does not yet exist.
+  void AnnounceAlert(const std::wstring& text);
+
   // |WindowBindingHandlerDelegate|
   void UpdateHighContrastEnabled(bool enabled) override;
 

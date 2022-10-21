@@ -4,11 +4,15 @@
 
 #include "flutter/shell/platform/windows/accessibility_root_node.h"
 
-static constexpr LONG kWindowChildId = 1;
-static constexpr LONG kAlertChildId = 2;
-static constexpr LONG kInvalidChildId = 3;
+#include "flutter/fml/logging.h"
 
 namespace flutter {
+
+static constexpr LONG kWindowChildId = 1;
+static constexpr LONG kInvalidChildId = 3;
+
+AccessibilityRootNode::AccessibilityRootNode() :
+    alert_accessible_(nullptr) {}
 
 AccessibilityRootNode::~AccessibilityRootNode() {
   if (alert_accessible_) {
@@ -66,7 +70,7 @@ IFACEMETHODIMP AccessibilityRootNode::accLocation(LONG* physical_pixel_left,
                                                   VARIANT var_id) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->accLocation(physical_pixel_left, physical_pixel_top, width, height, var_id);
+    return target->accLocation(physical_pixel_left, physical_pixel_top, width, height, var_id);
   }
   return S_FALSE;
 }
@@ -76,7 +80,7 @@ IFACEMETHODIMP AccessibilityRootNode::accNavigate(LONG nav_dir,
                                                   VARIANT* end) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&start))) {
-    return window_accessible_->accNavigate(nav_dir, start, end);
+    return target->accNavigate(nav_dir, start, end);
   }
   return S_FALSE;
 }
@@ -91,10 +95,12 @@ IFACEMETHODIMP AccessibilityRootNode::get_accChild(VARIANT var_child,
     *disp_child = this;
   } else if (!window_accessible_) {
     return E_FAIL;
-  } else if (child_id == 1) {
+  } else if (child_id == kWindowChildId) {
     *disp_child = window_accessible_;
-  } else if (child_id == 2 && alert_accessible_) {
+  } else if (child_id == kAlertChildId && alert_accessible_) {
     *disp_child = alert_accessible_;
+  } else if (child_id < 0) {
+    return window_accessible_->get_accChild(var_child, disp_child);
   } else {
     return E_FAIL;
   }
@@ -118,7 +124,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accDefaultAction(VARIANT var_id,
                                                            BSTR* def_action) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accDefaultAction(var_id, def_action);
+    return target->get_accDefaultAction(var_id, def_action);
   }
   *def_action = nullptr;
   return S_FALSE;
@@ -128,7 +134,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accDescription(VARIANT var_id,
                                                          BSTR* desc) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accDescription(var_id, desc);
+    return target->get_accDescription(var_id, desc);
   }
   return E_FAIL;
 }
@@ -145,12 +151,17 @@ IFACEMETHODIMP AccessibilityRootNode::get_accKeyboardShortcut(VARIANT var_id,
                                                               BSTR* acc_key) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accKeyboardShortcut(var_id, acc_key);
+    return target->get_accKeyboardShortcut(var_id, acc_key);
   }
   return E_FAIL;
 }
 
 IFACEMETHODIMP AccessibilityRootNode::get_accName(VARIANT var_id, BSTR* name_bstr) {
+  if (V_I4(&var_id) == CHILDID_SELF) {
+    std::wstring name = L"ROOT_NODE_VIEW";
+    *name_bstr = SysAllocString(name.c_str());
+    return S_OK;
+  }
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
     return window_accessible_->get_accName(var_id, name_bstr);
@@ -165,7 +176,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accParent(IDispatch** disp_parent) {
 IFACEMETHODIMP AccessibilityRootNode::get_accRole(VARIANT var_id, VARIANT* role) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accRole(var_id, role);
+    return target->get_accRole(var_id, role);
   }
   return E_FAIL;
 }
@@ -173,7 +184,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accRole(VARIANT var_id, VARIANT* role)
 IFACEMETHODIMP AccessibilityRootNode::get_accState(VARIANT var_id, VARIANT* state) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accState(var_id, state);
+    return target->get_accState(var_id, state);
   }
   return E_FAIL;
 }
@@ -189,7 +200,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accHelp(VARIANT var_id, BSTR* help) {
 IFACEMETHODIMP AccessibilityRootNode::get_accValue(VARIANT var_id, BSTR* value) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accValue(var_id, value);
+    return target->get_accValue(var_id, value);
   }
   return E_FAIL;
 }
@@ -197,7 +208,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accValue(VARIANT var_id, BSTR* value) 
 IFACEMETHODIMP AccessibilityRootNode::put_accValue(VARIANT var_id, BSTR new_value) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->put_accValue(var_id, new_value);
+    return target->put_accValue(var_id, new_value);
   }
   return E_FAIL;
 }
@@ -210,7 +221,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accSelection(VARIANT* selected) {
 IFACEMETHODIMP AccessibilityRootNode::accSelect(LONG flagsSelect, VARIANT var_id) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->accSelect(flagsSelect, var_id);
+    return target->accSelect(flagsSelect, var_id);
   }
   return E_FAIL;
 }
@@ -229,6 +240,23 @@ IFACEMETHODIMP AccessibilityRootNode::get_accHelpTopic(BSTR* help_file,
 
 IFACEMETHODIMP AccessibilityRootNode::put_accName(VARIANT var_id, BSTR put_name) {
   return E_NOTIMPL;
+}
+
+void AccessibilityRootNode::SetWindow(IAccessible* window) {
+  window_accessible_ = window;
+}
+
+AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
+  if (!alert_accessible_) {
+    CComObject<AccessibilityAlert>* instance = nullptr;
+    HRESULT hr = CComObject<AccessibilityAlert>::CreateInstance(&instance);
+    if (!SUCCEEDED(hr)) {
+      FML_LOG(FATAL) << "Failed to create alert accessible";
+    }
+    instance->SetParent(this);
+    alert_accessible_ = instance;
+  }
+  return alert_accessible_;
 }
 
 }
