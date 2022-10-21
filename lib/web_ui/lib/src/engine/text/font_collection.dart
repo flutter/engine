@@ -113,11 +113,6 @@ class HtmlFontCollection implements FontCollection {
       domDocument.fonts!.clear();
     }
   }
-
-  @override
-  Future<void> addPendingFonts() async {
-    return;
-  }
 }
 
 /// Manages a collection of fonts and ensures they are loaded.
