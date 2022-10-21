@@ -163,9 +163,9 @@ class SkiaFontCollection implements FontCollection {
         unregisteredFont.url,
         unregisteredFont.family
       );
-        if (registeredFont != null) {
-          _registeredFonts.add(registeredFont);
-        }
+      if (registeredFont != null) {
+        _registeredFonts.add(registeredFont);
+      }
     }
 
     _unregisteredFonts.clear();

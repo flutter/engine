@@ -137,7 +137,6 @@ void testMain() {
       /// Fonts should now be registered and _registeredFonts should be filled
       expect(fontCollection.debugRegisteredFonts, isNotEmpty);
       expect(warnings, isEmpty);
-
     });
   });
 }

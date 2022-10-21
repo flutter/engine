@@ -216,15 +216,11 @@ class FontManager {
     if (_downloadedFonts.isEmpty) {
       return;
     }
-
-    for (final DomFontFace? fontFace in _downloadedFonts) {
-      if (fontFace != null) {
-        domDocument.fonts!.add(fontFace);
-      }
-    }
+    _downloadedFonts.forEach(domDocument.fonts!.add);
   }
 
-  Future<void> testFillDownloadedFonts() async {
+
+  Future<void> fillDownloadedFonts() async {
     final List<DomFontFace?> loadedFonts = await Future.wait(_fontLoadingFutures);
     _downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
   }
@@ -264,6 +260,13 @@ class _PolyfillFontManager extends FontManager {
   static const Duration _fontLoadTimeout = Duration(seconds: 2);
   static const Duration _fontLoadRetryDuration = Duration(milliseconds: 50);
 
+  final List<Future<void>> _completerFutures = <Future<void>>[];
+
+  @override
+  Future<void> fillDownloadedFonts() async {
+    await Future.wait(_completerFutures);
+  }
+
   @override
   void downloadAsset(
     String family,
@@ -289,13 +292,18 @@ class _PolyfillFontManager extends FontManager {
 
     paragraph.style.fontFamily = "'$family', $fallbackFontName";
 
+    final Completer<void> completer = Completer<void>();
+
     late DateTime fontLoadStart;
 
     void watchWidth() {
       if (paragraph.offsetWidth != sansSerifWidth) {
         paragraph.remove();
+        completer.complete();
       } else {
         if (DateTime.now().difference(fontLoadStart) > _fontLoadTimeout) {
+          // Let application waiting for fonts continue with fallback.
+          completer.complete();
           // Throw unhandled exception for logging.
           throw Exception('Timed out trying to load font: $family');
         } else {
@@ -331,5 +339,7 @@ class _PolyfillFontManager extends FontManager {
 
     fontLoadStart = DateTime.now();
     watchWidth();
+
+    _completerFutures.add(completer.future);
   }
 }

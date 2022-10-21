@@ -208,7 +208,7 @@ Future<void> initializeEngineServices({
   _setAssetManager(assetManager);
 
   Future<void> initializeRendererCallback () async => renderer.initialize();
-  await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts(assetManager)]);
+  await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
   renderer.fontCollection.registerDownloadedFonts();
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
@@ -253,11 +253,11 @@ void _setAssetManager(AssetManager assetManager) {
   _assetManager = assetManager;
 }
 
-Future<void> _downloadAssetFonts(AssetManager assetManager) async {
+Future<void> _downloadAssetFonts() async {
   renderer.fontCollection.clear();
 
   if (_assetManager != null) {
-    await renderer.fontCollection.downloadAssetFonts(assetManager);
+    await renderer.fontCollection.downloadAssetFonts(_assetManager!);
   }
 
   if (ui.debugEmulateFlutterTesterEnvironment) {
