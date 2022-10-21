@@ -662,7 +662,8 @@ void testMain() {
 
       window.webOnlyDebugPhysicalSizeOverride = null;
       window.debugForceResize();
-    });
+    // ImageDecoder is not supported in Safari.
+    }, skip: isSafari);
 
     test('removed the DOM node of an unrendered platform view', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
