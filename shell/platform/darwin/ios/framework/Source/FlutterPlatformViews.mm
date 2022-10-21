@@ -458,7 +458,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
           CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
           CGRect filterRect =
               flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
-          // `filterRect` reprents the rect that shouuld be filtered inside the `flutter_view_`.
+          // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
           // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
           // filtered.
           CGRect intersection = CGRectIntersection(filterRect, clipView.frame);

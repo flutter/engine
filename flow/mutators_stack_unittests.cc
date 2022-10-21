@@ -281,9 +281,10 @@ TEST(Mutator, Equality) {
   Mutator other_mutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5 == other_mutator5);
 
-  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  Mutator mutator6 = Mutator(filter, SkRect::MakeEmpty());
-  Mutator other_mutator6 = Mutator(filter, SkRect::MakeEmpty());
+  auto filter1 = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter2 = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter1, SkRect::MakeEmpty());
+  Mutator other_mutator6 = Mutator(filter2, SkRect::MakeEmpty());
   ASSERT_TRUE(mutator6 == other_mutator6);
 }
 
