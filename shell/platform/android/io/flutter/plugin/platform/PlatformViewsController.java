@@ -304,6 +304,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           layoutParams.topMargin = physicalTop;
           layoutParams.leftMargin = physicalLeft;
           viewWrapper.setLayoutParams(layoutParams);
+          viewWrapper.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -606,8 +607,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
 
           // Size and position the view wrapper.
-          final int physicalTop = toPhysicalPixels(request.logicalTop);
-          final int physicalLeft = toPhysicalPixels(request.logicalLeft);
+          final int physicalTop = 0; //toPhysicalPixels(request.logicalTop);
+          final int physicalLeft = 0; //toPhysicalPixels(request.logicalLeft);
           viewWrapperLayoutParams.topMargin = physicalTop;
           viewWrapperLayoutParams.leftMargin = physicalLeft;
           viewWrapper.setLayoutParams(viewWrapperLayoutParams);
@@ -639,6 +640,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                   textInputPlugin.clearPlatformViewClient(request.viewId);
                 }
               });
+          viewWrapper.setVisibility(View.INVISIBLE);
           flutterView.addView(viewWrapper);
           viewWrappers.append(request.viewId, viewWrapper);
           return textureId;
