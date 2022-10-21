@@ -272,9 +272,18 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void PlatformConfigurationNativeApi::Render(Scene* scene) {
+void PlatformConfigurationNativeApi::Render(
+    Scene* scene,
+    int64_t fallback_vsync_target_time) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  UIDartState::Current()->platform_configuration()->client()->Render(scene);
+
+  std::optional<fml::TimePoint> fallback_vsync_target_time_converted =
+      fallback_vsync_target_time <= 0 ? std::nullopt
+                                      : std::optional(fml::TimePoint::FromTicks(
+                                            fallback_vsync_target_time));
+
+  UIDartState::Current()->platform_configuration()->client()->Render(
+      scene, fallback_vsync_target_time_converted);
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {

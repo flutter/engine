@@ -885,7 +885,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::shared_ptr<flutter::LayerTree> layer_tree) override;
+  void Render(
+      std::shared_ptr<flutter::LayerTree> layer_tree,
+      std::optional<fml::TimePoint> fallback_vsync_target_time) override;
 
   // |RuntimeDelegate|
   void UpdateSemantics(SemanticsNodeUpdates update,

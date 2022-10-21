@@ -282,8 +282,10 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(Scene* scene) {
-  client_.Render(scene->takeLayerTree());
+void RuntimeController::Render(
+    Scene* scene,
+    std::optional<fml::TimePoint> fallback_vsync_target_time) {
+  client_.Render(scene->takeLayerTree(), fallback_vsync_target_time);
 }
 
 // |PlatformConfigurationClient|

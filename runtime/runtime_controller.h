@@ -606,7 +606,9 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
-  void Render(Scene* scene) override;
+  void Render(
+      Scene* scene,
+      std::optional<fml::TimePoint> fallback_vsync_target_time) override;
 
   // |PlatformConfigurationClient|
   void UpdateSemantics(SemanticsUpdate* update) override;
