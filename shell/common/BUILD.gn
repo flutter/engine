@@ -85,6 +85,8 @@ source_set("common") {
     "platform_view.h",
     "pointer_data_dispatcher.cc",
     "pointer_data_dispatcher.h",
+    "pointer_data_peek.cc",
+    "pointer_data_peek.h",
     "rasterizer.cc",
     "rasterizer.h",
     "resource_cache_limit_calculator.cc",
