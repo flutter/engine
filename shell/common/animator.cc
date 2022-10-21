@@ -206,16 +206,26 @@ void Animator::DrawLastLayerTree(
   delegate_.OnAnimatorDrawLastLayerTree(std::move(frame_timings_recorder));
 }
 
-void Animator::RequestFrame(bool regenerate_layer_tree) {
+void Animator::RequestFrame(
+    bool regenerate_layer_tree,
+    std::optional<fml::TimePoint> force_directly_call_next_vsync_target_time) {
   if (regenerate_layer_tree) {
     regenerate_layer_tree_ = true;
   }
 
-  if (!pending_frame_semaphore_.TryWait()) {
+  // when want to directly call, should *cancel* previous pending call and
+  // schedule again instead of skip scheduling
+  if (!force_directly_call_next_vsync_target_time.has_value() &&
+      pending_await_vsync_id_.load().has_value()) {
     // Multiple calls to Animator::RequestFrame will still result in a
     // single request to the VsyncWaiter.
     return;
   }
+  // TODO this is not atomic with above
+  // when [pending_await_vsync_id_] is not null, this will effectively
+  // cancel the previous one
+  int curr_await_vsync_id = next_await_vsync_id_++;
+  pending_await_vsync_id_ = curr_await_vsync_id;
 
   // The AwaitVSync is going to call us back at the next VSync. However, we want
   // to be reasonably certain that the UI thread is not in the middle of a
@@ -226,23 +236,28 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
 
   task_runners_.GetUITaskRunner()->PostTask(
       [self = weak_factory_.GetWeakPtr(),
+       force_directly_call_next_vsync_target_time, curr_await_vsync_id,
        frame_request_number = frame_request_number_]() {
         if (!self) {
           return;
         }
         TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
                                  frame_request_number);
-        self->AwaitVSync();
+        self->AwaitVSync(force_directly_call_next_vsync_target_time,
+                         curr_await_vsync_id);
       });
   frame_scheduled_ = true;
 }
 
-void Animator::AwaitVSync() {
+void Animator::AwaitVSync(
+    std::optional<fml::TimePoint> force_directly_call_next_vsync_target_time,
+    int curr_await_vsync_id) {
   // (hacky) implementation in the runnable prototype can be seen in:
   // https://github.com/fzyzcjy/engine/blob/7e646656db8ac82d8436942e9f8e738999b0bdc4/shell/common/animator.cc#L371
   // that one works well in the prototype, but is too hacky
   // I will reimplement it if this PR looks acceptable
-  bool should_directly_call = TODO;
+  bool should_directly_call =
+      force_directly_call_next_vsync_target_time.has_value() || TODO;
 
   auto callback =
       [self = weak_factory_.GetWeakPtr()](
@@ -258,7 +273,8 @@ void Animator::AwaitVSync() {
 
   if (should_directly_call) {
     // again, the original code is runnable but hacky
-    const fml::TimePoint next_vsync_target_time = TODO;
+    const fml::TimePoint next_vsync_target_time =
+        force_directly_call_next_vsync_target_time.value_or(TODO);
     // mimic how [Animator::Render] fills the recorder
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
         std::make_unique<FrameTimingsRecorder>();
