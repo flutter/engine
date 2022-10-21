@@ -1079,7 +1079,7 @@ public class PlatformViewsControllerTest {
     assertEquals(flutterView.getChildCount(), 3);
 
     final View view = flutterView.getChildAt(1);
-    assertTrue(view instanceof PlatformOverlayView);
+    assertTrue(view instanceof FlutterImageView);
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
