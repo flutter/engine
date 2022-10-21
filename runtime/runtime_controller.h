@@ -606,6 +606,9 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
+  PointerDataPacket PeekPointerDataPacket() override;
+
+  // |PlatformConfigurationClient|
   void Render(Scene* scene) override;
 
   // |PlatformConfigurationClient|

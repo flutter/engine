@@ -397,6 +397,14 @@ void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
+PointerDataPacket PlatformConfigurationNativeApi::PeekPointerDataPacket() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  return UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->PeekPointerDataPacket();
+}
+
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->UpdateSemantics(

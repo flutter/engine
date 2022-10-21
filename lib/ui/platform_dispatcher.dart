@@ -720,6 +720,12 @@ class PlatformDispatcher {
   @FfiNative<Void Function()>('PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
 
+  PointerDataPacket peekPointerDataPacket() =>
+      _unpackPointerDataPacket(_peekPointerDataPacket());
+
+  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::PeekPointerDataPacket')
+  external static ByteData _peekPointerDataPacket();
+
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
 

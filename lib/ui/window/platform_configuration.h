@@ -65,6 +65,12 @@ class PlatformConfigurationClient {
   virtual void ScheduleFrame() = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief      Peek pointer data packets that have not been dispatched to
+  ///             Dart yet.
+  ///
+  virtual PointerDataPacket PeekPointerDataPacket() = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
@@ -472,6 +478,8 @@ class PlatformConfigurationNativeApi {
   static std::string DefaultRouteName();
 
   static void ScheduleFrame();
+
+  static PointerDataPacket PeekPointerDataPacket();
 
   static void Render(Scene* scene);
 

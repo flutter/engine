@@ -282,6 +282,11 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
+PointerDataPacket RuntimeController::PeekPointerDataPacket() {
+  return client_.PeekPointerDataPacket();
+}
+
+// |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene) {
   client_.Render(scene->takeLayerTree());
 }

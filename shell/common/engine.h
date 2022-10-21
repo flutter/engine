@@ -760,6 +760,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
+  PointerDataPacket PeekPointerDataPacket() override;
+
+  // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
   // |RuntimeDelegate|
