@@ -17,17 +17,17 @@ import 'layout_service.dart';
 /// This class is responsible for registering and loading fonts.
 ///
 /// Once an asset manager has been set in the framework, call
-/// [registerFonts] with it to register fonts declared in the
+/// [downloadAssetFonts] with it to register fonts declared in the
 /// font manifest. If test fonts are enabled, then call
-/// [registerTestFonts] as well.
+/// [debugDownloadTestFonts] as well.
 class HtmlFontCollection implements FontCollection {
   FontManager? _assetFontManager;
   FontManager? _testFontManager;
 
-  /// Reads the font manifest using the [assetManager] and registers all of the
+  /// Reads the font manifest using the [assetManager] and downloads all of the
   /// fonts declared within.
   @override
-  Future<void> registerFonts(AssetManager assetManager) async {
+  Future<void> downloadAssetFonts(AssetManager assetManager) async {
     ByteData byteData;
 
     try {
@@ -67,10 +67,13 @@ class HtmlFontCollection implements FontCollection {
             descriptors[descriptor] = '${fontAsset[descriptor]}';
           }
         }
-        _assetFontManager!.registerAsset(
+        _assetFontManager!.downloadAsset(
             family!, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
       }
     }
+
+    final List<DomFontFace?> loadedFonts = await Future.wait(_assetFontManager!._fontLoadingFutures);
+    _assetFontManager!._downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
   }
 
   @override
@@ -81,24 +84,24 @@ class HtmlFontCollection implements FontCollection {
     return _assetFontManager!._loadFontFaceBytes(fontFamily, list);
   }
 
-  /// Registers fonts that are used by tests.
+  /// Downloads fonts that are used by tests.
   @override
-  void debugRegisterTestFonts() {
+  Future<void> debugDownloadTestFonts() async {
     _testFontManager = FontManager();
-    _testFontManager!.registerAsset(
+    _testFontManager!.downloadAsset(
         ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
-    _testFontManager!.registerAsset(robotoFontFamily,
+    _testFontManager!.downloadAsset(robotoFontFamily,
         'url($robotoTestFontUrl)', const <String, String>{});
-    _testFontManager!.registerAsset(robotoVariableFontFamily,
+    _testFontManager!.downloadAsset(robotoVariableFontFamily,
         'url($robotoVariableTestFontUrl)', const <String, String>{});
+    final List<DomFontFace?> loadedFonts = await Future.wait(_testFontManager!._fontLoadingFutures);
+    _testFontManager!._downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
   }
 
-  /// Returns a [Future] that completes when the registered fonts are loaded
-  /// and ready to be used.
   @override
-  Future<void> ensureFontsLoaded() async {
-    await _assetFontManager?.ensureFontsLoaded();
-    await _testFontManager?.ensureFontsLoaded();
+  void registerDownloadedFonts() {
+    _assetFontManager?.registerDownloadedFonts();
+    _testFontManager?.registerDownloadedFonts();
   }
 
   /// Unregister all fonts that have been registered.
@@ -129,7 +132,12 @@ class FontManager {
 
   FontManager._();
 
-  final List<Future<void>> _fontLoadingFutures = <Future<void>>[];
+  /// Fonts that started the downloading process. Once the fonts have downloaded
+  /// without error, they are moved to [_downloadedFonts]. Those fonts
+  /// are subsequently registered by [registerDownloadedFonts].
+  final List<Future<DomFontFace?>> _fontLoadingFutures = <Future<DomFontFace?>>[];
+
+  final List<DomFontFace> _downloadedFonts = <DomFontFace>[];
 
   // Regular expression to detect a string with no punctuations.
   // For example font family 'Ahem!' does not fall into this category
@@ -172,7 +180,7 @@ class FontManager {
   ///
   /// * https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Valid_family_names
   /// * https://drafts.csswg.org/css-fonts-3/#font-family-prop
-  void registerAsset(
+  void downloadAsset(
     String family,
     String asset,
     Map<String, String> descriptors,
@@ -192,17 +200,38 @@ class FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
+    Future<DomFontFace?> fontFaceLoad(DomFontFace fontFace) async {
+      try {
+        return fontFace.load();
+      } catch (e) {
+        printWarning('Error while trying to load font family "$family":\n$e');
+        return null;
+      }
+    }
     // try/catch because `new FontFace` can crash with an improper font family.
     try {
       final DomFontFace fontFace = createDomFontFace(family, asset, descriptors);
-      _fontLoadingFutures.add(fontFace.load().then((_) {
-        domDocument.fonts!.add(fontFace);
-      }, onError: (dynamic e) {
-        printWarning('Error while trying to load font family "$family":\n$e');
-      }));
+      _fontLoadingFutures.add(fontFaceLoad(fontFace));
     } catch (e) {
       printWarning('Error while loading font family "$family":\n$e');
     }
+  }
+
+  void registerDownloadedFonts() {
+    if (_downloadedFonts.isEmpty) {
+      return;
+    }
+
+    for (final DomFontFace? fontFace in _downloadedFonts) {
+      if (fontFace != null) {
+        domDocument.fonts!.add(fontFace);
+      }
+    }
+  }
+
+  Future<void> testFillDownloadedFonts() async {
+    final List<DomFontFace?> loadedFonts = await Future.wait(_fontLoadingFutures);
+    _downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
   }
 
   // Loads a font from bytes, surfacing errors through the future.
@@ -224,12 +253,6 @@ class FontManager {
       throw Exception(exception.toString());
     });
   }
-
-  /// Returns a [Future] that completes when all fonts that have been
-  /// registered with this font manager have been loaded and are ready to use.
-  Future<void> ensureFontsLoaded() {
-    return Future.wait(_fontLoadingFutures);
-  }
 }
 
 /// A font manager that works without using the CSS Font Loading API.
@@ -247,7 +270,7 @@ class _PolyfillFontManager extends FontManager {
   static const Duration _fontLoadRetryDuration = Duration(milliseconds: 50);
 
   @override
-  void registerAsset(
+  void downloadAsset(
     String family,
     String asset,
     Map<String, String> descriptors,
@@ -271,18 +294,13 @@ class _PolyfillFontManager extends FontManager {
 
     paragraph.style.fontFamily = "'$family', $fallbackFontName";
 
-    final Completer<void> completer = Completer<void>();
-
     late DateTime fontLoadStart;
 
     void watchWidth() {
       if (paragraph.offsetWidth != sansSerifWidth) {
         paragraph.remove();
-        completer.complete();
       } else {
         if (DateTime.now().difference(fontLoadStart) > _fontLoadTimeout) {
-          // Let application waiting for fonts continue with fallback.
-          completer.complete();
           // Throw unhandled exception for logging.
           throw Exception('Timed out trying to load font: $family');
         } else {
@@ -318,7 +336,5 @@ class _PolyfillFontManager extends FontManager {
 
     fontLoadStart = DateTime.now();
     watchWidth();
-
-    _fontLoadingFutures.add(completer.future);
   }
 }
