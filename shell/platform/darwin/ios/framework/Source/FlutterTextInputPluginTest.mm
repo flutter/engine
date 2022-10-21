@@ -1872,7 +1872,6 @@ FLUTTER_ASSERT_ARC
   [regularField addEntriesFromDictionary:editingValue];
   [self setClientId:123 configuration:regularField];
   XCTAssertEqual(self.installedInputViews.count, 1ul);
-  XCTAssertNotEqual(textInputPlugin.activeView, nil);
   XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
 
   NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, nil];
@@ -1884,7 +1883,6 @@ FLUTTER_ASSERT_ARC
                              result:^(id _Nullable result){
                              }];
 
-  XCTAssertNotEqual(textInputPlugin.activeView.selectionRects, nil);
   XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 1u);
 }
 
