@@ -19,7 +19,7 @@ toolchain. Most developers will interact with Flutter via the [Flutter
 Framework](https://github.com/flutter/flutter), which provides a modern,
 reactive framework, and a rich set of platform, layout and foundation widgets.
 
-To Run/contribute into Flutter Web engine, more tooling can be
+To run/contribute into Flutter Web engine, more tooling can be
 found at [felt](https://github.com/flutter/engine/tree/main/lib/web_ui#using-felt).
 This is a tool written to make web engine development experience easy.
 
