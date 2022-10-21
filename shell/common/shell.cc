@@ -32,6 +32,7 @@
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
+#include "third_party/tonic/dart_state.h"
 
 namespace flutter {
 
@@ -901,7 +902,7 @@ void Shell::OnPlatformViewDestroyed() {
   rasterizer_->TeardownExternalViewEmbedder();
 
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), [] {
-    DartState::Scope scope(DartState::Current());
+    tonic::DartState::Scope scope(tonic::DartState::Current());
     ::Dart_NotifyDestroyed();
   });
 }
