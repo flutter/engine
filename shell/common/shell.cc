@@ -900,8 +900,10 @@ void Shell::OnPlatformViewDestroyed() {
   // https://github.com/flutter/flutter/issues/96679 is fixed.
   rasterizer_->TeardownExternalViewEmbedder();
 
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                    [] { ::Dart_NotifyDestroyed(); });
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), [] {
+    DartState::Scope scope(DartState::Current());
+    ::Dart_NotifyDestroyed();
+  });
 }
 
 // |PlatformView::Delegate|
