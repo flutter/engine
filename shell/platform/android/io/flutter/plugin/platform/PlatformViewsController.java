@@ -607,8 +607,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
 
           // Size and position the view wrapper.
-          final int physicalTop = 0; //toPhysicalPixels(request.logicalTop);
-          final int physicalLeft = 0; //toPhysicalPixels(request.logicalLeft);
+          final int physicalTop = 0; // toPhysicalPixels(request.logicalTop);
+          final int physicalLeft = 0; // toPhysicalPixels(request.logicalLeft);
           viewWrapperLayoutParams.topMargin = physicalTop;
           viewWrapperLayoutParams.leftMargin = physicalLeft;
           viewWrapper.setLayoutParams(viewWrapperLayoutParams);
