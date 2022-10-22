@@ -671,23 +671,6 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
   };
 }
 
-GeometryResult RectGeometry::GetPositionColorBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass,
-    Color paint_color,
-    BlendMode blend_mode) {
-  // TODO(jonahwilliams): support per-color vertex in rect geometry.
-  return {};
-}
-
-GeometryResult RectGeometry::GetPositionUVBuffer(const ContentContext& renderer,
-                                                 const Entity& entity,
-                                                 RenderPass& pass) {
-  // TODO(jonahwilliams): support texture coordinates in rect geometry.
-  return {};
-}
-
 GeometryVertexType RectGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
 }

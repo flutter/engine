@@ -241,18 +241,6 @@ class RectGeometry : public Geometry {
                                    RenderPass& pass) override;
 
   // |Geometry|
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
-
-  // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
   // |Geometry|
