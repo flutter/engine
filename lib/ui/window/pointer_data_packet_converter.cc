@@ -83,7 +83,9 @@ void PointerDataPacketConverter::ConvertPointerData(
       case PointerData::Change::kRemove: {
         // Makes sure we have an existing pointer
         auto iter = states_.find(pointer_data.device);
-        FML_DCHECK(iter != states_.end());
+        if (iter == states_.end()) {
+          break;
+        }
         PointerState state = iter->second;
 
         if (state.is_down) {
@@ -147,7 +149,7 @@ void PointerDataPacketConverter::ConvertPointerData(
           state = EnsurePointerState(synthesized_add_event);
           converted_pointers.push_back(synthesized_add_event);
         } else {
-          state = iter->second;
+          return;
         }
 
         FML_DCHECK(!state.is_down);
@@ -185,7 +187,9 @@ void PointerDataPacketConverter::ConvertPointerData(
       case PointerData::Change::kUp: {
         // Makes sure we have an existing pointer in down state
         auto iter = states_.find(pointer_data.device);
-        FML_DCHECK(iter != states_.end());
+        if (iter == states_.end()) {
+          break;
+        }
         PointerState state = iter->second;
         FML_DCHECK(state.is_down);
 
