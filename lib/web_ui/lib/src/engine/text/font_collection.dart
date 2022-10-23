@@ -197,7 +197,8 @@ class FontManager {
   ) {
     Future<DomFontFace?> fontFaceLoad(DomFontFace fontFace) async {
       try {
-        return fontFace.load();
+        final DomFontFace loadedFontFace = await fontFace.load();
+        return loadedFontFace;
       } catch (e) {
         printWarning('Error while trying to load font family "$family":\n$e');
         return null;
