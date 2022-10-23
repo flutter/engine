@@ -783,8 +783,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                     _threadHost->io_thread->GetTaskRunner()          // io
   );
 
-  _isGpuDisabled =
-      [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+  _isGpuDisabled = false;
+      // TD [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
       /*platform_data=*/std::move(platformData),
@@ -1340,12 +1340,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
-  id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
+  /*id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
     id<FlutterAppLifeCycleProvider> lifeCycleProvider =
         (id<FlutterAppLifeCycleProvider>)appDelegate;
     [lifeCycleProvider addApplicationLifeCycleDelegate:delegate];
-  }
+  }*/
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {

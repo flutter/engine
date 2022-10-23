@@ -164,7 +164,7 @@ using namespace flutter;
   // We opt out of view controller based status bar visibility since we want
   // to be able to modify this on the fly. The key used is
   // UIViewControllerBasedStatusBarAppearance
-  [UIApplication sharedApplication].statusBarHidden =
+  /*[UIApplication sharedApplication].statusBarHidden =
       ![overlays containsObject:@"SystemUiOverlay.top"];
   if ([overlays containsObject:@"SystemUiOverlay.bottom"]) {
     [[NSNotificationCenter defaultCenter]
@@ -174,7 +174,7 @@ using namespace flutter;
     [[NSNotificationCenter defaultCenter]
         postNotificationName:FlutterViewControllerHideHomeIndicator
                       object:nil];
-  }
+  }*/
 }
 
 - (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
@@ -184,7 +184,7 @@ using namespace flutter;
   // We opt out of view controller based status bar visibility since we want
   // to be able to modify this on the fly. The key used is
   // UIViewControllerBasedStatusBarAppearance
-  [UIApplication sharedApplication].statusBarHidden =
+  /*[UIApplication sharedApplication].statusBarHidden =
       ![mode isEqualToString:@"SystemUiMode.edgeToEdge"];
   if ([mode isEqualToString:@"SystemUiMode.edgeToEdge"]) {
     [[NSNotificationCenter defaultCenter]
@@ -194,7 +194,7 @@ using namespace flutter;
     [[NSNotificationCenter defaultCenter]
         postNotificationName:FlutterViewControllerHideHomeIndicator
                       object:nil];
-  }
+  }*/
 }
 
 - (void)restoreSystemChromeSystemUIOverlays {
@@ -233,7 +233,7 @@ using namespace flutter;
   } else {
     // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
     // in favor of delegating to the view controller
-    [[UIApplication sharedApplication] setStatusBarStyle:statusBarStyle];
+    //[[UIApplication sharedApplication] setStatusBarStyle:statusBarStyle];
   }
 }
 
@@ -249,11 +249,11 @@ using namespace flutter;
   if (navigationController) {
     [navigationController popViewControllerAnimated:isAnimated];
   } else {
-    UIViewController* rootViewController =
+    /*UIViewController* rootViewController =
         [UIApplication sharedApplication].keyWindow.rootViewController;
     if (engineViewController != rootViewController) {
       [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
-    }
+    }*/
   }
 }
 

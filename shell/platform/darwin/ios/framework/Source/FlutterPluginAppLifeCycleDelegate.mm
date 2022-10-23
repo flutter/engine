@@ -135,7 +135,7 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
 }
 
 - (void)handleDidEnterBackground:(NSNotification*)notification {
-  UIApplication* application = [UIApplication sharedApplication];
+  /*UIApplication* application = [UIApplication sharedApplication];
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // The following keeps the Flutter session alive when the device screen locks
   // in debug mode. It allows continued use of features like hot reload and
@@ -163,11 +163,11 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
     if ([delegate respondsToSelector:@selector(applicationDidEnterBackground:)]) {
       [delegate applicationDidEnterBackground:application];
     }
-  }
+  }*/
 }
 
 - (void)handleWillEnterForeground:(NSNotification*)notification {
-  UIApplication* application = [UIApplication sharedApplication];
+  /*UIApplication* application = [UIApplication sharedApplication];
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   if (_debugBackgroundTask != UIBackgroundTaskInvalid) {
     [application endBackgroundTask:_debugBackgroundTask];
@@ -181,11 +181,11 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
     if ([delegate respondsToSelector:@selector(applicationWillEnterForeground:)]) {
       [delegate applicationWillEnterForeground:application];
     }
-  }
+  }*/
 }
 
 - (void)handleWillResignActive:(NSNotification*)notification {
-  UIApplication* application = [UIApplication sharedApplication];
+  /*UIApplication* application = [UIApplication sharedApplication];
   for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
     if (!delegate) {
       continue;
@@ -193,11 +193,11 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
     if ([delegate respondsToSelector:@selector(applicationWillResignActive:)]) {
       [delegate applicationWillResignActive:application];
     }
-  }
+  }*/
 }
 
 - (void)handleDidBecomeActive:(NSNotification*)notification {
-  UIApplication* application = [UIApplication sharedApplication];
+  /*UIApplication* application = [UIApplication sharedApplication];
   for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
     if (!delegate) {
       continue;
@@ -205,11 +205,11 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
     if ([delegate respondsToSelector:@selector(applicationDidBecomeActive:)]) {
       [delegate applicationDidBecomeActive:application];
     }
-  }
+  }*/
 }
 
 - (void)handleWillTerminate:(NSNotification*)notification {
-  UIApplication* application = [UIApplication sharedApplication];
+  /*UIApplication* application = [UIApplication sharedApplication];
   for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
     if (!delegate) {
       continue;
@@ -217,7 +217,7 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
     if ([delegate respondsToSelector:@selector(applicationWillTerminate:)]) {
       [delegate applicationWillTerminate:application];
     }
-  }
+  }*/
 }
 
 #pragma GCC diagnostic push
