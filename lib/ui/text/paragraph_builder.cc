@@ -311,6 +311,10 @@ ParagraphBuilder::ParagraphBuilder(
   }
 #endif  // FLUTTER_ENABLE_SKSHAPER
 
+  if (style.max_lines == 1000) {
+    factory = txt::ParagraphBuilder::CreateCJKBuilder;
+  }
+
   m_paragraphBuilder = factory(style, font_collection.GetFontCollection());
 }
 

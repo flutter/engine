@@ -136,6 +136,10 @@ source_set("txt") {
     "src/utils/MacUtils.h",
     "src/utils/TypeHelpers.h",
     "src/utils/WindowsUtils.h",
+    "src/cjk/paragraph_builder_cjk.cc",
+    "src/cjk/paragraph_builder_ckj.h",
+    "src/cjk/paragraph_cjk.cc",
+    "src/cjk/paragraph_cjk.h",
   ]
 
   public_configs = [ ":txt_config" ]

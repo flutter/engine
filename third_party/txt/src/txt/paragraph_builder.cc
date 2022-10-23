@@ -15,6 +15,7 @@
  */
 
 #include "paragraph_builder.h"
+#include "cjk/paragraph_builder_ckj.h"
 
 #include "paragraph_builder_txt.h"
 #include "paragraph_style.h"
@@ -30,6 +31,12 @@ std::unique_ptr<ParagraphBuilder> ParagraphBuilder::CreateTxtBuilder(
     const ParagraphStyle& style,
     std::shared_ptr<FontCollection> font_collection) {
   return std::make_unique<ParagraphBuilderTxt>(style, font_collection);
+}
+
+std::unique_ptr<ParagraphBuilder> ParagraphBuilder::CreateCJKBuilder(
+    const txt::ParagraphStyle& style,
+    std::shared_ptr<FontCollection> font_collection) {
+  return std::make_unique<ParagraphBuilderCJK>(style, font_collection);
 }
 
 #if FLUTTER_ENABLE_SKSHAPER

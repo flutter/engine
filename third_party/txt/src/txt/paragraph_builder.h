@@ -35,6 +35,10 @@ class ParagraphBuilder {
       const ParagraphStyle& style,
       std::shared_ptr<FontCollection> font_collection);
 
+  static std::unique_ptr<ParagraphBuilder> CreateCJKBuilder(
+      const ParagraphStyle& style,
+      std::shared_ptr<FontCollection> font_collection);
+
 #if FLUTTER_ENABLE_SKSHAPER
   static std::unique_ptr<ParagraphBuilder> CreateSkiaBuilder(
       const ParagraphStyle& style,

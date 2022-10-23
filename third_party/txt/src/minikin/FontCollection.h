@@ -98,11 +98,13 @@ class FontCollection {
   // Initialize the FontCollection.
   bool init(const std::vector<std::shared_ptr<FontFamily>>& typefaces);
 
+ public:
   const std::shared_ptr<FontFamily>& getFamilyForChar(uint32_t ch,
                                                       uint32_t vs,
                                                       uint32_t langListId,
                                                       int variant) const;
 
+ private:
   const std::shared_ptr<FontFamily>&
   findFallbackFont(uint32_t ch, uint32_t vs, uint32_t langListId) const;
 
