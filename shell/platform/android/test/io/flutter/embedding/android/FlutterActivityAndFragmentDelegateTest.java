@@ -257,7 +257,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is obtained in onAttach().
-    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onAttach(ctx);
 
     // If the engine in FlutterEngineGroup is being used, it should have sent a resumed lifecycle
     // event.
@@ -282,7 +282,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // --- Execute the behavior under test ---
     // The FlutterEngine existence is verified in onAttach()
-    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onAttach(ctx);
 
     // Expect IllegalStateException.
   }

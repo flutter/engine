@@ -199,7 +199,7 @@ public class FlutterActivityTest {
             .dartEntrypoint("custom_entrypoint")
             .initialRoute("/custom/route")
             .backgroundMode(BackgroundMode.transparent)
-            .build(RuntimeEnvironment.application);
+            .build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();

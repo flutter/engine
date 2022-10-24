@@ -113,7 +113,11 @@ public class FlutterFragmentTest {
             .renderMode(RenderMode.texture)
             .transparencyMode(TransparencyMode.opaque)
             .build();
-    fragment.setDelegate(new FlutterActivityAndFragmentDelegate(fragment));
+
+    TestDelegateFactory delegateFactory =
+        new TestDelegateFactory(new FlutterActivityAndFragmentDelegate(fragment));
+
+    fragment.setDelegateFactory(delegateFactory);
 
     assertEquals("my_cached_engine_group", fragment.getCachedEngineGroupId());
     assertEquals("custom_entrypoint", fragment.getDartEntrypointFunctionName());
