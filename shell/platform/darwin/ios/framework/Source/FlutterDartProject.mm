@@ -42,6 +42,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   // 4. Settings from the main NSBundle and default values.
 
   NSBundle* mainBundle = [NSBundle mainBundle];
+
   NSBundle* engineBundle = [NSBundle bundleForClass:[FlutterViewController class]];
 
   bool hasExplicitBundle = bundle != nil;
@@ -51,6 +52,12 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   if (bundle == nil) {
     bundle = mainBundle;
   }
+    
+    if ([[bundle.bundleURL pathExtension] isEqualToString:@"appex"]) {
+        // Peel off two directory levels - MY_APP.app/PlugIns/MY_APP_EXTENSION.appex
+        bundle = [NSBundle bundleWithURL:[[bundle.bundleURL URLByDeletingLastPathComponent] URLByDeletingLastPathComponent]];
+    }
+        
 
   auto settings = flutter::SettingsFromCommandLine(command_line);
 
