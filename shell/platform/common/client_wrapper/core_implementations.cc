@@ -42,6 +42,7 @@ void ForwardToHandler(FlutterDesktopMessengerRef messenger,
   BinaryReply reply_handler = [messenger_ptr, response_handle](
                                   const uint8_t* reply,
                                   size_t reply_size) mutable {
+    // Note: This can be called on any thread.
     auto lock = std::unique_ptr<FlutterDesktopMessenger,
                                 decltype(&FlutterDesktopMessengerUnlock)>(
         FlutterDesktopMessengerLock(messenger_ptr.get()),
