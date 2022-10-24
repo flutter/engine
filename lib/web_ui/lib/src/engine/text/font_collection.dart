@@ -266,6 +266,9 @@ class _PolyfillFontManager extends FontManager {
   }
 
   @override
+  void registerDownloadedFonts() {}
+
+  @override
   void downloadAsset(
     String family,
     String asset,
