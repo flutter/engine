@@ -79,8 +79,6 @@ void ReusableFragmentShader::SetSampler(Dart_Handle index_handle,
 std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
     DlImageSampling sampling) {
   FML_CHECK(program_);
-  auto uniforms =
-      SkData::MakeWithCopy(uniform_data_->data(), uniform_data_->size());
 
   // The lifetime of this object is longer than a frame, and the uniforms can be
   // continually changed on the UI thread. So we take a copy of the uniforms
