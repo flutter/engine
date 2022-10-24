@@ -149,6 +149,8 @@ struct FlutterDesktopPluginRegistrar {
 
 // State associated with the messenger used to communicate with the engine.
 struct FlutterDesktopMessenger {
+  FlutterDesktopMessenger() = default;
+
   void AddRef() { ref_count_.fetch_add(1); }
 
   void Release() {
@@ -167,6 +169,7 @@ struct FlutterDesktopMessenger {
   std::mutex& GetMutex() { return mutex_; }
 
  private:
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterDesktopMessenger);
   // The engine that backs this messenger.
   FlutterDesktopEngineState* engine_;
   std::atomic<int32_t> ref_count_ = 0;
