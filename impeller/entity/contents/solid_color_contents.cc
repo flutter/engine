@@ -4,6 +4,7 @@
 
 #include "solid_color_contents.h"
 
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
@@ -55,15 +56,17 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   Command cmd;
   cmd.label = "Solid Fill";
-  cmd.pipeline =
-      renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto allocator = renderer.GetContext()->GetResourceAllocator();
-  auto geometry_result = geometry_->GetPositionBuffer(
-      allocator, host_buffer, renderer.GetTessellator(),
-      pass.GetRenderTargetSize());
+  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+
+  cmd.pipeline = renderer.GetSolidFillPipeline(options);
   cmd.BindVertices(geometry_result.vertex_buffer);
   cmd.primitive_type = geometry_result.type;
 
@@ -80,13 +83,16 @@ bool SolidColorContents::Render(const ContentContext& renderer,
     return false;
   }
 
+  if (geometry_result.prevent_overdraw) {
+    return ClipRestoreContents().Render(renderer, entity, pass);
+  }
   return true;
 }
 
 std::unique_ptr<SolidColorContents> SolidColorContents::Make(Path path,
                                                              Color color) {
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakePath(std::move(path)));
+  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
   contents->SetColor(color);
   return contents;
 }

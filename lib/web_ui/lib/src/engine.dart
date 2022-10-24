@@ -149,6 +149,8 @@ export 'engine/svg.dart';
 export 'engine/test_embedding.dart';
 export 'engine/text/canvas_paragraph.dart';
 export 'engine/text/font_collection.dart';
+export 'engine/text/fragmenter.dart';
+export 'engine/text/layout_fragmenter.dart';
 export 'engine/text/layout_service.dart';
 export 'engine/text/line_break_properties.dart';
 export 'engine/text/line_breaker.dart';

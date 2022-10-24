@@ -48,7 +48,11 @@ static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
-static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+// TODO(justinmc): Remove the TextInput method constant when the framework has
+// finished transitioning to using the Scribble channel.
+// https://github.com/flutter/flutter/pull/104128
+static NSString* const kDeprecatedSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+static NSString* const kSetSelectionRectsMethod = @"Scribble.setSelectionRects";
 static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 
 #pragma mark - TextInputConfiguration Field Names
@@ -707,6 +711,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, readonly) fml::WeakPtr<FlutterTextInputPlugin> weakPtr;
 @property(nonatomic, readonly) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, readonly) UIView* hostView;
 @end
 
 @interface FlutterTextInputView ()
@@ -1602,7 +1607,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       _cachedFirstRect = [self localRectFromFrameworkTransform:rect];
     }
 
-    return _cachedFirstRect;
+    UIView* hostView = _textInputPlugin.get().hostView;
+    NSAssert(hostView == nil || [self isDescendantOfView:hostView], @"%@ is not a descendant of %@",
+             self, hostView);
+    return hostView ? [hostView convertRect:_cachedFirstRect toView:self] : _cachedFirstRect;
   }
 
   if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
@@ -2165,6 +2173,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     result(nil);
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
+    result(nil);
+    // TODO(justinmc): Remove the TextInput method constant when the framework has
+    // finished transitioning to using the Scribble channel.
+    // https://github.com/flutter/flutter/pull/104128
+  } else if ([method isEqualToString:kDeprecatedSetSelectionRectsMethod]) {
+    [self setSelectionRects:args];
     result(nil);
   } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];

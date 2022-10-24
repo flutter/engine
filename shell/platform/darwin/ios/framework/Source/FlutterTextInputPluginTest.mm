@@ -1217,7 +1217,11 @@ FLUTTER_ASSERT_ARC
 #pragma mark - UITextInput methods - Tests
 
 - (void)testUpdateFirstRectForRange {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [self setClientId:123 configuration:self.mutableTemplateCopy];
+
+  FlutterTextInputView* inputView = textInputPlugin.activeView;
+  textInputPlugin.viewController.view.frame = CGRectMake(0, 0, 0, 0);
+
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
 
@@ -1272,6 +1276,16 @@ FLUTTER_ASSERT_ARC
   [inputView setMarkedRect:testRect];
   XCTAssertTrue(
       CGRectEqualToRect(CGRectMake(-306, 3, 300, 300), [inputView firstRectForRange:range]));
+
+  NSAssert(inputView.superview, @"inputView is not in the view hierarchy!");
+  const CGPoint offset = CGPointMake(113, 119);
+  CGRect currentFrame = inputView.frame;
+  currentFrame.origin = offset;
+  inputView.frame = currentFrame;
+  // Moving the input view within the FlutterView shouldn't affect the coordinates,
+  // since the framework sends us global coordinates.
+  XCTAssertTrue(CGRectEqualToRect(CGRectMake(-306 - 113, 3 - 119, 300, 300),
+                                  [inputView firstRectForRange:range]));
 }
 
 - (void)testFirstRectForRangeReturnsCorrectSelectionRect {
@@ -1838,6 +1852,38 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.installedInputViews.count, 2ul);
 
   [self commitAutofillContextAndVerify];
+}
+
+- (void)testScribbleSetSelectionRects {
+  NSMutableDictionary* regularField = self.mutableTemplateCopy;
+  NSDictionary* editingValue = @{
+    @"text" : @"REGULAR_TEXT_FIELD",
+    @"composingBase" : @0,
+    @"composingExtent" : @3,
+    @"selectionBase" : @1,
+    @"selectionExtent" : @4
+  };
+  [regularField setValue:@{
+    @"uniqueIdentifier" : @"field1",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : editingValue,
+  }
+                  forKey:@"autofill"];
+  [regularField addEntriesFromDictionary:editingValue];
+  [self setClientId:123 configuration:regularField];
+  XCTAssertEqual(self.installedInputViews.count, 1ul);
+  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
+
+  NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, nil];
+  NSArray* selectionRects = [NSArray arrayWithObjects:selectionRect, nil];
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"Scribble.setSelectionRects"
+                                        arguments:selectionRects];
+  [textInputPlugin handleMethodCall:methodCall
+                             result:^(id _Nullable result){
+                             }];
+
+  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 1u);
 }
 
 - (void)testDecommissionedViewAreNotReusedByAutofill {
