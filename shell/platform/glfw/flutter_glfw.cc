@@ -116,7 +116,7 @@ struct FlutterDesktopEngineState {
   std::unique_ptr<flutter::EventLoop> event_loop;
 
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterDesktopMessenger> messenger;
+  std::shared_ptr<FlutterDesktopMessenger> messenger;
 
   // Message dispatch manager for messages from the Flutter engine.
   std::unique_ptr<flutter::IncomingMessageDispatcher> message_dispatcher;
@@ -149,9 +149,53 @@ struct FlutterDesktopPluginRegistrar {
 
 // State associated with the messenger used to communicate with the engine.
 struct FlutterDesktopMessenger {
+  void AddRef() { ref_count_.fetch_add(1); }
+
+  void Release() {
+    int32_t old_count = ref_count_.fetch_sub(1);
+    if (old_count <= 1) {
+      delete this;
+    }
+  }
+
+  FlutterDesktopEngineState* GetEngine() const { return engine_; }
+  void SetEngine(FlutterDesktopEngineState* engine) {
+    std::scoped_lock lock(mutex_);
+    engine_ = engine;
+  }
+
+  std::mutex& GetMutex() { return mutex_; }
+
+ private:
   // The engine that backs this messenger.
-  FlutterDesktopEngineState* engine;
+  FlutterDesktopEngineState* engine_;
+  std::atomic<int32_t> ref_count_ = 0;
+  std::mutex mutex_;
 };
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(
+    FlutterDesktopMessengerRef messenger) {
+  messenger->AddRef();
+  return messenger;
+}
+
+void FlutterDesktopMessengerRelease(FlutterDesktopMessengerRef messenger) {
+  messenger->Release();
+}
+
+bool FlutterDesktopMessengerIsAvailable(FlutterDesktopMessengerRef messenger) {
+  return messenger->GetEngine() != nullptr;
+}
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
+    FlutterDesktopMessengerRef messenger) {
+  messenger->GetMutex().lock();
+  return messenger;
+}
+
+void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
+  messenger->GetMutex().unlock();
+}
 
 // Retrieves state bag for the window in question from the GLFWWindow.
 static FlutterDesktopWindowControllerState* GetWindowController(
@@ -743,8 +787,10 @@ static void SetUpLocales(FlutterDesktopEngineState* state) {
 static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
                                    GLFWwindow* window) {
   // Messaging.
-  state->messenger = std::make_unique<FlutterDesktopMessenger>();
-  state->messenger->engine = state;
+  state->messenger = std::shared_ptr<FlutterDesktopMessenger>(
+      FlutterDesktopMessengerAddRef(new FlutterDesktopMessenger()),
+      &FlutterDesktopMessengerRelease);
+  state->messenger->SetEngine(state);
   state->message_dispatcher =
       std::make_unique<flutter::IncomingMessageDispatcher>(
           state->messenger.get());
@@ -846,6 +892,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
 }
 
 void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  controller->engine->messenger->SetEngine(nullptr);
   FlutterDesktopPluginRegistrarRef registrar =
       controller->engine->plugin_registrar.get();
   if (registrar->destruction_handler) {
@@ -1045,7 +1092,8 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
   FlutterPlatformMessageResponseHandle* response_handle = nullptr;
   if (reply != nullptr && user_data != nullptr) {
     FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
-        messenger->engine->flutter_engine, reply, user_data, &response_handle);
+        messenger->GetEngine()->flutter_engine, reply, user_data,
+        &response_handle);
     if (result != kSuccess) {
       std::cout << "Failed to create response handle\n";
       return false;
@@ -1061,11 +1109,11 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
   };
 
   FlutterEngineResult message_result = FlutterEngineSendPlatformMessage(
-      messenger->engine->flutter_engine, &platform_message);
+      messenger->GetEngine()->flutter_engine, &platform_message);
 
   if (response_handle != nullptr) {
     FlutterPlatformMessageReleaseResponseHandle(
-        messenger->engine->flutter_engine, response_handle);
+        messenger->GetEngine()->flutter_engine, response_handle);
   }
 
   return message_result == kSuccess;
@@ -1084,41 +1132,16 @@ void FlutterDesktopMessengerSendResponse(
     const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
-  FlutterEngineSendPlatformMessageResponse(messenger->engine->flutter_engine,
-                                           handle, data, data_length);
+  FlutterEngineSendPlatformMessageResponse(
+      messenger->GetEngine()->flutter_engine, handle, data, data_length);
 }
 
 void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         const char* channel,
                                         FlutterDesktopMessageCallback callback,
                                         void* user_data) {
-  messenger->engine->message_dispatcher->SetMessageCallback(channel, callback,
-                                                            user_data);
-}
-
-FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(
-    FlutterDesktopMessengerRef messenger) {
-  assert(false);  // not implemented
-  return nullptr;
-}
-
-void FlutterDesktopMessengerRelease(FlutterDesktopMessengerRef messenger) {
-  assert(false);  // not implemented
-}
-
-bool FlutterDesktopMessengerIsAvailable(FlutterDesktopMessengerRef messenger) {
-  assert(false);  // not implemented
-  return false;
-}
-
-FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
-    FlutterDesktopMessengerRef messenger) {
-  assert(false);  // not implemented
-  return nullptr;
-}
-
-void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
-  assert(false);  // not implemented
+  messenger->GetEngine()->message_dispatcher->SetMessageCallback(
+      channel, callback, user_data);
 }
 
 FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
