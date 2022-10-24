@@ -16,15 +16,6 @@ namespace flutter {
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 static jmethodID g_decode_image_method = nullptr;
 
-inline jlong Pointer2Jlong(void* pointer) {
-  return static_cast<jlong>(reinterpret_cast<intptr_t>(pointer));
-}
-
-template <typename T>
-inline T Jlong2Pointer(jlong address) {
-  return reinterpret_cast<T>(static_cast<intptr_t>(address));
-}
-
 AndroidImageGenerator::~AndroidImageGenerator() = default;
 
 AndroidImageGenerator::AndroidImageGenerator(sk_sp<SkData> data)
@@ -115,7 +106,7 @@ void AndroidImageGenerator::DoDecodeImage() {
   auto bitmap = std::make_unique<fml::jni::ScopedJavaGlobalRef<jobject>>(
       env, env->CallStaticObjectMethod(g_flutter_jni_class->obj(),
                                        g_decode_image_method, direct_buffer,
-                                       Pointer2Jlong(this)));
+                                       reinterpret_cast<jlong>(this)));
   FML_CHECK(fml::jni::CheckException(env));
 
   if (bitmap->is_null()) {
@@ -200,7 +191,7 @@ void AndroidImageGenerator::NativeImageHeaderCallback(JNIEnv* env,
                                                       int width,
                                                       int height) {
   AndroidImageGenerator* generator =
-      Jlong2Pointer<AndroidImageGenerator*>(generator_address);
+      reinterpret_cast<AndroidImageGenerator*>(generator_address);
 
   generator->image_info_ = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
