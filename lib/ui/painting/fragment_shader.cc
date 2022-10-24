@@ -82,6 +82,9 @@ std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
   auto uniforms =
       SkData::MakeWithCopy(uniform_data_->data(), uniform_data_->size());
 
+  // The lifetime of this object is longer than a frame, and the uniforms can be
+  // continually changed on the UI thread. So we take a copy of the uniforms
+  // before handing it to the DisplayList for consumption on the render thread.
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
   uniform_data->resize(uniform_data_->size());
   memcpy(uniform_data->data(), uniform_data_->bytes(), uniform_data->size());
