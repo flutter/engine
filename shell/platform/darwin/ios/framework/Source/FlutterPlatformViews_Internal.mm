@@ -67,15 +67,14 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
 
 }  // namespace flutter
 
-static NSObject* GaussianBlurFilter = nil;
-// The index of "_UIVisualEffectBackdropView" in UIVisualEffectView's subViews.
-static NSInteger IndexOfBackdropView = -1;
-// The index of "_UIVisualEffectSubview" in UIVisualEffectView's subViews.
-static NSInteger IndexOfVisualEffectSubview = -1;
-static BOOL PreparedOnce = NO;
-;
-
 @implementation PlatformViewFilter
+
+static NSObject* _gaussianBlurFilter = nil;
+// The index of "_UIVisualEffectBackdropView" in UIVisualEffectView's subViews.
+static NSInteger _indexOfBackdropView = -1;
+// The index of "_UIVisualEffectSubview" in UIVisualEffectView's subViews.
+static NSInteger _indexOfVisualEffectSubview = -1;
+static BOOL _preparedOnce = NO;
 
 - (instancetype)initWithFrame:(CGRect)frame
                    blurRadius:(CGFloat)blurRadius
@@ -90,13 +89,13 @@ static BOOL PreparedOnce = NO;
       [self release];
       return nil;
     }
-    NSObject* gaussianBlurFilter = [[GaussianBlurFilter copy] autorelease];
+    NSObject* gaussianBlurFilter = [[_gaussianBlurFilter copy] autorelease];
     FML_DCHECK(gaussianBlurFilter);
-    UIView* backdropView = visualEffectView.subviews[IndexOfBackdropView];
+    UIView* backdropView = visualEffectView.subviews[_indexOfBackdropView];
     [gaussianBlurFilter setValue:@(_blurRadius) forKey:@"inputRadius"];
     backdropView.layer.filters = @[ gaussianBlurFilter ];
 
-    UIView* visualEffectSubview = visualEffectView.subviews[IndexOfVisualEffectSubview];
+    UIView* visualEffectSubview = visualEffectView.subviews[_indexOfVisualEffectSubview];
     visualEffectSubview.layer.backgroundColor = UIColor.clearColor.CGColor;
 
     _backdropFilterView = [visualEffectView retain];
@@ -106,37 +105,38 @@ static BOOL PreparedOnce = NO;
 }
 
 + (void)resetPreparation {
-  PreparedOnce = NO;
-  GaussianBlurFilter = nil;
-  IndexOfBackdropView = -1;
-  IndexOfVisualEffectSubview = -1;
+  _preparedOnce = NO;
+  [_gaussianBlurFilter release];
+  _gaussianBlurFilter = nil;
+  _indexOfBackdropView = -1;
+  _indexOfVisualEffectSubview = -1;
 }
 
 + (void)prepareOnce:(UIVisualEffectView*)visualEffectView {
-  if (PreparedOnce) {
+  if (_preparedOnce) {
     return;
   }
   NSUInteger index = 0;
   for (UIView* view in visualEffectView.subviews) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      IndexOfBackdropView = index;
+      _indexOfBackdropView = index;
       for (NSObject* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
             [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-          GaussianBlurFilter = [filter retain];
+          _gaussianBlurFilter = [filter retain];
           break;
         }
       }
     } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
-      IndexOfVisualEffectSubview = index;
+      _indexOfVisualEffectSubview = index;
     }
     ++index;
   }
-  PreparedOnce = YES;
+  _preparedOnce = YES;
 }
 
 + (BOOL)isUIVisualEffectViewImplementationValid {
-  return IndexOfBackdropView > -1 && IndexOfVisualEffectSubview > -1 && GaussianBlurFilter;
+  return _indexOfBackdropView > -1 && _indexOfVisualEffectSubview > -1 && _gaussianBlurFilter;
 }
 
 - (void)dealloc {
