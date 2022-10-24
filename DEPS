@@ -408,7 +408,7 @@ deps = {
       }
     ],
     'dep_type': 'cipd',
-    'condition': 'host_os == "win" and download_dart_sdk and not release_candidate_build'
+    'condition': 'host_os == "win" and download_dart_sdk and not release_candidate'
   },
 
   'src/third_party/colorama/src':
