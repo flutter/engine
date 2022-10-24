@@ -454,15 +454,14 @@ public class FlutterActivity extends Activity
    * Creates a {@link NewEngineInGroupIntentBuilder}, which can be used to configure an {@link
    * Intent} to launch a {@code FlutterActivity} by internally creating a FlutterEngine from an
    * existing {@link io.flutter.embedding.engine.FlutterEngineGroup} cached in a specified {@link
-   * io.flutter.embedding.engine.FlutterEngineGroupCache}, and creates a new {@link
-   * io.flutter.embedding.engine.FlutterEngine} by FlutterEngineGroup#createAndRunEngine
+   * io.flutter.embedding.engine.FlutterEngineGroupCache}.
    *
    * <pre>{@code
-   * // Create a FlutterEngineGroup, usually we could create it in onCreate method of Application.
+   * // Create a FlutterEngineGroup, such as in the onCreate method of the Application.
    * FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
    * FlutterEngineGroupCache.getInstance().put("my_cached_engine_group_id", engineGroup);
    *
-   * // use the intent that build by withNewEngineInGroup to start FlutterActivity
+   * // Start a FlutterActivity with the FlutterEngineGroup by creating an intent with withNewEngineInGroup
    * Intent intent = FlutterActivity.withNewEngineInGroup("my_cached_engine_group_id")
    *     .dartEntrypoint("custom_entrypoint")
    *     .initialRoute("/custom/route")
@@ -480,7 +479,7 @@ public class FlutterActivity extends Activity
 
   /**
    * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with a new {@link
-   * FlutterEngine} by FlutterEngineGroup#createAndRunEngine.
+   * FlutterEngine} created by FlutterEngineGroup#createAndRunEngine.
    */
   public static class NewEngineInGroupIntentBuilder {
     private final Class<? extends FlutterActivity> activityClass;
@@ -501,12 +500,11 @@ public class FlutterActivity extends Activity
      * cacheedEngineGroupId); }
      *
      * <pre>{@code
-     * // Create a FlutterEngineGroup, usually we could create it in onCreate method of Application.
+     * // Create a FlutterEngineGroup, such as in the onCreate method of the Application.
      * FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
      * FlutterEngineGroupCache.getInstance().put("my_cached_engine_group_id", engineGroup);
      *
-     * // create NewEngineInGroupIntentBuilder, and start my custom FlutterActivity with the intent
-     * // that build by NewEngineInGroupIntentBuilder.
+     * // Create a NewEngineInGroupIntentBuilder that would build an intent to start my custom FlutterActivity subclass.
      * FlutterActivity.NewEngineInGroupIntentBuilder intentBuilder =
      *     new FlutterActivity.NewEngineInGroupIntentBuilder(
      *           MyFlutterActivity.class,

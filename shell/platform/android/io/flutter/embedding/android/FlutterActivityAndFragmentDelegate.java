@@ -232,7 +232,7 @@ import java.util.List;
    * <p>Second, the {@code host} is given an opportunity to provide a {@link
    * io.flutter.embedding.engine.FlutterEngine} via {@link Host#provideFlutterEngine(Context)}.
    *
-   * <p>Third, the {@code host} is given an FluttenEngineGroup Id, then used a cached {@link
+   * <p>Third, the {@code host} is asked if it would like to use a cached {@link
    * io.flutter.embedding.engine.FlutterEngineGroup} to create a new {@link FlutterEngine} by {@link
    * FlutterEngineGroup#createAndRunEngine}
    *
@@ -265,7 +265,7 @@ import java.util.List;
     }
 
     // Third, check if the host wants to use a cached FlutterEngineGroup
-    // and create new FlutterEngine by FlutterEngineGroup#createAndRunEngine
+    // and create new FlutterEngine using FlutterEngineGroup#createAndRunEngine
     String cachedEngineGroupId = host.getCachedEngineGroupId();
     if (cachedEngineGroupId != null) {
       FlutterEngineGroup flutterEngineGroup =

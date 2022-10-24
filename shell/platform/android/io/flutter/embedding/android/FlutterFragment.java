@@ -741,10 +741,6 @@ public class FlutterFragment extends Fragment
    * FlutterFragment} if a cached {@link io.flutter.embedding.engine.FlutterEngineGroup} is
    * requested but does not exist in the {@link
    * io.flutter.embedding.engine.FlutterEngineGroupCache}.
-   *
-   * <p>To create a {@code FlutterFragment} that uses a new {@link
-   * io.flutter.embedding.engine.FlutterEngine} that created by {@link
-   * io.flutter.embedding.engine.FlutterEngineGroup#createAndRunEngine}
    */
   @NonNull
   public static NewEngineInGroupFragmentBuilder withNewEngineInGroup(
