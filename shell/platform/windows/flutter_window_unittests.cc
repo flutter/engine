@@ -404,14 +404,16 @@ TEST(FlutterWindowTest, InitialAccessibilityFeatures) {
 // Ensure that announcing the alert propagates the message to the alert node.
 // Different screen readers use different properties for alerts.
 TEST(FlutterWindowTest, AlertNode) {
-  std::unique_ptr<MockFlutterWindow> win32window = std::make_unique<MockFlutterWindow>();;
+  std::unique_ptr<MockFlutterWindow> win32window =
+      std::make_unique<MockFlutterWindow>();
+  ;
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
   AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
   TestFlutterWindowsView view(std::move(win32window));
   std::wstring message = L"Test alert";
   view.AnnounceAlert(message);
   IAccessible* alert = root_node->GetOrCreateAlert();
-  VARIANT self{.vt=VT_I4, .lVal=CHILDID_SELF};
+  VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR strptr;
   alert->get_accName(self, &strptr);
   EXPECT_EQ(message, strptr);

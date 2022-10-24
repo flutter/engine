@@ -11,8 +11,7 @@ namespace flutter {
 static constexpr LONG kWindowChildId = 1;
 static constexpr LONG kInvalidChildId = 3;
 
-AccessibilityRootNode::AccessibilityRootNode() :
-    alert_accessible_(nullptr) {}
+AccessibilityRootNode::AccessibilityRootNode() : alert_accessible_(nullptr) {}
 
 AccessibilityRootNode::~AccessibilityRootNode() {
   if (alert_accessible_) {
@@ -49,7 +48,8 @@ IFACEMETHODIMP AccessibilityRootNode::accHitTest(LONG screen_physical_pixel_x,
                                                  LONG screen_physical_pixel_y,
                                                  VARIANT* child) {
   if (window_accessible_) {
-    return window_accessible_->accHitTest(screen_physical_pixel_x, screen_physical_pixel_y, child);
+    return window_accessible_->accHitTest(screen_physical_pixel_x,
+                                          screen_physical_pixel_y, child);
   }
   child->vt = VT_EMPTY;
   return S_FALSE;
@@ -70,7 +70,8 @@ IFACEMETHODIMP AccessibilityRootNode::accLocation(LONG* physical_pixel_left,
                                                   VARIANT var_id) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return target->accLocation(physical_pixel_left, physical_pixel_top, width, height, var_id);
+    return target->accLocation(physical_pixel_left, physical_pixel_top, width,
+                               height, var_id);
   }
   return S_FALSE;
 }
@@ -156,7 +157,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accKeyboardShortcut(VARIANT var_id,
   return E_FAIL;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::get_accName(VARIANT var_id, BSTR* name_bstr) {
+IFACEMETHODIMP AccessibilityRootNode::get_accName(VARIANT var_id,
+                                                  BSTR* name_bstr) {
   if (V_I4(&var_id) == CHILDID_SELF) {
     std::wstring name = L"ROOT_NODE_VIEW";
     *name_bstr = SysAllocString(name.c_str());
@@ -173,7 +175,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accParent(IDispatch** disp_parent) {
   return S_FALSE;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::get_accRole(VARIANT var_id, VARIANT* role) {
+IFACEMETHODIMP AccessibilityRootNode::get_accRole(VARIANT var_id,
+                                                  VARIANT* role) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
     return target->get_accRole(var_id, role);
@@ -181,7 +184,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accRole(VARIANT var_id, VARIANT* role)
   return E_FAIL;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::get_accState(VARIANT var_id, VARIANT* state) {
+IFACEMETHODIMP AccessibilityRootNode::get_accState(VARIANT var_id,
+                                                   VARIANT* state) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
     return target->get_accState(var_id, state);
@@ -197,7 +201,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accHelp(VARIANT var_id, BSTR* help) {
   return S_FALSE;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::get_accValue(VARIANT var_id, BSTR* value) {
+IFACEMETHODIMP AccessibilityRootNode::get_accValue(VARIANT var_id,
+                                                   BSTR* value) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
     return target->get_accValue(var_id, value);
@@ -205,7 +210,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accValue(VARIANT var_id, BSTR* value) 
   return E_FAIL;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::put_accValue(VARIANT var_id, BSTR new_value) {
+IFACEMETHODIMP AccessibilityRootNode::put_accValue(VARIANT var_id,
+                                                   BSTR new_value) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
     return target->put_accValue(var_id, new_value);
@@ -218,7 +224,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accSelection(VARIANT* selected) {
   return S_OK;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::accSelect(LONG flagsSelect, VARIANT var_id) {
+IFACEMETHODIMP AccessibilityRootNode::accSelect(LONG flagsSelect,
+                                                VARIANT var_id) {
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
     return target->accSelect(flagsSelect, var_id);
@@ -238,7 +245,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accHelpTopic(BSTR* help_file,
   return E_NOTIMPL;
 }
 
-IFACEMETHODIMP AccessibilityRootNode::put_accName(VARIANT var_id, BSTR put_name) {
+IFACEMETHODIMP AccessibilityRootNode::put_accName(VARIANT var_id,
+                                                  BSTR put_name) {
   return E_NOTIMPL;
 }
 
@@ -260,4 +268,4 @@ AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
   return alert_accessible_;
 }
 
-}
+}  // namespace flutter

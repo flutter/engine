@@ -114,9 +114,8 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
   IAccessible* window_accessible_;
 
   AccessibilityAlert* alert_accessible_;
-
 };
 
-}
+}  // namespace flutter
 
 #endif

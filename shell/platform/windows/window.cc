@@ -217,7 +217,7 @@ LRESULT Window::OnGetObject(UINT const message,
       CreateAccessibilityRootNode();
     }
     // Return the IAccessible for the root view.
-    //Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
     accessibility_root_->SetWindow(root_view);
     Microsoft::WRL::ComPtr<IAccessible> root(accessibility_root_);
     // TODO(schectman): wrap returned accessible in AccessibilityRootNode

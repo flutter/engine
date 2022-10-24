@@ -187,10 +187,14 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
-  message_dispatcher_->SetMessageCallback(kAccessibilityChannelName, [](FlutterDesktopMessengerRef messenger, const FlutterDesktopMessage* message, void* data){
-      FlutterWindowsEngine* engine = static_cast<FlutterWindowsEngine*>(data);
-      engine->HandleAccessibilityMessage(messenger, message);
-  }, static_cast<void*>(this));
+  message_dispatcher_->SetMessageCallback(
+      kAccessibilityChannelName,
+      [](FlutterDesktopMessengerRef messenger,
+         const FlutterDesktopMessage* message, void* data) {
+        FlutterWindowsEngine* engine = static_cast<FlutterWindowsEngine*>(data);
+        engine->HandleAccessibilityMessage(messenger, message);
+      },
+      static_cast<void*>(this));
 
   FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
   texture_registrar_ =
@@ -668,20 +672,25 @@ int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
   return flags;
 }
 
-void FlutterWindowsEngine::HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger, const FlutterDesktopMessage* message) {
+void FlutterWindowsEngine::HandleAccessibilityMessage(
+    FlutterDesktopMessengerRef messenger,
+    const FlutterDesktopMessage* message) {
   const auto& codec = StandardMessageCodec::GetInstance();
   auto data = codec.DecodeMessage(message->message, message->message_size);
   EncodableMap map = std::get<EncodableMap>(*data);
   std::string type = std::get<std::string>(map.at(EncodableValue("type")));
   if (type.compare("announce") == 0) {
     if (semantics_enabled_) {
-      EncodableMap data_map = std::get<EncodableMap>(map.at(EncodableValue("data")));
-      std::string text = std::get<std::string>(data_map.at(EncodableValue("message")));
+      EncodableMap data_map =
+          std::get<EncodableMap>(map.at(EncodableValue("data")));
+      std::string text =
+          std::get<std::string>(data_map.at(EncodableValue("message")));
       std::wstring wide_text = fml::Utf8ToWideString(text);
       view_->AnnounceAlert(wide_text);
     }
   }
-  SendPlatformMessageResponse(message->response_handle, reinterpret_cast<const uint8_t*>(""), 0);
+  SendPlatformMessageResponse(message->response_handle,
+                              reinterpret_cast<const uint8_t*>(""), 0);
 }
 
 }  // namespace flutter

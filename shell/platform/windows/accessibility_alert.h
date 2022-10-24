@@ -108,9 +108,8 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
   std::wstring text_;
 
   AccessibilityRootNode* parent_;
-
 };
 
-}
+}  // namespace flutter
 
 #endif

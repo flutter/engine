@@ -11,8 +11,8 @@ namespace flutter {
 AccessibilityAlert::AccessibilityAlert() : text_(L""), parent_(nullptr) {}
 
 IFACEMETHODIMP AccessibilityAlert::accHitTest(LONG screen_physical_pixel_x,
-                            LONG screen_physical_pixel_y,
-                            VARIANT* child) {
+                                              LONG screen_physical_pixel_y,
+                                              VARIANT* child) {
   child->vt = VT_EMPTY;
   return S_FALSE;
 }
@@ -24,24 +24,24 @@ IFACEMETHODIMP AccessibilityAlert::accDoDefaultAction(VARIANT var_id) {
 
 // Retrieves the specified object's current screen location.
 IFACEMETHODIMP AccessibilityAlert::accLocation(LONG* physical_pixel_left,
-                            LONG* physical_pixel_top,
-                            LONG* width,
-                            LONG* height,
-                            VARIANT var_id) {
+                                               LONG* physical_pixel_top,
+                                               LONG* width,
+                                               LONG* height,
+                                               VARIANT var_id) {
   return E_NOTIMPL;
 }
 
 // Traverses to another UI element and retrieves the object.
 IFACEMETHODIMP AccessibilityAlert::accNavigate(LONG nav_dir,
-                            VARIANT start,
-                            VARIANT* end) {
+                                               VARIANT start,
+                                               VARIANT* end) {
   end->vt = VT_EMPTY;
   return E_NOTIMPL;
 }
 
 // Retrieves an IDispatch interface pointer for the specified child.
 IFACEMETHODIMP AccessibilityAlert::get_accChild(VARIANT var_child,
-                            IDispatch** disp_child) {
+                                                IDispatch** disp_child) {
   if (V_VT(&var_child) == VT_I4 && V_I4(&var_child) == CHILDID_SELF) {
     *disp_child = this;
     AddRef();
@@ -59,13 +59,14 @@ IFACEMETHODIMP AccessibilityAlert::get_accChildCount(LONG* child_count) {
 
 // Retrieves a string that describes the object's default action.
 IFACEMETHODIMP AccessibilityAlert::get_accDefaultAction(VARIANT var_id,
-                                    BSTR* default_action) {
+                                                        BSTR* default_action) {
   *default_action = nullptr;
   return E_NOTIMPL;
 }
 
 // Retrieves the tooltip description.
-IFACEMETHODIMP AccessibilityAlert::get_accDescription(VARIANT var_id, BSTR* desc) {
+IFACEMETHODIMP AccessibilityAlert::get_accDescription(VARIANT var_id,
+                                                      BSTR* desc) {
   *desc = SysAllocString(text_.c_str());
   return S_OK;
 }
@@ -78,7 +79,7 @@ IFACEMETHODIMP AccessibilityAlert::get_accFocus(VARIANT* focus_child) {
 
 // Retrieves the specified object's shortcut.
 IFACEMETHODIMP AccessibilityAlert::get_accKeyboardShortcut(VARIANT var_id,
-                                        BSTR* access_key) {
+                                                           BSTR* access_key) {
   *access_key = nullptr;
   return E_NOTIMPL;
 }
@@ -97,7 +98,7 @@ IFACEMETHODIMP AccessibilityAlert::get_accParent(IDispatch** disp_parent) {
   }
   return S_OK;
   //*disp_parent = nullptr;
-  //return E_NOTIMPL;
+  // return E_NOTIMPL;
 }
 
 // Retrieves information describing the role of the specified object.
@@ -107,7 +108,8 @@ IFACEMETHODIMP AccessibilityAlert::get_accRole(VARIANT var_id, VARIANT* role) {
 }
 
 // Retrieves the current state of the specified object.
-IFACEMETHODIMP AccessibilityAlert::get_accState(VARIANT var_id, VARIANT* state) {
+IFACEMETHODIMP AccessibilityAlert::get_accState(VARIANT var_id,
+                                                VARIANT* state) {
   *state = {.vt = VT_I4, .lVal = STATE_SYSTEM_DEFAULT};
   return S_OK;
 }
@@ -125,7 +127,8 @@ IFACEMETHODIMP AccessibilityAlert::get_accValue(VARIANT var_id, BSTR* value) {
   *value = SysAllocString(text_.c_str());
   return S_OK;
 }
-IFACEMETHODIMP AccessibilityAlert::put_accValue(VARIANT var_id, BSTR new_value) {
+IFACEMETHODIMP AccessibilityAlert::put_accValue(VARIANT var_id,
+                                                BSTR new_value) {
   return E_NOTIMPL;
 }
 
@@ -138,8 +141,8 @@ IFACEMETHODIMP AccessibilityAlert::accSelect(LONG flags_sel, VARIANT var_id) {
   return E_NOTIMPL;
 }
 IFACEMETHODIMP AccessibilityAlert::get_accHelpTopic(BSTR* help_file,
-                                VARIANT var_id,
-                                LONG* topic_id) {
+                                                    VARIANT var_id,
+                                                    LONG* topic_id) {
   if (help_file) {
     *help_file = nullptr;
   }
@@ -160,4 +163,4 @@ void AccessibilityAlert::SetParent(AccessibilityRootNode* parent) {
   parent_ = parent;
 }
 
-}
+}  // namespace flutter
