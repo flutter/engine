@@ -31,7 +31,7 @@ if (flutter_prebuilt_dart_sdk) {
   }
 }
 
-if (!is_fuchsia) {
+if (build_engine_artifacts) {
   group("dart_sdk") {
     if (flutter_prebuilt_dart_sdk) {
       public_deps = [ ":copy_dart_sdk" ]
