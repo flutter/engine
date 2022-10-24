@@ -666,7 +666,7 @@ void Window::CreateAccessibilityRootNode() {
   ui::win::CreateATLModuleIfNeeded();
   CComObject<AccessibilityRootNode>* instance = nullptr;
   HRESULT hr = CComObject<AccessibilityRootNode>::CreateInstance(&instance);
-  if (!SUCCEEDED(hr)) {
+  if (!SUCCEEDED(hr) || !instance) {
     FML_LOG(FATAL) << "Failed to create accessibility root node";
   }
   instance->AddRef();

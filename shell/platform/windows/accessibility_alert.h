@@ -32,19 +32,6 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
                             VARIANT* child) override;
 
   // Performs the object's default action.
-  IFACEMETHODIMP accDoDefaultAction(VARIANT var_id) override;
-
-  // Retrieves the specified object's current screen location.
-  IFACEMETHODIMP accLocation(LONG* physical_pixel_left,
-                             LONG* physical_pixel_top,
-                             LONG* width,
-                             LONG* height,
-                             VARIANT var_id) override;
-
-  // Traverses to another UI element and retrieves the object.
-  IFACEMETHODIMP accNavigate(LONG nav_dir,
-                             VARIANT start,
-                             VARIANT* end) override;
 
   // Retrieves an IDispatch interface pointer for the specified child.
   IFACEMETHODIMP get_accChild(VARIANT var_child,
@@ -61,11 +48,6 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
   IFACEMETHODIMP get_accDescription(VARIANT var_id, BSTR* desc) override;
 
   // Retrieves the object that has the keyboard focus.
-  IFACEMETHODIMP get_accFocus(VARIANT* focus_child) override;
-
-  // Retrieves the specified object's shortcut.
-  IFACEMETHODIMP get_accKeyboardShortcut(VARIANT var_id,
-                                         BSTR* access_key) override;
 
   // Retrieves the name of the specified object.
   IFACEMETHODIMP get_accName(VARIANT var_id, BSTR* name) override;
@@ -86,15 +68,27 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
   // Setting the value is not typically used by screen readers, but it's
   // used frequently by automation software.
   IFACEMETHODIMP get_accValue(VARIANT var_id, BSTR* value) override;
-  IFACEMETHODIMP put_accValue(VARIANT var_id, BSTR new_value) override;
 
   // IAccessible methods not implemented.
+  IFACEMETHODIMP accLocation(LONG* physical_pixel_left,
+                             LONG* physical_pixel_top,
+                             LONG* width,
+                             LONG* height,
+                             VARIANT var_id) override;
+  IFACEMETHODIMP accNavigate(LONG nav_dir,
+                             VARIANT start,
+                             VARIANT* end) override;
+  IFACEMETHODIMP accDoDefaultAction(VARIANT var_id) override;
+  IFACEMETHODIMP get_accFocus(VARIANT* focus_child) override;
+  IFACEMETHODIMP get_accKeyboardShortcut(VARIANT var_id,
+                                         BSTR* access_key) override;
   IFACEMETHODIMP get_accSelection(VARIANT* selected) override;
   IFACEMETHODIMP accSelect(LONG flags_sel, VARIANT var_id) override;
   IFACEMETHODIMP get_accHelpTopic(BSTR* help_file,
                                   VARIANT var_id,
                                   LONG* topic_id) override;
   IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
+  IFACEMETHODIMP put_accValue(VARIANT var_id, BSTR new_value) override;
 
   AccessibilityAlert();
   ~AccessibilityAlert() = default;

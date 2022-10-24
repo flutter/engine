@@ -95,10 +95,9 @@ IFACEMETHODIMP AccessibilityAlert::get_accParent(IDispatch** disp_parent) {
   *disp_parent = parent_;
   if (*disp_parent) {
     (*disp_parent)->AddRef();
+    return S_OK;
   }
-  return S_OK;
-  //*disp_parent = nullptr;
-  // return E_NOTIMPL;
+  return S_FALSE;
 }
 
 // Retrieves information describing the role of the specified object.
@@ -127,6 +126,7 @@ IFACEMETHODIMP AccessibilityAlert::get_accValue(VARIANT var_id, BSTR* value) {
   *value = SysAllocString(text_.c_str());
   return S_OK;
 }
+
 IFACEMETHODIMP AccessibilityAlert::put_accValue(VARIANT var_id,
                                                 BSTR new_value) {
   return E_NOTIMPL;
@@ -137,9 +137,11 @@ IFACEMETHODIMP AccessibilityAlert::get_accSelection(VARIANT* selected) {
   selected->vt = VT_EMPTY;
   return E_NOTIMPL;
 }
+
 IFACEMETHODIMP AccessibilityAlert::accSelect(LONG flags_sel, VARIANT var_id) {
   return E_NOTIMPL;
 }
+
 IFACEMETHODIMP AccessibilityAlert::get_accHelpTopic(BSTR* help_file,
                                                     VARIANT var_id,
                                                     LONG* topic_id) {

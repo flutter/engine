@@ -24,7 +24,7 @@ IAccessible* AccessibilityRootNode::GetTargetAndChildID(VARIANT* var_id) {
   LONG& child_id = var_id->lVal;
   if (V_VT(var_id) != VT_I4) {
     child_id = kInvalidChildId;
-    return FALSE;
+    return nullptr;
   }
   child_id = V_I4(var_id);
   if (!window_accessible_) {
@@ -38,6 +38,7 @@ IAccessible* AccessibilityRootNode::GetTargetAndChildID(VARIANT* var_id) {
     child_id = CHILDID_SELF;
     return alert_accessible_;
   }
+  // A negative child ID can be used to refer to an AX node directly by its ID.
   if (child_id < 0) {
     return window_accessible_;
   }
