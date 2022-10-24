@@ -191,7 +191,15 @@ void Canvas::DrawRect(Rect rect, Paint paint) {
   if (AttemptDrawBlurredRRect(rect, 0, paint)) {
     return;
   }
-  DrawPath(PathBuilder{}.AddRect(rect).TakePath(), std::move(paint));
+
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(
+      paint.CreateContentsForGeometry(Geometry::MakeRect(rect))));
+
+  GetCurrentPass().AddEntity(std::move(entity));
 }
 
 void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
@@ -373,6 +381,7 @@ void Canvas::DrawVertices(Vertices vertices,
         std::make_shared<VerticesContents>();
     contents->SetColor(paint.color);
     contents->SetBlendMode(blend_mode);
+    contents->SetGeometry(std::move(geometry));
     entity.SetContents(paint.WithFilters(std::move(contents), true));
   }
 

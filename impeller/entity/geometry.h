@@ -42,13 +42,15 @@ enum class Join {
   kBevel,
 };
 
+class VerticesGeometry;
+
 class Geometry {
  public:
   Geometry();
 
   virtual ~Geometry();
 
-  static std::unique_ptr<Geometry> MakeVertices(Vertices vertices);
+  static std::unique_ptr<VerticesGeometry> MakeVertices(Vertices vertices);
 
   static std::unique_ptr<Geometry> MakeFillPath(Path path);
 
@@ -61,19 +63,11 @@ class Geometry {
 
   static std::unique_ptr<Geometry> MakeCover();
 
+  static std::unique_ptr<Geometry> MakeRect(Rect rect);
+
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
                                            RenderPass& pass) = 0;
-
-  virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                                const Entity& entity,
-                                                RenderPass& pass,
-                                                Color paint_color,
-                                                BlendMode blend_mode) = 0;
-
-  virtual GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                             const Entity& entity,
-                                             RenderPass& pass) = 0;
 
   virtual GeometryVertexType GetVertexType() const = 0;
 
@@ -87,30 +81,28 @@ class VerticesGeometry : public Geometry {
 
   ~VerticesGeometry();
 
- private:
+  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass,
+                                        Color paint_color,
+                                        BlendMode blend_mode);
+
+  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass);
+
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) override;
 
   // |Geometry|
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
-  // |Geometry|
-  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
-
+ private:
   Vertices vertices_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VerticesGeometry);
@@ -128,18 +120,6 @@ class FillPathGeometry : public Geometry {
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) override;
-
-  // |Geometry|
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -193,18 +173,6 @@ class StrokePathGeometry : public Geometry {
                                    RenderPass& pass) override;
 
   // |Geometry|
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
-
-  // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
   // |Geometry|
@@ -252,16 +220,25 @@ class CoverGeometry : public Geometry {
                                    RenderPass& pass) override;
 
   // |Geometry|
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
+  GeometryVertexType GetVertexType() const override;
 
   // |Geometry|
-  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(CoverGeometry);
+};
+
+class RectGeometry : public Geometry {
+ public:
+  explicit RectGeometry(Rect rect);
+
+  ~RectGeometry();
+
+ private:
+  // |Geometry|
+  GeometryResult GetPositionBuffer(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -269,7 +246,9 @@ class CoverGeometry : public Geometry {
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CoverGeometry);
+  Rect rect_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(RectGeometry);
 };
 
 }  // namespace impeller
