@@ -88,18 +88,44 @@ FLUTTER_EXPORT void FlutterDesktopMessengerSetCallback(
     FlutterDesktopMessageCallback callback,
     void* user_data);
 
+// Increments the reference count for the |messenger|.
+//
+// See also: |FlutterDesktopMessengerRelease|
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopMessengerAddRef(FlutterDesktopMessengerRef messenger);
 
+// Decrements the reference count for the |messenger|.
+//
+// The reference count starts at zero so it is valid to call
+// FlutterDesktopMessengerRelease without having called
+// FlutterDesktopMessengerAddRef.
+//
+// See also: |FlutterDesktopMessengerAddRef|
 FLUTTER_EXPORT void FlutterDesktopMessengerRelease(
     FlutterDesktopMessengerRef messenger);
 
+// Returns `true` if the |FlutterDesktopMessengerRef| still references a running
+// engine.
+//
+// This check should be made inside of a |FlutterDesktopMessengerLock| and
+// before any other calls are made to the FlutterDesktopMessengerRef when using
+// it from a thread other than the platform thread.
 FLUTTER_EXPORT bool FlutterDesktopMessengerIsAvailable(
     FlutterDesktopMessengerRef messenger);
 
+// Locks the `FlutterDesktopMessengerRef` ensuring that
+// |FlutterDesktopMessengerIsAvailable| does not change while locked.
+//
+// All calls to the FlutterDesktopMessengerRef from threads other than the
+// platform thread should happen inside of a lock.
+//
+// See also: |FlutterDesktopMessengerUnlock|
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopMessengerLock(FlutterDesktopMessengerRef messenger);
 
+// Unlocks the `FlutterDesktopMessengerRef`.
+//
+// See also: |FlutterDesktopMessengerLock|
 FLUTTER_EXPORT void FlutterDesktopMessengerUnlock(
     FlutterDesktopMessengerRef messenger);
 
