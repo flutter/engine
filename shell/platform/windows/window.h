@@ -224,6 +224,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
+  // Create the wrapper node.
+  void CreateAccessibilityRootNode();
+
   // Handles running DirectManipulation on the window to receive trackpad
   // gestures.
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;

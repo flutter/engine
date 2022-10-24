@@ -292,6 +292,9 @@ void FlutterWindow::SendInitialAccessibilityFeatures() {
 }
 
 AccessibilityRootNode* FlutterWindow::GetAccessibilityRootNode() {
+  if (!accessibility_root_) {
+    CreateAccessibilityRootNode();
+  }
   return accessibility_root_;
 }
 

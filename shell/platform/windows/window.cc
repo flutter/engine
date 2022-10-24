@@ -214,14 +214,7 @@ LRESULT Window::OnGetObject(UINT const message,
   } else if (is_msaa_request && root_view) {
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
-      ui::win::CreateATLModuleIfNeeded();
-      CComObject<AccessibilityRootNode>* instance = nullptr;
-      HRESULT hr = CComObject<AccessibilityRootNode>::CreateInstance(&instance);
-      if (!SUCCEEDED(hr)) {
-        FML_LOG(FATAL) << "Failed to create accessibility root node";
-      }
-      instance->AddRef();
-      accessibility_root_ = instance;
+      CreateAccessibilityRootNode();
     }
     // Return the IAccessible for the root view.
     //Microsoft::WRL::ComPtr<IAccessible> root(root_view);
@@ -667,6 +660,17 @@ bool Window::GetHighContrastEnabled() {
                   << "support only for Windows 8 + ";
     return false;
   }
+}
+
+void Window::CreateAccessibilityRootNode() {
+  ui::win::CreateATLModuleIfNeeded();
+  CComObject<AccessibilityRootNode>* instance = nullptr;
+  HRESULT hr = CComObject<AccessibilityRootNode>::CreateInstance(&instance);
+  if (!SUCCEEDED(hr)) {
+    FML_LOG(FATAL) << "Failed to create accessibility root node";
+  }
+  instance->AddRef();
+  accessibility_root_ = instance;
 }
 
 }  // namespace flutter
