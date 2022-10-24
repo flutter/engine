@@ -66,6 +66,9 @@
 // The inputRadius can be customized and it doesn't add any color saturation to the blurred view.
 @property(nonatomic, retain, readonly) UIVisualEffectView* backdropFilterView;
 
+// For testing only.
++ (void)resetPreparation;
+
 - (instancetype)init NS_UNAVAILABLE;
 
 // Initialize the filter object.

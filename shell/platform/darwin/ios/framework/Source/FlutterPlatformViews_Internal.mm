@@ -69,10 +69,11 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
 
 static NSObject* GaussianBlurFilter = nil;
 // The index of "_UIVisualEffectBackdropView" in UIVisualEffectView's subViews.
-static NSUInteger IndexOfBackdropView = -1;
+static NSInteger IndexOfBackdropView = -1;
 // The index of "_UIVisualEffectSubview" in UIVisualEffectView's subViews.
-static NSUInteger IndexOfVisualEffectSubview = -1;
-static BOOL IsUIVisualEffectViewImplementationValid = NO;
+static NSInteger IndexOfVisualEffectSubview = -1;
+static BOOL PreparedOnce = NO;
+;
 
 @implementation PlatformViewFilter
 
@@ -82,8 +83,8 @@ static BOOL IsUIVisualEffectViewImplementationValid = NO;
   if (self = [super init]) {
     _frame = frame;
     _blurRadius = blurRadius;
-    [PlatformViewFilter prepareIfNecessary:visualEffectView];
-    if (IsUIVisualEffectViewImplementationValid == NO) {
+    [PlatformViewFilter prepareOnce:visualEffectView];
+    if (![PlatformViewFilter isUIVisualEffectViewImplementationValid]) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                          "access the gaussianBlur CAFilter.";
       [self release];
@@ -104,8 +105,15 @@ static BOOL IsUIVisualEffectViewImplementationValid = NO;
   return self;
 }
 
-+ (void)prepareIfNecessary:(UIVisualEffectView*)visualEffectView {
-  if (GaussianBlurFilter) {
++ (void)resetPreparation {
+  PreparedOnce = NO;
+  GaussianBlurFilter = nil;
+  IndexOfBackdropView = -1;
+  IndexOfVisualEffectSubview = -1;
+}
+
++ (void)prepareOnce:(UIVisualEffectView*)visualEffectView {
+  if (PreparedOnce) {
     return;
   }
   NSUInteger index = 0;
@@ -115,8 +123,7 @@ static BOOL IsUIVisualEffectViewImplementationValid = NO;
       for (NSObject* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
             [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-          GaussianBlurFilter = filter;
-          IsUIVisualEffectViewImplementationValid = YES;
+          GaussianBlurFilter = [filter retain];
           break;
         }
       }
@@ -125,6 +132,11 @@ static BOOL IsUIVisualEffectViewImplementationValid = NO;
     }
     ++index;
   }
+  PreparedOnce = YES;
+}
+
++ (BOOL)isUIVisualEffectViewImplementationValid {
+  return IndexOfBackdropView > -1 && IndexOfVisualEffectSubview > -1 && GaussianBlurFilter;
 }
 
 - (void)dealloc {

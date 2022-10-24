@@ -303,14 +303,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)1);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 1u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)1);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 1u);
 }
 
 - (void)testApplyBackdropFilterWithCorrectFrame {
@@ -373,14 +373,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)1);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 1u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 5, 8)
                               inputRadius:5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)1);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 1u);
 }
 
 - (void)testApplyMultipleBackdropFilters {
@@ -444,7 +444,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)50);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 50u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)numberOfExpectedVisualEffectView]) {
@@ -513,14 +513,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)1);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 1u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)1);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 1u);
 
   //
   // Simulate adding 1 backdrop filter (create a new mutators stack)
@@ -546,7 +546,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)2);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 2u);
 
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
@@ -554,7 +554,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)2);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 2u);
 }
 
 - (void)testRemoveBackdropFilters {
@@ -636,14 +636,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)4);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 4u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)4);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 4u);
 
   // Simulate removing all backdrop filters (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
@@ -666,7 +666,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)0);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 0u);
 }
 
 - (void)testEditBackdropFilters {
@@ -756,7 +756,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)5);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 5u);
     CGFloat expectInputRadius = 5;
     if (numberOfExpectedVisualEffectView == 3) {
       expectInputRadius = 2;
@@ -767,7 +767,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)5);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 5u);
 
   // Simulate editing 1 backdrop filter in the beginning of the stack (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
@@ -799,7 +799,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)5);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 5u);
     CGFloat expectInputRadius = 5;
     if (numberOfExpectedVisualEffectView == 0) {
       expectInputRadius = 2;
@@ -810,7 +810,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)5);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 5u);
 
   // Simulate editing 1 backdrop filter in the end of the stack (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
@@ -842,7 +842,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)5);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 5u);
     CGFloat expectInputRadius = 5;
     if (numberOfExpectedVisualEffectView == 4) {
       expectInputRadius = 2;
@@ -853,7 +853,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)5);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 5u);
 
   // Simulate editing all backdrop filters in the stack (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
@@ -880,14 +880,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)5);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 5u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)numberOfExpectedVisualEffectView]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)5);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 5u);
 }
 
 - (void)testApplyBackdropFilterNotDlBlurImageFilter {
@@ -951,7 +951,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)0);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 0u);
 
   // Simulate adding a non-DlBlurImageFilter in the middle of the stack (create a new mutators
   // stack) Create embedded view params
@@ -983,14 +983,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)4);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 4u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)4);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 4u);
 
   // Simulate adding a non-DlBlurImageFilter to the beginning of the stack (replace the mutators
   // stack) Update embedded view params, delete except screenScaleMatrix
@@ -1020,14 +1020,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)4);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 4u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)4);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 4u);
 
   // Simulate adding a non-DlBlurImageFilter to the end of the stack (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
@@ -1057,14 +1057,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)4);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 4u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:(CGFloat)5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)4);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 4u);
 
   // Simulate adding only non-DlBlurImageFilter to the stack (replace the mutators stack)
   // Update embedded view params, delete except screenScaleMatrix
@@ -1090,34 +1090,39 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)0);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 0u);
 }
 
-- (void)testApplyBackdropFilterAPIChanged {
+- (void)testApplyBackdropFilterCorrectAPI {
+  [PlatformViewFilter resetPreparation];
   // The gaussianBlur filter is extracted from UIVisualEffectView.
   // Each test requires a new PlatformViewFilter
   // Valid UIVisualEffectView API
-  UIVisualEffectView* visualEffectView1 = [[UIVisualEffectView alloc]
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-  PlatformViewFilter* platformViewFilter1 =
+  PlatformViewFilter* platformViewFilter =
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
-                               visualEffectView:visualEffectView1];
-  XCTAssertNotNil(platformViewFilter1);
+                               visualEffectView:visualEffectView];
+  XCTAssertNotNil(platformViewFilter);
+}
 
-  // Invalid UIVisualEffectView initialization
-  UIVisualEffectView* visualEffectView2 = [[UIVisualEffectView alloc] init];
-  PlatformViewFilter* platformViewFilter2 =
+- (void)testApplyBackdropFilterAPIChangedInvalidUIVisualEffectView {
+  [PlatformViewFilter resetPreparation];
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc] init];
+  PlatformViewFilter* platformViewFilter =
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
-                               visualEffectView:visualEffectView2];
-  XCTAssertNil(platformViewFilter2);
+                               visualEffectView:visualEffectView];
+  XCTAssertNil(platformViewFilter);
+}
 
-  // Invalid UIVisualEffectView API for "name"
-  UIVisualEffectView* editedUIVisualEffectView1 = [[UIVisualEffectView alloc]
+- (void)testApplyBackdropFilterAPIChangedNoGaussianBlurFilter {
+  [PlatformViewFilter resetPreparation];
+  UIVisualEffectView* editedUIVisualEffectView = [[UIVisualEffectView alloc]
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-  NSArray* subviews1 = editedUIVisualEffectView1.subviews;
-  for (UIView* view in subviews1) {
+  NSArray* subviews = editedUIVisualEffectView.subviews;
+  for (UIView* view in subviews) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
       for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
@@ -1128,18 +1133,19 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       break;
     }
   }
-
-  PlatformViewFilter* platformViewFilter4 =
+  PlatformViewFilter* platformViewFilter =
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
-                               visualEffectView:editedUIVisualEffectView1];
-  XCTAssertNil(platformViewFilter4);
+                               visualEffectView:editedUIVisualEffectView];
+  XCTAssertNil(platformViewFilter);
+}
 
-  // Invalid UIVisualEffectView API for "inputRadius"
-  UIVisualEffectView* editedUIVisualEffectView2 = [[UIVisualEffectView alloc]
+- (void)testApplyBackdropFilterAPIChangedInvalidInputRadius {
+  [PlatformViewFilter resetPreparation];
+  UIVisualEffectView* editedUIVisualEffectView = [[UIVisualEffectView alloc]
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-  NSArray* subviews2 = editedUIVisualEffectView2.subviews;
-  for (UIView* view in subviews2) {
+  NSArray* subviews = editedUIVisualEffectView.subviews;
+  for (UIView* view in subviews) {
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
       for (CIFilter* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
@@ -1151,11 +1157,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     }
   }
 
-  PlatformViewFilter* platformViewFilter5 =
+  PlatformViewFilter* platformViewFilter =
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
-                               visualEffectView:editedUIVisualEffectView2];
-  XCTAssertNil(platformViewFilter5);
+                               visualEffectView:editedUIVisualEffectView];
+  XCTAssertNil(platformViewFilter);
 }
 
 - (void)testBackdropFilterVisualEffectSubviewBackgroundColor {
@@ -1291,14 +1297,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
     }
-    XCTAssertLessThan(numberOfExpectedVisualEffectView, (NSUInteger)1);
+    XCTAssertLessThan(numberOfExpectedVisualEffectView, 1u);
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
                               inputRadius:5]) {
       numberOfExpectedVisualEffectView++;
     }
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)1);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 1u);
 
   // New frame, with no filter pushed.
   auto embeddedViewParams2 =
@@ -1318,7 +1324,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     }
     numberOfExpectedVisualEffectView++;
   }
-  XCTAssertEqual(numberOfExpectedVisualEffectView, (NSUInteger)0);
+  XCTAssertEqual(numberOfExpectedVisualEffectView, 0u);
 }
 
 - (void)testChildClippingViewShouldBeTheBoundingRectOfPlatformView {
@@ -2241,7 +2247,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     if (![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
       continue;
     }
-    XCTAssertEqual(view.layer.filters.count, (NSUInteger)1);
+    XCTAssertEqual(view.layer.filters.count, 1u);
     NSObject* filter = view.layer.filters.firstObject;
 
     XCTAssertEqualObjects([filter valueForKey:@"name"], @"gaussianBlur");
