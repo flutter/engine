@@ -12,7 +12,6 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry.h"
@@ -91,6 +90,9 @@ struct Paint {
 
   std::shared_ptr<Contents> CreateContentsForEntity(Path path = {},
                                                     bool cover = false) const;
+
+  std::shared_ptr<Contents> CreateContentsForGeometry(
+      std::unique_ptr<Geometry> geometry) const;
 
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,

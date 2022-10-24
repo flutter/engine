@@ -7,9 +7,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.app.Presentation;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.content.res.AssetManager;
+import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
 import android.util.SparseArray;
 import android.view.MotionEvent;
@@ -53,6 +55,8 @@ import org.mockito.ArgumentCaptor;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.shadows.ShadowDialog;
+import org.robolectric.shadows.ShadowSurface;
 import org.robolectric.shadows.ShadowSurfaceView;
 
 @Config(manifest = Config.NONE)
@@ -264,7 +268,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void getPlatformViewById__hybridComposition() {
+  public void getPlatformViewById_hybridComposition() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -292,7 +296,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__initializesAndroidView() {
+  public void createPlatformViewMessage_initializesAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -314,7 +318,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__wrapsContextForVirtualDisplay() {
+  public void createPlatformViewMessage_wrapsContextForVirtualDisplay() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -339,7 +343,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__doesNotWrapContextForHybrid() {
+  public void createPlatformViewMessage_doesNotWrapContextForHybrid() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -363,7 +367,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__setsAndroidViewLayoutDirection() {
+  public void createPlatformViewMessage_setsAndroidViewLayoutDirection() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
@@ -389,7 +393,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__setsAndroidViewSize() {
+  public void createPlatformViewMessage_setsAndroidViewSize() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
@@ -422,7 +426,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__disablesAccessibility() {
+  public void createPlatformViewMessage_disablesAccessibility() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
@@ -449,7 +453,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__throwsIfViewIsNull() {
+  public void createPlatformViewMessage_throwsIfViewIsNull() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -478,7 +482,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createHybridPlatformViewMessage__throwsIfViewIsNull() {
+  public void createHybridPlatformViewMessage_throwsIfViewIsNull() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -505,7 +509,8 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  @Config(
+      shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
   public void onDetachedFromJNI_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -536,7 +541,8 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  @Config(
+      shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class, ShadowPresentation.class})
   public void onPreEngineRestart_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -568,7 +574,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__throwsIfViewHasParent() {
+  public void createPlatformViewMessage_throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -599,7 +605,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createHybridPlatformViewMessage__throwsIfViewHasParent() {
+  public void createHybridPlatformViewMessage_throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -629,7 +635,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void setPlatformViewDirection__throwIfPlatformViewNotFound() {
+  public void setPlatformViewDirection_throwIfPlatformViewNotFound() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -700,7 +706,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void disposeAndroidView__hybridComposition() {
+  public void disposeAndroidView_hybridComposition() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -740,7 +746,12 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  @Config(
+      shadows = {
+        ShadowFlutterJNI.class,
+        ShadowReleasedSurface.class,
+        ShadowPlatformTaskQueue.class
+      })
   public void disposeNullAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
@@ -760,6 +771,20 @@ public class PlatformViewsControllerTest {
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
+    // Before Robolectric 4.8, Surface#lockHardwareCanvas will throw exception at
+    // PlatformViewWrapper#setTexture, because Robolectric doesn't support to shadow
+    // Surface#lockHardwareCanvas, and it uses real Android logic with native pointer address is 0.
+    // This failure will ensure embeddedView's parent is null, because
+    // PlatformViewsController#createForTextureLayer will fail because of previous mentioned error,
+    // and PlatformViewsController#createForTextureLayer will not add embeddedView to wrapperView.
+    // So this test can pass. From Robolectric 4.8, it supports to shadow Surface#lockHardwareCanvas
+    // and it can pass with default true valid value, and
+    // PlatformViewsController#createForTextureLayer will run correctly and add embeddedView to
+    // wrapperView, and initializePlatformViewIfNeeded will fail because embeddedView's parent is
+    // not null. So adding a new shadow class called ShadowReleasedSurface to simulate previous
+    // Surface#lockHardwareCanvas failure to ensure this test can work with Robolectric 4.8 and
+    // later versions. But it is just a workaround, the root cause is this test case depends on
+    // just-failure behavior of Surface#lockHardwareCanvas in old Robolectric.
     createPlatformView(
         jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
     platformViewsController.initializePlatformViewIfNeeded(platformViewId);
@@ -778,7 +803,7 @@ public class PlatformViewsControllerTest {
         ShadowFlutterJNI.class,
         ShadowPlatformTaskQueue.class
       })
-  public void onEndFrame__destroysOverlaySurfaceAfterFrameOnFlutterSurfaceView() {
+  public void onEndFrame_destroysOverlaySurfaceAfterFrameOnFlutterSurfaceView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -837,7 +862,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void onEndFrame__removesPlatformView() {
+  public void onEndFrame_removesPlatformView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -878,7 +903,7 @@ public class PlatformViewsControllerTest {
         ShadowFlutterJNI.class,
         ShadowPlatformTaskQueue.class
       })
-  public void onEndFrame__removesPlatformViewParent() {
+  public void onEndFrame_removesPlatformViewParent() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -921,7 +946,7 @@ public class PlatformViewsControllerTest {
         ShadowFlutterJNI.class,
         ShadowPlatformTaskQueue.class
       })
-  public void detach__destroysOverlaySurfaces() {
+  public void detach_destroysOverlaySurfaces() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -972,7 +997,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void detachFromView__removesAndDestroysOverlayViews() {
+  public void detachFromView_removesAndDestroysOverlayViews() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -1010,7 +1035,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void destroyOverlaySurfaces__doesNotThrowIfFlutterViewIsDetached() {
+  public void destroyOverlaySurfaces_doesNotThrowIfFlutterViewIsDetached() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -1048,7 +1073,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void destroyOverlaySurfaces__doesNotRemoveOverlayView() {
+  public void destroyOverlaySurfaces_doesNotRemoveOverlayView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -1082,7 +1107,7 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  public void checkInputConnectionProxy__falseIfViewIsNull() {
+  public void checkInputConnectionProxy_falseIfViewIsNull() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
     boolean shouldProxying = platformViewsController.checkInputConnectionProxy(null);
     assertFalse(shouldProxying);
@@ -1385,6 +1410,50 @@ public class PlatformViewsControllerTest {
     @Implementation
     public void dispatch(Runnable runnable) {
       runnable.run();
+    }
+  }
+
+  /**
+   * The shadow class of {@link Surface} to simulate released surface.
+   *
+   * <p>This shadow class's usage is restricted, not for normal purpose.
+   */
+  @Implements(Surface.class)
+  public static class ShadowReleasedSurface extends ShadowSurface {
+    public ShadowReleasedSurface() {}
+
+    @Implementation
+    @Override
+    protected Canvas lockHardwareCanvas() {
+      throw new IllegalStateException("Surface has already been released.");
+    }
+  }
+
+  /**
+   * The shadow class of {@link Presentation} to simulate Presentation showing logic.
+   *
+   * <p>Robolectric doesn't support VirtualDisplay creating correctly now, so this shadow class is
+   * used to simulate custom logic for Presentation.
+   */
+  @Implements(Presentation.class)
+  public static class ShadowPresentation extends ShadowDialog {
+    private boolean isShowing = false;
+
+    public ShadowPresentation() {}
+
+    @Implementation
+    protected void show() {
+      isShowing = true;
+    }
+
+    @Implementation
+    protected void dismiss() {
+      isShowing = false;
+    }
+
+    @Implementation
+    protected boolean isShowing() {
+      return isShowing;
     }
   }
 
