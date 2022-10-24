@@ -144,7 +144,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     size_t alignment =
         std::max(uniform.bit_width / 8, DefaultUniformAlignment());
     auto buffer_view = pass.GetTransientsBuffer().Emplace(
-        &uniform_data_.get()[uniform.location * sizeof(float)],
+        uniform_data_->data() + uniform.location * sizeof(float),
         uniform.GetSize(), alignment);
 
     ShaderUniformSlot slot;
