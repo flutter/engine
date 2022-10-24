@@ -108,7 +108,7 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
   AccessibilityAlert* GetOrCreateAlert();
 
  private:
-  // Helper method to redirect method calls to the contained window.
+  // Helper method to redirect method calls to the contained window or alert.
   IAccessible* GetTargetAndChildID(VARIANT* var_id);
 
   IAccessible* window_accessible_;
