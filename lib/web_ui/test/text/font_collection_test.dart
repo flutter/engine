@@ -31,7 +31,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -48,7 +48,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -67,7 +67,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -86,7 +86,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -111,7 +111,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -136,7 +136,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -162,7 +162,7 @@ void testMain() {
 
         fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.fillDownloadedFonts();
+        await fontManager.downloadAllFonts();
         fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {

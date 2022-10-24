@@ -71,9 +71,7 @@ class HtmlFontCollection implements FontCollection {
             family!, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
       }
     }
-
-    final List<DomFontFace?> loadedFonts = await Future.wait(_assetFontManager!._fontLoadingFutures);
-    _assetFontManager!._downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
+    await _assetFontManager!.downloadAllFonts();
   }
 
   @override
@@ -94,8 +92,7 @@ class HtmlFontCollection implements FontCollection {
         'url($robotoTestFontUrl)', const <String, String>{});
     _testFontManager!.downloadAsset(robotoVariableFontFamily,
         'url($robotoVariableTestFontUrl)', const <String, String>{});
-    final List<DomFontFace?> loadedFonts = await Future.wait(_testFontManager!._fontLoadingFutures);
-    _testFontManager!._downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
+    await _testFontManager!.downloadAllFonts();
   }
 
   @override
@@ -221,7 +218,7 @@ class FontManager {
   }
 
 
-  Future<void> fillDownloadedFonts() async {
+  Future<void> downloadAllFonts() async {
     final List<DomFontFace?> loadedFonts = await Future.wait(_fontLoadingFutures);
     _downloadedFonts.addAll(loadedFonts.whereType<DomFontFace>());
   }
@@ -264,7 +261,7 @@ class _PolyfillFontManager extends FontManager {
   final List<Future<void>> _completerFutures = <Future<void>>[];
 
   @override
-  Future<void> fillDownloadedFonts() async {
+  Future<void> downloadAllFonts() async {
     await Future.wait(_completerFutures);
   }
 
