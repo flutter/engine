@@ -1103,7 +1103,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
                                visualEffectView:visualEffectView1];
-  XCTAssertNotNil([platformViewFilter1 backdropFilterView]);
+  XCTAssertNotNil(platformViewFilter1);
 
   // Invalid UIVisualEffectView initialization
   UIVisualEffectView* visualEffectView2 = [[UIVisualEffectView alloc] init];
@@ -1111,7 +1111,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
                                visualEffectView:visualEffectView2];
-  XCTAssertNil([platformViewFilter2 backdropFilterView]);
+  XCTAssertNil(platformViewFilter2);
 
   // Invalid UIVisualEffectView API for "name"
   UIVisualEffectView* editedUIVisualEffectView1 = [[UIVisualEffectView alloc]
@@ -1133,7 +1133,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
                                visualEffectView:editedUIVisualEffectView1];
-  XCTAssertNil([platformViewFilter4 backdropFilterView]);
+  XCTAssertNil(platformViewFilter4);
 
   // Invalid UIVisualEffectView API for "inputRadius"
   UIVisualEffectView* editedUIVisualEffectView2 = [[UIVisualEffectView alloc]
@@ -1155,7 +1155,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
                                      blurRadius:5
                                visualEffectView:editedUIVisualEffectView2];
-  XCTAssertNil([platformViewFilter5 backdropFilterView]);
+  XCTAssertNil(platformViewFilter5);
 }
 
 - (void)testBackdropFilterVisualEffectSubviewBackgroundColor {

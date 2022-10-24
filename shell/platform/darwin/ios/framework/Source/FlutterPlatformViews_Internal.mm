@@ -67,6 +67,13 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
 
 }  // namespace flutter
 
+static NSObject* GaussianBlurFilter = nil;
+// The index of "_UIVisualEffectBackdropView" in UIVisualEffectView's subViews.
+static NSUInteger IndexOfBackdropView = -1;
+// The index of "_UIVisualEffectSubview" in UIVisualEffectView's subViews.
+static NSUInteger IndexOfVisualEffectSubview = -1;
+static BOOL IsUIVisualEffectViewImplementationValid = NO;
+
 @implementation PlatformViewFilter
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -75,36 +82,49 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
   if (self = [super init]) {
     _frame = frame;
     _blurRadius = blurRadius;
-    BOOL isUIVisualEffectViewImplementationValid = NO;
-    for (UIView* view in visualEffectView.subviews) {
-      if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-        for (NSObject* filter in view.layer.filters) {
-          if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
-              [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-            isUIVisualEffectViewImplementationValid = YES;
-            [filter setValue:@(_blurRadius) forKey:@"inputRadius"];
-            view.layer.filters = @[ filter ];
-
-            // Stop looping through other filters because the filter array is changed.
-            break;
-          }
-        }
-      } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
-        // Make `_UIVisualEffectSubview` transparanet so it does not add addtional color to the
-        // blurred PlatformView.
-        view.layer.backgroundColor = UIColor.clearColor.CGColor;
-      }
-    }
-    if (isUIVisualEffectViewImplementationValid) {
-      _backdropFilterView = [visualEffectView retain];
-      _backdropFilterView.frame = _frame;
-    } else {
+    [PlatformViewFilter prepareIfNecessary:visualEffectView];
+    if (IsUIVisualEffectViewImplementationValid == NO) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                          "access the gaussianBlur CAFilter.";
-      _backdropFilterView = nil;
+      [self release];
+      return nil;
     }
+    NSObject* gaussianBlurFilter = [[GaussianBlurFilter copy] autorelease];
+    FML_DCHECK(gaussianBlurFilter);
+    UIView* backdropView = visualEffectView.subviews[IndexOfBackdropView];
+    [gaussianBlurFilter setValue:@(_blurRadius) forKey:@"inputRadius"];
+    backdropView.layer.filters = @[ gaussianBlurFilter ];
+
+    UIView* visualEffectSubview = visualEffectView.subviews[IndexOfVisualEffectSubview];
+    visualEffectSubview.layer.backgroundColor = UIColor.clearColor.CGColor;
+
+    _backdropFilterView = [visualEffectView retain];
+    _backdropFilterView.frame = _frame;
   }
   return self;
+}
+
++ (void)prepareIfNecessary:(UIVisualEffectView*)visualEffectView {
+  if (GaussianBlurFilter) {
+    return;
+  }
+  NSUInteger index = 0;
+  for (UIView* view in visualEffectView.subviews) {
+    if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+      IndexOfBackdropView = index;
+      for (NSObject* filter in view.layer.filters) {
+        if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
+            [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
+          GaussianBlurFilter = filter;
+          IsUIVisualEffectViewImplementationValid = YES;
+          break;
+        }
+      }
+    } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
+      IndexOfVisualEffectSubview = index;
+    }
+    ++index;
+  }
 }
 
 - (void)dealloc {
@@ -136,7 +156,7 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
   return NO;
 }
 
-- (BOOL)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters {
+- (void)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters {
   BOOL needUpdateFilterViews = NO;
   if (self.filters.count != filters.count) {
     needUpdateFilterViews = YES;
@@ -159,13 +179,9 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
     // Add new filter views.
     for (PlatformViewFilter* filter in self.filters) {
       UIView* backdropFilterView = [filter backdropFilterView];
-      if (!backdropFilterView) {
-        return NO;
-      }
       [self addSubview:backdropFilterView];
     }
   }
-  return YES;
 }
 
 - (void)dealloc {

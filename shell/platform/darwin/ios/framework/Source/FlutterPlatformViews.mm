@@ -450,28 +450,34 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       case kBackdropFilter: {
         // Only support DlBlurImageFilter for BackdropFilter.
-        if ((*iter)->GetFilterMutation().GetFilter().asBlur() && canApplyBlurBackdrop) {
-          // sigma_x is arbitrarily chosen as the radius value because Quartz sets
-          // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
-          // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
-          // to blur the PlatformView.
-          CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
-          CGRect filterRect =
-              flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
-          // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
-          // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
-          // filtered.
-          CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
-          if (CGRectContainsRect(clipView.frame, intersection)) {
-            CGRect frameInClipView = [flutter_view_.get() convertRect:intersection toView:clipView];
-            UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
-                initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
-            PlatformViewFilter* filter =
-                [[[PlatformViewFilter alloc] initWithFrame:frameInClipView
-                                                blurRadius:blurRadius
-                                          visualEffectView:visualEffectView] autorelease];
-            [blurFilters addObject:filter];
-          }
+        if (!(*iter)->GetFilterMutation().GetFilter().asBlur() || !canApplyBlurBackdrop) {
+          break;
+        }
+        CGRect filterRect =
+            flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+        // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
+        // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
+        // filtered.
+        if (CGRectIsNull(CGRectIntersection(filterRect, clipView.frame))) {
+          break;
+        }
+        CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
+        CGRect frameInClipView = [flutter_view_.get() convertRect:intersection toView:clipView];
+        // sigma_x is arbitrarily chosen as the radius value because Quartz sets
+        // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
+        // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
+        // to blur the PlatformView.
+        CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
+        UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
+            initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+        PlatformViewFilter* filter =
+            [[[PlatformViewFilter alloc] initWithFrame:frameInClipView
+                                            blurRadius:blurRadius
+                                      visualEffectView:visualEffectView] autorelease];
+        if (!filter) {
+          canApplyBlurBackdrop = NO;
+        } else {
+          [blurFilters addObject:filter];
         }
         break;
       }
@@ -480,7 +486,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   }
 
   if (canApplyBlurBackdrop) {
-    canApplyBlurBackdrop = [clipView applyBlurBackdropFilters:blurFilters];
+    [clipView applyBlurBackdropFilters:blurFilters];
   }
 
   // Reverse the offset of the clipView.

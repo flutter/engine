@@ -66,6 +66,8 @@
 // The inputRadius can be customized and it doesn't add any color saturation to the blurred view.
 @property(nonatomic, retain, readonly) UIVisualEffectView* backdropFilterView;
 
+- (instancetype)init NS_UNAVAILABLE;
+
 // Initialize the filter object.
 //
 // The `frame` determines the rect of the blur effect in the coordinate system of
@@ -73,19 +75,21 @@
 // the value of `inputRadius` of the `gaussianFilter` that is internally used. The
 // `UIVisualEffectView` is the view that is used to add the blur effects. It is modified to become
 // `backdropFilterView`, which better supports the need of Flutter.
+//
+// Note: if the implementation of UIVisualEffectView changes in a way that affects the
+// implementation in `PlatformViewFilter`, this method will return nil.
 - (instancetype)initWithFrame:(CGRect)frame
                    blurRadius:(CGFloat)blurRadius
-             visualEffectView:(UIVisualEffectView*)visualEffectView;
+             visualEffectView:(UIVisualEffectView*)visualEffectView NS_DESIGNATED_INITIALIZER;
 
 @end
 
 // The parent view handles clipping to its subViews.
 @interface ChildClippingView : UIView
 
-// Applies blur backdrop filters to the ChildClippingView with blur radius values from
-// blurRadii. Returns NO if Apple's API has changed and blurred backdrop filters cannot
-// be applied, otherwise returns YES.
-- (BOOL)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters;
+// Applies blur backdrop filters to the ChildClippingView with blur values from
+// filters.
+- (void)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters;
 
 @end
 
