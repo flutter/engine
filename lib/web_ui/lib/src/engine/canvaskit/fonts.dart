@@ -135,12 +135,7 @@ class SkiaFontCollection implements FontCollection {
     }
 
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
-    for (final UnregisteredFont? unregFont in completedPendingFonts) {
-      if (unregFont != null) {
-        _unregisteredFonts.add(unregFont);
-      }
-    }
-    //_unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
+    _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
   }
 
   @override
