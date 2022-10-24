@@ -83,7 +83,7 @@ class SkiaFontCollection implements FontCollection {
         canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
     if (typeface != null) {
       _registeredFonts.add(RegisteredFont(list, fontFamily, typeface));
-      registerDownloadedFonts();
+      _registerWithFontProvider();
     } else {
       printWarning('Failed to parse font family "$fontFamily"');
       return;
@@ -135,7 +135,12 @@ class SkiaFontCollection implements FontCollection {
     }
 
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
-    _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
+    for (final UnregisteredFont? unregFont in completedPendingFonts) {
+      if (unregFont != null) {
+        _unregisteredFonts.add(unregFont);
+      }
+    }
+    //_unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
   }
 
   @override
@@ -151,10 +156,6 @@ class SkiaFontCollection implements FontCollection {
         printWarning('Verify that $url contains a valid font.');
         return null;
       }
-    }
-
-    if (_unregisteredFonts.isEmpty) {
-      return;
     }
 
     for (final UnregisteredFont unregisteredFont in _unregisteredFonts) {
