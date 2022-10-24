@@ -31,10 +31,12 @@ if (flutter_prebuilt_dart_sdk) {
   }
 }
 
-group("dart_sdk") {
-  if (flutter_prebuilt_dart_sdk) {
-    public_deps = [ ":copy_dart_sdk" ]
-  } else {
-    public_deps = [ "//third_party/dart:create_sdk" ]
+if (!is_fuchsia) {
+  group("dart_sdk") {
+    if (flutter_prebuilt_dart_sdk) {
+      public_deps = [ ":copy_dart_sdk" ]
+    } else {
+      public_deps = [ "//third_party/dart:create_sdk" ]
+    }
   }
 }
