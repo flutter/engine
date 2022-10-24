@@ -17,7 +17,9 @@ import re
 import subprocess
 import sys
 import time
+import csv
 
+script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(
     os.path.join(os.path.realpath(__file__), '..', '..', '..')
 )
@@ -305,6 +307,12 @@ class EngineExecutableTask(object):
     return " ".join(command)
 
 
+shuffle_flags = [
+    "--gtest_repeat=2",
+    "--gtest_shuffle",
+]
+
+
 def RunCCTests(build_dir, filter, coverage, capture_core_dump):
   print("Running Engine Unit-tests.")
 
@@ -313,11 +321,6 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     resource.setrlimit(
         resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY)
     )
-
-  shuffle_flags = [
-      "--gtest_repeat=2",
-      "--gtest_shuffle",
-  ]
 
   repeat_flags = [
       "--repeat=2",
@@ -425,6 +428,19 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
         shuffle_flags,
         coverage=coverage
     )
+
+
+def ParseImpellerVulkanFilter():
+  test_status_path = os.path.join(script_dir, 'impeller_vulkan_test_status.csv')
+  gtest_filter = '--gtest_filter="'
+  with open(test_status_path, 'r') as csvfile:
+    csvreader = csv.reader(csvfile)
+    next(csvreader)  # Skip header.
+    for row in csvreader:
+      if row[1] == 'pass':
+        gtest_filter += '*%s:' % row[0]
+  gtest_filter += '"'
+  return gtest_filter
 
 
 def RunEngineBenchmarks(build_dir, filter):
@@ -1052,6 +1068,21 @@ def main():
   if 'engine' in types:
     RunCCTests(
         build_dir, engine_filter, args.coverage, args.engine_capture_core_dump
+    )
+
+  # Use this type to exclusively run impeller vulkan tests.
+  # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
+  # impeller vulkan tests are stable.
+  if 'impeller-vulkan' in types:
+    vulkan_gtest_filter = ParseImpellerVulkanFilter()
+    gtest_flags = shuffle_flags
+    gtest_flags.append(vulkan_gtest_filter)
+    RunEngineExecutable(
+        build_dir,
+        'impeller_unittests',
+        engine_filter,
+        gtest_flags,
+        coverage=args.coverage
     )
 
   if 'dart' in types:

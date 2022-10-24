@@ -59,7 +59,7 @@
                     "--variant",
                     "host_debug_impeller_vulkan",
                     "--type",
-                    "engine",
+                    "impeller-vulkan",
                     "--engine-capture-core-dump"
                 ],
                 "script": "flutter/testing/run_tests.py",
