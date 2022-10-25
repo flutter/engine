@@ -101,6 +101,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
       context.internal_nodes_canvas->clipPath(path_, true);
       break;
     case Clip::antiAliasWithSaveLayer: {
+      TRACE_EVENT0("flutter", "Canvas::saveLayer");
       context.internal_nodes_canvas->clipPath(path_, true);
       context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
     } break;
