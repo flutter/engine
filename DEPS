@@ -92,7 +92,7 @@ vars = {
   # Setup Git hooks by default.
   "setup_githooks": True,
 
-  # upstream URLs for third party dependencies, used in
+  # Upstream URLs for third party dependencies, used in
   # determining common ancestor commit for vulnerability scanning
   # prefixed with "upstream_" in order to be identified by parsing tool
   "upstream_abseil-cpp": "https://github.com/abseil/abseil-cpp",
