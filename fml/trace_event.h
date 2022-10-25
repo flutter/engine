@@ -80,7 +80,7 @@
   __FML__AUTO_TRACE_END(name)
 #else
 #define DEBUG_TRACE_EVENT0(category_group, name)
-#endif 
+#endif
 
 // Avoid using the same `name` and `argX_name` for nested traces, which can
 // lead to double free errors. E.g. the following code should be avoided:
