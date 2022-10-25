@@ -25,17 +25,7 @@
 static_assert(VK_HEADER_VERSION >= 215,
               "Vulkan headers are must not be too old.");
 
-#ifdef VMA_STATIC_VULKAN_FUNCTIONS
-#undef VMA_STATIC_VULKAN_FUNCTIONS
-#endif  // VMA_STATIC_VULKAN_FUNCTIONS
-
-#ifdef VMA_DYNAMIC_VULKAN_FUNCTIONS
-#undef VMA_DYNAMIC_VULKAN_FUNCTIONS
-#endif  // VMA_DYNAMIC_VULKAN_FUNCTIONS
-
-#define VMA_STATIC_VULKAN_FUNCTIONS 0
-#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
-#include "vk_mem_alloc.h"
+#include "flutter/flutter_vma/flutter_vma.h"
 
 namespace impeller {
 

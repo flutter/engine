@@ -58,18 +58,23 @@ bool VulkanProcTable::SetupGetInstanceProcAddress() {
   }
 
   GetInstanceProcAddr = reinterpret_cast<void* (*)(VkInstance, const char*)>(
-#if VULKAN_LINK_STATICALLY
-      &vkGetInstanceProcAddr
-#else   // VULKAN_LINK_STATICALLY
-      const_cast<uint8_t*>(handle_->ResolveSymbol("vkGetInstanceProcAddr"))
-#endif  // VULKAN_LINK_STATICALLY
-  );
+      NativeGetInstanceProcAddr());
   if (!GetInstanceProcAddr) {
     FML_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
     return false;
   }
 
   return true;
+}
+
+PFN_vkGetInstanceProcAddr VulkanProcTable::NativeGetInstanceProcAddr() const {
+#if VULKAN_LINK_STATICALLY
+  return &vkGetInstanceProcAddr;
+#else   // VULKAN_LINK_STATICALLY
+  auto instance_proc =
+      const_cast<uint8_t*>(handle_->ResolveSymbol("vkGetInstanceProcAddr"));
+  return reinterpret_cast<PFN_vkGetInstanceProcAddr>(instance_proc);
+#endif  // VULKAN_LINK_STATICALLY
 }
 
 bool VulkanProcTable::SetupLoaderProcAddresses() {

@@ -136,6 +136,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
 
 #undef DEFINE_PROC
 
+  PFN_vkGetInstanceProcAddr NativeGetInstanceProcAddr() const;
+
  private:
   fml::RefPtr<fml::NativeLibrary> handle_;
   bool acquired_mandatory_proc_addresses_;

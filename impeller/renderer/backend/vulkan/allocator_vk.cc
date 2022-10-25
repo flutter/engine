@@ -2,20 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-_Pragma("GCC diagnostic push");
-_Pragma("GCC diagnostic ignored \"-Wnullability-completeness\"");
-_Pragma("GCC diagnostic ignored \"-Wunused-variable\"");
-_Pragma("GCC diagnostic ignored \"-Wthread-safety-analysis\"");
-
-#define VMA_IMPLEMENTATION
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
-#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/formats_vk.h"
-#include "impeller/renderer/backend/vulkan/texture_vk.h"
 
 #include <memory>
 
-_Pragma("GCC diagnostic pop");
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
 
 namespace impeller {
 

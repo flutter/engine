@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
@@ -142,6 +143,18 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fVkExtensions = &extensions;
   backend_context.fGetProc = get_proc;
   backend_context.fOwnsInstanceAndDevice = false;
+
+  PFN_vkGetInstanceProcAddr instance_proc_address =
+      vk_->NativeGetInstanceProcAddr();
+  PFN_vkGetDeviceProcAddr get_device_proc_address = vk_->GetDeviceProcAddr;
+  uint32_t vulkan_api_version = version;
+  sk_sp<skgpu::VulkanMemoryAllocator> allocator =
+      flutter::FlutterSkiaVulkanMemoryAllocator::Make(
+          vulkan_api_version, instance, device_.GetPhysicalDeviceHandle(),
+          device_.GetHandle(), instance_proc_address, get_device_proc_address,
+          true);
+
+  backend_context.fMemoryAllocator = allocator;
 
   extensions.init(backend_context.fGetProc, backend_context.fInstance,
                   backend_context.fPhysicalDevice, instance_extension_count,
