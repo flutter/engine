@@ -111,7 +111,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   auto context = preroll_context();
   display_list_layer->Preroll(preroll_context());
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);

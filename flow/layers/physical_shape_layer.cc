@@ -57,7 +57,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, &child_paint_bounds);
   context->renderable_state_flags =
-      UsesSaveLayer() ? Layer::SAVE_LAYER_RENDER_FLAGS : 0;
+      UsesSaveLayer() ? Layer::kSaveLayerRenderFlags : 0;
 
   SkRect paint_bounds;
   if (elevation_ == 0) {
@@ -67,7 +67,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context) {
     // bounds to leave space for the shadow.
     paint_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
         path_, elevation_, context->frame_device_pixel_ratio,
-        context->state_stack.transform());
+        context->state_stack.transform_3x3());
   }
 
   if (clip_behavior_ == Clip::none) {

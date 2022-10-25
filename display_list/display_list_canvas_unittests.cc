@@ -2040,7 +2040,9 @@ class CanvasCompareTester {
       const uint32_t* test_row = test_pixels->addr32(0, y);
       for (int x = 0; x < test_pixels->width(); x++) {
         if (ref_row[x] != test_row[x]) {
-          // FML_LOG(ERROR) << std::hex << ref_row[x] << " != " << test_row[x];
+          if (should_match) {
+            FML_LOG(ERROR) << std::hex << ref_row[x] << " != " << test_row[x];
+          }
           pixels_different++;
         }
       }

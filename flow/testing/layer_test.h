@@ -108,7 +108,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     paint_state_stack_.set_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_delegate(display_list_recorder_);
     checkerboard_state_stack_.set_delegate(&TestT::mock_canvas());
-    checkerboard_state_stack_.set_draw_checkerboard(draw_checkerboard);
+    checkerboard_state_stack_.set_checkerboard_func(draw_checkerboard);
     checkerboard_paint_.setColor(checkerboard_color_);
   }
 

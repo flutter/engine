@@ -116,7 +116,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   LayerStateStack state_stack;
   state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
   if (checkerboard_offscreen_layers_) {
-    state_stack.set_draw_checkerboard(DrawCheckerboard);
+    state_stack.set_checkerboard_func(DrawCheckerboard);
   }
 
   DisplayListBuilder* builder = frame.display_list_builder();
@@ -173,7 +173,7 @@ sk_sp<DisplayList> LayerTree::Flatten(
   DisplayListCanvasRecorder recorder(bounds);
 
   LayerStateStack state_stack;
-  state_stack.set_draw_checkerboard(nullptr);
+  state_stack.set_checkerboard_func(nullptr);
   // No root surface transformation. So assume identity.
   state_stack.set_initial_state(kGiantRect, SkMatrix::I());
 
@@ -220,7 +220,7 @@ sk_sp<DisplayList> LayerTree::Flatten(
     root_layer_->Preroll(&preroll_context);
     FML_DCHECK(state_stack.is_empty());
     FML_DCHECK(state_stack.device_cull_rect() == kGiantRect);
-    FML_DCHECK(state_stack.transformFullPerspective() == SkM44());
+    FML_DCHECK(state_stack.transform_4x4() == SkM44());
 
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting(paint_context)) {

@@ -51,7 +51,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
       Layer::AutoPrerollSaveLayerState::Create(context);
 
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
-                              context->state_stack.transform());
+                              context->state_stack.transform_3x3());
 
   SkRect child_bounds = SkRect::MakeEmpty();
 
@@ -66,8 +66,8 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   // color filter after it applies our image filter. So we can apply either
   // of those attributes with our saveLayer.
   context->renderable_state_flags =
-      (LayerStateStack::CALLER_CAN_APPLY_OPACITY |
-       LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER);
+      (LayerStateStack::kCallerCanApplyOpacity |
+       LayerStateStack::kCallerCanApplyColorFilter);
 
   const SkIRect filter_in_bounds = child_bounds.roundOut();
   SkIRect filter_out_bounds;
@@ -82,7 +82,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   layer_raster_cache_item_->MarkNotCacheChildren();
 
   transformed_filter_ =
-      filter_->makeWithLocalMatrix(context->state_stack.transform());
+      filter_->makeWithLocalMatrix(context->state_stack.transform_3x3());
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();
   }

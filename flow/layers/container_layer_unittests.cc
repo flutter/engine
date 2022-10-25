@@ -467,7 +467,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   PrerollContext* context = preroll_context();
   container1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
@@ -477,7 +477,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   // non-overlapping compatible children
   container1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
   auto mock3 = MockLayer::MakeOpacityCompatible(path3);
@@ -495,7 +495,7 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   // Double check first two children are compatible and non-overlapping
   container2->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   auto path4 = SkPath().addRect({60, 60, 70, 70});
   auto mock4 = MockLayer::Make(path4);

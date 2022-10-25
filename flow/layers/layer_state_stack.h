@@ -108,9 +108,9 @@ class LayerStateStack {
  public:
   explicit LayerStateStack(const SkRect* cull_rect = nullptr);
 
-  CheckerboardFunc get_draw_checkerboard() const { return draw_checkerboard_; }
-  void set_draw_checkerboard(CheckerboardFunc draw_checkerboard) {
-    draw_checkerboard_ = draw_checkerboard;
+  CheckerboardFunc checkerboard_func() const { return checkerboard_func_; }
+  void set_checkerboard_func(CheckerboardFunc checkerboard_func) {
+    checkerboard_func_ = checkerboard_func;
   }
 
   // Clears out any old delegate to make room for a new one.
@@ -180,10 +180,12 @@ class LayerStateStack {
     const size_t stack_restore_count_;
   };
 
-  static constexpr int CALLER_CAN_APPLY_OPACITY = 0x1;
-  static constexpr int CALLER_CAN_APPLY_COLOR_FILTER = 0x2;
-  static constexpr int CALLER_CAN_APPLY_IMAGE_FILTER = 0x4;
-  static constexpr int CALLER_CAN_APPLY_ANYTHING = 0x7;
+  static constexpr int kCallerCanApplyOpacity = 0x1;
+  static constexpr int kCallerCanApplyColorFilter = 0x2;
+  static constexpr int kCallerCanApplyImageFilter = 0x4;
+  static constexpr int kCallerCanApplyAnything =
+      (kCallerCanApplyOpacity | kCallerCanApplyColorFilter |
+       kCallerCanApplyImageFilter);
 
   class MutatorContext : public AutoRestore {
    public:
@@ -280,8 +282,8 @@ class LayerStateStack {
 
   SkRect device_cull_rect() const { return cull_rect_; }
   SkRect local_cull_rect() const;
-  SkM44 transformFullPerspective() const { return matrix_; }
-  SkMatrix transform() const { return matrix_.asM33(); }
+  SkM44 transform_4x4() const { return matrix_; }
+  SkMatrix transform_3x3() const { return matrix_.asM33(); }
 
   // Tests if painting content with the current outstanding attributes
   // will produce any content.
@@ -596,7 +598,7 @@ class LayerStateStack {
   MutatorsStack* mutators_ = nullptr;
   int restore_count_ = 0;
   RenderingAttributes outstanding_;
-  CheckerboardFunc draw_checkerboard_ = nullptr;
+  CheckerboardFunc checkerboard_func_ = nullptr;
 
   friend class SaveLayerEntry;
 };

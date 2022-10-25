@@ -19,15 +19,15 @@ TEST(LayerStateStack, Defaults) {
 
   ASSERT_EQ(state_stack.canvas_delegate(), nullptr);
   ASSERT_EQ(state_stack.builder_delegate(), nullptr);
-  ASSERT_EQ(state_stack.get_draw_checkerboard(), nullptr);
+  ASSERT_EQ(state_stack.checkerboard_func(), nullptr);
   ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
   ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
   ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
   ASSERT_EQ(state_stack.outstanding_bounds(), SkRect());
   ASSERT_EQ(state_stack.device_cull_rect(), kGiantRect);
   ASSERT_EQ(state_stack.local_cull_rect(), kGiantRect);
-  ASSERT_EQ(state_stack.transform(), SkMatrix::I());
-  ASSERT_EQ(state_stack.transformFullPerspective(), SkM44());
+  ASSERT_EQ(state_stack.transform_3x3(), SkMatrix::I());
+  ASSERT_EQ(state_stack.transform_4x4(), SkM44());
 
   SkPaint sk_paint;
   state_stack.fill(sk_paint);
@@ -122,7 +122,7 @@ TEST(LayerStateStack, Opacity) {
         state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(
-              rect, LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+              rect, LayerStateStack::kCallerCanApplyOpacity);
           ASSERT_EQ(state_stack.outstanding_opacity(), 0.25f);
           ASSERT_EQ(state_stack.outstanding_bounds(), rect);
 
@@ -201,7 +201,7 @@ TEST(LayerStateStack, ColorFilter) {
         state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(
-              rect, LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER);
+              rect, LayerStateStack::kCallerCanApplyColorFilter);
           ASSERT_EQ(state_stack.outstanding_color_filter(), inner_filter);
 
           DlPaint paint;
@@ -282,7 +282,7 @@ TEST(LayerStateStack, ImageFilter) {
         state_stack.set_delegate(&builder);
         {
           auto restore = state_stack.applyState(
-              rect, LayerStateStack::CALLER_CAN_APPLY_IMAGE_FILTER);
+              rect, LayerStateStack::kCallerCanApplyImageFilter);
           ASSERT_EQ(state_stack.outstanding_image_filter(), inner_filter);
 
           DlPaint paint;

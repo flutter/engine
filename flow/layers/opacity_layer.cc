@@ -44,19 +44,19 @@ void OpacityLayer::Preroll(PrerollContext* context) {
   mutator.applyOpacity(SkRect(), DlColor::toOpacity(alpha_));
 
   AutoCache auto_cache = AutoCache(layer_raster_cache_item_.get(), context,
-                                   context->state_stack.transform());
+                                   context->state_stack.transform_3x3());
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
   ContainerLayer::Preroll(context);
   // We store the inheritance ability of our children for |Paint|
   set_children_can_accept_opacity((context->renderable_state_flags &
-                                   LayerStateStack::CALLER_CAN_APPLY_OPACITY) !=
+                                   LayerStateStack::kCallerCanApplyOpacity) !=
                                   0);
 
   // Now we let our parent layers know that we, too, can inherit opacity
   // regardless of what our children are capable of
-  context->renderable_state_flags |= LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  context->renderable_state_flags |= LayerStateStack::kCallerCanApplyOpacity;
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 

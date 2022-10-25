@@ -128,16 +128,16 @@ class Layer {
   // The state attribute flags that represent which attributes a
   // layer can render if it plans to use a saveLayer call in its
   // |Paint| method.
-  static constexpr int SAVE_LAYER_RENDER_FLAGS =
-      LayerStateStack::CALLER_CAN_APPLY_OPACITY |
-      LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER |
-      LayerStateStack::CALLER_CAN_APPLY_IMAGE_FILTER;
+  static constexpr int kSaveLayerRenderFlags =
+      LayerStateStack::kCallerCanApplyOpacity |
+      LayerStateStack::kCallerCanApplyColorFilter |
+      LayerStateStack::kCallerCanApplyImageFilter;
 
   // The state attribute flags that represent which attributes a
   // layer can render if it will be rendering its content/children
   // from a cached representation.
-  static constexpr int RASTER_CACHE_RENDER_FLAGS =
-      LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  static constexpr int kRasterCacheRenderFlags =
+      LayerStateStack::kCallerCanApplyOpacity;
 
   Layer();
   virtual ~Layer();

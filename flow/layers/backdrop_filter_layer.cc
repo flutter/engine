@@ -49,7 +49,7 @@ void BackdropFilterLayer::Preroll(PrerollContext* context) {
   PrerollChildren(context, &child_paint_bounds);
   child_paint_bounds.join(context->state_stack.local_cull_rect());
   set_paint_bounds(child_paint_bounds);
-  context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
+  context->renderable_state_flags = kSaveLayerRenderFlags;
 }
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {

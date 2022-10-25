@@ -99,9 +99,9 @@ void DisplayListLayer::Preroll(PrerollContext* context) {
   DisplayList* disp_list = display_list();
 
   AutoCache cache = AutoCache(display_list_raster_cache_item_.get(), context,
-                              context->state_stack.transform());
+                              context->state_stack.transform_3x3());
   if (disp_list->can_apply_group_opacity()) {
-    context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+    context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
   }
   set_paint_bounds(bounds_);
 }

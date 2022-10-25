@@ -50,7 +50,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     // nullptr which mean we don't do raster cache logic.
     AutoCache cache =
         AutoCache(uses_save_layer ? layer_raster_cache_item_.get() : nullptr,
-                  context, context->state_stack.transform());
+                  context, context->state_stack.transform_3x3());
 
     Layer::AutoPrerollSaveLayerState save =
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
@@ -69,7 +69,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     // If we use a SaveLayer then we can accept opacity on behalf
     // of our children and apply it in the saveLayer.
     if (uses_save_layer) {
-      context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
+      context->renderable_state_flags = kSaveLayerRenderFlags;
     }
   }
 
@@ -90,7 +90,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     if (context.raster_cache) {
       mutator.integralTransform();
       auto restore_apply = context.state_stack.applyState(
-          paint_bounds(), LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+          paint_bounds(), LayerStateStack::kCallerCanApplyOpacity);
 
       SkPaint paint;
       if (layer_raster_cache_item_->Draw(context,

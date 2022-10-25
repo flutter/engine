@@ -135,7 +135,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
-  bool all_renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_ANYTHING;
+  bool all_renderable_state_flags = LayerStateStack::kCallerCanApplyAnything;
 
   for (auto& layer : layers_) {
     // Reset context->has_platform_view and context->has_texture_layer to false

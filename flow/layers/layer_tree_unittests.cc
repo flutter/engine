@@ -207,8 +207,8 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
     EXPECT_EQ(&context.state_stack, &state_stack);
     EXPECT_EQ(context.dst_color_space, nullptr);
     EXPECT_EQ(context.state_stack.device_cull_rect(), kGiantRect);
-    EXPECT_EQ(context.state_stack.transform(), SkMatrix::I());
-    EXPECT_EQ(context.state_stack.transformFullPerspective(), SkM44());
+    EXPECT_EQ(context.state_stack.transform_3x3(), SkMatrix::I());
+    EXPECT_EQ(context.state_stack.transform_4x4(), SkM44());
     EXPECT_EQ(context.surface_needs_readback, false);
 
     EXPECT_EQ(&context.raster_time, &mock_raster_time);
@@ -250,7 +250,7 @@ TEST_F(LayerTreeTest, PaintContextInitialization) {
     EXPECT_EQ(&context.ui_time, &mock_ui_time);
     EXPECT_EQ(context.texture_registry.get(), mock_registry.get());
     EXPECT_EQ(context.raster_cache, nullptr);
-    EXPECT_EQ(context.state_stack.get_draw_checkerboard(), nullptr);
+    EXPECT_EQ(context.state_stack.checkerboard_func(), nullptr);
     EXPECT_EQ(context.frame_device_pixel_ratio, 1.0f);
 
     EXPECT_EQ(context.enable_leaf_layer_tracing, false);

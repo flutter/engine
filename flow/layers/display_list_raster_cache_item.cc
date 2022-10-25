@@ -113,8 +113,7 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   if (!visible || accesses <= raster_cache->access_threshold()) {
     cache_state_ = kNone;
   } else {
-    context->renderable_state_flags |=
-        LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+    context->renderable_state_flags |= LayerStateStack::kCallerCanApplyOpacity;
     cache_state_ = kCurrent;
   }
   return;

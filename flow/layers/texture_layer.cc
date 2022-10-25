@@ -44,7 +44,7 @@ void TextureLayer::Preroll(PrerollContext* context) {
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
   context->has_texture_layer = true;
-  context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+  context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
 }
 
 void TextureLayer::Paint(PaintContext& context) const {

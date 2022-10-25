@@ -250,7 +250,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   PrerollContext* context = preroll_context();
   transform1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   auto path2 = SkPath().addRect({40, 40, 50, 50});
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
@@ -260,7 +260,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   // non-overlapping compatible children
   transform1->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   auto path3 = SkPath().addRect({20, 20, 40, 40});
   auto mock3 = MockLayer::MakeOpacityCompatible(path3);
@@ -278,7 +278,7 @@ TEST_F(TransformLayerTest, OpacityInheritance) {
   // Double check first two children are compatible and non-overlapping
   transform2->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   auto path4 = SkPath().addRect({60, 60, 70, 70});
   auto mock4 = MockLayer::Make(path4);
@@ -305,7 +305,7 @@ TEST_F(TransformLayerTest, OpacityInheritancePainting) {
   PrerollContext* context = preroll_context();
   transform_layer->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);

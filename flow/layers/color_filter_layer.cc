@@ -41,7 +41,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
-                              context->state_stack.transform());
+                              context->state_stack.transform_3x3());
 
   ContainerLayer::Preroll(context);
 
@@ -56,7 +56,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context) {
   if (filter_) {
     context->renderable_state_flags =
         filter_->can_commute_with_opacity()
-            ? LayerStateStack::CALLER_CAN_APPLY_OPACITY
+            ? LayerStateStack::kCallerCanApplyOpacity
             : 0;
   }
   // else - we can apply whatever our children can apply.

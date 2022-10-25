@@ -39,12 +39,12 @@ void ShaderMaskLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
-                              context->state_stack.transform());
+                              context->state_stack.transform_3x3());
 
   ContainerLayer::Preroll(context);
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
-  context->renderable_state_flags = SAVE_LAYER_RENDER_FLAGS;
+  context->renderable_state_flags = kSaveLayerRenderFlags;
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {

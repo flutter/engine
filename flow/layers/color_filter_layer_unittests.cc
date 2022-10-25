@@ -426,7 +426,7 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
   // ColorFilterLayer can always inherit opacity whether or not their
   // children are compatible.
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   int opacity_alpha = 0x7F;
   SkPoint offset = SkPoint::Make(10, 10);

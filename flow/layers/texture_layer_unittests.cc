@@ -131,7 +131,7 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
   context->texture_registry->RegisterTexture(mock_texture);
   layer->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 
   // MockTexture has no actual textur to render into the
   // PaintContext canvas so we have no way to verify its

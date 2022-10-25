@@ -93,7 +93,7 @@ TEST_F(MockLayerTest, OpacityInheritance) {
   auto mock2 = MockLayer::MakeOpacityCompatible(path1);
   mock2->Preroll(context);
   EXPECT_EQ(context->renderable_state_flags,
-            LayerStateStack::CALLER_CAN_APPLY_OPACITY);
+            LayerStateStack::kCallerCanApplyOpacity);
 }
 
 TEST_F(MockLayerTest, FlagGetSet) {

@@ -32,7 +32,7 @@ void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 void MockLayer::Preroll(PrerollContext* context) {
   parent_mutators_ = *context->state_stack.mutators_delegate();
-  parent_matrix_ = context->state_stack.transform();
+  parent_matrix_ = context->state_stack.transform_3x3();
   parent_cull_rect_ = context->state_stack.local_cull_rect();
 
   set_parent_has_platform_view(context->has_platform_view);
@@ -45,7 +45,7 @@ void MockLayer::Preroll(PrerollContext* context) {
     context->surface_needs_readback = true;
   }
   if (fake_opacity_compatible()) {
-    context->renderable_state_flags = LayerStateStack::CALLER_CAN_APPLY_OPACITY;
+    context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
   }
 }
 
@@ -68,7 +68,7 @@ void MockCacheableContainerLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   auto cache = AutoCache(layer_raster_cache_item_.get(), context,
-                         context->state_stack.transform());
+                         context->state_stack.transform_3x3());
 
   ContainerLayer::Preroll(context);
 }
@@ -77,7 +77,7 @@ void MockCacheableLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   auto cache = AutoCache(raster_cache_item_.get(), context,
-                         context->state_stack.transform());
+                         context->state_stack.transform_3x3());
 
   MockLayer::Preroll(context);
 }

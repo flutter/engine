@@ -79,35 +79,35 @@ void LayerStateStack::set_delegate(MutatorsStack* stack) {
 }
 
 void LayerStateStack::set_initial_cull_rect(const SkRect& cull_rect) {
-  FML_CHECK(is_empty()) << "set_initial_cull_rect() must be called before any "
-                           "state is pushed onto the state stack";
+  FML_DCHECK(is_empty()) << "set_initial_cull_rect() must be called before any "
+                            "state is pushed onto the state stack";
   initial_cull_rect_ = cull_rect_ = cull_rect;
 }
 
 void LayerStateStack::set_initial_transform(const SkMatrix& matrix) {
-  FML_CHECK(is_empty()) << "set_initial_transform() must be called before any "
-                           "state is pushed onto the state stack";
+  FML_DCHECK(is_empty()) << "set_initial_transform() must be called before any "
+                            "state is pushed onto the state stack";
   initial_matrix_ = matrix_ = SkM44(matrix);
 }
 
 void LayerStateStack::set_initial_transform(const SkM44& matrix) {
-  FML_CHECK(is_empty()) << "set_initial_transform() must be called before any "
-                           "state is pushed onto the state stack";
+  FML_DCHECK(is_empty()) << "set_initial_transform() must be called before any "
+                            "state is pushed onto the state stack";
   initial_matrix_ = matrix_ = matrix;
 }
 
 void LayerStateStack::set_initial_state(const SkRect& cull_rect,
                                         const SkMatrix& matrix) {
-  FML_CHECK(is_empty()) << "set_initial_state() must be called before any "
-                           "state is pushed onto the state stack";
+  FML_DCHECK(is_empty()) << "set_initial_state() must be called before any "
+                            "state is pushed onto the state stack";
   initial_cull_rect_ = cull_rect_ = cull_rect;
   initial_matrix_ = matrix_ = SkM44(matrix);
 }
 
 void LayerStateStack::set_initial_state(const SkRect& cull_rect,
                                         const SkM44& matrix) {
-  FML_CHECK(is_empty()) << "set_initial_state() must be called before any "
-                           "state is pushed onto the state stack";
+  FML_DCHECK(is_empty()) << "set_initial_state() must be called before any "
+                            "state is pushed onto the state stack";
   initial_cull_rect_ = cull_rect_ = cull_rect;
   initial_matrix_ = matrix_ = matrix;
 }
@@ -392,15 +392,15 @@ void LayerStateStack::push_clip_path(const SkPath& path, bool is_aa) {
 
 bool LayerStateStack::needs_save_layer(int flags) const {
   if (outstanding_.opacity < SK_Scalar1 &&
-      (flags & LayerStateStack::CALLER_CAN_APPLY_OPACITY) == 0) {
+      (flags & LayerStateStack::kCallerCanApplyOpacity) == 0) {
     return true;
   }
   if (outstanding_.image_filter &&
-      (flags & LayerStateStack::CALLER_CAN_APPLY_IMAGE_FILTER) == 0) {
+      (flags & LayerStateStack::kCallerCanApplyImageFilter) == 0) {
     return true;
   }
   if (outstanding_.color_filter &&
-      (flags & LayerStateStack::CALLER_CAN_APPLY_COLOR_FILTER) == 0) {
+      (flags & LayerStateStack::kCallerCanApplyColorFilter) == 0) {
     return true;
   }
   return false;
@@ -602,8 +602,8 @@ void LayerStateStack::SaveLayerEntry::apply(LayerStateStack* stack) const {
 
 void LayerStateStack::SaveLayerEntry::do_checkerboard(
     LayerStateStack* stack) const {
-  if (stack->draw_checkerboard_) {
-    (*stack->draw_checkerboard_)(stack->canvas_, stack->builder_, bounds_);
+  if (stack->checkerboard_func_) {
+    (*stack->checkerboard_func_)(stack->canvas_, stack->builder_, bounds_);
   }
 }
 
