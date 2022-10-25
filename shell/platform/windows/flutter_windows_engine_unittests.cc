@@ -521,7 +521,8 @@ TEST_F(FlutterWindowsEngineTest, PostRasterThreadTask) {
 
 class MockFlutterWindowsView : public FlutterWindowsView {
  public:
-  MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> wbh) : FlutterWindowsView(std::move(wbh)) {}
+  MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> wbh)
+      : FlutterWindowsView(std::move(wbh)) {}
   ~MockFlutterWindowsView() {}
 
   MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
@@ -535,9 +536,11 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   FlutterProjectBundle project(properties);
 
-  auto window_binding_handler = std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   AccessibilityRootNode* root_node = AccessibilityRootNode::Create();
-  ON_CALL(*window_binding_handler, GetAccessibilityRootNode).WillByDefault(::testing::Return(root_node));
+  ON_CALL(*window_binding_handler, GetAccessibilityRootNode)
+      .WillByDefault(::testing::Return(root_node));
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(std::make_unique<FlutterWindowsEngine>(project));
   FlutterWindowsEngine* engine = view.GetEngine();
@@ -548,23 +551,22 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
   binary_messenger->SetMessageHandler(
-      "semantics",
-      [&engine](
-          const uint8_t* message, size_t message_size, BinaryReply reply) {
-            engine->UpdateSemanticsEnabled(true);
-            char response[] = "";
-            reply(reinterpret_cast<uint8_t*>(response), 0);
+      "semantics", [&engine](const uint8_t* message, size_t message_size,
+                             BinaryReply reply) {
+        engine->UpdateSemanticsEnabled(true);
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
       });
 
   bool did_call = false;
-  ON_CALL(view, NotifyWinEventWrapper).WillByDefault([&did_call](DWORD event, HWND hwnd, LONG obj, LONG child) {
-    did_call = true;
-  });
-
+  ON_CALL(view, NotifyWinEventWrapper)
+      .WillByDefault([&did_call](DWORD event, HWND hwnd, LONG obj, LONG child) {
+        did_call = true;
+      });
 
   engine->UpdateSemanticsEnabled(true);
   engine->Run();
-  
+
   // Rely on timeout mechanism in CI.
   while (!did_call) {
     engine->task_runner()->ProcessTasks();

@@ -214,7 +214,10 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       BinaryMessenger* messenger);
 
-  virtual void NotifyWinEventWrapper(DWORD event, HWND hwnd, LONG idObject, LONG idChild);
+  virtual void NotifyWinEventWrapper(DWORD event,
+                                     HWND hwnd,
+                                     LONG idObject,
+                                     LONG idChild);
 
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep

@@ -412,7 +412,10 @@ TEST(FlutterWindowTest, AlertNode) {
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
   AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
   TestFlutterWindowsView view(std::move(win32window));
-  EXPECT_CALL(view, NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, nullptr, OBJID_CLIENT, AccessibilityRootNode::kAlertChildId)).Times(1);
+  EXPECT_CALL(view,
+              NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, nullptr, OBJID_CLIENT,
+                                    AccessibilityRootNode::kAlertChildId))
+      .Times(1);
   std::wstring message = L"Test alert";
   view.AnnounceAlert(message);
   IAccessible* alert = root_node->GetOrCreateAlert();

@@ -103,7 +103,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accChild(VARIANT var_child,
   } else if (child_id == kAlertChildId && alert_accessible_) {
     *disp_child = alert_accessible_;
   } else if (child_id < 0) {
-    // A negative child ID can be used to refer to an AX node directly by its ID.
+    // A negative child ID can be used to refer to an AX node directly by its
+    // ID.
     return window_accessible_->get_accChild(var_child, disp_child);
   } else {
     return E_FAIL;
