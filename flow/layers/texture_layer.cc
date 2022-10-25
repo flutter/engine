@@ -41,7 +41,7 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "TextureLayer::Preroll");
+  DEBUG_TRACE_EVENT0("flutter", "TextureLayer::Preroll");
 
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
@@ -50,7 +50,7 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void TextureLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "TextureLayer::Paint");
+  DEBUG_TRACE_EVENT0("flutter", "TextureLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   std::shared_ptr<Texture> texture =

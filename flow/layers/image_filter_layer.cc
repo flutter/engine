@@ -48,7 +48,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
+  DEBUG_TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
 
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
@@ -89,7 +89,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 }
 
 void ImageFilterLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
+  DEBUG_TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
