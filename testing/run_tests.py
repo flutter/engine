@@ -18,6 +18,7 @@ import subprocess
 import sys
 import time
 import csv
+import xvfb
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(
@@ -1074,6 +1075,8 @@ def main():
   # TODO (https://github.com/flutter/flutter/issues/113961): Remove this once
   # impeller vulkan tests are stable.
   if 'impeller-vulkan' in types:
+    build_name = args.variant
+    xvfb.StartVirtualX(build_name, build_dir)
     vulkan_gtest_filter = ParseImpellerVulkanFilter()
     gtest_flags = shuffle_flags
     gtest_flags.append(vulkan_gtest_filter)
@@ -1084,6 +1087,7 @@ def main():
         gtest_flags,
         coverage=args.coverage
     )
+    xvfb.StopVirtualX(build_name)
 
   if 'dart' in types:
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
