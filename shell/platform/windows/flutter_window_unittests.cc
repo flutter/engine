@@ -154,9 +154,12 @@ class TestFlutterWindowsView : public FlutterWindowsView {
  public:
   TestFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding)
       : FlutterWindowsView(std::move(window_binding)) {}
+  ~TestFlutterWindowsView() {}
 
   SpyKeyboardKeyHandler* key_event_handler;
   SpyTextInputPlugin* text_input_plugin;
+
+  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
 
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
@@ -406,10 +409,10 @@ TEST(FlutterWindowTest, InitialAccessibilityFeatures) {
 TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
-  ;
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
   AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
   TestFlutterWindowsView view(std::move(win32window));
+  EXPECT_CALL(view, NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, nullptr, OBJID_CLIENT, AccessibilityRootNode::kAlertChildId)).Times(1);
   std::wstring message = L"Test alert";
   view.AnnounceAlert(message);
   IAccessible* alert = root_node->GetOrCreateAlert();

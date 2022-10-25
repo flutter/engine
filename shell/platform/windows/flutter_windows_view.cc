@@ -661,6 +661,10 @@ void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
       binding_handler_->GetAccessibilityRootNode()->GetOrCreateAlert();
   alert->SetText(text);
   HWND hwnd = GetPlatformWindow();
+  NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT, AccessibilityRootNode::kAlertChildId);
+}
+
+void FlutterWindowsView::NotifyWinEventWrapper(DWORD event, HWND hwnd, LONG idObject, LONG idChild) {
   if (hwnd) {
     NotifyWinEvent(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT,
                    AccessibilityRootNode::kAlertChildId);
