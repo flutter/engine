@@ -127,6 +127,9 @@ void DartCallbackCache::LoadCacheFromDisk() {
   }
   std::string cache_contents{std::istreambuf_iterator<char>(input),
                              std::istreambuf_iterator<char>()};
+  if (cache_contents.empty()) {
+    return;
+  }
   Document d;
   d.Parse(cache_contents.c_str());
   if (d.HasParseError() || !d.IsArray()) {
