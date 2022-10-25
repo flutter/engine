@@ -1911,9 +1911,10 @@ FLUTTER_ASSERT_ARC
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.setSelectionRects"
                                         arguments:selectionRects];
-  XCTAssertThrows([textInputPlugin handleMethodCall:methodCall
-                                             result:^(id _Nullable result){
-                                             }]);
+  [textInputPlugin handleMethodCall:methodCall
+                             result:^(id _Nullable result) {
+                               XCTAssertEqual(result, FlutterMethodNotImplemented);
+                             }];
 
   XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
 }
