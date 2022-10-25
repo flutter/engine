@@ -32,9 +32,6 @@ SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 FLUTTER_DIR="$(cd "$SCRIPT_DIR/.."; pwd -P)"
 DART_BIN="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin"
 DART="${DART_BIN}/dart"
-# TODO(https://github.com/flutter/flutter/issues/113848): Migrate all platforms
-# to have this as an error.
-MAC_HOST_WARNINGS_AS_ERRORS="performance-move-const-arg,performance-unnecessary-value-param"
 
 COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
 if [ ! -f "$COMPILE_COMMANDS" ]; then
@@ -47,7 +44,16 @@ cd "$SCRIPT_DIR"
   "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
   --src-dir="$SRC_DIR" \
   --mac-host-warnings-as-errors="$MAC_HOST_WARNINGS_AS_ERRORS" \
-  "$@"
+  --fix \
+  "$@" && true # errors ignored
+clang_tidy_return=$?
+if [ $clang_tidy_return -ne 0 ]; then
+  # Print out the git diff to show the patch if --fix was used
+  echo "###################################################"
+  echo "# Attempted to fix issues with the following patch:"
+  git --no-pager diff
+  exit $clang_tidy_return
+fi
 
 cd "$FLUTTER_DIR"
 pylint-2.7 --rcfile=.pylintrc \
