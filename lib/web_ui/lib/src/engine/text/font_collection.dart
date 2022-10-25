@@ -327,7 +327,7 @@ class _PolyfillFontManager extends FontManager {
         .join(' ');
     final DomHTMLStyleElement fontLoadStyle = DomHTMLStyleElement();
     fontLoadStyle.type = 'text/css';
-    fontLoadStyle.innerHtml = '@font-face { $fontFaceDeclaration }';
+    fontLoadStyle.text = '@font-face { $fontFaceDeclaration }';
     domDocument.head!.append(fontLoadStyle);
 
     // HACK: If this is an icon font, then when it loads it won't change the
