@@ -1076,18 +1076,20 @@ def main():
   # impeller vulkan tests are stable.
   if 'impeller-vulkan' in types:
     build_name = args.variant
-    xvfb.StartVirtualX(build_name, build_dir)
-    vulkan_gtest_filter = ParseImpellerVulkanFilter()
-    gtest_flags = shuffle_flags
-    gtest_flags.append(vulkan_gtest_filter)
-    RunEngineExecutable(
-        build_dir,
-        'impeller_unittests',
-        engine_filter,
-        gtest_flags,
-        coverage=args.coverage
-    )
-    xvfb.StopVirtualX(build_name)
+    try:
+      xvfb.StartVirtualX(build_name, build_dir)
+      vulkan_gtest_filter = ParseImpellerVulkanFilter()
+      gtest_flags = shuffle_flags
+      gtest_flags.append(vulkan_gtest_filter)
+      RunEngineExecutable(
+          build_dir,
+          'impeller_unittests',
+          engine_filter,
+          gtest_flags,
+          coverage=args.coverage
+      )
+    finally:
+      xvfb.StopVirtualX(build_name)
 
   if 'dart' in types:
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
