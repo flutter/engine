@@ -32,7 +32,6 @@ void hiPlatformChannels() {
       ui.PlatformDispatcher.instance
           .sendPlatformMessage('hi', reply, (ByteData? reply) {});
     });
-    callback(null);
   });
 }
 
