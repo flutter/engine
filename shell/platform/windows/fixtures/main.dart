@@ -40,33 +40,37 @@ void hiPlatformChannels() {
 @pragma('vm:entry-point')
 void alertPlatformChannel() async {
   // Serializers for data types are in the framework, so this will be hardcoded.
-  Uint8List data = Uint8List.fromList([
-    13, // _valueMap
+  const int valueMap = 13, valueString = 7;
+  // Corresponds to:
+  // Map<String, Object> data =
+  // {"type": "announce", "data": {"message": ""}};
+  final Uint8List data = Uint8List.fromList([
+    valueMap, // _valueMap
     2, // Size
     // key: "type"
-    7, // _valueString
+    valueString,
     'type'.length,
     ...'type'.codeUnits,
     // value: "announce"
-    7,
+    valueString,
     'announce'.length,
     ...'announce'.codeUnits,
     // key: "data"
-    7, // _valueString
+    valueString,
     'data'.length,
     ...'data'.codeUnits,
     // value: map
-    13, // _valueMap
+    valueMap, // _valueMap
     1, // Size
     // key: "message"
-    7, // _valueString
+    valueString,
     'message'.length,
     ...'message'.codeUnits,
     // value: ""
-    7, // _valueString
-    0
+    valueString,
+    0, // Length of empty string == 0.
   ]);
-  ByteData byteData = data.buffer.asByteData();
+  final ByteData byteData = data.buffer.asByteData();
 
   final Completer<ByteData?> enabled = Completer<ByteData?>();
   ui.PlatformDispatcher.instance.sendPlatformMessage('semantics', ByteData(0), (ByteData? reply){
