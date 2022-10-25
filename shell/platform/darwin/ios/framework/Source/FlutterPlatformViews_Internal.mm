@@ -116,10 +116,10 @@ static BOOL _preparedOnce = NO;
   if (_preparedOnce) {
     return;
   }
-  NSUInteger index = 0;
-  for (UIView* view in visualEffectView.subviews) {
+  for (NSUInteger i = 0; i < visualEffectView.subviews.count; i++) {
+    UIView* view = visualEffectView.subviews[i];
     if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      _indexOfBackdropView = index;
+      _indexOfBackdropView = i;
       for (NSObject* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
             [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
@@ -128,9 +128,8 @@ static BOOL _preparedOnce = NO;
         }
       }
     } else if ([view isKindOfClass:NSClassFromString(@"_UIVisualEffectSubview")]) {
-      _indexOfVisualEffectSubview = index;
+      _indexOfVisualEffectSubview = i;
     }
-    ++index;
   }
   _preparedOnce = YES;
 }
