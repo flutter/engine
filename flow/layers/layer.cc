@@ -65,7 +65,6 @@ Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
       canvas_(save_mode == SaveMode::kInternalNodesCanvas
                   ? *(paint_context.internal_nodes_canvas)
                   : *(paint_context.leaf_nodes_canvas)) {
-  DEBUG_TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_.saveLayer(bounds_, paint);
 }
 
@@ -77,7 +76,6 @@ Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
       canvas_(save_mode == SaveMode::kInternalNodesCanvas
                   ? *(paint_context.internal_nodes_canvas)
                   : *(paint_context.leaf_nodes_canvas)) {
-  DEBUG_TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_.saveLayer(layer_rec);
 }
 

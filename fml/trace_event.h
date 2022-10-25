@@ -23,7 +23,6 @@
 #define FML_TRACE_EVENT(a, b, args...) TRACE_DURATION(a, b)
 
 #define TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
-#define DEBUG_TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
 #define TRACE_EVENT1(a, b, c, d) TRACE_DURATION(a, b, c, d)
 #define TRACE_EVENT2(a, b, c, d, e, f) TRACE_DURATION(a, b, c, d, e, f)
 #define TRACE_EVENT_ASYNC_BEGIN0(a, b, c) TRACE_ASYNC_BEGIN(a, b, c)
@@ -70,17 +69,6 @@
 #define FML_TRACE_COUNTER(category_group, name, counter_id, arg1, ...)         \
   ::fml::tracing::TraceCounter((category_group), (name), (counter_id), (arg1), \
                                __VA_ARGS__);
-
-// Certain trace events happen so frequently that in complex apps the tracing
-// overhead can easily dwarf the actual raster time. For these, we use
-// a special debug mode only trace macro.
-#if (FLUTTER_RUNTIME_MODE_DEBUG)
-#define DEBUG_TRACE_EVENT0(category_group, name)     \
-  ::fml::tracing::TraceEvent0(category_group, name); \
-  __FML__AUTO_TRACE_END(name)
-#else
-#define DEBUG_TRACE_EVENT0(category_group, name)
-#endif
 
 // Avoid using the same `name` and `argX_name` for nested traces, which can
 // lead to double free errors. E.g. the following code should be avoided:
