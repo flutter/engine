@@ -15,7 +15,6 @@
 #include <cstring>
 
 #include "flutter/shell/platform/windows/dpi_utils.h"
-#include "flutter/third_party/accessibility/base/win/atl_module.h"
 
 namespace flutter {
 
@@ -663,14 +662,7 @@ bool Window::GetHighContrastEnabled() {
 }
 
 void Window::CreateAccessibilityRootNode() {
-  ui::win::CreateATLModuleIfNeeded();
-  CComObject<AccessibilityRootNode>* instance = nullptr;
-  HRESULT hr = CComObject<AccessibilityRootNode>::CreateInstance(&instance);
-  if (!SUCCEEDED(hr) || !instance) {
-    FML_LOG(FATAL) << "Failed to create accessibility root node";
-  }
-  instance->AddRef();
-  accessibility_root_ = instance;
+  accessibility_root_ = AccessibilityRootNode::Create();
 }
 
 }  // namespace flutter

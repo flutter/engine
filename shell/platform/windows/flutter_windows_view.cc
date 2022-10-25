@@ -657,6 +657,7 @@ FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
 }
 
 void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
+  AccessibilityRootNode* root_node = binding_handler_->GetAccessibilityRootNode();
   AccessibilityAlert* alert =
       binding_handler_->GetAccessibilityRootNode()->GetOrCreateAlert();
   alert->SetText(text);

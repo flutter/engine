@@ -99,13 +99,15 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
   IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
 
   AccessibilityRootNode();
-  ~AccessibilityRootNode();
+  virtual ~AccessibilityRootNode();
 
   void SetWindow(IAccessible* window);
 
   void SetAlert(AccessibilityAlert* alert);
 
   AccessibilityAlert* GetOrCreateAlert();
+
+  static AccessibilityRootNode* Create();
 
  private:
   // Helper method to redirect method calls to the contained window or alert.

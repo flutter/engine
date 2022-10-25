@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/accessibility_root_node.h"
 
 #include "flutter/fml/logging.h"
+#include "flutter/third_party/accessibility/base/win/atl_module.h"
 
 namespace flutter {
 
@@ -268,6 +269,18 @@ AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
     alert_accessible_ = instance;
   }
   return alert_accessible_;
+}
+
+// static
+AccessibilityRootNode* AccessibilityRootNode::Create() {
+  ui::win::CreateATLModuleIfNeeded();
+  CComObject<AccessibilityRootNode>* instance = nullptr;
+  HRESULT hr = CComObject<AccessibilityRootNode>::CreateInstance(&instance);
+  if (!SUCCEEDED(hr) || !instance) {
+    FML_LOG(FATAL) << "Failed to create accessibility root node";
+  }
+  instance->AddRef();
+  return instance;
 }
 
 }  // namespace flutter
