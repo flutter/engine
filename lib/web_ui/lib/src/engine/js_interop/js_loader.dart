@@ -7,6 +7,7 @@ library js_loader;
 
 import 'package:js/js.dart';
 
+import '../dom.dart';
 import 'js_promise.dart';
 
 /// Typedef for the function that notifies JS that the main entrypoint is up and running.
@@ -24,26 +25,6 @@ external Object? get loader;
 
 @JS('_flutter.loader.didCreateEngineInitializer')
 external DidCreateEngineInitializerFn? get didCreateEngineInitializer;
-
-// /// window._flutter
-// @JS('_flutter')
-// external FlutterJsNamespace? get flutterjs;
-
-// /// window._flutter.loader
-// @JS()
-// @anonymous
-// class FlutterJsNamespace {
-//   external FlutterJsLoaderNamespace? get loader;
-// }
-
-// /// The bits of window._flutter.loader that the Flutter Engine cares about.
-// @JS()
-// @anonymous
-// class FlutterJsLoaderNamespace {
-//   /// A hook to notify JavaScript that Flutter is up and running!
-//   /// This is setup by flutter.js when the main entrypoint bundle is injected.
-//   external DidCreateEngineInitializerFn? get didCreateEngineInitializer;
-// }
 
 // FlutterEngineInitializer
 
@@ -68,6 +49,7 @@ abstract class FlutterEngineInitializer{
 @anonymous
 @staticInterop
 abstract class InitializeEngineFnParameters {
+  external List<DomElement>? get windows;
 }
 
 /// Typedef for the function that initializes the flutter engine.

@@ -7,16 +7,19 @@ import 'package:js/js.dart';
 import 'js_interop/js_loader.dart';
 import 'js_interop/js_promise.dart';
 
+/// The type of a function that initializes an engine (in Dart)
+typedef InitEngineFn = Future<void> Function([InitializeEngineFnParameters? params]);
+
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
   /// Construct a FlutterLoader
-  AppBootstrap({required Function initEngine, required Function runApp}) :
+  AppBootstrap({required InitEngineFn initEngine, required Function runApp}) :
     _initEngine = initEngine, _runApp = runApp;
 
   // TODO(dit): Be more strict with the below typedefs, so we can add incoming params for each function.
 
   // A function to initialize the engine
-  final Function _initEngine;
+  final InitEngineFn _initEngine;
 
   // A function to run the app
   final Function _runApp;
@@ -55,7 +58,7 @@ class AppBootstrap {
           PromiseResolver<FlutterAppRunner> resolve,
           PromiseRejecter _,
         ) async {
-          await _initEngine();
+          await _initEngine(params);
           // Return an app runner object
           resolve(_prepareAppRunner());
         }));
