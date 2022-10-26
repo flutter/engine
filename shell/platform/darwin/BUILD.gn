@@ -29,12 +29,7 @@ source_set("flutter_channels") {
   ]
 
   deps = [
-    # "//flutter/common",
-    # "//flutter/flow",
     "//flutter/fml",
-    # "//flutter/runtime",
-    # "//flutter/shell/common",
-    # "//third_party/skia",
   ]
 
   public_deps = [ ":flutter_channels_arc" ]
