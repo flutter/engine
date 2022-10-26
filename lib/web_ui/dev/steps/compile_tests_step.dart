@@ -356,7 +356,7 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required bool forCanvasKit, 
   ];
 
   final int exitCode = await runProcess(
-    environment.dartPrecompiledRuntimePath,
+    environment.dartAotRuntimePath,
     arguments,
     workingDirectory: environment.webUiRootDir.path,
   );
