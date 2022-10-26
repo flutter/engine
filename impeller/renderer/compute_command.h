@@ -72,8 +72,8 @@ struct ComputeCommand {
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler);
+                    const std::shared_ptr<const Texture>& texture,
+                    const std::shared_ptr<const Sampler>& sampler);
 
   constexpr operator bool() const { return pipeline && pipeline->IsValid(); }
 };

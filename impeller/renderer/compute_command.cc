@@ -70,17 +70,18 @@ bool ComputeCommand::BindResource(
   return true;
 }
 
-bool ComputeCommand::BindResource(ShaderStage stage,
-                                  const SampledImageSlot& slot,
-                                  const ShaderMetadata& metadata,
-                                  std::shared_ptr<const Texture> texture,
-                                  std::shared_ptr<const Sampler> sampler) {
+bool ComputeCommand::BindResource(
+    ShaderStage stage,
+    const SampledImageSlot& slot,
+    const ShaderMetadata& metadata,
+    const std::shared_ptr<const Texture>& texture,
+    const std::shared_ptr<const Sampler>& sampler) {
   if (stage != ShaderStage::kCompute) {
     VALIDATION_LOG << "Use Command for non-compute shader stages.";
     return false;
   }
-  return BindResource(stage, slot, metadata, std::move(texture)) &&
-         BindResource(stage, slot, metadata, std::move(sampler));
+  return BindResource(stage, slot, metadata, texture) &&
+         BindResource(stage, slot, metadata, sampler);
 }
 
 }  // namespace impeller
