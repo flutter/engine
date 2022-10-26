@@ -662,6 +662,9 @@ bool Window::GetHighContrastEnabled() {
 }
 
 void Window::CreateAccessibilityRootNode() {
+  if (accessibility_root_) {
+    accessibility_root_->Release();
+  }
   accessibility_root_ = AccessibilityRootNode::Create();
 }
 
