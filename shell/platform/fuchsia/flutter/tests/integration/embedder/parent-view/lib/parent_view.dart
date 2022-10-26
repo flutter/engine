@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:args/args.dart';
 import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
 import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
+import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
 import 'package:fuchsia_services/services.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math_64;
 import 'package:zircon/zircon.dart';
@@ -59,6 +60,7 @@ class TestApp {
   final bool showOverlay;
   final bool hitTestable;
   final bool focusable;
+  final _responseListener = test_touch.TouchInputListenerProxy();
 
   Color _backgroundColor = _blue;
 
@@ -73,12 +75,7 @@ class TestApp {
     childView.create(hitTestable, focusable, (ByteData reply) {
         // Set up window allbacks.
         window.onPointerDataPacket = (PointerDataPacket packet) {
-          for (final data in packet.data) {
-            if (data.change == PointerChange.down) {
-              this._backgroundColor = _black;
-            }
-          }
-          window.scheduleFrame();
+          this.pointerDataPacket(packet);
         };
         window.onMetricsChanged = () {
           window.scheduleFrame();
@@ -158,6 +155,38 @@ class TestApp {
     sceneBuilder.pop();
 
     window.render(sceneBuilder.build());
+  }
+
+  void pointerDataPacket(PointerDataPacket packet) async {
+    int nowNanos = System.clockGetMonotonic();
+
+    for (PointerData data in packet.data) {
+      print('parent-view received tap: ${data.toStringFull()}');
+
+      if (data.change == PointerChange.down) {
+        this._backgroundColor = _black;
+      }
+
+      if (data.change == PointerChange.down || data.change == PointerChange.move) {
+        Incoming.fromSvcPath()
+          ..connectToService(_responseListener)
+          ..close();
+
+        _respond(test_touch.TouchInputListenerReportTouchInputRequest(
+          localX: data.physicalX,
+          localY: data.physicalY,
+          timeReceived: nowNanos,
+          componentName: 'parent-view',
+        ));
+      }
+    }
+
+    window.scheduleFrame();
+  }
+
+  void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
+    print('parent-view reporting touch input to TouchInputListener');
+    await _responseListener.reportTouchInput(request);
   }
 }
 

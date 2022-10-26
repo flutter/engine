@@ -10,6 +10,13 @@ import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 dart_library("lib") {
   package_name = "child-view"
   sources = [ "child_view.dart" ]
+
+  deps = [
+    "//flutter/shell/platform/fuchsia/dart:args",
+    "//flutter/tools/fuchsia/dart:fuchsia_services",
+    "//flutter/tools/fuchsia/dart:zircon",
+    "//flutter/tools/fuchsia/fidl:fuchsia.ui.test.input",
+  ]
 }
 
 flutter_component("component") {

@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
 import 'dart:ui';
+
+import 'package:args/args.dart';
+import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
+import 'package:fuchsia_services/services.dart';
+import 'package:zircon/zircon.dart';
 
 void main(List<String> args) {
   print('child-view: starting');
@@ -16,6 +22,8 @@ class TestApp {
   static const _pink = Color.fromARGB(255, 255, 0, 255);
 
   Color _backgroundColor = _pink;
+
+  final _responseListener = test_touch.TouchInputListenerProxy();
 
   void run() {
     window.onPointerDataPacket = (PointerDataPacket packet) {
@@ -49,11 +57,34 @@ class TestApp {
   }
 
   void pointerDataPacket(PointerDataPacket packet) {
-    for (final data in packet.data) {
+    int nowNanos = System.clockGetMonotonic();
+
+    for (PointerData data in packet.data) {
+      print('child-view received tap: ${data.toStringFull()}');
+
       if (data.change == PointerChange.down) {
         this._backgroundColor = _yellow;
       }
+
+      if (data.change == PointerChange.down || data.change == PointerChange.move) {
+        Incoming.fromSvcPath()
+          ..connectToService(_responseListener)
+          ..close();
+        
+        _respond(test_touch.TouchInputListenerReportTouchInputRequest(
+          localX: data.physicalX,
+          localY: data.physicalY,
+          timeReceived: nowNanos,
+          componentName: 'child-view',
+        ));
+      }
     }
+
     window.scheduleFrame();
+  }
+
+  void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
+    print('child-view reporting touch input to TouchInputListener');
+    await _responseListener.reportTouchInput(request);
   }
 }

@@ -31,10 +31,7 @@ using fuchsia_test_utils::CheckViewExistsInSnapshot;
 
 void PortableUITest::SetUp() {
   SetUpRealmBase();
-
   ExtendRealm();
-
-  realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
 }
 
 void PortableUITest::SetUpRealmBase() {
@@ -139,15 +136,31 @@ void PortableUITest::WatchViewGeometry() {
   });
 }
 
-bool PortableUITest::HasViewConnected(zx_koid_t view_ref_koid) {
-  return last_view_tree_snapshot_.has_value() &&
-         CheckViewExistsInSnapshot(*last_view_tree_snapshot_, view_ref_koid);
+bool PortableUITest::HasViewConnected(
+    fuchsia::ui::observation::geometry::ViewTreeWatcherPtr& view_tree_watcher,
+    std::optional<fuchsia::ui::observation::geometry::WatchResponse>& watch_response,
+    zx_koid_t view_ref_koid) {
+  std::optional<fuchsia::ui::observation::geometry::WatchResponse> watch_result;
+  view_tree_watcher->Watch(
+      [&watch_result](auto response) { watch_result = std::move(response); });
+  FML_LOG(INFO) << "Waiting for view tree watch result";
+  RunLoopUntil([&watch_result] { return watch_result.has_value(); });
+  FML_LOG(INFO) << "Received for view tree watch result";
+  if (CheckViewExistsInUpdates(watch_result->updates(), view_ref_koid)) {
+    watch_response = std::move(watch_result);
+  };
+  return watch_response.has_value();
 }
 
 void PortableUITest::LaunchClient() {
+  realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
+
+  RegisterTouchScreen();
+
   scene_provider_ = realm_->Connect<fuchsia::ui::test::scene::Controller>();
   scene_provider_.set_error_handler(
       [](auto) { FML_LOG(ERROR) << "Error from test scene provider"; });
+
   fuchsia::ui::test::scene::ControllerAttachClientViewRequest request;
   request.set_view_provider(realm_->Connect<fuchsia::ui::app::ViewProvider>());
   scene_provider_->RegisterViewTreeWatcher(view_tree_watcher_.NewRequest(),
@@ -160,12 +173,27 @@ void PortableUITest::LaunchClient() {
   FML_LOG(INFO) << "Waiting for client view ref koid";
   RunLoopUntil([this] { return client_root_view_ref_koid_.has_value(); });
 
-  WatchViewGeometry();
-
   FML_LOG(INFO) << "Waiting for client view to connect";
-  RunLoopUntil(
-      [this] { return HasViewConnected(*client_root_view_ref_koid_); });
+  // Wait for the client view to get attached to the view tree.
+  std::optional<fuchsia::ui::observation::geometry::WatchResponse> watch_response;
+  RunLoopUntil([this, &watch_response] {
+    return HasViewConnected(view_tree_watcher_, watch_response,
+                            *client_root_view_ref_koid_);
+  });
   FML_LOG(INFO) << "Client view has rendered";
+
+  scenic_ = realm_->Connect<fuchsia::ui::scenic::Scenic>();
+  FML_LOG(INFO) << "Launched parent view";
+
+  // Get the display dimensions.
+  FML_LOG(INFO) << "Waiting for scenic display info";
+  scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info) {
+    display_width_ = display_info.width_in_px;
+    display_height_ = display_info.height_in_px;
+    FML_LOG(INFO) << "Got display_width = " << display_width_
+                  << " and display_height = " << display_height_;
+  });
+  RunLoopUntil([this] { return display_width_ != 0 && display_height_ != 0; });
 }
 
 void PortableUITest::RegisterTouchScreen() {
