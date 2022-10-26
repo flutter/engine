@@ -28,9 +28,7 @@ source_set("flutter_channels") {
     "common/buffer_conversions.mm",
   ]
 
-  deps = [
-    "//flutter/fml",
-  ]
+  deps = [ "//flutter/fml" ]
 
   public_deps = [ ":flutter_channels_arc" ]
 
