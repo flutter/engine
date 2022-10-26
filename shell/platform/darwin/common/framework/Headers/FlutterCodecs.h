@@ -230,7 +230,7 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The method name.
  */
-@property(readonly, nonatomic, copy) NSString* method;
+@property(readonly, nonatomic) NSString* method;
 
 /**
  * The arguments.
@@ -257,12 +257,12 @@ FLUTTER_DARWIN_EXPORT
 /**
  The error code.
  */
-@property(readonly, nonatomic, copy) NSString* code;
+@property(readonly, nonatomic) NSString* code;
 
 /**
  The error message.
  */
-@property(readonly, nonatomic, nullable, copy) NSString* message;
+@property(readonly, nonatomic, nullable) NSString* message;
 
 /**
  The error details.
@@ -339,7 +339,7 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The raw underlying data buffer.
  */
-@property(readonly, nonatomic, copy) NSData* data;
+@property(readonly, nonatomic) NSData* data;
 
 /**
  * The type of the encoded values.
