@@ -32,6 +32,7 @@ using fuchsia_test_utils::CheckViewExistsInSnapshot;
 void PortableUITest::SetUp() {
   SetUpRealmBase();
   ExtendRealm();
+  realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
 }
 
 void PortableUITest::SetUpRealmBase() {
@@ -136,27 +137,15 @@ void PortableUITest::WatchViewGeometry() {
   });
 }
 
-bool PortableUITest::HasViewConnected(
-    fuchsia::ui::observation::geometry::ViewTreeWatcherPtr& view_tree_watcher,
-    std::optional<fuchsia::ui::observation::geometry::WatchResponse>&
-        watch_response,
-    zx_koid_t view_ref_koid) {
-  std::optional<fuchsia::ui::observation::geometry::WatchResponse> watch_result;
-  view_tree_watcher->Watch(
-      [&watch_result](auto response) { watch_result = std::move(response); });
-  FML_LOG(INFO) << "Waiting for view tree watch result";
-  RunLoopUntil([&watch_result] { return watch_result.has_value(); });
-  FML_LOG(INFO) << "Received for view tree watch result";
-  if (CheckViewExistsInUpdates(watch_result->updates(), view_ref_koid)) {
-    watch_response = std::move(watch_result);
-  };
-  return watch_response.has_value();
+bool PortableUITest::HasViewConnected(zx_koid_t view_ref_koid) {
+  return last_view_tree_snapshot_.has_value() &&
+         CheckViewExistsInSnapshot(*last_view_tree_snapshot_, view_ref_koid);
 }
 
 void PortableUITest::LaunchClient() {
-  realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
+  // realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
 
-  RegisterTouchScreen();
+  // RegisterTouchScreen();
 
   scene_provider_ = realm_->Connect<fuchsia::ui::test::scene::Controller>();
   scene_provider_.set_error_handler(
@@ -174,28 +163,69 @@ void PortableUITest::LaunchClient() {
   FML_LOG(INFO) << "Waiting for client view ref koid";
   RunLoopUntil([this] { return client_root_view_ref_koid_.has_value(); });
 
+  WatchViewGeometry();
+
   FML_LOG(INFO) << "Waiting for client view to connect";
   // Wait for the client view to get attached to the view tree.
-  std::optional<fuchsia::ui::observation::geometry::WatchResponse>
-      watch_response;
-  RunLoopUntil([this, &watch_response] {
-    return HasViewConnected(view_tree_watcher_, watch_response,
-                            *client_root_view_ref_koid_);
-  });
+  RunLoopUntil(
+      [this] { return HasViewConnected(*client_root_view_ref_koid_); });
   FML_LOG(INFO) << "Client view has rendered";
 
-  scenic_ = realm_->Connect<fuchsia::ui::scenic::Scenic>();
-  FML_LOG(INFO) << "Launched parent view";
+  // scenic_ = realm_->Connect<fuchsia::ui::scenic::Scenic>();
+  // FML_LOG(INFO) << "Launched parent view";
 
-  // Get the display dimensions.
-  FML_LOG(INFO) << "Waiting for scenic display info";
-  scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info) {
-    display_width_ = display_info.width_in_px;
-    display_height_ = display_info.height_in_px;
-    FML_LOG(INFO) << "Got display_width = " << display_width_
-                  << " and display_height = " << display_height_;
+  // // Get the display dimensions.
+  // FML_LOG(INFO) << "Waiting for scenic display info";
+  // scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info) {
+  //   display_width_ = display_info.width_in_px;
+  //   display_height_ = display_info.height_in_px;
+  //   FML_LOG(INFO) << "Got display_width = " << display_width_
+  //                 << " and display_height = " << display_height_;
+  // });
+  // RunLoopUntil([this] { return display_width_ != 0 && display_height_ != 0; });
+}
+
+void PortableUITest::LaunchClientWithEmbeddedView() {
+  LaunchClient();
+  // At this point, the parent view must have rendered, so we just need to wait
+  // for the embedded view.
+  RunLoopUntil([this] {
+    if (!last_view_tree_snapshot_.has_value() ||
+        !last_view_tree_snapshot_->has_views()) {
+      return false;
+    }
+
+    if (!client_root_view_ref_koid_.has_value()) {
+      return false;
+    }
+
+    for (const auto& view : last_view_tree_snapshot_->views()) {
+      if (!view.has_view_ref_koid() ||
+          view.view_ref_koid() != *client_root_view_ref_koid_) {
+        continue;
+      }
+
+      if (view.children().empty()) {
+        return false;
+      }
+
+      // NOTE: We can't rely on the presence of the child view in
+      // `view.children()` to guarantee that it has rendered. The child view
+      // also needs to be present in `last_view_tree_snapshot_->views`.
+      return std::count_if(
+                 last_view_tree_snapshot_->views().begin(),
+                 last_view_tree_snapshot_->views().end(),
+                 [view_to_find =
+                      view.children().back()](const auto& view_to_check) {
+                   return view_to_check.has_view_ref_koid() &&
+                          view_to_check.view_ref_koid() == view_to_find;
+                 }) > 0;
+    }
+
+    return false;
   });
-  RunLoopUntil([this] { return display_width_ != 0 && display_height_ != 0; });
+
+  FML_LOG(INFO) << "Embedded view has rendered";
 }
 
 void PortableUITest::RegisterTouchScreen() {

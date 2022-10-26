@@ -46,9 +46,7 @@
 #include <gtest/gtest.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/shell/platform/fuchsia/flutter/tests/integration/utils/color.h"
 #include "flutter/shell/platform/fuchsia/flutter/tests/integration/utils/portable_ui_test.h"
-#include "flutter/shell/platform/fuchsia/flutter/tests/integration/utils/screenshot.h"
 
 // This test exercises the touch input dispatch path from Input Pipeline to a
 // Scenic client. It is a multi-component test, and carefully avoids sleeping or
@@ -129,10 +127,6 @@ using RealmBuilder = component_testing::RealmBuilder;
 // Max timeout in failure cases.
 // Set this as low as you can that still works across all test platforms.
 constexpr zx::duration kTimeout = zx::min(1);
-// Timeout for Scenic's |TakeScreenshot| FIDL call.
-constexpr zx::duration kScreenshotTimeout = zx::sec(10);
-constexpr fuchsia_test_utils::Color kChildBackgroundColor = {0xFF, 0x00, 0xFF,
-                                                             0xFF};  // Pink
 
 constexpr auto kTestUIStackUrl =
     "fuchsia-pkg://fuchsia.com/gfx-root-presenter-test-ui-stack#meta/"
@@ -231,6 +225,22 @@ class FlutterTapTestBase : public PortableUITest,
               << "\n\n>> Test did not complete in time, terminating.  <<\n\n";
         },
         kTimeout);
+
+    // Get the display dimensions.
+    FML_LOG(INFO) << "Waiting for scenic display info";
+    scenic_ = realm_root()->template Connect<fuchsia::ui::scenic::Scenic>();
+    scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info) {
+      display_width_ = display_info.width_in_px;
+      display_height_ = display_info.height_in_px;
+      FML_LOG(INFO) << "Got display_width = " << display_width_
+                    << " and display_height = " << display_height_;
+    });
+    RunLoopUntil(
+        [this] { return display_width_ != 0 && display_height_ != 0; });
+
+    // Register input injection device.
+    FML_LOG(INFO) << "Registering input injection device";
+    RegisterTouchScreen();
   }
 
   bool LastEventReceivedMatches(float expected_x,
@@ -314,32 +324,6 @@ class FlutterTapTest : public FlutterTapTestBase {
 };
 
 class FlutterEmbedTapTest : public FlutterTapTestBase {
- protected:
-  // Takes a screenshot and waits for child view to embed itself to the parent
-  // view
-  bool WaitForEmbed() {
-    return RunLoopWithTimeoutOrUntil(
-        [this] {
-          fuchsia::ui::scenic::ScreenshotData screenshot_out;
-          scenic_->TakeScreenshot(
-              [this, &screenshot_out](
-                  fuchsia::ui::scenic::ScreenshotData screenshot, bool status) {
-                EXPECT_TRUE(status) << "Failed to take screenshot";
-                screenshot_out = std::move(screenshot);
-                QuitLoop();
-              });
-          EXPECT_FALSE(RunLoopWithTimeout(kScreenshotTimeout))
-              << "Timed out waiting for screenshot.";
-
-          auto screenshot = fuchsia_test_utils::Screenshot(screenshot_out);
-          auto histogram = screenshot.Histogram();
-
-          bool color_found = histogram[kChildBackgroundColor] > 0;
-          return color_found;
-        },
-        kTimeout);
-  }
-
  private:
   void ExtendRealm() override {
     FML_LOG(INFO) << "Extending realm";
@@ -417,11 +401,8 @@ INSTANTIATE_TEST_SUITE_P(FlutterEmbedTapTestParameterized,
 TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
   // Launch view
   FML_LOG(INFO) << "Initializing scene";
-  LaunchClient();
+  LaunchClientWithEmbeddedView();
   FML_LOG(INFO) << "Client launched";
-  // Wait for child view to embed and render to proceed with the test.
-  WaitForEmbed();
-  FML_LOG(INFO) << "Embedded child view has rendered";
 
   {
     // Embedded child view takes up the left side of the screen
