@@ -109,8 +109,8 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
 
 void PlatformView::UpdateSemantics(
     SemanticsNodeUpdates update,  // NOLINT(performance-unnecessary-value-param)
-    CustomAccessibilityActionUpdates actions) {
-}  // NOLINT(performance-unnecessary-value-param)
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    CustomAccessibilityActionUpdates actions) {}
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
