@@ -70,7 +70,7 @@ class TestApp {
         Incoming.fromSvcPath()
           ..connectToService(_responseListener)
           ..close();
-        
+
         _respond(test_touch.TouchInputListenerReportTouchInputRequest(
           localX: data.physicalX,
           localY: data.physicalY,

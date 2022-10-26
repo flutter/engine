@@ -67,7 +67,7 @@ class PortableUITest : public ::loop_fixture::RealLoop {
  protected:
   component_testing::RealmBuilder* realm_builder() { return &realm_builder_; }
   component_testing::RealmRoot* realm_root() { return realm_.get(); }
-  
+
   fuchsia::ui::scenic::ScenicPtr scenic_;
   uint32_t display_width_ = 0;
   uint32_t display_height_ = 0;
