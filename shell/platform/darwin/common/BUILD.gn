@@ -16,15 +16,7 @@ source_set("common") {
     "command_line.mm",
   ]
 
-  deps = [
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//third_party/dart/runtime:dart_api",
-    "//third_party/skia",
-  ]
+  deps = [ "//flutter/fml" ]
 
   public_configs = [ "//flutter:config" ]
 }

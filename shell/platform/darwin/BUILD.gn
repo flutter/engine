@@ -29,12 +29,12 @@ source_set("flutter_channels") {
   ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/flow",
+    # "//flutter/common",
+    # "//flutter/flow",
     "//flutter/fml",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//third_party/skia",
+    # "//flutter/runtime",
+    # "//flutter/shell/common",
+    # "//third_party/skia",
   ]
 
   public_deps = [ ":flutter_channels_arc" ]
@@ -63,15 +63,6 @@ source_set("flutter_channels_arc") {
     "common/framework/Headers/FlutterCodecs.h",
     "common/framework/Headers/FlutterMacros.h",
     "common/framework/Source/FlutterStandardCodec_Internal.h",
-  ]
-
-  deps = [
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//third_party/skia",
   ]
 
   public_configs = [ "//flutter:config" ]
