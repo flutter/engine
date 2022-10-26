@@ -127,9 +127,9 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
   NSAssert(code, @"Code cannot be nil");
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _code = code;
-  _message = message;
-  _details = details;
+  _code = [code copy];
+  _message = [message copy];
+  _details = [details copy];
   return self;
 }
 
