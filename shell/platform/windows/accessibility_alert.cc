@@ -24,23 +24,6 @@ IFACEMETHODIMP AccessibilityAlert::accDoDefaultAction(VARIANT var_id) {
   return E_FAIL;
 }
 
-// Retrieves the specified object's current screen location.
-IFACEMETHODIMP AccessibilityAlert::accLocation(LONG* physical_pixel_left,
-                                               LONG* physical_pixel_top,
-                                               LONG* width,
-                                               LONG* height,
-                                               VARIANT var_id) {
-  return E_NOTIMPL;
-}
-
-// Traverses to another UI element and retrieves the object.
-IFACEMETHODIMP AccessibilityAlert::accNavigate(LONG nav_dir,
-                                               VARIANT start,
-                                               VARIANT* end) {
-  end->vt = VT_EMPTY;
-  return E_NOTIMPL;
-}
-
 // Retrieves an IDispatch interface pointer for the specified child.
 IFACEMETHODIMP AccessibilityAlert::get_accChild(VARIANT var_child,
                                                 IDispatch** disp_child) {
@@ -59,31 +42,11 @@ IFACEMETHODIMP AccessibilityAlert::get_accChildCount(LONG* child_count) {
   return S_OK;
 }
 
-// Retrieves a string that describes the object's default action.
-IFACEMETHODIMP AccessibilityAlert::get_accDefaultAction(VARIANT var_id,
-                                                        BSTR* default_action) {
-  *default_action = nullptr;
-  return E_NOTIMPL;
-}
-
 // Retrieves the tooltip description.
 IFACEMETHODIMP AccessibilityAlert::get_accDescription(VARIANT var_id,
                                                       BSTR* desc) {
   *desc = SysAllocString(text_.c_str());
   return S_OK;
-}
-
-// Retrieves the object that has the keyboard focus.
-IFACEMETHODIMP AccessibilityAlert::get_accFocus(VARIANT* focus_child) {
-  focus_child->vt = VT_EMPTY;
-  return E_NOTIMPL;
-}
-
-// Retrieves the specified object's shortcut.
-IFACEMETHODIMP AccessibilityAlert::get_accKeyboardShortcut(VARIANT var_id,
-                                                           BSTR* access_key) {
-  *access_key = nullptr;
-  return E_NOTIMPL;
 }
 
 // Retrieves the name of the specified object.
@@ -129,11 +92,6 @@ IFACEMETHODIMP AccessibilityAlert::get_accValue(VARIANT var_id, BSTR* value) {
   return S_OK;
 }
 
-IFACEMETHODIMP AccessibilityAlert::put_accValue(VARIANT var_id,
-                                                BSTR new_value) {
-  return E_NOTIMPL;
-}
-
 // IAccessible methods not implemented.
 IFACEMETHODIMP AccessibilityAlert::get_accSelection(VARIANT* selected) {
   selected->vt = VT_EMPTY;
@@ -141,6 +99,16 @@ IFACEMETHODIMP AccessibilityAlert::get_accSelection(VARIANT* selected) {
 }
 
 IFACEMETHODIMP AccessibilityAlert::accSelect(LONG flags_sel, VARIANT var_id) {
+  return E_NOTIMPL;
+}
+
+IFACEMETHODIMP AccessibilityAlert::put_accValue(VARIANT var_id,
+                                                BSTR new_value) {
+  return E_NOTIMPL;
+}
+
+IFACEMETHODIMP AccessibilityAlert::get_accFocus(VARIANT* focus_child) {
+  focus_child->vt = VT_EMPTY;
   return E_NOTIMPL;
 }
 
@@ -155,7 +123,35 @@ IFACEMETHODIMP AccessibilityAlert::get_accHelpTopic(BSTR* help_file,
   }
   return E_NOTIMPL;
 }
+
 IFACEMETHODIMP AccessibilityAlert::put_accName(VARIANT var_id, BSTR put_name) {
+  return E_NOTIMPL;
+}
+
+IFACEMETHODIMP AccessibilityAlert::get_accKeyboardShortcut(VARIANT var_id,
+                                                           BSTR* access_key) {
+  *access_key = nullptr;
+  return E_NOTIMPL;
+}
+
+IFACEMETHODIMP AccessibilityAlert::accLocation(LONG* physical_pixel_left,
+                                               LONG* physical_pixel_top,
+                                               LONG* width,
+                                               LONG* height,
+                                               VARIANT var_id) {
+  return E_NOTIMPL;
+}
+
+IFACEMETHODIMP AccessibilityAlert::accNavigate(LONG nav_dir,
+                                               VARIANT start,
+                                               VARIANT* end) {
+  end->vt = VT_EMPTY;
+  return E_NOTIMPL;
+}
+
+IFACEMETHODIMP AccessibilityAlert::get_accDefaultAction(VARIANT var_id,
+                                                        BSTR* default_action) {
+  *default_action = nullptr;
   return E_NOTIMPL;
 }
 
