@@ -339,7 +339,7 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The raw underlying data buffer.
  */
-@property(readonly, nonatomic) NSData* data;
+@property(readonly, nonatomic, copy) NSData* data;
 
 /**
  * The type of the encoded values.
