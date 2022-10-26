@@ -11,7 +11,7 @@ namespace flutter {
 sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::Make(
     const SkImageInfo& image_info,
     sk_sp<DisplayList> display_list,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPUSkia>(new DlDeferredImageGPUSkia(
@@ -24,7 +24,7 @@ sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::Make(
 sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::MakeFromLayerTree(
     const SkImageInfo& image_info,
     std::shared_ptr<LayerTree> layer_tree,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPUSkia>(new DlDeferredImageGPUSkia(
@@ -42,14 +42,14 @@ DlDeferredImageGPUSkia::DlDeferredImageGPUSkia(
 
 // |DlImage|
 DlDeferredImageGPUSkia::~DlDeferredImageGPUSkia() {
-  fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner_, [image_wrapper = std::move(image_wrapper_)]() {
-        if (!image_wrapper) {
-          return;
-        }
-        image_wrapper->Unregister();
-        image_wrapper->DeleteTexture();
-      });
+  fml::TaskRunner::RunNowOrPostTask(raster_task_runner_,
+                                    [image_wrapper = image_wrapper_]() {
+                                      if (!image_wrapper) {
+                                        return;
+                                      }
+                                      image_wrapper->Unregister();
+                                      image_wrapper->DeleteTexture();
+                                    });
 }
 
 // |DlImage|
@@ -94,7 +94,7 @@ std::shared_ptr<DlDeferredImageGPUSkia::ImageWrapper>
 DlDeferredImageGPUSkia::ImageWrapper::Make(
     const SkImageInfo& image_info,
     sk_sp<DisplayList> display_list,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
@@ -108,7 +108,7 @@ std::shared_ptr<DlDeferredImageGPUSkia::ImageWrapper>
 DlDeferredImageGPUSkia::ImageWrapper::MakeFromLayerTree(
     const SkImageInfo& image_info,
     std::shared_ptr<LayerTree> layer_tree,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   auto wrapper = std::shared_ptr<ImageWrapper>(
@@ -121,7 +121,7 @@ DlDeferredImageGPUSkia::ImageWrapper::MakeFromLayerTree(
 DlDeferredImageGPUSkia::ImageWrapper::ImageWrapper(
     const SkImageInfo& image_info,
     sk_sp<DisplayList> display_list,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue)
     : image_info_(image_info),

@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <type_traits>
+#include <utility>
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -24,8 +25,8 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-void TextContents::SetTextFrame(TextFrame frame) {
-  frame_ = std::move(frame);
+void TextContents::SetTextFrame(const TextFrame& frame) {
+  frame_ = frame;
 }
 
 void TextContents::SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas) {
@@ -34,10 +35,12 @@ void TextContents::SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas) {
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     GlyphAtlas::Type type,
+    std::shared_ptr<GlyphAtlasContext> atlas_context,
     std::shared_ptr<Context> context) const {
   FML_DCHECK(lazy_atlas_);
   if (lazy_atlas_) {
-    return lazy_atlas_->CreateOrGetGlyphAtlas(type, context);
+    return lazy_atlas_->CreateOrGetGlyphAtlas(type, std::move(atlas_context),
+                                              std::move(context));
   }
 
   return nullptr;
@@ -56,13 +59,15 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 }
 
 template <class TPipeline>
-static bool CommonRender(const ContentContext& renderer,
-                         const Entity& entity,
-                         RenderPass& pass,
-                         const Color& color,
-                         const TextFrame& frame,
-                         std::shared_ptr<GlyphAtlas> atlas,
-                         Command& cmd) {
+static bool CommonRender(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass,
+    const Color& color,
+    const TextFrame& frame,
+    std::shared_ptr<GlyphAtlas>
+        atlas,  // NOLINT(performance-unnecessary-value-param)
+    Command& cmd) {
   using VS = typename TPipeline::VertexShader;
   using FS = typename TPipeline::FragmentShader;
 
@@ -172,8 +177,9 @@ static bool CommonRender(const ContentContext& renderer,
 bool TextContents::RenderSdf(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
-  auto atlas = ResolveAtlas(GlyphAtlas::Type::kSignedDistanceField,
-                            renderer.GetContext());
+  auto atlas =
+      ResolveAtlas(GlyphAtlas::Type::kSignedDistanceField,
+                   renderer.GetGlyphAtlasContext(), renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -208,7 +214,7 @@ bool TextContents::Render(const ContentContext& renderer,
   auto atlas =
       ResolveAtlas(lazy_atlas_->HasColor() ? GlyphAtlas::Type::kColorBitmap
                                            : GlyphAtlas::Type::kAlphaBitmap,
-                   renderer.GetContext());
+                   renderer.GetGlyphAtlasContext(), renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";

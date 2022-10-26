@@ -165,18 +165,11 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   ASSERT_TRUE(sampler);
 
   Vector3 euler_angles;
-  bool first_frame = true;
   SinglePassCallback callback = [&](RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 80});
-      ImGui::SetNextWindowPos({20, 20});
-    }
-
     static Degrees fov_y(60);
     static Scalar distance = 10;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Field of view", &fov_y.degrees, 0, 180);
     ImGui::SliderFloat("Camera distance", &distance, 0, 30);
     ImGui::End();
@@ -397,18 +390,25 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   VertexBufferBuilder<VS::PerVertexData> builder;
 
-  ASSERT_EQ(
-      Tessellator::Result::kSuccess,
-      Tessellator{}.Tessellate(FillType::kPositive,
-                               PathBuilder{}
-                                   .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                                   .TakePath()
-                                   .CreatePolyline(),
-                               [&builder](Point vtx) {
-                                 VS::PerVertexData data;
-                                 data.vtx = vtx;
-                                 builder.AppendVertex(data);
-                               }));
+  ASSERT_EQ(Tessellator::Result::kSuccess,
+            Tessellator{}.Tessellate(
+                FillType::kPositive,
+                PathBuilder{}
+                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
+                    .TakePath()
+                    .CreatePolyline(),
+                [&builder](const float* vertices, size_t vertices_size,
+                           const uint16_t* indices, size_t indices_size) {
+                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    VS::PerVertexData data;
+                    data.vtx = {vertices[i], vertices[i + 1]};
+                    builder.AppendVertex(data);
+                  }
+                  for (auto i = 0u; i < indices_size; i++) {
+                    builder.AppendIndex(indices[i]);
+                  }
+                  return true;
+                }));
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -425,11 +425,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   cmd.label = "InstancedDraw";
 
   static constexpr size_t kInstancesCount = 5u;
-  std::vector<VS::InstanceInfo> instances;
+  VS::InstanceInfo<kInstancesCount> instances;
   for (size_t i = 0; i < kInstancesCount; i++) {
-    VS::InstanceInfo info;
-    info.colors = Color::Random();
-    instances.emplace_back(info);
+    instances.colors[i] = Color::Random();
   }
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
@@ -593,10 +591,6 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    if (first_frame) {
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
     const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
                                      MipFilter::kLinear};

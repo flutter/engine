@@ -709,6 +709,8 @@ FILE: ../../../flutter/display_list/display_list_path_effect.h
 FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
 FILE: ../../../flutter/display_list/display_list_rtree.cc
 FILE: ../../../flutter/display_list/display_list_rtree.h
+FILE: ../../../flutter/display_list/display_list_runtime_effect.cc
+FILE: ../../../flutter/display_list/display_list_runtime_effect.h
 FILE: ../../../flutter/display_list/display_list_sampling_options.h
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
@@ -1105,6 +1107,7 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
@@ -1129,6 +1132,7 @@ FILE: ../../../flutter/impeller/display_list/nine_patch_converter.cc
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.h
 FILE: ../../../flutter/impeller/display_list/vertices_converter.cc
 FILE: ../../../flutter/impeller/display_list/vertices_converter.h
+FILE: ../../../flutter/impeller/docs/assets/launch-app.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image1.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image10.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image11.png
@@ -1147,6 +1151,7 @@ FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image6.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image7.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image8.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image9.png
+FILE: ../../../flutter/impeller/docs/assets/render-doc-capture.png
 FILE: ../../../flutter/impeller/docs/assets/shader_pipeline.png
 FILE: ../../../flutter/impeller/docs/assets/showcase.png
 FILE: ../../../flutter/impeller/docs/assets/xcode_frame_capture/image1.png
@@ -1210,10 +1215,10 @@ FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.h
+FILE: ../../../flutter/impeller/entity/contents/runtime_effect_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/runtime_effect_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
-FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.h
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/text_contents.cc
@@ -1276,6 +1281,7 @@ FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
+FILE: ../../../flutter/impeller/entity/shaders/position_no_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
@@ -1399,6 +1405,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
@@ -1495,6 +1503,8 @@ FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
+FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
+FILE: ../../../flutter/impeller/renderer/gpu_tracer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer.cc
 FILE: ../../../flutter/impeller/renderer/host_buffer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer_unittests.cc
@@ -1551,6 +1561,7 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
+FILE: ../../../flutter/impeller/runtime_stage/runtime_types.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_types.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
@@ -1922,6 +1933,8 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/canvas_paragraph.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/font_collection.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/fragmenter.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/layout_fragmenter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/layout_service.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/line_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/line_breaker.dart
@@ -2073,6 +2086,7 @@ FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
+FILE: ../../../flutter/shell/common/vsync_waiter_unittests.cc
 FILE: ../../../flutter/shell/common/vsync_waiters_test.cc
 FILE: ../../../flutter/shell/common/vsync_waiters_test.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
@@ -2400,8 +2414,10 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
-FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h
-FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.mm
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
