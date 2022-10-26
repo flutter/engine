@@ -588,11 +588,13 @@ void LayerStateStack::SaveEntry::restore(LayerStateStack* stack) const {
 
 void LayerStateStack::SaveLayerEntry::apply(LayerStateStack* stack) const {
   if (stack->canvas_) {
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
     SkPaint paint;
     stack->canvas_->saveLayer(bounds_,
                               stack->outstanding_.fill(paint, blend_mode_));
   }
   if (stack->builder_) {
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
     DlPaint paint;
     stack->builder_->saveLayer(&bounds_,
                                stack->outstanding_.fill(paint, blend_mode_));
@@ -639,6 +641,7 @@ void LayerStateStack::ColorFilterEntry::apply(LayerStateStack* stack) const {
 
 void LayerStateStack::BackdropFilterEntry::apply(LayerStateStack* stack) const {
   if (stack->canvas_) {
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
     sk_sp<SkImageFilter> backdrop_filter =
         filter_ ? filter_->skia_object() : nullptr;
     SkPaint paint;
@@ -647,6 +650,7 @@ void LayerStateStack::BackdropFilterEntry::apply(LayerStateStack* stack) const {
         SkCanvas::SaveLayerRec{&bounds_, pPaint, backdrop_filter.get(), 0});
   }
   if (stack->builder_) {
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
     DlPaint paint;
     DlPaint* pPaint = stack->outstanding_.fill(paint, blend_mode_);
     stack->builder_->saveLayer(&bounds_, pPaint, filter_.get());
