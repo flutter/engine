@@ -11,7 +11,6 @@ import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
 import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
 import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
 import 'package:fuchsia_services/services.dart';
-import 'package:vector_math/vector_math_64.dart' as vector_math_64;
 import 'package:zircon/zircon.dart';
 
 void main(List<String> args) {

@@ -131,6 +131,8 @@ using RealmBuilder = component_testing::RealmBuilder;
 constexpr zx::duration kTimeout = zx::min(1);
 // Timeout for Scenic's |TakeScreenshot| FIDL call.
 constexpr zx::duration kScreenshotTimeout = zx::sec(10);
+constexpr fuchsia_test_utils::Color kChildBackgroundColor = {0xFF, 0x00, 0xFF,
+                                                             0xFF};  // Pink
 
 constexpr auto kTestUIStackUrl =
     "fuchsia-pkg://fuchsia.com/gfx-root-presenter-test-ui-stack#meta/"
@@ -318,8 +320,6 @@ class FlutterEmbedTapTest : public FlutterTapTestBase {
   bool WaitForEmbed() {
     return RunLoopWithTimeoutOrUntil(
         [this] {
-          constexpr fuchsia_test_utils::Color kChildBackgroundColor = {
-              0xFF, 0x00, 0xFF, 0xFF};  // Pink
           fuchsia::ui::scenic::ScreenshotData screenshot_out;
           scenic_->TakeScreenshot(
               [this, &screenshot_out](

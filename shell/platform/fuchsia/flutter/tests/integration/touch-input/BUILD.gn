@@ -50,8 +50,6 @@ executable("touch-input-test-bin") {
     "touch-input-view:package",
     "//build/fuchsia/fidl:fuchsia.ui.gfx",
     "//flutter/fml",
-    "//flutter/shell/platform/fuchsia/flutter/tests/integration/embedder/child-view:package",
-    "//flutter/shell/platform/fuchsia/flutter/tests/integration/embedder/parent-view:package",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:color",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:portable_ui_test",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:screenshot",
