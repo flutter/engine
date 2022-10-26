@@ -117,11 +117,10 @@ PlatformViewEmbedder::PlatformViewEmbedder(
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
 
 void PlatformViewEmbedder::UpdateSemantics(
-    flutter::SemanticsNodeUpdates update,
-    flutter::CustomAccessibilityActionUpdates actions) {
+    const flutter::SemanticsNodeUpdates& update,
+    const flutter::CustomAccessibilityActionUpdates& actions) {
   if (platform_dispatch_table_.update_semantics_callback != nullptr) {
-    platform_dispatch_table_.update_semantics_callback(std::move(update),
-                                                       std::move(actions));
+    platform_dispatch_table_.update_semantics_callback(update, actions);
   }
 }
 

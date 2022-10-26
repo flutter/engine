@@ -155,7 +155,7 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   void outdent(int spaces) { cur_indent_ -= spaces; }
 
   template <class T>
-  std::ostream& out_array(std::string name, int count, const T array[]);
+  std::ostream& out_array(const std::string& name, int count, const T array[]);
 
   std::ostream& startl();
 

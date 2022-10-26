@@ -465,7 +465,7 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       auto dl_blend = filter->asBlend();
       auto blend_mode = ToBlendMode(dl_blend->mode());
       auto color = ToColor(dl_blend->color());
-      return [blend_mode, color](FilterInput::Ref input) {
+      return [blend_mode, color](const FilterInput::Ref& input) {
         return ColorFilterContents::MakeBlend(blend_mode, {std::move(input)},
                                               color);
       };
@@ -474,17 +474,17 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
       impeller::FilterContents::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
-      return [color_matrix](FilterInput::Ref input) {
+      return [color_matrix](const FilterInput::Ref& input) {
         return ColorFilterContents::MakeColorMatrix({std::move(input)},
                                                     color_matrix);
       };
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      return [](FilterInput::Ref input) {
+      return [](const FilterInput::Ref& input) {
         return ColorFilterContents::MakeSrgbToLinearFilter({std::move(input)});
       };
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      return [](FilterInput::Ref input) {
+      return [](const FilterInput::Ref& input) {
         return ColorFilterContents::MakeLinearToSrgbFilter({std::move(input)});
       };
     case flutter::DlColorFilterType::kUnknown:
@@ -589,7 +589,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       auto radius_x = Radius(dilate->radius_x());
       auto radius_y = Radius(dilate->radius_y());
-      return [radius_x, radius_y](FilterInput::Ref input,
+      return [radius_x, radius_y](const FilterInput::Ref& input,
                                   const Matrix& effect_transform) {
         return FilterContents::MakeMorphology(
             std::move(input), radius_x, radius_y,
@@ -605,7 +605,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       auto radius_x = Radius(erode->radius_x());
       auto radius_y = Radius(erode->radius_y());
-      return [radius_x, radius_y](FilterInput::Ref input,
+      return [radius_x, radius_y](const FilterInput::Ref& input,
                                   const Matrix& effect_transform) {
         return FilterContents::MakeMorphology(
             std::move(input), radius_x, radius_y,
@@ -618,7 +618,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       FML_DCHECK(matrix_filter);
       auto matrix = ToMatrix(matrix_filter->matrix());
       auto desc = ToSamplerDescriptor(matrix_filter->sampling());
-      return [matrix, desc](FilterInput::Ref input,
+      return [matrix, desc](const FilterInput::Ref& input,
                             const Matrix& effect_transform) {
         return FilterContents::MakeMatrixFilter(std::move(input), matrix, desc);
       };
@@ -640,7 +640,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       FML_DCHECK(outer_proc.has_value() && inner_proc.has_value());
       return [outer_filter = outer_proc.value(),
               inner_filter = inner_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
+                 const FilterInput::Ref& input,
+                 const Matrix& effect_transform) {
         auto contents = inner_filter(std::move(input), effect_transform);
         contents = outer_filter(FilterInput::Make(contents), effect_transform);
         return contents;
@@ -655,10 +656,11 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       if (!color_filter_proc.has_value()) {
         return std::nullopt;
       }
-      return [color_filter = color_filter_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
-        return color_filter(std::move(input));
-      };
+      return
+          [color_filter = color_filter_proc.value()](
+              const FilterInput::Ref& input, const Matrix& effect_transform) {
+            return color_filter(std::move(input));
+          };
       break;
     }
     case flutter::DlImageFilterType::kLocalMatrixFilter: {
@@ -674,13 +676,14 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
 
       auto matrix = ToMatrix(local_matrix_filter->matrix());
 
-      return [matrix, filter_proc = image_filter_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
-        std::shared_ptr<FilterContents> filter =
-            filter_proc(std::move(input), effect_transform);
-        return FilterContents::MakeLocalMatrixFilter(FilterInput::Make(filter),
-                                                     matrix);
-      };
+      return
+          [matrix, filter_proc = image_filter_proc.value()](
+              const FilterInput::Ref& input, const Matrix& effect_transform) {
+            std::shared_ptr<FilterContents> filter =
+                filter_proc(std::move(input), effect_transform);
+            return FilterContents::MakeLocalMatrixFilter(
+                FilterInput::Make(filter), matrix);
+          };
       break;
     }
     case flutter::DlImageFilterType::kUnknown:

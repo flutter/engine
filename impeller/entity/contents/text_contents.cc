@@ -29,8 +29,8 @@ void TextContents::SetTextFrame(const TextFrame& frame) {
   frame_ = frame;
 }
 
-void TextContents::SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas) {
-  lazy_atlas_ = std::move(atlas);
+void TextContents::SetGlyphAtlas(const std::shared_ptr<LazyGlyphAtlas>& atlas) {
+  lazy_atlas_ = atlas;
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
@@ -64,7 +64,7 @@ static bool CommonRender(const ContentContext& renderer,
                          RenderPass& pass,
                          const Color& color,
                          const TextFrame& frame,
-                         std::shared_ptr<GlyphAtlas> atlas,
+                         const std::shared_ptr<GlyphAtlas>& atlas,
                          Command& cmd) {
   using VS = typename TPipeline::VertexShader;
   using FS = typename TPipeline::FragmentShader;

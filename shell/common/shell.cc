@@ -1376,7 +1376,7 @@ void Shell::LoadDartDeferredLibrary(
 }
 
 void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                         const std::string error_message,
+                                         const std::string& error_message,
                                          bool transient) {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),

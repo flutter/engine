@@ -23,8 +23,8 @@ class BlobWriter {
   [[nodiscard]] bool AddBlobAtPath(const std::string& path);
 
   [[nodiscard]] bool AddBlob(BlobShaderType type,
-                             std::string name,
-                             std::shared_ptr<fml::Mapping> mapping);
+                             const std::string& name,
+                             const std::shared_ptr<fml::Mapping>& mapping);
 
   std::shared_ptr<fml::Mapping> CreateMapping() const;
 

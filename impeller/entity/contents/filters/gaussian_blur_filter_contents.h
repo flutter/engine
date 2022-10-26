@@ -27,7 +27,7 @@ class DirectionalGaussianBlurFilterContents final : public FilterContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
-  void SetSourceOverride(FilterInput::Ref alpha_mask);
+  void SetSourceOverride(const FilterInput::Ref& alpha_mask);
 
   // |FilterContents|
   std::optional<Rect> GetFilterCoverage(

@@ -21,7 +21,7 @@ class AtlasContents final : public Contents {
 
   ~AtlasContents() override;
 
-  void SetTexture(std::shared_ptr<Texture> texture);
+  void SetTexture(const std::shared_ptr<Texture>& texture);
 
   std::shared_ptr<Texture> GetTexture() const;
 
@@ -35,7 +35,7 @@ class AtlasContents final : public Contents {
 
   void SetCullRect(std::optional<Rect> cull_rect);
 
-  void SetSamplerDescriptor(SamplerDescriptor desc);
+  void SetSamplerDescriptor(const SamplerDescriptor& desc);
 
   void SetAlpha(Scalar alpha);
 

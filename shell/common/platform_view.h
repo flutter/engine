@@ -283,7 +283,7 @@ class PlatformView {
     ///                              re-request the library will instantly
     ///                              complete with an error.
     virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                              const std::string error_message,
+                                              const std::string& error_message,
                                               bool transient) = 0;
 
     //--------------------------------------------------------------------------
@@ -461,8 +461,8 @@ class PlatformView {
   /// @param[in]  actions  A map with the stable semantics node identifier as
   ///                      key and the custom node action as the value.
   ///
-  virtual void UpdateSemantics(SemanticsNodeUpdates updates,
-                               CustomAccessibilityActionUpdates actions);
+  virtual void UpdateSemantics(const SemanticsNodeUpdates& updates,
+                               const CustomAccessibilityActionUpdates& actions);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics. In
@@ -765,7 +765,7 @@ class PlatformView {
   ///                              complete with an error.
   ///
   virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                            const std::string error_message,
+                                            const std::string& error_message,
                                             bool transient);
 
   //--------------------------------------------------------------------------

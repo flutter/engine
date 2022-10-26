@@ -39,7 +39,7 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
   delegate_ = std::move(delegate);
 }
 
-void EntityPass::AddEntity(Entity entity) {
+void EntityPass::AddEntity(const Entity& entity) {
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
     reads_from_pass_texture_ += 1;
   }
@@ -386,7 +386,7 @@ bool EntityPass::OnRender(
     Point parent_position,
     uint32_t pass_depth,
     size_t stencil_depth_floor,
-    std::shared_ptr<Contents> backdrop_filter_contents) const {
+    const std::shared_ptr<Contents>& backdrop_filter_contents) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
@@ -606,7 +606,8 @@ void EntityPass::SetBlendMode(BlendMode blend_mode) {
   cover_whole_screen_ = Entity::BlendModeShouldCoverWholeScreen(blend_mode);
 }
 
-void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
+void EntityPass::SetBackdropFilter(
+    const std::optional<BackdropFilterProc>& proc) {
   if (superpass_) {
     VALIDATION_LOG << "Backdrop filters cannot be set on EntityPasses that "
                       "have already been appended to another pass.";

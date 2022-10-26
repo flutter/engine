@@ -77,7 +77,7 @@ TEST_P(AiksTest, CanRenderImage) {
 
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
-                    std::string label) {
+                    const std::string& label) {
   auto buffer = context->CreateCommandBuffer();
   if (!buffer) {
     return false;

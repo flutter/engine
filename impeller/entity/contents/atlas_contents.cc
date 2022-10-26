@@ -22,7 +22,7 @@ AtlasContents::AtlasContents() = default;
 
 AtlasContents::~AtlasContents() = default;
 
-void AtlasContents::SetTexture(std::shared_ptr<Texture> texture) {
+void AtlasContents::SetTexture(const std::shared_ptr<Texture>& texture) {
   texture_ = std::move(texture);
 }
 
@@ -70,8 +70,8 @@ std::optional<Rect> AtlasContents::GetCoverage(const Entity& entity) const {
   return bounding_box.TransformBounds(entity.GetTransformation());
 }
 
-void AtlasContents::SetSamplerDescriptor(SamplerDescriptor desc) {
-  sampler_descriptor_ = std::move(desc);
+void AtlasContents::SetSamplerDescriptor(const SamplerDescriptor& desc) {
+  sampler_descriptor_ = desc;
 }
 
 const SamplerDescriptor& AtlasContents::GetSamplerDescriptor() const {

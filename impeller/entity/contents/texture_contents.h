@@ -28,15 +28,15 @@ class TextureContents final : public Contents {
   ///         when image filters are applied.
   static std::shared_ptr<TextureContents> MakeRect(Rect destination);
 
-  void SetLabel(std::string label);
+  void SetLabel(const std::string& label);
 
   void SetPath(const Path& path);
 
-  void SetTexture(std::shared_ptr<Texture> texture);
+  void SetTexture(const std::shared_ptr<Texture>& texture);
 
   std::shared_ptr<Texture> GetTexture() const;
 
-  void SetSamplerDescriptor(SamplerDescriptor desc);
+  void SetSamplerDescriptor(const SamplerDescriptor& desc);
 
   const SamplerDescriptor& GetSamplerDescriptor() const;
 

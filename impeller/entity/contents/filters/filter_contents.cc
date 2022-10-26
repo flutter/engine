@@ -30,16 +30,16 @@
 namespace impeller {
 
 std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     Sigma sigma,
     Vector2 direction,
     BlurStyle blur_style,
     Entity::TileMode tile_mode,
-    FilterInput::Ref source_override,
+    const FilterInput::Ref& source_override,
     Sigma secondary_sigma,
     const Matrix& effect_transform) {
   auto blur = std::make_shared<DirectionalGaussianBlurFilterContents>();
-  blur->SetInputs({std::move(input)});
+  blur->SetInputs({input});
   blur->SetSigma(sigma);
   blur->SetDirection(direction);
   blur->SetBlurStyle(blur_style);
@@ -67,13 +67,13 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     Sigma sigma_x,
     Sigma sigma_y,
     BlurStyle blur_style,
     const Matrix& effect_transform) {
   auto filter = std::make_shared<BorderMaskBlurFilterContents>();
-  filter->SetInputs({std::move(input)});
+  filter->SetInputs({input});
   filter->SetSigma(sigma_x, sigma_y);
   filter->SetBlurStyle(blur_style);
   filter->SetEffectTransform(effect_transform);
@@ -81,13 +81,13 @@ std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeDirectionalMorphology(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     Radius radius,
     Vector2 direction,
     MorphType morph_type,
     const Matrix& effect_transform) {
   auto filter = std::make_shared<DirectionalMorphologyFilterContents>();
-  filter->SetInputs({std::move(input)});
+  filter->SetInputs({input});
   filter->SetRadius(radius);
   filter->SetDirection(direction);
   filter->SetMorphType(morph_type);
@@ -96,7 +96,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalMorphology(
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     Radius radius_x,
     Radius radius_y,
     MorphType morph_type,
@@ -110,21 +110,21 @@ std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     const Matrix& matrix,
     const SamplerDescriptor& desc) {
   auto filter = std::make_shared<MatrixFilterContents>();
-  filter->SetInputs({std::move(input)});
+  filter->SetInputs({input});
   filter->SetMatrix(matrix);
   filter->SetSamplerDescriptor(desc);
   return filter;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeLocalMatrixFilter(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     const Matrix& matrix) {
   auto filter = std::make_shared<LocalMatrixFilterContents>();
-  filter->SetInputs({std::move(input)});
+  filter->SetInputs({input});
   filter->SetMatrix(matrix);
   return filter;
 }
@@ -133,8 +133,8 @@ FilterContents::FilterContents() = default;
 
 FilterContents::~FilterContents() = default;
 
-void FilterContents::SetInputs(FilterInput::Vector inputs) {
-  inputs_ = std::move(inputs);
+void FilterContents::SetInputs(const FilterInput::Vector& inputs) {
+  inputs_ = inputs;
 }
 
 void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
