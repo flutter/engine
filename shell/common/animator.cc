@@ -208,10 +208,10 @@ void Animator::DrawLastLayerTree(
 
 void Animator::RequestFrame(bool regenerate_layer_tree) {
   if (regenerate_layer_tree) {
-    // This event will be closed by BeginFrame. BeginFrame will only be called if
-    // regenerating the layer tree.
-    // If a frame has been requested to update an external texture, this will be
-    // false and no BeginFrame call will happen.
+    // This event will be closed by BeginFrame. BeginFrame will only be called
+    // if regenerating the layer tree. If a frame has been requested to update
+    // an external texture, this will be false and no BeginFrame call will
+    // happen.
     TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
                              frame_request_number_);
     regenerate_layer_tree_ = true;
