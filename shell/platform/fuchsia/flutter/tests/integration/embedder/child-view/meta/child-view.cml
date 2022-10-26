@@ -21,11 +21,4 @@
             from: "self",
         },
     ],
-    use: [
-        {
-            protocol: [
-                "fuchsia.ui.test.input.TouchInputListener",
-            ]
-        }
-    ]
 }

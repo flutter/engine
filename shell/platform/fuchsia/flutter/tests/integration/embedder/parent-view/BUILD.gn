@@ -18,7 +18,6 @@ dart_library("lib") {
     "//flutter/tools/fuchsia/dart:zircon",
     "//flutter/tools/fuchsia/fidl:fuchsia.sys",
     "//flutter/tools/fuchsia/fidl:fuchsia.ui.app",
-    "//flutter/tools/fuchsia/fidl:fuchsia.ui.test.input",
     "//flutter/tools/fuchsia/fidl:fuchsia.ui.views",
   ]
 }
