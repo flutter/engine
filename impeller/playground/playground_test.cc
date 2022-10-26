@@ -25,7 +25,7 @@ void PlaygroundTest::SetUp() {
 
   SetupWindow(GetParam());
 
-  start_time_ = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+  start_time_ = fml::TimePoint::Now().ToEpochDelta();
 }
 
 void PlaygroundTest::TearDown() {
@@ -64,7 +64,7 @@ std::string PlaygroundTest::GetWindowTitle() const {
 }
 
 Scalar PlaygroundTest::GetSecondsElapsed() const {
-  return fml::TimePoint::Now().ToEpochDelta().ToSecondsF() - start_time_;
+  return (fml::TimePoint::Now().ToEpochDelta() - start_time_).ToSecondsF();
 }
 
 }  // namespace impeller
