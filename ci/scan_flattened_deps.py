@@ -245,7 +245,8 @@ def get_common_ancestor_commit(dep):
         # perform merge-base on most recent default branch commit and pinned mirror commit
         ancestor_commit = subprocess.check_output(
             'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'
-            .format(temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]),            shell=True
+            .format(temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]),
+            shell=True
         )
         ancestor_commit = ancestor_commit.decode().strip()
         print('Ancestor commit: ' + ancestor_commit)
