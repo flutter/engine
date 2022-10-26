@@ -94,8 +94,13 @@ vars = {
 
   # upstream URLs for third party dependencies, used in
   # determining common ancestor commit for vulnerability scanning
-  # prefixed with "upstream_" in order to be identified by parsing tool
-  "upstream_abseil-cpp": "https://github.com/abseil/abseil-cpp",
+  # prefixed with 'upstream_' in order to be identified by parsing tool
+  # If a new dependency needs to be added, the upstream (non-mirrored)
+  # git URL for that dependency should be added to this list 
+  # with the key-value pair being:
+  # 'upstream_[dep name from last slash and before .git in URL]':'[git URL]'
+  # example: 
+  "upstream_abseil-cpp": "https://github.com/abseil/abseil-cpp.git",
   "upstream_angle": "https://github.com/google/angle.git",
   "upstream_archive": "https://github.com/brendan-duncan/archive.git",
   "upstream_args": "https://github.com/dart-lang/args.git",
@@ -104,13 +109,13 @@ vars = {
   "upstream_benchmark": "https://github.com/google/benchmark.git",
   "upstream_boolean_selector": "https://github.com/dart-lang/boolean_selector.git",
   "upstream_boringssl_gen": "https://github.com/dart-lang/boringssl_gen.git",
-  "upstream_boringssl": "https://github.com/openssl/openssl",
+  "upstream_boringssl": "https://github.com/openssl/openssl.git",
   "upstream_browser_launcher": "https://github.com/dart-lang/browser_launcher.git",
   "upstream_buildroot": "https://github.com/flutter/buildroot.git",
   "upstream_cli_util": "https://github.com/dart-lang/cli_util.git",
   "upstream_clock": "https://github.com/dart-lang/clock.git",
   "upstream_collection": "https://github.com/dart-lang/collection.git",
-  "upstream_colorama": "https://github.com/tartley/colorama",
+  "upstream_colorama": "https://github.com/tartley/colorama.git",
   "upstream_convert": "https://github.com/dart-lang/convert.git",
   "upstream_crypto": "https://github.com/dart-lang/crypto.git",
   "upstream_csslib": "https://github.com/dart-lang/csslib.git",
@@ -127,7 +132,7 @@ vars = {
   "upstream_glfw": "https://github.com/glfw/glfw.git",
   "upstream_glob": "https://github.com/dart-lang/glob.git",
   "upstream_googleapis": "https://github.com/google/googleapis.dart.git",
-  "upstream_googletest": "https://github.com/google/googletest",
+  "upstream_googletest": "https://github.com/google/googletest.git",
   "upstream_gtest-parallel": "https://github.com/google/gtest-parallel.git",
   "upstream_harfbuzz": "https://github.com/harfbuzz/harfbuzz.git",
   "upstream_html": "https://github.com/dart-lang/html.git",

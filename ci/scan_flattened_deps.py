@@ -20,12 +20,13 @@ from urllib import request
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
-UPSTREAM_PREFIX = 'upstream_'
-
-HELP_STR = 'To find complete information on this vulnerability, navigate to '
-# TODO -- use prefix matching for this rather than always to OSV
-OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
+DEP_CLONE_DIR = CHECKOUT_ROOT + '/clone-test'
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
+HELP_STR = 'To find complete information on this vulnerability, navigate to '
+OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
+SECONDS_PER_YEAR = 31556952
+# TODO -- use prefix matching for this rather than always to OSV
+UPSTREAM_PREFIX = 'upstream_'
 
 failed_deps = []  # deps which fail to be be cloned or git-merge based
 old_deps = []  # deps which have not been updated in more than 1 year
@@ -93,15 +94,12 @@ def parse_deps_file(deps_flat_file):
   }
   osv_url = 'https://api.osv.dev/v1/querybatch'
 
-  clone_test_dir = '/clone-test'
-
   os.mkdir(
-      CHECKOUT_ROOT + clone_test_dir
+      DEP_CLONE_DIR
   )  #clone deps with upstream into temporary dir
 
   # Extract commit hash, save in dictionary
   for line in lines:
-    os.chdir(CHECKOUT_ROOT + clone_test_dir)
     dep = line.strip().split(
         '@'
     )  # separate fully qualified dep into name + pinned hash
@@ -122,7 +120,7 @@ def parse_deps_file(deps_flat_file):
   )
 
   # Query OSV API using common ancestor commit for each dep
-  # return any vulnerabilities found
+  # return any vulnerabilities found.
   data = json.dumps({'queries': queries}).encode('utf-8')
   req = request.Request(osv_url, data, headers=headers)
   with request.urlopen(req) as resp:
@@ -180,19 +178,13 @@ def get_common_ancestor_commit(dep):
       try:
         # get the upstream URL from the mapping in DEPS file
         upstream = deps.get(UPSTREAM_PREFIX + dep_name)
+        temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
         # clone dependency from mirror
-        # print(f'attempting: git clone --quiet {dep_name}')
-        # os.system(f'git clone {dep[0]} --quiet {dep_name}')
-        os.system(
-            'git clone {depUrl} --quiet {dep_name}'.format(
-                depUrl=dep[0], dep_name=dep_name
-            )
-        )
-        os.chdir('./{dep_name}'.format(dep_name=dep_name))
+        subprocess.check_output(['git', 'clone', dep[0], '--quiet', temp_dep_dir])
 
         # check how old pinned commit is
         dep_roll_date = subprocess.check_output(
-            'git show -s --format=%ct {dep}'.format(dep=dep[1]), shell=True
+            'git --git-dir {temp_dep_dir}/.git show -s --format=%ct {dep}'.format(temp_dep_dir=temp_dep_dir, dep=dep[1]), shell=True
         ).decode()
         print(
             'dep roll date is {dep_roll_date}'.format(
@@ -201,7 +193,7 @@ def get_common_ancestor_commit(dep):
         )
         years = (
             time.time() - int(dep_roll_date)
-        ) / 31556952  # convert to years since last roll
+        ) / SECONDS_PER_YEAR  # convert to years since last roll
         if years >= 1:
           print(
               'Old dep found: {depUrl} is from {dep_roll_date}'.format(
@@ -216,51 +208,39 @@ def get_common_ancestor_commit(dep):
                 upstream=upstream
             )
         )
-        os.system(
-            'git remote add upstream {upstream}'.format(upstream=upstream)
-        )
-        os.system('git fetch --quiet upstream')
+        subprocess.check_output(['git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add', 'upstream', upstream])
+        subprocess.check_output(['git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet', 'upstream'])
 
-        # get name of default branch for upstream
+        # get name of the default branch for upstream (e.g. main/master/etc.)
         default_branch = subprocess.check_output(
-            'git remote show upstream ' + "| sed -n \'/HEAD branch/s/.*: //p\'",
+            'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' + "| sed -n \'/HEAD branch/s/.*: //p\'",
             shell=True
-        ).decode()
+        ).decode().strip()
         print(
             'default_branch found: {default_branch}'.format(
                 default_branch=default_branch
             )
         )
         # make upstream branch track the upstream dep
-        os.system(
-            'git checkout -b upstream --track upstream/{default_branch}'.format(
-                default_branch=default_branch
-            )
-        )
+        subprocess.check_output(['git', '--git-dir', temp_dep_dir + '/.git', 'checkout', '-b', 'upstream', '--track', 'upstream/' + default_branch])
 
         # get the most recent commit from default branch of upstream
         commit = subprocess.check_output(
-            'git for-each-ref ' +
+            'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
             "--format=\'%(objectname:short)\' refs/heads/upstream",
             shell=True
         )
         commit = commit.decode().strip()
-        print('commit found:' + commit)
-        print(
-            'git merge-base {commit} {depUrl}'.format(
-                commit=commit, depUrl=dep[1]
-            )
-        )
 
         # perform merge-base on most recent default branch commit and pinned mirror commit
         ancestor_commit = subprocess.check_output(
-            'git merge-base {commit} {depUrl}'.format(
-                commit=commit, depUrl=dep[1]
+            'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'.format(
+                temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]
             ),
             shell=True
         )
         ancestor_commit = ancestor_commit.decode().strip()
-        print('FOUND ANCESTOR COMMIT: ' + ancestor_commit)
+        print('Ancestor commit: ' + ancestor_commit)
         return ancestor_commit
       except subprocess.CalledProcessError as error:
         print("Subprocess error '{0}' occured.".format(error.output))
