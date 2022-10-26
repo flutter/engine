@@ -17,9 +17,9 @@ UPSTREAM_PREFIX = 'upstream_'
 
 class TestDepsParserMethods(unittest.TestCase):
 
-  # extract both mirrored dep names and URLs &
-  # upstream names and URLs from DEPs file
-  def setUp(self):
+  # Extract both mirrored dep names and URLs &
+  # upstream names and URLs from DEPs file.
+  def setup(self):
     with open(DEPS) as file:
       local_scope_upstream = {}
       global_scope_upstream = {'Var': lambda x: x}  # dummy lambda
@@ -73,18 +73,18 @@ class TestDepsParserMethods(unittest.TestCase):
 
   def test_each_upstream_url_has_dep(self):
 
-    # parse DEPS into dependency names
+    # Parse DEPS into dependency names.
     deps_names = []
     for dep in self.deps:
       dep_repo = dep.split('@')[0]
       dep_name = dep_repo.split('/')[-1].split('.')[0]
       deps_names.append(dep_name)
 
-    # for each upstream URL dep, check it exists as in DEPS
+    # For each upstream URL dep, check it exists as in DEPS.
     for upsream_dep in self.upstream_urls:
-      # only test on upstream deps in vars section which start with the upstream prefix
+      # Only test on upstream deps in vars section which start with the upstream prefix
       if upsream_dep.startswith(UPSTREAM_PREFIX):
-        # strip the prefix to check that it has a corresponding dependency in the DEPS file
+        # Strip the prefix to check that it has a corresponding dependency in the DEPS file
         self.assertTrue(
             upsream_dep[len(UPSTREAM_PREFIX):] in deps_names,
             msg=upsream_dep + ' from upstream list not found in DEPS'

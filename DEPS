@@ -94,7 +94,7 @@ vars = {
 
   # Upstream URLs for third party dependencies, used in
   # determining common ancestor commit for vulnerability scanning
-  # prefixed with 'upstream_' in order to be identified by parsing tool
+  # prefixed with 'upstream_' in order to be identified by parsing tool.
   # If a new dependency needs to be added, the upstream (non-mirrored)
   # git URL for that dependency should be added to this list 
   # with the key-value pair being:

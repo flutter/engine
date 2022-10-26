@@ -64,7 +64,6 @@ def parse_deps_file(deps_file):
     # We currently do not support packages or cipd which are represented
     # as dictionaries.
     if isinstance(dep, str):
-      print(dep)
       filtered_deps.append(dep)
   return filtered_deps
 
@@ -80,9 +79,7 @@ def parse_readme(deps):
   # read the content of the file opened
   content = file.readlines()
   commit_line = content[CHROMIUM_README_COMMIT_LINE]
-  print('commit line: ' + commit_line)
   commit = re.search(r'(?<=\[).*(?=\])', commit_line)
-  print(CHROMIUM + '@' + commit.group())
   deps.append(CHROMIUM + '@' + commit.group())
   return deps
 

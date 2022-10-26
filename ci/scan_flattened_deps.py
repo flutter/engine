@@ -25,7 +25,6 @@ DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
 HELP_STR = 'To find complete information on this vulnerability, navigate to '
 OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
 SECONDS_PER_YEAR = 31556952
-# TODO -- use prefix matching for this rather than always to OSV
 UPSTREAM_PREFIX = 'upstream_'
 
 failed_deps = []  # deps which fail to be be cloned or git-merge based
