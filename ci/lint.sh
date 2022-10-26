@@ -36,16 +36,6 @@ DART="${DART_BIN}/dart"
 # to have this as an error.
 MAC_HOST_WARNINGS_AS_ERRORS="performance-move-const-arg,performance-unnecessary-value-param"
 
-# FLUTTER_LINT_PRINT_FIX will make it so that fix is executed and the generated
-# diff is printed to stdout if clang-tidy fails. This is helpful for enabling
-# new lints.
-FLUTTER_LINT_PRINT_FIX=1
-if [[ -z "${FLUTTER_LINT_PRINT_FIX}" ]]; then
-  fix_flag=""
-else
-  fix_flag="--fix"
-fi
-
 COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
 if [ ! -f "$COMPILE_COMMANDS" ]; then
   (cd "$SRC_DIR"; ./flutter/tools/gn)
@@ -57,18 +47,7 @@ cd "$SCRIPT_DIR"
   "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
   --src-dir="$SRC_DIR" \
   --mac-host-warnings-as-errors="$MAC_HOST_WARNINGS_AS_ERRORS" \
-  $fix_flag \
-  "$@" && true # errors ignored
-clang_tidy_return=$?
-if [ $clang_tidy_return -ne 0 ]; then
-  if [ -n "$fix_flag" ]; then
-    echo "###################################################"
-    echo "# Attempted to fix issues with the following patch:"
-    echo "###################################################"
-    git --no-pager diff
-  fi
-  exit $clang_tidy_return
-fi
+  "$@"
 
 cd "$FLUTTER_DIR"
 pylint-2.7 --rcfile=.pylintrc \
