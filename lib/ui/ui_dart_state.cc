@@ -222,7 +222,8 @@ void UIDartState::LogMessage(const std::string& tag,
     }
     stream << message;
     std::string log = stream.str();
-    syslog(1 /* LOG_ALERT */, "%.*s", (int)log.size(), log.c_str());
+    syslog(1 /* LOG_ALERT */, "%.*s", static_cast<int>(log.size()),
+           log.c_str());
 #else
     if (!tag.empty()) {
       std::cout << tag << ": ";

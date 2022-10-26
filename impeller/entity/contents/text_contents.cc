@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <type_traits>
+#include <utility>
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -24,8 +25,8 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-void TextContents::SetTextFrame(TextFrame frame) {
-  frame_ = std::move(frame);
+void TextContents::SetTextFrame(const TextFrame& frame) {
+  frame_ = frame;
 }
 
 void TextContents::SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas) {
@@ -38,7 +39,8 @@ std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     std::shared_ptr<Context> context) const {
   FML_DCHECK(lazy_atlas_);
   if (lazy_atlas_) {
-    return lazy_atlas_->CreateOrGetGlyphAtlas(type, atlas_context, context);
+    return lazy_atlas_->CreateOrGetGlyphAtlas(type, std::move(atlas_context),
+                                              std::move(context));
   }
 
   return nullptr;
