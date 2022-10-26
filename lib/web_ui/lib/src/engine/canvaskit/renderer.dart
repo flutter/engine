@@ -25,7 +25,6 @@ import 'picture_recorder.dart';
 import 'rasterizer.dart';
 import 'shader.dart';
 import 'text.dart';
-import 'util.dart';
 import 'vertices.dart';
 
 class CanvasKitRenderer implements Renderer {
