@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 
+#include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/context_options.h"
 #include "flutter/testing/test_vulkan_context.h"
@@ -87,6 +88,12 @@ TestVulkanContext::TestVulkanContext() {
     return;
   }
 
+  sk_sp<skgpu::VulkanMemoryAllocator> allocator =
+      flutter::FlutterSkiaVulkanMemoryAllocator::Make(
+          VK_MAKE_VERSION(1, 0, 0), application_->GetInstance(),
+          device_->GetPhysicalDeviceHandle(), device_->GetHandle(),
+          vk_->NativeGetInstanceProcAddr(), vk_->GetDeviceProcAddr, true);
+
   GrVkExtensions extensions;
 
   GrVkBackendContext backend_context = {};
@@ -101,6 +108,7 @@ TestVulkanContext::TestVulkanContext() {
   backend_context.fVkExtensions = &extensions;
   backend_context.fGetProc = get_proc;
   backend_context.fOwnsInstanceAndDevice = false;
+  backend_context.fMemoryAllocator = allocator;
 
   GrContextOptions options =
       MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);

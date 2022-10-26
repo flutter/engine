@@ -20,10 +20,6 @@ source_set("flutter_skia_vma") {
   sources = [
     "flutter_skia_vma.cc",
     "flutter_skia_vma.h",
-    "vulkan_extensions.cc",
-    "vulkan_extensions.h",
-    "vulkan_interface.cc",
-    "vulkan_interface.h",
   ]
 
   public_deps = [ ":flutter_vma" ]

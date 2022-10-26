@@ -159,9 +159,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
 //     bool mustUseCoherentHostVisibleMemory,
 //     bool threadSafe
 
-  auto interface = sk_make_sp<const VulkanInterface>(
-      instance, device_.GetPhysicalDeviceHandle(), device_.GetHandle(),
-      version, &extensions, vk_, false, false);
+
 
   sk_sp<skgpu::VulkanMemoryAllocator> allocator =
       flutter::FlutterSkiaVulkanMemoryAllocator::Make(

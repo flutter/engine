@@ -7,104 +7,39 @@
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 
-#include "flutter/flutter_vma/vulkan_extensions.h"
-
 namespace flutter {
 
 sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
+    uint32_t vulkan_api_version,
     VkInstance instance,
     VkPhysicalDevice physicalDevice,
     VkDevice device,
-    uint32_t physicalDeviceVersion,
-    const VulkanExtensions* extensions,
-    sk_sp<const VulkanInterface> interface,
-    bool mustUseCoherentHostVisibleMemory,
-    bool threadSafe) {
-#define SKGPU_COPY_FUNCTION(NAME) \
-  functions.vk##NAME = interface->fFunctions.f##NAME
-#define SKGPU_COPY_FUNCTION_KHR(NAME) \
-  functions.vk##NAME##KHR = interface->fFunctions.f##NAME
+    PFN_vkGetInstanceProcAddr get_instance_proc_address,
+    PFN_vkGetDeviceProcAddr get_device_proc_address,
+    bool mustUseCoherentHostVisibleMemory) {
+  VmaVulkanFunctions proc_table = {};
+  proc_table.vkGetInstanceProcAddr = get_instance_proc_address;
+  proc_table.vkGetDeviceProcAddr = get_device_proc_address;
 
-  VmaVulkanFunctions functions;
-  // We should be setting all the required functions (at least through
-  // vulkan 1.1), but this is just extra belt and suspenders to make sure there
-  // isn't unitialized values here.
-  memset(&functions, 0, sizeof(VmaVulkanFunctions));
-
-  // We don't use dynamic function getting in the allocator so we set the
-  // getProc functions to null.
-  functions.vkGetInstanceProcAddr = nullptr;
-  functions.vkGetDeviceProcAddr = nullptr;
-  SKGPU_COPY_FUNCTION(GetPhysicalDeviceProperties);
-  SKGPU_COPY_FUNCTION(GetPhysicalDeviceMemoryProperties);
-  SKGPU_COPY_FUNCTION(AllocateMemory);
-  SKGPU_COPY_FUNCTION(FreeMemory);
-  SKGPU_COPY_FUNCTION(MapMemory);
-  SKGPU_COPY_FUNCTION(UnmapMemory);
-  SKGPU_COPY_FUNCTION(FlushMappedMemoryRanges);
-  SKGPU_COPY_FUNCTION(InvalidateMappedMemoryRanges);
-  SKGPU_COPY_FUNCTION(BindBufferMemory);
-  SKGPU_COPY_FUNCTION(BindImageMemory);
-  SKGPU_COPY_FUNCTION(GetBufferMemoryRequirements);
-  SKGPU_COPY_FUNCTION(GetImageMemoryRequirements);
-  SKGPU_COPY_FUNCTION(CreateBuffer);
-  SKGPU_COPY_FUNCTION(DestroyBuffer);
-  SKGPU_COPY_FUNCTION(CreateImage);
-  SKGPU_COPY_FUNCTION(DestroyImage);
-  SKGPU_COPY_FUNCTION(CmdCopyBuffer);
-  SKGPU_COPY_FUNCTION_KHR(GetBufferMemoryRequirements2);
-  SKGPU_COPY_FUNCTION_KHR(GetImageMemoryRequirements2);
-  SKGPU_COPY_FUNCTION_KHR(BindBufferMemory2);
-  SKGPU_COPY_FUNCTION_KHR(BindImageMemory2);
-  SKGPU_COPY_FUNCTION_KHR(GetPhysicalDeviceMemoryProperties2);
-
-  VmaAllocatorCreateInfo info;
-  info.flags = 0;
-  if (!threadSafe) {
-    info.flags |= VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
-  }
-  if (physicalDeviceVersion >= VK_MAKE_VERSION(1, 1, 0) ||
-      (extensions->hasExtension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
-                                1) &&
-       extensions->hasExtension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-                                1))) {
-    info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-  }
-
-  info.physicalDevice = physicalDevice;
-  info.device = device;
-  // 4MB was picked for the size here by looking at memory usage of Android apps
-  // and runs of DM. It seems to be a good compromise of not wasting unused
-  // allocated space and not making too many small allocations. The AMD
-  // allocator will start making blocks at 1/8 the max size and builds up block
-  // size as needed before capping at the max set here.
-  info.preferredLargeHeapBlockSize = 4 * 1024 * 1024;
-  info.pAllocationCallbacks = nullptr;
-  info.pDeviceMemoryCallbacks = nullptr;
-  info.pHeapSizeLimit = nullptr;
-  info.pVulkanFunctions = &functions;
-  info.instance = instance;
-  // TODO (kaushikiska): Update our interface and headers to support vulkan 1.3
-  // and add in the new required functions for 1.3 that the allocator needs.
-  // Until then we just clamp the version to 1.1.
-  info.vulkanApiVersion =
-      std::min(physicalDeviceVersion, VK_MAKE_VERSION(1, 1, 0));
-  info.pTypeExternalMemoryHandleTypes = nullptr;
+  VmaAllocatorCreateInfo allocator_info = {};
+  allocator_info.vulkanApiVersion = vulkan_api_version;
+  allocator_info.physicalDevice = physicalDevice;
+  allocator_info.device = device;
+  allocator_info.instance = instance;
+  allocator_info.pVulkanFunctions = &proc_table;
 
   VmaAllocator allocator;
-  vmaCreateAllocator(&info, &allocator);
+  vmaCreateAllocator(&allocator_info, &allocator);
 
   return sk_sp<FlutterSkiaVulkanMemoryAllocator>(
-      new FlutterSkiaVulkanMemoryAllocator(allocator, std::move(interface),
+      new FlutterSkiaVulkanMemoryAllocator(allocator,
                                            mustUseCoherentHostVisibleMemory));
 }
 
 FlutterSkiaVulkanMemoryAllocator::FlutterSkiaVulkanMemoryAllocator(
     VmaAllocator allocator,
-    sk_sp<const VulkanInterface> interface,
     bool mustUseCoherentHostVisibleMemory)
     : allocator_(allocator),
-      interface_(std::move(interface)),
       must_use_coherent_host_visible_memory_(mustUseCoherentHostVisibleMemory) {
 }
 
