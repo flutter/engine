@@ -120,4 +120,4 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
 
 }  // namespace flutter
 
-#endif
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_ACCESSIBILITY_ROOT_NODE_H_
