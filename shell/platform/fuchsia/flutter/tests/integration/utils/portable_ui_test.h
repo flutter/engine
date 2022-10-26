@@ -52,9 +52,10 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // Returns true when the specified view is fully connected to the scene AND
   // has presented at least one frame of content.
   bool HasViewConnected(
-    fuchsia::ui::observation::geometry::ViewTreeWatcherPtr& view_tree_watcher,
-    std::optional<fuchsia::ui::observation::geometry::WatchResponse>& watch_response,
-    zx_koid_t view_ref_koid);
+      fuchsia::ui::observation::geometry::ViewTreeWatcherPtr& view_tree_watcher,
+      std::optional<fuchsia::ui::observation::geometry::WatchResponse>&
+          watch_response,
+      zx_koid_t view_ref_koid);
 
   // Registers a fake touch screen device with an injection coordinate space
   // spanning [-1000, 1000] on both axes.

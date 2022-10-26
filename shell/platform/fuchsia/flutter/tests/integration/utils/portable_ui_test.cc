@@ -138,7 +138,8 @@ void PortableUITest::WatchViewGeometry() {
 
 bool PortableUITest::HasViewConnected(
     fuchsia::ui::observation::geometry::ViewTreeWatcherPtr& view_tree_watcher,
-    std::optional<fuchsia::ui::observation::geometry::WatchResponse>& watch_response,
+    std::optional<fuchsia::ui::observation::geometry::WatchResponse>&
+        watch_response,
     zx_koid_t view_ref_koid) {
   std::optional<fuchsia::ui::observation::geometry::WatchResponse> watch_result;
   view_tree_watcher->Watch(
@@ -175,7 +176,8 @@ void PortableUITest::LaunchClient() {
 
   FML_LOG(INFO) << "Waiting for client view to connect";
   // Wait for the client view to get attached to the view tree.
-  std::optional<fuchsia::ui::observation::geometry::WatchResponse> watch_response;
+  std::optional<fuchsia::ui::observation::geometry::WatchResponse>
+      watch_response;
   RunLoopUntil([this, &watch_response] {
     return HasViewConnected(view_tree_watcher_, watch_response,
                             *client_root_view_ref_koid_);

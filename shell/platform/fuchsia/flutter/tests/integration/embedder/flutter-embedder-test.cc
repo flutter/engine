@@ -480,7 +480,8 @@ void FlutterEmbedderTest::TryInject(int32_t x, int32_t y) {
 //   ASSERT_TRUE(TakeScreenshotUntil(
 //       kChildBackgroundColor,
 //       [](std::map<fuchsia_test_utils::Color, size_t> histogram) {
-//         // Expect parent and child background colors, with parent color > child
+//         // Expect parent and child background colors, with parent color >
+//         child
 //         // color.
 //         EXPECT_GT(histogram[kParentBackgroundColor], 0u);
 //         EXPECT_GT(histogram[kChildBackgroundColor], 0u);
@@ -525,7 +526,8 @@ TEST_F(FlutterEmbedderTest, HittestEmbedding) {
 //   ASSERT_TRUE(TakeScreenshotUntil(
 //       kParentTappedColor,
 //       [](std::map<fuchsia_test_utils::Color, size_t> histogram) {
-//         // Expect parent and child background colors, with parent color > child
+//         // Expect parent and child background colors, with parent color >
+//         child
 //         // color.
 //         EXPECT_EQ(histogram[kParentBackgroundColor], 0u);
 //         EXPECT_GT(histogram[kParentTappedColor], 0u);
