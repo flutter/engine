@@ -59,13 +59,15 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 }
 
 template <class TPipeline>
-static bool CommonRender(const ContentContext& renderer,
-                         const Entity& entity,
-                         RenderPass& pass,
-                         const Color& color,
-                         const TextFrame& frame,
-                         std::shared_ptr<GlyphAtlas> atlas,
-                         Command& cmd) {
+static bool CommonRender(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass,
+    const Color& color,
+    const TextFrame& frame,
+    std::shared_ptr<GlyphAtlas>
+        atlas,  // NOLINT(performance-unnecessary-value-param)
+    Command& cmd) {
   using VS = typename TPipeline::VertexShader;
   using FS = typename TPipeline::FragmentShader;
 
