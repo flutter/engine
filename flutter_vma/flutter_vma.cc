@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #ifdef VMA_STATIC_VULKAN_FUNCTIONS
 #undef VMA_STATIC_VULKAN_FUNCTIONS
 #endif  // VMA_STATIC_VULKAN_FUNCTIONS

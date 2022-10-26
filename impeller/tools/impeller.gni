@@ -572,7 +572,6 @@ template("impeller_shaders") {
 
   if (impeller_enable_vulkan) {
     vk_shaders = "vk_$target_name"
-    print("vk_shaders = $vk_shaders")
     impeller_shaders_vk(vk_shaders) {
       name = invoker.name
       shaders = invoker.shaders
