@@ -53,39 +53,50 @@ void CursorHandler::HandleMethodCall(
     result->Success();
   } else if (method.compare(kSetSystemCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
-    auto buffer_iter = arguments.find(EncodableValue(std::string(kCustomCursorBufferKey)));
+    auto buffer_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorBufferKey)));
     if (buffer_iter == arguments.end()) {
-      result->Error("Argument error",
-                    "Missing argument buffer while trying to customize system cursor");
+      result->Error(
+          "Argument error",
+          "Missing argument buffer while trying to customize system cursor");
       return;
     }
     auto buffer = std::get<std::vector<uint8_t>>(
         arguments.at(flutter::EncodableValue("buffer")));
-    auto width_iter = arguments.find(EncodableValue(std::string(kCustomCursorWidthKey)));
+    auto width_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorWidthKey)));
     if (width_iter == arguments.end()) {
-      result->Error("Argument error",
-                    "Missing argument width while trying to customize system cursor");
+      result->Error(
+          "Argument error",
+          "Missing argument width while trying to customize system cursor");
       return;
     }
     auto width = std::get<int>(arguments.at(flutter::EncodableValue("width")));
-    auto height_iter = arguments.find(EncodableValue(std::string(kCustomCursorHeightKey)));
+    auto height_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorHeightKey)));
     if (height_iter == arguments.end()) {
-      result->Error("Argument error",
-                    "Missing argument height while trying to customize system cursor");
+      result->Error(
+          "Argument error",
+          "Missing argument height while trying to customize system cursor");
       return;
     }
-    auto height = std::get<int>(arguments.at(flutter::EncodableValue("height")));
-    auto hotx_iter = arguments.find(EncodableValue(std::string(kCustomCursorHotxKey)));
+    auto height =
+        std::get<int>(arguments.at(flutter::EncodableValue("height")));
+    auto hotx_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorHotxKey)));
     if (hotx_iter == arguments.end()) {
-      result->Error("Argument error",
-                    "Missing argument hotx while trying to customize system cursor");
+      result->Error(
+          "Argument error",
+          "Missing argument hotx while trying to customize system cursor");
       return;
     }
     auto hotx = std::get<double>(arguments.at(flutter::EncodableValue("hotx")));
-    auto hoty_iter = arguments.find(EncodableValue(std::string(kCustomCursorHotyKey)));
+    auto hoty_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorHotyKey)));
     if (hoty_iter == arguments.end()) {
-      result->Error("Argument error",
-                    "Missing argument hoty while trying to customize system cursor");
+      result->Error(
+          "Argument error",
+          "Missing argument hoty while trying to customize system cursor");
       return;
     }
     auto hoty = std::get<double>(arguments.at(flutter::EncodableValue("hoty")));
@@ -93,7 +104,8 @@ void CursorHandler::HandleMethodCall(
     // Flutter returns rawRgba, which has 8bits*4channels
     auto bitmap = CreateBitmap(width, height, 1, 32, &buffer[0]);
     if (bitmap == nullptr) {
-      result->Error("Argument error", "Argument buffer must contain valid rawRgba bitmap");
+      result->Error("Argument error",
+                    "Argument buffer must contain valid rawRgba bitmap");
       return;
     }
     ICONINFO icon_info;
@@ -105,7 +117,9 @@ void CursorHandler::HandleMethodCall(
     cursor = CreateIconIndirect(&icon_info);
     DeleteObject(bitmap);
     if (cursor == nullptr) {
-      result->Error("Argument error", "Create Icon failed, argument buffer must contain valid rawRgba bitmap");
+      result->Error("Argument error",
+                    "Create Icon failed, argument buffer must contain valid "
+                    "rawRgba bitmap");
       return;
     }
     delegate_->SetFlutterCursor(cursor);
