@@ -438,6 +438,10 @@ def to_gn_args(args):
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
+    # Disable VMA's use of std::shared_mutex in environments where the
+    # standard library doesn't support it.
+    if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
+      gn_args['disable_vma_stl_shared_mutex'] = True
 
   # We should not need a special case for x86, but this seems to introduce text relocations
   # even with -fPIC everywhere.
