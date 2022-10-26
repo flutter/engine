@@ -143,10 +143,6 @@ bool PortableUITest::HasViewConnected(zx_koid_t view_ref_koid) {
 }
 
 void PortableUITest::LaunchClient() {
-  // realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
-
-  // RegisterTouchScreen();
-
   scene_provider_ = realm_->Connect<fuchsia::ui::test::scene::Controller>();
   scene_provider_.set_error_handler(
       [](auto) { FML_LOG(ERROR) << "Error from test scene provider"; });
@@ -170,21 +166,6 @@ void PortableUITest::LaunchClient() {
   RunLoopUntil(
       [this] { return HasViewConnected(*client_root_view_ref_koid_); });
   FML_LOG(INFO) << "Client view has rendered";
-
-  // scenic_ = realm_->Connect<fuchsia::ui::scenic::Scenic>();
-  // FML_LOG(INFO) << "Launched parent view";
-
-  // // Get the display dimensions.
-  // FML_LOG(INFO) << "Waiting for scenic display info";
-  // scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info)
-  // {
-  //   display_width_ = display_info.width_in_px;
-  //   display_height_ = display_info.height_in_px;
-  //   FML_LOG(INFO) << "Got display_width = " << display_width_
-  //                 << " and display_height = " << display_height_;
-  // });
-  // RunLoopUntil([this] { return display_width_ != 0 && display_height_ != 0;
-  // });
 }
 
 void PortableUITest::LaunchClientWithEmbeddedView() {
