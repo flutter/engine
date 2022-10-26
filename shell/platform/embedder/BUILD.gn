@@ -136,14 +136,10 @@ template("embedder_source_set") {
         "embedder_surface_vulkan.h",
       ]
 
-      public_deps = [ "//flutter/flutter_vma:flutter_skia_vma" ]
+      deps += [ "//flutter/flutter_vma:flutter_skia_vma" ]
     }
 
-    if (!defined(public_deps)) {
-      public_deps = []
-    }
-
-    public_deps += [ ":embedder_headers" ]
+    public_deps = [ ":embedder_headers" ]
 
     public_configs += [
       ":embedder_gpu_configuration_config",

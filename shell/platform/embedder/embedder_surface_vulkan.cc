@@ -148,6 +148,21 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
       vk_->NativeGetInstanceProcAddr();
   PFN_vkGetDeviceProcAddr get_device_proc_address = vk_->GetDeviceProcAddr;
   uint32_t vulkan_api_version = version;
+
+
+//     VkInstance instance,
+//     VkPhysicalDevice physicalDevice,
+//     VkDevice device,
+//     uint32_t physicalDeviceVersion,
+//     const VulkanExtensions* extensions,
+//     sk_sp<const VulkanInterface> interface,
+//     bool mustUseCoherentHostVisibleMemory,
+//     bool threadSafe
+
+  auto interface = sk_make_sp<const VulkanInterface>(
+      instance, device_.GetPhysicalDeviceHandle(), device_.GetHandle(),
+      version, &extensions, vk_, false, false);
+
   sk_sp<skgpu::VulkanMemoryAllocator> allocator =
       flutter::FlutterSkiaVulkanMemoryAllocator::Make(
           vulkan_api_version, instance, device_.GetPhysicalDeviceHandle(),

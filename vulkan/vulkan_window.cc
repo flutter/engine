@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "vulkan_application.h"
 #include "vulkan_device.h"
@@ -79,6 +80,12 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
     FML_DLOG(INFO) << "Vulkan surface is invalid.";
     return;
   }
+
+  // Needs to happen before GrDirectContext is created.
+  memory_allocator_ = flutter::FlutterSkiaVulkanMemoryAllocator::Make(
+      application_->GetAPIVersion(), application_->GetInstance(),
+      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
+      vk->NativeGetInstanceProcAddr(), vk->GetDeviceProcAddr, true);
 
   // Create the Skia GrDirectContext.
 
@@ -154,6 +161,7 @@ bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
   context->fFeatures = skia_features;
   context->fGetProc = std::move(getProc);
   context->fOwnsInstanceAndDevice = false;
+  context->fMemoryAllocator = memory_allocator_;
   return true;
 }
 

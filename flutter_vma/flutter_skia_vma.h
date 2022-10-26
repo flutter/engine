@@ -1,19 +1,23 @@
+#pragma once
+
 #include "flutter/flutter_vma/flutter_vma.h"
 
-#include "include/gpu/vk/GrVkBackendContext.h"
+#include "flutter/flutter_vma/vulkan_interface.h"
+#include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 
 namespace flutter {
 
 class FlutterSkiaVulkanMemoryAllocator : public skgpu::VulkanMemoryAllocator {
  public:
-  static sk_sp<VulkanMemoryAllocator> Make(
-      uint32_t vulkan_api_version,
+  static sk_sp<skgpu::VulkanMemoryAllocator> Make(
       VkInstance instance,
       VkPhysicalDevice physicalDevice,
       VkDevice device,
-      PFN_vkGetInstanceProcAddr get_instance_proc_address,
-      PFN_vkGetDeviceProcAddr get_device_proc_address,
-      bool mustUseCoherentHostVisibleMemory);
+      uint32_t physicalDeviceVersion,
+      const VulkanExtensions* extensions,
+      sk_sp<const VulkanInterface> interface,
+      bool mustUseCoherentHostVisibleMemory,
+      bool threadSafe);
 
   ~FlutterSkiaVulkanMemoryAllocator() override;
 
@@ -46,9 +50,15 @@ class FlutterSkiaVulkanMemoryAllocator : public skgpu::VulkanMemoryAllocator {
 
  private:
   FlutterSkiaVulkanMemoryAllocator(VmaAllocator allocator,
+                                   sk_sp<const VulkanInterface> interface,
                                    bool mustUseCoherentHostVisibleMemory);
 
   VmaAllocator allocator_;
+
+  // If a future version of the AMD allocator has helper functions for flushing
+  // and invalidating memory, then we won't need to save the VulkanInterface
+  // here since we won't need to make direct vulkan calls.
+  sk_sp<const VulkanInterface> interface_;
 
   // For host visible allocations do we require they are coherent or not. All
   // devices are required to support a host visible and coherent memory type.
