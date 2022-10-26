@@ -176,13 +176,15 @@ void PortableUITest::LaunchClient() {
 
   // // Get the display dimensions.
   // FML_LOG(INFO) << "Waiting for scenic display info";
-  // scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info) {
+  // scenic_->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo display_info)
+  // {
   //   display_width_ = display_info.width_in_px;
   //   display_height_ = display_info.height_in_px;
   //   FML_LOG(INFO) << "Got display_width = " << display_width_
   //                 << " and display_height = " << display_height_;
   // });
-  // RunLoopUntil([this] { return display_width_ != 0 && display_height_ != 0; });
+  // RunLoopUntil([this] { return display_width_ != 0 && display_height_ != 0;
+  // });
 }
 
 void PortableUITest::LaunchClientWithEmbeddedView() {

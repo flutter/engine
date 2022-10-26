@@ -48,7 +48,8 @@ class PortableUITest : public ::loop_fixture::RealLoop {
 
   // Attaches a client view to the scene, and waits for it to render.
   void LaunchClient();
-  // Attaches a view with an embedded child view to the scene, and waits for it to render.
+  // Attaches a view with an embedded child view to the scene, and waits for it
+  // to render.
   void LaunchClientWithEmbeddedView();
 
   // Returns true when the specified view is fully connected to the scene AND
