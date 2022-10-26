@@ -69,7 +69,7 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
                    taskQueue:(NSObject<FlutterTaskQueue>*)taskQueue {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _name = name;
+  _name = [name copy];
   _messenger = messenger;
   _codec = codec;
   _taskQueue = taskQueue;
@@ -161,7 +161,7 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
   NSAssert(method, @"Method name cannot be nil");
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _method = method;
+  _method = [method copy];
   _arguments = arguments;
   return self;
 }
@@ -218,7 +218,7 @@ NSObject const* FlutterMethodNotImplemented = [[NSObject alloc] init];
                    taskQueue:(NSObject<FlutterTaskQueue>*)taskQueue {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _name = name;
+  _name = [name copy];
   _messenger = messenger;
   _codec = codec;
   _taskQueue = taskQueue;
@@ -313,7 +313,7 @@ NSObject const* FlutterEndOfEventStream = [[NSObject alloc] init];
                    taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _name = name;
+  _name = [name copy];
   _messenger = messenger;
   _codec = codec;
   _taskQueue = taskQueue;

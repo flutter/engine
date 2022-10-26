@@ -170,7 +170,7 @@ using namespace flutter;
   NSAssert(data.length % elementSize == 0, @"Data must contain integral number of elements");
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _data = data;
+  _data = [data copy];
   _type = type;
   _elementSize = elementSize;
   _elementCount = data.length / elementSize;
@@ -326,7 +326,7 @@ using namespace flutter;
 - (instancetype)initWithData:(NSData*)data {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _data = data;
+  _data = [data copy];
   _range = NSMakeRange(0, 0);
   return self;
 }
