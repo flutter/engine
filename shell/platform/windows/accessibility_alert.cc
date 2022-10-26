@@ -10,6 +10,8 @@ namespace flutter {
 
 AccessibilityAlert::AccessibilityAlert() : text_(L""), parent_(nullptr) {}
 
+// IAccessible methods.
+
 IFACEMETHODIMP AccessibilityAlert::accHitTest(LONG screen_physical_pixel_x,
                                               LONG screen_physical_pixel_y,
                                               VARIANT* child) {
@@ -156,6 +158,8 @@ IFACEMETHODIMP AccessibilityAlert::get_accHelpTopic(BSTR* help_file,
 IFACEMETHODIMP AccessibilityAlert::put_accName(VARIANT var_id, BSTR put_name) {
   return E_NOTIMPL;
 }
+
+// End of IAccessible methods.
 
 void AccessibilityAlert::SetText(const std::wstring& text) {
   text_ = text;

@@ -16,6 +16,11 @@ namespace flutter {
 class AccessibilityRootNode;
 
 // An IAccessible node representing an alert read to the screen reader.
+// When an announcement is requested by the framework, an instance of
+// this class, if none exists already, is created and made a child of
+// the root AccessibilityRootNode node, and is therefore also a sibling
+// of the window's root node.
+// This node is not interactable to the user.
 class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
                            public IDispatchImpl<IAccessible> {
  public:
@@ -31,8 +36,6 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
                             LONG screen_physical_pixel_y,
                             VARIANT* child) override;
 
-  // Performs the object's default action.
-
   // Retrieves an IDispatch interface pointer for the specified child.
   IFACEMETHODIMP get_accChild(VARIANT var_child,
                               IDispatch** disp_child) override;
@@ -46,8 +49,6 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
 
   // Retrieves the tooltip description.
   IFACEMETHODIMP get_accDescription(VARIANT var_id, BSTR* desc) override;
-
-  // Retrieves the object that has the keyboard focus.
 
   // Retrieves the name of the specified object.
   IFACEMETHODIMP get_accName(VARIANT var_id, BSTR* name) override;
@@ -64,9 +65,7 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
   // Gets the help string for the specified object.
   IFACEMETHODIMP get_accHelp(VARIANT var_id, BSTR* help) override;
 
-  // Retrieve or set the string value associated with the specified object.
-  // Setting the value is not typically used by screen readers, but it's
-  // used frequently by automation software.
+  // Retrieve the string value associated with the specified object.
   IFACEMETHODIMP get_accValue(VARIANT var_id, BSTR* value) override;
 
   // IAccessible methods not implemented.
@@ -89,6 +88,8 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
                                   LONG* topic_id) override;
   IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
   IFACEMETHODIMP put_accValue(VARIANT var_id, BSTR new_value) override;
+
+  // End of IAccessible methods.
 
   AccessibilityAlert();
   ~AccessibilityAlert() = default;

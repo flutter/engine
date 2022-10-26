@@ -170,7 +170,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accName(VARIANT var_id,
   }
   IAccessible* target;
   if ((target = GetTargetAndChildID(&var_id))) {
-    return window_accessible_->get_accName(var_id, name_bstr);
+    return target->get_accName(var_id, name_bstr);
   }
   return S_FALSE;
 }
