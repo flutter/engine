@@ -230,7 +230,7 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The method name.
  */
-@property(readonly, nonatomic) NSString* method;
+@property(readonly, nonatomic, copy) NSString* method;
 
 /**
  * The arguments.
@@ -257,12 +257,12 @@ FLUTTER_DARWIN_EXPORT
 /**
  The error code.
  */
-@property(readonly, nonatomic) NSString* code;
+@property(readonly, nonatomic, copy) NSString* code;
 
 /**
  The error message.
  */
-@property(readonly, nonatomic, nullable) NSString* message;
+@property(readonly, nonatomic, nullable, copy) NSString* message;
 
 /**
  The error details.
@@ -344,17 +344,17 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The type of the encoded values.
  */
-@property(readonly, nonatomic) FlutterStandardDataType type;
+@property(readonly, nonatomic, assign) FlutterStandardDataType type;
 
 /**
  * The number of value items encoded.
  */
-@property(readonly, nonatomic) UInt32 elementCount;
+@property(readonly, nonatomic, assign) UInt32 elementCount;
 
 /**
  * The number of bytes used by the encoding of a single value item.
  */
-@property(readonly, nonatomic) UInt8 elementSize;
+@property(readonly, nonatomic, assign) UInt8 elementSize;
 @end
 
 /**
