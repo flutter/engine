@@ -36,6 +36,24 @@ FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
   root_transform_id_ = flatland_->NextTransformId();
   flatland_->flatland()->CreateTransform(root_transform_id_);
   flatland_->flatland()->SetRootTransform(root_transform_id_);
+
+  if (intercept_all_input) {
+    input_interceptor_transform_ = flatland_->NextTransformId();
+    flatland_->flatland()->CreateTransform(*input_interceptor_transform_);
+
+    flatland_->flatland()->AddChild(root_transform_id_,
+                                    *input_interceptor_transform_);
+    child_transforms_.emplace_back(*input_interceptor_transform_);
+
+    // Attach full-screen hit testing shield. Note that since the hit-region
+    // may be transformed (translated, rotated), we do not want to set
+    // width/height to FLT_MAX. This will cause a numeric overflow.
+    flatland_->flatland()->SetHitRegions(
+        *input_interceptor_transform_,
+        {{{0, 0, kMaxHitRegionSize, kMaxHitRegionSize},
+          fuchsia::ui::composition::HitTestInteraction::
+              SEMANTICALLY_INVISIBLE}});
+  }
 }
 
 FlatlandExternalViewEmbedder::~FlatlandExternalViewEmbedder() = default;
@@ -104,8 +122,7 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   // Reset for new frame.
   Reset();
   frame_size_ = frame_size;
-
-  // TODO(fxbug.dev/94000): Handle device pixel ratio.
+  frame_dpr_ = device_pixel_ratio;
 
   // Create the root layer.
   frame_layers_.emplace(
@@ -179,6 +196,10 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
   // Submit layers and platform views to Scenic in composition order.
   {
     TRACE_EVENT0("flutter", "SubmitLayers");
+
+    // First re-scale everything according to the DPR.
+    const float inv_dpr = 1.0f / frame_dpr_;
+    flatland_->flatland()->SetScale(root_transform_id_, {inv_dpr, inv_dpr});
 
     size_t flatland_layer_index = 0;
     for (const auto& layer_id : frame_composition_order_) {
@@ -333,6 +354,18 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
       // Reset for the next pass:
       flatland_layer_index++;
     }
+
+    // TODO(fxbug.dev/104956): Setting per-layer overlay hit region for Flatland
+    // external view embedder should match with what is being done in GFX
+    // external view embedder.
+    // Set up the input interceptor at the top of the
+    // scene, if applicable.  It will capture all input, and any unwanted input
+    // will be reinjected into embedded views.
+    if (input_interceptor_transform_.has_value()) {
+      flatland_->flatland()->AddChild(root_transform_id_,
+                                      *input_interceptor_transform_);
+      child_transforms_.emplace_back(*input_interceptor_transform_);
+    }
   }
 
   // Present the session to Scenic, along with surface acquire/release fences.
@@ -463,6 +496,7 @@ void FlatlandExternalViewEmbedder::Reset() {
   frame_layers_.clear();
   frame_composition_order_.clear();
   frame_size_ = SkISize::Make(0, 0);
+  frame_dpr_ = 1.f;
 
   // Clear all children from root.
   for (const auto& transform : child_transforms_) {

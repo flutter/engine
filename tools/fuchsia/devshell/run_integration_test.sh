@@ -47,6 +47,8 @@ shift # past argument
 # Ensure we know about the test and look up its packages.
 # The first package listed here should be the main package for the test
 # (the package that gets passed to `ffx test run`).
+# Note: You do not need to include oot_flutter_jit_runner-0.far, the script
+# automatically publishes it.
 test_packages=
 case $test_name in
   embedder)
@@ -56,6 +58,9 @@ case $test_name in
     # TODO(https://fxbug.dev/107917): Finish implementing and remove this warning.
     engine-warning "This test currently hangs because the Dart view hasn't been implemented yet. https://fxbug.dev/107917"
     test_packages=("text-input-test-0.far" "text-input-view.far")
+    ;;
+  touch-input)
+    test_packages=("touch-input-test-0.far" "touch-input-view.far")
     ;;
   *)
     engine-error "Unknown test name $test_name. You may need to add it to $0"
@@ -164,10 +169,11 @@ do
   rm -r "${far_debug_dir}"
 done
 
-engine-info "Registering debug symbols..."
-"$ENGINE_DIR"/fuchsia/sdk/linux/tools/x64/symbol-index add "${fuchsia_out_dir}"/.build-id "${fuchsia_out_dir}"
-
+# .jiri_root/bin/ffx needs to run from $FUCHSIA_DIR.
 pushd $FUCHSIA_DIR
+
+engine-info "Registering debug symbols..."
+"$FUCHSIA_DIR"/.jiri_root/bin/ffx debug symbol-index add "${fuchsia_out_dir}"/.build-id --build-dir "${fuchsia_out_dir}"
 
 if [[ "$skip_fuchsia_build" -eq 0 ]]
 then

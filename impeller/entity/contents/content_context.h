@@ -53,8 +53,6 @@
 #include "impeller/entity/rrect_blur.vert.h"
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
-#include "impeller/entity/solid_stroke.frag.h"
-#include "impeller/entity/solid_stroke.vert.h"
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
 #include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
@@ -63,9 +61,14 @@
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
 #include "impeller/entity/vertices.frag.h"
-#include "impeller/entity/vertices.vert.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline.h"
+
+#include "impeller/entity/position.vert.h"
+#include "impeller/entity/position_color.vert.h"
+#include "impeller/entity/position_uv.vert.h"
+
+#include "impeller/typographer/glyph_atlas.h"
 
 namespace impeller {
 
@@ -142,20 +145,21 @@ using LinearToSrgbFilterPipeline =
 using SrgbToLinearFilterPipeline =
     RenderPipelineT<SrgbToLinearFilterVertexShader,
                     SrgbToLinearFilterFragmentShader>;
-using SolidStrokePipeline =
-    RenderPipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using GlyphAtlasSdfPipeline =
     RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
-using VerticesPipeline =
-    RenderPipelineT<VerticesVertexShader, VerticesFragmentShader>;
 using AtlasPipeline =
     RenderPipelineT<AtlasFillVertexShader, AtlasFillFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+
+using GeometryPositionPipeline =
+    RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
+using GeometryColorPipeline =
+    RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 
 struct ContentContextOptions {
   SampleCount sample_count = SampleCount::kCount1;
@@ -183,6 +187,8 @@ struct ContentContextOptions {
   void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
 
+class Tessellator;
+
 class ContentContext {
  public:
   explicit ContentContext(std::shared_ptr<Context> context);
@@ -190,6 +196,8 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  std::shared_ptr<Tessellator> GetTessellator() const;
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -261,11 +269,6 @@ class ContentContext {
     return GetPipeline(srgb_to_linear_filter_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetSolidStrokePipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(solid_stroke_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetClipPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(clip_pipelines_, opts);
@@ -281,9 +284,14 @@ class ContentContext {
     return GetPipeline(glyph_atlas_sdf_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetVerticesPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(vertices_pipelines_, opts);
+    return GetPipeline(geometry_color_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryPositionPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(geometry_position_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasPipeline(
@@ -370,13 +378,16 @@ class ContentContext {
 
   std::shared_ptr<Context> GetContext() const;
 
+  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
+
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(ISize texture_size,
-                                       SubpassCallback subpass_callback) const;
+  std::shared_ptr<Texture> MakeSubpass(
+      ISize texture_size,
+      const SubpassCallback& subpass_callback) const;
 
  private:
   std::shared_ptr<Context> context_;
@@ -405,12 +416,12 @@ class ContentContext {
       color_matrix_color_filter_pipelines_;
   mutable Variants<LinearToSrgbFilterPipeline> linear_to_srgb_filter_pipelines_;
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
-  mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
-  mutable Variants<VerticesPipeline> vertices_pipelines_;
   mutable Variants<AtlasPipeline> atlas_pipelines_;
+  mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
+  mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
@@ -458,6 +469,8 @@ class ContentContext {
   }
 
   bool is_valid_ = false;
+  std::shared_ptr<Tessellator> tessellator_;
+  std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };

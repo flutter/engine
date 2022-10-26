@@ -54,6 +54,7 @@ PlaygroundImplVK::PlaygroundImplVK()
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
   auto window =
       ::glfwCreateWindow(800, 600, "Test Vulkan Window", nullptr, nullptr);
@@ -87,7 +88,13 @@ void PlaygroundImplVK::SetupSwapchain() {
   auto window = reinterpret_cast<GLFWwindow*>(handle_.get());
   vk::Instance instance = context_vk->GetInstance();
   VkSurfaceKHR surface_tmp;
-  ::glfwCreateWindowSurface(instance, window, nullptr, &surface_tmp);
+  auto res = vk::Result{
+      ::glfwCreateWindowSurface(instance, window, nullptr, &surface_tmp)};
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create surface for GLFW window: "
+                   << vk::to_string(res);
+    return;
+  }
   vk::UniqueSurfaceKHR surface{surface_tmp, instance};
   context_vk->SetupSwapchain(std::move(surface));
 }

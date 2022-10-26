@@ -9,6 +9,7 @@
 
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
@@ -61,11 +62,11 @@ struct Playground::GLFWInitializer {
     //    applicationDidFinishLaunching is never fired.
     static std::once_flag sOnceInitializer;
     std::call_once(sOnceInitializer, []() {
-      FML_CHECK(::glfwInit() == GLFW_TRUE);
       ::glfwSetErrorCallback([](int code, const char* description) {
         FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code
                        << ").";
       });
+      FML_CHECK(::glfwInit() == GLFW_TRUE);
     });
   }
 };
@@ -211,6 +212,8 @@ bool Playground::OpenPlaygroundHere(
   ImGui_ImplImpeller_Init(renderer_->GetContext());
   fml::ScopedCleanupClosure shutdown_imgui_impeller(
       []() { ImGui_ImplImpeller_Shutdown(); });
+
+  ImGui::SetNextWindowPos({10, 10});
 
   ::glfwSetWindowSize(window, GetWindowSize().width, GetWindowSize().height);
   ::glfwSetWindowPos(window, 200, 100);

@@ -232,6 +232,10 @@ struct Vector4 {
     return Vector4(x * f, y * f, z * f, w * f);
   }
 
+  constexpr Vector4 operator*(const Vector4& v) const {
+    return Vector4(x * v.x, y * v.y, z * v.z, w * v.w);
+  }
+
   constexpr Vector4 Lerp(const Vector4& v, Scalar t) const {
     return *this + (v - *this) * t;
   }
@@ -243,3 +247,17 @@ static_assert(sizeof(Vector3) == 3 * sizeof(Scalar));
 static_assert(sizeof(Vector4) == 4 * sizeof(Scalar));
 
 }  // namespace impeller
+
+namespace std {
+
+inline std::ostream& operator<<(std::ostream& out, const impeller::Vector3& p) {
+  out << "(" << p.x << ", " << p.y << ", " << p.z << ")";
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const impeller::Vector4& p) {
+  out << "(" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
+  return out;
+}
+
+}  // namespace std

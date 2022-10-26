@@ -11,6 +11,7 @@
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -109,8 +110,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kModulate:
-      // kSourceColor and kDestinationColor override the alpha blend factor.
-      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceColor;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -118,7 +118,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     default:
       FML_UNREACHABLE();
   }
-  desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+  desc.SetColorAttachmentDescriptor(0u, color0);
 
   if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
     StencilAttachmentDescriptor stencil =
@@ -142,7 +142,9 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 }
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
-    : context_(std::move(context)) {
+    : context_(std::move(context)),
+      tessellator_(std::make_shared<Tessellator>()),
+      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -203,13 +205,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearToSrgbFilterPipeline>(*context_);
   srgb_to_linear_filter_pipelines_[{}] =
       CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
-  solid_stroke_pipelines_[{}] =
-      CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
   glyph_atlas_sdf_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
-  vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
+  geometry_color_pipelines_[{}] =
+      CreateDefaultPipeline<GeometryColorPipeline>(*context_);
+  geometry_position_pipelines_[{}] =
+      CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.
@@ -244,7 +247,7 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
-    SubpassCallback subpass_callback) const {
+    const SubpassCallback& subpass_callback) const {
   auto context = GetContext();
 
   RenderTarget subpass_target;
@@ -283,6 +286,15 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   }
 
   return subpass_texture;
+}
+
+std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
+  return tessellator_;
+}
+
+std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
+    const {
+  return glyph_atlas_context_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {
