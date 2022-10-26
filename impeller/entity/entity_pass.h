@@ -39,7 +39,7 @@ class EntityPass {
 
   std::unique_ptr<EntityPass> Clone() const;
 
-  void AddEntity(const Entity& entity);
+  void AddEntity(Entity entity);
 
   void SetElements(std::vector<Element> elements);
 
@@ -60,7 +60,7 @@ class EntityPass {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  void SetBackdropFilter(const std::optional<BackdropFilterProc>& proc);
+  void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
@@ -101,15 +101,15 @@ class EntityPass {
                                    uint32_t pass_depth,
                                    size_t stencil_depth_floor) const;
 
-  bool OnRender(ContentContext& renderer,
-                ISize root_pass_size,
-                const RenderTarget& render_target,
-                Point position,
-                Point parent_position,
-                uint32_t pass_depth,
-                size_t stencil_depth_floor = 0,
-                const std::shared_ptr<Contents>& backdrop_filter_contents =
-                    nullptr) const;
+  bool OnRender(
+      ContentContext& renderer,
+      ISize root_pass_size,
+      const RenderTarget& render_target,
+      Point position,
+      Point parent_position,
+      uint32_t pass_depth,
+      size_t stencil_depth_floor = 0,
+      std::shared_ptr<Contents> backdrop_filter_contents = nullptr) const;
 
   std::vector<Element> elements_;
 

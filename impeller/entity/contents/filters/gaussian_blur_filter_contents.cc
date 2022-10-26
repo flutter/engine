@@ -77,7 +77,7 @@ void DirectionalGaussianBlurFilterContents::SetTileMode(
 }
 
 void DirectionalGaussianBlurFilterContents::SetSourceOverride(
-    const FilterInput::Ref& source_override) {
+    FilterInput::Ref source_override) {
   source_override_ = std::move(source_override);
 }
 

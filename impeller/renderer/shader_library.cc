@@ -10,13 +10,10 @@ ShaderLibrary::ShaderLibrary() = default;
 
 ShaderLibrary::~ShaderLibrary() = default;
 
-void ShaderLibrary::RegisterFunction(
-    std::string name,  // NOLINT(performance-unnecessary-value-param)
-    ShaderStage stage,
-    std::shared_ptr<fml::Mapping>
-        code,  // NOLINT(performance-unnecessary-value-param)
-    RegistrationCallback
-        callback) {  // NOLINT(performance-unnecessary-value-param)
+void ShaderLibrary::RegisterFunction(std::string name,
+                                     ShaderStage stage,
+                                     std::shared_ptr<fml::Mapping> code,
+                                     RegistrationCallback callback) {
   if (callback) {
     callback(false);
   }

@@ -32,8 +32,8 @@ std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
   return contents;
 }
 
-void TextureContents::SetLabel(const std::string& label) {
-  label_ = label;
+void TextureContents::SetLabel(std::string label) {
+  label_ = std::move(label);
 }
 
 void TextureContents::SetPath(const Path& path) {
@@ -41,8 +41,8 @@ void TextureContents::SetPath(const Path& path) {
   is_rect_ = false;
 }
 
-void TextureContents::SetTexture(const std::shared_ptr<Texture>& texture) {
-  texture_ = texture;
+void TextureContents::SetTexture(std::shared_ptr<Texture> texture) {
+  texture_ = std::move(texture);
 }
 
 std::shared_ptr<Texture> TextureContents::GetTexture() const {
@@ -194,8 +194,8 @@ const Rect& TextureContents::GetSourceRect() const {
   return source_rect_;
 }
 
-void TextureContents::SetSamplerDescriptor(const SamplerDescriptor& desc) {
-  sampler_descriptor_ = desc;
+void TextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
+  sampler_descriptor_ = std::move(desc);
 }
 
 const SamplerDescriptor& TextureContents::GetSamplerDescriptor() const {

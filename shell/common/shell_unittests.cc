@@ -102,7 +102,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
 
   MOCK_METHOD3(LoadDartDeferredLibraryError,
                void(intptr_t loading_unit_id,
-                    const std::string& error_message,
+                    const std::string error_message,
                     bool transient));
 
   MOCK_METHOD2(UpdateAssetResolverByType,

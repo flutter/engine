@@ -37,12 +37,12 @@ class FilterContents : public Contents {
   enum class MorphType { kDilate, kErode };
 
   static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
-      const FilterInput::Ref& input,
+      FilterInput::Ref input,
       Sigma sigma,
       Vector2 direction,
       BlurStyle blur_style = BlurStyle::kNormal,
       Entity::TileMode tile_mode = Entity::TileMode::kDecal,
-      const FilterInput::Ref& alpha_mask = nullptr,
+      FilterInput::Ref alpha_mask = nullptr,
       Sigma secondary_sigma = {},
       const Matrix& effect_transform = Matrix());
 
@@ -55,33 +55,33 @@ class FilterContents : public Contents {
       const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeBorderMaskBlur(
-      const FilterInput::Ref& input,
+      FilterInput::Ref input,
       Sigma sigma_x,
       Sigma sigma_y,
       BlurStyle blur_style = BlurStyle::kNormal,
       const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeDirectionalMorphology(
-      const FilterInput::Ref& input,
+      FilterInput::Ref input,
       Radius radius,
       Vector2 direction,
       MorphType morph_type,
       const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeMorphology(
-      const FilterInput::Ref& input,
+      FilterInput::Ref input,
       Radius radius_x,
       Radius radius_y,
       MorphType morph_type,
       const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
-      const FilterInput::Ref& input,
+      FilterInput::Ref input,
       const Matrix& matrix,
       const SamplerDescriptor& desc);
 
   static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
-      const FilterInput::Ref& input,
+      FilterInput::Ref input,
       const Matrix& matrix);
 
   FilterContents();
@@ -93,7 +93,7 @@ class FilterContents : public Contents {
   ///
   ///         The number of required or optional textures depends on the
   ///         particular filter's implementation.
-  void SetInputs(const FilterInput::Vector& inputs);
+  void SetInputs(FilterInput::Vector inputs);
 
   /// @brief  Screen space bounds to use for cropping the filter output.
   void SetCoverageCrop(std::optional<Rect> coverage_crop);

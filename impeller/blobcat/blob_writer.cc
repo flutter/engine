@@ -72,8 +72,8 @@ bool BlobWriter::AddBlobAtPath(const std::string& std_path) {
 }
 
 bool BlobWriter::AddBlob(BlobShaderType type,
-                         const std::string& name,
-                         const std::shared_ptr<fml::Mapping>& mapping) {
+                         std::string name,
+                         std::shared_ptr<fml::Mapping> mapping) {
   if (name.empty() || !mapping || mapping->GetMapping() == nullptr) {
     return false;
   }

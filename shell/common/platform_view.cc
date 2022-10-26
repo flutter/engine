@@ -107,9 +107,8 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
-void PlatformView::UpdateSemantics(
-    const SemanticsNodeUpdates& update,
-    const CustomAccessibilityActionUpdates& actions) {}
+void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
+                                   CustomAccessibilityActionUpdates actions) {}
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
@@ -170,10 +169,9 @@ void PlatformView::LoadDartDeferredLibrary(
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
 
-void PlatformView::LoadDartDeferredLibraryError(
-    intptr_t loading_unit_id,
-    const std::string& error_message,
-    bool transient) {}
+void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                                const std::string error_message,
+                                                bool transient) {}
 
 void PlatformView::UpdateAssetResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,

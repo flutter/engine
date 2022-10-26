@@ -167,7 +167,7 @@ class CompositorContext {
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
       bool surface_supports_readback,
-      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger,
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
       DisplayListBuilder* display_list_builder);
 
   void OnGrContextCreated();

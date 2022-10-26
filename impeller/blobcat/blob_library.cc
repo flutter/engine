@@ -71,9 +71,8 @@ size_t BlobLibrary::GetShaderCount() const {
   return blobs_.size();
 }
 
-std::shared_ptr<fml::Mapping> BlobLibrary::GetMapping(
-    BlobShaderType type,
-    const std::string& name) const {
+std::shared_ptr<fml::Mapping> BlobLibrary::GetMapping(BlobShaderType type,
+                                                      std::string name) const {
   BlobKey key;
   key.type = type;
   key.name = std::move(name);

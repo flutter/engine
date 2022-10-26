@@ -28,7 +28,7 @@ class BlobLibrary {
   size_t GetShaderCount() const;
 
   std::shared_ptr<fml::Mapping> GetMapping(BlobShaderType type,
-                                           const std::string& name) const;
+                                           std::string name) const;
 
   size_t IterateAllBlobs(
       const std::function<bool(BlobShaderType type,

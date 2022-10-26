@@ -258,7 +258,7 @@ void Canvas::DrawPicture(Picture picture) {
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
                        Point offset,
                        const Paint& paint,
-                       const SamplerDescriptor& sampler) {
+                       SamplerDescriptor sampler) {
   if (!image) {
     return;
   }
@@ -274,7 +274,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
                            Rect source,
                            Rect dest,
                            const Paint& paint,
-                           const SamplerDescriptor& sampler) {
+                           SamplerDescriptor sampler) {
   if (!image || source.size.IsEmpty() || dest.size.IsEmpty()) {
     return;
   }
@@ -394,7 +394,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
                        std::vector<Rect> texture_coordinates,
                        std::vector<Color> colors,
                        BlendMode blend_mode,
-                       const SamplerDescriptor& sampler,
+                       SamplerDescriptor sampler,
                        std::optional<Rect> cull_rect,
                        const Paint& paint) {
   if (!atlas) {

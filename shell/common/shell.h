@@ -578,7 +578,7 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
 
   void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                    const std::string& error_message,
+                                    const std::string error_message,
                                     bool transient) override;
 
   // |PlatformView::Delegate|
