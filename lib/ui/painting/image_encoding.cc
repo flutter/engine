@@ -66,7 +66,7 @@ void ConvertImageToRaster(
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     const fml::RefPtr<fml::TaskRunner>& io_task_runner,
     const fml::WeakPtr<GrDirectContext>& resource_context,
-    const fml::WeakPtr<SnapshotDelegate>& snapshot_delegate,
+    const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   // If the owning_context is kRaster, we can't access it on this task runner.
   if (dl_image->owning_context() != DlImage::OwningContext::kRaster) {
@@ -220,7 +220,7 @@ void EncodeImageAndInvokeDataCallback(
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     const fml::RefPtr<fml::TaskRunner>& io_task_runner,
     const fml::WeakPtr<GrDirectContext>& resource_context,
-    const fml::WeakPtr<SnapshotDelegate>& snapshot_delegate,
+    const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   auto callback_task = fml::MakeCopyable(
       [callback = std::move(callback)](sk_sp<SkData> encoded) mutable {
@@ -275,9 +275,9 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
        snapshot_delegate =
            UIDartState::Current()->GetSnapshotDelegate()]() mutable {
         EncodeImageAndInvokeDataCallback(
-            std::move(image), std::move(callback), image_format, ui_task_runner,
-            std::move(raster_task_runner), std::move(io_task_runner),
-            io_manager->GetResourceContext(), std::move(snapshot_delegate),
+            image, std::move(callback), image_format, ui_task_runner,
+            raster_task_runner, io_task_runner,
+            io_manager->GetResourceContext(), snapshot_delegate,
             io_manager->GetIsGpuDisabledSyncSwitch());
       }));
 

@@ -8,12 +8,12 @@ import 'dart:developer' as developer;
 import 'package:ui/src/engine/assets.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/keyboard.dart';
 import 'package:ui/src/engine/mouse_cursor.dart';
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/platform_dispatcher.dart';
 import 'package:ui/src/engine/platform_views/content_manager.dart';
 import 'package:ui/src/engine/profiler.dart';
+import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/src/engine/safe_browser_api.dart';
 import 'package:ui/src/engine/window.dart';
@@ -204,11 +204,12 @@ Future<void> initializeEngineServices({
     }
   };
 
-  await renderer.initialize();
-
   assetManager ??= const AssetManager();
-  await _setAssetManager(assetManager);
-  await renderer.fontCollection.ensureFontsLoaded();
+  _setAssetManager(assetManager);
+
+  Future<void> initializeRendererCallback () async => renderer.initialize();
+  await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
+  renderer.fontCollection.registerDownloadedFonts();
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
 
@@ -234,7 +235,7 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
-  Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
+  RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
   _initializationState = DebugEngineInitializationState.initialized;
@@ -243,22 +244,24 @@ Future<void> initializeEngineUi() async {
 AssetManager get assetManager => _assetManager!;
 AssetManager? _assetManager;
 
-Future<void> _setAssetManager(AssetManager assetManager) async {
+void _setAssetManager(AssetManager assetManager) {
   assert(assetManager != null, 'Cannot set assetManager to null');
   if (assetManager == _assetManager) {
     return;
   }
 
   _assetManager = assetManager;
+}
 
+Future<void> _downloadAssetFonts() async {
   renderer.fontCollection.clear();
 
   if (_assetManager != null) {
-    await renderer.fontCollection.registerFonts(assetManager);
+    await renderer.fontCollection.downloadAssetFonts(_assetManager!);
   }
 
   if (ui.debugEmulateFlutterTesterEnvironment) {
-    renderer.fontCollection.debugRegisterTestFonts();
+    await renderer.fontCollection.debugDownloadTestFonts();
   }
 }
 

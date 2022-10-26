@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 #include <cmath>
+#include <utility>
 #include <valarray>
 
 #include "impeller/base/strings.h"
@@ -77,7 +78,7 @@ void DirectionalGaussianBlurFilterContents::SetTileMode(
 
 void DirectionalGaussianBlurFilterContents::SetSourceOverride(
     FilterInput::Ref source_override) {
-  source_override_ = source_override;
+  source_override_ = std::move(source_override);
 }
 
 std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
@@ -258,7 +259,8 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
           texture_rotate.Invert() *
           Matrix::MakeTranslation(pass_texture_rect.origin) *
           Matrix::MakeScale((1 / scale) * (scaled_size / floored_size)),
-      .sampler_descriptor = sampler_desc};
+      .sampler_descriptor = sampler_desc,
+      .opacity = input_snapshot->opacity};
 }
 
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(

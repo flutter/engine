@@ -8,9 +8,11 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/texture.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
 

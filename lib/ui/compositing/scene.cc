@@ -95,7 +95,7 @@ static sk_sp<DlImage> CreateDeferredImage(
     std::shared_ptr<LayerTree> layer_tree,
     uint32_t width,
     uint32_t height,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
@@ -110,7 +110,7 @@ static sk_sp<DlImage> CreateDeferredImage(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   return DlDeferredImageGPUSkia::MakeFromLayerTree(
       image_info, std::move(layer_tree), std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue));
+      raster_task_runner, std::move(unref_queue));
 }
 
 void Scene::RasterizeToImage(uint32_t width,
