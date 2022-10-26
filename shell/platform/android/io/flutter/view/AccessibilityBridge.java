@@ -2800,7 +2800,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     private CharSequence getValueLabelHint() {
       CharSequence[] array = new CharSequence[] {getValue(), getLabel(), getHint()};
-      ;
       CharSequence result = null;
       for (CharSequence word : array) {
         if (word != null && word.length() > 0) {
@@ -2816,7 +2815,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     private CharSequence getTextFieldHint() {
       CharSequence[] array = new CharSequence[] {getLabel(), getHint()};
-      ;
       CharSequence result = null;
       for (CharSequence word : array) {
         if (word != null && word.length() > 0) {
