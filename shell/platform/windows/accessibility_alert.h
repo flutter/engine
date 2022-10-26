@@ -107,4 +107,4 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
 
 }  // namespace flutter
 
-#endif
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_ACCESSIBILITY_ALERT_H_
