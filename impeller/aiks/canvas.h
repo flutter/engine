@@ -74,11 +74,11 @@ class Canvas {
 
   void DrawRRect(Rect rect, Scalar corner_radius, Paint paint);
 
-  void DrawCircle(Point center, Scalar radius, Paint paint);
+  void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
   void DrawImage(const std::shared_ptr<Image>& image,
                  Point offset,
-                 Paint paint,
+                 const Paint& paint,
                  SamplerDescriptor sampler = {});
 
   void DrawImageRect(const std::shared_ptr<Image>& image,

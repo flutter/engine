@@ -1726,8 +1726,8 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
   canvas.Translate(Vector2(100, 100));
 
   auto texture = std::make_shared<Image>(CreateTextureForFixture("boston.jpg"));
-  auto draw_image_layer = [&canvas, &texture](Paint paint) {
-    canvas.SaveLayer(std::move(paint));
+  auto draw_image_layer = [&canvas, &texture](const Paint& paint) {
+    canvas.SaveLayer(paint);
     canvas.DrawImage(texture, {}, Paint{});
     canvas.Restore();
   };

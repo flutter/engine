@@ -206,13 +206,11 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
   if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
     return;
   }
-  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
-           std::move(paint));
+  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(), paint);
 }
 
-void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
-  DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(),
-           std::move(paint));
+void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
+  DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(), paint);
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
@@ -259,7 +257,7 @@ void Canvas::DrawPicture(Picture picture) {
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
                        Point offset,
-                       Paint paint,
+                       const Paint& paint,
                        SamplerDescriptor sampler) {
   if (!image) {
     return;
@@ -269,7 +267,7 @@ void Canvas::DrawImage(const std::shared_ptr<Image>& image,
   const auto dest =
       Rect::MakeXYWH(offset.x, offset.y, source.size.width, source.size.height);
 
-  DrawImageRect(image, source, dest, std::move(paint), std::move(sampler));
+  DrawImageRect(image, source, dest, paint, std::move(sampler));
 }
 
 void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,

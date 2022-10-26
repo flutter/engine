@@ -19,11 +19,11 @@ Geometry::~Geometry() = default;
 // static
 std::unique_ptr<VerticesGeometry> Geometry::MakeVertices(
     const Vertices& vertices) {
-  return std::make_unique<VerticesGeometry>(std::move(vertices));
+  return std::make_unique<VerticesGeometry>(vertices);
 }
 
 std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
-  return std::make_unique<FillPathGeometry>(std::move(path));
+  return std::make_unique<FillPathGeometry>(path);
 }
 
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,

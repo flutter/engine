@@ -572,11 +572,11 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto sigma_y = Sigma(blur->sigma_y());
       auto tile_mode = ToTileMode(blur->tile_mode());
 
-      return [sigma_x, sigma_y, tile_mode](FilterInput::Ref input,
+      return [sigma_x, sigma_y, tile_mode](const FilterInput::Ref& input,
                                            const Matrix& effect_transform) {
         return FilterContents::MakeGaussianBlur(
-            std::move(input), sigma_x, sigma_y,
-            FilterContents::BlurStyle::kNormal, tile_mode, effect_transform);
+            input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
+            tile_mode, effect_transform);
       };
 
       break;
@@ -945,7 +945,7 @@ void DisplayListDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   auto path = PathBuilder{}.AddLine(ToPoint(p0), ToPoint(p1)).TakePath();
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
-  canvas_.DrawPath(path, std::move(paint));
+  canvas_.DrawPath(path, paint);
 }
 
 // |flutter::Dispatcher|
@@ -1230,7 +1230,7 @@ void DisplayListDispatcher::drawShadow(const SkPath& path,
     canvas_.DrawRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX,
                       std::move(paint));
   } else {
-    canvas_.DrawPath(ToPath(path), std::move(paint));
+    canvas_.DrawPath(ToPath(path), paint);
   }
 
   canvas_.Restore();
