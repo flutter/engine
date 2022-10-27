@@ -857,7 +857,11 @@ class BrowserManager {
             suiteChannel,
             message);
 
-        if (!_wasm) {
+        if (_wasm) {
+          // We don't have mapping for wasm yet. But we should send a message
+          // to let the host page move forward.
+          controller!.channel('test.browser.mapper').sink.add(null);
+        } else {
           final String sourceMapFileName =
               '${p.basename(path)}.browser_test.dart.js.map';
           final String pathToTest = p.dirname(path);
