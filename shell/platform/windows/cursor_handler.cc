@@ -11,7 +11,7 @@
 static constexpr char kChannelName[] = "flutter/mousecursor";
 
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
-static constexpr char kSetSystemCursorMethod[] = "setSystemCursor";
+static constexpr char kSetCustomCursorMethod[] = "setCustomCursor";
 
 static constexpr char kKindKey[] = "kind";
 static constexpr char kCustomCursorBufferKey[] = "buffer";
@@ -51,7 +51,7 @@ void CursorHandler::HandleMethodCall(
     const auto& kind = std::get<std::string>(kind_iter->second);
     delegate_->UpdateFlutterCursor(kind);
     result->Success();
-  } else if (method.compare(kSetSystemCursorMethod) == 0) {
+  } else if (method.compare(kSetCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
     auto buffer_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorBufferKey)));
@@ -61,8 +61,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument buffer while trying to customize system cursor");
       return;
     }
-    auto buffer = std::get<std::vector<uint8_t>>(
-        arguments.at(flutter::EncodableValue("buffer")));
+    auto buffer = std::get<std::vector<uint8_t>>(buffer_iter->second);
     auto width_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorWidthKey)));
     if (width_iter == arguments.end()) {
@@ -71,7 +70,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument width while trying to customize system cursor");
       return;
     }
-    auto width = std::get<int>(arguments.at(flutter::EncodableValue("width")));
+    auto width = std::get<int>(arguments.at(width_iter->second));
     auto height_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorHeightKey)));
     if (height_iter == arguments.end()) {
@@ -81,7 +80,7 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     auto height =
-        std::get<int>(arguments.at(flutter::EncodableValue("height")));
+        std::get<int>(height_iter->second);
     auto hotx_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorHotxKey)));
     if (hotx_iter == arguments.end()) {
@@ -90,7 +89,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument hotx while trying to customize system cursor");
       return;
     }
-    auto hotx = std::get<double>(arguments.at(flutter::EncodableValue("hotx")));
+    auto hotx = std::get<double>(hotx_iter->second);
     auto hoty_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorHotyKey)));
     if (hoty_iter == arguments.end()) {
@@ -99,7 +98,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument hoty while trying to customize system cursor");
       return;
     }
-    auto hoty = std::get<double>(arguments.at(flutter::EncodableValue("hoty")));
+    auto hoty = std::get<double>(hoty_iter->second);
     HCURSOR cursor = nullptr;
     // Flutter returns rawRgba, which has 8bits*4channels
     auto bitmap = CreateBitmap(width, height, 1, 32, &buffer[0]);
