@@ -886,7 +886,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // for non-scopes-routes semantics nodes.
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
       result.setText(semanticsNode.getValue());
-      result.setHintText(semanticsNode.getTextFieldHint());
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        result.setHintText(semanticsNode.getTextFieldHint());
+      }
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       CharSequence content = semanticsNode.getValueLabelHint();
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
