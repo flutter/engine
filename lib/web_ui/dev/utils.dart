@@ -411,7 +411,7 @@ class TestsByRenderer {
 }
 
 /// Given a list of test files, organizes them by which renderer should run them.
-TestsByRenderer organizeTestsByRenderer(List<FilePath> testFiles) {
+TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles) {
   final List<FilePath> htmlTargets = <FilePath>[];
   final List<FilePath> canvasKitTargets = <FilePath>[];
   final List<FilePath> skwasmTargets = <FilePath>[];

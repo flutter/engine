@@ -68,11 +68,11 @@ class RunTestsStep implements PipelineStep {
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
-    final TestsByRenderer testsByRenderer = organizeTestsByRenderer(testFiles);
+    final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
-    if (testsByRenderer.htmlTests.isNotEmpty || testsByRenderer.uiTests.isNotEmpty) {
+    if (sortedTests.htmlTests.isNotEmpty || sortedTests.uiTests.isNotEmpty) {
       await _runTestBatch(
-        testFiles: testsByRenderer.htmlTests + testsByRenderer.uiTests,
+        testFiles: sortedTests.htmlTests + sortedTests.uiTests,
         renderer: Renderer.html,
         browserEnvironment: browserEnvironment,
         expectFailure: false,
@@ -83,9 +83,9 @@ class RunTestsStep implements PipelineStep {
       );
     }
 
-    if (testsByRenderer.canvasKitTests.isNotEmpty || testsByRenderer.uiTests.isNotEmpty) {
+    if (sortedTests.canvasKitTests.isNotEmpty || sortedTests.uiTests.isNotEmpty) {
       await _runTestBatch(
-        testFiles: testsByRenderer.canvasKitTests + testsByRenderer.uiTests,
+        testFiles: sortedTests.canvasKitTests + sortedTests.uiTests,
         renderer: Renderer.canvasKit,
         browserEnvironment: browserEnvironment,
         expectFailure: false,
@@ -96,9 +96,9 @@ class RunTestsStep implements PipelineStep {
       );
     }
 
-    if (testsByRenderer.skwasmTests.isNotEmpty) {
+    if (sortedTests.skwasmTests.isNotEmpty) {
       await _runTestBatch(
-        testFiles: testsByRenderer.skwasmTests,
+        testFiles: sortedTests.skwasmTests,
         renderer: Renderer.skwasm,
         browserEnvironment: browserEnvironment,
         expectFailure: false,

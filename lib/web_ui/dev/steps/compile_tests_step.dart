@@ -194,24 +194,24 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
 Future<void> compileTests(List<FilePath> testFiles) async {
   final Stopwatch stopwatch = Stopwatch()..start();
 
-  final TestsByRenderer testsByRenderer = organizeTestsByRenderer(testFiles);
+  final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
   await Future.wait(<Future<void>>[
-    if (testsByRenderer.htmlTests.isNotEmpty)
-      _compileTestsInParallel(targets: testsByRenderer.htmlTests),
-    if (testsByRenderer.canvasKitTests.isNotEmpty)
-      _compileTestsInParallel(targets: testsByRenderer.canvasKitTests, renderer: Renderer.canvasKit),
-    if (testsByRenderer.skwasmTests.isNotEmpty)
-      _compileTestsInParallel(targets: testsByRenderer.skwasmTests, renderer: Renderer.skwasm),
-    if (testsByRenderer.uiTests.isNotEmpty)
-      _compileTestsInParallel(targets: testsByRenderer.uiTests),
-    if (testsByRenderer.uiTests.isNotEmpty)
-      _compileTestsInParallel(targets: testsByRenderer.uiTests, renderer: Renderer.canvasKit),
+    if (sortedTests.htmlTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.htmlTests),
+    if (sortedTests.canvasKitTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.canvasKitTests, renderer: Renderer.canvasKit),
+    if (sortedTests.skwasmTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.skwasmTests, renderer: Renderer.skwasm),
+    if (sortedTests.uiTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.uiTests),
+    if (sortedTests.uiTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.uiTests, renderer: Renderer.canvasKit),
   ]);
 
   stopwatch.stop();
 
-  final int targetCount = testsByRenderer.numTargetsToCompile;
+  final int targetCount = sortedTests.numTargetsToCompile;
   print(
     'Built $targetCount tests in ${stopwatch.elapsedMilliseconds ~/ 1000} '
     'seconds using $_dart2jsConcurrency concurrent dart2js processes.',
