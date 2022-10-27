@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
+FLUTTER_ASSERT_ARC
+
 #pragma mark - Basic message channel
 
 static NSString* const kFlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
