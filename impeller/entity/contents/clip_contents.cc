@@ -92,7 +92,7 @@ bool ClipContents::Render(const ContentContext& renderer,
           VertexBufferBuilder<VS::PerVertexData>{}
               .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
               .CreateVertexBuffer(pass.GetTransientsBuffer());
-      cmd.BindVertices(std::move(vertices));
+      cmd.BindVertices(vertices);
 
       info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
       VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
@@ -117,12 +117,8 @@ bool ClipContents::Render(const ContentContext& renderer,
 
   cmd.pipeline = renderer.GetClipPipeline(options);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
   auto allocator = renderer.GetContext()->GetResourceAllocator();
-  auto geometry_result = geometry_->GetPositionBuffer(
-      allocator, host_buffer, renderer.GetTessellator(),
-      pass.GetRenderTargetSize(),
-      entity.GetTransformation().GetMaxBasisLength());
+  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
   cmd.BindVertices(geometry_result.vertex_buffer);
   cmd.primitive_type = geometry_result.type;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

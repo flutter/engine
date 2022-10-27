@@ -62,11 +62,11 @@ struct Playground::GLFWInitializer {
     //    applicationDidFinishLaunching is never fired.
     static std::once_flag sOnceInitializer;
     std::call_once(sOnceInitializer, []() {
-      FML_CHECK(::glfwInit() == GLFW_TRUE);
       ::glfwSetErrorCallback([](int code, const char* description) {
         FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code
                        << ").";
       });
+      FML_CHECK(::glfwInit() == GLFW_TRUE);
     });
   }
 };
@@ -212,6 +212,8 @@ bool Playground::OpenPlaygroundHere(
   ImGui_ImplImpeller_Init(renderer_->GetContext());
   fml::ScopedCleanupClosure shutdown_imgui_impeller(
       []() { ImGui_ImplImpeller_Shutdown(); });
+
+  ImGui::SetNextWindowPos({10, 10});
 
   ::glfwSetWindowSize(window, GetWindowSize().width, GetWindowSize().height);
   ::glfwSetWindowPos(window, 200, 100);
@@ -435,22 +437,6 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
   }
 
   return texture;
-}
-
-std::shared_ptr<RuntimeStage> Playground::LoadFixtureRuntimeStage(
-    const char* fixture_name) const {
-  if (fixture_name == nullptr) {
-    return nullptr;
-  }
-
-  auto runtime_stage =
-      std::make_shared<RuntimeStage>(OpenAssetAsMapping(fixture_name));
-
-  if (!runtime_stage->IsValid()) {
-    VALIDATION_LOG << "Could not load valid runtime stage.";
-    return nullptr;
-  }
-  return runtime_stage;
 }
 
 void Playground::SetWindowSize(ISize size) {

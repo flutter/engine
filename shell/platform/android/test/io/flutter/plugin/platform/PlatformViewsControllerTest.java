@@ -264,7 +264,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void getPlatformViewById__hybridComposition() {
+  public void getPlatformViewById_hybridComposition() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -292,7 +292,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__initializesAndroidView() {
+  public void createPlatformViewMessage_initializesAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -314,7 +314,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__wrapsContextForVirtualDisplay() {
+  public void createPlatformViewMessage_wrapsContextForVirtualDisplay() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -339,7 +339,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__doesNotWrapContextForHybrid() {
+  public void createPlatformViewMessage_doesNotWrapContextForHybrid() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -363,7 +363,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__setsAndroidViewLayoutDirection() {
+  public void createPlatformViewMessage_setsAndroidViewLayoutDirection() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
@@ -389,7 +389,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__setsAndroidViewSize() {
+  public void createPlatformViewMessage_setsAndroidViewSize() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
@@ -422,7 +422,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__disablesAccessibility() {
+  public void createPlatformViewMessage_disablesAccessibility() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
@@ -449,7 +449,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__throwsIfViewIsNull() {
+  public void createPlatformViewMessage_throwsIfViewIsNull() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -478,7 +478,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createHybridPlatformViewMessage__throwsIfViewIsNull() {
+  public void createHybridPlatformViewMessage_throwsIfViewIsNull() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -568,7 +568,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createPlatformViewMessage__throwsIfViewHasParent() {
+  public void createPlatformViewMessage_throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -599,7 +599,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void createHybridPlatformViewMessage__throwsIfViewHasParent() {
+  public void createHybridPlatformViewMessage_throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -629,7 +629,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void setPlatformViewDirection__throwIfPlatformViewNotFound() {
+  public void setPlatformViewDirection_throwIfPlatformViewNotFound() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -700,7 +700,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void disposeAndroidView__hybridComposition() {
+  public void disposeAndroidView_hybridComposition() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
     int platformViewId = 0;
@@ -778,7 +778,7 @@ public class PlatformViewsControllerTest {
         ShadowFlutterJNI.class,
         ShadowPlatformTaskQueue.class
       })
-  public void onEndFrame__destroysOverlaySurfaceAfterFrameOnFlutterSurfaceView() {
+  public void onEndFrame_destroysOverlaySurfaceAfterFrameOnFlutterSurfaceView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -837,7 +837,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void onEndFrame__removesPlatformView() {
+  public void onEndFrame_removesPlatformView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -878,7 +878,7 @@ public class PlatformViewsControllerTest {
         ShadowFlutterJNI.class,
         ShadowPlatformTaskQueue.class
       })
-  public void onEndFrame__removesPlatformViewParent() {
+  public void onEndFrame_removesPlatformViewParent() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -921,7 +921,7 @@ public class PlatformViewsControllerTest {
         ShadowFlutterJNI.class,
         ShadowPlatformTaskQueue.class
       })
-  public void detach__destroysOverlaySurfaces() {
+  public void detach_destroysOverlaySurfaces() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -972,7 +972,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void detachFromView__removesAndDestroysOverlayViews() {
+  public void detachFromView_removesAndDestroysOverlayViews() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -1010,7 +1010,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void destroyOverlaySurfaces__doesNotThrowIfFlutterViewIsDetached() {
+  public void destroyOverlaySurfaces_doesNotThrowIfFlutterViewIsDetached() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -1048,7 +1048,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void destroyOverlaySurfaces__doesNotRemoveOverlayView() {
+  public void destroyOverlaySurfaces_doesNotRemoveOverlayView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -1082,7 +1082,7 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
-  public void checkInputConnectionProxy__falseIfViewIsNull() {
+  public void checkInputConnectionProxy_falseIfViewIsNull() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
     boolean shouldProxying = platformViewsController.checkInputConnectionProxy(null);
     assertFalse(shouldProxying);

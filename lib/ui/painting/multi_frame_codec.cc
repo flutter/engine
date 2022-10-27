@@ -9,9 +9,10 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/image.h"
 #if IMPELLER_SUPPORTS_RENDERING
-#include "lib/ui/painting/image_decoder_impeller.h"
+#include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
@@ -184,7 +185,7 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
   int duration = 0;
   sk_sp<DlImage> dlImage =
       GetNextFrameImage(std::move(resourceContext), gpu_disable_sync_switch,
-                        impeller_context, unref_queue);
+                        std::move(impeller_context), std::move(unref_queue));
   if (dlImage) {
     image = CanvasImage::Create();
     image->set_image(dlImage);

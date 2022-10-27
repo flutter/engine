@@ -118,7 +118,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     default:
       FML_UNREACHABLE();
   }
-  desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+  desc.SetColorAttachmentDescriptor(0u, color0);
 
   if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
     StencilAttachmentDescriptor stencil =
@@ -143,7 +143,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
-      tessellator_(std::make_shared<Tessellator>()) {
+      tessellator_(std::make_shared<Tessellator>()),
+      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -248,7 +249,7 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
-    SubpassCallback subpass_callback) const {
+    const SubpassCallback& subpass_callback) const {
   auto context = GetContext();
 
   RenderTarget subpass_target;
@@ -291,6 +292,11 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
 
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;
+}
+
+std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
+    const {
+  return glyph_atlas_context_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {
