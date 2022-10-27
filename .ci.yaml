@@ -195,6 +195,22 @@ targets:
       lint_host: "true"
     timeout: 60
 
+  - name: Linux Host clang-tidy fix
+    recipe: engine/engine_lint
+    postsubmit: false
+    properties:
+      add_recipes_cq: "true"
+      cores: "32"
+      lint_android: "false"
+      lint_host: "true"
+      lint_all: "false"
+      lint_head: "true"
+    timeout: 60
+    runIf:
+      - .clang-tidy
+      - **.cc
+      - **.h
+
   - name: Linux Android clang-tidy
     recipe: engine/engine_lint
     properties:
