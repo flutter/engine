@@ -17,13 +17,6 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
     VkDevice device,
     fml::RefPtr<vulkan::VulkanProcTable> vk,
     bool mustUseCoherentHostVisibleMemory) {
-  FML_LOG(ERROR) << "here!!!";
-
-  if (vk->AllocateMemory == nullptr) {
-    FML_LOG(ERROR) << "Could not acquire vkAllocateMemory.";
-    return nullptr;
-  }
-
 #define PROVIDE_PROC(tbl, proc, provider) tbl.vk##proc = provider->proc;
 
   VmaVulkanFunctions proc_table = {};
@@ -46,11 +39,20 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
   PROVIDE_PROC(proc_table, CreateImage, vk);
   PROVIDE_PROC(proc_table, DestroyImage, vk);
   PROVIDE_PROC(proc_table, CmdCopyBuffer, vk);
-  PROVIDE_PROC(proc_table, GetBufferMemoryRequirements2KHR, vk);
-  PROVIDE_PROC(proc_table, GetImageMemoryRequirements2KHR, vk);
-  PROVIDE_PROC(proc_table, BindBufferMemory2KHR, vk);
-  PROVIDE_PROC(proc_table, BindImageMemory2KHR, vk);
-  PROVIDE_PROC(proc_table, GetPhysicalDeviceMemoryProperties2KHR, vk);
+
+#define PROVIDE_PROC_COALESCE(tbl, proc, provider) \
+  tbl.vk##proc##KHR = provider->proc ? provider->proc : provider->proc##KHR;
+  // See the following link for why we have to pick either KHR version or
+  // promoted non-KHR version:
+  // https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/203
+  PROVIDE_PROC_COALESCE(proc_table, GetBufferMemoryRequirements2, vk);
+  PROVIDE_PROC_COALESCE(proc_table, GetImageMemoryRequirements2, vk);
+  PROVIDE_PROC_COALESCE(proc_table, BindBufferMemory2, vk);
+  PROVIDE_PROC_COALESCE(proc_table, BindImageMemory2, vk);
+  PROVIDE_PROC_COALESCE(proc_table, GetPhysicalDeviceMemoryProperties2, vk);
+#undef PROVIDE_PROC_COALESCE
+
+#undef PROVIDE_PROC
 
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;

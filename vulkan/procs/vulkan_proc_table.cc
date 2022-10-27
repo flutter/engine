@@ -10,14 +10,14 @@
 
 #define ACQUIRE_PROC(name, context)                          \
   if (!(name = AcquireProc("vk" #name, context))) {          \
-    FML_LOG(ERROR) << "Could not acquire proc: vk" << #name; \
+    FML_DLOG(INFO) << "Could not acquire proc: vk" << #name; \
     return false;                                            \
   }
 
 #define ACQUIRE_PROC_EITHER(name, name2, context)                              \
   if (!(name = AcquireProc("vk" #name, context)) &&                            \
       !(name2 = AcquireProc("vk" #name2, context))) {                          \
-    FML_LOG(ERROR) << "Could not acquire proc: vk" << #name << ", or proc: vk" \
+    FML_DLOG(INFO) << "Could not acquire proc: vk" << #name << ", or proc: vk" \
                    << #name2;                                                  \
     return false;                                                              \
   }
@@ -62,11 +62,8 @@ bool VulkanProcTable::AreDeviceProcsSetup() const {
 
 bool VulkanProcTable::SetupGetInstanceProcAddress() {
   if (!handle_) {
-    FML_LOG(ERROR) << "SetupGetInstanceProcAddress: handle_ is null";
     return true;
   }
-
-  FML_LOG(ERROR) << "SetupGetInstanceProcAddress: handle_ is non-null";
 
   GetInstanceProcAddr = NativeGetInstanceProcAddr();
   if (!GetInstanceProcAddr) {
@@ -103,8 +100,6 @@ bool VulkanProcTable::SetupLoaderProcAddresses() {
 
 bool VulkanProcTable::SetupInstanceProcAddresses(
     const VulkanHandle<VkInstance>& handle) {
-  FML_LOG(ERROR) << this << " - SetupInstanceProcAddresses. handle: " << handle;
-
   ACQUIRE_PROC(CreateDevice, handle);
   ACQUIRE_PROC(DestroyDevice, handle);
   ACQUIRE_PROC(DestroyInstance, handle);
@@ -214,16 +209,13 @@ bool VulkanProcTable::OpenLibraryHandle(const char* path) {
   handle_ = fml::NativeLibrary::Create(path);
 #endif  // VULKAN_LINK_STATICALLY
   if (!handle_) {
-    FML_LOG(ERROR) << "Could not open Vulkan library handle: " << path;
+    FML_DLOG(ERROR) << "Could not open Vulkan library handle: " << path;
     return false;
-  } else {
-    FML_LOG(ERROR) << "Opened Vulkan library handle: " << path;
   }
   return true;
 }
 
 bool VulkanProcTable::CloseLibraryHandle() {
-  FML_LOG(ERROR) << "Closing Vulkan library handle: " << handle_.get();
   handle_ = nullptr;
   return true;
 }

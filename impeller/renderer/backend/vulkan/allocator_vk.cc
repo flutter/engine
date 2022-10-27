@@ -54,14 +54,19 @@ AllocatorVK::AllocatorVK(ContextVK& context,
   PROVIDE_PROC(proc_table, DestroyImage, vk_);
   PROVIDE_PROC(proc_table, CmdCopyBuffer, vk_);
 
-  // clang-format off
-  // See: https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/203
-  proc_table.vkGetBufferMemoryRequirements2KHR = vk_->GetBufferMemoryRequirements2;
-  proc_table.vkGetImageMemoryRequirements2KHR = vk_->GetImageMemoryRequirements2;
-  proc_table.vkBindBufferMemory2KHR = vk_->BindBufferMemory2;
-  proc_table.vkBindImageMemory2KHR = vk_->BindImageMemory2;
-  proc_table.vkGetPhysicalDeviceMemoryProperties2KHR = vk_->GetPhysicalDeviceMemoryProperties2;
-  // clang-format on
+#define PROVIDE_PROC_COALESCE(tbl, proc, provider) \
+  tbl.vk##proc##KHR = provider->proc ? provider->proc : provider->proc##KHR;
+  // See the following link for why we have to pick either KHR version or
+  // promoted non-KHR version:
+  // https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/203
+  PROVIDE_PROC_COALESCE(proc_table, GetBufferMemoryRequirements2, vk_);
+  PROVIDE_PROC_COALESCE(proc_table, GetImageMemoryRequirements2, vk_);
+  PROVIDE_PROC_COALESCE(proc_table, BindBufferMemory2, vk_);
+  PROVIDE_PROC_COALESCE(proc_table, BindImageMemory2, vk_);
+  PROVIDE_PROC_COALESCE(proc_table, GetPhysicalDeviceMemoryProperties2, vk_);
+#undef PROVIDE_PROC_COALESCE
+
+#undef PROVIDE_PROC
 
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;
