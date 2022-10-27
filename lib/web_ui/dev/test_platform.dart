@@ -835,6 +835,11 @@ class BrowserManager {
       sink.close();
     }));
 
+    if (Configuration.current.pauseAfterLoad) {
+      print('Browser loaded. Press enter to start tests...');
+      stdin.readLineSync();
+    }
+
     return _pool.withResource<RunnerSuite>(() async {
       _channel.sink.add(<String, dynamic>{
         'command': 'loadSuite',
