@@ -16,20 +16,21 @@ in vec2 v_position;
 
 out vec4 frag_color;
 
-const int kSamples = 5;
+const int kSampleCount = 5;
 
-float RRectDistance(vec2 sample_position, vec2 half_size, float corner_radius) {
-  vec2 space = abs(sample_position) - half_size + corner_radius;
+float RRectDistance(vec2 sample_position, vec2 half_size) {
+  vec2 space = abs(sample_position) - half_size + frag_info.corner_radius;
   return length(max(space, 0.0)) + min(max(space.x, space.y), 0.0) -
-         corner_radius;
+         frag_info.corner_radius;
 }
 
 /// Closed form unidirectional rounded rect blur mask solution using the
 /// analytical Gaussian integral (with approximated erf).
-float RRectShadowX(float x, float y, vec2 half_size) {
+float RRectShadowX(vec2 sample_position, vec2 half_size) {
   // Compute the X direction distance field (not incorporating the Y distance)
   // for the rounded rect.
-  float space = min(0, half_size.y - frag_info.corner_radius - abs(y));
+  float space =
+      min(0, half_size.y - frag_info.corner_radius - abs(sample_position.y));
   float rrect_distance =
       half_size.x - frag_info.corner_radius +
       sqrt(max(0, frag_info.corner_radius * frag_info.corner_radius -
@@ -37,7 +38,8 @@ float RRectShadowX(float x, float y, vec2 half_size) {
 
   // Map the linear distance field to the analytical Gaussian integral.
   vec2 integral = IPVec2GaussianIntegral(
-      x + vec2(-rrect_distance, rrect_distance), frag_info.blur_sigma);
+      sample_position.x + vec2(-rrect_distance, rrect_distance),
+      frag_info.blur_sigma);
   return integral.y - integral.x;
 }
 
@@ -48,14 +50,15 @@ float RRectShadow(vec2 sample_position, vec2 half_size) {
 
   float begin_y = max(-half_sampling_range, sample_position.y - half_size.y);
   float end_y = min(half_sampling_range, sample_position.y + half_size.y);
-  float interval = (end_y - begin_y) / kSamples;
+  float interval = (end_y - begin_y) / kSampleCount;
 
+  // Sample the X blur kSampleCount times, weighted by the Gaussian function.
   float result = 0;
-  for (int sample_i = 0; sample_i < kSamples; sample_i++) {
+  for (int sample_i = 0; sample_i < kSampleCount; sample_i++) {
     float y = begin_y + interval * (sample_i + 0.5);
-    result +=
-        RRectShadowX(sample_position.x, sample_position.y - y, half_size) *
-        IPGaussian(y, frag_info.blur_sigma) * interval;
+    result += RRectShadowX(vec2(sample_position.x, sample_position.y - y),
+                           half_size) *
+              IPGaussian(y, frag_info.blur_sigma) * interval;
   }
 
   return result;
@@ -70,7 +73,6 @@ void main() {
   if (frag_info.blur_sigma > 0) {
     frag_color *= RRectShadow(sample_position, half_size);
   } else {
-    frag_color *=
-        -RRectDistance(sample_position, half_size, frag_info.corner_radius);
+    frag_color *= -RRectDistance(sample_position, half_size);
   }
 }
