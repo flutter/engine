@@ -18,22 +18,11 @@ UPSTREAM_PREFIX = 'upstream_'
 class TestDepsParserMethods(unittest.TestCase):
   # Extract both mirrored dep names and URLs &
   # upstream names and URLs from DEPs file.
-  def setup(self):
+  def setUp(self):
     with open(DEPS) as file:
-      local_scope_upstream = {}
-      global_scope_upstream = {'Var': lambda x: x}  # dummy lambda
       # Read the content.
       with open(DEPS, 'r') as file:
         deps_content = file.read()
-
-      # Eval the content.
-      exec(deps_content, global_scope_upstream, local_scope_upstream)
-
-      # Extract the upstream URLs
-      # vars contains more than just upstream URLs
-      # however the upstream URLs are prefixed with 'upstream_'
-      upstream = local_scope_upstream.get('vars')
-      self.upstream_urls = upstream
 
       local_scope_mirror = {}
       var = VarImpl(local_scope_mirror)
@@ -45,6 +34,12 @@ class TestDepsParserMethods(unittest.TestCase):
       # Eval the content.
       exec(deps_content, global_scope_mirror, local_scope_mirror)
 
+      # Extract the upstream URLs
+      # vars contains more than just upstream URLs
+      # however the upstream URLs are prefixed with 'upstream_'
+      upstream = local_scope_mirror.get('vars')
+      self.upstream_urls = upstream
+
       # Extract the deps and filter.
       deps = local_scope_mirror.get('deps', {})
       filtered_deps = []
@@ -53,7 +48,6 @@ class TestDepsParserMethods(unittest.TestCase):
         # as dictionaries.
         if isinstance(dep, str):
           filtered_deps.append(dep)
-
       self.deps = filtered_deps
 
   def test_each_dep_has_upstream_url(self):
