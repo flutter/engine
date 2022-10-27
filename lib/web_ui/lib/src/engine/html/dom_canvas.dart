@@ -257,7 +257,7 @@ DomHTMLElement buildDrawRectElement(
     ..transform = effectiveTransform;
 
   String cssColor =
-      paint.color == null ? '#000000' : colorToCssString(paint.color)!;
+      paint.color == null ? '#000000' : colorValueToCssString(paint.color)!;
 
   if (paint.maskFilter != null) {
     final double sigma = paint.maskFilter!.webOnlySigma;
@@ -266,7 +266,7 @@ DomHTMLElement buildDrawRectElement(
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
       cssColor = colorToCssString(
-          blurColor(paint.color ?? const ui.Color(0xFF000000), sigma))!;
+          blurColor(ui.Color(paint.color ?? 0xFF000000), sigma))!;
     } else {
       style.filter = 'blur(${sigma}px)';
     }
@@ -345,7 +345,7 @@ SVGSVGElement pathToSvgElement(
 
   final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
-  final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
+  final ui.Color color = ui.Color(paint.color ?? 0xFF000000);
   if (paint.style == ui.PaintingStyle.stroke ||
       (paint.style != ui.PaintingStyle.fill &&
           paint.strokeWidth != 0 &&

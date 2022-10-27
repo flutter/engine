@@ -344,6 +344,14 @@ String? colorToCssString(ui.Color? color) {
     return null;
   }
   final int value = color.value;
+  return colorValueToCssString(value);
+}
+
+// Converts a color value (as an int) into a CSS-compatible value.
+String? colorValueToCssString(int? value) {
+  if (value == null) {
+    return null;
+  }
   if ((0xff000000 & value) == 0xff000000) {
     final String hexValue = (value & 0xFFFFFF).toRadixString(16);
     final int hexValueLength = hexValue.length;

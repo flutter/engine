@@ -1012,7 +1012,7 @@ class ContextStateHandle {
         }
       }
     } else if (paint.color != null) {
-      final String? colorString = colorToCssString(paint.color);
+      final String? colorString = colorValueToCssString(paint.color);
       fillStyle = colorString;
       strokeStyle = colorString;
     } else {
@@ -1038,7 +1038,7 @@ class ContextStateHandle {
         context.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
         if (paint.color != null) {
           // Shadow color must be fully opaque.
-          context.shadowColor = colorToCssString(paint.color!.withAlpha(255));
+          context.shadowColor = colorToCssString(ui.Color(paint.color!).withAlpha(255));
         } else {
           context.shadowColor = colorToCssString(const ui.Color(0xFF000000));
         }
