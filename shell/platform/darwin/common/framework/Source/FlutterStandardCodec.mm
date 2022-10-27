@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h"
 
+FLUTTER_ASSERT_ARC
+
 #pragma mark - Codec for basic message channel
 
 @implementation FlutterStandardMessageCodec {

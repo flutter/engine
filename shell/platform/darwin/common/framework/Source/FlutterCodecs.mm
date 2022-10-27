@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+FLUTTER_ASSERT_ARC
+
 @implementation FlutterBinaryCodec
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;

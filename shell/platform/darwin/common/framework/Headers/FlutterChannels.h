@@ -8,6 +8,8 @@
 #import "FlutterBinaryMessenger.h"
 #import "FlutterCodecs.h"
 
+FLUTTER_ASSERT_ARC
+
 @protocol FlutterTaskQueue;
 
 NS_ASSUME_NONNULL_BEGIN
