@@ -112,7 +112,7 @@ FLUTTER_ASSERT_ARC
                                }];
   XCTAssertEqual([capturedResult count], 2u);
   XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
-  XCTAssertEqual([[capturedResult objectForKey:@"data"] data], data);
+  XCTAssertEqualObjects([[capturedResult objectForKey:@"data"] data], data);
 }
 
 - (void)testRespondsWithNoDataWhenRestorationIsCompletedWithoutData {
