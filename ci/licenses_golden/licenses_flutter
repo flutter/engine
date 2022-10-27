@@ -777,6 +777,9 @@ FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.cc
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.h
+FILE: ../../../flutter/flow/layers/layer_state_stack.cc
+FILE: ../../../flutter/flow/layers/layer_state_stack.h
+FILE: ../../../flutter/flow/layers/layer_state_stack_unittests.cc
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
 FILE: ../../../flutter/flow/layers/layer_tree_unittests.cc
@@ -1107,6 +1110,7 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl

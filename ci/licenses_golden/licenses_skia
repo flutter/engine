@@ -1,4 +1,4 @@
-Signature: 4497f7762ce7dbb9e156300b7c3aa7c5
+Signature: 654fe1a59d6aaebc9075fce3bdc56226
 
 UNUSED LICENSES:
 
@@ -1012,6 +1012,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/Metrics.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Paragraph.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphBuilder.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphCache.h
+FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphPainter.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
@@ -1031,6 +1032,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.h
+FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphPainterImpl.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphPainterImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphStyle.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Run.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Run.h
@@ -5107,8 +5110,8 @@ FILE: ../../../third_party/skia/src/core/SkImageFilter_Base.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffect.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.h
+FILE: ../../../third_party/skia/src/gpu/AsyncReadTypes.h
 FILE: ../../../third_party/skia/src/gpu/Swizzle.cpp
-FILE: ../../../third_party/skia/src/gpu/TClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrClientMappedBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrCopyRenderTask.cpp
@@ -7706,6 +7709,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputeCommandEncoder.h
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_hmtx.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLDiscardStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInterfaceBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLLiteral.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h
