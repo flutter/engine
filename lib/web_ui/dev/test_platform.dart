@@ -366,6 +366,7 @@ class BrowserPlatform extends PlatformPlugin {
 
   static const Map<String, String> contentTypes = <String, String>{
     '.js': 'text/javascript',
+    '.mjs': 'text/javascript',
     '.wasm': 'application/wasm',
     '.html': 'text/html',
     '.htm': 'text/html',
@@ -427,7 +428,7 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase">';
 
-      final String testRunner = wasm ? '../dev/test_dart2wasm.js' : 'packages/test/dart.js';
+      final String testRunner = wasm ? 'test_dart2wasm.js' : 'packages/test/dart.js';
 
       return shelf.Response.ok('''
         <!DOCTYPE html>

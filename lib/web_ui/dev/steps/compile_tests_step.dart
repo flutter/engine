@@ -44,6 +44,10 @@ class CompileTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webUiBuildDir.create();
+    if (wasm) {
+      await copyDart2WasmTestScript();
+      await copyDart2WasmRuntime();
+    }
     await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     await buildHostPage();
     await copyTestFonts();
@@ -123,6 +127,34 @@ Future<void> copySkiaTestImages() async {
     destination.createSync(recursive: true);
     await imageFile.copy(destination.path);
   }
+}
+
+Future<void> copyDart2WasmRuntime() async {
+  final io.File sourceFile = io.File(pathlib.join(
+    environment.dartSdkDir.path,
+    'bin',
+    'dart2wasm_runtime.mjs',
+  ));
+  final io.Directory targetDir = io.Directory(pathlib.join(
+    environment.webUiBuildDir.path,
+    'test',
+    'dart2wasm_runtime.mjs',
+  ));
+
+  await sourceFile.copy(targetDir.path);
+}
+
+Future<void> copyDart2WasmTestScript() async {
+  final io.File sourceFile = io.File(pathlib.join(
+    environment.webUiDevDir.path,
+    'test_dart2wasm.js',
+  ));
+  final io.Directory targetDir = io.Directory(pathlib.join(
+    environment.webUiBuildDir.path,
+    'test',
+    'test_dart2wasm.js',
+  ));
+  await sourceFile.copy(targetDir.path);
 }
 
 Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
