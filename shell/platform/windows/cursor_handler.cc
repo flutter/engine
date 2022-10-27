@@ -11,13 +11,19 @@
 static constexpr char kChannelName[] = "flutter/mousecursor";
 
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
-static constexpr char kSetCustomCursorMethod[] = "setCustomCursor";
-
 static constexpr char kKindKey[] = "kind";
+
+// [kSetCustomCursorMethod] allows developers to set a custom cursor with rawRGBA buffer.
+static constexpr char kSetCustomCursorMethod[] = "setCustomCursor";
+// std::vector<uint8_t> value for custom cursor rawRGBA buffer.
 static constexpr char kCustomCursorBufferKey[] = "buffer";
+// double value for the hotx value of custom cursor.
 static constexpr char kCustomCursorHotxKey[] = "hotx";
+// double value for the hoty value of custom cursor.
 static constexpr char kCustomCursorHotyKey[] = "hoty";
+// int value for the width of custom cursor.
 static constexpr char kCustomCursorWidthKey[] = "width";
+// int value for the height of custom cursor.
 static constexpr char kCustomCursorHeightKey[] = "height";
 
 namespace flutter {
