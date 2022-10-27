@@ -28,7 +28,6 @@ SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
 
 failed_deps = []  # deps which fail to be be cloned or git-merge based
-old_deps = []  # deps which have not been updated in more than 1 year
 
 sarif_log = {
     '$schema':
@@ -111,10 +110,6 @@ def parse_deps_file(deps_flat_file):
       'Dependencies that could not be parsed for ancestor commits: ' +
       ', '.join(failed_deps)
   )
-  print(
-      'Dependencies that have not been rolled in at least 1 year: ' +
-      ', '.join(old_deps)
-  )
 
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found.
@@ -178,30 +173,8 @@ def get_common_ancestor_commit(dep):
         temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
         # clone dependency from mirror
         subprocess.check_output([
-            'git', 'clone', dep[0], '--quiet', temp_dep_dir
+            'git', 'clone', '--quiet', '--', dep[0], temp_dep_dir
         ])
-
-        # check how old pinned commit is
-        dep_roll_date = subprocess.check_output(
-            'git --git-dir {temp_dep_dir}/.git show -s --format=%ct {dep}'
-            .format(temp_dep_dir=temp_dep_dir, dep=dep[1]),
-            shell=True
-        ).decode()
-        print(
-            'dep roll date is {dep_roll_date}'.format(
-                dep_roll_date=dep_roll_date
-            )
-        )
-        years = (
-            time.time() - int(dep_roll_date)
-        ) / SECONDS_PER_YEAR  # convert to years since last roll
-        if years >= 1:
-          print(
-              'Old dep found: {depUrl} is from {dep_roll_date}'.format(
-                  depUrl=dep[0], dep_roll_date=dep_roll_date
-              )
-          )
-          old_deps.append(dep[0])
 
         # create branch that will track the upstream dep
         print(
