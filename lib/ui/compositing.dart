@@ -106,6 +106,7 @@ abstract class _EngineLayerWrapper implements EngineLayer {
   bool _debugWasUsedAsOldLayer = false;
 
   bool _debugCheckNotUsedAsOldLayer() {
+    // The hashCode formatting should match shortHash in the framework
     assert(
         !_debugWasUsedAsOldLayer,
         'Layer $runtimeType#${hashCode.toUnsigned(20).toRadixString(16).padLeft(5, '0')} was previously used as oldLayer.\n'
