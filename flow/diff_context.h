@@ -45,7 +45,8 @@ class DiffContext {
   explicit DiffContext(SkISize frame_size,
                        double device_pixel_aspect_ratio,
                        PaintRegionMap& this_frame_paint_region_map,
-                       const PaintRegionMap& last_frame_paint_region_map);
+                       const PaintRegionMap& last_frame_paint_region_map,
+                       bool has_raster_cache);
 
   // Starts a new subtree.
   void BeginSubtree();
@@ -80,7 +81,7 @@ class DiffContext {
 
   // Pushes filter bounds adjustment to current subtree. Every layer in this
   // subtree will have bounds adjusted by this function.
-  void PushFilterBoundsAdjustment(FilterBoundsAdjustment filter);
+  void PushFilterBoundsAdjustment(const FilterBoundsAdjustment& filter);
 
   // Returns transform matrix for current subtree
   const SkMatrix& GetTransform() const { return state_.transform; }
@@ -156,6 +157,11 @@ class DiffContext {
   // frame layer tree.
   PaintRegion GetOldLayerPaintRegion(const Layer* layer) const;
 
+  // Whether or not a raster cache is being used. If so, we must snap
+  // all transformations to physical pixels if the layer may be raster
+  // cached.
+  bool has_raster_cache() const { return has_raster_cache_; }
+
   class Statistics {
    public:
     // Picture replaced by different picture
@@ -197,7 +203,16 @@ class DiffContext {
     bool dirty;
     SkRect cull_rect;  // in screen coordinates
 
+    // In order to replicate paint process closely, we need both the original
+    // transform, and the overriden transform (set for layers that need to paint
+    // on integer coordinates). The reason for this is that during paint the
+    // transform matrix is overriden only after layer passes the cull check
+    // first (with original transform). So to cull layer we use transform, but
+    // to get paint coordinates we use transform_override. Child layers are
+    // painted after transform override, so if set we use transform_override as
+    // base when diffing child layers.
     SkMatrix transform;
+    std::optional<SkMatrix> transform_override;
     size_t rect_index_;
 
     // Whether this subtree has filter bounds adjustment function. If so,
@@ -223,6 +238,7 @@ class DiffContext {
 
   PaintRegionMap& this_frame_paint_region_map_;
   const PaintRegionMap& last_frame_paint_region_map_;
+  bool has_raster_cache_;
 
   void AddDamage(const SkRect& rect);
 

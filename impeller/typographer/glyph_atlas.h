@@ -11,6 +11,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/rect.h"
+#include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/texture.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
@@ -24,13 +25,43 @@ namespace impeller {
 class GlyphAtlas {
  public:
   //----------------------------------------------------------------------------
+  /// @brief      Describes how the glyphs are represented in the texture.
+  enum class Type {
+    //--------------------------------------------------------------------------
+    /// The glyphs are represented at a fixed size in an 8-bit grayscale texture
+    /// where the value of each pixel represents a signed-distance field that
+    /// stores the glyph outlines.
+    ///
+    kSignedDistanceField,
+
+    //--------------------------------------------------------------------------
+    /// The glyphs are reprsented at their requested size using only an 8-bit
+    /// alpha channel.
+    ///
+    kAlphaBitmap,
+
+    //--------------------------------------------------------------------------
+    /// The glyphs are reprsented at their requested size using N32 premul
+    /// colors.
+    ///
+    kColorBitmap,
+  };
+
+  //----------------------------------------------------------------------------
   /// @brief      Create an empty glyph atlas.
   ///
-  GlyphAtlas();
+  /// @param[in]  type  How the glyphs are represented in the texture.
+  ///
+  explicit GlyphAtlas(Type type);
 
   ~GlyphAtlas();
 
   bool IsValid() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Describes how the glyphs are represented in the texture.
+  ///
+  Type GetType() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Set the texture for the glyph atlas.
@@ -53,7 +84,7 @@ class GlyphAtlas {
   /// @param[in]  pair  The font-glyph pair
   /// @param[in]  rect  The rectangle
   ///
-  void AddTypefaceGlyphPosition(FontGlyphPair pair, Rect rect);
+  void AddTypefaceGlyphPosition(const FontGlyphPair& pair, Rect rect);
 
   //----------------------------------------------------------------------------
   /// @brief      Get the number of unique font-glyph pairs in this atlas.
@@ -71,8 +102,9 @@ class GlyphAtlas {
   ///
   /// @return     The number of glyphs iterated over.
   ///
-  size_t IterateGlyphs(std::function<bool(const FontGlyphPair& pair,
-                                          const Rect& rect)> iterator) const;
+  size_t IterateGlyphs(
+      const std::function<bool(const FontGlyphPair& pair, const Rect& rect)>&
+          iterator) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Find the location of a specific font-glyph pair in the atlas.
@@ -84,7 +116,18 @@ class GlyphAtlas {
   ///
   std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      whether this atlas contains all of the same font-glyph pairs
+  ///             as the vector.
+  ///
+  /// @param[in]  new_glyphs  The full set of new glyphs
+  ///
+  /// @return     Whether this atlas contains all passed pairs.
+  ///
+  bool HasSamePairs(const FontGlyphPair::Vector& new_glyphs);
+
  private:
+  const Type type_;
   std::shared_ptr<Texture> texture_;
 
   std::unordered_map<FontGlyphPair,
@@ -94,6 +137,29 @@ class GlyphAtlas {
       positions_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlas);
+};
+
+//------------------------------------------------------------------------------
+/// @brief      A container for caching a glyph atlas across frames.
+///
+class GlyphAtlasContext {
+ public:
+  GlyphAtlasContext();
+
+  ~GlyphAtlasContext();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the current glyph atlas.
+  std::shared_ptr<GlyphAtlas> GetGlyphAtlas() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the context with a newly constructed glyph atlas.
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas);
+
+ private:
+  std::shared_ptr<GlyphAtlas> atlas_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContext);
 };
 
 }  // namespace impeller

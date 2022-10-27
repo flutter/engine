@@ -11,7 +11,7 @@
 namespace impeller {
 
 PaintPassDelegate::PaintPassDelegate(Paint paint, std::optional<Rect> coverage)
-    : paint_(std::move(paint)), coverage_(std::move(coverage)) {}
+    : paint_(std::move(paint)), coverage_(coverage) {}
 
 // |EntityPassDelgate|
 PaintPassDelegate::~PaintPassDelegate() = default;
@@ -23,7 +23,7 @@ std::optional<Rect> PaintPassDelegate::GetCoverageRect() {
 
 // |EntityPassDelgate|
 bool PaintPassDelegate::CanElide() {
-  return paint_.blend_mode == Entity::BlendMode::kDestination;
+  return paint_.blend_mode == BlendMode::kDestination;
 }
 
 // |EntityPassDelgate|
@@ -39,8 +39,9 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
   contents->SetTexture(target);
   contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
-
-  return paint_.WithFilters(std::move(contents), false, effect_transform);
+  contents->SetDeferApplyingOpacity(true);
+  return paint_.WithFiltersForSubpassTarget(std::move(contents),
+                                            effect_transform);
 }
 
 }  // namespace impeller

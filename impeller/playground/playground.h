@@ -8,9 +8,11 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/texture.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
 
@@ -48,7 +50,7 @@ class Playground {
 
   std::shared_ptr<Context> GetContext() const;
 
-  bool OpenPlaygroundHere(Renderer::RenderCallback render_callback);
+  bool OpenPlaygroundHere(const Renderer::RenderCallback& render_callback);
 
   bool OpenPlaygroundHere(SinglePassCallback pass_callback);
 

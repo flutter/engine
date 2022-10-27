@@ -8,7 +8,7 @@
 
 namespace impeller {
 
-Texture::Texture(TextureDescriptor desc) : desc_(std::move(desc)) {}
+Texture::Texture(TextureDescriptor desc) : desc_(desc) {}
 
 Texture::~Texture() = default;
 
@@ -59,6 +59,10 @@ bool Texture::IsSliceValid(size_t slice) const {
       return slice <= 5;
   }
   FML_UNREACHABLE();
+}
+
+void Texture::SetIntent(TextureIntent intent) {
+  intent_ = intent;
 }
 
 TextureIntent Texture::GetIntent() const {

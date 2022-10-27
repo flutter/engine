@@ -9,6 +9,7 @@
 
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
@@ -61,11 +62,11 @@ struct Playground::GLFWInitializer {
     //    applicationDidFinishLaunching is never fired.
     static std::once_flag sOnceInitializer;
     std::call_once(sOnceInitializer, []() {
-      FML_CHECK(::glfwInit() == GLFW_TRUE);
       ::glfwSetErrorCallback([](int code, const char* description) {
         FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code
                        << ").";
       });
+      FML_CHECK(::glfwInit() == GLFW_TRUE);
     });
   }
 };
@@ -161,7 +162,8 @@ void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
 
-bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
+bool Playground::OpenPlaygroundHere(
+    const Renderer::RenderCallback& render_callback) {
   if (!is_enabled()) {
     return true;
   }
@@ -211,6 +213,8 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
   fml::ScopedCleanupClosure shutdown_imgui_impeller(
       []() { ImGui_ImplImpeller_Shutdown(); });
 
+  ImGui::SetNextWindowPos({10, 10});
+
   ::glfwSetWindowSize(window, GetWindowSize().width, GetWindowSize().height);
   ::glfwSetWindowPos(window, 200, 100);
   ::glfwShowWindow(window);
@@ -252,6 +256,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
         }
         render_target.SetColorAttachment(color0, 0);
 
+#ifndef IMPELLER_ENABLE_VULKAN
         {
           TextureDescriptor stencil0_tex;
           stencil0_tex.storage_mode = StorageMode::kDeviceTransient;
@@ -279,6 +284,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
           render_target.SetStencilAttachment(stencil0);
         }
+#endif
 
         auto pass = buffer->CreateRenderPass(render_target);
         if (!pass) {

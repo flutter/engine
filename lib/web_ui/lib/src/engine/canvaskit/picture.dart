@@ -6,13 +6,14 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../dom.dart';
 import '../profiler.dart';
 import '../util.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
 import 'skia_object_cache.dart';
+import 'surface.dart';
+import 'surface_factory.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
 ///
@@ -81,6 +82,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
       _debugDisposalStackTrace = StackTrace.current;
       return true;
     }());
+    ui.Picture.onDispose?.call(this);
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('Picture disposed');
     }
@@ -100,12 +102,13 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   @override
   ui.Image toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
-    final DomCanvasElement tempCanvas =
-        createDomCanvasElement(width: width, height: height);
-    final SkSurface skSurface = canvasKit.MakeWebGLCanvasSurface(tempCanvas);
-    final SkCanvas skCanvas = skSurface.getCanvas();
-    skCanvas.drawPicture(skiaObject);
-    final SkImage skImage = skSurface.makeImageSnapshot();
+    final Surface surface = SurfaceFactory.instance.pictureToImageSurface;
+    final CkSurface ckSurface =
+      surface.createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.clear(const ui.Color(0x00000000));
+    ckCanvas.drawPicture(this);
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
     final SkImageInfo imageInfo = SkImageInfo(
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
@@ -115,8 +118,6 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     );
     final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
     final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, 4 * width);
-    skSurface.dispose();
-    tempCanvas.remove();
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');
     }

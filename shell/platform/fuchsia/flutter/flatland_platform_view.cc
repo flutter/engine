@@ -75,10 +75,16 @@ void FlatlandPlatformView::OnGetLayout(
   view_logical_size_ = {static_cast<float>(info.logical_size().width),
                         static_cast<float>(info.logical_size().height)};
 
-  // TODO(fxbug.dev/94000): Set device pixel ratio.
+  float pixel_ratio = 1.0f;
+  if (info.has_device_pixel_ratio()) {
+    // Flatland returns a Vec2 for DPR but both values should be identical.
+    FML_DCHECK(info.device_pixel_ratio().x == info.device_pixel_ratio().y);
+    view_pixel_ratio_ = info.device_pixel_ratio().x;
+    pixel_ratio = *view_pixel_ratio_;
+  }
 
   SetViewportMetrics({
-      1,                              // device_pixel_ratio
+      pixel_ratio,                    // device_pixel_ratio
       view_logical_size_.value()[0],  // physical_width
       view_logical_size_.value()[1],  // physical_height
       0.0f,                           // physical_padding_top
@@ -148,17 +154,13 @@ void FlatlandPlatformView::OnChildViewViewRef(
     fuchsia::ui::views::ViewRef view_ref) {
   FML_CHECK(child_view_info_.count(content_id) == 1);
 
-  focus_delegate_->OnChildViewViewRef(view_id, std::move(view_ref));
-
   fuchsia::ui::views::ViewRef view_ref_clone;
   fidl::Clone(view_ref, &view_ref_clone);
-  pointer_injector_delegate_->OnCreateView(view_id, std::move(view_ref_clone));
 
-  child_view_info_.at(content_id)
-      .child_view_watcher->GetViewRef(
-          [this, content_id, view_id](fuchsia::ui::views::ViewRef view_ref) {
-            this->OnChildViewViewRef(content_id, view_id, std::move(view_ref));
-          });
+  focus_delegate_->OnChildViewViewRef(view_id, std::move(view_ref));
+
+  pointer_injector_delegate_->OnCreateView(view_id, std::move(view_ref_clone));
+  OnChildViewConnected(content_id);
 }
 
 void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
@@ -182,7 +184,7 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
     FML_CHECK(child_view_watcher);
 
     child_view_watcher.set_error_handler(
-        [weak, view_id](zx_status_t status) {
+        [weak, view_id, content_id](zx_status_t status) {
           FML_LOG(ERROR) << "Interface error on: ChildViewWatcher status: "
                          << status;
 
@@ -195,6 +197,8 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
 
           // Disconnected views cannot listen to pointer events.
           weak->pointer_injector_delegate_->OnDestroyView(view_id);
+
+          weak->OnChildViewDisconnected(content_id.value);
         });
 
     platform_task_runner->PostTask(
@@ -246,12 +250,47 @@ void FlatlandPlatformView::OnDisposeView(int64_t view_id_raw) {
           }
 
           FML_DCHECK(weak->child_view_info_.count(content_id.value) == 1);
+          weak->OnChildViewDisconnected(content_id.value);
           weak->child_view_info_.erase(content_id.value);
           weak->focus_delegate_->OnDisposeChildView(view_id_raw);
           weak->pointer_injector_delegate_->OnDestroyView(view_id_raw);
         });
       };
   on_destroy_view_callback_(view_id_raw, std::move(on_view_unbound));
+}
+
+void FlatlandPlatformView::OnChildViewConnected(uint64_t content_id) {
+  FML_CHECK(child_view_info_.count(content_id) == 1);
+  std::ostringstream out;
+  out << "{"
+      << "\"method\":\"View.viewConnected\","
+      << "\"args\":{"
+      << "  \"viewId\":" << child_view_info_.at(content_id).view_id << "  }"
+      << "}";
+  auto call = out.str();
+
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(call.c_str(), call.size()), nullptr);
+  DispatchPlatformMessage(std::move(message));
+}
+
+void FlatlandPlatformView::OnChildViewDisconnected(uint64_t content_id) {
+  FML_CHECK(child_view_info_.count(content_id) == 1);
+  std::ostringstream out;
+  out << "{"
+      << "\"method\":\"View.viewDisconnected\","
+      << "\"args\":{"
+      << "  \"viewId\":" << child_view_info_.at(content_id).view_id << "  }"
+      << "}";
+  auto call = out.str();
+
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(call.c_str(), call.size()), nullptr);
+  DispatchPlatformMessage(std::move(message));
 }
 
 }  // namespace flutter_runner

@@ -8,8 +8,10 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/string_conversion.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/base/work_queue_common.h"
@@ -32,6 +34,20 @@ static std::set<std::string> kRequiredDeviceExtensions = {
 #endif
 };
 
+std::vector<std::string> kRequiredWSIInstanceExtensions = {
+#if FML_OS_WIN
+    "VK_KHR_win32_surface",
+#elif FML_OS_ANDROID
+    "VK_KHR_android_surface",
+#elif FML_OS_LINUX
+    "VK_KHR_xcb_surface",
+    "VK_KHR_xlib_surface",
+    "VK_KHR_wayland_surface",
+#elif FML_OS_MACOSX
+    "VK_EXT_metal_surface",
+#endif
+};
+
 #if FML_OS_MACOSX
 static const char* MVK_MACOS_SURFACE_EXT = "VK_MVK_macos_surface";
 #endif
@@ -50,17 +66,19 @@ static bool HasRequiredQueues(const vk::PhysicalDevice& device) {
                                     vk::QueueFlagBits::eTransfer));
 }
 
-static bool HasRequiredExtensions(const vk::PhysicalDevice& device) {
+static std::vector<std::string> HasRequiredExtensions(
+    const vk::PhysicalDevice& device) {
   std::set<std::string> exts;
+  std::vector<std::string> missing;
   for (const auto& ext : device.enumerateDeviceExtensionProperties().value) {
     exts.insert(ext.extensionName);
   }
   for (const auto& req_ext : kRequiredDeviceExtensions) {
     if (exts.count(req_ext) != 1u) {
-      return false;
+      missing.push_back(req_ext);
     }
   }
-  return true;
+  return missing;
 }
 
 static vk::PhysicalDeviceFeatures GetRequiredPhysicalDeviceFeatures() {
@@ -80,15 +98,17 @@ static bool HasRequiredProperties(const vk::PhysicalDevice& device) {
 
 static bool IsPhysicalDeviceCompatible(const vk::PhysicalDevice& device) {
   if (!HasRequiredQueues(device)) {
-    VALIDATION_LOG << "Device doesn't have required queues.";
+    FML_LOG(ERROR) << "Device doesn't have required queues.";
     return false;
   }
-  if (!HasRequiredExtensions(device)) {
-    VALIDATION_LOG << "Device doesn't have required extensions.";
+  auto missing_exts = HasRequiredExtensions(device);
+  if (!missing_exts.empty()) {
+    FML_LOG(ERROR) << "Device doesn't have required extensions: "
+                   << fml::Join(missing_exts, ", ");
     return false;
   }
   if (!HasRequiredProperties(device)) {
-    VALIDATION_LOG << "Device doesn't have required properties.";
+    FML_LOG(ERROR) << "Device doesn't have required properties.";
     return false;
   }
   return true;
@@ -252,6 +272,23 @@ ContextVK::ContextVK(
   enabled_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
   //----------------------------------------------------------------------------
+  /// Enable WSI Instance Extensions. Having any one of these is sufficient.
+  ///
+  bool has_wsi_extensions = false;
+  for (const auto& wsi_ext : kRequiredWSIInstanceExtensions) {
+    if (capabilities->HasExtension(wsi_ext)) {
+      enabled_extensions.push_back(wsi_ext.c_str());
+      has_wsi_extensions = true;
+    }
+  }
+  if (!has_wsi_extensions) {
+    VALIDATION_LOG
+        << "Instance doesn't have any of the required WSI extensions: "
+        << fml::Join(kRequiredWSIInstanceExtensions, ", ");
+    return;
+  }
+
+  //----------------------------------------------------------------------------
   /// Enable any and all validation as well as debug toggles.
   ///
   auto has_debug_utils = false;
@@ -272,7 +309,7 @@ ContextVK::ContextVK(
 
   vk::ApplicationInfo application_info;
   application_info.setApplicationVersion(VK_API_VERSION_1_0);
-  application_info.setApiVersion(VK_API_VERSION_1_0);
+  application_info.setApiVersion(VK_API_VERSION_1_1);
   application_info.setEngineVersion(VK_API_VERSION_1_0);
   application_info.setPEngineName("Impeller");
   application_info.setPApplicationName("Impeller");
@@ -310,9 +347,16 @@ ContextVK::ContextVK(
            VkDebugUtilsMessageTypeFlagsEXT type,
            const VkDebugUtilsMessengerCallbackDataEXT* data,
            void* user_data) -> VkBool32 {
-      FML_DCHECK(false)
-          << vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT{severity})
-          << ": " << data->pMessage;
+      if (type == VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+        // do not terminate on performance warnings.
+        FML_LOG(ERROR)
+            << vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT{severity})
+            << ": " << data->pMessage;
+      } else {
+        FML_DCHECK(false)
+            << vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT{severity})
+            << ": " << data->pMessage;
+      }
       return true;
     };
 
@@ -432,6 +476,7 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   graphics_command_pool_ =
       CommandPoolVK::Create(*device_, graphics_queue->index);
+  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
   is_valid_ = true;
 }
 
@@ -472,8 +517,8 @@ vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-std::unique_ptr<Surface> ContextVK::AcquireSurface() {
-  return surface_producer_->AcquireSurface();
+std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
+  return surface_producer_->AcquireSurface(current_frame);
 }
 
 void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
@@ -503,6 +548,10 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
 
 bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
+}
+
+std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
+  return descriptor_pool_;
 }
 
 }  // namespace impeller

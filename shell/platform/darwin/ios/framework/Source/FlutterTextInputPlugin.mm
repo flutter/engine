@@ -48,7 +48,11 @@ static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
-static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+// TODO(justinmc): Remove the TextInput method constant when the framework has
+// finished transitioning to using the Scribble channel.
+// https://github.com/flutter/flutter/pull/104128
+static NSString* const kDeprecatedSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+static NSString* const kSetSelectionRectsMethod = @"Scribble.setSelectionRects";
 static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 
 #pragma mark - TextInputConfiguration Field Names
@@ -73,6 +77,19 @@ static NSString* const kAutofillHints = @"hints";
 static NSString* const kAutocorrectionType = @"autocorrect";
 
 #pragma mark - Static Functions
+
+// Determine if the character at `range` of `text` is an emoji.
+static BOOL IsEmoji(NSString* text, NSRange charRange) {
+  UChar32 codePoint;
+  BOOL gotCodePoint = [text getBytes:&codePoint
+                           maxLength:sizeof(codePoint)
+                          usedLength:NULL
+                            encoding:NSUTF32StringEncoding
+                             options:kNilOptions
+                               range:charRange
+                      remainingRange:NULL];
+  return gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI);
+}
 
 // "TextInputType.none" is a made-up input type that's typically
 // used when there's an in-app virtual keyboard. If
@@ -694,6 +711,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, readonly) fml::WeakPtr<FlutterTextInputPlugin> weakPtr;
 @property(nonatomic, readonly) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, readonly) UIView* hostView;
 @end
 
 @interface FlutterTextInputView ()
@@ -702,6 +720,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+// The composed character that is temporarily removed by the keyboard API.
+// This is cleared at the start of each keyboard interaction. (Enter a character, delete a character
+// etc)
+@property(nonatomic, copy) NSString* temporarilyDeletedComposedCharacter;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -880,6 +902,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_markedTextStyle release];
   [_textContentType release];
   [_textInteraction release];
+  [_temporarilyDeletedComposedCharacter release];
+  _temporarilyDeletedComposedCharacter = nil;
   [super dealloc];
 }
 
@@ -1224,6 +1248,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
+  // `temporarilyDeletedComposedCharacter` should only be used during a single text change session.
+  // So it needs to be cleared at the start of each text editting session.
+  self.temporarilyDeletedComposedCharacter = nil;
+
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
     [self.textInputDelegate flutterTextInputView:self
                                    performAction:FlutterTextInputActionNewline
@@ -1511,11 +1539,49 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _cachedFirstRect = kInvalidFirstRect;
 }
 
+// Returns the bounding CGRect of the transformed incomingRect, in the view's
+// coordinates.
+- (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect {
+  CGPoint points[] = {
+      incomingRect.origin,
+      CGPointMake(incomingRect.origin.x, incomingRect.origin.y + incomingRect.size.height),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width, incomingRect.origin.y),
+      CGPointMake(incomingRect.origin.x + incomingRect.size.width,
+                  incomingRect.origin.y + incomingRect.size.height)};
+
+  CGPoint origin = CGPointMake(CGFLOAT_MAX, CGFLOAT_MAX);
+  CGPoint farthest = CGPointMake(-CGFLOAT_MAX, -CGFLOAT_MAX);
+
+  for (int i = 0; i < 4; i++) {
+    const CGPoint point = points[i];
+
+    CGFloat x = _editableTransform.m11 * point.x + _editableTransform.m21 * point.y +
+                _editableTransform.m41;
+    CGFloat y = _editableTransform.m12 * point.x + _editableTransform.m22 * point.y +
+                _editableTransform.m42;
+
+    const CGFloat w = _editableTransform.m14 * point.x + _editableTransform.m24 * point.y +
+                      _editableTransform.m44;
+
+    if (w == 0.0) {
+      return kInvalidFirstRect;
+    } else if (w != 1.0) {
+      x /= w;
+      y /= w;
+    }
+
+    origin.x = MIN(origin.x, x);
+    origin.y = MIN(origin.y, y);
+    farthest.x = MAX(farthest.x, x);
+    farthest.y = MAX(farthest.y, y);
+  }
+  return CGRectMake(origin.x, origin.y, farthest.x - origin.x, farthest.y - origin.y);
+}
+
 // The following methods are required to support force-touch cursor positioning
 // and to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
-
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
@@ -1524,25 +1590,27 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
-    // The candidates view can't be shown if _editableTransform is not affine,
-    // or markedRect is invalid.
-    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect) ||
-        !CATransform3DIsAffine(_editableTransform)) {
+    // The candidates view can't be shown if the framework has not sent the
+    // first caret rect.
+    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect)) {
       return kInvalidFirstRect;
     }
 
     if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
       // If the width returned is too small, that means the framework sent us
-      // the caret rect instead of the marked text rect. Expand it to 0.1 so
-      // the IME candidates view show up.
-      double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
+      // the caret rect instead of the marked text rect. Expand it to 0.2 so
+      // the IME candidates view would show up.
       CGRect rect = _markedRect;
-      rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
-      _cachedFirstRect =
-          CGRectApplyAffineTransform(rect, CATransform3DGetAffineTransform(_editableTransform));
+      if (CGRectIsEmpty(rect)) {
+        rect = CGRectInset(rect, -0.1, 0);
+      }
+      _cachedFirstRect = [self localRectFromFrameworkTransform:rect];
     }
 
-    return _cachedFirstRect;
+    UIView* hostView = _textInputPlugin.get().hostView;
+    NSAssert(hostView == nil || [self isDescendantOfView:hostView], @"%@ is not a descendant of %@",
+             self, hostView);
+    return hostView ? [hostView convertRect:_cachedFirstRect toView:self] : _cachedFirstRect;
   }
 
   if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
@@ -1811,6 +1879,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)insertText:(NSString*)text {
+  if (self.temporarilyDeletedComposedCharacter.length > 0 && text.length == 1 && !text.UTF8String &&
+      [text characterAtIndex:0] == [self.temporarilyDeletedComposedCharacter characterAtIndex:0]) {
+    // Workaround for https://github.com/flutter/flutter/issues/111494
+    // TODO(cyanglaz): revert this workaround if when flutter supports a minimum iOS version which
+    // this bug is fixed by Apple.
+    text = self.temporarilyDeletedComposedCharacter;
+    self.temporarilyDeletedComposedCharacter = nil;
+  }
+
   NSMutableArray<FlutterTextSelectionRect*>* copiedRects =
       [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
   NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
@@ -1881,15 +1958,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       // We should check if the last character is a part of emoji.
       // If so, we must delete the entire emoji to prevent the text from being malformed.
       NSRange charRange = fml::RangeForCharacterAtIndex(self.text, oldRange.location - 1);
-      UChar32 codePoint;
-      BOOL gotCodePoint = [self.text getBytes:&codePoint
-                                    maxLength:sizeof(codePoint)
-                                   usedLength:NULL
-                                     encoding:NSUTF32StringEncoding
-                                      options:kNilOptions
-                                        range:charRange
-                               remainingRange:NULL];
-      if (gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI)) {
+      if (IsEmoji(self.text, charRange)) {
         newRange = NSMakeRange(charRange.location, oldRange.location - charRange.location);
       }
 
@@ -1899,6 +1968,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   }
 
   if (!_selectedTextRange.isEmpty) {
+    // Cache the last deleted emoji to use for an iOS bug where the next
+    // insertion corrupts the emoji characters.
+    // See: https://github.com/flutter/flutter/issues/111494#issuecomment-1248441346
+    if (IsEmoji(self.text, _selectedTextRange.range)) {
+      NSString* deletedText = [self.text substringWithRange:_selectedTextRange.range];
+      NSRange deleteFirstCharacterRange = fml::RangeForCharacterAtIndex(deletedText, 0);
+      self.temporarilyDeletedComposedCharacter =
+          [deletedText substringWithRange:deleteFirstCharacterRange];
+    }
     [self replaceRange:_selectedTextRange withText:@""];
   }
 }
@@ -2095,6 +2173,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     result(nil);
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
+    result(nil);
+    // TODO(justinmc): Remove the TextInput method constant when the framework has
+    // finished transitioning to using the Scribble channel.
+    // https://github.com/flutter/flutter/pull/104128
+  } else if ([method isEqualToString:kDeprecatedSetSelectionRectsMethod]) {
+    [self setSelectionRects:args];
     result(nil);
   } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];

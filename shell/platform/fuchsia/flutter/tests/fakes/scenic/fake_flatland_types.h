@@ -28,8 +28,19 @@ inline bool operator==(const fuchsia::math::SizeU& a,
   return a.width == b.width && a.height == b.height;
 }
 
+inline bool operator==(const fuchsia::math::Inset& a,
+                       const fuchsia::math::Inset& b) {
+  return a.top == b.top && a.left == b.left && a.right == b.right &&
+         a.bottom == b.bottom;
+}
+
 inline bool operator==(const fuchsia::math::Vec& a,
                        const fuchsia::math::Vec& b) {
+  return a.x == b.x && a.y == b.y;
+}
+
+inline bool operator==(const fuchsia::math::VecF& a,
+                       const fuchsia::math::VecF& b) {
   return a.x == b.x && a.y == b.y;
 }
 
@@ -129,6 +140,7 @@ struct FakeViewport {
   bool operator==(const FakeViewport& other) const;
 
   constexpr static fuchsia::math::SizeU kDefaultViewportLogicalSize{};
+  constexpr static fuchsia::math::Inset kDefaultViewportInset{};
 
   fuchsia::ui::composition::ContentId id{kInvalidContentId};
 
@@ -165,14 +177,20 @@ struct FakeTransform {
   bool operator==(const FakeTransform& other) const;
 
   constexpr static fuchsia::math::Vec kDefaultTranslation{.x = 0, .y = 0};
+  constexpr static fuchsia::math::VecF kDefaultScale{.x = 1.0f, .y = 1.0f};
   constexpr static fuchsia::ui::composition::Orientation kDefaultOrientation{
       fuchsia::ui::composition::Orientation::CCW_0_DEGREES};
+  constexpr static float kDefaultOpacity = 1.0f;
 
   fuchsia::ui::composition::TransformId id{kInvalidTransformId};
 
   fuchsia::math::Vec translation{kDefaultTranslation};
-  std::optional<fuchsia::math::Rect> clip_bounds;
+  fuchsia::math::VecF scale{kDefaultScale};
   fuchsia::ui::composition::Orientation orientation{kDefaultOrientation};
+
+  std::optional<fuchsia::math::Rect> clip_bounds = std::nullopt;
+
+  float opacity = kDefaultOpacity;
 
   std::vector<std::shared_ptr<FakeTransform>> children;
   std::shared_ptr<FakeContent> content;

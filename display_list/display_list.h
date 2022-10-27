@@ -273,7 +273,10 @@ class DisplayList : public SkRefCnt {
               bool can_apply_group_opacity,
               sk_sp<const DlRTree> rtree);
 
-  std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
+  struct SkFreeDeleter {
+    void operator()(uint8_t* p) { sk_free(p); }
+  };
+  std::unique_ptr<uint8_t, SkFreeDeleter> storage_;
   size_t byte_count_;
   unsigned int op_count_;
 

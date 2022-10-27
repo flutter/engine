@@ -25,8 +25,6 @@ TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
     Dart_Handle result = Dart_GetNativeInstanceField(
         handle, tonic::DartWrappable::kPeerIndex, &peer);
     ASSERT_FALSE(Dart_IsError(result));
-    SingleFrameCodec* codec = reinterpret_cast<SingleFrameCodec*>(peer);
-    ASSERT_EQ(codec->GetAllocationSize(), sizeof(SingleFrameCodec));
   };
   auto finish = [message_latch](Dart_NativeArguments args) {
     message_latch->Signal();
@@ -43,8 +41,7 @@ TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
   AddNativeCallback("ValidateCodec", CREATE_NATIVE_ENTRY(validate_codec));
   AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -55,7 +52,7 @@ TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
   });
 
   message_latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 }  // namespace testing

@@ -4,14 +4,56 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <array>
 #include <cstdlib>
 #include <ostream>
-
 #include "impeller/geometry/scalar.h"
 
 namespace impeller {
 
 struct ColorHSB;
+struct Vector4;
+
+/// All blend modes assume that both the source (fragment output) and
+/// destination (first color attachment) have colors with premultiplied alpha.
+enum class BlendMode {
+  // The following blend modes are able to be used as pipeline blend modes or
+  // via `BlendFilterContents`.
+  kClear,
+  kSource,
+  kDestination,
+  kSourceOver,
+  kDestinationOver,
+  kSourceIn,
+  kDestinationIn,
+  kSourceOut,
+  kDestinationOut,
+  kSourceATop,
+  kDestinationATop,
+  kXor,
+  kPlus,
+  kModulate,
+
+  // The following blend modes use equations that are not available for
+  // pipelines on most graphics devices without extensions, and so they are
+  // only able to be used via `BlendFilterContents`.
+  kScreen,
+  kOverlay,
+  kDarken,
+  kLighten,
+  kColorDodge,
+  kColorBurn,
+  kHardLight,
+  kSoftLight,
+  kDifference,
+  kExclusion,
+  kMultiply,
+  kHue,
+  kSaturation,
+  kColor,
+  kLuminosity,
+};
 
 /**
  *  Represents a RGBA color
@@ -39,14 +81,21 @@ struct Color {
 
   constexpr Color() {}
 
-  Color(const ColorHSB& hsbColor);
+  explicit Color(const ColorHSB& hsbColor);
+
+  Color(const Vector4& value);
 
   constexpr Color(Scalar r, Scalar g, Scalar b, Scalar a)
       : red(r), green(g), blue(b), alpha(a) {}
 
+  static constexpr Color MakeRGBA8(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return Color(static_cast<Scalar>(r) / 255, static_cast<Scalar>(g) / 255,
+                 static_cast<Scalar>(b) / 255, static_cast<Scalar>(a) / 255);
+  }
+
   constexpr bool operator==(const Color& c) const {
-    return red == c.red && green == c.green && blue == c.blue &&
-           alpha == c.alpha;
+    return ScalarNearlyEqual(red, c.red) && ScalarNearlyEqual(green, c.green) &&
+           ScalarNearlyEqual(blue, c.blue) && ScalarNearlyEqual(alpha, c.alpha);
   }
 
   constexpr Color Premultiply() const {
@@ -58,6 +107,34 @@ struct Color {
       return Color::BlackTransparent();
     }
     return {red / alpha, green / alpha, blue / alpha, alpha};
+  }
+
+  /**
+   * @brief Return a color that is linearly interpolated between colors a
+   * and b, according to the value of t.
+   *
+   * @param a The lower color.
+   * @param b The upper color.
+   * @param t A value between 0.0 and 1.0, inclusive.
+   * @return constexpr Color
+   */
+  constexpr static Color lerp(Color a, Color b, Scalar t) {
+    Scalar tt = 1.0 - t;
+    return {a.red * tt + b.red * t, a.green * tt + b.green * t,
+            a.blue * tt + b.blue * t, a.alpha * tt + b.alpha * t};
+  }
+
+  /**
+   * @brief Convert to R8G8B8A8 representation.
+   *
+   * @return constexpr std::array<u_int8, 4>
+   */
+  constexpr std::array<uint8_t, 4> ToR8G8B8A8() const {
+    uint8_t r = std::round(red * 255);
+    uint8_t g = std::round(green * 255);
+    uint8_t b = std::round(blue * 255);
+    uint8_t a = std::round(alpha * 255);
+    return {r, g, b, a};
   }
 
   static constexpr Color White() { return {1.0, 1.0, 1.0, 1.0}; }
@@ -654,6 +731,20 @@ struct Color {
         1.0                                                //
     };
   }
+
+  static Color BlendColor(const Color& src,
+                          const Color& dst,
+                          BlendMode blend_mode);
+
+  Color operator*(const Color& c) const {
+    return Color(red * c.red, green * c.green, blue * c.blue, alpha * c.alpha);
+  }
+
+  Color operator+(const Color& c) const;
+
+  Color operator-(const Color& c) const;
+
+  Color operator*(Scalar value) const;
 
   constexpr bool IsTransparent() const { return alpha == 0.0; }
 

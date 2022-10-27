@@ -72,6 +72,10 @@
   [_resizeSynchronizer requestCommit];
 }
 
+- (void)presentWithoutContent {
+  [_resizeSynchronizer noFlutterContent];
+}
+
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
   [_resizeSynchronizer beginResize:scaledSize
@@ -108,6 +112,15 @@
 
 - (BOOL)acceptsFirstResponder {
   return YES;
+}
+
+- (void)cursorUpdate:(NSEvent*)event {
+  // When adding/removing views AppKit will schedule call to current hit-test view
+  // cursorUpdate: at the end of frame to determine possible cursor change. If
+  // the view doesn't implement cursorUpdate: AppKit will set the default (arrow) cursor
+  // instead. This would replace the cursor set by FlutterMouseCursorPlugin.
+  // Empty cursorUpdate: implementation prevents this behavior.
+  // https://github.com/flutter/flutter/issues/111425
 }
 
 - (void)viewDidChangeBackingProperties {

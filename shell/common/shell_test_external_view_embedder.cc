@@ -28,6 +28,14 @@ SkISize ShellTestExternalViewEmbedder::GetLastSubmittedFrameSize() {
   return last_submitted_frame_size_;
 }
 
+std::vector<int64_t> ShellTestExternalViewEmbedder::GetVisitedPlatformViews() {
+  return visited_platform_views_;
+}
+
+MutatorsStack ShellTestExternalViewEmbedder::GetStack(int64_t view_id) {
+  return mutators_stacks_[view_id];
+}
+
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::CancelFrame() {}
 
@@ -36,12 +44,25 @@ void ShellTestExternalViewEmbedder::BeginFrame(
     SkISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  visited_platform_views_.clear();
+  mutators_stacks_.clear();
+  current_composition_params_.clear();
+}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
-    std::unique_ptr<EmbeddedViewParams> params) {}
+    std::unique_ptr<EmbeddedViewParams> params) {
+  SkRect view_bounds = SkRect::Make(frame_size_);
+  std::unique_ptr<EmbedderViewSlice> view;
+  if (params->display_list_enabled()) {
+    view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+  } else {
+    view = std::make_unique<SkPictureEmbedderViewSlice>(view_bounds);
+  }
+  slices_.insert_or_assign(view_id, std::move(view));
+}
 
 // |ExternalViewEmbedder|
 PostPrerollResult ShellTestExternalViewEmbedder::PostPrerollAction(
@@ -62,9 +83,24 @@ ShellTestExternalViewEmbedder::GetCurrentBuilders() {
 }
 
 // |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
+  visited_platform_views_.push_back(view_id);
+}
+
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter) {
+  for (int64_t id : visited_platform_views_) {
+    EmbeddedViewParams params = current_composition_params_[id];
+    params.PushImageFilter(filter);
+    current_composition_params_[id] = params;
+    mutators_stacks_[id] = params.mutatorsStack();
+  }
+}
+
 EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
     int view_id) {
-  return {nullptr, nullptr};
+  return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
 }
 
 // |ExternalViewEmbedder|

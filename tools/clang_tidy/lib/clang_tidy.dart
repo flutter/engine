@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:convert' show jsonDecode;
-import 'dart:io' as io show Directory, File, stderr, stdout;
+import 'dart:io' as io show File, stderr, stdout;
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -47,6 +47,7 @@ class ClangTidy {
     required io.File buildCommandsPath,
     String checksArg = '',
     bool lintAll = false,
+    bool lintHead = false,
     bool fix = false,
     StringSink? outSink,
     StringSink? errSink,
@@ -55,6 +56,7 @@ class ClangTidy {
       buildCommandsPath: buildCommandsPath,
       checksArg: checksArg,
       lintAll: lintAll,
+      lintHead: lintHead,
       fix: fix,
       errSink: errSink,
     ),
@@ -132,8 +134,7 @@ class ClangTidy {
 
     final _ComputeJobsResult computeJobsResult = await _computeJobs(
       changedFileBuildCommands,
-      options.repoPath,
-      options.checks,
+      options,
     );
     final int computeResult = computeJobsResult.sawMalformed ? 1 : 0;
     final List<WorkerJob> jobs = computeJobsResult.jobs;
@@ -159,7 +160,15 @@ class ClangTidy {
         .whereType<io.File>()
         .toList();
     }
-    return GitRepo(options.repoPath).changedFiles;
+
+    final GitRepo repo = GitRepo(
+      options.repoPath,
+      verbose: options.verbose,
+    );
+    if (options.lintHead) {
+      return repo.changedFilesAtHead;
+    }
+    return repo.changedFiles;
   }
 
   /// Given a build commands json file, and the files with local changes,
@@ -183,15 +192,14 @@ class ClangTidy {
 
   Future<_ComputeJobsResult> _computeJobs(
     List<Command> commands,
-    io.Directory repoPath,
-    String? checks,
+    Options options,
   ) async {
     bool sawMalformed = false;
     final List<WorkerJob> jobs = <WorkerJob>[];
     for (final Command command in commands) {
       final String relativePath = path.relative(
         command.filePath,
-        from: repoPath.parent.path,
+        from: options.repoPath.parent.path,
       );
       final LintAction action = await command.lintAction;
       switch (action) {
@@ -207,7 +215,7 @@ class ClangTidy {
           break;
         case LintAction.lint:
           _outSink.writeln('🔶 linting $relativePath');
-          jobs.add(command.createLintJob(checks, options.fix));
+          jobs.add(command.createLintJob(options));
           break;
         case LintAction.skipThirdParty:
           _outSink.writeln('🔷 ignoring $relativePath (third_party)');

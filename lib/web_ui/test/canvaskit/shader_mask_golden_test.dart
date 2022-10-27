@@ -8,8 +8,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import 'package:web_engine_tester/golden_tester.dart';
-
 import 'common.dart';
 
 void main() {
@@ -17,12 +15,6 @@ void main() {
 }
 
 const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
-
-Future<void> matchSceneGolden(String goldenFile, LayerScene scene,
-    {bool write = false}) async {
-  CanvasKitRenderer.instance.rasterizer.draw(scene.layerTree);
-  await matchGoldenFile(goldenFile, region: region, write: write);
-}
 
 void testMain() {
   group('ShaderMask', () {
@@ -88,8 +80,11 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, sweepCircle);
 
-      await matchSceneGolden('canvaskit_shadermask_linear.png',
-          builder.build());
+      await matchSceneGolden(
+        'canvaskit_shadermask_linear.png',
+        builder.build(),
+        region: region,
+      );
     });
 
     /// Regression test for https://github.com/flutter/flutter/issues/78959
@@ -153,8 +148,11 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, sweepCircle);
 
-      await matchSceneGolden('canvaskit_shadermask_linear_translated.png',
-          builder.build());
+      await matchSceneGolden(
+        'canvaskit_shadermask_linear_translated.png',
+        builder.build(),
+        region: region,
+      );
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);

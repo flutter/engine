@@ -40,12 +40,12 @@ bool CommandBufferGLES::OnSubmitCommands(CompletionCallback callback) {
 
 // |CommandBuffer|
 std::shared_ptr<RenderPass> CommandBufferGLES::OnCreateRenderPass(
-    RenderTarget target) const {
+    RenderTarget target) {
   if (!IsValid()) {
     return nullptr;
   }
   auto pass = std::shared_ptr<RenderPassGLES>(
-      new RenderPassGLES(context_, std::move(target), reactor_));
+      new RenderPassGLES(context_, target, reactor_));
   if (!pass->IsValid()) {
     return nullptr;
   }

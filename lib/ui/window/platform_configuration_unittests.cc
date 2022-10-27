@@ -49,8 +49,7 @@ TEST_F(ShellTest, PlatformConfigurationInitialization) {
   AddNativeCallback("ValidateConfiguration",
                     CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -61,7 +60,7 @@ TEST_F(ShellTest, PlatformConfigurationInitialization) {
   });
 
   message_latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
@@ -100,8 +99,7 @@ TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
   AddNativeCallback("ValidateConfiguration",
                     CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -112,7 +110,7 @@ TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
   });
 
   message_latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PlatformConfigurationOnErrorHandlesError) {
@@ -139,8 +137,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorHandlesError) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -159,7 +156,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorHandlesError) {
   message_latch->Wait();
 
   ASSERT_FALSE(did_throw);
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
@@ -178,8 +175,8 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
       [&ex, &st, &throw_count](const std::string& exception,
                                const std::string& stack_trace) -> bool {
     throw_count += 1;
-    ex = std::move(exception);
-    st = std::move(stack_trace);
+    ex = exception;
+    st = stack_trace;
     return true;
   };
 
@@ -190,8 +187,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -212,7 +208,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
   ASSERT_EQ(throw_count, 1ul);
   ASSERT_EQ(ex, "Exception: false") << ex;
   ASSERT_EQ(st.rfind("#0      customOnErrorFalse", 0), 0ul) << st;
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
@@ -230,8 +226,8 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
       [&errors, &throw_count](const std::string& exception,
                               const std::string& stack_trace) -> bool {
     throw_count += 1;
-    errors.push_back(std::move(exception));
-    errors.push_back(std::move(stack_trace));
+    errors.push_back(exception);
+    errors.push_back(stack_trace);
     return true;
   };
 
@@ -242,8 +238,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -268,7 +263,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorThrows) {
   ASSERT_EQ(errors[2], "Exception: throw1") << errors[2];
   ASSERT_EQ(errors[3].rfind("#0      customOnErrorThrow"), 0ul) << errors[3];
 
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PlatformConfigurationSetDartPerformanceMode) {
@@ -291,8 +286,7 @@ TEST_F(ShellTest, PlatformConfigurationSetDartPerformanceMode) {
                            CreateNewThread()        // io
   );
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto run_configuration = RunConfiguration::InferFromSettings(settings);
@@ -303,7 +297,7 @@ TEST_F(ShellTest, PlatformConfigurationSetDartPerformanceMode) {
   });
 
   message_latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 }  // namespace testing

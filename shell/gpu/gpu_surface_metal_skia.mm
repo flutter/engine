@@ -7,6 +7,8 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
+#include <utility>
+
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
@@ -41,8 +43,8 @@ sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
   info.fTexture.reset([texture retain]);
   GrBackendTexture backend_texture(texture.width, texture.height, GrMipmapped::kNo, info);
   return SkSurface::MakeFromBackendTexture(context, backend_texture, origin,
-                                           static_cast<int>(sample_cnt), color_type, color_space,
-                                           props);
+                                           static_cast<int>(sample_cnt), color_type,
+                                           std::move(color_space), props);
 }
 }  // namespace
 
@@ -95,7 +97,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; }, frame_size);
   }
 
   PrecompileKnownSkSLsIfNecessary();
@@ -187,7 +189,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     framebuffer_info.supports_partial_repaint = true;
   }
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
+                                        frame_info);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
@@ -228,8 +231,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), std::move(framebuffer_info),
-                                        submit_callback);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
+                                        frame_info);
 }
 
 // |Surface|

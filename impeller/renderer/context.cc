@@ -14,4 +14,8 @@ bool Context::HasThreadingRestrictions() const {
   return false;
 }
 
+std::shared_ptr<GPUTracer> Context::GetGPUTracer() const {
+  return nullptr;
+}
+
 }  // namespace impeller

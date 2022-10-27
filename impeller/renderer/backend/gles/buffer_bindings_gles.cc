@@ -5,7 +5,9 @@
 #include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 
 #include <algorithm>
+#include <cstring>
 #include <sstream>
+#include <vector>
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
@@ -48,7 +50,7 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     attrib.normalized = GL_FALSE;
     attrib.offset = offset;
     offset += (input.bit_width * input.vec_size) / 8;
-    vertex_attrib_arrays.emplace_back(std::move(attrib));
+    vertex_attrib_arrays.emplace_back(attrib);
   }
   for (auto& array : vertex_attrib_arrays) {
     array.stride = offset;
@@ -70,9 +72,13 @@ static std::string NormalizeUniformKey(const std::string& key) {
 }
 
 static std::string CreateUnifiormMemberKey(const std::string& struct_name,
-                                           const std::string& member) {
+                                           const std::string& member,
+                                           bool is_array) {
   std::stringstream stream;
   stream << struct_name << "." << member;
+  if (is_array) {
+    stream << "[0]";
+  }
   return NormalizeUniformKey(stream.str());
 }
 
@@ -97,6 +103,9 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
     GLsizei written_count = 0u;
     GLint uniform_var_size = 0u;
     GLenum uniform_type = GL_FLOAT;
+    // Note: Active uniforms are defined as uniforms that may have an impact on
+    //       the output of the shader. Drivers are allowed to (and often do)
+    //       optimize out unused uniforms.
     gl.GetActiveUniform(program,            // program
                         i,                  // index
                         max_name_size,      // buffer_size
@@ -112,10 +121,6 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
     }
     if (written_count <= 0) {
       VALIDATION_LOG << "Uniform name could not be read for active uniform.";
-      return false;
-    }
-    if (uniform_var_size != 1) {
-      VALIDATION_LOG << "Array uniform types are not supported.";
       return false;
     }
     uniform_locations_[NormalizeUniformKey(std::string{
@@ -208,12 +213,38 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
       // mappings for these. Keep going.
       continue;
     }
+
+    size_t element_count = member.array_elements.value_or(1);
+
     const auto member_key =
-        CreateUnifiormMemberKey(metadata->name, member.name);
+        CreateUnifiormMemberKey(metadata->name, member.name, element_count > 1);
     const auto location = uniform_locations_.find(member_key);
     if (location == uniform_locations_.end()) {
-      VALIDATION_LOG << "Location for uniform member not known: " << member_key;
-      return false;
+      // The list of uniform locations only contains "active" uniforms that are
+      // not optimized out. So this situation is expected to happen when unused
+      // uniforms are present in the shader.
+      continue;
+    }
+
+    size_t element_stride = member.byte_length / element_count;
+
+    auto* buffer_data =
+        reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
+
+    std::vector<uint8_t> array_element_buffer;
+    if (element_count > 1) {
+      // When binding uniform arrays, the elements must be contiguous. Copy the
+      // uniforms to a temp buffer to eliminate any padding needed by the other
+      // backends.
+      array_element_buffer.resize(member.size * element_count);
+      for (size_t element_i = 0; element_i < element_count; element_i++) {
+        std::memcpy(array_element_buffer.data() + element_i * member.size,
+                    reinterpret_cast<const char*>(buffer_data) +
+                        element_i * element_stride,
+                    member.size);
+      }
+      buffer_data =
+          reinterpret_cast<const GLfloat*>(array_element_buffer.data());
     }
 
     switch (member.type) {
@@ -221,38 +252,33 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
         switch (member.size) {
           case sizeof(Matrix):
             gl.UniformMatrix4fv(location->second,  // location
-                                1u,                // count
+                                element_count,     // count
                                 GL_FALSE,          // normalize
-                                reinterpret_cast<const GLfloat*>(
-                                    buffer_ptr + member.offset)  // data
+                                buffer_data        // data
             );
             continue;
           case sizeof(Vector4):
             gl.Uniform4fv(location->second,  // location
-                          1u,                // count
-                          reinterpret_cast<const GLfloat*>(
-                              buffer_ptr + member.offset)  // data
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
           case sizeof(Vector3):
             gl.Uniform3fv(location->second,  // location
-                          1u,                // count
-                          reinterpret_cast<const GLfloat*>(
-                              buffer_ptr + member.offset)  // data
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
           case sizeof(Vector2):
             gl.Uniform2fv(location->second,  // location
-                          1u,                // count
-                          reinterpret_cast<const GLfloat*>(
-                              buffer_ptr + member.offset)  // data
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
           case sizeof(Scalar):
             gl.Uniform1fv(location->second,  // location
-                          1u,                // count
-                          reinterpret_cast<const GLfloat*>(
-                              buffer_ptr + member.offset)  // data
+                          element_count,     // count
+                          buffer_data        // data
             );
             continue;
         }

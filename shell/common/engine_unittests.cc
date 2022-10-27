@@ -36,6 +36,8 @@ class MockDelegate : public Engine::Delegate {
                    const std::vector<std::string>&));
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
   MOCK_METHOD0(GetCurrentTimePoint, fml::TimePoint());
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     const std::shared_ptr<PlatformMessageHandler>&());
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -61,11 +63,14 @@ class MockRuntimeDelegate : public RuntimeDelegate {
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     std::weak_ptr<PlatformMessageHandler>());
 };
 
 class MockRuntimeController : public RuntimeController {
  public:
-  MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
+  MockRuntimeController(RuntimeDelegate& client,
+                        const TaskRunners& p_task_runners)
       : RuntimeController(client, p_task_runners) {}
   MOCK_METHOD0(IsRootIsolateRunning, bool());
   MOCK_METHOD1(DispatchPlatformMessage, bool(std::unique_ptr<PlatformMessage>));
@@ -78,7 +83,7 @@ class MockRuntimeController : public RuntimeController {
 std::unique_ptr<PlatformMessage> MakePlatformMessage(
     const std::string& channel,
     const std::map<std::string, std::string>& values,
-    fml::RefPtr<PlatformMessageResponse> response) {
+    const fml::RefPtr<PlatformMessageResponse>& response) {
   rapidjson::Document document;
   auto& allocator = document.GetAllocator();
   document.SetObject();
@@ -141,7 +146,7 @@ class EngineTest : public testing::FixtureTest {
   fml::WeakPtr<IOManager> io_manager_;
   std::unique_ptr<RuntimeController> runtime_controller_;
   std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner_;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
+  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
 };
 }  // namespace
 

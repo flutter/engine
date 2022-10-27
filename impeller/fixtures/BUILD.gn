@@ -8,12 +8,16 @@ import("//flutter/testing/testing.gni")
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
   shaders = [
+    "array.frag",
+    "array.vert",
     "box_fade.frag",
     "box_fade.vert",
     "colors.vert",
     "colors.frag",
     "impeller.frag",
     "impeller.vert",
+    "inactive_uniforms.frag",
+    "inactive_uniforms.vert",
     "instanced_draw.frag",
     "instanced_draw.vert",
     "mipmaps.frag",
@@ -30,7 +34,10 @@ impeller_shaders("shader_fixtures") {
 }
 
 impellerc("runtime_stages") {
-  shaders = [ "ink_sparkle.frag" ]
+  shaders = [
+    "ink_sparkle.frag",
+    "runtime_stage_example.frag",
+  ]
   sl_file_extension = "iplr"
   shader_target_flag = "--runtime-stage-metal"
   iplr = true
@@ -53,6 +60,7 @@ test_fixtures("file_fixtures") {
     "sample.tesc",
     "sample.tese",
     "sample.vert",
+    "sample_with_binding.vert",
     "sa%m#ple.vert",
     "struct_def_bug.vert",
     "table_mountain_nx.png",
@@ -64,6 +72,9 @@ test_fixtures("file_fixtures") {
     "test_texture.frag",
     "types.h",
   ]
+  if (host_os == "mac") {
+    fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
+  }
   fixtures +=
       filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ])
   deps = [ ":runtime_stages" ]

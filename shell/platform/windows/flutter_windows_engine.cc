@@ -152,9 +152,12 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
-FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
+FlutterWindowsEngine::FlutterWindowsEngine(
+    const FlutterProjectBundle& project,
+    std::unique_ptr<WindowsRegistry> registry)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
-      aot_data_(nullptr, nullptr) {
+      aot_data_(nullptr, nullptr),
+      windows_registry_(std::move(registry)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -525,7 +528,8 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  std::vector<LanguageInfo> languages =
+      GetPreferredLanguageInfo(*windows_registry_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -555,6 +559,26 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
     int64_t texture_id) {
   return (embedder_api_.MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
+}
+
+bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
+  struct Captures {
+    fml::closure callback;
+  };
+  auto captures = new Captures();
+  captures->callback = std::move(callback);
+  if (embedder_api_.PostRenderThreadTask(
+          engine_,
+          [](void* opaque) {
+            auto captures = reinterpret_cast<Captures*>(opaque);
+            captures->callback();
+            delete captures;
+          },
+          captures) == kSuccess) {
+    return true;
+  }
+  delete captures;
+  return false;
 }
 
 bool FlutterWindowsEngine::DispatchSemanticsAction(

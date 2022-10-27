@@ -2,22 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
+#include "impeller/fixtures/array.frag.h"
+#include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
 #include "impeller/fixtures/colors.frag.h"
 #include "impeller/fixtures/colors.vert.h"
 #include "impeller/fixtures/impeller.frag.h"
 #include "impeller/fixtures/impeller.vert.h"
+#include "impeller/fixtures/inactive_uniforms.frag.h"
+#include "impeller/fixtures/inactive_uniforms.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
-#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
-#include "impeller/fixtures/sample.comp.h"
-#endif
 #include "impeller/fixtures/test_texture.frag.h"
 #include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
@@ -91,7 +91,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
     FS::FrameInfo frame_info;
-    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.current_time = GetSecondsElapsed();
     frame_info.cursor_position = GetCursorPosition();
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
@@ -164,18 +164,11 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   ASSERT_TRUE(sampler);
 
   Vector3 euler_angles;
-  bool first_frame = true;
   SinglePassCallback callback = [&](RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 80});
-      ImGui::SetNextWindowPos({20, 20});
-    }
-
     static Degrees fov_y(60);
     static Scalar distance = 10;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Field of view", &fov_y.degrees, 0, 180);
     ImGui::SliderFloat("Camera distance", &distance, 0, 30);
     ImGui::End();
@@ -187,7 +180,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     cmd.BindVertices(vertex_buffer);
 
     VS::UniformBuffer uniforms;
-    Scalar time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    Scalar time = GetSecondsElapsed();
     euler_angles = Vector3(0.19 * time, 0.7 * time, 0.43 * time);
 
     uniforms.mvp =
@@ -250,7 +243,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     cmd.BindVertices(vertex_buffer);
 
     FS::FrameInfo frame_info;
-    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.current_time = GetSecondsElapsed();
     frame_info.cursor_position = GetCursorPosition();
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
@@ -365,7 +358,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   cmd.BindVertices(vertex_buffer);
 
   FS::FrameInfo frame_info;
-  frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+  frame_info.current_time = GetSecondsElapsed();
   frame_info.cursor_position = GetCursorPosition();
   frame_info.window_size.x = GetWindowSize().width;
   frame_info.window_size.y = GetWindowSize().height;
@@ -396,18 +389,25 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   VertexBufferBuilder<VS::PerVertexData> builder;
 
-  ASSERT_EQ(
-      Tessellator::Result::kSuccess,
-      Tessellator{}.Tessellate(FillType::kPositive,
-                               PathBuilder{}
-                                   .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                                   .TakePath()
-                                   .CreatePolyline(),
-                               [&builder](Point vtx) {
-                                 VS::PerVertexData data;
-                                 data.vtx = vtx;
-                                 builder.AppendVertex(data);
-                               }));
+  ASSERT_EQ(Tessellator::Result::kSuccess,
+            Tessellator{}.Tessellate(
+                FillType::kPositive,
+                PathBuilder{}
+                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
+                    .TakePath()
+                    .CreatePolyline(),
+                [&builder](const float* vertices, size_t vertices_size,
+                           const uint16_t* indices, size_t indices_size) {
+                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    VS::PerVertexData data;
+                    data.vtx = {vertices[i], vertices[i + 1]};
+                    builder.AppendVertex(data);
+                  }
+                  for (auto i = 0u; i < indices_size; i++) {
+                    builder.AppendIndex(indices[i]);
+                  }
+                  return true;
+                }));
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -424,11 +424,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   cmd.label = "InstancedDraw";
 
   static constexpr size_t kInstancesCount = 5u;
-  std::vector<VS::InstanceInfo> instances;
+  VS::InstanceInfo<kInstancesCount> instances;
   for (size_t i = 0; i < kInstancesCount; i++) {
-    VS::InstanceInfo info;
-    info.colors = Color::Random();
-    instances.emplace_back(info);
+    instances.colors[i] = Color::Random();
   }
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
@@ -592,10 +590,6 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    if (first_frame) {
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
     const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
                                      MipFilter::kLinear};
@@ -727,7 +721,7 @@ TEST_P(RendererTest, TheImpeller) {
 
     FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
-    fs_uniform.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    fs_uniform.time = GetSecondsElapsed();
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
@@ -739,50 +733,174 @@ TEST_P(RendererTest, TheImpeller) {
   OpenPlaygroundHere(callback);
 }
 
-#if IMPELLER_ENABLE_METAL || IMPELLER_ENABLE_VULKAN
-TEST_P(RendererTest, CanCreateComputePass) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Compute is not supported on GL.");
-  }
-  if (GetParam() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Compute is not supported on Vulkan yet.");
-  }
+TEST_P(RendererTest, ArrayUniforms) {
+  using VS = ArrayVertexShader;
+  using FS = ArrayFragmentShader;
 
-  using CS = SampleComputeShader;
   auto context = GetContext();
-  ASSERT_TRUE(context);
-  using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
-  auto pipeline_desc =
-      SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
-  ASSERT_TRUE(pipeline_desc.has_value());
-  auto compute_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
-  ASSERT_TRUE(compute_pipeline);
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
 
-  auto cmd_buffer = context->CreateCommandBuffer();
-  auto pass = cmd_buffer->CreateComputePass();
-  ASSERT_TRUE(pass && pass->IsValid());
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
 
-  ComputeCommand cmd;
-  cmd.label = "Compute";
-  cmd.pipeline = compute_pipeline;
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Google Dots";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-  std::vector<CS::Input0> input_0;
-  std::vector<CS::Input1> input_1;
-  input_0.push_back(CS::Input0{Vector4(2.0, 3.0, 4.0, 5.0)});
-  input_1.push_back(CS::Input1{Vector4(6.0, 7.0, 8.0, 9.0)});
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
 
-  std::vector<CS::Output> output(5);
-  CS::BindInput0(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(output));
+    auto time = GetSecondsElapsed();
+    auto y_pos = [&time](float x) {
+      return 400 + 10 * std::cos(time * 5 + x / 6);
+    };
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
-  ASSERT_TRUE(pass->EncodeCommands());
+    FS::FragInfo fs_uniform = {
+        .circle_positions = {Point(430, y_pos(0)), Point(480, y_pos(1)),
+                             Point(530, y_pos(2)), Point(580, y_pos(3))},
+        .colors = {Color::MakeRGBA8(66, 133, 244, 255),
+                   Color::MakeRGBA8(219, 68, 55, 255),
+                   Color::MakeRGBA8(244, 180, 0, 255),
+                   Color::MakeRGBA8(15, 157, 88, 255)},
+    };
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
 }
-#endif
+
+TEST_P(RendererTest, InactiveUniforms) {
+  using VS = InactiveUniformsVertexShader;
+  using FS = InactiveUniformsFragmentShader;
+
+  auto context = GetContext();
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto size = pass.GetRenderTargetSize();
+
+    Command cmd;
+    cmd.pipeline = pipeline;
+    cmd.label = "Inactive Uniform";
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+
+    VS::VertInfo vs_uniform;
+    vs_uniform.mvp =
+        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+    VS::BindVertInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
+
+    FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
+                               .color = Color::Green()};
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+
+    pass.AddCommand(cmd);
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanCreateCPUBackedTexture) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("CPU backed textures only supported on Metal right now.");
+  }
+
+  auto context = GetContext();
+  auto allocator = context->GetResourceAllocator();
+  size_t dimension = 2;
+
+  do {
+    ISize size(dimension, dimension);
+    TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
+    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+    texture_descriptor.size = size;
+    auto row_bytes =
+        std::max(static_cast<uint16_t>(size.width * 4),
+                 allocator->MinimumBytesPerRow(texture_descriptor.format));
+    auto buffer_size = size.height * row_bytes;
+
+    DeviceBufferDescriptor buffer_descriptor;
+    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
+    buffer_descriptor.size = buffer_size;
+
+    auto buffer = allocator->CreateBuffer(buffer_descriptor);
+
+    ASSERT_TRUE(buffer);
+
+    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
+
+    ASSERT_TRUE(texture);
+    ASSERT_TRUE(texture->IsValid());
+
+    dimension *= 2;
+  } while (dimension <= 8192);
+}
+
+TEST_P(RendererTest, DefaultIndexSize) {
+  using VS = BoxFadeVertexShader;
+
+  // Default to 16bit index buffer size, as this is a reasonable default and
+  // supported on all backends without extensions.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, VertexBufferBuilder) {
+  // Does not create index buffer if one is provided.
+  using VS = BoxFadeVertexShader;
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  vertex_builder.AppendIndex(0);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(3);
+
+  ASSERT_EQ(vertex_builder.GetIndexCount(), 6u);
+  ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
+}
 
 }  // namespace testing
 }  // namespace impeller

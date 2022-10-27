@@ -10,18 +10,24 @@ namespace flutter {
 DiffContext::DiffContext(SkISize frame_size,
                          double frame_device_pixel_ratio,
                          PaintRegionMap& this_frame_paint_region_map,
-                         const PaintRegionMap& last_frame_paint_region_map)
+                         const PaintRegionMap& last_frame_paint_region_map,
+                         bool has_raster_cache)
     : rects_(std::make_shared<std::vector<SkRect>>()),
       frame_size_(frame_size),
       frame_device_pixel_ratio_(frame_device_pixel_ratio),
       this_frame_paint_region_map_(this_frame_paint_region_map),
-      last_frame_paint_region_map_(last_frame_paint_region_map) {}
+      last_frame_paint_region_map_(last_frame_paint_region_map),
+      has_raster_cache_(has_raster_cache) {}
 
 void DiffContext::BeginSubtree() {
   state_stack_.push_back(state_);
   state_.rect_index_ = rects_->size();
   state_.has_filter_bounds_adjustment = false;
   state_.has_texture = false;
+  if (state_.transform_override) {
+    state_.transform = *state_.transform_override;
+    state_.transform_override = std::nullopt;
+  }
 }
 
 void DiffContext::EndSubtree() {
@@ -29,7 +35,7 @@ void DiffContext::EndSubtree() {
   if (state_.has_filter_bounds_adjustment) {
     filter_bounds_adjustment_stack_.pop_back();
   }
-  state_ = std::move(state_stack_.back());
+  state_ = state_stack_.back();
   state_stack_.pop_back();
 }
 
@@ -45,10 +51,11 @@ void DiffContext::PushTransform(const SkMatrix& transform) {
 }
 
 void DiffContext::SetTransform(const SkMatrix& transform) {
-  state_.transform = transform;
+  state_.transform_override = transform;
 }
 
-void DiffContext::PushFilterBoundsAdjustment(FilterBoundsAdjustment filter) {
+void DiffContext::PushFilterBoundsAdjustment(
+    const FilterBoundsAdjustment& filter) {
   FML_DCHECK(state_.has_filter_bounds_adjustment == false);
   state_.has_filter_bounds_adjustment = true;
   filter_bounds_adjustment_stack_.push_back(filter);
@@ -153,8 +160,16 @@ void DiffContext::MarkSubtreeDirty(const SkRect& previous_paint_region) {
 }
 
 void DiffContext::AddLayerBounds(const SkRect& rect) {
-  auto paint_rect = ApplyFilterBoundsAdjustment(state_.transform.mapRect(rect));
-  if (paint_rect.intersects(state_.cull_rect)) {
+  // During painting we cull based on non-overriden transform and then
+  // override the transform right before paint. Do the same thing here to get
+  // identical paint rect.
+  auto transformed_rect =
+      ApplyFilterBoundsAdjustment(state_.transform.mapRect(rect));
+  if (transformed_rect.intersects(state_.cull_rect)) {
+    auto paint_rect = state_.transform_override
+                          ? ApplyFilterBoundsAdjustment(
+                                state_.transform_override->mapRect(rect))
+                          : transformed_rect;
     rects_->push_back(paint_rect);
     if (IsSubtreeDirty()) {
       AddDamage(paint_rect);
@@ -187,7 +202,7 @@ void DiffContext::AddReadbackRegion(const SkIRect& rect) {
   readback.position = rects_->size();
   // Push empty rect as a placeholder for position in current subtree
   rects_->push_back(SkRect::MakeEmpty());
-  readbacks_.push_back(std::move(readback));
+  readbacks_.push_back(readback);
 }
 
 PaintRegion DiffContext::CurrentSubtreeRegion() const {

@@ -4,12 +4,11 @@
 
 #include "solid_color_contents.h"
 
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -25,12 +24,8 @@ const Color& SolidColorContents::GetColor() const {
   return color_;
 }
 
-void SolidColorContents::SetPath(Path path) {
-  path_ = std::move(path);
-}
-
-void SolidColorContents::SetCover(bool cover) {
-  cover_ = cover;
+void SolidColorContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
+  geometry_ = std::move(geometry);
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(
@@ -38,28 +33,19 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   if (color_.IsTransparent()) {
     return std::nullopt;
   }
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
+  if (geometry_ == nullptr) {
+    return std::nullopt;
+  }
+  return geometry_->GetCoverage(entity.GetTransformation());
 };
 
-bool SolidColorContents::ShouldRender(const Entity& entity,
-                                      const ISize& target_size) const {
-  return cover_ || Contents::ShouldRender(entity, target_size);
-}
-
-VertexBuffer SolidColorContents::CreateSolidFillVertices(const Path& path,
-                                                         HostBuffer& buffer) {
-  using VS = SolidFillPipeline::VertexShader;
-
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-
-  auto tesselation_result = Tessellator{}.Tessellate(
-      path.GetFillType(), path.CreatePolyline(),
-      [&vtx_builder](auto point) { vtx_builder.AppendVertex({point}); });
-  if (tesselation_result != Tessellator::Result::kSuccess) {
-    return {};
+bool SolidColorContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
+  if (!stencil_coverage.has_value()) {
+    return false;
   }
-
-  return vtx_builder.CreateVertexBuffer(buffer);
+  return Contents::ShouldRender(entity, stencil_coverage);
 }
 
 bool SolidColorContents::Render(const ContentContext& renderer,
@@ -70,15 +56,19 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   Command cmd;
   cmd.label = "Solid Fill";
-  cmd.pipeline =
-      renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  cmd.BindVertices(CreateSolidFillVertices(
-      cover_
-          ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
-          : path_,
-      pass.GetTransientsBuffer()));
+  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+
+  cmd.pipeline = renderer.GetSolidFillPipeline(options);
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.primitive_type = geometry_result.type;
 
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -89,19 +79,20 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   frag_info.color = color_.Premultiply();
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
-  cmd.primitive_type = PrimitiveType::kTriangle;
-
   if (!pass.AddCommand(std::move(cmd))) {
     return false;
   }
 
+  if (geometry_result.prevent_overdraw) {
+    return ClipRestoreContents().Render(renderer, entity, pass);
+  }
   return true;
 }
 
-std::unique_ptr<SolidColorContents> SolidColorContents::Make(Path path,
+std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
                                                              Color color) {
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetPath(std::move(path));
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(color);
   return contents;
 }

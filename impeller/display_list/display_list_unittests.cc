@@ -97,19 +97,12 @@ TEST_P(DisplayListTest, CanDrawCapsAndJoins) {
 }
 
 TEST_P(DisplayListTest, CanDrawArc) {
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 100});
-      ImGui::SetNextWindowPos({300, 550});
-    }
-
     static float start_angle = 45;
     static float sweep_angle = 270;
     static bool use_center = true;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Start angle", &start_angle, -360, 360);
     ImGui::SliderFloat("Sweep angle", &sweep_angle, -360, 360);
     ImGui::Checkbox("Use center", &use_center);
@@ -256,20 +249,37 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawWithColorFilterImageFilter) {
+  const float invert_color_matrix[20] = {
+      -1, 0,  0,  0, 1,  //
+      0,  -1, 0,  0, 1,  //
+      0,  0,  -1, 0, 1,  //
+      0,  0,  0,  1, 0,  //
+  };
+  auto texture = CreateTextureForFixture("boston.jpg");
+  flutter::DisplayListBuilder builder;
+  auto color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(invert_color_matrix);
+  auto image_filter =
+      std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
+  builder.setImageFilter(image_filter.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+
+  builder.translate(0, 700);
+  builder.setColorFilter(color_filter.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
 
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 100});
-      ImGui::SetNextWindowPos({300, 550});
-    }
-
     static float sigma[] = {10, 10};
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat2("Sigma", sigma, 0, 100);
     ImGui::End();
 
@@ -287,16 +297,163 @@ TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(DisplayListTest, CanDrawWithComposeImageFilter) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  flutter::DisplayListBuilder builder;
+  auto dilate = std::make_shared<flutter::DlDilateImageFilter>(10.0, 10.0);
+  auto erode = std::make_shared<flutter::DlErodeImageFilter>(10.0, 10.0);
+  auto open = std::make_shared<flutter::DlComposeImageFilter>(dilate, erode);
+  auto close = std::make_shared<flutter::DlComposeImageFilter>(erode, dilate);
+  builder.setImageFilter(open.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  builder.translate(0, 700);
+  builder.setImageFilter(close.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanClampTheResultingColorOfColorMatrixFilter) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  const float inner_color_matrix[20] = {
+      1, 0, 0, 0, 0,  //
+      0, 1, 0, 0, 0,  //
+      0, 0, 1, 0, 0,  //
+      0, 0, 0, 2, 0,  //
+  };
+  const float outer_color_matrix[20] = {
+      1, 0, 0, 0,   0,  //
+      0, 1, 0, 0,   0,  //
+      0, 0, 1, 0,   0,  //
+      0, 0, 0, 0.5, 0,  //
+  };
+  auto inner_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(inner_color_matrix);
+  auto outer_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(outer_color_matrix);
+  auto inner =
+      std::make_shared<flutter::DlColorFilterImageFilter>(inner_color_filter);
+  auto outer =
+      std::make_shared<flutter::DlColorFilterImageFilter>(outer_color_filter);
+  auto compose = std::make_shared<flutter::DlComposeImageFilter>(outer, inner);
+
+  flutter::DisplayListBuilder builder;
+  builder.setImageFilter(compose.get());
+  builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                    flutter::DlImageSampling::kNearestNeighbor, true);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, SaveLayerWithColorMatrixFiltersAndAlphaDrawCorrectly) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  enum class Type { kUseAsImageFilter, kUseAsColorFilter, kDisableFilter };
+  auto callback = [&]() {
+    static float alpha = 0.5;
+    static int selected_type = 0;
+    const char* names[] = {"Use as image filter", "Use as color filter",
+                           "Disable filter"};
+
+    static float color_matrix[20] = {
+        1, 0, 0, 0, 0,  //
+        0, 1, 0, 0, 0,  //
+        0, 0, 1, 0, 0,  //
+        0, 0, 0, 2, 0,  //
+    };
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Alpha", &alpha, 0, 1);
+
+    ImGui::Combo("Type", &selected_type, names, sizeof(names) / sizeof(char*));
+    std::string label = "##1";
+    for (int i = 0; i < 20; i += 5) {
+      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
+                          &(color_matrix[i]), 5, nullptr, nullptr, "%.2f", 0);
+      label[2]++;
+    }
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+    flutter::DlPaint save_paint;
+    save_paint.setAlpha(static_cast<uint8_t>(255 * alpha));
+    auto color_filter =
+        std::make_shared<flutter::DlMatrixColorFilter>(color_matrix);
+    Type type = static_cast<Type>(selected_type);
+    switch (type) {
+      case Type::kUseAsImageFilter: {
+        auto image_filter =
+            std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
+        save_paint.setImageFilter(image_filter);
+        break;
+      }
+      case Type::kUseAsColorFilter: {
+        save_paint.setColorFilter(color_filter);
+        break;
+      }
+      case Type::kDisableFilter:
+        break;
+    }
+    builder.saveLayer(nullptr, &save_paint);
+    flutter::DlPaint draw_paint;
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                      flutter::DlImageSampling::kNearestNeighbor, &draw_paint);
+    builder.restore();
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, SaveLayerWithBlendFiltersAndAlphaDrawCorrectly) {
+  auto texture = CreateTextureForFixture("boston.jpg");
+  enum class Type { kUseAsImageFilter, kUseAsColorFilter, kDisableFilter };
+  auto callback = [&]() {
+    static float alpha = 0.5;
+    static int selected_type = 0;
+    const char* names[] = {"Use as image filter", "Use as color filter",
+                           "Disable filter"};
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Alpha", &alpha, 0, 1);
+
+    ImGui::Combo("Type", &selected_type, names, sizeof(names) / sizeof(char*));
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+    flutter::DlPaint save_paint;
+    save_paint.setAlpha(static_cast<uint8_t>(255 * alpha));
+    auto color_filter = std::make_shared<flutter::DlBlendColorFilter>(
+        flutter::DlColor::kRed(), flutter::DlBlendMode::kDstOver);
+    Type type = static_cast<Type>(selected_type);
+    switch (type) {
+      case Type::kUseAsImageFilter: {
+        auto image_filter =
+            std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
+        save_paint.setImageFilter(image_filter);
+        break;
+      }
+      case Type::kUseAsColorFilter: {
+        save_paint.setColorFilter(color_filter);
+        break;
+      }
+      case Type::kDisableFilter:
+        break;
+    }
+    builder.saveLayer(nullptr, &save_paint);
+    flutter::DlPaint draw_paint;
+    draw_paint.setColor(flutter::DlColor::kBlue());
+    builder.drawRect(SkRect::MakeLTRB(100, 100, 400, 400), draw_paint);
+    builder.restore();
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(DisplayListTest, CanDrawBackdropFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
 
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static float sigma[] = {10, 10};
     static float ctm_scale = 1;
     static bool use_bounds = true;
@@ -580,6 +737,225 @@ TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
     builder.drawRect(path.getBounds().makeOutset(5, 5), outline_paint);
     builder.translate(0, 150);
   }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
+  auto boston = CreateTextureForFixture("boston.jpg");
+
+  auto callback = [&]() {
+    static int selected_matrix_type = 0;
+    const char* matrix_type_names[] = {"Matrix", "Local Matrix"};
+
+    static float ctm_translation[2] = {200, 200};
+    static float ctm_scale[2] = {0.65, 0.65};
+    static float ctm_skew[2] = {0, 0};
+
+    static bool enable = true;
+    static float translation[2] = {100, 100};
+    static float scale[2] = {0.8, 0.8};
+    static float skew[2] = {0.2, 0.2};
+
+    static bool enable_savelayer = true;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      ImGui::Combo("Filter type", &selected_matrix_type, matrix_type_names,
+                   sizeof(matrix_type_names) / sizeof(char*));
+
+      ImGui::TextWrapped("Current Transform");
+      ImGui::SliderFloat2("CTM Translation", ctm_translation, 0, 1000);
+      ImGui::SliderFloat2("CTM Scale", ctm_scale, 0, 3);
+      ImGui::SliderFloat2("CTM Skew", ctm_skew, -3, 3);
+
+      ImGui::TextWrapped(
+          "MatrixFilter and LocalMatrixFilter modify the CTM in the same way. "
+          "The only difference is that MatrixFilter doesn't affect the effect "
+          "transform, whereas LocalMatrixFilter does.");
+      // Note: See this behavior in:
+      //       https://fiddle.skia.org/c/6cbb551ab36d06f163db8693972be954
+      ImGui::Checkbox("Enable", &enable);
+      ImGui::SliderFloat2("Filter Translation", translation, 0, 1000);
+      ImGui::SliderFloat2("Filter Scale", scale, 0, 3);
+      ImGui::SliderFloat2("Filter Skew", skew, -3, 3);
+
+      ImGui::TextWrapped(
+          "Rendering the filtered image within a layer can expose bounds "
+          "issues. If the rendered image gets cut off when this setting is "
+          "enabled, there's a coverage bug in the filter.");
+      ImGui::Checkbox("Render in layer", &enable_savelayer);
+    }
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+    SkPaint paint;
+    if (enable_savelayer) {
+      builder.saveLayer(nullptr, nullptr);
+    }
+    {
+      auto content_scale = GetContentScale();
+      builder.scale(content_scale.x, content_scale.y);
+
+      // Set the current transform
+      auto ctm_matrix =
+          SkMatrix::MakeAll(ctm_scale[0], ctm_skew[0], ctm_translation[0],  //
+                            ctm_skew[1], ctm_scale[1], ctm_translation[1],  //
+                            0, 0, 1);
+      builder.transform(ctm_matrix);
+
+      // Set the matrix filter
+      auto filter_matrix =
+          SkMatrix::MakeAll(scale[0], skew[0], translation[0],  //
+                            skew[1], scale[1], translation[1],  //
+                            0, 0, 1);
+
+      if (enable) {
+        switch (selected_matrix_type) {
+          case 0: {
+            auto filter = flutter::DlMatrixImageFilter(
+                filter_matrix, flutter::DlImageSampling::kLinear);
+            builder.setImageFilter(&filter);
+            break;
+          }
+          case 1: {
+            auto internal_filter =
+                flutter::DlBlurImageFilter(10, 10, flutter::DlTileMode::kDecal)
+                    .shared();
+            auto filter = flutter::DlLocalMatrixImageFilter(filter_matrix,
+                                                            internal_filter);
+            builder.setImageFilter(&filter);
+            break;
+          }
+        }
+      }
+
+      builder.drawImage(DlImageImpeller::Make(boston), {},
+                        flutter::DlImageSampling::kLinear, true);
+    }
+    if (enable_savelayer) {
+      builder.restore();
+    }
+
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, CanDrawRectWithLinearToSrgbColorFilter) {
+  flutter::DlPaint paint;
+  paint.setColor(flutter::DlColor(0xFF2196F3).withAlpha(128));
+  flutter::DisplayListBuilder builder;
+  paint.setColorFilter(flutter::DlLinearToSrgbGammaColorFilter::instance.get());
+  builder.drawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
+  builder.translate(0, 200);
+
+  paint.setColorFilter(flutter::DlSrgbToLinearGammaColorFilter::instance.get());
+  builder.drawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
+  const flutter::DlColor colors[2] = {
+      flutter::DlColor(0xFFF44336),
+      flutter::DlColor(0xFF2196F3),
+  };
+  const float stops[2] = {0.0, 1.0};
+  flutter::DlPaint paint;
+  flutter::DisplayListBuilder builder;
+  auto clip_bounds = SkRect::MakeWH(300.0, 300.0);
+  builder.save();
+  builder.translate(100, 100);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, false);
+  auto linear =
+      flutter::DlColorSource::MakeLinear({0.0, 0.0}, {100.0, 100.0}, 2, colors,
+                                         stops, flutter::DlTileMode::kRepeat);
+  paint.setColorSource(linear);
+  builder.drawPaint(paint);
+  builder.restore();
+
+  builder.save();
+  builder.translate(500, 100);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, false);
+  auto radial = flutter::DlColorSource::MakeRadial(
+      {100.0, 100.0}, 100.0, 2, colors, stops, flutter::DlTileMode::kRepeat);
+  paint.setColorSource(radial);
+  builder.drawPaint(paint);
+  builder.restore();
+
+  builder.save();
+  builder.translate(100, 500);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, false);
+  auto sweep =
+      flutter::DlColorSource::MakeSweep({100.0, 100.0}, 180.0, 270.0, 2, colors,
+                                        stops, flutter::DlTileMode::kRepeat);
+  paint.setColorSource(sweep);
+  builder.drawPaint(paint);
+  builder.restore();
+
+  builder.save();
+  builder.translate(500, 500);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, false);
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+  auto image = std::make_shared<flutter::DlImageColorSource>(
+      DlImageImpeller::Make(texture), flutter::DlTileMode::kRepeat,
+      flutter::DlTileMode::kRepeat);
+  paint.setColorSource(image);
+  builder.drawPaint(paint);
+  builder.restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
+  flutter::DisplayListBuilder builder;
+
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(100, 100);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kRed());
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    paint.setBlendMode(flutter::DlBlendMode::kSrcOver);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(300, 100);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kRed());
+    paint.setBlendMode(flutter::DlBlendMode::kDstOver);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(100, 300);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kRed());
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    paint.setBlendMode(flutter::DlBlendMode::kSrc);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+  {
+    builder.saveLayer(nullptr, nullptr);
+    builder.translate(300, 300);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    paint.setColor(flutter::DlColor::kRed());
+    paint.setBlendMode(flutter::DlBlendMode::kDst);
+    builder.drawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.restore();
+  }
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

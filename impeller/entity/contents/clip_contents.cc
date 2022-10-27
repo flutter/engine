@@ -3,16 +3,14 @@
 // found in the LICENSE file.
 
 #include <optional>
-#include "impeller/geometry/path_builder.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "linear_gradient_contents.h"
 
+#include "fml/logging.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -24,8 +22,8 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetPath(Path path) {
-  path_ = std::move(path);
+void ClipContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
+  geometry_ = std::move(geometry);
 }
 
 void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
@@ -36,8 +34,31 @@ std::optional<Rect> ClipContents::GetCoverage(const Entity& entity) const {
   return std::nullopt;
 };
 
-bool ClipContents::ShouldRender(const Entity& entity,
-                                const ISize& target_size) const {
+Contents::StencilCoverage ClipContents::GetStencilCoverage(
+    const Entity& entity,
+    const std::optional<Rect>& current_stencil_coverage) const {
+  if (!current_stencil_coverage.has_value()) {
+    return {.type = StencilCoverage::Type::kAppend, .coverage = std::nullopt};
+  }
+  switch (clip_op_) {
+    case Entity::ClipOperation::kDifference:
+      // This can be optimized further by considering cases when the bounds of
+      // the current stencil will shrink.
+      return {.type = StencilCoverage::Type::kAppend,
+              .coverage = current_stencil_coverage};
+    case Entity::ClipOperation::kIntersect:
+      return {
+          .type = StencilCoverage::Type::kAppend,
+          .coverage = current_stencil_coverage->Intersection(
+              geometry_->GetCoverage(entity.GetTransformation()).value()),
+      };
+  }
+  FML_UNREACHABLE();
+}
+
+bool ClipContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
   return true;
 }
 
@@ -71,7 +92,7 @@ bool ClipContents::Render(const ContentContext& renderer,
           VertexBufferBuilder<VS::PerVertexData>{}
               .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
               .CreateVertexBuffer(pass.GetTransientsBuffer());
-      cmd.BindVertices(std::move(vertices));
+      cmd.BindVertices(vertices);
 
       info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
       VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
@@ -95,9 +116,11 @@ bool ClipContents::Render(const ContentContext& renderer,
   }
 
   cmd.pipeline = renderer.GetClipPipeline(options);
-  cmd.BindVertices(SolidColorContents::CreateSolidFillVertices(
-      path_, pass.GetTransientsBuffer()));
 
+  auto allocator = renderer.GetContext()->GetResourceAllocator();
+  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.primitive_type = geometry_result.type;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
              entity.GetTransformation();
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
@@ -119,8 +142,15 @@ std::optional<Rect> ClipRestoreContents::GetCoverage(
   return std::nullopt;
 };
 
-bool ClipRestoreContents::ShouldRender(const Entity& entity,
-                                       const ISize& target_size) const {
+Contents::StencilCoverage ClipRestoreContents::GetStencilCoverage(
+    const Entity& entity,
+    const std::optional<Rect>& current_stencil_coverage) const {
+  return {.type = StencilCoverage::Type::kRestore, .coverage = std::nullopt};
+}
+
+bool ClipRestoreContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect>& stencil_coverage) const {
   return true;
 }
 

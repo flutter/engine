@@ -165,7 +165,10 @@ class FlatlandExternalViewEmbedder final
     fuchsia::ui::composition::ContentId viewport_id;
     ViewMutators mutators;
     SkSize size = SkSize::MakeEmpty();
-    fit::callback<void(const SkSize&)> pending_create_viewport_callback;
+    SkRect pending_occlusion_hint = SkRect::MakeEmpty();
+    SkRect occlusion_hint = SkRect::MakeEmpty();
+    fit::callback<void(const SkSize&, const SkRect&)>
+        pending_create_viewport_callback;
   };
 
   struct FlatlandLayer {
@@ -187,6 +190,12 @@ class FlatlandExternalViewEmbedder final
   std::vector<EmbedderLayerId> frame_composition_order_;
   std::vector<fuchsia::ui::composition::TransformId> child_transforms_;
   SkISize frame_size_ = SkISize::Make(0, 0);
+  float frame_dpr_ = 1.f;
+
+  // TransformId for the input interceptor node when input shield is turned on,
+  // std::nullptr otherwise.
+  std::optional<fuchsia::ui::composition::TransformId>
+      input_interceptor_transform_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlatlandExternalViewEmbedder);
 };

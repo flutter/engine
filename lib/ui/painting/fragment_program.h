@@ -5,13 +5,15 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_
 #define FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_
 
+#include "flutter/display_list/display_list_runtime_effect.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/fragment_shader.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "third_party/skia/include/effects/SkRuntimeEffect.h"
+
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -27,19 +29,19 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
   ~FragmentProgram() override;
   static void Create(Dart_Handle wrapper);
 
-  std::string initFromAsset(std::string asset_name);
+  std::string initFromAsset(const std::string& asset_name);
 
   fml::RefPtr<FragmentShader> shader(Dart_Handle shader,
                                      Dart_Handle uniforms_handle,
                                      Dart_Handle samplers);
 
   std::shared_ptr<DlColorSource> MakeDlColorSource(
-      sk_sp<SkData> float_uniforms,
+      std::shared_ptr<std::vector<uint8_t>> float_uniforms,
       const std::vector<std::shared_ptr<DlColorSource>>& children);
 
  private:
   FragmentProgram();
-  sk_sp<SkRuntimeEffect> runtime_effect_;
+  sk_sp<DlRuntimeEffect> runtime_effect_;
 };
 
 }  // namespace flutter

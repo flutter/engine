@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 #include <memory>
+#include <utility>
 
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -37,7 +38,7 @@ FilterInput::Ref FilterInput::Make(Variant input) {
 FilterInput::Ref FilterInput::Make(std::shared_ptr<Texture> texture,
                                    Matrix local_transform) {
   return std::shared_ptr<TextureFilterInput>(
-      new TextureFilterInput(texture, local_transform));
+      new TextureFilterInput(std::move(texture), local_transform));
 }
 
 FilterInput::Vector FilterInput::Make(std::initializer_list<Variant> inputs) {
@@ -51,6 +52,12 @@ FilterInput::Vector FilterInput::Make(std::initializer_list<Variant> inputs) {
 
 Matrix FilterInput::GetLocalTransform(const Entity& entity) const {
   return Matrix();
+}
+
+std::optional<Rect> FilterInput::GetLocalCoverage(const Entity& entity) const {
+  Entity local_entity = entity;
+  local_entity.SetTransformation(GetLocalTransform(entity));
+  return GetCoverage(local_entity);
 }
 
 Matrix FilterInput::GetTransform(const Entity& entity) const {

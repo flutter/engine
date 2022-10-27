@@ -343,6 +343,21 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         name, data, _zonedPlatformMessageResponseCallback(callback));
   }
 
+  @override
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port,
+  ) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
+  @override
+  void registerBackgroundIsolate(ui.RootIsolateToken token) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
   // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
   // to using channel buffers exclusively.
   @override
@@ -683,6 +698,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   @override
+  @Deprecated('''
+    In a multi-view world, the platform dispatcher can no longer provide apis
+    to update semantics since each view will host its own semantics tree.
+
+    Semantics updates must be passed to an individual [FlutterView]. To update
+    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
+    call `updateSemantics`.
+  ''')
   void updateSemantics(ui.SemanticsUpdate update) {
     EngineSemanticsOwner.instance.updateSemantics(update);
   }

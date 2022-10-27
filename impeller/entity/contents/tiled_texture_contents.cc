@@ -4,12 +4,14 @@
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
+#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -41,40 +43,8 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   using VS = TiledTextureFillVertexShader;
   using FS = TiledTextureFillFragmentShader;
 
-  const auto coverage_rect = GetPath().GetBoundingBox();
-
-  if (!coverage_rect.has_value()) {
-    return true;
-  }
-
-  if (coverage_rect->size.IsEmpty()) {
-    return true;
-  }
-
   const auto texture_size = texture_->GetSize();
   if (texture_size.IsEmpty()) {
-    return true;
-  }
-
-  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  {
-    const auto tess_result = Tessellator{}.Tessellate(
-        GetPath().GetFillType(), GetPath().CreatePolyline(),
-        [&vertex_builder](Point vtx) {
-          VS::PerVertexData data;
-          data.position = vtx;
-          vertex_builder.AppendVertex(data);
-        });
-
-    if (tess_result == Tessellator::Result::kInputError) {
-      return true;
-    }
-    if (tess_result == Tessellator::Result::kTessellationError) {
-      return false;
-    }
-  }
-
-  if (!vertex_builder.HasVertices()) {
     return true;
   }
 
@@ -91,20 +61,39 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
   frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
+  frag_info.alpha = GetAlpha();
 
   Command cmd;
   cmd.label = "TiledTextureFill";
   cmd.pipeline =
       renderer.GetTiledTexturePipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  cmd.pipeline = renderer.GetTiledTexturePipeline(options);
+
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.primitive_type = geometry_result.type;
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              sampler_descriptor_));
-  pass.AddCommand(std::move(cmd));
 
+  if (!pass.AddCommand(std::move(cmd))) {
+    return false;
+  }
+
+  if (geometry_result.prevent_overdraw) {
+    return ClipRestoreContents().Render(renderer, entity, pass);
+  }
   return true;
 }
 

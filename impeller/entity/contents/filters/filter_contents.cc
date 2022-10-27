@@ -10,18 +10,16 @@
 #include <memory>
 #include <optional>
 #include <tuple>
+#include <utility>
 
 #include "flutter/fml/logging.h"
-#include "impeller/base/validation.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
-#include "impeller/entity/contents/filters/color_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/filters/linear_to_srgb_filter_contents.h"
+#include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
+#include "impeller/entity/contents/filters/matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/morphology_filter_contents.h"
-#include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
@@ -30,48 +28,6 @@
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
-
-std::shared_ptr<FilterContents> FilterContents::MakeBlend(
-    Entity::BlendMode blend_mode,
-    FilterInput::Vector inputs,
-    std::optional<Color> foreground_color) {
-  if (blend_mode > Entity::BlendMode::kLastAdvancedBlendMode) {
-    VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
-                   << " passed to FilterContents::MakeBlend.";
-    return nullptr;
-  }
-
-  size_t total_inputs = inputs.size() + (foreground_color.has_value() ? 1 : 0);
-  if (total_inputs < 2 ||
-      blend_mode <= Entity::BlendMode::kLastPipelineBlendMode) {
-    auto blend = std::make_shared<BlendFilterContents>();
-    blend->SetInputs(inputs);
-    blend->SetBlendMode(blend_mode);
-    blend->SetForegroundColor(foreground_color);
-    return blend;
-  }
-
-  auto blend_input = inputs[0];
-  std::shared_ptr<BlendFilterContents> new_blend;
-  for (auto in_i = inputs.begin() + 1; in_i < inputs.end(); in_i++) {
-    new_blend = std::make_shared<BlendFilterContents>();
-    new_blend->SetInputs({*in_i, blend_input});
-    new_blend->SetBlendMode(blend_mode);
-    if (in_i < inputs.end() - 1 || foreground_color.has_value()) {
-      blend_input = FilterInput::Make(
-          std::static_pointer_cast<FilterContents>(new_blend));
-    }
-  }
-
-  if (foreground_color.has_value()) {
-    new_blend = std::make_shared<BlendFilterContents>();
-    new_blend->SetInputs({blend_input});
-    new_blend->SetBlendMode(blend_mode);
-    new_blend->SetForegroundColor(foreground_color);
-  }
-
-  return new_blend;
-}
 
 std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
     FilterInput::Ref input,
@@ -83,19 +39,19 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
     Sigma secondary_sigma,
     const Matrix& effect_transform) {
   auto blur = std::make_shared<DirectionalGaussianBlurFilterContents>();
-  blur->SetInputs({input});
+  blur->SetInputs({std::move(input)});
   blur->SetSigma(sigma);
   blur->SetDirection(direction);
   blur->SetBlurStyle(blur_style);
   blur->SetTileMode(tile_mode);
-  blur->SetSourceOverride(source_override);
+  blur->SetSourceOverride(std::move(source_override));
   blur->SetSecondarySigma(secondary_sigma);
   blur->SetEffectTransform(effect_transform);
   return blur;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     Sigma sigma_x,
     Sigma sigma_y,
     BlurStyle blur_style,
@@ -117,7 +73,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
     BlurStyle blur_style,
     const Matrix& effect_transform) {
   auto filter = std::make_shared<BorderMaskBlurFilterContents>();
-  filter->SetInputs({input});
+  filter->SetInputs({std::move(input)});
   filter->SetSigma(sigma_x, sigma_y);
   filter->SetBlurStyle(blur_style);
   filter->SetEffectTransform(effect_transform);
@@ -128,12 +84,14 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalMorphology(
     FilterInput::Ref input,
     Radius radius,
     Vector2 direction,
-    MorphType morph_type) {
+    MorphType morph_type,
+    const Matrix& effect_transform) {
   auto filter = std::make_shared<DirectionalMorphologyFilterContents>();
-  filter->SetInputs({input});
+  filter->SetInputs({std::move(input)});
   filter->SetRadius(radius);
   filter->SetDirection(direction);
   filter->SetMorphType(morph_type);
+  filter->SetEffectTransform(effect_transform);
   return filter;
 }
 
@@ -141,34 +99,33 @@ std::shared_ptr<FilterContents> FilterContents::MakeMorphology(
     FilterInput::Ref input,
     Radius radius_x,
     Radius radius_y,
-    MorphType morph_type) {
-  auto x_morphology =
-      MakeDirectionalMorphology(input, radius_x, Point(1, 0), morph_type);
-  auto y_morphology = MakeDirectionalMorphology(
-      FilterInput::Make(x_morphology), radius_y, Point(0, 1), morph_type);
+    MorphType morph_type,
+    const Matrix& effect_transform) {
+  auto x_morphology = MakeDirectionalMorphology(
+      std::move(input), radius_x, Point(1, 0), morph_type, effect_transform);
+  auto y_morphology =
+      MakeDirectionalMorphology(FilterInput::Make(x_morphology), radius_y,
+                                Point(0, 1), morph_type, effect_transform);
   return y_morphology;
 }
 
-std::shared_ptr<FilterContents> FilterContents::MakeColorMatrix(
+std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
     FilterInput::Ref input,
-    const ColorMatrix& matrix) {
-  auto filter = std::make_shared<ColorMatrixFilterContents>();
-  filter->SetInputs({input});
+    const Matrix& matrix,
+    const SamplerDescriptor& desc) {
+  auto filter = std::make_shared<MatrixFilterContents>();
+  filter->SetInputs({std::move(input)});
   filter->SetMatrix(matrix);
+  filter->SetSamplerDescriptor(desc);
   return filter;
 }
 
-std::shared_ptr<FilterContents> FilterContents::MakeLinearToSrgbFilter(
-    FilterInput::Ref input) {
-  auto filter = std::make_shared<LinearToSrgbFilterContents>();
-  filter->SetInputs({input});
-  return filter;
-}
-
-std::shared_ptr<FilterContents> FilterContents::MakeSrgbToLinearFilter(
-    FilterInput::Ref input) {
-  auto filter = std::make_shared<SrgbToLinearFilterContents>();
-  filter->SetInputs({input});
+std::shared_ptr<FilterContents> FilterContents::MakeLocalMatrixFilter(
+    FilterInput::Ref input,
+    const Matrix& matrix) {
+  auto filter = std::make_shared<LocalMatrixFilterContents>();
+  filter->SetInputs({std::move(input)});
+  filter->SetMatrix(matrix);
   return filter;
 }
 
@@ -211,6 +168,7 @@ bool FilterContents::Render(const ContentContext& renderer,
   contents->SetTexture(snapshot.texture);
   contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
   contents->SetSourceRect(texture_rect);
+  contents->SetOpacity(snapshot.opacity);
 
   Entity e;
   e.SetBlendMode(entity.GetBlendMode());
@@ -280,12 +238,12 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
                       effect_transform_, coverage.value());
 }
 
-Matrix FilterContents::GetLocalTransform() const {
+Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
   return Matrix();
 }
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
-  return parent_transform * GetLocalTransform();
+  return parent_transform * GetLocalTransform(parent_transform);
 }
 
 }  // namespace impeller

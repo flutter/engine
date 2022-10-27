@@ -73,6 +73,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Optional. The path to a local build of CanvasKit to use in '
               'tests. If omitted, the test runner uses the default CanvasKit '
               'build.',
+      )
+      ..addFlag(
+        'use-local-canvaskit',
+        help: 'Optional. Whether or not to use the locally built version of '
+              'CanvasKit in the tests.',
       );
   }
 
@@ -115,6 +120,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Path to a CanvasKit build. Overrides the default CanvasKit.
   String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
 
+  /// Whether or not to use the locally built version of CanvasKit.
+  bool get useLocalCanvasKit => boolArg('use-local-canvaskit');
+
   @override
   Future<bool> run() async {
     final List<FilePath> testFiles = runAllTests
@@ -123,7 +131,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      CompileTestsStep(testFiles: testFiles),
+      CompileTestsStep(testFiles: testFiles, useLocalCanvasKit: useLocalCanvasKit),
       RunTestsStep(
         browserName: browserName,
         testFiles: testFiles,
@@ -133,12 +141,30 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         overridePathToCanvasKit: overridePathToCanvasKit,
       ),
     ]);
-    await testPipeline.run();
+
+    try {
+      await testPipeline.run();
+      if (isWatchMode) {
+        print('');
+        print('Initial test succeeded!');
+      }
+    } catch(error, stackTrace) {
+      if (isWatchMode) {
+        // The error is printed but not rethrown in watch mode because
+        // failures are expected. The idea is that the developer corrects the
+        // error, saves the file, and the pipeline reruns.
+        print('');
+        print('Initial test failed!\n');
+        print(error);
+        print(stackTrace);
+      } else {
+        rethrow;
+      }
+    }
 
     if (isWatchMode) {
       final FilePath dir = FilePath.fromWebUi('');
       print('');
-      print('Initial test run is done!');
       print(
           'Watching ${dir.relativeToCwd}/lib and ${dir.relativeToCwd}/test to re-run tests');
       print('');

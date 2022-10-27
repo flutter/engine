@@ -146,7 +146,7 @@ void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT
   packet.reset();
 }
 
-TEST(PointerDataPacketConverterTest, CanConvetPointerDataPacket) {
+TEST(PointerDataPacketConverterTest, CanConvertPointerDataPacket) {
   PointerDataPacketConverter converter;
   auto packet = std::make_unique<PointerDataPacket>(6);
   PointerData data;
@@ -558,6 +558,7 @@ TEST(PointerDataPacketConverterTest, CanConvertPointerSignals) {
   PointerData::SignalKind signal_kinds[] = {
       PointerData::SignalKind::kScroll,
       PointerData::SignalKind::kScrollInertiaCancel,
+      PointerData::SignalKind::kScale,
   };
   for (const PointerData::SignalKind& kind : signal_kinds) {
     PointerDataPacketConverter converter;

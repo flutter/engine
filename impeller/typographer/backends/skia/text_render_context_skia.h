@@ -17,6 +17,8 @@ class TextRenderContextSkia : public TextRenderContext {
 
   // |TextRenderContext|
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
+      GlyphAtlas::Type type,
+      std::shared_ptr<GlyphAtlasContext> atlas_context,
       FrameIterator iterator) const override;
 
  private:

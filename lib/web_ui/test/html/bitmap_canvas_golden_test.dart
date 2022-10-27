@@ -10,6 +10,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
+import 'paragraph/helper.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -103,8 +104,7 @@ Future<void> testMain() async {
 
     appendToScene();
 
-    await matchGoldenFile('misaligned_canvas_test.png', region: region,
-      maxDiffRatePercent: 1.0);
+    await matchGoldenFile('misaligned_canvas_test.png', region: region);
   });
 
   test('fill the whole canvas with color even when transformed', () async {
@@ -117,8 +117,7 @@ Future<void> testMain() async {
     appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png',
-        region: region,
-        maxDiffRatePercent: 5.0);
+        region: region);
   });
 
   test('fill the whole canvas with paint even when transformed', () async {
@@ -133,8 +132,7 @@ Future<void> testMain() async {
     appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png',
-        region: region,
-        maxDiffRatePercent: 5.0);
+        region: region);
   });
 
   // This test reproduces text blurriness when two pieces of text appear inside
@@ -186,8 +184,6 @@ Future<void> testMain() async {
     await matchGoldenFile(
       'bitmap_canvas_draws_high_quality_text.png',
       region: canvasSize,
-      maxDiffRatePercent: 0.0,
-      pixelComparison: PixelComparison.precise,
     );
   }, testOn: 'chrome');
 
@@ -230,8 +226,13 @@ Future<void> testMain() async {
       ..lineTo(-r, 0)
       ..close()).shift(const Offset(250, 250));
 
+    final SurfacePaintData borderPaint = SurfacePaintData()
+      ..color = black
+      ..style = PaintingStyle.stroke;
+
     canvas.drawPath(path, pathPaint);
     canvas.drawParagraph(paragraph, const Offset(180, 50));
+    canvas.drawRect(Rect.fromLTWH(180, 50, paragraph.width, paragraph.height), borderPaint);
 
     expect(
       canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
@@ -264,8 +265,6 @@ Future<void> testMain() async {
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',
       region: canvasSize,
-      maxDiffRatePercent: 1.0,
-      pixelComparison: PixelComparison.precise,
     );
   });
 

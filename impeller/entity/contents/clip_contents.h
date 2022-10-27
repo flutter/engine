@@ -11,6 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry.h"
 
 namespace impeller {
 
@@ -20,7 +21,7 @@ class ClipContents final : public Contents {
 
   ~ClipContents();
 
-  void SetPath(Path path);
+  void SetGeometry(std::unique_ptr<Geometry> geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
@@ -28,8 +29,13 @@ class ClipContents final : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
+  StencilCoverage GetStencilCoverage(
+      const Entity& entity,
+      const std::optional<Rect>& current_stencil_coverage) const override;
+
+  // |Contents|
   bool ShouldRender(const Entity& entity,
-                    const ISize& target_size) const override;
+                    const std::optional<Rect>& stencil_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -37,7 +43,7 @@ class ClipContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  Path path_;
+  std::unique_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ClipContents);
@@ -53,8 +59,13 @@ class ClipRestoreContents final : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
+  StencilCoverage GetStencilCoverage(
+      const Entity& entity,
+      const std::optional<Rect>& current_stencil_coverage) const override;
+
+  // |Contents|
   bool ShouldRender(const Entity& entity,
-                    const ISize& target_size) const override;
+                    const std::optional<Rect>& stencil_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,

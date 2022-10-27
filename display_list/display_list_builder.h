@@ -226,6 +226,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
   /// recorded rendering operations are interpreted.
   SkRect getLocalClipBounds();
 
+  /// Return true iff the supplied bounds are easily shown to be outside
+  /// of the current clip bounds. This method may conservatively return
+  /// false if it cannot make the determination.
+  bool quickReject(const SkRect& bounds) const;
+
   void drawPaint() override;
   void drawPaint(const DlPaint& paint);
   void drawColor(DlColor color, DlBlendMode mode) override;
@@ -280,7 +285,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const SkPoint point,
                  DlImageSampling sampling,
                  bool render_with_attributes) override;
-  void drawImage(const sk_sp<DlImage> image,
+  void drawImage(const sk_sp<DlImage>& image,
                  const SkPoint point,
                  DlImageSampling sampling,
                  const DlPaint* paint = nullptr);
@@ -292,7 +297,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
-  void drawImageRect(const sk_sp<DlImage> image,
+  void drawImageRect(const sk_sp<DlImage>& image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
@@ -304,7 +309,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                      const SkRect& dst,
                      DlFilterMode filter,
                      bool render_with_attributes) override;
-  void drawImageNine(const sk_sp<DlImage> image,
+  void drawImageNine(const sk_sp<DlImage>& image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
@@ -323,7 +328,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
-  void drawAtlas(const sk_sp<DlImage> atlas,
+  void drawAtlas(const sk_sp<DlImage>& atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
                  const DlColor colors[],

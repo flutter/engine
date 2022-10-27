@@ -6,6 +6,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
+#import <os/log.h>
 #include <memory>
 
 #include "flutter/fml/memory/weak_ptr.h"
@@ -64,6 +65,14 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
+
+/// VSyncClient for touch events delivery frame rate correction.
+///
+/// On promotion devices(eg: iPhone13 Pro), the delivery frame rate of touch events is 60HZ
+/// but the frame rate of rendering is 120HZ, which is different and will leads jitter and laggy.
+/// With this VSyncClient, it can correct the delivery frame rate of touch events to let it keep
+/// the same with frame rate of rendering.
+@property(nonatomic, retain) VSyncClient* touchRateCorrectionVSyncClient;
 
 /*
  * Mouse and trackpad gesture recognizers
@@ -497,7 +506,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 - (void)setDisplayingFlutterUI:(BOOL)displayingFlutterUI {
   if (_displayingFlutterUI != displayingFlutterUI) {
     if (displayingFlutterUI == YES) {
-      if (!self.isViewLoaded || !self.view.window) {
+      if (!self.viewIfLoaded.window) {
         return;
       }
     }
@@ -680,6 +689,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Register internal plugins.
   [self addInternalPlugins];
 
+  // Create a vsync client to correct delivery frame rate of touch events if needed.
+  [self createTouchRateCorrectionVSyncClientIfNeeded];
+
   if (@available(iOS 13.4, *)) {
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
@@ -842,6 +854,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [self invalidateKeyboardAnimationVSyncClient];
+  [self invalidateTouchRateCorrectionVSyncClient];
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
@@ -889,9 +902,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 // Make this transition only while this current view controller is visible.
 - (void)goToApplicationLifecycle:(nonnull NSString*)state {
-  // Accessing self.view will create the view. Check whether the view is organically loaded
-  // first before checking whether the view is attached to window.
-  if (self.isViewLoaded && self.view.window) {
+  // Accessing self.view will create the view. Instead use viewIfLoaded
+  // to check whether the view is attached to window.
+  if (self.viewIfLoaded.window) {
     [[_engine.get() lifecycleChannel] sendMessage:state];
   }
 }
@@ -974,6 +987,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       touches_to_remove_count++;
     }
   }
+
+  // Activate or pause the correction of delivery frame rate of touch events.
+  [self triggerTouchRateCorrectionIfNeeded:touches];
 
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet =
@@ -1118,6 +1134,63 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)forceTouchesCancelled:(NSSet*)touches {
   flutter::PointerData::Change cancel = flutter::PointerData::Change::kCancel;
   [self dispatchTouches:touches pointerDataChangeOverride:&cancel event:nullptr];
+}
+
+#pragma mark - Touch events rate correction
+
+- (void)createTouchRateCorrectionVSyncClientIfNeeded {
+  if (_touchRateCorrectionVSyncClient != nil) {
+    return;
+  }
+
+  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  const double epsilon = 0.1;
+  if (displayRefreshRate < 60.0 + epsilon) {  // displayRefreshRate <= 60.0
+
+    // If current device's max frame rate is not larger than 60HZ, the delivery rate of touch events
+    // is the same with render vsync rate. So it is unnecessary to create
+    // _touchRateCorrectionVSyncClient to correct touch callback's rate.
+    return;
+  }
+
+  flutter::Shell& shell = [_engine.get() shell];
+  auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    // Do nothing in this block. Just trigger system to callback touch events with correct rate.
+  };
+  _touchRateCorrectionVSyncClient =
+      [[VSyncClient alloc] initWithTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()
+                                     callback:callback];
+  _touchRateCorrectionVSyncClient.allowPauseAfterVsync = NO;
+}
+
+- (void)triggerTouchRateCorrectionIfNeeded:(NSSet*)touches {
+  if (_touchRateCorrectionVSyncClient == nil) {
+    // If the _touchRateCorrectionVSyncClient is not created, means current devices doesn't
+    // need to correct the touch rate. So just return.
+    return;
+  }
+
+  // As long as there is a touch's phase is UITouchPhaseBegan or UITouchPhaseMoved,
+  // activate the correction. Otherwise pause the correction.
+  BOOL isUserInteracting = NO;
+  for (UITouch* touch in touches) {
+    if (touch.phase == UITouchPhaseBegan || touch.phase == UITouchPhaseMoved) {
+      isUserInteracting = YES;
+      break;
+    }
+  }
+
+  if (isUserInteracting && [_engine.get() viewController] == self) {
+    [_touchRateCorrectionVSyncClient await];
+  } else {
+    [_touchRateCorrectionVSyncClient pause];
+  }
+}
+
+- (void)invalidateTouchRateCorrectionVSyncClient {
+  [_touchRateCorrectionVSyncClient invalidate];
+  [_touchRateCorrectionVSyncClient release];
+  _touchRateCorrectionVSyncClient = nil;
 }
 
 #pragma mark - Handle view resizing
@@ -1464,26 +1537,51 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
   if (new_preferences != _orientationPreferences) {
     _orientationPreferences = new_preferences;
-    [UIViewController attemptRotationToDeviceOrientation];
 
-    UIInterfaceOrientationMask currentInterfaceOrientation =
-        1 << [[UIApplication sharedApplication] statusBarOrientation];
-    if (!(_orientationPreferences & currentInterfaceOrientation)) {
-      // Force orientation switch if the current orientation is not allowed
-      if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
-        // This is no official API but more like a workaround / hack (using
-        // key-value coding on a read-only property). This might break in
-        // the future, but currently it´s the only way to force an orientation change
-        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
-      } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
-        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown)
-                                    forKey:@"orientation"];
-      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
-        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft)
-                                    forKey:@"orientation"];
-      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
-        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight)
-                                    forKey:@"orientation"];
+    if (@available(iOS 16.0, *)) {
+      for (UIScene* scene in UIApplication.sharedApplication.connectedScenes) {
+        if (![scene isKindOfClass:[UIWindowScene class]]) {
+          continue;
+        }
+        UIWindowScene* windowScene = (UIWindowScene*)scene;
+        UIInterfaceOrientationMask currentInterfaceOrientation =
+            1 << windowScene.interfaceOrientation;
+        if (!(_orientationPreferences & currentInterfaceOrientation)) {
+          [self setNeedsUpdateOfSupportedInterfaceOrientations];
+          UIWindowSceneGeometryPreferencesIOS* preference =
+              [[[UIWindowSceneGeometryPreferencesIOS alloc]
+                  initWithInterfaceOrientations:_orientationPreferences] autorelease];
+          [windowScene
+              requestGeometryUpdateWithPreferences:preference
+                                      errorHandler:^(NSError* error) {
+                                        os_log_error(OS_LOG_DEFAULT,
+                                                     "Failed to change device orientation: %@",
+                                                     error);
+                                      }];
+        }
+      }
+    } else {
+      UIInterfaceOrientationMask currentInterfaceOrientation =
+          1 << [[UIApplication sharedApplication] statusBarOrientation];
+      if (!(_orientationPreferences & currentInterfaceOrientation)) {
+        [UIViewController attemptRotationToDeviceOrientation];
+        // Force orientation switch if the current orientation is not allowed
+        if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
+          // This is no official API but more like a workaround / hack (using
+          // key-value coding on a read-only property). This might break in
+          // the future, but currently it´s the only way to force an orientation change
+          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait)
+                                      forKey:@"orientation"];
+        } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
+          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown)
+                                      forKey:@"orientation"];
+        } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
+          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft)
+                                      forKey:@"orientation"];
+        } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
+          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight)
+                                      forKey:@"orientation"];
+        }
       }
     }
   }
@@ -1582,7 +1680,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"textScaleFactor" : @([self textScaleFactor]),
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
-    @"platformContrast" : [self contrastMode]
+    @"platformContrast" : [self contrastMode],
+    @"nativeSpellCheckServiceDefined" : @true
   }];
 }
 

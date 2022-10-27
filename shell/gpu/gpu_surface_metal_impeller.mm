@@ -27,7 +27,7 @@ static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
 }
 
 GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 std::shared_ptr<impeller::Context> context)
+                                                 const std::shared_ptr<impeller::Context>& context)
     : delegate_(delegate),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
@@ -88,6 +88,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   return std::make_unique<SurfaceFrame>(nullptr,                          // surface
                                         SurfaceFrame::FramebufferInfo{},  // framebuffer info
                                         submit_callback,                  // submit callback
+                                        frame_info,                       // frame size
                                         nullptr,                          // context result
                                         true                              // display list fallback
   );

@@ -37,6 +37,8 @@ impeller_component("renderer") {
     "device_buffer_descriptor.h",
     "formats.cc",
     "formats.h",
+    "gpu_tracer.cc",
+    "gpu_tracer.h",
     "host_buffer.cc",
     "host_buffer.h",
     "pipeline.cc",
@@ -106,6 +108,10 @@ impeller_component("renderer_unittests") {
     "host_buffer_unittests.cc",
     "renderer_unittests.cc",
   ]
+
+  if (impeller_enable_metal || impeller_enable_vulkan) {
+    sources += [ "compute_unittests.cc" ]
+  }
 
   deps = [
     ":renderer",

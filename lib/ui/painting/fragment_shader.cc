@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include <iostream>
+#include <memory>
+#include <utility>
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
@@ -18,44 +20,13 @@
 
 namespace flutter {
 
-// Since _FragmentShader is a private class, we can't use
-// IMPLEMENT_WRAPPERTYPEINFO
-static const tonic::DartWrapperInfo kDartWrapperInfo_ui_FragmentShader = {
-    "ui",
-    "_FragmentShader",
-    sizeof(FragmentShader),
-};
-const tonic::DartWrapperInfo& FragmentShader::dart_wrapper_info_ =
-    kDartWrapperInfo_ui_FragmentShader;
-
-std::shared_ptr<DlColorSource> FragmentShader::shader(
-    DlImageSampling sampling) {
-  // Sampling options are ignored, since sampling options don't make sense for
-  // generative shaders.
-  return source_;
-}
-
-fml::RefPtr<FragmentShader> FragmentShader::Create(
-    Dart_Handle dart_handle,
-    std::shared_ptr<DlRuntimeEffectColorSource> shader) {
-  auto fragment_shader = fml::MakeRefCounted<FragmentShader>(std::move(shader));
-  fragment_shader->AssociateWithDartWrapper(dart_handle);
-  return fragment_shader;
-}
-
-FragmentShader::FragmentShader(
-    std::shared_ptr<DlRuntimeEffectColorSource> shader)
-    : source_(std::move(shader)) {}
-
-FragmentShader::~FragmentShader() = default;
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ReusableFragmentShader);
 
 ReusableFragmentShader::ReusableFragmentShader(
     fml::RefPtr<FragmentProgram> program,
     uint64_t float_count,
     uint64_t sampler_count)
-    : program_(program),
+    : program_(std::move(program)),
       uniform_data_(SkData::MakeUninitialized(
           (float_count + 2 * sampler_count) * sizeof(float))),
       samplers_(sampler_count),
@@ -108,7 +79,15 @@ void ReusableFragmentShader::SetSampler(Dart_Handle index_handle,
 std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
     DlImageSampling sampling) {
   FML_CHECK(program_);
-  return program_->MakeDlColorSource(uniform_data_, samplers_);
+
+  // The lifetime of this object is longer than a frame, and the uniforms can be
+  // continually changed on the UI thread. So we take a copy of the uniforms
+  // before handing it to the DisplayList for consumption on the render thread.
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(uniform_data_->size());
+  memcpy(uniform_data->data(), uniform_data_->bytes(), uniform_data->size());
+
+  return program_->MakeDlColorSource(std::move(uniform_data), samplers_);
 }
 
 void ReusableFragmentShader::Dispose() {

@@ -6,12 +6,10 @@ import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show flutterViewEmbedder, window;
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/pointer_binding.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+
+import '../keyboard_converter_test.dart';
 
 const int _kNoButtonChange = -1;
 const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
@@ -43,12 +41,19 @@ void main() {
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
   final DomElement glassPane = flutterViewEmbedder.glassPaneElement!;
-  double dpi = 1.0;
+  late double dpi;
 
   setUp(() {
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
   });
+
+  KeyboardConverter createKeyboardConverter(List<ui.KeyData> keyDataList) {
+    return KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+  }
 
   test('ios workaround', () {
     debugEmulateIosSafari = true;
@@ -59,7 +64,9 @@ void testMain() {
     final MockSafariPointerEventWorkaround mockSafariPointer =
         MockSafariPointerEventWorkaround();
     SafariPointerEventWorkaround.instance = mockSafariPointer;
-    final PointerBinding instance = PointerBinding(createDomHTMLDivElement());
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+    final PointerBinding instance = PointerBinding(createDomHTMLDivElement(), keyboardConverter);
     expect(mockSafariPointer.workAroundInvoked, isIosSafari);
     instance.dispose();
   }, skip: !isSafari);
@@ -238,6 +245,19 @@ void testMain() {
     expect(events[1].buttons, equals(0));
     expect(events[1].client.x, equals(0));
     expect(events[1].client.y, equals(0));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), true);
+    expect(event.getModifierState('Control'), true);
+    expect(event.getModifierState('Meta'), true);
+    expect(event.getModifierState('Shift'), true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), false);
+    expect(event.getModifierState('Control'), false);
+    expect(event.getModifierState('Meta'), false);
+    expect(event.getModifierState('Shift'), false);
   });
 
   test('_TouchEventContext generates expected events', () {
@@ -334,6 +354,19 @@ void testMain() {
     expect(events[0].changedTouches![1].identifier, equals(105));
     expect(events[0].changedTouches![1].client.x, equals(322));
     expect(events[0].changedTouches![1].client.y, equals(323));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.altKey, true);
+    expect(event.ctrlKey, true);
+    expect(event.metaKey, true);
+    expect(event.shiftKey, true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.altKey, false);
+    expect(event.ctrlKey, false);
+    expect(event.metaKey, false);
+    expect(event.shiftKey, false);
   });
 
   test('_MouseEventContext generates expected events', () {
@@ -423,6 +456,19 @@ void testMain() {
     expect(event.buttons, equals(0));
     expect(event.client.x, equals(400));
     expect(event.client.y, equals(401));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), true);
+    expect(event.getModifierState('Control'), true);
+    expect(event.getModifierState('Meta'), true);
+    expect(event.getModifierState('Shift'), true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), false);
+    expect(event.getModifierState('Control'), false);
+    expect(event.getModifierState('Meta'), false);
+    expect(event.getModifierState('Shift'), false);
   });
 
   // ALL ADAPTERS
@@ -469,6 +515,248 @@ void testMain() {
 
       expect(packets.single.data[0].change, equals(ui.PointerChange.add));
       expect(packets.single.data[1].change, equals(ui.PointerChange.down));
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'synthesize modifier keys left down event if left or right are not pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should synthesize a modifier left key down event when DOM event indicates
+      // that the modifier key is pressed and known pressing state doesn't contain
+      // the modifier left key nor the modifier right key.
+      void shouldSynthesizeLeftDownIfNotPressed(String key) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+        final int logicalLeft = kWebLogicalLocationMap[key]![kLocationLeft]!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 1);
+        expectKeyData(keyDataList.last,
+          type: ui.KeyEventType.down,
+          physical: physicalLeft,
+          logical: logicalLeft,
+          character: null,
+          synthesized: true,
+        );
+      }
+
+      context.altPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Alt');
+      context.unpressAllModifiers();
+      context.ctrlPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Control');
+      context.unpressAllModifiers();
+      context.metaPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Meta');
+      context.unpressAllModifiers();
+      context.shiftPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Shift');
+      context.unpressAllModifiers();
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'should not synthesize modifier keys down event if left or right are pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should not synthesize a modifier down event when DOM event indicates
+      // that the modifier key is pressed and known pressing state contains
+      // the modifier left key.
+      void shouldNotSynthesizeDownIfLeftPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 0);
+      }
+
+      // Should not synthesize a modifier down event when DOM event indicates
+      // that the modifier key is pressed and known pressing state contains
+      // the modifier right key.
+      void shouldNotSynthesizeDownIfRightPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 0);
+      }
+
+      context.altPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Alt', kAlt);
+      shouldNotSynthesizeDownIfRightPressed('Alt', kAlt);
+      context.unpressAllModifiers();
+      context.ctrlPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Control', kCtrl);
+      shouldNotSynthesizeDownIfRightPressed('Control', kCtrl);
+      context.unpressAllModifiers();
+      context.metaPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Meta', kMeta);
+      shouldNotSynthesizeDownIfRightPressed('Meta', kMeta);
+      context.unpressAllModifiers();
+      context.shiftPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Shift', kShift);
+      shouldNotSynthesizeDownIfRightPressed('Shift', kShift);
+      context.unpressAllModifiers();
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'synthesize modifier keys up event if left or right are pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should synthesize a modifier left key up event when DOM event indicates
+      // that the modifier key is not pressed and known pressing state contains
+      // the modifier left key.
+      void shouldSynthesizeLeftUpIfLeftPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+        final int logicalLeft = kWebLogicalLocationMap[key]![kLocationLeft]!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 1);
+        expectKeyData(keyDataList.last,
+          type: ui.KeyEventType.up,
+          physical: physicalLeft,
+          logical: logicalLeft,
+          character: null,
+          synthesized: true,
+        );
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+      }
+
+      // Should synthesize a modifier right key up event when DOM event indicates
+      // that the modifier key is not pressed and known pressing state contains
+      // the modifier right key.
+      void shouldSynthesizeRightUpIfRightPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+        final int logicalRight = kWebLogicalLocationMap[key]![kLocationRight]!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 1);
+        expectKeyData(keyDataList.last,
+          type: ui.KeyEventType.up,
+          physical: physicalRight,
+          logical: logicalRight,
+          character: null,
+          synthesized: true,
+        );
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+      }
+
+      context.altPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Alt', kAlt);
+      shouldSynthesizeRightUpIfRightPressed('Alt', kAlt);
+      context.ctrlPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Control', kCtrl);
+      shouldSynthesizeRightUpIfRightPressed('Control', kCtrl);
+      context.metaPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Meta', kMeta);
+      shouldSynthesizeRightUpIfRightPressed('Meta', kMeta);
+      context.shiftPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Shift', kShift);
+      shouldSynthesizeRightUpIfRightPressed('Shift', kShift);
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'should not synthesize modifier keys up event if left or right are not pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should not synthesize a modifier up event when DOM event indicates
+      // that the modifier key is not pressed and known pressing state does
+      // not contain the modifier left key nor the modifier right key.
+      void shouldNotSynthesizeUpIfNotPressed(String key) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 0);
+      }
+
+      context.altPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Alt');
+      context.ctrlPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Control');
+      context.metaPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Meta');
+      context.shiftPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Shift');
     },
   );
 
@@ -723,6 +1011,104 @@ void testMain() {
       expect(packets[3].data[1].physicalY, equals(60.0 * dpi));
       expect(packets[3].data[1].physicalDeltaX, equals(0.0));
       expect(packets[3].data[1].physicalDeltaY, equals(0.0));
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'converts scroll delta to physical pixels (Firefox)',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      const double dpi = 2.5;
+      debugOperatingSystemOverride = OperatingSystem.macOs;
+      debugBrowserEngineOverride = BrowserEngine.firefox;
+      window.debugOverrideDevicePixelRatio(dpi);
+
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 10,
+        deltaY: 10,
+      ));
+
+      expect(packets, hasLength(1));
+
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      // Scroll deltas should be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0 * dpi));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0 * dpi));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      // Scroll deltas should be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0 * dpi));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0 * dpi));
+
+      window.debugOverrideDevicePixelRatio(1.0);
+      debugOperatingSystemOverride = null;
+      debugBrowserEngineOverride = null;
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'scroll delta are already in physical pixels (Chrome)',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      const double dpi = 2.5;
+      debugOperatingSystemOverride = OperatingSystem.macOs;
+      debugBrowserEngineOverride = BrowserEngine.blink;
+      window.debugOverrideDevicePixelRatio(dpi);
+
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 10,
+        deltaY: 10,
+      ));
+
+      expect(packets, hasLength(1));
+
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      // Scroll deltas should NOT be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      // Scroll deltas should NOT be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0));
+
+      window.debugOverrideDevicePixelRatio(1.0);
+      debugOperatingSystemOverride = null;
+      debugBrowserEngineOverride = null;
     },
   );
 
@@ -2326,6 +2712,15 @@ abstract class _BasicEventContext implements PointerSupportDetector {
 
   bool get isSupported;
 
+  // Accepted modifier keys are 'Alt', 'Control', 'Meta' and 'Shift'.
+  // https://www.w3.org/TR/uievents-key/#keys-modifier defines more modifiers,
+  // but only the four main modifiers could be set from MouseEvent, PointerEvent
+  // and TouchEvent constructors.
+  bool altPressed = false;
+  bool ctrlPressed = false;
+  bool metaPressed = false;
+  bool shiftPressed = false;
+
   // Generate an event that is:
   //
   //  * For mouse, a left click
@@ -2343,6 +2738,20 @@ abstract class _BasicEventContext implements PointerSupportDetector {
   //  * For mouse, release LMB
   //  * For touch, a touch up
   DomEvent primaryUp({double clientX, double clientY});
+
+  void pressAllModifiers() {
+    altPressed = true;
+    ctrlPressed = true;
+    metaPressed = true;
+    shiftPressed = true;
+  }
+
+  void unpressAllModifiers() {
+    altPressed = false;
+    ctrlPressed = false;
+    metaPressed = false;
+    shiftPressed = false;
+  }
 }
 
 mixin _ButtonedEventMixin on _BasicEventContext {
@@ -2528,6 +2937,10 @@ class _TouchEventContext extends _BasicEventContext
               ),
             )
             .toList(),
+        'altKey': altPressed,
+        'ctrlKey': ctrlPressed,
+        'metaKey': metaPressed,
+        'shiftKey': shiftPressed,
       },
     );
   }
@@ -2663,6 +3076,10 @@ class _MouseEventContext extends _BasicEventContext
         'button': button,
         'clientX': clientX,
         'clientY': clientY,
+        'altKey': altPressed,
+        'ctrlKey': ctrlPressed,
+        'metaKey': metaPressed,
+        'shiftKey': shiftPressed,
       }
     ];
     return js_util.callConstructor<DomMouseEvent>(
@@ -2741,6 +3158,10 @@ class _PointerEventContext extends _BasicEventContext
       'clientX': clientX,
       'clientY': clientY,
       'pointerType': pointerType,
+      'altKey': altPressed,
+      'ctrlKey': ctrlPressed,
+      'metaKey': metaPressed,
+      'shiftKey': shiftPressed,
     });
   }
 

@@ -16,6 +16,14 @@ typedef PlatformMessageCallback = void Function(
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
+// ignore: avoid_classes_with_only_static_members
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  static RootIsolateToken? get instance {
+    throw UnsupportedError('Root isolate not identifiable on web.');
+  }
+}
+
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
 
@@ -49,6 +57,14 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port);
+
+  void registerBackgroundIsolate(RootIsolateToken token);
+
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
@@ -67,6 +83,14 @@ abstract class PlatformDispatcher {
   VoidCallback? get onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
+  @Deprecated('''
+    In a multi-view world, the platform dispatcher can no longer provide apis
+    to update semantics since each view will host its own semantics tree.
+
+    Semantics updates must be passed to an individual [FlutterView]. To update
+    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
+    call `updateSemantics`.
+  ''')
   void updateSemantics(SemanticsUpdate update);
 
   Locale get locale;
