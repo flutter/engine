@@ -165,4 +165,9 @@ class SkwasmRenderer implements Renderer {
   void reset(FlutterViewEmbedder embedder) {
     throw UnimplementedError('Not yet implemented');
   }
+  
+  @override
+  Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
+    throw UnimplementedError('Not yet implemented');
+  }
 }

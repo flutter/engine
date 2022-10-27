@@ -2562,6 +2562,18 @@ external Object? get exports;
 @JS()
 external Object? get module;
 
+@JS('window.flutterCanvasKit.RuntimeEffect')
+@anonymous
+@staticInterop
+class SkRuntimeEffect {}
+
+@JS('window.flutterCanvasKit.RuntimeEffect.Make')
+external SkRuntimeEffect MakeRuntimeEffect(String program);
+
+extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
+  external SkShader makeShader(List<Object> uniforms);
+}
+
 /// Monkey-patch the top-level `module` and `exports` objects so that
 /// CanvasKit doesn't attempt to register itself as an anonymous module.
 ///

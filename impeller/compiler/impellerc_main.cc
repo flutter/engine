@@ -114,7 +114,10 @@ bool Main(const fml::CommandLine& command_line) {
         std::cerr << "Runtime stage information was nil." << std::endl;
         return false;
       }
-      auto stage_data_mapping = stage_data->CreateMapping();
+
+      auto stage_data_mapping = switches.use_raw_output
+                                    ? stage_data->CreateShaderOnlyMapping()
+                                    : stage_data->CreateMapping();
       if (!stage_data_mapping) {
         std::cerr << "Runtime stage data could not be created." << std::endl;
         return false;

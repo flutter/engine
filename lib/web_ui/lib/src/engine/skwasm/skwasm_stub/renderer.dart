@@ -164,4 +164,9 @@ class SkwasmRenderer implements Renderer {
   void reset(FlutterViewEmbedder embedder) {
     throw UnimplementedError('Skwasm not implemented on this platform.');
   }
+  
+  @override
+  Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
+     throw UnimplementedError('Skwasm not implemented on this platform.');
+  }
 }

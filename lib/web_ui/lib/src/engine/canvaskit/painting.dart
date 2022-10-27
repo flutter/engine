@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
@@ -150,7 +151,11 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (_shader == value) {
       return;
     }
-    _shader = value as CkShader?;
+    if (value is CkFragmentShader) {
+      _shader = value.createShader();
+    } else {
+      _shader = value as CkShader?;
+    }
     skiaObject.setShader(_shader?.withQuality(_filterQuality));
   }
 
@@ -302,3 +307,76 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
 
 final ManagedSkColorFilter _invertColorFilter =
     ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
+
+
+class CkFragmentProgram implements ui.FragmentProgram {
+  CkFragmentProgram(this.source);
+
+  final ByteData source;
+
+  @override
+  ui.FragmentShader fragmentShader() {
+    final String contents = utf8.decode(source.buffer.asUint8List());
+    return CkFragmentShader(contents);
+  }
+}
+
+class CkFragmentShader implements ui.FragmentShader {
+  CkFragmentShader(this.source);
+
+  final String source;
+  List<double> floats = <double>[];
+  final List<ui.ImageShader> samplers = <ui.ImageShader>[];
+
+  CkShader createShader() {
+    return CkFragmentInstance(source, floats);
+  }
+
+  @override
+  void setFloat(int index, double value) {
+    // TODO, get uniform length from IPLR.
+    if (index >= floats.length) {
+      final List<double> newFloats = List<double>.filled(index + 1, 0);
+      for (int i = 0; i < floats.length; i++) {
+        newFloats[i] = floats[i];
+      }
+      floats = newFloats;
+    }
+    floats[index] = value;
+  }
+
+  @override
+  void setSampler(int index, ui.ImageShader sampler) {
+    samplers[index] = sampler;
+  }
+
+  @override
+  void dispose() {
+    assert(() {
+      _debugDisposed = true;
+      return true;
+    }());
+  }
+
+  bool _debugDisposed = false;
+
+  @override
+  bool get debugDisposed => _debugDisposed;
+}
+
+class CkFragmentInstance extends CkShader {
+  CkFragmentInstance(this.source, this.floats);
+
+  final String source;
+  final List<double> floats;
+
+  @override
+  SkShader createDefault() {
+    return MakeRuntimeEffect(source).makeShader(floats);
+  }
+
+  @override
+  SkShader resurrect() {
+    return MakeRuntimeEffect(source).makeShader(floats);
+  }
+}
