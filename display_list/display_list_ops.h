@@ -830,7 +830,7 @@ struct DrawImageLatticeOp final : DLOp {
   }
 };
 
-// 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
+// 4 byte header + 16 byte payload uses 20 bytes but is rounded up to 24 bytes
 // (4 bytes unused)
 // Each of these is then followed by a number of lists.
 // SkRSXform list is a multiple of 16 bytes so it is always packed well
@@ -847,16 +847,29 @@ struct DrawAtlasBaseOp : DLOp {
       : count(count),
         mode_index(static_cast<uint16_t>(mode)),
         has_colors(has_colors),
-        with(with),
-        sampling(sampling),
+        with_index(static_cast<int>(with)),
+        sampling_index(static_cast<int>(sampling)),
         atlas(std::move(atlas)) {}
 
   const int count;
-  const uint16_t mode_index;
-  const uint8_t has_colors;
-  const RenderWith with : 8;
-  const DlImageSampling sampling;
+  const uint8_t mode_index : 8;
+  const uint8_t has_colors : 8;
+  const uint8_t with_index : 8;
+  const uint8_t sampling_index : 8;
   const sk_sp<DlImage> atlas;
+
+  void dispatch(Dispatcher& dispatcher, const void* pod, const SkRect* cull_rect) const {
+    const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(pod);
+    const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
+    const DlColor* colors =
+        has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
+    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
+    const DlImageSampling sampling =
+        static_cast<DlImageSampling>(sampling_index);
+    const RenderWith with = static_cast<RenderWith>(with_index);
+    dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
+                         cull_rect, with);
+  }
 };
 
 // Packs into 48 bytes as per DrawAtlasBaseOp
@@ -873,13 +886,7 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
       : DrawAtlasBaseOp(atlas, count, mode, sampling, has_colors, with) {}
 
   void dispatch(Dispatcher& dispatcher) const {
-    const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
-    const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
-    const DlColor* colors =
-        has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
-    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
-    dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
-                         nullptr, with);
+    DrawAtlasBaseOp::dispatch(dispatcher, this + 1, nullptr);
   }
 };
 
@@ -903,13 +910,7 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   const SkRect cull_rect;
 
   void dispatch(Dispatcher& dispatcher) const {
-    const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
-    const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
-    const DlColor* colors =
-        has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
-    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
-    dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
-                         &cull_rect, with);
+    DrawAtlasBaseOp::dispatch(dispatcher, this + 1, &cull_rect);
   }
 };
 

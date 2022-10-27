@@ -949,7 +949,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        }},
       {"DrawAtlas",
        {
-           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
+           {1, 24 + 32 + 32, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -957,7 +957,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           RenderWith::kDefaults);
             }},
-           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
+           {1, 24 + 32 + 32, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -965,7 +965,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           RenderWith::kDlPaint);
             }},
-           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
+           {1, 24 + 32 + 32, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{0, 1, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -973,7 +973,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           RenderWith::kDefaults);
             }},
-           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
+           {1, 24 + 32 + 32, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 25, 30, 30}};
@@ -981,7 +981,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           RenderWith::kDefaults);
             }},
-           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
+           {1, 24 + 32 + 32, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -989,7 +989,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kLinearSampling, nullptr,
                           RenderWith::kDefaults);
             }},
-           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
+           {1, 24 + 32 + 32, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -997,7 +997,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kDstIn, kNearestSampling, nullptr,
                           RenderWith::kDefaults);
             }},
-           {1, 64 + 32 + 8, -1, 64 + 32 + 32,
+           {1, 24 + 32 + 32 + 16, -1, 64 + 32 + 32,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -1006,7 +1006,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
                           RenderWith::kDefaults);
             }},
-           {1, 48 + 32 + 8 + 8, -1, 48 + 32 + 32 + 8,
+           {1, 24 + 32 + 32 + 8, -1, 48 + 32 + 32 + 8,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
@@ -1015,7 +1015,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           RenderWith::kDefaults);
             }},
-           {1, 64 + 32 + 8 + 8, -1, 64 + 32 + 32 + 8,
+           {1, 24 + 32 + 32 + 8 + 16, -1, 64 + 32 + 32 + 8,
             [](DisplayListBuilder& b) {
               static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
               static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
