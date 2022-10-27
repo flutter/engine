@@ -16,7 +16,6 @@ UPSTREAM_PREFIX = 'upstream_'
 
 
 class TestDepsParserMethods(unittest.TestCase):
-
   # Extract both mirrored dep names and URLs &
   # upstream names and URLs from DEPs file.
   def setup(self):
@@ -72,7 +71,6 @@ class TestDepsParserMethods(unittest.TestCase):
         )
 
   def test_each_upstream_url_has_dep(self):
-
     # Parse DEPS into dependency names.
     deps_names = []
     for dep in self.deps:
