@@ -858,7 +858,9 @@ struct DrawAtlasBaseOp : DLOp {
   const uint8_t sampling_index : 8;
   const sk_sp<DlImage> atlas;
 
-  void dispatch(Dispatcher& dispatcher, const void* pod, const SkRect* cull_rect) const {
+  void dispatch(Dispatcher& dispatcher,
+                const void* pod,
+                const SkRect* cull_rect) const {
     const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(pod);
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
     const DlColor* colors =
