@@ -91,9 +91,9 @@ struct MouseState {
   bool rotate_gesture_active = false;
 
   /**
-   * System scroll inertia is currently sending us events.
+   * Time of last scroll momentum event.
    */
-  bool system_scroll_inertia_active = false;
+  NSTimeInterval last_scroll_momentum_changed_time = 0;
 
   /**
    * Resets all gesture state to default values.
@@ -521,11 +521,11 @@ static void CommonInit(FlutterViewController* controller) {
   } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
     [self dispatchMouseEvent:event phase:kHover];
   } else {
-    if (event.momentumPhase == NSEventPhaseBegan) {
-      _mouseState.system_scroll_inertia_active = true;
-    } else if (event.momentumPhase == NSEventPhaseEnded ||
-               event.momentumPhase == NSEventPhaseCancelled) {
-      _mouseState.system_scroll_inertia_active = false;
+    // Waiting until the first momentum change event is a workaround for an issue where
+    // touchesBegan: is called unexpectedly while in low power mode within the interval between
+    // momentum start and the first momentum change.
+    if (event.momentumPhase == NSEventPhaseChanged) {
+      _mouseState.last_scroll_momentum_changed_time = event.timestamp;
     }
     // Skip momentum update events, the framework will generate scroll momentum.
     NSAssert(event.momentumPhase != NSEventPhaseNone,
@@ -549,6 +549,8 @@ static void CommonInit(FlutterViewController* controller) {
                               _mouseState.rotate_gesture_active;
     if (event.type == NSEventTypeScrollWheel) {
       _mouseState.pan_gesture_active = true;
+      // Ensure scroll inertia cancel event is not sent afterwards.
+      _mouseState.last_scroll_momentum_changed_time = 0;
     } else if (event.type == NSEventTypeMagnify) {
       _mouseState.scale_gesture_active = true;
     } else if (event.type == NSEventTypeRotate) {
@@ -841,8 +843,8 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)touchesBeganWithEvent:(NSEvent*)event {
   NSTouch* touch = event.allTouches.anyObject;
   if (touch != nil) {
-    if (_mouseState.system_scroll_inertia_active) {
-      // The trackpad has been touched and a scroll gesture is still sending inertia events.
+    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) < 0.010) {
+      // The trackpad has been touched within 10 ms following a scroll momentum event.
       // A scroll inertia cancel message should be sent to the framework.
       NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
       NSPoint locationInBackingCoordinates =
@@ -858,6 +860,8 @@ static void CommonInit(FlutterViewController* controller) {
       };
 
       [_engine sendPointerEvent:flutterEvent];
+      // Ensure no further scroll inertia cancel event will be sent.
+      _mouseState.last_scroll_momentum_changed_time = 0;
     }
   }
 }
