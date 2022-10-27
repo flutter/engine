@@ -257,13 +257,13 @@ Future<bool> compileUnitTest(FilePath input, {required Renderer renderer}) async
   // to run the same test in multiple renderers.
   final String targetFileName = pathlib.join(
     environment.webUiBuildDir.path,
-    buildDirForRenderer(renderer),
+    getBuildDirForRenderer(renderer),
     '${input.relativeToWebUi}.browser_test.dart.js',
   );
 
   final io.Directory directoryToTarget = io.Directory(pathlib.join(
       environment.webUiBuildDir.path,
-      buildDirForRenderer(renderer),
+      getBuildDirForRenderer(renderer),
       pathlib.dirname(input.relativeToWebUi)));
 
   if (!directoryToTarget.existsSync()) {
