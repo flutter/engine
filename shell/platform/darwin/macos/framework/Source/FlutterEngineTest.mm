@@ -145,7 +145,7 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
-  [viewController setBackgroundColor:[NSColor whiteColor]];
+  viewController.flutterView.backgroundColor = [NSColor whiteColor];
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;

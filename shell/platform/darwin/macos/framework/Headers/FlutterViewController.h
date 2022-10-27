@@ -102,7 +102,7 @@ FLUTTER_DARWIN_EXPORT
  *     // If the `FlutterView`'s color is not set via `FlutterViewController.setBackgroundColor`
  *     // it's default will be black.
  *     self.backgroundColor = NSColor.clear
- *     flutterViewController.setBackgroundColor(NSColor.white)
+ *     flutterViewController.backgroundColor = NSColor.clear
  *
  *     let windowFrame = self.frame
  *     self.contentViewController = flutterViewController
@@ -115,6 +115,6 @@ FLUTTER_DARWIN_EXPORT
  * }
  * ```
  */
-- (void)setBackgroundColor:(nonnull NSColor*)color;
+@property(readwrite, nonatomic, nullable) NSColor* backgroundColor;
 
 @end

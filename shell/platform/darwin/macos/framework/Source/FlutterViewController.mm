@@ -425,7 +425,8 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)setBackgroundColor:(NSColor*)color {
-  [(FlutterViewWrapper*)[self view] setBackgroundColor:color];
+  _backgroundColor = color;
+  [(FlutterViewWrapper*)[self view] setBackgroundColor:_backgroundColor];
 }
 
 - (void)onPreEngineRestart {
