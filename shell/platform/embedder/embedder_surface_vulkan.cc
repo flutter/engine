@@ -46,10 +46,18 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  FML_DCHECK(vk_->SetupInstanceProcAddresses(
-      vulkan::VulkanHandle<VkInstance>{instance}));
-  FML_DCHECK(
-      vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device}));
+  bool success = vk_->SetupInstanceProcAddresses(
+      vulkan::VulkanHandle<VkInstance>{instance});
+  if (!success) {
+    FML_LOG(ERROR) << "Could not setup instance proc addresses.";
+    return;
+  }
+  success =
+      vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
+  if (!success) {
+    FML_LOG(ERROR) << "Could not setup device proc addresses.";
+    return;
+  }
   if (!vk_->IsValid()) {
     FML_LOG(ERROR) << "VulkanProcTable invalid.";
     return;
