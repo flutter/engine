@@ -38,12 +38,14 @@ import 'package:web_test_utils/image_compare.dart';
 
 import 'browser.dart';
 import 'environment.dart' as env;
+import 'utils.dart';
 
 /// Custom test platform that serves web engine unit tests.
 class BrowserPlatform extends PlatformPlugin {
   BrowserPlatform._({
     required this.browserEnvironment,
     required this.server,
+    required this.renderer,
     required this.isDebug,
     required this.wasm,
     required this.doUpdateScreenshotGoldens,
@@ -101,6 +103,7 @@ class BrowserPlatform extends PlatformPlugin {
   /// instead of failing the test on screenshot mismatches.
   static Future<BrowserPlatform> start({
     required BrowserEnvironment browserEnvironment,
+    required Renderer renderer,
     required bool doUpdateScreenshotGoldens,
     required SkiaGoldClient? skiaClient,
     required String? overridePathToCanvasKit,
@@ -110,6 +113,7 @@ class BrowserPlatform extends PlatformPlugin {
         shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
       browserEnvironment: browserEnvironment,
+      renderer: renderer,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
       wasm: wasm,
@@ -132,6 +136,9 @@ class BrowserPlatform extends PlatformPlugin {
 
   /// Provides the environment for the browser running tests.
   final BrowserEnvironment browserEnvironment;
+
+  /// The renderer that tests are running under.
+  final Renderer renderer;
 
   /// The URL for this server.
   Uri get url => server.url.resolve('/');
@@ -390,10 +397,20 @@ class BrowserPlatform extends PlatformPlugin {
   ///
   /// This is used for trivial use-cases, such as `favicon.ico`, host pages, etc.
   shelf.Response buildDirectoryHandler(shelf.Request request) {
-    final File fileInBuild = File(p.join(
+    File fileInBuild = File(p.join(
       env.environment.webUiBuildDir.path,
       request.url.path,
     ));
+
+    // If we can't find the file in the top-level `build` directory, then it
+    // may be in the renderer-specific `build` subdirectory.
+    if (!fileInBuild.existsSync()) {
+      fileInBuild = File(p.join(
+        env.environment.webUiBuildDir.path,
+        getBuildDirForRenderer(renderer),
+        request.url.path,
+      ));
+    }
 
     if (!fileInBuild.existsSync()) {
       return shelf.Response.notFound('File not found: ${request.url.path}');
@@ -522,6 +539,7 @@ class BrowserPlatform extends PlatformPlugin {
       packageConfig: packageConfig,
       wasm: wasm,
       debug: isDebug,
+      renderer: renderer,
     );
 
     // Store null values for browsers that error out so we know not to load them
@@ -617,7 +635,7 @@ class BrowserManager {
   /// Creates a new BrowserManager that communicates with the browser over
   /// [webSocket].
   BrowserManager._(this.packageConfig, this._browser, this._browserEnvironment,
-      this._wasm, WebSocketChannel webSocket) {
+      this._renderer, this._wasm, WebSocketChannel webSocket) {
     // The duration should be short enough that the debugging console is open as
     // soon as the user is done setting breakpoints, but long enough that a test
     // doing a lot of synchronous work doesn't trigger a false positive.
@@ -662,6 +680,9 @@ class BrowserManager {
 
   /// The browser environment for this test.
   final BrowserEnvironment _browserEnvironment;
+
+  /// The renderer for this test.
+  final Renderer _renderer;
 
   /// The channel used to communicate with the browser.
   ///
@@ -730,6 +751,7 @@ class BrowserManager {
     required Uri url,
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
+    required Renderer renderer,
     required bool wasm,
     bool debug = false,
   }) async {
@@ -741,6 +763,7 @@ class BrowserManager {
         future: future,
         packageConfig: packageConfig,
         browser: browser,
+        renderer: renderer,
         wasm: wasm,
         debug: debug);
   }
@@ -751,6 +774,7 @@ class BrowserManager {
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
     required Browser browser,
+    required Renderer renderer,
     required bool wasm,
     bool debug = false,
   }) {
@@ -773,7 +797,7 @@ class BrowserManager {
         return;
       }
       completer.complete(BrowserManager._(
-          packageConfig, browser, browserEnvironment, wasm, webSocket));
+          packageConfig, browser, browserEnvironment, renderer, wasm, webSocket));
     }).catchError((Object error, StackTrace stackTrace) {
       browser.close();
       if (completer.isCompleted) {
@@ -867,7 +891,7 @@ class BrowserManager {
           final String pathToTest = p.dirname(path);
 
           final String mapPath = p.join(env.environment.webUiRootDir.path,
-              'build', pathToTest, sourceMapFileName);
+              'build', getBuildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
 
           final Map<String, Uri> packageMap = <String, Uri>{
             for (Package p in packageConfig.packages) p.name: p.packageUriRoot
