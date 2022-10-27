@@ -136,7 +136,10 @@ template("embedder_source_set") {
         "embedder_surface_vulkan.h",
       ]
 
-      deps += [ "//flutter/flutter_vma:flutter_skia_vma" ]
+      deps += [
+        "//flutter/flutter_vma:flutter_skia_vma",
+        "//flutter/vulkan/procs",
+      ]
     }
 
     public_deps = [ ":embedder_headers" ]
@@ -293,6 +296,7 @@ if (enable_unittests) {
       public_deps += [
         "//flutter/testing:vulkan",
         "//flutter/vulkan",
+        "//flutter/vulkan/procs",
       ]
     }
   }

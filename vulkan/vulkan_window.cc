@@ -10,6 +10,7 @@
 #include <string>
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "vulkan_application.h"
 #include "vulkan_device.h"
@@ -138,7 +139,7 @@ bool VulkanWindow::CreateSkiaGrContext() {
 }
 
 bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
-  auto getProc = vk->CreateSkiaGetProc();
+  auto getProc = CreateSkiaGetProc(vk);
 
   if (getProc == nullptr) {
     return false;

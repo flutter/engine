@@ -6,6 +6,7 @@
 #define FLUTTER_VULKAN_VULKAN_PROVIDER_H_
 
 #include "flutter/vulkan/procs/vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace vulkan {
 

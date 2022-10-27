@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
@@ -98,7 +99,7 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
     return false;
   }
 
-  auto getProc = vk_->CreateSkiaGetProc();
+  auto getProc = CreateSkiaGetProc(vk_);
 
   if (getProc == nullptr) {
     FML_LOG(ERROR) << "VulkanSurfaceProducer: Failed to create skia getProc.";

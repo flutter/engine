@@ -8,6 +8,7 @@
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/shell/common/context_options.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
 #if OS_FUCHSIA
@@ -148,7 +149,7 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
 
 bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaBackendContext(
     GrVkBackendContext* context) {
-  auto getProc = vk_->CreateSkiaGetProc();
+  auto getProc = CreateSkiaGetProc(vk_);
 
   if (getProc == nullptr) {
     FML_DLOG(ERROR) << "GetProcAddress is null";

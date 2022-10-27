@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_
-#define FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_
+#pragma once
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
@@ -11,8 +10,6 @@
 #include "flutter/fml/native_library.h"
 #include "flutter/vulkan/procs/vulkan_handle.h"
 #include "flutter/vulkan/procs/vulkan_interface.h"
-#include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 
 namespace vulkan {
 
@@ -65,8 +62,6 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   bool SetupInstanceProcAddresses(const VulkanHandle<VkInstance>& instance);
 
   bool SetupDeviceProcAddresses(const VulkanHandle<VkDevice>& device);
-
-  GrVkGetProc CreateSkiaGetProc() const;
 
   std::function<void*(VkInstance, const char*)> GetInstanceProcAddr = nullptr;
 
@@ -138,6 +133,13 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
 
   PFN_vkGetInstanceProcAddr NativeGetInstanceProcAddr() const;
 
+  PFN_vkVoidFunction AcquireProc(
+      const char* proc_name,
+      const VulkanHandle<VkInstance>& instance) const;
+
+  PFN_vkVoidFunction AcquireProc(const char* proc_name,
+                                 const VulkanHandle<VkDevice>& device) const;
+
  private:
   fml::RefPtr<fml::NativeLibrary> handle_;
   bool acquired_mandatory_proc_addresses_;
@@ -148,15 +150,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   bool SetupGetInstanceProcAddress();
   bool SetupLoaderProcAddresses();
   bool CloseLibraryHandle();
-  PFN_vkVoidFunction AcquireProc(
-      const char* proc_name,
-      const VulkanHandle<VkInstance>& instance) const;
-  PFN_vkVoidFunction AcquireProc(const char* proc_name,
-                                 const VulkanHandle<VkDevice>& device) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanProcTable);
 };
 
 }  // namespace vulkan
-
-#endif  // FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_

@@ -10,6 +10,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/context_options.h"
 #include "flutter/testing/test_vulkan_context.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/native_library.h"
@@ -82,7 +83,7 @@ TestVulkanContext::TestVulkanContext() {
     return;
   }
 
-  auto get_proc = vk_->CreateSkiaGetProc();
+  auto get_proc = vulkan::CreateSkiaGetProc(vk_);
   if (get_proc == nullptr) {
     FML_LOG(ERROR) << "Failed to create Vulkan getProc for Skia.";
     return;

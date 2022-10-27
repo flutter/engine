@@ -209,22 +209,4 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
   return GetDeviceProcAddr(device, proc_name);
 }
 
-GrVkGetProc VulkanProcTable::CreateSkiaGetProc() const {
-  if (!IsValid()) {
-    return nullptr;
-  }
-
-  return [this](const char* proc_name, VkInstance instance, VkDevice device) {
-    if (device != VK_NULL_HANDLE) {
-      auto result =
-          AcquireProc(proc_name, VulkanHandle<VkDevice>{device, nullptr});
-      if (result != nullptr) {
-        return result;
-      }
-    }
-
-    return AcquireProc(proc_name, VulkanHandle<VkInstance>{instance, nullptr});
-  };
-}
-
 }  // namespace vulkan

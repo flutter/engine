@@ -8,6 +8,7 @@
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
 #include "include/gpu/vk/GrVkExtensions.h"
@@ -123,7 +124,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     return nullptr;
   }
 
-  auto get_proc = vk_->CreateSkiaGetProc();
+  auto get_proc = CreateSkiaGetProc(vk_);
   if (get_proc == nullptr) {
     FML_LOG(ERROR) << "Failed to create Vulkan getProc for Skia.";
     return nullptr;
