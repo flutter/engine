@@ -19,7 +19,7 @@ class FlutterSkiaVulkanMemoryAllocator : public skgpu::VulkanMemoryAllocator {
       VkInstance instance,
       VkPhysicalDevice physicalDevice,
       VkDevice device,
-      fml::RefPtr<vulkan::VulkanProcTable> vk,
+      const fml::RefPtr<vulkan::VulkanProcTable>& vk,
       bool mustUseCoherentHostVisibleMemory);
 
   ~FlutterSkiaVulkanMemoryAllocator() override;

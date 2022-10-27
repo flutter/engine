@@ -15,7 +15,7 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
     VkInstance instance,
     VkPhysicalDevice physicalDevice,
     VkDevice device,
-    fml::RefPtr<vulkan::VulkanProcTable> vk,
+    const fml::RefPtr<vulkan::VulkanProcTable>& vk,
     bool mustUseCoherentHostVisibleMemory) {
 #define PROVIDE_PROC(tbl, proc, provider) tbl.vk##proc = provider->proc;
 
@@ -73,7 +73,7 @@ FlutterSkiaVulkanMemoryAllocator::FlutterSkiaVulkanMemoryAllocator(
     fml::RefPtr<vulkan::VulkanProcTable> vk_proc_table,
     VmaAllocator allocator,
     bool mustUseCoherentHostVisibleMemory)
-    : vk_proc_table_(vk_proc_table),
+    : vk_proc_table_(std::move(vk_proc_table)),
       allocator_(allocator),
       must_use_coherent_host_visible_memory_(mustUseCoherentHostVisibleMemory) {
 }
