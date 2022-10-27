@@ -1886,39 +1886,6 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 1u);
 }
 
-- (void)testScribbleSetSelectionRectsTICFails {
-  NSMutableDictionary* regularField = self.mutableTemplateCopy;
-  NSDictionary* editingValue = @{
-    @"text" : @"REGULAR_TEXT_FIELD",
-    @"composingBase" : @0,
-    @"composingExtent" : @3,
-    @"selectionBase" : @1,
-    @"selectionExtent" : @4
-  };
-  [regularField setValue:@{
-    @"uniqueIdentifier" : @"field1",
-    @"hints" : @[ @"hint2" ],
-    @"editingValue" : editingValue,
-  }
-                  forKey:@"autofill"];
-  [regularField addEntriesFromDictionary:editingValue];
-  [self setClientId:123 configuration:regularField];
-  XCTAssertEqual(self.installedInputViews.count, 1ul);
-  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
-
-  NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, nil];
-  NSArray* selectionRects = [NSArray arrayWithObjects:selectionRect, nil];
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.setSelectionRects"
-                                        arguments:selectionRects];
-  [textInputPlugin handleMethodCall:methodCall
-                             result:^(id _Nullable result) {
-                               XCTAssertEqual(result, FlutterMethodNotImplemented);
-                             }];
-
-  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
-}
-
 - (void)testDecommissionedViewAreNotReusedByAutofill {
   // Regression test for https://github.com/flutter/flutter/issues/84407.
   NSMutableDictionary* configuration = self.mutableTemplateCopy;
