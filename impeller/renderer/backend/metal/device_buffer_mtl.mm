@@ -40,7 +40,6 @@ std::shared_ptr<Texture> DeviceBufferMTL::AsTexture(
     return nullptr;
   }
 
-  mtl_texture_desc.storageMode = storage_mode_;
   if (@available(iOS 13.0, macos 10.15, *)) {
     mtl_texture_desc.resourceOptions = buffer_.resourceOptions;
   }
