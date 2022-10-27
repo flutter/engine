@@ -219,7 +219,6 @@ LRESULT Window::OnGetObject(UINT const message,
     // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
     accessibility_root_->SetWindow(root_view);
     Microsoft::WRL::ComPtr<IAccessible> root(accessibility_root_);
-    // TODO(schectman): wrap returned accessible in AccessibilityRootNode
     LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
     return lresult;
   }
