@@ -45,6 +45,11 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
   proc_table.vkCreateImage = vk->CreateImage;
   proc_table.vkDestroyImage = vk->DestroyImage;
   proc_table.vkCmdCopyBuffer = vk->CmdCopyBuffer;
+  proc_table.vkGetBufferMemoryRequirements2KHR = vk->GetBufferMemoryRequirements2KHR;
+  proc_table.vkGetImageMemoryRequirements2KHR = vk->GetImageMemoryRequirements2KHR;
+  proc_table.vkBindBufferMemory2KHR = vk->BindBufferMemory2KHR;
+  proc_table.vkBindImageMemory2KHR = vk->BindImageMemory2KHR;
+  proc_table.vkGetPhysicalDeviceMemoryProperties2KHR = vk->GetPhysicalDeviceMemoryProperties2KHR;
   // clang-format on
 
   VmaAllocatorCreateInfo allocator_info = {};

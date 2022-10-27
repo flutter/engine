@@ -26,9 +26,9 @@ VulkanProcTable::VulkanProcTable(const char* so_path)
 }
 
 VulkanProcTable::VulkanProcTable(
-    std::function<void*(VkInstance, const char*)> get_instance_proc_addr)
+    PFN_vkGetInstanceProcAddr get_instance_proc_addr)
     : handle_(nullptr), acquired_mandatory_proc_addresses_(false) {
-  GetInstanceProcAddr = std::move(get_instance_proc_addr);
+  GetInstanceProcAddr = get_instance_proc_addr;
   acquired_mandatory_proc_addresses_ = SetupLoaderProcAddresses();
 }
 
@@ -60,8 +60,7 @@ bool VulkanProcTable::SetupGetInstanceProcAddress() {
 
   FML_LOG(ERROR) << "SetupGetInstanceProcAddress: handle_ is non-null";
 
-  GetInstanceProcAddr = reinterpret_cast<void* (*)(VkInstance, const char*)>(
-      NativeGetInstanceProcAddr());
+  GetInstanceProcAddr = NativeGetInstanceProcAddr();
   if (!GetInstanceProcAddr) {
     FML_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
     return false;
@@ -71,8 +70,9 @@ bool VulkanProcTable::SetupGetInstanceProcAddress() {
 }
 
 PFN_vkGetInstanceProcAddr VulkanProcTable::NativeGetInstanceProcAddr() const {
-  FML_LOG(ERROR) << this << " - " << handle_.get()
-                 << " : NativeGetInstanceProcAddr";
+  if (GetInstanceProcAddr) {
+    return GetInstanceProcAddr;
+  }
 
 #if VULKAN_LINK_STATICALLY
   return &vkGetInstanceProcAddr;
@@ -167,6 +167,13 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(CreateBuffer, handle);
   ACQUIRE_PROC(DestroyBuffer, handle);
   ACQUIRE_PROC(CmdCopyBuffer, handle);
+
+  ACQUIRE_PROC(GetBufferMemoryRequirements2KHR, handle);
+  ACQUIRE_PROC(GetImageMemoryRequirements2KHR, handle);
+  ACQUIRE_PROC(BindBufferMemory2KHR, handle);
+  ACQUIRE_PROC(BindImageMemory2KHR, handle);
+  ACQUIRE_PROC(GetPhysicalDeviceMemoryProperties2KHR, handle);
+
 #ifndef TEST_VULKAN_PROCS
 #if FML_OS_ANDROID
   ACQUIRE_PROC(AcquireNextImageKHR, handle);

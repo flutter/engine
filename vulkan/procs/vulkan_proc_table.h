@@ -47,8 +47,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
 
   VulkanProcTable();
   explicit VulkanProcTable(const char* so_path);
-  explicit VulkanProcTable(
-      std::function<void*(VkInstance, const char*)> get_instance_proc_addr);
+  explicit VulkanProcTable(PFN_vkGetInstanceProcAddr get_instance_proc_addr);
   ~VulkanProcTable();
 
   bool HasAcquiredMandatoryProcAddresses() const;
@@ -63,7 +62,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
 
   bool SetupDeviceProcAddresses(const VulkanHandle<VkDevice>& device);
 
-  std::function<void*(VkInstance, const char*)> GetInstanceProcAddr = nullptr;
+  PFN_vkGetInstanceProcAddr GetInstanceProcAddr = nullptr;
 
 #define DEFINE_PROC(name) Proc<PFN_vk##name> name;
 
@@ -119,6 +118,13 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(CreateBuffer);
   DEFINE_PROC(DestroyBuffer);
   DEFINE_PROC(CmdCopyBuffer);
+
+  DEFINE_PROC(GetBufferMemoryRequirements2KHR);
+  DEFINE_PROC(GetImageMemoryRequirements2KHR);
+  DEFINE_PROC(BindBufferMemory2KHR);
+  DEFINE_PROC(BindImageMemory2KHR);
+  DEFINE_PROC(GetPhysicalDeviceMemoryProperties2KHR);
+
 #ifndef TEST_VULKAN_PROCS
 #if FML_OS_ANDROID
   DEFINE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR);

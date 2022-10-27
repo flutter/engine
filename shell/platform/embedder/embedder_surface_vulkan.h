@@ -20,8 +20,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
                                     public GPUSurfaceVulkanDelegate {
  public:
   struct VulkanDispatchTable {
-    std::function<void*(VkInstance, const char*)>
-        get_instance_proc_address;  // required
+    PFN_vkGetInstanceProcAddr get_instance_proc_address;  // required
     std::function<FlutterVulkanImage(const SkISize& frame_size)>
         get_next_image;  // required
     std::function<bool(VkImage image, VkFormat format)>
