@@ -24,10 +24,6 @@
 #endif  // VK_USE_PLATFORM_FUCHSIA
 #endif  // OS_FUCHSIA
 
-#if !VULKAN_LINK_STATICALLY
-#define VK_NO_PROTOTYPES 1
-#endif  // !VULKAN_LINK_STATICALLY
-
 // TODO(dnfield): vulkan_metal.h has some unguarded availability checks for
 // macOS 10.13. We can remove this if we bump to 10.14 or if that gets fixed
 // upstream, but fixing it upstream will take some time to flow through to

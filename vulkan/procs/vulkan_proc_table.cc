@@ -14,6 +14,14 @@
     return false;                                            \
   }
 
+#define ACQUIRE_PROC_EITHER(name, name2, context)                              \
+  if (!(name = AcquireProc("vk" #name, context)) &&                            \
+      !(name2 = AcquireProc("vk" #name2, context))) {                          \
+    FML_LOG(ERROR) << "Could not acquire proc: vk" << #name << ", or proc: vk" \
+                   << #name2;                                                  \
+    return false;                                                              \
+  }
+
 namespace vulkan {
 
 VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
@@ -107,6 +115,8 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
   ACQUIRE_PROC(GetPhysicalDeviceQueueFamilyProperties, handle);
   ACQUIRE_PROC(GetPhysicalDeviceProperties, handle);
   ACQUIRE_PROC(GetPhysicalDeviceMemoryProperties, handle);
+  ACQUIRE_PROC_EITHER(GetPhysicalDeviceMemoryProperties2,
+                      GetPhysicalDeviceMemoryProperties2KHR, handle);
 
 #if FML_OS_ANDROID
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR, handle);
@@ -168,11 +178,12 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(DestroyBuffer, handle);
   ACQUIRE_PROC(CmdCopyBuffer, handle);
 
-  ACQUIRE_PROC(GetBufferMemoryRequirements2KHR, handle);
-  ACQUIRE_PROC(GetImageMemoryRequirements2KHR, handle);
-  ACQUIRE_PROC(BindBufferMemory2KHR, handle);
-  ACQUIRE_PROC(BindImageMemory2KHR, handle);
-  ACQUIRE_PROC(GetPhysicalDeviceMemoryProperties2KHR, handle);
+  ACQUIRE_PROC_EITHER(GetBufferMemoryRequirements2,
+                      GetBufferMemoryRequirements2KHR, handle);
+  ACQUIRE_PROC_EITHER(GetImageMemoryRequirements2,
+                      GetImageMemoryRequirements2KHR, handle);
+  ACQUIRE_PROC_EITHER(BindBufferMemory2, BindBufferMemory2KHR, handle);
+  ACQUIRE_PROC_EITHER(BindImageMemory2, BindImageMemory2KHR, handle);
 
 #ifndef TEST_VULKAN_PROCS
 #if FML_OS_ANDROID

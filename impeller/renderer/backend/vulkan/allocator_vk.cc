@@ -6,6 +6,9 @@
 
 #include <memory>
 
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
@@ -20,9 +23,45 @@ AllocatorVK::AllocatorVK(ContextVK& context,
                          PFN_vkGetInstanceProcAddr get_instance_proc_address,
                          PFN_vkGetDeviceProcAddr get_device_proc_address)
     : context_(context), device_(logical_device) {
+  vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(get_instance_proc_address);
+
+  auto instance_handle = vulkan::VulkanHandle<VkInstance>(instance);
+  FML_CHECK(vk_->SetupInstanceProcAddresses(instance_handle));
+
+  auto device_handle = vulkan::VulkanHandle<VkDevice>(logical_device);
+  FML_CHECK(vk_->SetupDeviceProcAddresses(device_handle));
+
   VmaVulkanFunctions proc_table = {};
   proc_table.vkGetInstanceProcAddr = get_instance_proc_address;
   proc_table.vkGetDeviceProcAddr = get_device_proc_address;
+
+#define PROVIDE_PROC(tbl, proc, provider) tbl.vk##proc = provider->proc;
+  PROVIDE_PROC(proc_table, GetPhysicalDeviceProperties, vk_);
+  PROVIDE_PROC(proc_table, GetPhysicalDeviceMemoryProperties, vk_);
+  PROVIDE_PROC(proc_table, AllocateMemory, vk_);
+  PROVIDE_PROC(proc_table, FreeMemory, vk_);
+  PROVIDE_PROC(proc_table, MapMemory, vk_);
+  PROVIDE_PROC(proc_table, UnmapMemory, vk_);
+  PROVIDE_PROC(proc_table, FlushMappedMemoryRanges, vk_);
+  PROVIDE_PROC(proc_table, InvalidateMappedMemoryRanges, vk_);
+  PROVIDE_PROC(proc_table, BindBufferMemory, vk_);
+  PROVIDE_PROC(proc_table, BindImageMemory, vk_);
+  PROVIDE_PROC(proc_table, GetBufferMemoryRequirements, vk_);
+  PROVIDE_PROC(proc_table, GetImageMemoryRequirements, vk_);
+  PROVIDE_PROC(proc_table, CreateBuffer, vk_);
+  PROVIDE_PROC(proc_table, DestroyBuffer, vk_);
+  PROVIDE_PROC(proc_table, CreateImage, vk_);
+  PROVIDE_PROC(proc_table, DestroyImage, vk_);
+  PROVIDE_PROC(proc_table, CmdCopyBuffer, vk_);
+
+  // clang-format off
+  // See: https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/203
+  proc_table.vkGetBufferMemoryRequirements2KHR = vk_->GetBufferMemoryRequirements2;
+  proc_table.vkGetImageMemoryRequirements2KHR = vk_->GetImageMemoryRequirements2;
+  proc_table.vkBindBufferMemory2KHR = vk_->BindBufferMemory2;
+  proc_table.vkBindImageMemory2KHR = vk_->BindImageMemory2;
+  proc_table.vkGetPhysicalDeviceMemoryProperties2KHR = vk_->GetPhysicalDeviceMemoryProperties2;
+  // clang-format on
 
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;

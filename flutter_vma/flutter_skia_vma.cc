@@ -24,33 +24,33 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
     return nullptr;
   }
 
-  // clang-format off
+#define PROVIDE_PROC(tbl, proc, provider) tbl.vk##proc = provider->proc;
+
   VmaVulkanFunctions proc_table = {};
   proc_table.vkGetInstanceProcAddr = vk->NativeGetInstanceProcAddr();
-  proc_table.vkGetDeviceProcAddr = vk->GetDeviceProcAddr;
-  proc_table.vkGetPhysicalDeviceProperties = vk->GetPhysicalDeviceProperties;
-  proc_table.vkGetPhysicalDeviceMemoryProperties = vk->GetPhysicalDeviceMemoryProperties;
-  proc_table.vkAllocateMemory = vk->AllocateMemory;
-  proc_table.vkFreeMemory = vk->FreeMemory;
-  proc_table.vkMapMemory = vk->MapMemory;
-  proc_table.vkUnmapMemory = vk->UnmapMemory;
-  proc_table.vkFlushMappedMemoryRanges = vk->FlushMappedMemoryRanges;
-  proc_table.vkInvalidateMappedMemoryRanges = vk->InvalidateMappedMemoryRanges;
-  proc_table.vkBindBufferMemory = vk->BindBufferMemory;
-  proc_table.vkBindImageMemory = vk->BindImageMemory;
-  proc_table.vkGetBufferMemoryRequirements = vk->GetBufferMemoryRequirements;
-  proc_table.vkGetImageMemoryRequirements = vk->GetImageMemoryRequirements;
-  proc_table.vkCreateBuffer = vk->CreateBuffer;
-  proc_table.vkDestroyBuffer = vk->DestroyBuffer;
-  proc_table.vkCreateImage = vk->CreateImage;
-  proc_table.vkDestroyImage = vk->DestroyImage;
-  proc_table.vkCmdCopyBuffer = vk->CmdCopyBuffer;
-  proc_table.vkGetBufferMemoryRequirements2KHR = vk->GetBufferMemoryRequirements2KHR;
-  proc_table.vkGetImageMemoryRequirements2KHR = vk->GetImageMemoryRequirements2KHR;
-  proc_table.vkBindBufferMemory2KHR = vk->BindBufferMemory2KHR;
-  proc_table.vkBindImageMemory2KHR = vk->BindImageMemory2KHR;
-  proc_table.vkGetPhysicalDeviceMemoryProperties2KHR = vk->GetPhysicalDeviceMemoryProperties2KHR;
-  // clang-format on
+  PROVIDE_PROC(proc_table, GetDeviceProcAddr, vk);
+  PROVIDE_PROC(proc_table, GetPhysicalDeviceProperties, vk);
+  PROVIDE_PROC(proc_table, GetPhysicalDeviceMemoryProperties, vk);
+  PROVIDE_PROC(proc_table, AllocateMemory, vk);
+  PROVIDE_PROC(proc_table, FreeMemory, vk);
+  PROVIDE_PROC(proc_table, MapMemory, vk);
+  PROVIDE_PROC(proc_table, UnmapMemory, vk);
+  PROVIDE_PROC(proc_table, FlushMappedMemoryRanges, vk);
+  PROVIDE_PROC(proc_table, InvalidateMappedMemoryRanges, vk);
+  PROVIDE_PROC(proc_table, BindBufferMemory, vk);
+  PROVIDE_PROC(proc_table, BindImageMemory, vk);
+  PROVIDE_PROC(proc_table, GetBufferMemoryRequirements, vk);
+  PROVIDE_PROC(proc_table, GetImageMemoryRequirements, vk);
+  PROVIDE_PROC(proc_table, CreateBuffer, vk);
+  PROVIDE_PROC(proc_table, DestroyBuffer, vk);
+  PROVIDE_PROC(proc_table, CreateImage, vk);
+  PROVIDE_PROC(proc_table, DestroyImage, vk);
+  PROVIDE_PROC(proc_table, CmdCopyBuffer, vk);
+  PROVIDE_PROC(proc_table, GetBufferMemoryRequirements2KHR, vk);
+  PROVIDE_PROC(proc_table, GetImageMemoryRequirements2KHR, vk);
+  PROVIDE_PROC(proc_table, BindBufferMemory2KHR, vk);
+  PROVIDE_PROC(proc_table, BindImageMemory2KHR, vk);
+  PROVIDE_PROC(proc_table, GetPhysicalDeviceMemoryProperties2KHR, vk);
 
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;
