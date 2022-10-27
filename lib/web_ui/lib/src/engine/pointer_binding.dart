@@ -341,10 +341,19 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
-    if (event.deltaX % 120 != 0 || event.deltaY % 120 != 0) {
+    if ((event.deltaX % 120 != 0 || event.deltaY % 120 != 0) &&
+        ((event.wheelDeltaX ?? (-3 * event.deltaX)) == -3 * event.deltaX) &&
+        ((event.wheelDeltaY ?? (-3 * event.deltaY)) == -3 * event.deltaY)) {
       // While not standardized, all major browsers use a delta of 120 to
       // represent one mouse wheel turn. If either dimension of the delta
-      // is not divisible by 120, this event must not be from a mouse wheel.
+      // is not divisible by 120, this event is not a normal mouse wheel event.
+      // On macOS, mouse wheel events by default have an acceleration curve applied,
+      // so their delta values ramp up and are not at fixed multiples of 120.
+      // But in this case, the wheelDelta properties of the event still keep
+      // their original values.
+      // For all events without this acceleration curve applied, the wheelDelta
+      // values are by convention three times greater than the delta values and with
+      // the opposite sign.
       kind = ui.PointerDeviceKind.trackpad;
     }
 
