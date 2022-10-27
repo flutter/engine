@@ -31,6 +31,7 @@ source_set("flutter_skia_vma") {
   public_deps = [ ":flutter_vma" ]
 
   deps = [
+    "//flutter/vulkan/procs",
     "//third_party/skia",
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",

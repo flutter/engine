@@ -4,6 +4,10 @@
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
+
 namespace flutter {
 
 sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
@@ -11,12 +15,37 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
     VkInstance instance,
     VkPhysicalDevice physicalDevice,
     VkDevice device,
-    PFN_vkGetInstanceProcAddr get_instance_proc_address,
-    PFN_vkGetDeviceProcAddr get_device_proc_address,
+    fml::RefPtr<vulkan::VulkanProcTable> vk,
     bool mustUseCoherentHostVisibleMemory) {
+  FML_LOG(ERROR) << "here!!!";
+
+  if (vk->AllocateMemory == nullptr) {
+    FML_LOG(ERROR) << "Could not acquire vkAllocateMemory.";
+    return nullptr;
+  }
+
+  // clang-format off
   VmaVulkanFunctions proc_table = {};
-  proc_table.vkGetInstanceProcAddr = get_instance_proc_address;
-  proc_table.vkGetDeviceProcAddr = get_device_proc_address;
+  proc_table.vkGetInstanceProcAddr = vk->NativeGetInstanceProcAddr();
+  proc_table.vkGetDeviceProcAddr = vk->GetDeviceProcAddr;
+  proc_table.vkGetPhysicalDeviceProperties = vk->GetPhysicalDeviceProperties;
+  proc_table.vkGetPhysicalDeviceMemoryProperties = vk->GetPhysicalDeviceMemoryProperties;
+  proc_table.vkAllocateMemory = vk->AllocateMemory;
+  proc_table.vkFreeMemory = vk->FreeMemory;
+  proc_table.vkMapMemory = vk->MapMemory;
+  proc_table.vkUnmapMemory = vk->UnmapMemory;
+  proc_table.vkFlushMappedMemoryRanges = vk->FlushMappedMemoryRanges;
+  proc_table.vkInvalidateMappedMemoryRanges = vk->InvalidateMappedMemoryRanges;
+  proc_table.vkBindBufferMemory = vk->BindBufferMemory;
+  proc_table.vkBindImageMemory = vk->BindImageMemory;
+  proc_table.vkGetBufferMemoryRequirements = vk->GetBufferMemoryRequirements;
+  proc_table.vkGetImageMemoryRequirements = vk->GetImageMemoryRequirements;
+  proc_table.vkCreateBuffer = vk->CreateBuffer;
+  proc_table.vkDestroyBuffer = vk->DestroyBuffer;
+  proc_table.vkCreateImage = vk->CreateImage;
+  proc_table.vkDestroyImage = vk->DestroyImage;
+  proc_table.vkCmdCopyBuffer = vk->CmdCopyBuffer;
+  // clang-format on
 
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;
@@ -29,14 +58,16 @@ sk_sp<skgpu::VulkanMemoryAllocator> FlutterSkiaVulkanMemoryAllocator::Make(
   vmaCreateAllocator(&allocator_info, &allocator);
 
   return sk_sp<FlutterSkiaVulkanMemoryAllocator>(
-      new FlutterSkiaVulkanMemoryAllocator(allocator,
+      new FlutterSkiaVulkanMemoryAllocator(vk, allocator,
                                            mustUseCoherentHostVisibleMemory));
 }
 
 FlutterSkiaVulkanMemoryAllocator::FlutterSkiaVulkanMemoryAllocator(
+    fml::RefPtr<vulkan::VulkanProcTable> vk_proc_table,
     VmaAllocator allocator,
     bool mustUseCoherentHostVisibleMemory)
-    : allocator_(allocator),
+    : vk_proc_table_(vk_proc_table),
+      allocator_(allocator),
       must_use_coherent_host_visible_memory_(mustUseCoherentHostVisibleMemory) {
 }
 

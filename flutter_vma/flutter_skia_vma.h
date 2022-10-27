@@ -6,6 +6,8 @@
 
 #include "flutter/flutter_vma/flutter_vma.h"
 
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 
 namespace flutter {
@@ -17,8 +19,7 @@ class FlutterSkiaVulkanMemoryAllocator : public skgpu::VulkanMemoryAllocator {
       VkInstance instance,
       VkPhysicalDevice physicalDevice,
       VkDevice device,
-      PFN_vkGetInstanceProcAddr get_instance_proc_address,
-      PFN_vkGetDeviceProcAddr get_device_proc_address,
+      fml::RefPtr<vulkan::VulkanProcTable> vk,
       bool mustUseCoherentHostVisibleMemory);
 
   ~FlutterSkiaVulkanMemoryAllocator() override;
@@ -51,9 +52,12 @@ class FlutterSkiaVulkanMemoryAllocator : public skgpu::VulkanMemoryAllocator {
   uint64_t totalAllocatedMemory() const override;
 
  private:
-  FlutterSkiaVulkanMemoryAllocator(VmaAllocator allocator,
-                                   bool mustUseCoherentHostVisibleMemory);
+  FlutterSkiaVulkanMemoryAllocator(
+      fml::RefPtr<vulkan::VulkanProcTable> vk_proc_table,
+      VmaAllocator allocator,
+      bool mustUseCoherentHostVisibleMemory);
 
+  fml::RefPtr<vulkan::VulkanProcTable> vk_proc_table_;
   VmaAllocator allocator_;
 
   // For host visible allocations do we require they are coherent or not. All

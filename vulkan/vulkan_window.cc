@@ -86,7 +86,7 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
   memory_allocator_ = flutter::FlutterSkiaVulkanMemoryAllocator::Make(
       application_->GetAPIVersion(), application_->GetInstance(),
       logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
-      vk->NativeGetInstanceProcAddr(), vk->GetDeviceProcAddr, true);
+      vk, true);
 
   // Create the Skia GrDirectContext.
 

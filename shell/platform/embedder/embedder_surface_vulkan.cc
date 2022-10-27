@@ -46,8 +46,10 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  vk_->SetupInstanceProcAddresses(vulkan::VulkanHandle<VkInstance>{instance});
-  vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
+  FML_DCHECK(vk_->SetupInstanceProcAddresses(
+      vulkan::VulkanHandle<VkInstance>{instance}));
+  FML_DCHECK(
+      vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device}));
   if (!vk_->IsValid()) {
     FML_LOG(ERROR) << "VulkanProcTable invalid.";
     return;
@@ -145,16 +147,11 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fGetProc = get_proc;
   backend_context.fOwnsInstanceAndDevice = false;
 
-  PFN_vkGetInstanceProcAddr instance_proc_address =
-      vk_->NativeGetInstanceProcAddr();
-  PFN_vkGetDeviceProcAddr get_device_proc_address = vk_->GetDeviceProcAddr;
   uint32_t vulkan_api_version = version;
-
   sk_sp<skgpu::VulkanMemoryAllocator> allocator =
       flutter::FlutterSkiaVulkanMemoryAllocator::Make(
           vulkan_api_version, instance, device_.GetPhysicalDeviceHandle(),
-          device_.GetHandle(), instance_proc_address, get_device_proc_address,
-          true);
+          device_.GetHandle(), vk_, true);
 
   backend_context.fMemoryAllocator = allocator;
 

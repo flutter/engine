@@ -92,8 +92,7 @@ TestVulkanContext::TestVulkanContext() {
   sk_sp<skgpu::VulkanMemoryAllocator> allocator =
       flutter::FlutterSkiaVulkanMemoryAllocator::Make(
           VK_MAKE_VERSION(1, 0, 0), application_->GetInstance(),
-          device_->GetPhysicalDeviceHandle(), device_->GetHandle(),
-          vk_->NativeGetInstanceProcAddr(), vk_->GetDeviceProcAddr, true);
+          device_->GetPhysicalDeviceHandle(), device_->GetHandle(), vk_, true);
 
   GrVkExtensions extensions;
 

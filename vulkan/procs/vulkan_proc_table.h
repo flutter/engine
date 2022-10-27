@@ -108,6 +108,17 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(ResetCommandBuffer);
   DEFINE_PROC(ResetFences);
   DEFINE_PROC(WaitForFences);
+  DEFINE_PROC(GetPhysicalDeviceProperties);
+  DEFINE_PROC(GetPhysicalDeviceMemoryProperties);
+  DEFINE_PROC(MapMemory);
+  DEFINE_PROC(UnmapMemory);
+  DEFINE_PROC(FlushMappedMemoryRanges);
+  DEFINE_PROC(InvalidateMappedMemoryRanges);
+  DEFINE_PROC(BindBufferMemory);
+  DEFINE_PROC(GetBufferMemoryRequirements);
+  DEFINE_PROC(CreateBuffer);
+  DEFINE_PROC(DestroyBuffer);
+  DEFINE_PROC(CmdCopyBuffer);
 #ifndef TEST_VULKAN_PROCS
 #if FML_OS_ANDROID
   DEFINE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR);

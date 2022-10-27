@@ -10,7 +10,7 @@
 
 #define ACQUIRE_PROC(name, context)                          \
   if (!(name = AcquireProc("vk" #name, context))) {          \
-    FML_DLOG(INFO) << "Could not acquire proc: vk" << #name; \
+    FML_LOG(ERROR) << "Could not acquire proc: vk" << #name; \
     return false;                                            \
   }
 
@@ -54,8 +54,11 @@ bool VulkanProcTable::AreDeviceProcsSetup() const {
 
 bool VulkanProcTable::SetupGetInstanceProcAddress() {
   if (!handle_) {
+    FML_LOG(ERROR) << "SetupGetInstanceProcAddress: handle_ is null";
     return true;
   }
+
+  FML_LOG(ERROR) << "SetupGetInstanceProcAddress: handle_ is non-null";
 
   GetInstanceProcAddr = reinterpret_cast<void* (*)(VkInstance, const char*)>(
       NativeGetInstanceProcAddr());
@@ -68,6 +71,9 @@ bool VulkanProcTable::SetupGetInstanceProcAddress() {
 }
 
 PFN_vkGetInstanceProcAddr VulkanProcTable::NativeGetInstanceProcAddr() const {
+  FML_LOG(ERROR) << this << " - " << handle_.get()
+                 << " : NativeGetInstanceProcAddr";
+
 #if VULKAN_LINK_STATICALLY
   return &vkGetInstanceProcAddr;
 #else   // VULKAN_LINK_STATICALLY
@@ -89,6 +95,8 @@ bool VulkanProcTable::SetupLoaderProcAddresses() {
 
 bool VulkanProcTable::SetupInstanceProcAddresses(
     const VulkanHandle<VkInstance>& handle) {
+  FML_LOG(ERROR) << this << " - SetupInstanceProcAddresses. handle: " << handle;
+
   ACQUIRE_PROC(CreateDevice, handle);
   ACQUIRE_PROC(DestroyDevice, handle);
   ACQUIRE_PROC(DestroyInstance, handle);
@@ -97,6 +105,9 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
   ACQUIRE_PROC(GetDeviceProcAddr, handle);
   ACQUIRE_PROC(GetPhysicalDeviceFeatures, handle);
   ACQUIRE_PROC(GetPhysicalDeviceQueueFamilyProperties, handle);
+  ACQUIRE_PROC(GetPhysicalDeviceProperties, handle);
+  ACQUIRE_PROC(GetPhysicalDeviceMemoryProperties, handle);
+
 #if FML_OS_ANDROID
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceFormatsKHR, handle);
@@ -147,6 +158,15 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(ResetCommandBuffer, handle);
   ACQUIRE_PROC(ResetFences, handle);
   ACQUIRE_PROC(WaitForFences, handle);
+  ACQUIRE_PROC(MapMemory, handle);
+  ACQUIRE_PROC(UnmapMemory, handle);
+  ACQUIRE_PROC(FlushMappedMemoryRanges, handle);
+  ACQUIRE_PROC(InvalidateMappedMemoryRanges, handle);
+  ACQUIRE_PROC(BindBufferMemory, handle);
+  ACQUIRE_PROC(GetBufferMemoryRequirements, handle);
+  ACQUIRE_PROC(CreateBuffer, handle);
+  ACQUIRE_PROC(DestroyBuffer, handle);
+  ACQUIRE_PROC(CmdCopyBuffer, handle);
 #ifndef TEST_VULKAN_PROCS
 #if FML_OS_ANDROID
   ACQUIRE_PROC(AcquireNextImageKHR, handle);
@@ -176,13 +196,16 @@ bool VulkanProcTable::OpenLibraryHandle(const char* path) {
   handle_ = fml::NativeLibrary::Create(path);
 #endif  // VULKAN_LINK_STATICALLY
   if (!handle_) {
-    FML_DLOG(WARNING) << "Could not open Vulkan library handle: " << path;
+    FML_LOG(ERROR) << "Could not open Vulkan library handle: " << path;
     return false;
+  } else {
+    FML_LOG(ERROR) << "Opened Vulkan library handle: " << path;
   }
   return true;
 }
 
 bool VulkanProcTable::CloseLibraryHandle() {
+  FML_LOG(ERROR) << "Closing Vulkan library handle: " << handle_.get();
   handle_ = nullptr;
   return true;
 }
