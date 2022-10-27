@@ -145,6 +145,7 @@ if (enable_unittests) {
       "//flutter/fml",
       "//flutter/shell/common",
       "//flutter/vulkan",
+      "//flutter/vulkan/procs",
     ]
 
     if (!is_fuchsia) {
