@@ -202,6 +202,9 @@ targets:
       - "**.h"
       - "**.c"
       - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
 
   - name: Linux Android clang-tidy
     recipe: engine/engine_lint
@@ -219,6 +222,9 @@ targets:
       - "**.h"
       - "**.c"
       - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
       - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
@@ -361,6 +367,9 @@ targets:
       - "**.h"
       - "**.c"
       - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
       - "**.m"
       - "**.mm"
 
@@ -380,6 +389,9 @@ targets:
       - "**.h"
       - "**.c"
       - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
       - "**.m"
       - "**.mm"
 
