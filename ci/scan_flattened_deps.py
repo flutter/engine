@@ -15,7 +15,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 from urllib import request
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
