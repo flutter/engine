@@ -422,12 +422,32 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
         coverage=coverage
     )
     # Impeller tests are only supported on macOS for now.
+    xcode_location = subprocess.check_output(['xcode-select', '-p'])
     RunEngineExecutable(
         build_dir,
         'impeller_unittests',
         filter,
         shuffle_flags,
-        coverage=coverage
+        coverage=coverage,
+        extra_env={
+            'DYLD_INSERT_LIBRARIES':
+                '/usr/lib/libMTLCapture.dylib:%s/Platforms/MacOSX.platform/Developer/Library/GPUToolsPlatform/libMTLToolsDiagnostics.dylib'
+                % xcode_location,
+            'METAL_DEBUG_ERROR_MODE':
+                '0',
+            'METAL_DEVICE_FORCE_COMMAND_BUFFER_ENHANCED_ERRORS':
+                '1',
+            'METAL_DEVICE_WRAPPER_TYPE':
+                '5',
+            'METAL_DIAGNOSTICS_ENABLED':
+                '1',
+            'METAL_LOAD_INTERPOSER':
+                '1',
+            'MTL_FORCE_COMMAND_BUFFER_ENHANCED_ERRORS':
+                '1',
+            'DYMTL_TOOLS_DYLIB_PATH':
+                '/usr/lib/libMTLCapture.dylib',
+        }
     )
 
 
