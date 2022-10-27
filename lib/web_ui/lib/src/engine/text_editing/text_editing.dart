@@ -60,6 +60,7 @@ void _setStaticStyleAttributes(DomHTMLElement domElement) {
   final DomCSSStyleDeclaration elementStyle = domElement.style;
   elementStyle
     // Prevent (forced-colors: active) from making our invisible text fields visible.
+    // For more details, see: https://developer.mozilla.org/en-US/docs/Web/CSS/forced-color-adjust
     ..setProperty('forced-color-adjust', 'none')
     ..whiteSpace = 'pre-wrap'
     ..alignContent = 'center'
