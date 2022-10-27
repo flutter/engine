@@ -138,6 +138,7 @@ template("runner_sources") {
       "//flutter/fml",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
       "//flutter/vulkan",
+      "//flutter/vulkan/procs",
     ]
 
     public_deps = [
