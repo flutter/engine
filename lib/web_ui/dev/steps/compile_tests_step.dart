@@ -203,10 +203,6 @@ Future<void> compileTests(List<FilePath> testFiles) async {
       _compileTestsInParallel(targets: sortedTests.canvasKitTests, renderer: Renderer.canvasKit),
     if (sortedTests.skwasmTests.isNotEmpty)
       _compileTestsInParallel(targets: sortedTests.skwasmTests, renderer: Renderer.skwasm),
-    if (sortedTests.uiTests.isNotEmpty)
-      _compileTestsInParallel(targets: sortedTests.uiTests),
-    if (sortedTests.uiTests.isNotEmpty)
-      _compileTestsInParallel(targets: sortedTests.uiTests, renderer: Renderer.canvasKit),
   ]);
 
   stopwatch.stop();

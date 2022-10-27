@@ -401,7 +401,7 @@ class BrowserPlatform extends PlatformPlugin {
     if (!fileInBuild.existsSync()) {
       fileInBuild = File(p.join(
         env.environment.webUiBuildDir.path,
-        buildDirForRenderer(renderer),
+        getBuildDirForRenderer(renderer),
         request.url.path,
       ));
     }
@@ -870,7 +870,7 @@ class BrowserManager {
         final String pathToTest = p.dirname(path);
 
         final String mapPath = p.join(env.environment.webUiRootDir.path,
-            'build', buildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
+            'build', getBuildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
 
         final Map<String, Uri> packageMap = <String, Uri>{
           for (Package p in packageConfig.packages) p.name: p.packageUriRoot

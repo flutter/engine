@@ -389,7 +389,7 @@ enum Renderer {
 
 /// The `FilePath`s for all the tests, organized by renderer.
 class TestsByRenderer {
-  TestsByRenderer(this.htmlTests, this.canvasKitTests, this.skwasmTests, this.uiTests);
+  TestsByRenderer(this.htmlTests, this.canvasKitTests, this.skwasmTests);
 
   /// Tests which should be run with the HTML renderer.
   final List<FilePath> htmlTests;
@@ -400,14 +400,11 @@ class TestsByRenderer {
   /// Tests which should be run with the Skwasm renderer.
   final List<FilePath> skwasmTests;
 
-  /// Renderer-agnostic tests. These should only use `dart:ui` APIs.
-  final List<FilePath> uiTests;
-
   /// The total number of targets to compile.
   ///
   /// The number of uiTests is doubled since they are compiled twice: once for
   /// the HTML renderer and once for the CanvasKit renderer.
-  int get numTargetsToCompile => htmlTests.length + canvasKitTests.length + skwasmTests.length + 2 * uiTests.length;
+  int get numTargetsToCompile => htmlTests.length + canvasKitTests.length + skwasmTests.length;
 }
 
 /// Given a list of test files, organizes them by which renderer should run them.
@@ -415,7 +412,6 @@ TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles) {
   final List<FilePath> htmlTargets = <FilePath>[];
   final List<FilePath> canvasKitTargets = <FilePath>[];
   final List<FilePath> skwasmTargets = <FilePath>[];
-  final List<FilePath> uiTargets = <FilePath>[];
   final String canvasKitTestDirectory =
       path.join(environment.webUiTestDir.path, 'canvaskit');
   final String skwasmTestDirectory =
@@ -428,16 +424,17 @@ TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles) {
     } else if (path.isWithin(skwasmTestDirectory, testFile.absolute)) {
       skwasmTargets.add(testFile);
     } else if (path.isWithin(uiTestDirectory, testFile.absolute)) {
-      uiTargets.add(testFile);
+      htmlTargets.add(testFile);
+      canvasKitTargets.add(testFile);
     } else {
       htmlTargets.add(testFile);
     }
   }
-  return TestsByRenderer(htmlTargets, canvasKitTargets, skwasmTargets, uiTargets);
+  return TestsByRenderer(htmlTargets, canvasKitTargets, skwasmTargets);
 }
 
 /// The build directory to compile a test into given the renderer.
-String buildDirForRenderer(Renderer renderer) {
+String getBuildDirForRenderer(Renderer renderer) {
   switch (renderer) {
     case Renderer.html:
       return 'html_tests';

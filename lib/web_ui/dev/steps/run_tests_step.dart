@@ -70,9 +70,9 @@ class RunTestsStep implements PipelineStep {
 
     final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
-    if (sortedTests.htmlTests.isNotEmpty || sortedTests.uiTests.isNotEmpty) {
+    if (sortedTests.htmlTests.isNotEmpty) {
       await _runTestBatch(
-        testFiles: sortedTests.htmlTests + sortedTests.uiTests,
+        testFiles: sortedTests.htmlTests,
         renderer: Renderer.html,
         browserEnvironment: browserEnvironment,
         expectFailure: false,
@@ -83,9 +83,9 @@ class RunTestsStep implements PipelineStep {
       );
     }
 
-    if (sortedTests.canvasKitTests.isNotEmpty || sortedTests.uiTests.isNotEmpty) {
+    if (sortedTests.canvasKitTests.isNotEmpty) {
       await _runTestBatch(
-        testFiles: sortedTests.canvasKitTests + sortedTests.uiTests,
+        testFiles: sortedTests.canvasKitTests,
         renderer: Renderer.canvasKit,
         browserEnvironment: browserEnvironment,
         expectFailure: false,
@@ -188,7 +188,7 @@ Future<void> _runTestBatch({
   );
   final String precompiledBuildDir = pathlib.join(
     environment.webUiBuildDir.path,
-    buildDirForRenderer(renderer),
+    getBuildDirForRenderer(renderer),
   );
   final List<String> testArgs = <String>[
     ...<String>['-r', 'compact'],
