@@ -87,7 +87,6 @@
 }
 
 - (void)setBackgroundColor:(NSColor*)color {
-  [self setWantsLayer:YES];
   self.layer.backgroundColor = color.CGColor;
 }
 
