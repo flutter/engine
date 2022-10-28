@@ -105,8 +105,7 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     auto hoty = std::get<double>(hoty_iter->second);
-    HCURSOR cursor =
-        GetCursorFromBuffer(std::move(buffer), hotx, hoty, width, height);
+    HCURSOR cursor = GetCursorFromBuffer(buffer, hotx, hoty, width, height);
     if (cursor == nullptr) {
       result->Error("Argument error",
                     "Argument must contain valid rawRgba bitmap");
@@ -119,7 +118,7 @@ void CursorHandler::HandleMethodCall(
   }
 }
 
-HCURSOR GetCursorFromBuffer(std::vector<uint8_t> buffer,
+HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
                             double hotx,
                             double hoty,
                             int width,

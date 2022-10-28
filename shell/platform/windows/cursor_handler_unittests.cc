@@ -17,7 +17,7 @@ TEST(CursorHandlerTest, CreateDummyCursor) {
   for (int i = 0; i < 4 * 4 * 4; i++) {
     buffer.push_back(0);
   }
-  auto cursor = GetCursorFromBuffer(std::move(buffer), 0, 0, 4, 4);
+  auto cursor = GetCursorFromBuffer(buffer, 0, 0, 4, 4);
   EXPECT_NE(cursor, nullptr);
 }
 

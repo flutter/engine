@@ -33,7 +33,7 @@ class CursorHandler {
 };
 
 // Create cursor from buffer and cursor info
-inline HCURSOR GetCursorFromBuffer(std::vector<uint8_t> buffer,
+inline HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
                                    double hotx,
                                    double hoty,
                                    int width,
