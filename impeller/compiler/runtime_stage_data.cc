@@ -170,9 +170,5 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
                                                 [builder](auto, auto) {});
 }
 
-std::shared_ptr<fml::Mapping> RuntimeStageData::CreateShaderOnlyMapping() const {
-  return shader_;
-}
-
 }  // namespace compiler
 }  // namespace impeller

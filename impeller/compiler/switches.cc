@@ -60,7 +60,6 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional,multiple] --include=<include_directory>" << std::endl;
   stream << "[optional,multiple] --define=<define>" << std::endl;
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
-  stream << "[optional] --use-raw-output" << std::endl;
 }
 
 Switches::Switches() = default;
@@ -113,8 +112,7 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("reflection-header", "")),
       reflection_cc_name(
           command_line.GetOptionValueWithDefault("reflection-cc", "")),
-      depfile_path(command_line.GetOptionValueWithDefault("depfile", "")),
-      use_raw_output(command_line.HasOption("use-raw-output")) {
+      depfile_path(command_line.GetOptionValueWithDefault("depfile", "")) {
   if (!working_directory || !working_directory->is_valid()) {
     return;
   }
