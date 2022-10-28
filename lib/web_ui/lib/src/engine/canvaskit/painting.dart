@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
@@ -308,56 +307,109 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
 final ManagedSkColorFilter _invertColorFilter =
     ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
 
+class UniformData {
+  const UniformData({
+    required this.name,
+    required this.location,
+    required this.type,
+  });
+
+  final String name;
+  final UniformType type;
+  final int location;
+
+  static const UniformData empty =
+      UniformData(name: '', location: -1, type: UniformType.Float);
+}
+
+enum UniformType {
+  Boolean,
+  SByte,
+  UByte,
+  Short,
+  UShort,
+  Int,
+  Uint,
+  Int64,
+  Uint64,
+  Half,
+  Float,
+  Double,
+  SampledImage,
+}
+
+UniformType? uniformTypeFromJson(int value) {
+  switch (value) {
+    case 0:
+      return UniformType.Boolean;
+    case 1:
+      return UniformType.SByte;
+    case 2:
+      return UniformType.UByte;
+    case 3:
+      return UniformType.Short;
+    case 4:
+      return UniformType.UShort;
+    case 5:
+      return UniformType.Int;
+    case 6:
+      return UniformType.Uint;
+    case 7:
+      return UniformType.Int64;
+    case 8:
+      return UniformType.Uint64;
+    case 9:
+      return UniformType.Half;
+    case 10:
+      return UniformType.Float;
+    case 11:
+      return UniformType.Double;
+    case 12:
+      return UniformType.SampledImage;
+  }
+  return null;
+}
 
 class CkFragmentProgram implements ui.FragmentProgram {
-  CkFragmentProgram(this.source);
+  CkFragmentProgram(this.name, this.effect, this.uniforms, this.floatCount,
+      this.textureCount);
 
-  final ByteData source;
+  final String name;
+  final SkRuntimeEffect effect;
+  final List<UniformData> uniforms;
+  final int floatCount;
+  final int textureCount;
 
   @override
   ui.FragmentShader fragmentShader() {
-    final String contents = utf8.decode(source.buffer.asUint8List());
-    return CkFragmentShader(contents);
+    return CkFragmentShader(name, effect, floatCount, textureCount);
   }
 }
 
 class CkFragmentShader implements ui.FragmentShader {
-  CkFragmentShader(this.source);
+  CkFragmentShader(this.name, this.effect, int floatCount, int textureCount)
+      : floats = List<double>.filled(floatCount, 0),
+        samplers = List<SkShader?>.filled(textureCount, null);
 
-  final String source;
-  List<double> floats = <double>[];
-  List<CkShader?> samplers = <CkShader?>[];
+  final String name;
+  final SkRuntimeEffect effect;
+  final List<double> floats;
+  final List<SkShader?> samplers;
 
   CkShader createShader() {
-    return CkFragmentInstance(source, floats, List<SkShader>.from(samplers.where((x) => x != null).map((x) => x!.skiaObject).toList().cast<SkShader>()));
+    return CkFragmentInstance(name, effect, floats, samplers);
   }
 
   @override
   void setFloat(int index, double value) {
-    // TODO, get uniform length from IPLR.
-    if (index >= floats.length) {
-      final List<double> newFloats = List<double>.filled(index + 1, 0);
-      for (int i = 0; i < floats.length; i++) {
-        newFloats[i] = floats[i];
-      }
-      floats = newFloats;
-    }
     floats[index] = value;
   }
 
   @override
   void setSampler(int index, ui.ImageShader sampler) {
-    // TODO, get uniform length from IPLR.
-    if (index >= samplers.length) {
-      final List<CkShader?> newSamplers = List<CkShader?>.filled(index + 1, null);
-      for (int i = 0; i < samplers.length; i++) {
-        newSamplers[i] = samplers[i];
-      }
-      samplers = newSamplers;
-    }
-    samplers[index] = sampler as CkShader;
-    setFloat(3, (sampler as CkImageShader).imageWidth.toDouble());
-    setFloat(4, sampler.imageHeight.toDouble());
+    samplers[index] = (sampler as CkShader).skiaObject;
+    setFloat(2 * index, (sampler as CkImageShader).imageWidth.toDouble());
+    setFloat(2 * index + 1, sampler.imageHeight.toDouble());
   }
 
   @override
@@ -375,31 +427,35 @@ class CkFragmentShader implements ui.FragmentShader {
 }
 
 class CkFragmentInstance extends CkShader {
-  CkFragmentInstance(this.source, this.floats, this.shaders);
+  CkFragmentInstance(this.name, this.effect, this.floats, this.shaders);
 
-  final String source;
+  final String name;
+  final SkRuntimeEffect effect;
   final List<double> floats;
-  final List<SkShader> shaders;
+  final List<SkShader?> shaders;
 
   @override
   SkShader createDefault() {
-    print(source);
-    print(floats);
-    print(shaders);
-    final SkShader? result = MakeRuntimeEffect(source).makeShaderWithChildren(floats, shaders);
+    final SkShader? result = shaders.isEmpty
+        ? effect.makeShader(floats)
+        : effect.makeShaderWithChildren(floats, shaders);
     if (result == null) {
-      print('Error compiling $source with $floats/$shaders');
-      throw Exception();
+      throw Exception('Invalid uniform data for shader $name:'
+          '  floatUniforms: $floats \n'
+          '  samplerUniforms: $shaders \n');
     }
     return result;
   }
 
   @override
   SkShader resurrect() {
-    final SkShader? result = MakeRuntimeEffect(source).makeShaderWithChildren(floats, shaders);
+    final SkShader? result = shaders.isEmpty
+        ? effect.makeShader(floats)
+        : effect.makeShaderWithChildren(floats, shaders);
     if (result == null) {
-      print('Error compiling $source with $floats/$shaders');
-      throw Exception();
+      throw Exception('Invalid uniform data for shader $name:'
+          '  floatUniforms: $floats \n'
+          '  samplerUniforms: $shaders \n');
     }
     return result;
   }
