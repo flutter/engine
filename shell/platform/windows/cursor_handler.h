@@ -32,6 +32,13 @@ class CursorHandler {
   WindowBindingHandler* delegate_;
 };
 
+// Create cursor from buffer and cursor info
+inline HCURSOR GetCursorFromBuffer(std::vector<uint8_t> buffer,
+                                   double hotx,
+                                   double hoty,
+                                   int width,
+                                   int height);
+
 }  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_CURSOR_HANDLER_H_

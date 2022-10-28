@@ -105,26 +105,11 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     auto hoty = std::get<double>(hoty_iter->second);
-    HCURSOR cursor = nullptr;
-    // Flutter returns rawRgba, which has 8bits*4channels
-    auto bitmap = CreateBitmap(width, height, 1, 32, &buffer[0]);
-    if (bitmap == nullptr) {
-      result->Error("Argument error",
-                    "Argument buffer must contain valid rawRgba bitmap");
-      return;
-    }
-    ICONINFO icon_info;
-    icon_info.fIcon = 0;
-    icon_info.xHotspot = hotx;
-    icon_info.yHotspot = hoty;
-    icon_info.hbmMask = bitmap;
-    icon_info.hbmColor = bitmap;
-    cursor = CreateIconIndirect(&icon_info);
-    DeleteObject(bitmap);
+    HCURSOR cursor =
+        GetCursorFromBuffer(std::move(buffer), hotx, hoty, width, height);
     if (cursor == nullptr) {
       result->Error("Argument error",
-                    "Create Icon failed, argument buffer must contain valid "
-                    "rawRgba bitmap");
+                    "Argument must contain valid rawRgba bitmap");
       return;
     }
     delegate_->SetFlutterCursor(cursor);
@@ -132,6 +117,28 @@ void CursorHandler::HandleMethodCall(
   } else {
     result->NotImplemented();
   }
+}
+
+HCURSOR GetCursorFromBuffer(std::vector<uint8_t> buffer,
+                            double hotx,
+                            double hoty,
+                            int width,
+                            int height) {
+  HCURSOR cursor = nullptr;
+  // Flutter returns rawRgba, which has 8bits * 4channels
+  auto bitmap = CreateBitmap(width, height, 1, 32, &buffer[0]);
+  if (bitmap == nullptr) {
+    return nullptr;
+  }
+  ICONINFO icon_info;
+  icon_info.fIcon = 0;
+  icon_info.xHotspot = hotx;
+  icon_info.yHotspot = hoty;
+  icon_info.hbmMask = bitmap;
+  icon_info.hbmColor = bitmap;
+  cursor = CreateIconIndirect(&icon_info);
+  DeleteObject(bitmap);
+  return cursor;
 }
 
 }  // namespace flutter
