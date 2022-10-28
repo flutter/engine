@@ -47,7 +47,6 @@
   if (self) {
     _delegate = delegate;
     self.layer.opaque = opaque;
-    self.layer.backgroundColor = NSColor.black;
   }
 
   return self;
