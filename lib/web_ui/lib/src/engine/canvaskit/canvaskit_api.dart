@@ -168,7 +168,15 @@ extension CanvasKitExtension on CanvasKit {
   /// On Cobalt, this is the only way to get a Skia surface. Other CanvasKit
   /// Make...Surface methods are not supported.
   external SkSurface getH5vccSkSurface();
+
+  /// Retrieve the RuntimeEffect namespace for null checking.
+  external Object? get RuntimeEffect;
 }
+
+// TODO(jonahwilliams): remove this once all CanvasKit versions
+// are built in the SDK.
+// https://github.com/flutter/flutter/issues/114260
+final bool isRuntimeEffectAvailable = canvasKit.RuntimeEffect == null;
 
 @JS('window.CanvasKitInit')
 external CanvasKitInitPromise CanvasKitInit(CanvasKitInitOptions options);

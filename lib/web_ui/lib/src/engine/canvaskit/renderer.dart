@@ -387,6 +387,9 @@ class CanvasKitRenderer implements Renderer {
     if (_programs.containsKey(assetKey)) {
       return _programs[assetKey]!;
     }
+    if (!isRuntimeEffectAvailable) {
+      throw Exception('FragmentProgram is not supported.');
+    }
     return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
       final String contents = utf8.decode(data.buffer.asUint8List());
       final Object? rawShaderData = json.decode(contents);
