@@ -16,12 +16,18 @@
 namespace flutter {
 
 // A parent node that wraps the window IAccessible node.
-class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
-                              public IDispatchImpl<IAccessible> {
+class __declspec(uuid("fedb8280-ea4f-47a9-98fe-5d1a557fe4b3"))
+    AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
+                            public IDispatchImpl<IAccessible>,
+                            public IServiceProvider {
  public:
   static constexpr LONG kAlertChildId = 2;
+
   BEGIN_COM_MAP(AccessibilityRootNode)
+  COM_INTERFACE_ENTRY(AccessibilityRootNode)
   COM_INTERFACE_ENTRY(IAccessible)
+  COM_INTERFACE_ENTRY(IDispatch)
+  COM_INTERFACE_ENTRY(IServiceProvider)
   END_COM_MAP()
 
   //
@@ -98,6 +104,14 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
                                   LONG* topic_id) override;
   IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
 
+  //
+  // IServiceProvider method.
+  //
+
+  IFACEMETHODIMP QueryService(REFGUID guidService,
+                              REFIID riid,
+                              void** object) override;
+
   AccessibilityRootNode();
   virtual ~AccessibilityRootNode();
 
@@ -116,6 +130,8 @@ class AccessibilityRootNode : public CComObjectRootEx<CComMultiThreadModel>,
   IAccessible* window_accessible_;
 
   AccessibilityAlert* alert_accessible_;
+
+  CComObject<AccessibilityRootNode>* self_com_;
 };
 
 }  // namespace flutter

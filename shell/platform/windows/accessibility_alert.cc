@@ -157,6 +157,25 @@ IFACEMETHODIMP AccessibilityAlert::get_accDefaultAction(VARIANT var_id,
 
 // End of IAccessible methods.
 
+//
+// IServiceProvider implementation.
+//
+
+IFACEMETHODIMP AccessibilityAlert::QueryService(REFGUID guidService,
+                                                REFIID riid,
+                                                void** object) {
+  if (!object) {
+    return E_INVALIDARG;
+  }
+
+  if (guidService == IID_IAccessible) {
+    return QueryInterface(riid, object);
+  }
+
+  *object = nullptr;
+  return E_FAIL;
+}
+
 void AccessibilityAlert::SetText(const std::wstring& text) {
   text_ = text;
 }

@@ -95,7 +95,7 @@ IFACEMETHODIMP AccessibilityRootNode::get_accChild(VARIANT var_child,
   }
   LONG child_id = V_I4(&var_child);
   if (child_id == CHILDID_SELF) {
-    *disp_child = this;
+    *disp_child = self_com_;
   } else if (!window_accessible_) {
     return E_FAIL;
   } else if (child_id == kWindowChildId) {
@@ -254,6 +254,25 @@ IFACEMETHODIMP AccessibilityRootNode::put_accName(VARIANT var_id,
   return E_NOTIMPL;
 }
 
+//
+// IServiceProvider implementation.
+//
+
+IFACEMETHODIMP AccessibilityRootNode::QueryService(REFGUID guidService,
+                                                   REFIID riid,
+                                                   void** object) {
+  if (!object) {
+    return E_INVALIDARG;
+  }
+
+  if (guidService == IID_IAccessible) {
+    return QueryInterface(riid, object);
+  }
+
+  *object = nullptr;
+  return E_FAIL;
+}
+
 void AccessibilityRootNode::SetWindow(IAccessible* window) {
   window_accessible_ = window;
 }
@@ -281,6 +300,7 @@ AccessibilityRootNode* AccessibilityRootNode::Create() {
     FML_LOG(FATAL) << "Failed to create accessibility root node";
   }
   instance->AddRef();
+  instance->self_com_ = instance;
   return instance;
 }
 

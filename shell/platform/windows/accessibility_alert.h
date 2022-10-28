@@ -21,11 +21,16 @@ class AccessibilityRootNode;
 // the root AccessibilityRootNode node, and is therefore also a sibling
 // of the window's root node.
 // This node is not interactable to the user.
-class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
-                           public IDispatchImpl<IAccessible> {
+class __declspec(uuid("778c1bd8-383f-4d49-b6be-8937e12b6a32"))
+    AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
+                         public IDispatchImpl<IAccessible>,
+                         public IServiceProvider {
  public:
   BEGIN_COM_MAP(AccessibilityAlert)
+  COM_INTERFACE_ENTRY(AccessibilityAlert)
   COM_INTERFACE_ENTRY(IAccessible)
+  COM_INTERFACE_ENTRY(IDispatch)
+  COM_INTERFACE_ENTRY(IServiceProvider)
   END_COM_MAP()
   //
   // IAccessible methods.
@@ -90,6 +95,14 @@ class AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
   IFACEMETHODIMP put_accValue(VARIANT var_id, BSTR new_value) override;
 
   // End of IAccessible methods.
+
+  //
+  // IServiceProvider method.
+  //
+
+  IFACEMETHODIMP QueryService(REFGUID guidService,
+                              REFIID riid,
+                              void** object) override;
 
   AccessibilityAlert();
   ~AccessibilityAlert() = default;
