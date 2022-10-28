@@ -93,7 +93,7 @@ generated_file("impellerc_license") {
     "",
     "### rapidjson",
     "",
-    read_file("//third_party/rapidjson/LICENSE.txt", "string"),
+    read_file("//third_party/rapidjson/LICENSE", "string"),
   ]
 }
 
