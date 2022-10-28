@@ -13,7 +13,8 @@ static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
-// [kSetCustomCursorMethod] allows developers to set a custom cursor with rawRGBA buffer.
+// [kSetCustomCursorMethod] allows developers to set a custom cursor with
+// rawRGBA buffer.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor";
 // std::vector<uint8_t> value for custom cursor rawRGBA buffer.
 static constexpr char kCustomCursorBufferKey[] = "buffer";
@@ -85,8 +86,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument height while trying to customize system cursor");
       return;
     }
-    auto height =
-        std::get<int>(height_iter->second);
+    auto height = std::get<int>(height_iter->second);
     auto hotx_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorHotxKey)));
     if (hotx_iter == arguments.end()) {
