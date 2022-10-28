@@ -81,7 +81,8 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   if (!children_can_accept_opacity()) {
     SkPaint paint;
-    if (layer_raster_cache_item_->Draw(context, context.state_stack.fill(paint))) {
+    if (layer_raster_cache_item_->Draw(context,
+                                       context.state_stack.fill(paint))) {
       return;
     }
   }
