@@ -388,11 +388,13 @@ class CkFragmentProgram implements ui.FragmentProgram {
 
 class CkFragmentShader implements ui.FragmentShader {
   CkFragmentShader(this.name, this.effect, int floatCount, int textureCount)
-      : floats = List<double>.filled(floatCount, 0),
-        samplers = List<SkShader?>.filled(textureCount, null);
+      : floats = List<double>.filled(floatCount + textureCount * 2, 0),
+        samplers = List<SkShader?>.filled(textureCount, null),
+        lastFloatIndex = floatCount;
 
   final String name;
   final SkRuntimeEffect effect;
+  final int lastFloatIndex;
   final List<double> floats;
   final List<SkShader?> samplers;
 
@@ -408,8 +410,8 @@ class CkFragmentShader implements ui.FragmentShader {
   @override
   void setSampler(int index, ui.ImageShader sampler) {
     samplers[index] = (sampler as CkShader).skiaObject;
-    setFloat(2 * index, (sampler as CkImageShader).imageWidth.toDouble());
-    setFloat(2 * index + 1, sampler.imageHeight.toDouble());
+    setFloat(lastFloatIndex + 2 * index, (sampler as CkImageShader).imageWidth.toDouble());
+    setFloat(lastFloatIndex + 2 * index + 1, sampler.imageHeight.toDouble());
   }
 
   @override
