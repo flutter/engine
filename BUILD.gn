@@ -12,6 +12,8 @@ import("//third_party/dart/build/dart/copy_tree.gni")
 
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
+# TODO(jacksongardner): remove this poorly named argument once the recipes stop
+# using it. https://github.com/flutter/flutter/issues/113303
 declare_args() {
   full_dart_sdk = false
 }
@@ -33,7 +35,7 @@ config("export_dynamic_symbols") {
   if (is_linux || is_fuchsia) {
     inputs = [ "//flutter/common/exported_symbols.sym" ]
     ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
-  } else if (is_mac && !use_xcode) {
+  } else if (is_mac) {
     inputs = [ "//flutter/common/exported_symbols_mac.sym" ]
     ldflags = [
       "-Xlinker",
@@ -41,30 +43,6 @@ config("export_dynamic_symbols") {
       "-Xlinker",
       rebase_path(inputs[0], root_build_dir),
     ]
-  }
-}
-
-if (flutter_prebuilt_dart_sdk) {
-  copy_trees("_copy_trees") {
-    sources = [
-      {
-        target = "copy_dart_sdk"
-        visibility = [ ":dart_sdk" ]
-        source = prebuilt_dart_sdk
-        dest = "$root_out_dir/dart-sdk"
-        ignore_patterns = "{}"
-      },
-    ]
-  }
-}
-
-group("dart_sdk") {
-  if (build_engine_artifacts) {
-    if (flutter_prebuilt_dart_sdk) {
-      public_deps = [ ":copy_dart_sdk" ]
-    } else {
-      public_deps = [ "//third_party/dart:create_sdk" ]
-    }
   }
 }
 
@@ -96,7 +74,7 @@ group("flutter") {
 
     if (build_engine_artifacts) {
       public_deps += [
-        ":dart_sdk",
+        "//flutter/build/dart:dart_sdk",
         "//flutter/flutter_frontend_server:frontend_server",
 
         # This must be listed explicitly for desktop cross-builds since
@@ -135,6 +113,7 @@ group("flutter") {
       "//flutter/display_list:display_list_benchmarks",
       "//flutter/display_list:display_list_builder_benchmarks",
       "//flutter/fml:fml_benchmarks",
+      "//flutter/impeller/geometry:geometry_benchmarks",
       "//flutter/lib/ui:ui_benchmarks",
       "//flutter/shell/common:shell_benchmarks",
       "//flutter/third_party/txt:txt_benchmarks",

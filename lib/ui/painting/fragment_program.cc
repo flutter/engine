@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 #include <iostream>
+#include <memory>
+#include <sstream>
 
+#include "display_list/display_list_runtime_effect.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
 
 #include "flutter/assets/asset_manager.h"
@@ -12,6 +15,7 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
+
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -40,7 +44,22 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     return std::string("Asset '") + asset_name +
            std::string("' does not contain valid shader data.");
   }
-  {
+
+  int sampled_image_count = 0;
+  size_t other_uniforms_bytes = 0;
+  for (const auto& uniform_description : runtime_stage.GetUniforms()) {
+    if (uniform_description.type ==
+        impeller::RuntimeUniformType::kSampledImage) {
+      sampled_image_count++;
+    } else {
+      other_uniforms_bytes += uniform_description.GetSize();
+    }
+  }
+
+  if (UIDartState::Current()->IsImpellerEnabled()) {
+    runtime_effect_ = DlRuntimeEffect::MakeImpeller(
+        std::make_unique<impeller::RuntimeStage>(std::move(runtime_stage)));
+  } else {
     auto code_mapping = runtime_stage.GetCodeMapping();
     auto code_size = code_mapping->GetSize();
     const char* sksl =
@@ -52,24 +71,7 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
       return std::string("Invalid SkSL:\n") + sksl +
              std::string("\nSkSL Error:\n") + result.errorText.c_str();
     }
-    runtime_effect_ = result.effect;
-  }
-
-  int sampled_image_count = 0;
-  size_t other_uniforms_bytes = 0;
-  for (const auto& uniform_description : runtime_stage.GetUniforms()) {
-    if (uniform_description.type ==
-        impeller::RuntimeUniformType::kSampledImage) {
-      sampled_image_count++;
-    } else {
-      size_t size = uniform_description.dimensions.rows *
-                    uniform_description.dimensions.cols *
-                    uniform_description.bit_width / 8u;
-      if (uniform_description.array_elements > 0) {
-        size *= uniform_description.array_elements;
-      }
-      other_uniforms_bytes += size;
-    }
+    runtime_effect_ = DlRuntimeEffect::MakeSkia(result.effect);
   }
 
   Dart_Handle ths = Dart_HandleFromWeakPersistent(dart_wrapper());
@@ -96,7 +98,7 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
 }
 
 std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
-    sk_sp<SkData> float_uniforms,
+    std::shared_ptr<std::vector<uint8_t>> float_uniforms,
     const std::vector<std::shared_ptr<DlColorSource>>& children) {
   return DlColorSource::MakeRuntimeEffect(runtime_effect_, children,
                                           std::move(float_uniforms));

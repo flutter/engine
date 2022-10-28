@@ -5,11 +5,10 @@
 #include "linear_gradient_contents.h"
 
 #include "flutter/fml/logging.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
-#include "impeller/entity/contents/solid_fill_utils.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -74,16 +73,19 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
 
   Command cmd;
   cmd.label = "LinearGradientFill";
-  cmd.pipeline = renderer.GetLinearGradientFillPipeline(
-      OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(CreateSolidFillVertices<VS::PerVertexData>(
-      renderer.GetTessellator(),
-      GetCover()
-          ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
-          : GetPath(),
-      pass.GetTransientsBuffer()));
-  cmd.primitive_type = PrimitiveType::kTriangle;
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  cmd.pipeline = renderer.GetLinearGradientFillPipeline(options);
+
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.primitive_type = geometry_result.type;
   FS::BindGradientInfo(
       cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
   SamplerDescriptor sampler_desc;
@@ -93,7 +95,15 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
       cmd, std::move(gradient_texture),
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-  return pass.AddCommand(std::move(cmd));
+
+  if (!pass.AddCommand(std::move(cmd))) {
+    return false;
+  }
+
+  if (geometry_result.prevent_overdraw) {
+    return ClipRestoreContents().Render(renderer, entity, pass);
+  }
+  return true;
 }
 
 }  // namespace impeller

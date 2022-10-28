@@ -1112,6 +1112,8 @@ class Paint {
   //
   // The binary format must match the deserialization code in paint.cc.
 
+  // C++ unit tests access this.
+  @pragma('vm:entry-point')
   final ByteData _data = ByteData(_kDataByteCount);
 
   static const int _kIsAntiAliasIndex = 0;
@@ -1147,6 +1149,8 @@ class Paint {
   static const int _kDataByteCount = 56;
 
   // Binary format must match the deserialization code in paint.cc.
+  // C++ unit tests access this.
+  @pragma('vm:entry-point')
   List<Object?>? _objects;
 
   List<Object?> _ensureObjectsInitialized() {
@@ -2430,7 +2434,8 @@ class Path extends NativeFieldWrapperClass1 {
   /// point to the given point (x2,y2), using the control point
   /// (x1,y1).
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_quadratic_to.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_quadratic_to.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_quadratic_to_dark.png#gh-dark-mode-only)
   @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>('Path::quadraticBezierTo', isLeaf: true)
   external void quadraticBezierTo(double x1, double y1, double x2, double y2);
 
@@ -2446,7 +2451,8 @@ class Path extends NativeFieldWrapperClass1 {
   /// to the given point (x3,y3), using the control points (x1,y1) and
   /// (x2,y2).
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_cubic_to.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_cubic_to.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_cubic_to_dark.png#gh-dark-mode-only)
   @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>('Path::cubicTo', isLeaf: true)
   external void cubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
 
@@ -2463,7 +2469,8 @@ class Path extends NativeFieldWrapperClass1 {
   /// hyperbola; if the weight equals 1, it's a parabola; and if it is
   /// less than 1, it is an ellipse.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_conic_to.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_conic_to.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_conic_to_dark.png#gh-dark-mode-only)
   @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>('Path::conicTo', isLeaf: true)
   external void conicTo(double x1, double y1, double x2, double y2, double w);
 
@@ -2594,9 +2601,11 @@ class Path extends NativeFieldWrapperClass1 {
   /// rectangle and with positive angles going clockwise around the
   /// oval.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc_dark.png#gh-dark-mode-only)
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc_ccw.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc_ccw.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_add_arc_ccw_dark.png#gh-dark-mode-only)
   void addArc(Rect oval, double startAngle, double sweepAngle) {
     assert(_rectIsValid(oval));
     _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
@@ -4179,7 +4188,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
       <String, WeakReference<FragmentProgram>>{};
 
   static void _reinitializeShader(String assetKey) {
-    // If a shader for the assent isn't already registered, then there's no
+    // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
     final WeakReference<FragmentProgram>? programRef = _shaderRegistry == null
@@ -4913,7 +4922,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// The `p1` and `p2` arguments are interpreted as offsets from the origin.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_line.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_line.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_line_dark.png#gh-dark-mode-only)
   void drawLine(Offset p1, Offset p2, Paint paint) {
     assert(_offsetIsValid(p1));
     assert(_offsetIsValid(p2));
@@ -4939,7 +4949,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_rect.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_rect.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_rect_dark.png#gh-dark-mode-only)
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
@@ -4952,7 +4963,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
   /// filled or stroked (or both) is controlled by [Paint.style].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_rrect.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_rrect.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_rrect_dark.png#gh-dark-mode-only)
   void drawRRect(RRect rrect, Paint paint) {
     assert(_rrectIsValid(rrect));
     assert(paint != null);
@@ -4981,7 +4993,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// with the given [Paint]. Whether the oval is filled or stroked (or both) is
   /// controlled by [Paint.style].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_oval.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_oval.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_oval_dark.png#gh-dark-mode-only)
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
@@ -4996,7 +5009,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// the third argument. Whether the circle is filled or stroked (or both) is
   /// controlled by [Paint.style].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_circle.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_circle.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_circle_dark.png#gh-dark-mode-only)
   void drawCircle(Offset c, double radius, Paint paint) {
     assert(_offsetIsValid(c));
     assert(paint != null);
@@ -5016,7 +5030,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// closed back to the center, forming a circle sector. Otherwise, the arc is
   /// not closed, forming a circle segment.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_draw_arc.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_draw_arc.png#gh-light-mode-only)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/canvas_draw_arc_dark.png#gh-dark-mode-only)
   ///
   /// This method is optimized for drawing arcs and should be faster than [Path.arcTo].
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
@@ -6086,11 +6101,29 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     }).then((int length) => instance.._length = length);
   }
 
+  /// Create a buffer from the file with [path].
+  ///
+  /// Throws an [Exception] if the asset does not exist.
+  static Future<ImmutableBuffer> fromFilePath(String path) {
+    final ImmutableBuffer instance = ImmutableBuffer._(0);
+    return _futurize((_Callback<int> callback) {
+      return instance._initFromFile(path, callback);
+    }).then((int length) {
+      if (length == -1) {
+        throw Exception('Could not load file at $path.');
+      }
+      return instance.._length = length;
+    });
+  }
+
   @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::init')
   external String? _init(Uint8List list, _Callback<void> callback);
 
   @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::initFromAsset')
   external String? _initFromAsset(String assetKey, _Callback<int> callback);
+
+  @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::initFromFile')
+  external String? _initFromFile(String assetKey, _Callback<int> callback);
 
   /// The length, in bytes, of the underlying data.
   int get length => _length;

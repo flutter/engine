@@ -556,8 +556,13 @@ InferVulkanPlatformViewCreationCallback(
     return ptr(user_data, &image_desc);
   };
 
+  auto vk_instance = static_cast<VkInstance>(config->vulkan.instance);
+  auto proc_addr =
+      vulkan_get_instance_proc_address(vk_instance, "GetInstanceProcAddr");
+
   flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
-      .get_instance_proc_address = vulkan_get_instance_proc_address,
+      .get_instance_proc_address =
+          reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc_addr),
       .get_next_image = vulkan_get_next_image,
       .present_image = vulkan_present_image_callback,
   };
@@ -567,8 +572,7 @@ InferVulkanPlatformViewCreationCallback(
 
   std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
       std::make_unique<flutter::EmbedderSurfaceVulkan>(
-          config->vulkan.version,
-          static_cast<VkInstance>(config->vulkan.instance),
+          config->vulkan.version, vk_instance,
           config->vulkan.enabled_instance_extension_count,
           config->vulkan.enabled_instance_extensions,
           config->vulkan.enabled_device_extension_count,
@@ -1462,6 +1466,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                   node.customAccessibilityActions.size(),
                   node.customAccessibilityActions.data(),
                   node.platformViewId,
+                  node.tooltip.c_str(),
               };
               update_semantics_node_callback(&embedder_node, user_data);
             }

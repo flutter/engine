@@ -695,8 +695,7 @@ void _matrix4x4CompositionTests() {
     final bool areEqual =
         await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
     expect(areEqual, true);
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 void _toSkRectTests() {
@@ -1402,8 +1401,7 @@ void _canvasTests() {
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 void _textStyleTests() {
@@ -1467,8 +1465,8 @@ void _textStyleTests() {
 
 void _paragraphTests() {
   setUpAll(() async {
-    CanvasKitRenderer.instance.fontCollection.debugRegisterTestFonts();
-    await CanvasKitRenderer.instance.fontCollection.ensureFontsLoaded();
+    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
+    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
   });
 
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
