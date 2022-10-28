@@ -333,7 +333,7 @@ class HtmlRenderer implements Renderer {
     _viewEmbedder.addSceneToSceneHost((scene as SurfaceScene).webOnlyRootElement);
     frameTimingsOnRasterFinish();
   }
-  
+
   @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     return Future<HtmlFragmentProgram>.value(HtmlFragmentProgram());
