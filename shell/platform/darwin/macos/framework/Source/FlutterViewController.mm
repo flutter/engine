@@ -843,8 +843,8 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)touchesBeganWithEvent:(NSEvent*)event {
   NSTouch* touch = event.allTouches.anyObject;
   if (touch != nil) {
-    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) < 0.010) {
-      // The trackpad has been touched within 10 ms following a scroll momentum event.
+    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) < 0.050) {
+      // The trackpad has been touched within 50 ms following a scroll momentum event.
       // A scroll inertia cancel message should be sent to the framework.
       NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
       NSPoint locationInBackingCoordinates =
