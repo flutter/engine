@@ -34,10 +34,10 @@ class CursorHandler {
 
 // Create cursor from buffer and cursor info
 HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
-                                   double hotx,
-                                   double hoty,
-                                   int width,
-                                   int height);
+                            double hotx,
+                            double hoty,
+                            int width,
+                            int height);
 
 }  // namespace flutter
 
