@@ -18,7 +18,7 @@ TEST(CursorHandlerTest, CreateDummyCursor) {
     buffer.push_back(0);
   }
   // get cursor
-  auto cursor = GetCursorFromBuffer(buffer, 0, 0, 4, 4);
+  auto cursor = GetCursorFromBuffer(buffer, 0.0, 0.0, 4, 4);
   // expect cursor is not null
   EXPECT_NE(cursor, nullptr);
 }
