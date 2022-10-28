@@ -127,14 +127,9 @@ void DartCallbackCache::LoadCacheFromDisk() {
   }
   std::string cache_contents{std::istreambuf_iterator<char>(input),
                              std::istreambuf_iterator<char>()};
-  if (cache_contents.empty()) {
-    return;
-  }
   Document d;
   d.Parse(cache_contents.c_str());
   if (d.HasParseError() || !d.IsArray()) {
-    FML_LOG(INFO) << "Could not parse callback cache, aborting restore";
-    // TODO(bkonyi): log and bail (delete cache?)
     return;
   }
   const auto entries = d.GetArray();
