@@ -422,7 +422,6 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
         coverage=coverage
     )
     # Impeller tests are only supported on macOS for now.
-    xcode_location = subprocess.check_output(['xcode-select', '-p'])
     RunEngineExecutable(
         build_dir,
         'impeller_unittests',
@@ -430,23 +429,14 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
         shuffle_flags,
         coverage=coverage,
         extra_env={
-            'DYLD_INSERT_LIBRARIES':
-                '/usr/lib/libMTLCapture.dylib:%s/Platforms/MacOSX.platform/Developer/Library/GPUToolsPlatform/libMTLToolsDiagnostics.dylib'
-                % xcode_location,
-            'METAL_DEBUG_ERROR_MODE':
-                '0',
-            'METAL_DEVICE_FORCE_COMMAND_BUFFER_ENHANCED_ERRORS':
-                '1',
-            'METAL_DEVICE_WRAPPER_TYPE':
-                '5',
-            'METAL_DIAGNOSTICS_ENABLED':
-                '1',
-            'METAL_LOAD_INTERPOSER':
-                '1',
-            'MTL_FORCE_COMMAND_BUFFER_ENHANCED_ERRORS':
-                '1',
-            'DYMTL_TOOLS_DYLIB_PATH':
-                '/usr/lib/libMTLCapture.dylib',
+            # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+            'MTL_SHADER_VALIDATION': 1,  # Enables all shader validation tests.
+            'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+                1,  # Validates accesses to device and constant memory.
+            'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
+                1,  # Validates accesses to threadgroup memory.
+            'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
+                1,  # Validates that texture references are not nil.
         }
     )
 
