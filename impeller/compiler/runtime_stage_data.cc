@@ -7,9 +7,7 @@
 #include <array>
 #include <optional>
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "inja/inja.hpp"
 
 #include "impeller/base/validation.h"
 #include "impeller/runtime_stage/runtime_stage_flatbuffers.h"
@@ -213,10 +211,7 @@ static const char* kUniformBitWidthKey = "bit_width";
 static const char* kUniformArrayElementsKey = "array_elements";
 
 std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
-  using rapidjson::StringBuffer;
-  using rapidjson::Writer;
-
-  // Runtime Stage JSON format
+  // Runtime Stage Data JSON format
   //   {
   //      "stage": 0,
   //      "target_platform": "",
@@ -234,45 +229,35 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
   //        }
   //      ]
   //   },
-  StringBuffer s;
-  Writer<StringBuffer> writer(s);
-  writer.StartObject();
+  nlohmann::json root;
 
   const auto stage = ToJsonStage(stage_);
   if (!stage.has_value()) {
     VALIDATION_LOG << "Invalid runtime stage.";
     return nullptr;
   }
-  writer.Key(kStageKey);
-  writer.Int64(stage.value());
+  root[kStageKey] = stage.value();
 
   const auto target_platform = ToJsonTargetPlatform(target_platform_);
   if (!target_platform.has_value()) {
     VALIDATION_LOG << "Invalid target platform for runtime stage.";
     return nullptr;
   }
-  writer.Key(kTargetPlatformKey);
-  writer.Int64(target_platform.value());
+  root[kTargetPlatformKey] = target_platform.value();
 
   if (shader_->GetSize() > 0u) {
     std::string shader(reinterpret_cast<const char*>(shader_->GetMapping()),
                        shader_->GetSize());
-    writer.Key(kShaderKey);
-    writer.String(shader.c_str());
+    root[kShaderKey] = shader.c_str();
   }
 
-  writer.Key(kUniformsKey);
-  writer.StartArray();
+  auto& uniforms = root[kUniformsKey] = nlohmann::json::array_t{};
   for (const auto& uniform : uniforms_) {
-    writer.StartObject();
-    writer.Key(kUniformNameKey);
-    writer.String(uniform.name.c_str());
-    writer.Key(kUniformLocationKey);
-    writer.Int64(uniform.location);
-    writer.Key(kUniformRowsKey);
-    writer.Int64(uniform.rows);
-    writer.Key(kUniformColumnsKey);
-    writer.Int64(uniform.columns);
+    nlohmann::json uniform_object;
+    uniform_object[kUniformNameKey] = uniform.name.c_str();
+    uniform_object[kUniformLocationKey] = uniform.location;
+    uniform_object[kUniformRowsKey] = uniform.rows;
+    uniform_object[kUniformColumnsKey] = uniform.columns;
 
     auto uniform_type = ToJsonType(uniform.type);
     if (!uniform_type.has_value()) {
@@ -280,21 +265,22 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
       return nullptr;
     }
 
-    writer.Key(kUniformTypeKey);
-    writer.Int64(uniform_type.value());
-    writer.Key(kUniformBitWidthKey);
-    writer.Int64(uniform.bit_width);
-    writer.Key(kUniformArrayElementsKey);
+    uniform_object[kUniformTypeKey] = uniform_type.value();
+    uniform_object[kUniformBitWidthKey] = uniform.bit_width;
+
     if (uniform.array_elements.has_value()) {
-      writer.Int64(uniform.array_elements.value());
+      uniform_object[kUniformArrayElementsKey] = uniform.array_elements.value();
     } else {
-      writer.Int64(0);
+      uniform_object[kUniformArrayElementsKey] = 0;
     }
-    writer.EndObject();
+    uniforms.push_back(uniform_object);
   }
-  writer.EndArray();
-  writer.EndObject();
-  return std::make_shared<fml::DataMapping>(s.GetString());
+
+  auto json_string = std::make_shared<std::string>(root.dump(2u));
+
+  return std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(json_string->data()),
+      json_string->size(), [json_string](auto, auto) {});
 }
 
 std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {

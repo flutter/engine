@@ -27,7 +27,7 @@ if (enable_unittests) {
   impellerc("ink_sparkle_web") {
     shaders = [ "//flutter/impeller/fixtures/ink_sparkle_web.frag" ]
     shader_target_flag = "--sksl"
-    intermediates_subdir = "iplr"
+    intermediates_subdir = "iplr-json"
     sl_file_extension = "iplr"
     iplr = true
     json = true
