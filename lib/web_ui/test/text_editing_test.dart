@@ -2231,6 +2231,22 @@ Future<void> testMain() async {
       );
     });
 
+    test('Sets default composing offsets if none given', () {
+      final EditingState editingState =
+          EditingState(text: 'Test', baseOffset: 2, extentOffset: 4);
+      final EditingState editingStateFromFrameworkMsg =
+          EditingState.fromFrameworkMessage(<String, dynamic>{
+        'selectionBase': 10,
+        'selectionExtent': 4,
+      });
+
+      expect(editingState.composingBaseOffset, -1);
+      expect(editingState.composingExtentOffset, -1);
+
+      expect(editingStateFromFrameworkMsg.composingBaseOffset, -1);
+      expect(editingStateFromFrameworkMsg.composingExtentOffset, -1);
+    });
+
     test('Correctly identifies min and max offsets', () {
       final EditingState flippedEditingState =
           EditingState(baseOffset: 10, extentOffset: 4);
