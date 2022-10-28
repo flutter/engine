@@ -137,7 +137,6 @@ Future<void> copyDart2WasmRuntime() async {
   ));
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
-    'test',
     'dart2wasm_runtime.mjs',
   ));
 
@@ -151,7 +150,6 @@ Future<void> copyDart2WasmTestScript() async {
   ));
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
-    'test',
     'test_dart2wasm.js',
   ));
   await sourceFile.copy(targetDir.path);

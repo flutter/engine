@@ -445,7 +445,7 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase">';
 
-      final String testRunner = wasm ? 'test_dart2wasm.js' : 'packages/test/dart.js';
+      final String testRunner = wasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
       return shelf.Response.ok('''
         <!DOCTYPE html>
@@ -966,6 +966,10 @@ class BrowserManager {
   /// Closes the manager and releases any resources it owns, including closing
   /// the browser.
   Future<void> close() => _closeMemoizer.runOnce(() {
+        if (Configuration.current.pauseAfterLoad) {
+          print('Test run finished. Press enter to close browser...');
+          stdin.readLineSync();
+        }
         _closed = true;
         _timer.cancel();
         _pauseCompleter?.complete();
