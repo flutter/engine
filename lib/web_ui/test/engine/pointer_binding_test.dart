@@ -1152,7 +1152,7 @@ void testMain() {
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
-    'does set pointer device kind based on delta precision',
+    'does set pointer device kind based on delta precision and wheelDelta',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -1166,6 +1166,8 @@ void testMain() {
         clientY: 10,
         deltaX: 10,
         deltaY: 10,
+        wheelDeltaX: -30,
+        wheelDeltaY: -30,
       ));
 
       glassPane.dispatchEvent(context.wheel(
@@ -1174,9 +1176,21 @@ void testMain() {
         clientY: 10,
         deltaX: 0,
         deltaY: 120,
+        wheelDeltaX: 0,
+        wheelDeltaY: -360,
       ));
 
-      expect(packets, hasLength(2));
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 40,
+        wheelDeltaX: 0,
+        wheelDeltaY: -360,
+      ));
+
+      expect(packets, hasLength(3));
 
       // An add will be synthesized.
       expect(packets[0].data, hasLength(2));
@@ -1187,7 +1201,8 @@ void testMain() {
       expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
       expect(packets[0].data[0].physicalDeltaY, equals(0.0));
-      // Because the delta is not in increments of 120, it will be a trackpad event.
+      // Because the delta is not in increments of 120 and has matching wheelDelta,
+      // it will be a trackpad event.
       expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
       expect(
           packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
@@ -1217,6 +1232,23 @@ void testMain() {
       expect(packets[1].data[0].physicalDeltaY, equals(0.0));
       expect(packets[1].data[0].scrollDeltaX, equals(0.0));
       expect(packets[1].data[0].scrollDeltaY, equals(120.0));
+
+      // Because the delta is not in increments of 120 and has non-matching
+      // wheelDelta, it will be a mouse event.
+      expect(packets[2].data, hasLength(1));
+      expect(packets[2].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[2].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[2].data[0].pointerIdentifier, equals(0));
+      expect(packets[2].data[0].synthesized, isFalse);
+      expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaY, equals(40.0));
     },
   );
 
@@ -2927,6 +2959,8 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? clientY,
     required double? deltaX,
     required double? deltaY,
+    double? wheelDeltaX,
+    double? wheelDeltaY,
   }) {
     final Function jsWheelEvent = js_util.getProperty<Function>(domWindow, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
@@ -2937,6 +2971,8 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         'clientY': clientY,
         'deltaX': deltaX,
         'deltaY': deltaY,
+        'wheelDeltaX': wheelDeltaX,
+        'wheelDeltaY': wheelDeltaY,
       }
     ];
     return js_util.callConstructor<DomEvent>(
