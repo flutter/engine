@@ -83,7 +83,7 @@ abstract class PlatformDispatcher {
   VoidCallback? get onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
-  void updateSemantics(SemanticsUpdate update, [FlutterView view]);
+  void updateSemantics(SemanticsUpdate update);
 
   Locale get locale;
 

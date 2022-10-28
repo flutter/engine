@@ -16,7 +16,7 @@ abstract class FlutterView {
   WindowPadding get padding => viewConfiguration.padding;
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update, this);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
 
 abstract class FlutterWindow extends FlutterView {
