@@ -341,10 +341,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
-    if ((event.deltaX % 120 != 0 || event.deltaY % 120 != 0) &&
+    if ((browserEngine == BrowserEngine.blink || browserEngine == BrowserEngine.webkit) &&
+        (event.deltaX % 120 != 0 || event.deltaY % 120 != 0) &&
         ((event.wheelDeltaX ?? (-3 * event.deltaX)) == -3 * event.deltaX) &&
         ((event.wheelDeltaY ?? (-3 * event.deltaY)) == -3 * event.deltaY)) {
-      // While not standardized, all major browsers use a delta of 120 to
+      // While not standardized, `blink` and `webkit` browsers use a delta of 120 to
       // represent one mouse wheel turn. If either dimension of the delta
       // is not divisible by 120, this event is not a normal mouse wheel event.
       // On macOS, mouse wheel events by default have an acceleration curve applied,

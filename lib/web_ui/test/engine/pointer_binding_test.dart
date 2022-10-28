@@ -1154,6 +1154,11 @@ void testMain() {
     ],
     'does set pointer device kind based on delta precision and wheelDelta',
     (_ButtonedEventMixin context) {
+      if (isFirefox) {
+        // Firefox does not support trackpad events, as they cannot be
+        // disambiguated from smoothed mouse wheel events.
+        return;
+      }
       PointerBinding.instance!.debugOverrideDetector(context);
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
