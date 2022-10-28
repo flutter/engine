@@ -131,9 +131,6 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
 
-  @override
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update, this);
-
   void sendPlatformMessage(
     String name,
     ByteData? data,
