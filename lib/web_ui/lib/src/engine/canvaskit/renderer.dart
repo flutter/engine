@@ -381,7 +381,7 @@ class CanvasKitRenderer implements Renderer {
   }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
-  
+
   @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     if (_programs.containsKey(assetKey)) {
@@ -404,7 +404,7 @@ class CanvasKitRenderer implements Renderer {
       }
 
       final List<UniformData> uniforms = List<UniformData>.filled(rawUniforms.length, UniformData.empty);
-      
+
       int textureCount = 0;
       int floatCount = 0;
       for (int i = 0; i < rawUniforms.length; i += 1) {
