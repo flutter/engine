@@ -2571,7 +2571,8 @@ class SkRuntimeEffect {}
 external SkRuntimeEffect MakeRuntimeEffect(String program);
 
 extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
-  external SkShader makeShader(List<Object> uniforms);
+  external SkShader? makeShader(List<Object> uniforms);
+  external SkShader? makeShaderWithChildren(List<Object> uniforms, List<Object> children);
 }
 
 /// Monkey-patch the top-level `module` and `exports` objects so that

@@ -326,10 +326,10 @@ class CkFragmentShader implements ui.FragmentShader {
 
   final String source;
   List<double> floats = <double>[];
-  final List<ui.ImageShader> samplers = <ui.ImageShader>[];
+  List<CkShader?> samplers = <CkShader?>[];
 
   CkShader createShader() {
-    return CkFragmentInstance(source, floats);
+    return CkFragmentInstance(source, floats, List<SkShader>.from(samplers.where((x) => x != null).map((x) => x!.skiaObject).toList().cast<SkShader>()));
   }
 
   @override
@@ -347,7 +347,17 @@ class CkFragmentShader implements ui.FragmentShader {
 
   @override
   void setSampler(int index, ui.ImageShader sampler) {
-    samplers[index] = sampler;
+    // TODO, get uniform length from IPLR.
+    if (index >= samplers.length) {
+      final List<CkShader?> newSamplers = List<CkShader?>.filled(index + 1, null);
+      for (int i = 0; i < samplers.length; i++) {
+        newSamplers[i] = samplers[i];
+      }
+      samplers = newSamplers;
+    }
+    samplers[index] = sampler as CkShader;
+    setFloat(3, (sampler as CkImageShader).imageWidth.toDouble());
+    setFloat(4, sampler.imageHeight.toDouble());
   }
 
   @override
@@ -365,18 +375,32 @@ class CkFragmentShader implements ui.FragmentShader {
 }
 
 class CkFragmentInstance extends CkShader {
-  CkFragmentInstance(this.source, this.floats);
+  CkFragmentInstance(this.source, this.floats, this.shaders);
 
   final String source;
   final List<double> floats;
+  final List<SkShader> shaders;
 
   @override
   SkShader createDefault() {
-    return MakeRuntimeEffect(source).makeShader(floats);
+    print(source);
+    print(floats);
+    print(shaders);
+    final SkShader? result = MakeRuntimeEffect(source).makeShaderWithChildren(floats, shaders);
+    if (result == null) {
+      print('Error compiling $source with $floats/$shaders');
+      throw Exception();
+    }
+    return result;
   }
 
   @override
   SkShader resurrect() {
-    return MakeRuntimeEffect(source).makeShader(floats);
+    final SkShader? result = MakeRuntimeEffect(source).makeShaderWithChildren(floats, shaders);
+    if (result == null) {
+      print('Error compiling $source with $floats/$shaders');
+      throw Exception();
+    }
+    return result;
   }
 }
