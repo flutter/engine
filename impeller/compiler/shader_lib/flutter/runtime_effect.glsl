@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef RUNTIME_EFFECT_GLSL_
+#define RUNTIME_EFFECT_GLSL_
+
 #if defined(IMPELLER_GRAPHICS_BACKEND)
 
 in vec2 _fragCoord;
@@ -17,4 +20,6 @@ vec2 FlutterFragCoord() {
 
 #else
 #error "Runtime effect builtins are not supported for this graphics backend."
+#endif
+
 #endif
