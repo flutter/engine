@@ -2242,6 +2242,7 @@ Future<void> testMain() async {
       expect(normalEditingState.minOffset, 2);
       expect(normalEditingState.maxOffset, 6);
     });
+    
     test('Configure input element from the editing state', () {
       final DomHTMLInputElement input =
           defaultTextEditingRoot.querySelector('input')! as DomHTMLInputElement;
