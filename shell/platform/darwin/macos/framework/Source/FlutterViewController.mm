@@ -382,6 +382,9 @@ static void CommonInit(FlutterViewController* controller) {
     }
     flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
   }
+  if (_backgroundColor != nil) {
+    [flutterView setBackgroundColor:_backgroundColor];
+  }
   FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView];
   self.view = wrapperView;
   _flutterView = flutterView;
@@ -426,7 +429,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)setBackgroundColor:(NSColor*)color {
   _backgroundColor = color;
-  [(FlutterViewWrapper*)[self view] setBackgroundColor:_backgroundColor];
+  [_flutterView setBackgroundColor:_backgroundColor];
 }
 
 - (void)onPreEngineRestart {
