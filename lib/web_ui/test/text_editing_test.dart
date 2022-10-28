@@ -2360,6 +2360,7 @@ Future<void> testMain() async {
         expect(editingState1 == editingState2, isTrue);
         expect(editingState1 != editingState3, isTrue);
       });
+
       test('Takes flipped base and extent offsets into account', () {
         final EditingState flippedEditingState =
             EditingState(baseOffset: 10, extentOffset: 4);
