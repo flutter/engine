@@ -1,4 +1,4 @@
-Signature: 793f8e35dc218f42466903cda878f49c
+Signature: f5592bed0625cc4ebbd3ee4e84efff66
 
 UNUSED LICENSES:
 
@@ -3797,11 +3797,6 @@ FILE: ../../../third_party/skia/src/ports/SkImageGeneratorCG.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageGeneratorWIC.cpp
 FILE: ../../../third_party/skia/src/shaders/SkColorFilterShader.h
 FILE: ../../../third_party/skia/src/shaders/SkColorShader.cpp
-FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.cpp
-FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.h
-FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientPriv.h
-FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fLinearGradient.cpp
-FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fLinearGradient.h
 FILE: ../../../third_party/skia/src/sksl/SkSLCompiler.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLCompiler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.h
