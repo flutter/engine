@@ -562,7 +562,8 @@ def to_gn_args(args):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     # Force ANGLE context checks on Windows to prevent crashes.
-    # See: https://github.com/flutter/flutter/issues/110311
+    # TODO(loic-sharma): Remove this once ANGLE crashes have been fixed.
+    # https://github.com/flutter/flutter/issues/114107
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
     # Requires RTTI. We may want to build this in debug modes, punting on that
