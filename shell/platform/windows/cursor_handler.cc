@@ -13,15 +13,15 @@ static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
-// [kSetCustomCursorMethod] allows developers to set a custom cursor with
-// rawRGBA buffer.
-static constexpr char kSetCustomCursorMethod[] = "setCustomCursor";
-// std::vector<uint8_t> value for custom cursor rawRGBA buffer.
+// This method allows setting a custom cursor with rawRGBA buffer.
+static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
+// A list of bytes, the custom cursor's rawRGBA buffer.
 static constexpr char kCustomCursorBufferKey[] = "buffer";
-// double value for the hotx value of custom cursor.
-static constexpr char kCustomCursorHotxKey[] = "hotx";
-// double value for the hoty value of custom cursor.
-static constexpr char kCustomCursorHotyKey[] = "hoty";
+// A double, the x coordinate of the custom cursor's hotspot, starting from
+// left.
+static constexpr char kCustomCursorHotXKey[] = "hotX";
+// A double, the y coordinate of the custom cursor's hotspot, starting from top.
+static constexpr char kCustomCursorHotYKey[] = "hotY";
 // int value for the width of custom cursor.
 static constexpr char kCustomCursorWidthKey[] = "width";
 // int value for the height of custom cursor.
@@ -87,25 +87,25 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     auto height = std::get<int>(height_iter->second);
-    auto hotx_iter =
-        arguments.find(EncodableValue(std::string(kCustomCursorHotxKey)));
-    if (hotx_iter == arguments.end()) {
+    auto hot_x_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorHotXKey)));
+    if (hot_x_iter == arguments.end()) {
       result->Error(
           "Argument error",
-          "Missing argument hotx while trying to customize system cursor");
+          "Missing argument hotX while trying to customize system cursor");
       return;
     }
-    auto hotx = std::get<double>(hotx_iter->second);
-    auto hoty_iter =
-        arguments.find(EncodableValue(std::string(kCustomCursorHotyKey)));
-    if (hoty_iter == arguments.end()) {
+    auto hot_x = std::get<double>(hot_x_iter->second);
+    auto hot_y_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorHotYKey)));
+    if (hot_y_iter == arguments.end()) {
       result->Error(
           "Argument error",
-          "Missing argument hoty while trying to customize system cursor");
+          "Missing argument hotY while trying to customize system cursor");
       return;
     }
-    auto hoty = std::get<double>(hoty_iter->second);
-    HCURSOR cursor = GetCursorFromBuffer(buffer, hotx, hoty, width, height);
+    auto hot_y = std::get<double>(hot_y_iter->second);
+    HCURSOR cursor = GetCursorFromBuffer(buffer, hot_x, hot_y, width, height);
     if (cursor == nullptr) {
       result->Error("Argument error",
                     "Argument must contain valid rawRgba bitmap");
@@ -119,20 +119,20 @@ void CursorHandler::HandleMethodCall(
 }
 
 HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
-                            double hotx,
-                            double hoty,
+                            double hot_x,
+                            double hot_y,
                             int width,
                             int height) {
   HCURSOR cursor = nullptr;
-  // Flutter returns rawRgba, which has 8bits * 4channels
+  // Flutter returns rawRgba, which has 8bits * 4channels.
   auto bitmap = CreateBitmap(width, height, 1, 32, &buffer[0]);
   if (bitmap == nullptr) {
     return nullptr;
   }
   ICONINFO icon_info;
   icon_info.fIcon = 0;
-  icon_info.xHotspot = hotx;
-  icon_info.yHotspot = hoty;
+  icon_info.xHotspot = hot_x;
+  icon_info.yHotspot = hot_y;
   icon_info.hbmMask = bitmap;
   icon_info.hbmColor = bitmap;
   cursor = CreateIconIndirect(&icon_info);

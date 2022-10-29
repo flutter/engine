@@ -32,10 +32,10 @@ class CursorHandler {
   WindowBindingHandler* delegate_;
 };
 
-// Create cursor from buffer and cursor info
+// Create a cursor from buffer and cursor info.
 HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
-                            double hotx,
-                            double hoty,
+                            double hot_x,
+                            double hot_y,
                             int width,
                             int height);
 
