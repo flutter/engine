@@ -32,6 +32,10 @@ void RuntimeStageData::SetShaderData(std::shared_ptr<fml::Mapping> shader) {
   shader_ = std::move(shader);
 }
 
+void RuntimeStageData::SetSkSLData(std::shared_ptr<fml::Mapping> sksl) {
+  sksl_ = std::move(sksl);
+}
+
 static std::optional<fb::Stage> ToStage(spv::ExecutionModel stage) {
   switch (stage) {
     case spv::ExecutionModel::ExecutionModelVertex:
@@ -201,7 +205,7 @@ static const char* kStageKey = "stage";
 static const char* kTargetPlatformKey = "target_platform";
 static const char* kEntrypointKey = "entrypoint";
 static const char* kUniformsKey = "uniforms";
-static const char* kShaderKey = "shader";
+static const char* kShaderKey = "sksl";
 static const char* kUniformNameKey = "name";
 static const char* kUniformLocationKey = "location";
 static const char* kUniformTypeKey = "type";
@@ -217,6 +221,7 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
   //      "target_platform": "",
   //      "entrypoint": "",
   //      "shader": "",
+  //      "sksl": "",
   //      "uniforms": [
   //        {
   //           "name": "..",
@@ -307,6 +312,11 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
   if (shader_->GetSize() > 0u) {
     runtime_stage.shader = {shader_->GetMapping(),
                             shader_->GetMapping() + shader_->GetSize()};
+  }
+  // It is not an error for the SkSL to be ommitted.
+  if (sksl_->GetSize() > 0u) {
+    runtime_stage.sksl = {sksl_->GetMapping(),
+                          sksl_->GetMapping() + sksl_->GetSize()};
   }
   for (const auto& uniform : uniforms_) {
     auto desc = std::make_unique<fb::UniformDescriptionT>();
