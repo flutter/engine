@@ -674,10 +674,6 @@ class EditingState {
         // Don't allow negative numbers.
         extentOffset = math.max(0, extentOffset ?? 0);
 
-  // Pick the smallest selection index for base.
-  int get minOffset => math.min(baseOffset ?? 0, extentOffset ?? 0);
-  // Pick the greatest selection index for extent.
-  int get maxOffset => math.max(baseOffset ?? 0, extentOffset ?? 0);
   /// Creates an [EditingState] instance using values from an editing state Map
   /// coming from Flutter.
   ///
@@ -739,6 +735,11 @@ class EditingState {
       throw UnsupportedError('Initialized with unsupported input type');
     }
   }
+
+  // Pick the smallest selection index for base.
+  int get minOffset => math.min(baseOffset ?? 0, extentOffset ?? 0);
+  // Pick the greatest selection index for extent.
+  int get maxOffset => math.max(baseOffset ?? 0, extentOffset ?? 0);
 
     EditingState copyWith({
      String? text,
