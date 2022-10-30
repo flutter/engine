@@ -9,7 +9,6 @@
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/src/codec/SkPngCodec.h"
-#include "third_party/skia/src/core/SkRasterPipeline.h"
 #include "third_party/zlib/zlib.h"  // For crc32
 
 namespace flutter {
@@ -521,6 +520,7 @@ void APNGImageGenerator::BlendLine(SkColorType dest_colortype,
                                    SkAlphaType dest_alphatype,
                                    SkCodecAnimation::Blend blend_mode,
                                    int width) {
+  /*
   SkRasterPipeline_MemoryCtx dst_ctx = {dest, 0},
                              src_ctx = {const_cast<void*>(source), 0};
 
@@ -544,6 +544,7 @@ void APNGImageGenerator::BlendLine(SkColorType dest_colortype,
   p.append_store(dest_colortype, &dst_ctx);
 
   p.run(0, 0, width, 1);
+  */
 }
 
 bool APNGImageGenerator::RenderDefaultImage(const SkImageInfo& info,
