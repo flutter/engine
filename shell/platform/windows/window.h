@@ -301,7 +301,7 @@ class Window : public KeyboardManager::WindowDelegate {
   const static int kDirectManipulationTimer = 1;
 
   // Frequency (Hz) to poll for DirectManipulation updates.
-  int directManipulationPollingRate_ = 60;
+  int directManipulationPollingRate_ = 240;
 };
 
 }  // namespace flutter

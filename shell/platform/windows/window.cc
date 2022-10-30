@@ -111,7 +111,7 @@ void Window::InitializeChild(const char* title,
   ZeroMemory(&dmi, sizeof(dmi));
   dmi.dmSize = sizeof(dmi);
   if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmi)) {
-    directManipulationPollingRate_ = dmi.dmDisplayFrequency;
+    directManipulationPollingRate_ = 4 * dmi.dmDisplayFrequency;
   } else {
     OutputDebugString(
         L"Failed to get framerate, will use default of 60 Hz for gesture "
