@@ -107,6 +107,8 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   std::optional<unsigned int> prior_frame_index = std::nullopt;
 
   if (requiredFrameIndex != SkCodec::kNoFrame) {
+    // We currently assume that frames can only ever depend on the immediately
+    // previous frame, if any.
     if (lastRequiredFrame_ == nullptr) {
       FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
                      << requiredFrameIndex
@@ -118,6 +120,8 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
                      << " instead";
     }
 
+    // Copy the previous frame's output buffer into the current frame as the
+    // starting point.
     if (lastRequiredFrame_->getPixels() &&
         CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
                      *lastRequiredFrame_)) {
@@ -125,6 +129,8 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     }
   }
 
+  // Write the new frame to the output buffer. The bitmap pixels as supplied
+  // are already set in accordance with the previous frame's disposal policy.
   if (!generator_->GetPixels(info, bitmap.getPixels(), bitmap.rowBytes(),
                              nextFrameIndex_, requiredFrameIndex)) {
     FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
