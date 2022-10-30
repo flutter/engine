@@ -4,9 +4,13 @@
 
 #include "image_generator_apng.h"
 #include <cstddef>
+#include <cstring>
 
+#include "flutter/fml/logging.h"
 #include "third_party/libpng/png.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/src/codec/SkPngCodec.h"
 #include "third_party/zlib/zlib.h"  // For crc32
@@ -101,15 +105,78 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
   /// 3. Composite the frame onto the canvas.
   ///
 
-  for (int i = 0; i < frame_info.height(); i++) {
-    void* source = frame.pixels.data() + i * frame_row_bytes;
-    void* destination = static_cast<uint8_t*>(pixels) +
-                        frame.x_offset * frame_info.bytesPerPixel() +
-                        (i + frame.y_offset) * row_bytes;
+  FML_DCHECK(info.colorType() == kN32_SkColorType);
+  FML_DCHECK(frame_info.colorType() == kN32_SkColorType);
 
-    BlendLine(info.colorType(), destination, frame_info.colorType(), source,
-              info.alphaType(), frame.frame_info->blend_mode,
-              frame_info.width());
+  // Regardless of the byte order (RGBA vs BGRA), the blending operations are
+  // the same.
+  struct Pixel {
+    uint8_t channel[4];
+
+    uint8_t GetAlpha() { return channel[3]; }
+
+    void SetAlpha(uint8_t value) { channel[3] = value; }
+
+    void Premultiply() {
+      for (int i = 0; i < 3; i++) {
+        channel[i] = channel[i] * GetAlpha() / 0xFF;
+      }
+    }
+
+    void Unpremultiply() {
+      if (GetAlpha() == 0) {
+        channel[0] = channel[1] = channel[2] = 0;
+        return;
+      }
+      for (int i = 0; i < 3; i++) {
+        channel[i] = channel[i] * 0xFF / GetAlpha();
+      }
+    }
+  };
+
+  FML_DCHECK(frame_info.bytesPerPixel() == sizeof(Pixel));
+
+  for (int y = 0; y < frame_info.height(); y++) {
+    auto src_row = frame.pixels.data() + y * frame_row_bytes;
+    auto dst_row = static_cast<uint8_t*>(pixels) +
+                   (y + frame.y_offset) * row_bytes +
+                   frame.x_offset * frame_info.bytesPerPixel();
+
+    switch (frame.frame_info->blend_mode) {
+      case SkCodecAnimation::Blend::kSrcOver: {
+        for (int x = 0; x < frame_info.width(); x++) {
+          auto x_offset_bytes = x * frame_info.bytesPerPixel();
+
+          Pixel src = *reinterpret_cast<Pixel*>(src_row + x_offset_bytes);
+          Pixel* dst_p = reinterpret_cast<Pixel*>(dst_row + x_offset_bytes);
+          Pixel dst = *dst_p;
+
+          if (info.alphaType() == kUnpremul_SkAlphaType) {
+            dst.Premultiply();
+          }
+          if (frame_info.alphaType() == kUnpremul_SkAlphaType) {
+            src.Premultiply();
+          }
+
+          for (int i = 0; i < 3; i++) {
+            dst.channel[i] = src.channel[i] +
+                             dst.channel[i] * (0xFF - src.GetAlpha()) / 0xFF;
+          }
+          dst.SetAlpha(src.GetAlpha() +
+                       dst.GetAlpha() * (0xFF - src.GetAlpha()) / 0xFF);
+
+          if (info.alphaType() == kUnpremul_SkAlphaType) {
+            dst.Unpremultiply();
+          }
+
+          *dst_p = dst;
+        }
+        break;
+      }
+      case SkCodecAnimation::Blend::kSrc:
+        memcpy(dst_row, src_row, frame_row_bytes);
+        break;
+    }
   }
 
   return true;
