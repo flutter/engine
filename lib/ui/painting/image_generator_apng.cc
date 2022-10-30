@@ -105,8 +105,20 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
   /// 3. Composite the frame onto the canvas.
   ///
 
-  FML_DCHECK(info.colorType() == kN32_SkColorType);
-  FML_DCHECK(frame_info.colorType() == kN32_SkColorType);
+  if (info.colorType() != kN32_SkColorType) {
+    FML_DLOG(ERROR) << "Failed to composite image at index " << image_index
+                    << " (frame index: " << frame_index
+                    << ") of APNG due to the destination surface having an "
+                       "unsupported color type.";
+    return false;
+  }
+  if (frame_info.colorType() != kN32_SkColorType) {
+    FML_DLOG(ERROR)
+        << "Failed to composite image at index " << image_index
+        << " (frame index: " << frame_index
+        << ") of APNG due to the frame having an unsupported color type.";
+    return false;
+  }
 
   // Regardless of the byte order (RGBA vs BGRA), the blending operations are
   // the same.
@@ -515,8 +527,11 @@ bool APNGImageGenerator::DemuxNextImageInternal() {
     return false;
   }
 
-  if (!images_.empty() && images_.back().frame_info->disposal_method ==
-                              SkCodecAnimation::DisposalMethod::kKeep) {
+  if (images_.size() > first_frame_index_ &&
+      images_.back().frame_info->disposal_method ==
+          SkCodecAnimation::DisposalMethod::kKeep) {
+    // Offset by 2 because the first image is the default image, which may not
+    // be a frame.
     image->frame_info->required_frame = images_.size() - 1;
   }
 
@@ -578,40 +593,6 @@ uint32_t APNGImageGenerator::ChunkHeader::ComputeChunkCrc32() {
   } while (length > 0);
 
   return crc;
-}
-
-void APNGImageGenerator::BlendLine(SkColorType dest_colortype,
-                                   void* dest,
-                                   SkColorType source_colortype,
-                                   const void* source,
-                                   SkAlphaType dest_alphatype,
-                                   SkCodecAnimation::Blend blend_mode,
-                                   int width) {
-  /*
-  SkRasterPipeline_MemoryCtx dst_ctx = {dest, 0},
-                             src_ctx = {const_cast<void*>(source), 0};
-
-  SkRasterPipeline_<256> p;
-
-  p.append_load_dst(dest_colortype, &dst_ctx);
-  if (kUnpremul_SkAlphaType == dest_alphatype) {
-    p.append(SkRasterPipeline::premul_dst);
-  }
-
-  p.append_load(source_colortype, &src_ctx);
-  p.append(SkRasterPipeline::premul);
-
-  if (blend_mode == SkCodecAnimation::Blend::kSrcOver) {
-    p.append(SkRasterPipeline::srcover);
-  }
-
-  if (kUnpremul_SkAlphaType == dest_alphatype) {
-    p.append(SkRasterPipeline::unpremul);
-  }
-  p.append_store(dest_colortype, &dst_ctx);
-
-  p.run(0, 0, width, 1);
-  */
 }
 
 bool APNGImageGenerator::RenderDefaultImage(const SkImageInfo& info,

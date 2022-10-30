@@ -192,14 +192,6 @@ class APNGImageGenerator : public ImageGenerator {
 
   bool DemuxToImageIndex(unsigned int image_index);
 
-  static void BlendLine(SkColorType dest_colortype,
-                        void* dest,
-                        SkColorType source_colortype,
-                        const void* source,
-                        SkAlphaType dest_alphatype,
-                        SkCodecAnimation::Blend blend_mode,
-                        int width);
-
   bool RenderDefaultImage(const SkImageInfo& info,
                           void* pixels,
                           size_t row_bytes);
