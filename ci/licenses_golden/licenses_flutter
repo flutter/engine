@@ -4273,6 +4273,8 @@ FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_generator.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator.h
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.cc
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.h
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
