@@ -13,9 +13,9 @@ static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
-// This method allows setting a custom cursor with rawRGBA buffer.
+// This method allows setting a custom cursor with rawBGRA buffer.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
-// A list of bytes, the custom cursor's rawRGBA buffer.
+// A list of bytes, the custom cursor's rawBGRA buffer.
 static constexpr char kCustomCursorBufferKey[] = "buffer";
 // A double, the x coordinate of the custom cursor's hotspot, starting from
 // left.
@@ -108,7 +108,7 @@ void CursorHandler::HandleMethodCall(
     HCURSOR cursor = GetCursorFromBuffer(buffer, hot_x, hot_y, width, height);
     if (cursor == nullptr) {
       result->Error("Argument error",
-                    "Argument must contain valid rawRgba bitmap");
+                    "Argument must contain valid rawBGRA bitmap");
       return;
     }
     delegate_->SetFlutterCursor(cursor);
@@ -124,7 +124,7 @@ HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
                             int width,
                             int height) {
   HCURSOR cursor = nullptr;
-  // Flutter returns rawRgba, which has 8bits * 4channels.
+  // Flutter returns rawRGRA, which has 8bits * 4channels.
   auto bitmap = CreateBitmap(width, height, 1, 32, &buffer[0]);
   if (bitmap == nullptr) {
     return nullptr;

@@ -32,7 +32,7 @@ class CursorHandler {
   WindowBindingHandler* delegate_;
 };
 
-// Create a cursor from buffer and cursor info.
+// Create a cursor from a rawBGRA buffer and the cursor info.
 HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
                             double hot_x,
                             double hot_y,

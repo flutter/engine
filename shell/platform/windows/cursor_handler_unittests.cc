@@ -12,7 +12,7 @@
 namespace flutter {
 namespace testing {
 TEST(CursorHandlerTest, CreateDummyCursor) {
-  // create a 4x4 rawRGBA dummy cursor buffer.
+  // create a 4x4 rawBGRA dummy cursor buffer.
   std::vector<uint8_t> buffer;
   for (int i = 0; i < 4 * 4 * 4; i++) {
     buffer.push_back(0);
