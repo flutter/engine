@@ -134,7 +134,7 @@ class APNGImageGenerator : public ImageGenerator {
                      unsigned int frame_count,
                      unsigned int play_count,
                      const void* next_chunk_p,
-                     const std::vector<uint8_t> header);
+                     const std::vector<uint8_t>& header);
 
   static bool IsValidChunkHeader(const void* buffer,
                                  size_t size,
@@ -185,7 +185,7 @@ class APNGImageGenerator : public ImageGenerator {
   static std::pair<std::optional<APNGImage>, const void*> DemuxNextImage(
       const void* buffer_p,
       size_t buffer_size,
-      const std::vector<uint8_t> header,
+      const std::vector<uint8_t>& header,
       const void* chunk_p);
 
   bool DemuxNextImageInternal();

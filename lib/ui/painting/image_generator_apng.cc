@@ -7,6 +7,7 @@
 
 #include "third_party/libpng/png.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
+#include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/src/codec/SkPngCodec.h"
 #include "third_party/skia/src/core/SkRasterPipeline.h"
 #include "third_party/zlib/zlib.h"  // For crc32
@@ -21,7 +22,7 @@ APNGImageGenerator::APNGImageGenerator(sk_sp<SkData>& data,
                                        unsigned int frame_count,
                                        unsigned int play_count,
                                        const void* next_chunk_p,
-                                       const std::vector<uint8_t> header)
+                                       const std::vector<uint8_t>& header)
     : data_(data),
       image_info_(image_info),
       frame_count_(frame_count),
@@ -275,7 +276,7 @@ APNGImageGenerator::ExtractHeader(const void* buffer_p, size_t buffer_size) {
 std::pair<std::optional<APNGImageGenerator::APNGImage>, const void*>
 APNGImageGenerator::DemuxNextImage(const void* buffer_p,
                                    size_t buffer_size,
-                                   const std::vector<uint8_t> header,
+                                   const std::vector<uint8_t>& header,
                                    const void* chunk_p) {
   const ChunkHeader* chunk = reinterpret_cast<const ChunkHeader*>(chunk_p);
   // Validate the given chunk to ensure it's safe to read.
