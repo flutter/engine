@@ -335,6 +335,9 @@ class HtmlRenderer implements Renderer {
   }
 
   @override
+  void clearFragmentProgramCache() { }
+
+  @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     return Future<HtmlFragmentProgram>.value(HtmlFragmentProgram());
   }

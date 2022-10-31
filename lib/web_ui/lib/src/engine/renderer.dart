@@ -153,6 +153,7 @@ abstract class Renderer {
     ui.FilterQuality? filterQuality,
   );
 
+  void clearFragmentProgramCache();
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey);
 
   ui.Path createPath();

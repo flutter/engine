@@ -167,6 +167,9 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
+  void clearFragmentProgramCache() { }
+
+  @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     throw UnimplementedError('Not yet implemented');
   }

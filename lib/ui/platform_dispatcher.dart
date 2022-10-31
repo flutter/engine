@@ -750,27 +750,6 @@ class PlatformDispatcher {
     _invoke(onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone,);
   }
 
-  /// Change the retained semantics data about this platform dispatcher.
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this platform dispatcher
-  /// changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
-  @Deprecated('''
-    In a multi-view world, the platform dispatcher can no longer provide apis
-    to update semantics since each view will host its own semantics tree.
-
-    Semantics updates must be passed to an individual [FlutterView]. To update
-    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
-    call `updateSemantics`.
-  ''')
-  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
-
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
-  external static void _updateSemantics(SemanticsUpdate update);
-
   /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
@@ -1056,7 +1035,7 @@ class PlatformDispatcher {
     }
   }
 
-  /// Whether the user has requested that [updateSemantics] be called when the
+  /// Whether the user has requested that updateSemantics be called when the
   /// semantic contents of a view changes.
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
@@ -1092,7 +1071,7 @@ class PlatformDispatcher {
   /// performed.
   ///
   /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
+  /// perform based on the semantics supplied by updateSemantics.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1264,7 +1243,7 @@ class PlatformConfiguration {
   /// format.
   final bool alwaysUse24HourFormat;
 
-  /// Whether the user has requested that [updateSemantics] be called when the
+  /// Whether the user has requested that updateSemantics be called when the
   /// semantic contents of a view changes.
   final bool semanticsEnabled;
 

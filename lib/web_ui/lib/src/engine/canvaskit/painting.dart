@@ -108,7 +108,8 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (_color == value) {
       return;
     }
-    _color = value;
+    _color =
+        value.runtimeType == ui.Color ? value : ui.Color(value.value);
     skiaObject.setColorInt(value.value);
   }
 
@@ -373,6 +374,11 @@ UniformType? uniformTypeFromJson(int value) {
 class CkFragmentProgram implements ui.FragmentProgram {
   CkFragmentProgram(this.name, this.effect, this.uniforms, this.floatCount,
       this.textureCount);
+
+
+  static Future<CkFragmentProgram> fromBytes(Uint8List data) async {
+
+  }
 
   final String name;
   final SkRuntimeEffect effect;

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <utility>
 
 #include "flutter/fml/logging.h"
 #include "impeller/aiks/paint_pass_delegate.h"
@@ -55,13 +56,13 @@ void Canvas::Save(
   if (create_subpass) {
     entry.is_subpass = true;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetBackdropFilter(backdrop_filter);
+    subpass->SetBackdropFilter(std::move(backdrop_filter));
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransformation(xformation_stack_.back().xformation);
     current_pass_->SetStencilDepth(xformation_stack_.back().stencil_depth);
   }
-  xformation_stack_.emplace_back(std::move(entry));
+  xformation_stack_.emplace_back(entry);
 }
 
 bool Canvas::Restore() {
@@ -136,58 +137,61 @@ void Canvas::RestoreToCount(size_t count) {
   }
 }
 
-void Canvas::DrawPath(Path path, Paint paint) {
+void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(
-      paint.WithFilters(paint.CreateContentsForEntity(std::move(path))));
+  entity.SetContents(paint.WithFilters(paint.CreateContentsForEntity(path)));
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawPaint(Paint paint) {
+void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.CreateContentsForEntity({}, true));
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Scalar corner_radius,
-                                     Paint& paint) {
+                                     const Paint& paint) {
+  // TODO(114184): This should return false when the paint's ColorSource is not
+  //               solid color.
   if (!paint.mask_blur_descriptor.has_value() ||
       paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal ||
       paint.style != Paint::Style::kFill) {
     return false;
   }
 
+  Paint new_paint = paint;
+
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
 
   auto contents = std::make_shared<RRectShadowContents>();
-  contents->SetColor(paint.color);
-  contents->SetSigma(paint.mask_blur_descriptor->sigma);
+  contents->SetColor(new_paint.color);
+  contents->SetSigma(new_paint.mask_blur_descriptor->sigma);
   contents->SetRRect(rect, corner_radius);
 
-  paint.mask_blur_descriptor = std::nullopt;
+  new_paint.mask_blur_descriptor = std::nullopt;
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(std::move(contents)));
+  entity.SetBlendMode(new_paint.blend_mode);
+  entity.SetContents(new_paint.WithFilters(std::move(contents)));
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 
   return true;
 }
 
-void Canvas::DrawRect(Rect rect, Paint paint) {
+void Canvas::DrawRect(Rect rect, const Paint& paint) {
   if (AttemptDrawBlurredRRect(rect, 0, paint)) {
     return;
   }
@@ -199,25 +203,28 @@ void Canvas::DrawRect(Rect rect, Paint paint) {
   entity.SetContents(paint.WithFilters(
       paint.CreateContentsForGeometry(Geometry::MakeRect(rect))));
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
+void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
   if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
     return;
   }
-  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(),
-           std::move(paint));
+  DrawPath(PathBuilder{}.AddRoundedRect(rect, corner_radius).TakePath(), paint);
 }
 
-void Canvas::DrawCircle(Point center, Scalar radius, Paint paint) {
-  DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(),
-           std::move(paint));
+void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
+  Size half_size(radius, radius);
+  if (AttemptDrawBlurredRRect(Rect(center - half_size, half_size * 2), radius,
+                              paint)) {
+    return;
+  }
+  DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(), paint);
 }
 
-void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
+void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
   auto contents = std::make_shared<ClipContents>();
-  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetClipOperation(clip_op);
 
   Entity entity;
@@ -225,7 +232,7 @@ void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
   entity.SetContents(std::move(contents));
   entity.SetStencilDepth(GetStencilDepth());
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 
   ++xformation_stack_.back().stencil_depth;
   xformation_stack_.back().contains_clips = true;
@@ -239,7 +246,7 @@ void Canvas::RestoreClip() {
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetStencilDepth(GetStencilDepth());
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
 void Canvas::DrawPicture(Picture picture) {
@@ -257,9 +264,9 @@ void Canvas::DrawPicture(Picture picture) {
   return;
 }
 
-void Canvas::DrawImage(std::shared_ptr<Image> image,
+void Canvas::DrawImage(const std::shared_ptr<Image>& image,
                        Point offset,
-                       Paint paint,
+                       const Paint& paint,
                        SamplerDescriptor sampler) {
   if (!image) {
     return;
@@ -269,13 +276,13 @@ void Canvas::DrawImage(std::shared_ptr<Image> image,
   const auto dest =
       Rect::MakeXYWH(offset.x, offset.y, source.size.width, source.size.height);
 
-  DrawImageRect(image, source, dest, std::move(paint), std::move(sampler));
+  DrawImageRect(image, source, dest, paint, std::move(sampler));
 }
 
-void Canvas::DrawImageRect(std::shared_ptr<Image> image,
+void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
                            Rect source,
                            Rect dest,
-                           Paint paint,
+                           const Paint& paint,
                            SamplerDescriptor sampler) {
   if (!image || source.size.IsEmpty() || dest.size.IsEmpty()) {
     return;
@@ -299,7 +306,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
   entity.SetContents(paint.WithFilters(contents, false));
   entity.SetTransformation(GetCurrentTransformation());
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
 Picture Canvas::EndRecordingAsPicture() {
@@ -321,9 +328,10 @@ size_t Canvas::GetStencilDepth() const {
   return xformation_stack_.back().stencil_depth;
 }
 
-void Canvas::SaveLayer(Paint paint,
-                       std::optional<Rect> bounds,
-                       std::optional<Paint::ImageFilterProc> backdrop_filter) {
+void Canvas::SaveLayer(
+    const Paint& paint,
+    std::optional<Rect> bounds,
+    const std::optional<Paint::ImageFilterProc>& backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -340,13 +348,15 @@ void Canvas::SaveLayer(Paint paint,
   }
 }
 
-void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
+void Canvas::DrawTextFrame(const TextFrame& text_frame,
+                           Point position,
+                           const Paint& paint) {
   auto lazy_glyph_atlas = GetCurrentPass().GetLazyGlyphAtlas();
 
   lazy_glyph_atlas->AddTextFrame(text_frame);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(std::move(text_frame));
+  text_contents->SetTextFrame(text_frame);
   text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
   text_contents->SetColor(paint.color);
 
@@ -357,13 +367,13 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(Vertices vertices,
+void Canvas::DrawVertices(const Vertices& vertices,
                           BlendMode blend_mode,
                           Paint paint) {
-  auto geometry = Geometry::MakeVertices(std::move(vertices));
+  auto geometry = Geometry::MakeVertices(vertices);
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
@@ -385,17 +395,17 @@ void Canvas::DrawVertices(Vertices vertices,
     entity.SetContents(paint.WithFilters(std::move(contents), true));
   }
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
+void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
                        std::vector<Matrix> transforms,
                        std::vector<Rect> texture_coordinates,
                        std::vector<Color> colors,
                        BlendMode blend_mode,
                        SamplerDescriptor sampler,
                        std::optional<Rect> cull_rect,
-                       Paint paint) {
+                       const Paint& paint) {
   if (!atlas) {
     return;
   }
@@ -421,7 +431,7 @@ void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(contents, false));
 
-  GetCurrentPass().AddEntity(std::move(entity));
+  GetCurrentPass().AddEntity(entity);
 }
 
 }  // namespace impeller

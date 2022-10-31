@@ -212,7 +212,7 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
   Entity entity;
   entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 5.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
   contents->SetColor(Color::Red());
   entity.SetContents(std::move(contents));
   ASSERT_TRUE(OpenPlaygroundHere(entity));
@@ -251,7 +251,7 @@ TEST_P(EntityTest, TriangleInsideASquare) {
     Entity entity;
     entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
     auto contents = std::make_unique<SolidColorContents>();
-    contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 20.0));
+    contents->SetGeometry(Geometry::MakeStrokePath(path, 20.0));
     contents->SetColor(Color::Red());
     entity.SetContents(std::move(contents));
 
@@ -264,22 +264,14 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
   const Point padding(300, 250);
   const Point margin(140, 180);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({300, 100});
-      ImGui::SetNextWindowPos(
-          {0 * padding.x + margin.x, 1.7f * padding.y + margin.y});
-    }
-
     // Slightly above sqrt(2) by default, so that right angles are just below
     // the limit and acute angles are over the limit (causing them to get
     // beveled).
     static Scalar miter_limit = 1.41421357;
     static Scalar width = 30;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
       ImGui::SliderFloat("Miter limit", &miter_limit, 0, 30);
       ImGui::SliderFloat("Stroke width", &width, 0, 100);
@@ -292,7 +284,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
 
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     auto render_path = [width = width, &context, &pass, &world_matrix](
-                           Path path, Cap cap, Join join) {
+                           const Path& path, Cap cap, Join join) {
       auto contents = std::make_unique<SolidColorContents>();
       contents->SetGeometry(
           Geometry::MakeStrokePath(path, width, miter_limit, cap, join));
@@ -741,14 +733,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
     };
   }
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({350, 200});
-      ImGui::SetNextWindowPos({200, 450});
-    }
-
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
@@ -792,7 +777,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
       return pass.AddCommand(std::move(cmd));
     };
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     static Color color1(1, 0, 0, 0.5), color2(0, 1, 0, 0.5);
     ImGui::ColorEdit4("Color 1", reinterpret_cast<float*>(&color1));
     ImGui::ColorEdit4("Color 2", reinterpret_cast<float*>(&color2));
@@ -879,13 +864,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(boston);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* input_type_names[] = {"Texture", "Solid Color"};
     const char* blur_type_names[] = {"Image blur", "Mask blur"};
     const char* pass_variation_names[] = {"Two pass", "Directional"};
@@ -1035,13 +1014,7 @@ TEST_P(EntityTest, MorphologyFilter) {
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(boston);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* morphology_type_names[] = {"Dilate", "Erode"};
     const FilterContents::MorphType morphology_types[] = {
         FilterContents::MorphType::kDilate, FilterContents::MorphType::kErode};
@@ -1563,13 +1536,7 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
 }
 
 TEST_P(EntityTest, RRectShadowTest) {
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static Color color = Color::Red();
     static float corner_radius = 100;
     static float blur_radius = 100;
@@ -1651,14 +1618,7 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
   auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
   ASSERT_TRUE(bay_bridge);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    // If this is the first frame, set the ImGui's initial size and postion.
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     // UI state.
     static FilterContents::ColorMatrix color_matrix = {
         1, 0, 0, 0, 0,  //
@@ -2061,7 +2021,7 @@ TEST_P(EntityTest, SdfText) {
     EXPECT_FALSE(lazy_glyph_atlas->HasColor());
 
     auto text_contents = std::make_shared<TextContents>();
-    text_contents->SetTextFrame(std::move(frame));
+    text_contents->SetTextFrame(frame);
     text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
     text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
     Entity entity;
@@ -2086,15 +2046,14 @@ TEST_P(EntityTest, RuntimeEffect) {
     contents->SetGeometry(Geometry::MakeCover());
 
     auto runtime_stage =
-        LoadFixtureRuntimeStage("runtime_stage_example.frag.iplr");
+        OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
     contents->SetRuntimeStage(runtime_stage);
 
     struct FragUniforms {
       Scalar iTime;
       Vector2 iResolution;
     } frag_uniforms = {
-        .iTime = static_cast<Scalar>(
-            fml::TimePoint::Now().ToEpochDelta().ToSecondsF()),
+        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
         .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
     };
     auto uniform_data = std::make_shared<std::vector<uint8_t>>();

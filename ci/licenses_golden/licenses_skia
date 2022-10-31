@@ -1,4 +1,4 @@
-Signature: 21823a59e9d8d0a6079086147b4b6f48
+Signature: 84dbca7193c7c782c4dceb55da06f547
 
 UNUSED LICENSES:
 
@@ -887,6 +887,7 @@ FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canvaskit_gold/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/codesize/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/compile_wasm_gm_tests/BUILD.bazel
+FILE: ../../../third_party/skia/infra/bots/task_drivers/cpu_tests/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/g3_canary/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/BUILD.bazel
@@ -1012,6 +1013,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/Metrics.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Paragraph.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphBuilder.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphCache.h
+FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphPainter.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
@@ -1031,6 +1033,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.h
+FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphPainterImpl.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphPainterImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphStyle.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Run.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Run.h
@@ -2031,36 +2035,19 @@ FILE: ../../../third_party/skia/include/private/SkTArray.h
 FILE: ../../../third_party/skia/include/utils/SkNWayCanvas.h
 FILE: ../../../third_party/skia/include/utils/mac/SkCGUtils.h
 FILE: ../../../third_party/skia/samplecode/Sample.h
-FILE: ../../../third_party/skia/samplecode/Sample2PtRadial.cpp
-FILE: ../../../third_party/skia/samplecode/SampleAARectModes.cpp
-FILE: ../../../third_party/skia/samplecode/SampleAARects.cpp
 FILE: ../../../third_party/skia/samplecode/SampleArc.cpp
 FILE: ../../../third_party/skia/samplecode/SampleCamera.cpp
-FILE: ../../../third_party/skia/samplecode/SampleCircle.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClip.cpp
-FILE: ../../../third_party/skia/samplecode/SampleComplexClip.cpp
 FILE: ../../../third_party/skia/samplecode/SampleDegenerateTwoPtRadials.cpp
-FILE: ../../../third_party/skia/samplecode/SampleEffects.cpp
-FILE: ../../../third_party/skia/samplecode/SampleEmboss.cpp
-FILE: ../../../third_party/skia/samplecode/SampleFillType.cpp
 FILE: ../../../third_party/skia/samplecode/SampleGradients.cpp
-FILE: ../../../third_party/skia/samplecode/SampleHairCurves.cpp
-FILE: ../../../third_party/skia/samplecode/SampleHairModes.cpp
-FILE: ../../../third_party/skia/samplecode/SampleLCD.cpp
 FILE: ../../../third_party/skia/samplecode/SampleLayers.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePatch.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePath.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathClip.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathEffects.cpp
-FILE: ../../../third_party/skia/samplecode/SamplePolyToPoly.cpp
 FILE: ../../../third_party/skia/samplecode/SampleRepeatTile.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSlides.cpp
-FILE: ../../../third_party/skia/samplecode/SampleStrokePath.cpp
-FILE: ../../../third_party/skia/samplecode/SampleStrokeRect.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextBox.cpp
-FILE: ../../../third_party/skia/samplecode/SampleVertices.cpp
-FILE: ../../../third_party/skia/samplecode/SampleWritePixels.cpp
-FILE: ../../../third_party/skia/samplecode/SampleXfermodesBlur.cpp
 FILE: ../../../third_party/skia/samplecode/vertexdump.cpp
 FILE: ../../../third_party/skia/src/core/SkAAClip.cpp
 FILE: ../../../third_party/skia/src/core/SkAAClip.h
@@ -5107,8 +5094,8 @@ FILE: ../../../third_party/skia/src/core/SkImageFilter_Base.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffect.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.h
+FILE: ../../../third_party/skia/src/gpu/AsyncReadTypes.h
 FILE: ../../../third_party/skia/src/gpu/Swizzle.cpp
-FILE: ../../../third_party/skia/src/gpu/TClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrClientMappedBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrCopyRenderTask.cpp
@@ -7766,6 +7753,7 @@ FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
 FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/bazel_build.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canvaskit_gold/canvaskit_gold.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/cpu_tests/cpu_tests.go
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode.cpp
 FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkCapabilities.cpp

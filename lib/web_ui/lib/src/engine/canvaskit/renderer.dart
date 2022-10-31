@@ -27,7 +27,6 @@ import 'picture_recorder.dart';
 import 'rasterizer.dart';
 import 'shader.dart';
 import 'text.dart';
-import 'util.dart';
 import 'vertices.dart';
 
 class CanvasKitRenderer implements Renderer {
@@ -54,12 +53,6 @@ class CanvasKitRenderer implements Renderer {
   Future<void> initialize() async {
     if (windowFlutterCanvasKit != null) {
       canvasKit = windowFlutterCanvasKit!;
-    } else if (useH5vccCanvasKit) {
-      if (h5vcc?.canvasKit == null) {
-        throw CanvasKitError('H5vcc CanvasKit implementation not found.');
-      }
-      canvasKit = h5vcc!.canvasKit!;
-      windowFlutterCanvasKit = canvasKit;
     } else {
       canvasKit = await downloadCanvasKit();
       windowFlutterCanvasKit = canvasKit;
@@ -380,6 +373,11 @@ class CanvasKitRenderer implements Renderer {
     frameTimingsOnRasterFinish();
   }
 
+  @override
+  void clearFragmentProgramCache() {
+    _programs.clear();
+  }
+
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
 
   @override
@@ -396,7 +394,7 @@ class CanvasKitRenderer implements Renderer {
       if (rawShaderData is! Map<String, Object?>) {
         throw const FormatException('Invalid Shader Data');
       }
-      final Object? source = rawShaderData['source'];
+      final Object? source = rawShaderData['sksl'];
       final Object? rawUniforms = rawShaderData['uniforms'];
       if (source is! String || rawUniforms is! List<Object?>) {
         throw const FormatException('Invalid Shader Data');
