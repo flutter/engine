@@ -13,6 +13,7 @@
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from urllib import request
@@ -111,7 +112,8 @@ def parse_deps_file(deps_flat_file):
       ', '.join(failed_deps)
   )
   try:
-    os.rmdir(DEP_CLONE_DIR)
+    # clean up cloned upstream dependency directory
+    shutil.rmtree(DEP_CLONE_DIR) # use shutil.rmtree since dir could be non-empty
   except OSError as e:
     print("Error cleaning up clone directory: %s : %s" % (DEP_CLONE_DIR, e.strerror))
 
