@@ -127,12 +127,12 @@ class MouseInputListenerServer
   void Start(std::unique_ptr<LocalComponentHandles> mock_handles) override {
     FML_LOG(INFO) << "Starting MouseInputServer";
     ASSERT_EQ(ZX_OK, mock_handles->outgoing()->AddPublicService(
-                 fidl::InterfaceRequestHandler<
-                     fuchsia::ui::test::input::MouseInputListener>(
-                     [this](auto request) {
-                       bindings_.AddBinding(this, std::move(request),
-                                            dispatcher_);
-                     })));
+                         fidl::InterfaceRequestHandler<
+                             fuchsia::ui::test::input::MouseInputListener>(
+                             [this](auto request) {
+                               bindings_.AddBinding(this, std::move(request),
+                                                    dispatcher_);
+                             })));
     mock_handles_.emplace_back(std::move(mock_handles));
   }
 

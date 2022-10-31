@@ -216,7 +216,8 @@ void PortableUITest::InjectTap(int32_t x, int32_t y) {
 }
 
 void PortableUITest::SimulateMouseEvent(
-    std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons, int movement_x,
+    std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
+    int movement_x,
     int movement_y) {
   FML_LOG(INFO) << "Requesting mouse event";
   fuchsia::ui::test::input::MouseSimulateMouseEventRequest request;
@@ -224,8 +225,8 @@ void PortableUITest::SimulateMouseEvent(
   request.set_movement_x(movement_x);
   request.set_movement_y(movement_y);
 
-  fake_mouse_->SimulateMouseEvent(std::move(request),
-                                  [] { FML_LOG(INFO) << "Mouse event injected"; });
+  fake_mouse_->SimulateMouseEvent(
+      std::move(request), [] { FML_LOG(INFO) << "Mouse event injected"; });
 }
 
 void PortableUITest::SimulateMouseScroll(
