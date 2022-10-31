@@ -7,17 +7,19 @@
 #include <memory>
 #include <utility>
 
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan.h"
+#include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
-#include "fml/memory/ref_ptr.h"
 #include "impeller/entity/vk/entity_shaders_vk.h"
 
 namespace flutter {
 
 std::shared_ptr<impeller::Context> CreateImpellerContext(
-    fml::RefPtr<vulkan::VulkanProcTable> proc_table) {
+    const fml::RefPtr<vulkan::VulkanProcTable>& proc_table,
+    const std::shared_ptr<fml::ConcurrentMessageLoop>& concurrent_loop) {
   if (!proc_table->IsValid()) {
     FML_LOG(ERROR) << "Invalid Vulkan Proc Table.";
     return nullptr;
@@ -28,27 +30,35 @@ std::shared_ptr<impeller::Context> CreateImpellerContext(
                                              impeller_entity_shaders_vk_length),
   };
 
-  // auto context = ContextVK::Create(reinterpret_cast<PFN_vkGetInstanceProcAddr>(
-  //                                      &::glfwGetInstanceProcAddress),  //
-  //                                  shader_mappings,                     //
-  //                                  nullptr,                             //
-  //                                  concurrent_loop_->GetTaskRunner(),   //
-  //                                  "Android Impeller Vulkan Lib"        //
-  // );
+  PFN_vkGetInstanceProcAddr instance_proc_addr =
+      proc_table->NativeGetInstanceProcAddr();
 
-  return nullptr;
+  auto context =
+      impeller::ContextVK::Create(instance_proc_addr,                //
+                                  shader_mappings,                   //
+                                  nullptr,                           //
+                                  concurrent_loop->GetTaskRunner(),  //
+                                  "Android Impeller Vulkan Lib"      //
+      );
+
+  return context;
 }
 
 AndroidSurfaceVulkanImpeller::AndroidSurfaceVulkanImpeller(
     const std::shared_ptr<AndroidContext>& android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
     : AndroidSurface(android_context),
-      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
+      workers_(fml::ConcurrentMessageLoop::Create()) {
+  impeller_context_ = CreateImpellerContext(proc_table_, workers_);
+  is_valid_ =
+      proc_table_->HasAcquiredMandatoryProcAddresses() && impeller_context_;
+}
 
 AndroidSurfaceVulkanImpeller::~AndroidSurfaceVulkanImpeller() = default;
 
 bool AndroidSurfaceVulkanImpeller::IsValid() const {
-  return proc_table_->HasAcquiredMandatoryProcAddresses();
+  return is_valid_;
 }
 
 void AndroidSurfaceVulkanImpeller::TeardownOnScreenContext() {
@@ -73,22 +83,8 @@ std::unique_ptr<Surface> AndroidSurfaceVulkanImpeller::CreateGPUSurface(
     return nullptr;
   }
 
-  sk_sp<GrDirectContext> provided_gr_context;
-  if (gr_context) {
-    provided_gr_context = sk_ref_sp(gr_context);
-  } else if (android_context_->GetMainSkiaContext()) {
-    provided_gr_context = android_context_->GetMainSkiaContext();
-  }
-
-  std::unique_ptr<GPUSurfaceVulkan> gpu_surface;
-  // if (provided_gr_context) {
-  //   gpu_surface = std::make_unique<GPUSurfaceVulkan>(
-  //       provided_gr_context, this, std::move(vulkan_surface_android), true);
-  // } else {
-  //   gpu_surface = std::make_unique<GPUSurfaceVulkan>(
-  //       this, std::move(vulkan_surface_android), true);
-  //   android_context_->SetMainSkiaContext(sk_ref_sp(gpu_surface->GetContext()));
-  // }
+  std::unique_ptr<GPUSurfaceVulkanImpeller> gpu_surface =
+      std::make_unique<GPUSurfaceVulkanImpeller>(impeller_context_);
 
   if (!gpu_surface->IsValid()) {
     return nullptr;
@@ -114,11 +110,13 @@ bool AndroidSurfaceVulkanImpeller::ResourceContextClearCurrent() {
 bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
-  return native_window_ && native_window_->IsValid();
-}
 
-const vulkan::VulkanProcTable& AndroidSurfaceVulkanImpeller::vk() {
-  return *proc_table_;
+  // TODO (kaushikiska): setup the swapchain here!
+
+  auto& context_vk = impeller::ContextVK::Cast(*impeller_context_);
+  context_vk.SetupSwapchain(vk::UniqueSurfaceKHR surface);
+
+  return native_window_ && native_window_->IsValid();
 }
 
 }  // namespace flutter

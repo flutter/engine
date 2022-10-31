@@ -527,8 +527,8 @@ std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
   return surface_producer_->AcquireSurface(current_frame);
 }
 
-void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
-  surface_ = std::move(surface);
+void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
+  surface_ = surface;
   auto present_queue_out = PickPresentQueue(physical_device_, *surface_);
   if (!present_queue_out.has_value()) {
     return;

@@ -99,8 +99,8 @@ SwapchainDetailsVK::SwapchainDetailsVK(
     std::vector<vk::SurfaceFormatKHR> surface_formats,
     std::vector<vk::PresentModeKHR> surface_present_modes)
     : surface_capabilities_(capabilities),
-      surface_formats_(surface_formats),
-      present_modes_(surface_present_modes) {}
+      surface_formats_(std::move(surface_formats)),
+      present_modes_(std::move(surface_present_modes)) {}
 
 SwapchainDetailsVK::~SwapchainDetailsVK() = default;
 

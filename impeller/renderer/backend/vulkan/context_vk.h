@@ -60,7 +60,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance() const;
 
-  void SetupSwapchain(vk::UniqueSurfaceKHR surface);
+  void SetupSwapchain(vk::SurfaceKHR surface);
 
   std::unique_ptr<Surface> AcquireSurface(size_t current_frame);
 
@@ -80,7 +80,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
   vk::Queue present_queue_;
-  vk::UniqueSurfaceKHR surface_;
+  vk::SurfaceKHR surface_;
   std::unique_ptr<SwapchainVK> swapchain_;
   std::unique_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;

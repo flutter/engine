@@ -59,16 +59,15 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
           },
   });
   stencil0.texture = std::make_shared<TextureVK>(
-      std::move(stencil0_tex), context, std::move(stencil_texture_info));
+      stencil0_tex, context, std::move(stencil_texture_info));
   stencil0.load_action = LoadAction::kClear;
   stencil0.store_action = StoreAction::kDontCare;
 
   RenderTarget render_target_desc;
   render_target_desc.SetColorAttachment(color0, 0u);
 
-  return std::unique_ptr<SurfaceVK>(new SurfaceVK(std::move(render_target_desc),
-                                                  swapchain_image,
-                                                  std::move(swap_callback)));
+  return std::unique_ptr<SurfaceVK>(new SurfaceVK(
+      render_target_desc, swapchain_image, std::move(swap_callback)));
 }
 
 SurfaceVK::SurfaceVK(RenderTarget target,
