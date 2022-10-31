@@ -22,9 +22,9 @@ static constexpr char kCustomCursorBufferKey[] = "buffer";
 static constexpr char kCustomCursorHotXKey[] = "hotX";
 // A double, the y coordinate of the custom cursor's hotspot, starting from top.
 static constexpr char kCustomCursorHotYKey[] = "hotY";
-// int value for the width of custom cursor.
+// An int value for the width of custom cursor.
 static constexpr char kCustomCursorWidthKey[] = "width";
-// int value for the height of custom cursor.
+// An int value for the height of custom cursor.
 static constexpr char kCustomCursorHeightKey[] = "height";
 
 namespace flutter {
