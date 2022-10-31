@@ -23,7 +23,8 @@ void PlaygroundTest::SetUp() {
     return;
   }
 
-  SetupWindow(GetParam());
+  SetupContext(GetParam());
+  SetupWindow();
 
   start_time_ = fml::TimePoint::Now().ToEpochDelta();
 }

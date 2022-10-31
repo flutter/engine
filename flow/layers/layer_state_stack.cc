@@ -656,7 +656,7 @@ void LayerStateStack::BackdropFilterEntry::apply(LayerStateStack* stack) const {
     stack->builder_->saveLayer(&bounds_, pPaint, filter_.get());
   }
   if (stack->mutators_) {
-    stack->mutators_->PushBackdropFilter(filter_);
+    stack->mutators_->PushBackdropFilter(filter_, bounds_);
   }
   stack->outstanding_ = {};
 }

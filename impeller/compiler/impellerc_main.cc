@@ -70,6 +70,7 @@ bool Main(const fml::CommandLine& command_line) {
   options.defines = switches.defines;
   options.entry_point_name = EntryPointFunctionNameFromSourceName(
       switches.source_file_name, options.type);
+  options.json_format = switches.json_format;
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = switches.target_platform;
@@ -80,6 +81,25 @@ bool Main(const fml::CommandLine& command_line) {
       ToUtf8(std::filesystem::path{switches.reflection_header_name}
                  .filename()
                  .native());
+
+  // Generate SkSL if needed.
+  std::shared_ptr<fml::Mapping> sksl_mapping;
+  if (switches.iplr && TargetPlatformBundlesSkSL(switches.target_platform)) {
+    SourceOptions sksl_options = options;
+    sksl_options.target_platform = TargetPlatform::kSkSL;
+
+    Reflector::Options sksl_reflector_options = reflector_options;
+    sksl_reflector_options.target_platform = TargetPlatform::kSkSL;
+
+    Compiler sksl_compiler =
+        Compiler(*source_file_mapping, sksl_options, sksl_reflector_options);
+    if (!sksl_compiler.IsValid()) {
+      std::cerr << "Compilation to SkSL failed." << std::endl;
+      std::cerr << sksl_compiler.GetErrorMessages() << std::endl;
+      return false;
+    }
+    sksl_mapping = sksl_compiler.GetSLShaderSource();
+  }
 
   Compiler compiler(*source_file_mapping, options, reflector_options);
   if (!compiler.IsValid()) {
@@ -114,7 +134,12 @@ bool Main(const fml::CommandLine& command_line) {
         std::cerr << "Runtime stage information was nil." << std::endl;
         return false;
       }
-      auto stage_data_mapping = stage_data->CreateMapping();
+      if (sksl_mapping) {
+        stage_data->SetSkSLData(sksl_mapping);
+      }
+      auto stage_data_mapping = options.json_format
+                                    ? stage_data->CreateJsonMapping()
+                                    : stage_data->CreateMapping();
       if (!stage_data_mapping) {
         std::cerr << "Runtime stage data could not be created." << std::endl;
         return false;
