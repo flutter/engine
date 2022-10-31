@@ -110,19 +110,27 @@ Map<String, int> _buildLayout(Map<String, LayoutEntry> entries) {
   return result;
 }
 
-class _ResultRecord {
-  _ResultRecord(this.logicalKey, this.language);
+final int _kLowerA = 'a'.codeUnitAt(0);
+final int _kUpperA = 'A'.codeUnitAt(0);
+final int _kLowerZ = 'z'.codeUnitAt(0);
+final int _kUpperZ = 'Z'.codeUnitAt(0);
+bool _charCodeIsLetter(int charCode) {
+  return (charCode >= _kLowerA && charCode <= _kLowerZ)
+      || (charCode >= _kUpperA && charCode <= _kUpperZ);
+}
 
-  final int logicalKey;
-  final String language;
+const int _kUseKeyCode = 1;
+
+bool _mappedToKeyCode(int charCode) {
+  return _charCodeIsLetter(charCode) || charCode == _kUseKeyCode;
 }
 
 // Return a map of EventCode -> EventKey -> logicalKey
-void buildMap(Iterable<Layout> layouts) {
-  final Map<String, Map<String, _ResultRecord>> result = <String, Map<String, _ResultRecord>>{};
+Map<String, Map<String, int>> buildMap(Iterable<Layout> layouts) {
+  final Map<String, Map<String, int>> result = <String, Map<String, int>>{};
   for (final Layout layout in layouts) {
     _buildLayout(layout.entries).forEach((String eventCode, int logicalKey) {
-      final Map<String, _ResultRecord> codeMap = result.putIfAbsent(eventCode, () => <String, _ResultRecord>{});
+      final Map<String, int> codeMap = result.putIfAbsent(eventCode, () => <String, int>{});
       final LayoutEntry entry = layout.entries[eventCode]!;
       for (int charIndex = 0; charIndex < 4; charIndex += 1) {
         final bool isDeadKey = entry.deadMasks & (1 << charIndex) != 0;
@@ -131,16 +139,15 @@ void buildMap(Iterable<Layout> layouts) {
           continue;
         }
         final String eventKey = isDeadKey ? 'Deadkey' : printable;
-        if (codeMap.containsKey(eventKey) && codeMap[eventKey]!.logicalKey != logicalKey) {
-          print('Error assigning ($eventCode, $eventKey) as '
-            '0x${logicalKey.toRadixString(16)} (${layout.language}): '
-            'already assigned as 0x${codeMap[eventKey]!.logicalKey.toRadixString(16)} '
-            '(${codeMap[eventKey]!.language})');
+        if (codeMap.containsKey(eventKey) && codeMap[eventKey] != logicalKey) {
+          assert(_mappedToKeyCode(codeMap[eventKey]!));
+          assert(_mappedToKeyCode(logicalKey));
+          codeMap[eventKey] = _kUseKeyCode;
         } else {
-          codeMap[eventKey] = _ResultRecord(logicalKey, layout.language);
+          codeMap[eventKey] = logicalKey;
         }
       }
     });
   }
-  // return result;
+  return result;
 }

@@ -99,6 +99,45 @@ String _readSharedSegment(String path) {
   return lines.sublist(startLine + 1, endLine).join('\n').trimRight();
 }
 
+typedef _ForEachAction<V> = void Function(String key, V value);
+void _sortedForEach<V>(Map<String, V> map, _ForEachAction<V> action) {
+  map
+    .entries
+    .toList()
+    ..sort((MapEntry<String, V> a, MapEntry<String, V> b) => a.key.compareTo(b.key))
+    ..forEach((MapEntry<String, V> entry) {
+      action(entry.key, entry.value);
+    });
+}
+
+String _escapeEventKey(String original) {
+  switch (original) {
+    case "'":
+      return '"\'"';
+    case r'\':
+      return r"r'\'";
+    case r'$':
+      return r"r'$'";
+    default:
+      return "'$original'";
+  }
+}
+
+String _buildMapString(Iterable<Layout> layouts) {
+  final List<String> codeStrings = <String>[];
+  _sortedForEach(buildMap(layouts), (String eventCode, Map<String, int> eventKeyToLogicalKeys) {
+    final List<String> codeStringBodies = <String>[];
+    _sortedForEach(eventKeyToLogicalKeys, (String eventKey, int result) {
+      codeStringBodies.add('    ${_escapeEventKey(eventKey)}: 0x${result.toRadixString(16)},');
+    });
+    codeStrings.add('''
+  '$eventCode': <String, int>{
+${codeStringBodies.join('\n').trimRight()}
+  },''');
+  });
+  return '<String, Map<String, int>>{\n${codeStrings.join('\n')}\n}';
+}
+
 Future<void> generate(Options options) async {
   final List<Layout> layouts = await fetchFromGithub(
     githubToken: options.githubToken,
@@ -107,9 +146,9 @@ Future<void> generate(Options options) async {
   );
   // Build store.
   final LayoutStore store = LayoutStore(kLayoutGoals, layouts);
-  buildMap(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.win));
-  buildMap(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.linux));
-  buildMap(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.darwin));
+
+  _buildMapString(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.linux));
+  _buildMapString(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.darwin));
 
   // final String body = marshallStoreCompressed(store);
 
@@ -117,19 +156,22 @@ Future<void> generate(Options options) async {
   // // Inconcistencies will cause exceptions.
   // verifyLayoutStoreEqual(store, unmarshallStoreCompressed(body));
 
-  // // Generate the definition file.
-  // _writeFileTo(
-  //   options.outputRoot,
-  //   'definitions.g.dart',
-  //   _renderTemplate(
-  //     File(path.join(options.dataRoot, 'definitions.dart.tmpl')).readAsStringSync(),
-  //     <String, String>{
-  //       'COMMIT_ID': commitId,
-  //       'BODY': _prettyPrintBody(body, 64),
-  //       'BODY_LENGTH': '${body.length}',
-  //     },
-  //   ),
-  // );
+  // Generate the definition file.
+  _writeFileTo(
+    options.outputRoot,
+    'key_mappings.g.dart',
+    _renderTemplate(
+      File(path.join(options.dataRoot, 'key_mappings.dart.tmpl')).readAsStringSync(),
+      <String, String>{
+        'WIN_MAPPING': _buildMapString(store.layouts.where((Layout layout) =>
+            layout.platform == LayoutPlatform.win)),
+        'LINUX_MAPPING': _buildMapString(store.layouts.where((Layout layout) =>
+            layout.platform == LayoutPlatform.linux)),
+        'DARWIN_MAPPING': _buildMapString(store.layouts.where((Layout layout) =>
+            layout.platform == LayoutPlatform.darwin)),
+      },
+    ),
+  );
 
   // // Generate the type file.
   // _writeFileTo(

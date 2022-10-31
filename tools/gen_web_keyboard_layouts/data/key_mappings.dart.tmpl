@@ -13,7 +13,8 @@
 //
 // See flutter/engine:flutter/tools/gen_web_keyboard_layouts/README.md for more information.
 
-part of web_keyboard_layouts;
+final Map<String, Map<String, int>> kWinMapping = @@@WIN_MAPPING@@@;
 
-final LayoutStore kLayoutStore = unmarshallStoreCompressed(
-@@@BODY@@@); // @@@BODY_LENGTH@@@ bytes
+final Map<String, Map<String, int>> kLinuxMapping = @@@LINUX_MAPPING@@@;
+
+final Map<String, Map<String, int>> kDarwinMapping = @@@DARWIN_MAPPING@@@;
