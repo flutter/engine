@@ -163,6 +163,7 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
           Pixel* dst_p = reinterpret_cast<Pixel*>(dst_row + x_offset_bytes);
           Pixel dst = *dst_p;
 
+          // Ensure both colors are premultiplied for the blending operation.
           if (info.alphaType() == kUnpremul_SkAlphaType) {
             dst.Premultiply();
           }
@@ -170,13 +171,13 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
             src.Premultiply();
           }
 
-          for (int i = 0; i < 3; i++) {
+          for (int i = 0; i < 4; i++) {
             dst.channel[i] = src.channel[i] +
                              dst.channel[i] * (0xFF - src.GetAlpha()) / 0xFF;
           }
-          dst.SetAlpha(src.GetAlpha() +
-                       dst.GetAlpha() * (0xFF - src.GetAlpha()) / 0xFF);
 
+          // The final color is premultiplied. Unpremultiply to match the
+          // backdrop surface if necessary.
           if (info.alphaType() == kUnpremul_SkAlphaType) {
             dst.Unpremultiply();
           }
@@ -408,9 +409,6 @@ APNGImageGenerator::DemuxNextImage(const void* buffer_p,
     frame_info.duration =
         static_cast<int>(control_data->get_delay_num() * 1000.f / denominator);
 
-    // TODO(bdero): Populate frame_info.required_frame depending on the
-    //              blend_mode and disposal_method.
-
     result.frame_info = frame_info;
     result.x_offset = control_data->get_x_offset();
     result.y_offset = control_data->get_y_offset();
@@ -527,11 +525,18 @@ bool APNGImageGenerator::DemuxNextImageInternal() {
     return false;
   }
 
+  if (images_.back().frame_info->disposal_method ==
+      SkCodecAnimation::DisposalMethod::kRestorePrevious) {
+    FML_DLOG(INFO)
+        << "DisposalMethod::kRestorePrevious is not supported by the "
+           "MultiFrameCodec. Falling back to DisposalMethod::kRestoreBGColor "
+           " behavior instead.";
+  }
+
   if (images_.size() > first_frame_index_ &&
       images_.back().frame_info->disposal_method ==
           SkCodecAnimation::DisposalMethod::kKeep) {
-    // Offset by 2 because the first image is the default image, which may not
-    // be a frame.
+    // Mark the required frame as the previous frame in all cases.
     image->frame_info->required_frame = images_.size() - 1;
   }
 

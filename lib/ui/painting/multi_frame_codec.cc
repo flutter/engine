@@ -108,24 +108,24 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
 
   if (requiredFrameIndex != SkCodec::kNoFrame) {
     // We currently assume that frames can only ever depend on the immediately
-    // previous frame, if any.
+    // previous frame, if any. This means that
+    // `DisposalMethod::kRestorePrevious` is not supported.
     if (lastRequiredFrame_ == nullptr) {
-      FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
-                     << requiredFrameIndex
-                     << " and no required frames are cached.";
-      return nullptr;
+      FML_DLOG(INFO)
+          << "Frame " << nextFrameIndex_ << " depends on frame "
+          << requiredFrameIndex
+          << " and no required frames are cached. Using blank slate instead.";
     } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
       FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
-                     << " is not cached. Using " << lastRequiredFrameIndex_
-                     << " instead";
-    }
-
-    // Copy the previous frame's output buffer into the current frame as the
-    // starting point.
-    if (lastRequiredFrame_->getPixels() &&
-        CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
-                     *lastRequiredFrame_)) {
-      prior_frame_index = requiredFrameIndex;
+                     << " is not cached. Using blank slate instead.";
+    } else {
+      // Copy the previous frame's output buffer into the current frame as the
+      // starting point.
+      if (lastRequiredFrame_->getPixels() &&
+          CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
+                       *lastRequiredFrame_)) {
+        prior_frame_index = requiredFrameIndex;
+      }
     }
   }
 
