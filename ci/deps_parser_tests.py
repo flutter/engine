@@ -18,7 +18,7 @@ UPSTREAM_PREFIX = 'upstream_'
 class TestDepsParserMethods(unittest.TestCase):
   # Extract both mirrored dep names and URLs &
   # upstream names and URLs from DEPs file.
-  def setUp(self): # lower-camel-case for the python unittest framework
+  def setUp(self):  # lower-camel-case for the python unittest framework
     with open(DEPS) as file:
       # Read the content.
       with open(DEPS, 'r') as file:
