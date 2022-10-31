@@ -1731,7 +1731,7 @@ half4 main(vec2 fragCoord) {
     expect(shader, isNotNull);
 
     // mismatched uniforms returns null.
-    final SkShader? invalidShader = effect!.makeShader(<double>[1]);
+    final SkShader? invalidShader = effect.makeShader(<double>[1]);
 
     expect(invalidShader, isNull);
 
