@@ -185,6 +185,22 @@ void PortableUITest::RegisterTouchScreen() {
   FML_LOG(INFO) << "Touchscreen registered";
 }
 
+void PortableUITest::RegisterMouse() {
+  FML_LOG(INFO) << "Registering fake mouse";
+  input_registry_ = realm_->Connect<fuchsia::ui::test::input::Registry>();
+  input_registry_.set_error_handler(
+      [](auto) { FML_LOG(ERROR) << "Error from input helper"; });
+
+  bool mouse_registered = false;
+  fuchsia::ui::test::input::RegistryRegisterMouseRequest request;
+  request.set_device(fake_mouse_.NewRequest());
+  input_registry_->RegisterMouse(
+      std::move(request), [&mouse_registered]() { mouse_registered = true; });
+
+  RunLoopUntil([&mouse_registered] { return mouse_registered; });
+  FML_LOG(INFO) << "Mouse registered";
+}
+
 void PortableUITest::InjectTap(int32_t x, int32_t y) {
   fuchsia::ui::test::input::TouchScreenSimulateTapRequest tap_request;
   tap_request.mutable_tap_location()->x = x;
@@ -196,6 +212,40 @@ void PortableUITest::InjectTap(int32_t x, int32_t y) {
     ++touch_injection_request_count_;
     FML_LOG(INFO) << "*** Tap injected, count: "
                   << touch_injection_request_count_;
+  });
+}
+
+void PortableUITest::SimulateMouseEvent(
+    std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons, int movement_x,
+    int movement_y) {
+  FML_LOG(INFO) << "Requesting mouse event";
+  fuchsia::ui::test::input::MouseSimulateMouseEventRequest request;
+  request.set_pressed_buttons(std::move(pressed_buttons));
+  request.set_movement_x(movement_x);
+  request.set_movement_y(movement_y);
+
+  fake_mouse_->SimulateMouseEvent(std::move(request),
+                                  [] { FML_LOG(INFO) << "Mouse event injected"; });
+}
+
+void PortableUITest::SimulateMouseScroll(
+    std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
+    int scroll_x,
+    int scroll_y,
+    bool use_physical_units) {
+  FML_LOG(INFO) << "Requesting mouse scroll";
+  fuchsia::ui::test::input::MouseSimulateMouseEventRequest request;
+  request.set_pressed_buttons(std::move(pressed_buttons));
+  if (use_physical_units) {
+    request.set_scroll_h_physical_pixel(scroll_x);
+    request.set_scroll_v_physical_pixel(scroll_y);
+  } else {
+    request.set_scroll_h_detent(scroll_x);
+    request.set_scroll_v_detent(scroll_y);
+  }
+
+  fake_mouse_->SimulateMouseEvent(std::move(request), [] {
+    FML_LOG(INFO) << "Mouse scroll event injected";
   });
 }
 
