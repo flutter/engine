@@ -113,7 +113,7 @@ class FlutterConfiguration {
   String get canvasKitBaseUrl => _js?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
-    defaultValue: '',
+    defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
   );
 
   /// If set to true, forces CPU-only rendering in CanvasKit (i.e. the engine

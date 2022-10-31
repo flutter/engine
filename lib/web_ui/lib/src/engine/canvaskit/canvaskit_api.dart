@@ -137,15 +137,6 @@ extension CanvasKitExtension on CanvasKit {
     SkPartialImageInfo info,
   );
 
-  /// Gets a Skia surface from Cobalt's h5vcc object.
-  ///
-  /// This is only applicable when running on Cobalt and when using Cobalt's
-  /// h5vcc CanvasKit bindings.
-  ///
-  /// On Cobalt, this is the only way to get a Skia surface. Other CanvasKit
-  /// Make...Surface methods are not supported.
-  external SkSurface getH5vccSkSurface();
-
   /// Retrieve the RuntimeEffect namespace for null checking.
   external Object? get RuntimeEffect;
 }
