@@ -61,8 +61,7 @@ class TestDepsParserMethods(unittest.TestCase):
         # add the prefix on the dep name when searching for the upstream entry
         self.assertTrue(
             UPSTREAM_PREFIX + dep_name in self.upstream_urls,
-            msg=dep_name +
-            ' not found in upstream URL list. ' +
+            msg=dep_name + ' not found in upstream URL list. ' +
             'Each dep in the "deps" section of DEPS file must have associated upstream URL'
         )
 
