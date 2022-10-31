@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import 'common.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -184,7 +185,27 @@ void testMain() {
     await ui.webOnlyInitializePlatform();
   });
 
-  group('FragmentProgram can be created from JSON IPLR bundle', () {
-    CkFragmentProgram
+  group('FragmentProgram can be created from JSON IPLR bundle', () async {
+    final Uint8List data = utf8.encode(kJsonIPLR) as Uint8List;
+    final CkFragmentProgram program = await CkFragmentProgram.fromBytes('test', data);
+
+    expect(program.effect, isNotNull);
+    expect(program.floatCount, 17);
+    expect(program.textureCount, 0);
+    expect(program.uniforms, hasLength(17));
+    expect(program.name, 'test');
+
+    final ui.FragmentShader shader = program.fragmentShader();
+
+    shader.setFloat(0, 4);
+    shader.dispose();
+
+    expect(shader.debugDisposed, true);
+
+    final ui.FragmentShader shader2 = program.fragmentShader();
+
+    shader.setFloat(0, 5);
+    shader2.dispose();
+    expect(shader2.debugDisposed, true);
   });
 }

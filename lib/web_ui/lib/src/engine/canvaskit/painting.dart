@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
@@ -375,9 +376,63 @@ class CkFragmentProgram implements ui.FragmentProgram {
   CkFragmentProgram(this.name, this.effect, this.uniforms, this.floatCount,
       this.textureCount);
 
+  static Future<CkFragmentProgram> fromBytes(String name, Uint8List data) async {
+    final String contents = utf8.decode(data);
+    final Object? rawShaderData = json.decode(contents);
+    if (rawShaderData is! Map<String, Object?>) {
+      throw const FormatException('Invalid Shader Data');
+    }
+    final Object? source = rawShaderData['sksl'];
+    final Object? rawUniforms = rawShaderData['uniforms'];
+    if (source is! String || rawUniforms is! List<Object?>) {
+      throw const FormatException('Invalid Shader Data');
+    }
+    final SkRuntimeEffect? effect = MakeRuntimeEffect(source);
+    if (effect == null) {
+      throw const FormatException('Invalid Shader Data');
+    }
 
-  static Future<CkFragmentProgram> fromBytes(Uint8List data) async {
+    final List<UniformData> uniforms = List<UniformData>.filled(rawUniforms.length, UniformData.empty);
 
+    int textureCount = 0;
+    int floatCount = 0;
+    for (int i = 0; i < rawUniforms.length; i += 1) {
+      final Object? rawUniformData = rawUniforms[i];
+      if (rawUniformData is! Map<String, Object?>) {
+        throw const FormatException('Invalid Shader Data');
+      }
+      final Object? name = rawUniformData['name'];
+      final Object? location = rawUniformData['location'];
+      final Object? rawType = rawUniformData['type'];
+      if (name is! String || location is! int || rawType is! int) {
+        throw const FormatException('Invalid Shader Data');
+      }
+      final UniformType? type = uniformTypeFromJson(rawType);
+      if (type == null) {
+        throw const FormatException('Invalid Shader Data');
+      }
+      if (type == UniformType.SampledImage) {
+        textureCount += 1;
+      } else {
+        final Object? bitWidth = rawUniformData['bit_width'];
+        if (bitWidth is! int) {
+          throw const FormatException('Invalid Shader Data');
+        }
+        floatCount += bitWidth ~/ 32;
+      }
+      uniforms[location] = UniformData(
+        name: name,
+        location: location,
+        type: type,
+      );
+    }
+    return CkFragmentProgram(
+      name,
+      effect,
+      uniforms,
+      floatCount,
+      textureCount,
+    );
   }
 
   final String name;
