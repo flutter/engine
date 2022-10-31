@@ -23,6 +23,8 @@
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_handles.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -527,8 +529,30 @@ std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
   return surface_producer_->AcquireSurface(current_frame);
 }
 
-void ContextVK::SetupSwapchain(vk::SurfaceKHR surface) {
-  surface_ = surface;
+#ifdef FML_OS_ANDROID
+
+vk::UniqueSurfaceKHR ContextVK::CreateAndroidSurface(
+    ANativeWindow* window) const {
+  if (!instance_) {
+    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  }
+
+  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
+  auto surface_res = instance_->createAndroidSurfaceKHRUnique(create_info);
+
+  if (surface_res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create Android surface, error: "
+                   << vk::to_string(surface_res.result);
+    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  }
+
+  return std::move(surface_res.value);
+}
+
+#endif  // FML_OS_ANDROID
+
+void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
+  surface_ = std::move(surface);
   auto present_queue_out = PickPresentQueue(physical_device_, *surface_);
   if (!present_queue_out.has_value()) {
     return;

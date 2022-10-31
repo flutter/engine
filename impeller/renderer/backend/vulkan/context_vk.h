@@ -60,11 +60,15 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Instance GetInstance() const;
 
-  void SetupSwapchain(vk::SurfaceKHR surface);
+  void SetupSwapchain(vk::UniqueSurfaceKHR surface);
 
   std::unique_ptr<Surface> AcquireSurface(size_t current_frame);
 
   std::shared_ptr<DescriptorPoolVK> GetDescriptorPool() const;
+
+#ifdef FML_OS_ANDROID
+  vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;
+#endif  // FML_OS_ANDROID
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -80,7 +84,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
   vk::Queue present_queue_;
-  vk::SurfaceKHR surface_;
+  vk::UniqueSurfaceKHR surface_;
   std::unique_ptr<SwapchainVK> swapchain_;
   std::unique_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;

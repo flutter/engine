@@ -75,14 +75,6 @@ std::unique_ptr<Surface> AndroidSurfaceVulkanImpeller::CreateGPUSurface(
     return nullptr;
   }
 
-  auto vulkan_surface_android =
-      std::make_unique<vulkan::VulkanNativeSurfaceAndroid>(
-          native_window_->handle());
-
-  if (!vulkan_surface_android->IsValid()) {
-    return nullptr;
-  }
-
   std::unique_ptr<GPUSurfaceVulkanImpeller> gpu_surface =
       std::make_unique<GPUSurfaceVulkanImpeller>(impeller_context_);
 
@@ -110,13 +102,23 @@ bool AndroidSurfaceVulkanImpeller::ResourceContextClearCurrent() {
 bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
+  bool success = native_window_ && native_window_->IsValid();
 
-  // TODO (kaushikiska): setup the swapchain here!
+  if (success) {
+    auto& context_vk = impeller::ContextVK::Cast(*impeller_context_);
+    auto surface = context_vk.CreateAndroidSurface(native_window_->handle());
 
-  auto& context_vk = impeller::ContextVK::Cast(*impeller_context_);
-  context_vk.SetupSwapchain(vk::UniqueSurfaceKHR surface);
+    if (!surface) {
+      FML_LOG(ERROR) << "Could not create a vulkan surface.";
+      return false;
+    }
 
-  return native_window_ && native_window_->IsValid();
+    context_vk.SetupSwapchain(std::move(surface));
+    return true;
+  }
+
+  native_window_ = nullptr;
+  return false;
 }
 
 }  // namespace flutter
