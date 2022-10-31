@@ -11,7 +11,7 @@
 namespace flutter {
 
 FlutterMetalCompositor::FlutterMetalCompositor(
-    FlutterViewProvider* view_provider,
+    id<FlutterViewProvider> view_provider,
     FlutterPlatformViewController* platform_views_controller,
     id<MTLDevice> mtl_device)
     : FlutterCompositor(view_provider),

@@ -24,8 +24,8 @@ class FlutterCompositor {
   //
   // The view_provider is used to query FlutterViews from view IDs,
   // which are used for presenting and creating backing stores.
-  // It must not be null, and is typically a facade over FlutterEngine.
-  explicit FlutterCompositor(FlutterViewProvider* view_provider);
+  // It must not be null, and is typically FlutterViewEngineProvider.
+  explicit FlutterCompositor(id<FlutterViewProvider> view_provider);
 
   virtual ~FlutterCompositor() = default;
 
@@ -96,7 +96,7 @@ class FlutterCompositor {
   std::list<CALayer*> active_ca_layers_;
 
   // Where the compositor can query FlutterViews. Must not be null.
-  FlutterViewProvider* const view_provider_;
+  id<FlutterViewProvider> const view_provider_;
 
   // Callback set by the embedder to be called when the layer tree has been
   // correctly set up for this frame.

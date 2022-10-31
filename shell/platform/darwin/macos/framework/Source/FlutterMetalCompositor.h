@@ -14,7 +14,7 @@ namespace flutter {
 class FlutterMetalCompositor : public FlutterCompositor {
  public:
   explicit FlutterMetalCompositor(
-      FlutterViewProvider* view_provider,
+      id<FlutterViewProvider> view_provider,
       FlutterPlatformViewController* platform_views_controller,
       id<MTLDevice> mtl_device);
 
@@ -47,8 +47,8 @@ class FlutterMetalCompositor : public FlutterCompositor {
  private:
   // Presents the platform view layer represented by `layer`. `layer_index` is
   // used to position the layer in the z-axis. If the layer does not have a
-  // superview, it will become subview of the view corresponding to `view_id`.
-  void PresentPlatformView(uint64_t view_id,
+  // superview, it will become subview of `view`.
+  void PresentPlatformView(FlutterView* view,
                            const FlutterLayer* layer,
                            size_t layer_position);
 

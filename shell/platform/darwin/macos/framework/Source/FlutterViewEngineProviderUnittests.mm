@@ -8,7 +8,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -17,8 +17,8 @@
 
 namespace flutter::testing {
 
-TEST(FlutterViewProviderUnittests, GetViewReturnsTheCorrectView) {
-  FlutterViewProvider* viewProvider;
+TEST(FlutterViewEngineProviderUnittests, GetViewReturnsTheCorrectView) {
+  FlutterViewEngineProvider* viewProvider;
   id mockEngine = OCMClassMock([FlutterEngine class]);
   __block id mockFlutterViewController;
   OCMStub([mockEngine viewController]).andDo(^(NSInvocation* invocation) {
@@ -26,7 +26,7 @@ TEST(FlutterViewProviderUnittests, GetViewReturnsTheCorrectView) {
       [invocation setReturnValue:&mockFlutterViewController];
     }
   });
-  viewProvider = [[FlutterViewProvider alloc] initWithEngine:mockEngine];
+  viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:mockEngine];
 
   // When the view controller is not set, the returned view is nil.
   EXPECT_EQ([viewProvider getView:0], nil);

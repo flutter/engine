@@ -4,20 +4,14 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
-@class FlutterEngine;
-
 /**
- * @brief A facade over FlutterEngine that allows FlutterEngine's children
- *        components to query FlutterView.
+ * An interface to query FlutterView.
  *
- *        FlutterViewProvider only holds a weak reference to FlutterEngine.
+ * See also:
+ *
+ *  * FlutterViewEngineProvider, a typical implementation.
  */
-@interface FlutterViewProvider : NSObject
-
-/**
- * Create a FlutterViewProvider with the underlying engine.
- */
-- (nonnull instancetype)initWithEngine:(nonnull __weak FlutterEngine*)engine;
+@protocol FlutterViewProvider
 
 /**
  * Get the FlutterView with the given view ID.

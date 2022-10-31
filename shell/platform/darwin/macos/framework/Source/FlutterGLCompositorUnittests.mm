@@ -9,14 +9,40 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #import "flutter/testing/testing.h"
 
+@interface FlutterViewMockProviderGL : NSObject <FlutterViewProvider> {
+  FlutterView* _defaultView;
+}
+/**
+ * Create a FlutterViewMockProviderGL with the provided view as the default view.
+ */
+- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view;
+@end
+
+@implementation FlutterViewMockProviderGL
+
+- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view {
+  self = [super init];
+  if (self != nil) {
+    _defaultView = view;
+  }
+  return self;
+}
+
+- (nullable FlutterView*)getView:(uint64_t)viewId {
+  if (viewId == kFlutterDefaultViewId) {
+    return _defaultView;
+  }
+  return nil;
+}
+
+@end
+
 namespace flutter::testing {
 namespace {
 
-FlutterViewProvider* MockViewProvider() {
+id<FlutterViewProvider> MockViewProvider() {
   id viewMock = OCMClassMock([FlutterView class]);
-  FlutterViewProvider* viewProviderMock = OCMStrictClassMock([FlutterViewProvider class]);
-  OCMStub([viewProviderMock getView:kFlutterDefaultViewId]).ignoringNonObjectArgs().andReturn(viewMock);
-  return viewProviderMock;
+  return [[FlutterViewMockProviderGL alloc] initWithDefaultView:viewMock];
 }
 }  // namespace
 

@@ -7,10 +7,9 @@
 
 namespace flutter {
 
-FlutterCompositor::FlutterCompositor(FlutterViewProvider* view_provider) {
+FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider)
+    : view_provider_(view_provider) {
   FML_CHECK(view_provider != nullptr) << "FlutterViewProvider* cannot be nullptr";
-
-  view_provider_ = view_provider;
 }
 
 void FlutterCompositor::SetPresentCallback(

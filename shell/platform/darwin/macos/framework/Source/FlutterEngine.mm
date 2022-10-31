@@ -21,6 +21,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 /**
@@ -211,7 +212,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // This is either a FlutterGLCompositor or a FlutterMetalCompositor instance.
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
-  FlutterViewProvider* _viewProvider;
+  FlutterViewEngineProvider* _viewProvider;
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
@@ -246,7 +247,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
-  _viewProvider = [[FlutterViewProvider alloc] initWithEngine:self];
+  _viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:self];
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
