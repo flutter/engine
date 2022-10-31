@@ -130,6 +130,7 @@ void DartCallbackCache::LoadCacheFromDisk() {
   Document d;
   d.Parse(cache_contents.c_str());
   if (d.HasParseError() || !d.IsArray()) {
+    // Could not parse callback cache, aborting restore.
     return;
   }
   const auto entries = d.GetArray();
