@@ -130,8 +130,6 @@ class __declspec(uuid("fedb8280-ea4f-47a9-98fe-5d1a557fe4b3"))
   IAccessible* window_accessible_;
 
   AccessibilityAlert* alert_accessible_;
-
-  CComObject<AccessibilityRootNode>* self_com_;
 };
 
 }  // namespace flutter
