@@ -117,7 +117,7 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
   return EndFrame(has_flutter_content);
 }
 
-void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_super_view,
+void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_base_view,
                                                  const FlutterLayer* layer,
                                                  size_t layer_position) {
   // TODO (https://github.com/flutter/flutter/issues/96668)
@@ -134,7 +134,7 @@ void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_super_view
   platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
                                    layer->size.width / scale, layer->size.height / scale);
   if (platform_view.superview == nil) {
-    [default_super_view addSubview:platform_view];
+    [default_base_view addSubview:platform_view];
   }
   platform_view.layer.zPosition = layer_position;
 }
