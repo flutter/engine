@@ -113,10 +113,14 @@ def parse_deps_file(deps_flat_file):
   )
   try:
     # clean up cloned upstream dependency directory
-    shutil.rmtree(DEP_CLONE_DIR) # use shutil.rmtree since dir could be non-empty
+    shutil.rmtree(
+        DEP_CLONE_DIR
+    )  # use shutil.rmtree since dir could be non-empty
   except OSError as e:
-    print("Error cleaning up clone directory: %s : %s" % (DEP_CLONE_DIR, e.strerror))
-
+    print(
+        "Error cleaning up clone directory: %s : %s" %
+        (DEP_CLONE_DIR, e.strerror)
+    )
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found.
   data = json.dumps({'queries': queries}).encode('utf-8')
