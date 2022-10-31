@@ -91,7 +91,8 @@ def parse_deps_file(deps_flat_file):
   }
   osv_url = 'https://api.osv.dev/v1/querybatch'
 
-  os.mkdir(DEP_CLONE_DIR)  #clone deps with upstream into temporary dir
+  if not os.path.exists(DEP_CLONE_DIR):
+    os.mkdir(DEP_CLONE_DIR)  #clone deps with upstream into temporary dir
 
   # Extract commit hash, save in dictionary
   for line in lines:
@@ -109,6 +110,10 @@ def parse_deps_file(deps_flat_file):
       'Dependencies that could not be parsed for ancestor commits: ' +
       ', '.join(failed_deps)
   )
+  try:
+    os.rmdir(DEP_CLONE_DIR)
+  except OSError as e:
+    print("Error cleaning up clone directory: %s : %s" % (DEP_CLONE_DIR, e.strerror))
 
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found.
@@ -152,12 +157,11 @@ def get_common_ancestor_commit(dep):
   # dep[1] contains the mirror's pinned SHA
   # upstream is the origin repo
   dep_name = dep[0].split('/')[-1].split('.')[0]
-  with open(DEPS, 'r', encoding='utf-8') as file:
+  with open(DEPS, 'r') as file:
     local_scope = {}
     global_scope = {'Var': lambda x: x}  # dummy lambda
     # Read the content.
-    with open(DEPS, 'r') as file:
-      deps_content = file.read()
+    deps_content = file.read()
 
     # Eval the content.
     exec(deps_content, global_scope, local_scope)
