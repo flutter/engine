@@ -153,7 +153,7 @@ extension CanvasKitExtension on CanvasKit {
 // TODO(jonahwilliams): remove this once all CanvasKit versions
 // are built in the SDK.
 // https://github.com/flutter/flutter/issues/114260
-final bool isRuntimeEffectAvailable = canvasKit.RuntimeEffect == null;
+final bool isRuntimeEffectAvailable = windowFlutterCanvasKit?.RuntimeEffect != null;
 
 @JS('window.CanvasKitInit')
 external CanvasKitInitPromise CanvasKitInit(CanvasKitInitOptions options);
