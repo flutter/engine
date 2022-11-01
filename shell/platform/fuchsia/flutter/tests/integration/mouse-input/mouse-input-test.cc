@@ -267,16 +267,16 @@ class MouseInputTest : public PortableUITest,
                                   .environment = kFlutterRunnerEnvironment,
                               });
 
-    realm_builder()->AddRoute(Route{
-        .capabilities = {Protocol{
+    realm_builder()->AddRoute(
+        Route{.capabilities = {Protocol{
                   fuchsia::ui::test::input::MouseInputListener::Name_}},
-        .source = kMouseInputListenerRef,
-        .targets = {kFlutterJitRunnerRef, kMouseInputViewRef}});
+              .source = kMouseInputListenerRef,
+              .targets = {kFlutterJitRunnerRef, kMouseInputViewRef}});
 
-    realm_builder()->AddRoute(Route{
-        .capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-        .source = kMouseInputViewRef,
-        .targets = {ParentRef()}});
+    realm_builder()->AddRoute(
+        Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
+              .source = kMouseInputViewRef,
+              .targets = {ParentRef()}});
   }
 
   ParamType GetTestUIStackUrl() override { return GetParam(); };
