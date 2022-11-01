@@ -228,7 +228,7 @@ class ClangTidy {
     return _ComputeJobsResult(jobs, sawMalformed);
   }
 
-  Iterable<String> _trimGenerator(String output) sync* {
+  static Iterable<String> _trimGenerator(String output) sync* {
     const LineSplitter splitter = LineSplitter();
     final List<String> lines = splitter.convert(output);
     bool isPrintingError = false;
@@ -244,7 +244,8 @@ class ClangTidy {
     }
   }
 
-  String _trimOutput(String output) => _trimGenerator(output).join('\n');
+  @visibleForTesting
+  static String trimOutput(String output) => _trimGenerator(output).join('\n');
 
   Future<int> _runJobs(List<WorkerJob> jobs) async {
     int result = 0;
@@ -257,9 +258,9 @@ class ClangTidy {
       if (!job.printOutput) {
         final Exception? exception = job.exception;
         if (exception != null) {
-          _errSink.writeln(_trimOutput(exception.toString()));
+          _errSink.writeln(trimOutput(exception.toString()));
         } else {
-          _errSink.writeln(_trimOutput(job.result.stdout));
+          _errSink.writeln(trimOutput(job.result.stdout));
         }
       }
       result = 1;
