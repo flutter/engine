@@ -47,7 +47,8 @@ void testMain() {
     // the bounds on this will be the same as union - but would draw a missing inside piece.
     final Path xor = Path.combine(PathOperation.xor, pathCircle1, pathCircle2);
     expect(xor.getBounds(), equals(c1UnionC2));
-  });
+  // TODO(hterkelsen): Implement Path.combine in the HTML renderer, https://github.com/flutter/flutter/issues/44572
+  }, skip: isHtml);
 
   test('path combine oval', () {
     final Rect c1 = Rect.fromCircle(center: const Offset(10.0, 10.0), radius: 10.0);
@@ -73,7 +74,8 @@ void testMain() {
     // the bounds on this will be the same as union - but would draw a missing inside piece.
     final Path xor = Path.combine(PathOperation.xor, pathCircle1, pathCircle2);
     expect(xor.getBounds(), equals(c1UnionC2));
-  });
+  // TODO(hterkelsen): Implement Path.combine in the HTML renderer, https://github.com/flutter/flutter/issues/44572
+  }, skip: isHtml);
 
   test('path clone', () {
     final Path p1 = Path()..lineTo(20.0, 20.0);
@@ -186,7 +188,8 @@ void testMain() {
     expect(multiContourMetric.iterator.current.length, equals(5.0));
     expect(multiContourMetric.iterator.moveNext(), isFalse);
     expect(() => multiContourMetric.iterator.current, throwsRangeError);
-  });
+  // TODO(hterkelsen): forceClosed in computeMetrics is ignored in the HTML renderer, https://github.com/flutter/flutter/issues/114446
+  }, skip: isHtml);
 
   test('PathMetrics can remember lengths and isClosed', () {
     final Path path = Path()..lineTo(0, 10)
@@ -203,7 +206,8 @@ void testMain() {
     expect(metrics[1].isClosed, false);
     expect(metrics[1].getTangentForOffset(4.0)!.vector, const Offset(1.0, 0.0));
     expect(metrics[1].extractPath(4.0, 6.0).computeMetrics().first.length, 2.0);
-  });
+  // TODO(hterkelsen): isClosed always returns false in the HTML renderer, https://github.com/flutter/flutter/issues/114446
+  }, skip: isHtml);
 
   test('PathMetrics on a mutated path', () {
     final Path path = Path()..lineTo(0, 10);
@@ -232,5 +236,6 @@ void testMain() {
     expect(newFirstMetric.isClosed, true);
     expect(newFirstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(newFirstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
-  });
+  // TODO(hterkelsen): isClosed always returns false in the HTML renderer, https://github.com/flutter/flutter/issues/114446
+  }, skip: isHtml);
 }

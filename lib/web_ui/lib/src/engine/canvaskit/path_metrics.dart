@@ -44,7 +44,7 @@ class CkContourMeasureIter extends ManagedSkiaObject<SkContourMeasureIter>
     if (currentMetric == null) {
       throw RangeError(
           'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
-          '- The iteration has not started yet. If so, call "moveNext" to start iteration.'
+          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
           '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
     }
     return currentMetric;
