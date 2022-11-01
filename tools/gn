@@ -436,13 +436,12 @@ def to_gn_args(args):
   # features can't work on these platforms.
   if args.target_os not in ['android', 'ios']:
     gn_args['skia_use_vulkan'] = True
-    gn_args['skia_vulkan_memory_allocator_dir'
-           ] = '//third_party/vulkan_memory_allocator'
+    gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
     # Disable VMA's use of std::shared_mutex in environments where the
     # standard library doesn't support it.
     if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
-      gn_args['skia_disable_vma_stl_shared_mutex'] = True
+      gn_args['disable_vma_stl_shared_mutex'] = True
 
   # We should not need a special case for x86, but this seems to introduce text relocations
   # even with -fPIC everywhere.
@@ -543,12 +542,6 @@ def to_gn_args(args):
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
-  # Vulkan support is WIP, see: https://github.com/flutter/flutter/issues/107357
-  if args.enable_impeller_vulkan:
-    gn_args['impeller_enable_opengles'] = False
-    gn_args['impeller_enable_vulkan'] = True
-    gn_args['skia_use_vma'] = False
-
   # ANGLE is exclusively used for:
   #  - Windows at runtime
   #  - Non-fuchsia host unit tests (is_host_build evaluates to false).
@@ -561,6 +554,11 @@ def to_gn_args(args):
                              get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
+    # Force ANGLE context checks on Windows to prevent crashes.
+    # TODO(loic-sharma): Remove this once ANGLE crashes have been fixed.
+    # https://github.com/flutter/flutter/issues/114107
+    if get_host_os() == 'win':
+      gn_args['angle_force_context_check_every_call'] = True
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
     gn_args['angle_enable_vulkan_validation_layers'] = False
@@ -956,6 +954,8 @@ def parse_args(args):
       help='Absolute path to a prebuilt impellerc. ' +
       'Do not use this outside of CI or with impellerc from a different engine version.'
   )
+
+  # This is currently a no-op, will be removed shortly.
   parser.add_argument(
       '--enable-impeller-vulkan',
       default=False,
