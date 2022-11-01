@@ -16,7 +16,14 @@ bool _isLetter(String char) {
       || (charCode >= _kUpperA && charCode <= _kUpperZ);
 }
 
-void verifyEntry(LayoutMapping mapping, String eventCode, List<String> eventKeys, int logicalKey) {
+String _fromCharCode(int? logicalKey) {
+  if (logicalKey == null) {
+    return '';
+  }
+  return String.fromCharCode(logicalKey);
+}
+
+void verifyEntry(LayoutMapping mapping, String eventCode, List<String> eventKeys, String mappedResult) {
   // If the first two entry of KeyboardEvent.key are letter keys such as "a" and
   // "A", then KeyboardEvent.keyCode is the upper letter such as "A". Otherwise,
   // this field must not be used (in reality this field may or may not be
@@ -34,7 +41,10 @@ void verifyEntry(LayoutMapping mapping, String eventCode, List<String> eventKeys
       continue;
     }
     test('$eventCode $index', () {
-      expect(mapping.getLogicalKey(eventCode, eventKey, eventKeyCode ?? ''), logicalKey);
+      expect(
+        _fromCharCode(mapping.getLogicalKey(eventCode, eventKey, eventKeyCode ?? '')),
+        mappedResult,
+      );
     });
     index += 1;
   }

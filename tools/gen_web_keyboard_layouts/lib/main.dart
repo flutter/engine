@@ -146,12 +146,12 @@ String _buildTestCasesString(List<Layout> layouts) {
       final LayoutEntry entry = layout.entries[eventCode]!;
       layoutEntries.add("    verifyEntry(mapping, '$eventCode', <String>["
           '${entry.printables.map(_escapeEventKey).join(', ')}'
-          '], 0x${logicalKey.toRadixString(16)});');
+          "], '${String.fromCharCode(logicalKey)}');");
     });
     layoutsString.add('''
   group('${layout.language}', () {
 ${layoutEntries.join('\n')}
-});
+  });
 ''');
   }
   return layoutsString.join('\n').trimRight();
