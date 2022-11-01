@@ -376,10 +376,10 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     // Do not break between closing punctuation and a nonstarter, even with
     // intervening spaces.
     // LB16: (CL | CP) SP* × NS
-    if ((prev1 == LineCharProperty.CL ||
-            baseOfSpaceSequence == LineCharProperty.CL ||
-            prev1 == LineCharProperty.CP ||
-            baseOfSpaceSequence == LineCharProperty.CP) &&
+    //
+    // The above is a quote from unicode.org. In our implementation, we did the
+    // following modification: Allow breaks when there are spaces.
+    if ((prev1 == LineCharProperty.CL || prev1 == LineCharProperty.CP) &&
         curr == LineCharProperty.NS) {
       setBreak(LineBreakType.prohibited, 16);
       continue;
@@ -387,9 +387,10 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
 
     // Do not break within ‘——’, even with intervening spaces.
     // LB17: B2 SP* × B2
-    if ((prev1 == LineCharProperty.B2 ||
-            baseOfSpaceSequence == LineCharProperty.B2) &&
-        curr == LineCharProperty.B2) {
+    //
+    // The above is a quote from unicode.org. In our implementation, we did the
+    // following modification: Allow breaks when there are spaces.
+    if (prev1 == LineCharProperty.B2 && curr == LineCharProperty.B2) {
       setBreak(LineBreakType.prohibited, 17);
       continue;
     }
