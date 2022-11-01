@@ -1074,7 +1074,7 @@ class SurfacePath implements ui.Path {
   /// `offset`, and using the given [mode].
   ///
   /// If `matrix4` is not null, the path will be transformed by this matrix
-  /// before the matrix is translated by the given offset.
+  /// after the matrix is translated by the given offset.
   void addPathWithMode(ui.Path path, double offsetX, double offsetY,
       Float32List? matrix4, int mode) {
     SurfacePath source = path as SurfacePath;
@@ -1172,10 +1172,8 @@ class SurfacePath implements ui.Path {
       } else {
         final double x = points[p];
         final double y = points[p + 1];
-        points[p] = (matrix4[0] * points[p]) + (matrix4[1] * points[p + 1]) + matrix4[12];
-        points[p + 1] = (matrix4[4] * x) + (matrix4[5] * y) + matrix4[13];
-        points[p] = points[p] + offsetX;
-        points[p + 1] = points[p + 1] + offsetY;
+        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + (matrix4[12] + offsetX);
+        points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + (matrix4[13] + offsetY);
       }
     }
     _resetAfterEdit();
