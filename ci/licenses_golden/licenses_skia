@@ -1,4 +1,4 @@
-Signature: cacb1540253983fcb9d32f4ec4f91ff5
+Signature: f991b7341d0774a635831831637a612e
 
 UNUSED LICENSES:
 
@@ -887,6 +887,7 @@ FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canvaskit_gold/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/codesize/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/compile_wasm_gm_tests/BUILD.bazel
+FILE: ../../../third_party/skia/infra/bots/task_drivers/cpu_tests/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/g3_canary/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/BUILD.bazel
@@ -2034,36 +2035,19 @@ FILE: ../../../third_party/skia/include/private/SkTArray.h
 FILE: ../../../third_party/skia/include/utils/SkNWayCanvas.h
 FILE: ../../../third_party/skia/include/utils/mac/SkCGUtils.h
 FILE: ../../../third_party/skia/samplecode/Sample.h
-FILE: ../../../third_party/skia/samplecode/Sample2PtRadial.cpp
-FILE: ../../../third_party/skia/samplecode/SampleAARectModes.cpp
-FILE: ../../../third_party/skia/samplecode/SampleAARects.cpp
 FILE: ../../../third_party/skia/samplecode/SampleArc.cpp
 FILE: ../../../third_party/skia/samplecode/SampleCamera.cpp
-FILE: ../../../third_party/skia/samplecode/SampleCircle.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClip.cpp
-FILE: ../../../third_party/skia/samplecode/SampleComplexClip.cpp
 FILE: ../../../third_party/skia/samplecode/SampleDegenerateTwoPtRadials.cpp
-FILE: ../../../third_party/skia/samplecode/SampleEffects.cpp
-FILE: ../../../third_party/skia/samplecode/SampleEmboss.cpp
-FILE: ../../../third_party/skia/samplecode/SampleFillType.cpp
 FILE: ../../../third_party/skia/samplecode/SampleGradients.cpp
-FILE: ../../../third_party/skia/samplecode/SampleHairCurves.cpp
-FILE: ../../../third_party/skia/samplecode/SampleHairModes.cpp
-FILE: ../../../third_party/skia/samplecode/SampleLCD.cpp
 FILE: ../../../third_party/skia/samplecode/SampleLayers.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePatch.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePath.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathClip.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathEffects.cpp
-FILE: ../../../third_party/skia/samplecode/SamplePolyToPoly.cpp
 FILE: ../../../third_party/skia/samplecode/SampleRepeatTile.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSlides.cpp
-FILE: ../../../third_party/skia/samplecode/SampleStrokePath.cpp
-FILE: ../../../third_party/skia/samplecode/SampleStrokeRect.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextBox.cpp
-FILE: ../../../third_party/skia/samplecode/SampleVertices.cpp
-FILE: ../../../third_party/skia/samplecode/SampleWritePixels.cpp
-FILE: ../../../third_party/skia/samplecode/SampleXfermodesBlur.cpp
 FILE: ../../../third_party/skia/samplecode/vertexdump.cpp
 FILE: ../../../third_party/skia/src/core/SkAAClip.cpp
 FILE: ../../../third_party/skia/src/core/SkAAClip.h
@@ -2516,7 +2500,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMatrixConvolutionImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMergeImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMorphologyImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkOffsetImageFilter.cpp
 FILE: ../../../third_party/skia/src/images/SkImageEncoderFns.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2012 The Android Open Source Project
@@ -7769,7 +7752,9 @@ FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
 FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/bazel_build.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canvaskit_gold/canvaskit_gold.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/cpu_tests/cpu_tests.go
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode.cpp
+FILE: ../../../third_party/skia/samplecode/SampleGraphitePrimitives.cpp
 FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkCapabilities.cpp
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
