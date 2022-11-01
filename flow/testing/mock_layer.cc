@@ -56,7 +56,7 @@ void MockLayer::Paint(PaintContext& context) const {
     SkMatrix matrix = context.builder ? context.builder->getTransform()
                                       : context.canvas->getTotalMatrix();
 
-    ASSERT_EQ(matrix, expected_paint_matrix_.value());
+    EXPECT_EQ(matrix, expected_paint_matrix_.value());
   }
 
   SkPaint sk_paint = fake_paint_;

@@ -7,6 +7,9 @@
 #include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
+#include "flutter/flow/layers/image_filter_layer.h"
+#include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
@@ -611,6 +614,49 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
 
     cache.EndFrame();
   }
+}
+
+TEST(RasterCache, PrepareLayerTransform) {
+  SkRect child_bounds = SkRect::MakeLTRB(10, 10, 50, 50);
+  SkPath child_path = SkPath().addOval(child_bounds);
+  auto child_layer = MockLayer::Make(child_path);
+  auto blur_filter =
+      std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto blur_layer = std::make_shared<ImageFilterLayer>(blur_filter);
+  SkMatrix matrix = SkMatrix::Scale(2, 2);
+  auto transform_layer = std::make_shared<TransformLayer>(matrix);
+  SkMatrix cache_matrix = SkMatrix::Translate(-20, -20);
+  cache_matrix.preConcat(matrix);
+  child_layer->set_expected_paint_matrix(cache_matrix);
+
+  blur_layer->Add(child_layer);
+  transform_layer->Add(blur_layer);
+
+  size_t threshold = 2;
+  MockRasterCache cache(threshold);
+  LayerStateStack state_stack;
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  MutatorsStack mutators_stack;
+  std::vector<RasterCacheItem*> cache_items;
+
+  cache.BeginFrame();
+
+  state_stack.set_delegate(&mutators_stack);
+  auto preroll_holder = GetSamplePrerollContextHolder(state_stack, &cache,
+                                                      &raster_time, &ui_time);
+  preroll_holder.preroll_context.raster_cached_entries = &cache_items;
+  transform_layer->Preroll(&preroll_holder.preroll_context);
+
+  auto paint_holder =
+      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+
+  cache.EvictUnusedCacheEntries();
+  LayerTree::TryToRasterCache(
+      *preroll_holder.preroll_context.raster_cached_entries,
+      &paint_holder.paint_context);
+
+  // Condition tested inside MockLayer::Paint against expected paint matrix.
 }
 
 TEST(RasterCache, RasterCacheKeyHashFunction) {

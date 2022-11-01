@@ -104,11 +104,11 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
                SkCanvas* canvas) {
   FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
   LayerStateStack state_stack;
+  SkRect clip_bounds = SkRect::Make(canvas->getDeviceClipBounds());
+  state_stack.set_initial_state(clip_bounds, canvas->getLocalToDevice());
   state_stack.set_delegate(canvas);
   state_stack.set_checkerboard_func(
       paint_context.state_stack.checkerboard_func());
-  auto mutator = state_stack.save();
-  mutator.transform(canvas->getTotalMatrix());
   PaintContext context = {
       // clang-format off
       .state_stack                   = state_stack,
