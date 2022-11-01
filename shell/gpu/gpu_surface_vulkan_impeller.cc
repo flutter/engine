@@ -6,7 +6,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/impeller/display_list/display_list_dispatcher.h"
-#include "flutter/impeller/renderer/backend/gles/surface_gles.h"
 #include "flutter/impeller/renderer/renderer.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
@@ -47,7 +46,7 @@ bool GPUSurfaceVulkanImpeller::IsValid() {
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     const SkISize& size) {
   if (!IsValid()) {
-    FML_LOG(ERROR) << "OpenGL surface was invalid.";
+    FML_LOG(ERROR) << "Vulkan surface was invalid.";
     return nullptr;
   }
 
