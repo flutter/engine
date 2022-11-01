@@ -116,10 +116,10 @@ def parse_deps_file(deps_flat_file):
     shutil.rmtree(
         DEP_CLONE_DIR
     )  # use shutil.rmtree since dir could be non-empty
-  except OSError as cloneDirError:
+  except OSError as clone_dir_error:
     print(
         'Error cleaning up clone directory: %s : %s' %
-        (DEP_CLONE_DIR, cloneDirError.strerror)
+        (DEP_CLONE_DIR, clone_dir_error.strerror)
     )
   # Query OSV API using common ancestor commit for each dep
   # return any vulnerabilities found.
