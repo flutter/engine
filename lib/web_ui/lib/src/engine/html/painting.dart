@@ -83,7 +83,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.Color get color => ui.Color(_paintData.color ?? _defaultPaintColor);
+  ui.Color get color => ui.Color(_paintData.color);
 
   @override
   set color(ui.Color value) {
@@ -224,7 +224,7 @@ class SurfacePaintData {
   ui.StrokeCap? strokeCap;
   ui.StrokeJoin? strokeJoin;
   bool isAntiAlias = true;
-  int? color;
+  int color = 0xFF000000;
   ui.Shader? shader;
   ui.MaskFilter? maskFilter;
   ui.FilterQuality? filterQuality;
@@ -268,7 +268,7 @@ class SurfacePaintData {
         buffer.write('strokeJoin = $strokeJoin; ');
       }
       if (color != null) {
-        buffer.write('color = ${colorToCssString(ui.Color(color!))}; ');
+        buffer.write('color = ${colorToCssString(ui.Color(color))}; ');
       }
       if (shader != null) {
         buffer.write('shader = $shader; ');
