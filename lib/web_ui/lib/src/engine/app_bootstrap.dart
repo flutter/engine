@@ -4,11 +4,12 @@
 
 import 'package:js/js.dart';
 
+import 'configuration.dart';
 import 'js_interop/js_loader.dart';
 import 'js_interop/js_promise.dart';
 
 /// The type of a function that initializes an engine (in Dart)
-typedef InitEngineFn = Future<void> Function([InitializeEngineFnParameters? params]);
+typedef InitEngineFn = Future<void> Function([JsFlutterConfiguration? params]);
 
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
@@ -50,7 +51,7 @@ class AppBootstrap {
       }),
       // Calls [_initEngine], and returns a JS Promise that resolves to an
       // app runner object.
-      initializeEngine: allowInterop(([InitializeEngineFnParameters? params]) {
+      initializeEngine: allowInterop(([JsFlutterConfiguration? params]) {
         // `params` coming from Javascript may be used to configure the engine intialization.
         // The internal `initEngine` function must accept those params, and then this
         // code needs to be slightly modified to pass them to the initEngine call below.

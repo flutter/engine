@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:js/js_util.dart' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -805,7 +806,9 @@ void testMain() {
     test('works correctly with max overlays == 2', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       debugSetConfiguration(FlutterConfiguration(
-          JsFlutterConfiguration()..canvasKitMaximumSurfaces = 2));
+        js_util.jsify(<String, Object?>{
+          'canvasKitMaximumSurfaces': 2,
+        }) as JsFlutterConfiguration));
       SurfaceFactory.instance.debugClear();
 
       expect(SurfaceFactory.instance.maximumSurfaces, 2);

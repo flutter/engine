@@ -26,7 +26,7 @@ void testMain() {
     runCalled = 0;
   });
 
-  Future<void> mockInit () async {
+  Future<void> mockInit ([JsFlutterConfiguration? runtimeConfig]) async {
     initCalled = callOrder++;
     await Future<void>.delayed(const Duration(milliseconds: 1));
   }

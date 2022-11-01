@@ -28,6 +28,7 @@
 library configuration;
 
 import 'package:js/js.dart';
+import 'dom.dart';
 
 /// The version of CanvasKit used by the web engine by default.
 // DO NOT EDIT THE NEXT LINE OF CODE MANUALLY
@@ -51,14 +52,49 @@ void debugSetConfiguration(FlutterConfiguration configuration) {
 class FlutterConfiguration {
   /// Constructs a configuration from a JavaScript object containing
   /// runtime-supplied properties.
-  FlutterConfiguration(this._js);
+  FlutterConfiguration(JsFlutterConfiguration? config) {
+    addConfigurationOverrides(config);
+  }
 
-  final JsFlutterConfiguration? _js;
+  final List<JsFlutterConfiguration> _configurations = <JsFlutterConfiguration>[];
+
+  /// Adds a configuration [overrides] object that will take precedence over
+  /// any existing configuration.
+  ///
+  /// This is used so we support multiple sources of configuration with a consistent
+  /// precedence. From lowest to highest:
+  ///
+  /// * default static values
+  /// * window.flutterConfiguration object
+  /// * engineInitializer.initEngine(runtimeConfig)
+  ///
+  /// Overrides are always added at position [0] of the array, so the order in
+  /// which this method is called (first with flutterConfiguration), then with
+  /// the runtimeConfig, matters.
+  void addConfigurationOverrides(JsFlutterConfiguration? overrides) {
+    if (overrides != null) {
+      _configurations.insert(0, overrides);
+    }
+  }
+
+  T getConfigValue<T>(T? Function(JsFlutterConfiguration) extractor, T defaultValue) {
+    try {
+      final JsFlutterConfiguration config = _configurations
+          .firstWhere(
+            (JsFlutterConfiguration config) => extractor(config) != null
+          );
+      return extractor(config)!; // Guaranteed not null, because two lines above.
+    } on StateError {
+      // None of the _configurations defined the value,
+      // so we end up returning `defaultValue`. Noop here.
+    }
+    return defaultValue;
+  }
 
   // Static constant parameters.
   //
   // These properties affect tree shaking and therefore cannot be supplied at
-  // runtime. They must be static constants for the compiler to remove dead
+  // runtime. They must be static constants for the compiler to remove dead code
   // effectively.
 
   /// Auto detect which rendering backend to use.
@@ -110,7 +146,9 @@ class FlutterConfiguration {
   ///   --web-renderer=canvaskit \
   ///   --dart-define=FLUTTER_WEB_CANVASKIT_URL=https://example.com/custom-canvaskit-build/
   /// ```
-  String get canvasKitBaseUrl => _js?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
+  String get canvasKitBaseUrl => getConfigValue<String>(
+    (JsFlutterConfiguration c) => c.canvasKitBaseUrl,
+    _defaultCanvasKitBaseUrl);
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
     defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
@@ -121,7 +159,9 @@ class FlutterConfiguration {
   ///
   /// This is mainly used for testing or for apps that want to ensure they
   /// run on devices which don't support WebGL.
-  bool get canvasKitForceCpuOnly => _js?.canvasKitForceCpuOnly ?? _defaultCanvasKitForceCpuOnly;
+  bool get canvasKitForceCpuOnly => getConfigValue<bool>(
+    (JsFlutterConfiguration c) => c.canvasKitForceCpuOnly,
+    _defaultCanvasKitForceCpuOnly);
   static const bool _defaultCanvasKitForceCpuOnly = bool.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
@@ -135,7 +175,9 @@ class FlutterConfiguration {
   ///
   /// This value can be specified using either the `FLUTTER_WEB_MAXIMUM_SURFACES`
   /// environment variable, or using the runtime configuration.
-  int get canvasKitMaximumSurfaces => _js?.canvasKitMaximumSurfaces ?? _defaultCanvasKitMaximumSurfaces;
+  int get canvasKitMaximumSurfaces => getConfigValue<int>(
+    (JsFlutterConfiguration c) => c.canvasKitMaximumSurfaces,
+    _defaultCanvasKitMaximumSurfaces);
   static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
     'FLUTTER_WEB_MAXIMUM_SURFACES',
     defaultValue: 8,
@@ -152,10 +194,29 @@ class FlutterConfiguration {
   /// ```
   /// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
   /// ```
-  bool get debugShowSemanticsNodes => _js?.debugShowSemanticsNodes ?? _defaultDebugShowSemanticsNodes;
+  bool get debugShowSemanticsNodes => getConfigValue<bool>(
+    (JsFlutterConfiguration c) => c.debugShowSemanticsNodes,
+    _defaultDebugShowSemanticsNodes);
   static const bool _defaultDebugShowSemanticsNodes = bool.fromEnvironment(
     'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
   );
+
+  /// Returns the [targetElement] in which the Flutter Application is supposed
+  /// to render, or `null` if the user hasn't specified anything.
+  DomElement? get targetElement => getConfigValue<DomElement?>(
+    (JsFlutterConfiguration c) => c.targetElement,
+    null);
+
+  /// Returns the [requestedRendererType] to be used with the current Flutter
+  /// application, normally 'canvaskit' or 'auto'.
+  ///
+  /// This value may come from the JS configuration, but also a specific JS value:
+  /// `window.flutterWebRenderer`.
+  ///
+  /// This is used by the Renderer class to decide how to initialize the engine.
+  String? get requestedRendererType => getConfigValue<String?>(
+    (JsFlutterConfiguration c) => c.renderer,
+    _requestedRendererType);
 }
 
 @JS('window.flutterConfiguration')
@@ -172,10 +233,12 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external bool? get debugShowSemanticsNodes;
 
   external int? get canvasKitMaximumSurfaces;
-  external set canvasKitMaximumSurfaces(int? maxSurfaces);
+
+  external DomElement? get targetElement;
+  external String? get renderer;
 }
 
 /// A JavaScript entrypoint that allows developer to set rendering backend
 /// at runtime before launching the application.
 @JS('window.flutterWebRenderer')
-external String? get requestedRendererType;
+external String? get _requestedRendererType;
