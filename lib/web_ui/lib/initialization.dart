@@ -86,11 +86,11 @@ Future<void> webOnlyWarmupEngine({
   }
   if (autoStart) {
     // The user does not want control of the app, bootstrap immediately.
-    print('Flutter Web Bootstrap: Auto');
+    engine.domWindow.console.debug('Flutter Web Bootstrap: Auto.');
     await bootstrap.autoStart();
   } else {
     // Yield control of the bootstrap procedure to the user.
-    print('Flutter Web Bootstrap: Programmatic');
+    engine.domWindow.console.debug('Flutter Web Bootstrap: Programmatic.');
     engine.didCreateEngineInitializer!(bootstrap.prepareEngineInitializer());
   }
 }
