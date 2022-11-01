@@ -1,4 +1,4 @@
-Signature: 84dbca7193c7c782c4dceb55da06f547
+Signature: 56add540e14e60bb0a82fb2df4c5d298
 
 UNUSED LICENSES:
 
@@ -6227,6 +6227,7 @@ FILE: ../../../third_party/skia/modules/skplaintexteditor/src/stringslice.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.h
 FILE: ../../../third_party/skia/samplecode/SamplePathTessellators.cpp
+FILE: ../../../third_party/skia/src/core/SkContainers.cpp
 FILE: ../../../third_party/skia/src/core/SkMalloc.cpp
 FILE: ../../../third_party/skia/src/core/SkPixelRefPriv.h
 FILE: ../../../third_party/skia/src/core/SkTextBlobTrace.cpp
@@ -7958,6 +7959,7 @@ FILE: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanTypes.h
+FILE: ../../../third_party/skia/include/private/SkContainers.h
 FILE: ../../../third_party/skia/include/private/gpu/graphite/DawnTypesPriv.h
 FILE: ../../../third_party/skia/include/private/gpu/graphite/VulkanGraphiteTypesPriv.h
 FILE: ../../../third_party/skia/include/private/gpu/vk/VulkanTypesPriv.h
