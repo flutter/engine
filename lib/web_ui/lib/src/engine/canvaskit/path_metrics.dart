@@ -20,11 +20,9 @@ class CkPathMetrics extends IterableBase<ui.PathMetric>
 
   /// The [CkPath.isEmpty] case is special-cased to avoid booting the WASM machinery just to find out there are no contours.
   @override
-  Iterator<ui.PathMetric> get iterator => _iterator ??= _path.isEmpty
+  late final Iterator<ui.PathMetric> iterator = _path.isEmpty
       ? const CkPathMetricIteratorEmpty._()
       : CkContourMeasureIter(this);
-
-  Iterator<ui.PathMetric>? _iterator;
 }
 
 class CkContourMeasureIter extends ManagedSkiaObject<SkContourMeasureIter>
