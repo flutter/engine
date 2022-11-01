@@ -137,18 +137,25 @@ constexpr std::optional<vk::ShaderStageFlagBits> ToVKShaderStageFlagBits(
 constexpr vk::Format ToVKImageFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::kUnknown:
+      FML_LOG(ERROR) << "Unknown pixel format";
       return vk::Format::eUndefined;
     case PixelFormat::kA8UNormInt:
+      FML_LOG(ERROR) << "kA8UNormInt - eA8B8G8R8UnormPack32 format";
       return vk::Format::eA8B8G8R8UnormPack32;
     case PixelFormat::kR8G8B8A8UNormInt:
+      FML_LOG(ERROR) << "kR8G8B8A8UNormInt - eR8G8B8A8Unorm format";
       return vk::Format::eR8G8B8A8Unorm;
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
+      FML_LOG(ERROR) << "kR8G8B8A8UNormIntSRGB - eR8G8B8A8Srgb format";
       return vk::Format::eR8G8B8A8Srgb;
     case PixelFormat::kB8G8R8A8UNormInt:
+      FML_LOG(ERROR) << "kB8G8R8A8UNormInt - eB8G8R8A8Unorm format";
       return vk::Format::eB8G8R8A8Unorm;
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
+      FML_LOG(ERROR) << "kB8G8R8A8UNormIntSRGB - eB8G8R8A8Srgb format";
       return vk::Format::eB8G8R8A8Srgb;
     case PixelFormat::kS8UInt:
+      FML_LOG(ERROR) << "kS8UInt - eS8Uint format";
       return vk::Format::eS8Uint;
   }
 }

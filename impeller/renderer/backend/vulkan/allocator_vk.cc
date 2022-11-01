@@ -101,6 +101,7 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
   auto image_create_info = vk::ImageCreateInfo{};
   image_create_info.imageType = vk::ImageType::e2D;
+  FML_LOG(ERROR) << __PRETTY_FUNCTION__;
   image_create_info.format = ToVKImageFormat(desc.format);
   image_create_info.extent.width = desc.size.width;
   image_create_info.extent.height = desc.size.height;

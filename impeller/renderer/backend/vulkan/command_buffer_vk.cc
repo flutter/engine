@@ -83,6 +83,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
         attachment.texture->GetTextureDescriptor();
 
     vk::AttachmentDescription color_attachment;
+    FML_LOG(ERROR) << __PRETTY_FUNCTION__;
     color_attachment.setFormat(ToVKImageFormat(tex_desc.format));
     color_attachment.setSamples(ToVKSampleCountFlagBits(tex_desc.sample_count));
     color_attachment.setLoadOp(ToVKAttachmentLoadOp(attachment.load_action));

@@ -117,7 +117,11 @@ struct PipelineBuilder {
       // Configure the sole color attachments pixel format. This is by
       // convention.
       ColorAttachmentDescriptor color0;
+#if defined(IMPELLER_ENABLE_VULKAN) && FML_OS_ANDROID
+      color0.format = PixelFormat::kR8G8B8A8UNormInt;
+#else
       color0.format = PixelFormat::kDefaultColor;
+#endif
       color0.blending_enabled = true;
       desc.SetColorAttachmentDescriptor(0u, std::move(color0));
     }

@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/surface.h"
 
@@ -20,6 +21,10 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   TextureDescriptor color0_tex;
   color0_tex.type = TextureType::kTexture2D;
   color0_tex.format = swapchain_image->GetPixelFormat();
+
+  FML_LOG(ERROR) << __PRETTY_FUNCTION__;
+  ToVKImageFormat(color0_tex.format);
+
   color0_tex.size = swapchain_image->GetSize();
   color0_tex.usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   color0_tex.sample_count = SampleCount::kCount1;
