@@ -169,7 +169,9 @@ struct FlutterDesktopMessenger {
   std::mutex& GetMutex() { return mutex_; }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(FlutterDesktopMessenger);
+  FlutterDesktopMessenger(const FlutterDesktopMessenger& value) = delete;
+  FlutterDesktopMessenger& operator=(const FlutterDesktopMessenger& value) =
+      delete;
   // The engine that backs this messenger.
   FlutterDesktopEngineState* engine_;
   std::atomic<int32_t> ref_count_ = 0;

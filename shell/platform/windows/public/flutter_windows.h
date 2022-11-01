@@ -181,6 +181,8 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
                                        const char* plugin_name);
 
 // Returns the messenger associated with the engine.
+//
+// This does not effect the reference count of the FlutterDesktopMessenger.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 

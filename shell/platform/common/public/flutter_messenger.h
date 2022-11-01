@@ -90,15 +90,15 @@ FLUTTER_EXPORT void FlutterDesktopMessengerSetCallback(
 
 // Increments the reference count for the |messenger|.
 //
+// Operation is thread-safe.
+//
 // See also: |FlutterDesktopMessengerRelease|
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopMessengerAddRef(FlutterDesktopMessengerRef messenger);
 
 // Decrements the reference count for the |messenger|.
 //
-// The reference count starts at zero so it is valid to call
-// FlutterDesktopMessengerRelease without having called
-// FlutterDesktopMessengerAddRef.
+// Operation is thread-safe.
 //
 // See also: |FlutterDesktopMessengerAddRef|
 FLUTTER_EXPORT void FlutterDesktopMessengerRelease(
@@ -119,11 +119,17 @@ FLUTTER_EXPORT bool FlutterDesktopMessengerIsAvailable(
 // All calls to the FlutterDesktopMessengerRef from threads other than the
 // platform thread should happen inside of a lock.
 //
+// Operation is thread-safe.
+//
+// Returns the |messenger| value.
+//
 // See also: |FlutterDesktopMessengerUnlock|
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopMessengerLock(FlutterDesktopMessengerRef messenger);
 
 // Unlocks the `FlutterDesktopMessengerRef`.
+//
+// Operation is thread-safe.
 //
 // See also: |FlutterDesktopMessengerLock|
 FLUTTER_EXPORT void FlutterDesktopMessengerUnlock(
