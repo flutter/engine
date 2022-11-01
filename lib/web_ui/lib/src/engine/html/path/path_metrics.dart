@@ -505,7 +505,7 @@ class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
           '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
     }
     return _pathMetric!;
-  } 
+  }
 
   @override
   bool moveNext() {
