@@ -112,6 +112,23 @@ void BlitPassGLES::OnCopyTextureToTextureCommand(
 }
 
 // |BlitPass|
+void BlitPassGLES::OnCopyTextureToBufferCommand(
+    std::shared_ptr<Texture> source,
+    std::shared_ptr<DeviceBuffer> destination,
+    IRect source_region,
+    size_t destination_offset,
+    std::string label) {
+  auto command = std::make_unique<BlitCopyTextureToBufferCommandGLES>();
+  command->label = label;
+  command->source = std::move(source);
+  command->destination = std::move(destination);
+  command->source_region = source_region;
+  command->destination_offset = destination_offset;
+
+  commands_.emplace_back(std::move(command));
+}
+
+// |BlitPass|
 void BlitPassGLES::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                            std::string label) {
   auto command = std::make_unique<BlitGenerateMipmapCommandGLES>();

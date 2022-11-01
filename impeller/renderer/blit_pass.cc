@@ -77,6 +77,45 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
   return true;
 }
 
+bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
+                       std::shared_ptr<DeviceBuffer> destination,
+                       std::optional<IRect> source_region,
+                       size_t destination_offset,
+                       std::string label) {
+  if (!source) {
+    VALIDATION_LOG << "Attempted to add a texture blit with no source.";
+    return false;
+  }
+  if (!destination) {
+    VALIDATION_LOG << "Attempted to add a texture blit with no destination.";
+    return false;
+  }
+
+  if (!source_region.has_value()) {
+    source_region = IRect::MakeSize(source->GetSize());
+  }
+
+  if (destination_offset +
+          source->GetTextureDescriptor().GetByteSizeOfBaseMipLevel() >
+      destination->GetDeviceBufferDescriptor().size) {
+    VALIDATION_LOG
+        << "Attempted to add a texture blit with out fo bounds access.";
+    return false;
+  }
+
+  // Clip the source image.
+  source_region =
+      source_region->Intersection(IRect::MakeSize(source->GetSize()));
+  if (!source_region.has_value()) {
+    return true;  // Nothing to blit.
+  }
+
+  OnCopyTextureToBufferCommand(std::move(source), std::move(destination),
+                               source_region.value(), destination_offset,
+                               std::move(label));
+  return true;
+}
+
 bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,
                               std::string label) {
   if (!texture) {
