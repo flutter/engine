@@ -201,10 +201,10 @@ class FlutterConfiguration {
     'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
   );
 
-  /// Returns the [targetElement] in which the Flutter Application is supposed
+  /// Returns the [hostElement] in which the Flutter Application is supposed
   /// to render, or `null` if the user hasn't specified anything.
-  DomElement? get targetElement => getConfigValue<DomElement?>(
-    (JsFlutterConfiguration c) => c.targetElement,
+  DomElement? get hostElement => getConfigValue<DomElement?>(
+    (JsFlutterConfiguration c) => c.hostElement,
     null);
 
   /// Returns the [requestedRendererType] to be used with the current Flutter
@@ -234,7 +234,7 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
 
   external int? get canvasKitMaximumSurfaces;
 
-  external DomElement? get targetElement;
+  external DomElement? get hostElement;
   external String? get renderer;
 }
 
