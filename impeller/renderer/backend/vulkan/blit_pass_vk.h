@@ -37,12 +37,11 @@ class BlitPassVK final : public BlitPass {
                                      std::string label) override;
 
   // |BlitPass|
-  void OnCopyTextureToBufferCommand(
-      std::shared_ptr<Texture> source,
-      std::shared_ptr<DeviceBuffer> destination,
-      IRect source_region,
-      size_t destination_offset,
-      std::string label) override;
+  void OnCopyTextureToBufferCommand(std::shared_ptr<Texture> source,
+                                    std::shared_ptr<DeviceBuffer> destination,
+                                    IRect source_region,
+                                    size_t destination_offset,
+                                    std::string label) override;
 
   // |BlitPass|
   void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
