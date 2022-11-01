@@ -333,6 +333,42 @@ abstract class _BaseAdapter {
 mixin _WheelEventListenerMixin on _BaseAdapter {
   static double? _defaultScrollLineHeight;
 
+  bool _isTrackpadEvent(DomWheelEvent event) {
+    // This function relies on deprecated and non-standard implementation
+    // details. Useful reference material can be found below.
+    //
+    // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/event.cc
+    // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/cocoa/events_mac.mm
+    // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/platform/mac/PlatformEventFactoryMac.mm
+    // https://searchfox.org/mozilla-central/source/dom/events/WheelEvent.h
+    // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
+    if (browserEngine == BrowserEngine.firefox) {
+      // Firefox has restricted the wheelDelta properties, they do not provide
+      // enough information to accurately disambiguate trackpad events from mouse
+      // wheel events.
+      return false;
+    }
+    if ((event.deltaX % 120 == 0) && (event.deltaY % 120 == 0)) {
+      // While not in any formal web standard, `blink` and `webkit` browsers use
+      // a delta of 120 to represent one mouse wheel turn. If both dimensions of
+      // the delta are divisible by 120, this event is almost certainly not from
+      // a trackpad.
+      return false;
+    }
+    if (((event.wheelDeltaX ?? (-3 * event.deltaX)) != -3 * event.deltaX) ||
+        ((event.wheelDeltaY ?? (-3 * event.deltaY)) != -3 * event.deltaY)) {
+      // On macOS, scrolling using a mouse wheel by default uses an acceleration
+      // curve, so delta values ramp up and are not at fixed multiples of 120.
+      // But in this case, the wheelDelta properties of the event still keep
+      // their original values.
+      // For all events without this acceleration curve applied, the wheelDelta
+      // values are by convention three times greater than the delta values and with
+      // the opposite sign.
+      return false;
+    }
+    return true;
+  }
+
   List<ui.PointerData> _convertWheelEventToPointerData(
     DomWheelEvent event
   ) {
@@ -341,20 +377,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
-    if ((browserEngine == BrowserEngine.blink || browserEngine == BrowserEngine.webkit) &&
-        (event.deltaX % 120 != 0 || event.deltaY % 120 != 0) &&
-        ((event.wheelDeltaX ?? (-3 * event.deltaX)) == -3 * event.deltaX) &&
-        ((event.wheelDeltaY ?? (-3 * event.deltaY)) == -3 * event.deltaY)) {
-      // While not standardized, `blink` and `webkit` browsers use a delta of 120 to
-      // represent one mouse wheel turn. If either dimension of the delta
-      // is not divisible by 120, this event is not a normal mouse wheel event.
-      // On macOS, mouse wheel events by default have an acceleration curve applied,
-      // so their delta values ramp up and are not at fixed multiples of 120.
-      // But in this case, the wheelDelta properties of the event still keep
-      // their original values.
-      // For all events without this acceleration curve applied, the wheelDelta
-      // values are by convention three times greater than the delta values and with
-      // the opposite sign.
+    if (_isTrackpadEvent(event)) {
       kind = ui.PointerDeviceKind.trackpad;
     }
 
