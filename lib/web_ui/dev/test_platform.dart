@@ -47,7 +47,7 @@ class BrowserPlatform extends PlatformPlugin {
     required this.server,
     required this.renderer,
     required this.isDebug,
-    required this.wasm,
+    required this.isWasm,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
     required this.skiaClient,
@@ -107,7 +107,7 @@ class BrowserPlatform extends PlatformPlugin {
     required bool doUpdateScreenshotGoldens,
     required SkiaGoldClient? skiaClient,
     required String? overridePathToCanvasKit,
-    required bool wasm,
+    required bool isWasm,
   }) async {
     final shelf_io.IOServer server =
         shelf_io.IOServer(await HttpMultiServer.loopback(0));
@@ -116,7 +116,7 @@ class BrowserPlatform extends PlatformPlugin {
       renderer: renderer,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
-      wasm: wasm,
+      isWasm: isWasm,
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       packageConfig: await loadPackageConfigUri((await Isolate.packageConfig)!),
       skiaClient: skiaClient,
@@ -129,7 +129,7 @@ class BrowserPlatform extends PlatformPlugin {
   /// breakpoints in the code.
   final bool isDebug;
 
-  final bool wasm;
+  final bool isWasm;
 
   /// The underlying server.
   final shelf.Server server;
@@ -445,7 +445,7 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase">';
 
-      final String testRunner = wasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
+      final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
       return shelf.Response.ok('''
         <!DOCTYPE html>
@@ -537,7 +537,7 @@ class BrowserPlatform extends PlatformPlugin {
       url: hostUrl,
       future: completer.future,
       packageConfig: packageConfig,
-      wasm: wasm,
+      isWasm: isWasm,
       debug: isDebug,
       renderer: renderer,
     );
@@ -635,7 +635,7 @@ class BrowserManager {
   /// Creates a new BrowserManager that communicates with the browser over
   /// [webSocket].
   BrowserManager._(this.packageConfig, this._browser, this._browserEnvironment,
-      this._renderer, this._wasm, WebSocketChannel webSocket) {
+      this._renderer, this._isWasm, WebSocketChannel webSocket) {
     // The duration should be short enough that the debugging console is open as
     // soon as the user is done setting breakpoints, but long enough that a test
     // doing a lot of synchronous work doesn't trigger a false positive.
@@ -708,7 +708,7 @@ class BrowserManager {
   bool _closed = false;
 
   /// Whether we are running tests that have been compiled to WebAssembly.
-  final bool _wasm;
+  final bool _isWasm;
 
   /// The completer for [_BrowserEnvironment.displayPause].
   ///
@@ -752,7 +752,7 @@ class BrowserManager {
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
     required Renderer renderer,
-    required bool wasm,
+    required bool isWasm,
     bool debug = false,
   }) async {
     final Browser browser =
@@ -764,7 +764,7 @@ class BrowserManager {
         packageConfig: packageConfig,
         browser: browser,
         renderer: renderer,
-        wasm: wasm,
+        isWasm: isWasm,
         debug: debug);
   }
 
@@ -775,7 +775,7 @@ class BrowserManager {
     required PackageConfig packageConfig,
     required Browser browser,
     required Renderer renderer,
-    required bool wasm,
+    required bool isWasm,
     bool debug = false,
   }) {
     final Completer<BrowserManager> completer = Completer<BrowserManager>();
@@ -797,7 +797,7 @@ class BrowserManager {
         return;
       }
       completer.complete(BrowserManager._(
-          packageConfig, browser, browserEnvironment, renderer, wasm, webSocket));
+          packageConfig, browser, browserEnvironment, renderer, isWasm, webSocket));
     }).catchError((Object error, StackTrace stackTrace) {
       browser.close();
       if (completer.isCompleted) {
@@ -881,7 +881,7 @@ class BrowserManager {
             suiteChannel,
             message);
 
-        if (_wasm) {
+        if (_isWasm) {
           // We don't have mapping for wasm yet. But we should send a message
           // to let the host page move forward.
           controller!.channel('test.browser.mapper').sink.add(null);

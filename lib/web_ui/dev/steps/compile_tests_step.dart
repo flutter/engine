@@ -23,10 +23,10 @@ import '../utils.dart';
 ///  * test/        - compiled test code
 ///  * test_images/ - test images copied from Skis sources.
 class CompileTestsStep implements PipelineStep {
-  CompileTestsStep({this.testFiles, this.useLocalCanvasKit = false, this.wasm = false});
+  CompileTestsStep({this.testFiles, this.useLocalCanvasKit = false, this.isWasm = false});
 
   final List<FilePath>? testFiles;
-  final bool wasm;
+  final bool isWasm;
 
   final bool useLocalCanvasKit;
 
@@ -44,7 +44,7 @@ class CompileTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webUiBuildDir.create();
-    if (wasm) {
+    if (isWasm) {
       await copyDart2WasmTestScript();
       await copyDart2WasmRuntime();
     }
@@ -52,7 +52,7 @@ class CompileTestsStep implements PipelineStep {
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
-    await compileTests(testFiles ?? findAllTests(), wasm);
+    await compileTests(testFiles ?? findAllTests(), isWasm);
   }
 }
 
@@ -222,18 +222,18 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
 }
 
 /// Compiles the specified unit tests.
-Future<void> compileTests(List<FilePath> testFiles, bool wasm) async {
+Future<void> compileTests(List<FilePath> testFiles, bool isWasm) async {
   final Stopwatch stopwatch = Stopwatch()..start();
 
   final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
   await Future.wait(<Future<void>>[
     if (sortedTests.htmlTests.isNotEmpty)
-      _compileTestsInParallel(targets: sortedTests.htmlTests, wasm: wasm),
+      _compileTestsInParallel(targets: sortedTests.htmlTests, isWasm: isWasm),
     if (sortedTests.canvasKitTests.isNotEmpty)
-      _compileTestsInParallel(targets: sortedTests.canvasKitTests, renderer: Renderer.canvasKit, wasm: wasm),
+      _compileTestsInParallel(targets: sortedTests.canvasKitTests, renderer: Renderer.canvasKit, isWasm: isWasm),
     if (sortedTests.skwasmTests.isNotEmpty)
-      _compileTestsInParallel(targets: sortedTests.skwasmTests, renderer: Renderer.skwasm, wasm: wasm),
+      _compileTestsInParallel(targets: sortedTests.skwasmTests, renderer: Renderer.skwasm, isWasm: isWasm),
   ]);
 
   stopwatch.stop();
@@ -254,11 +254,11 @@ final Pool _dart2jsPool = Pool(_dart2jsConcurrency);
 Future<void> _compileTestsInParallel({
   required List<FilePath> targets,
   Renderer renderer = Renderer.html,
-  bool wasm = false,
+  bool isWasm = false,
 }) async {
   final Stream<bool> results = _dart2jsPool.forEach(
     targets,
-    (FilePath file) => compileUnitTest(file, renderer: renderer, wasm: wasm),
+    (FilePath file) => compileUnitTest(file, renderer: renderer, isWasm: isWasm),
   );
   await for (final bool isSuccess in results) {
     if (!isSuccess) {
@@ -267,8 +267,8 @@ Future<void> _compileTestsInParallel({
   }
 }
 
-Future<bool> compileUnitTest(FilePath input, {required Renderer renderer, required bool wasm}) async {
-  return wasm ? compileUnitTestToWasm(input, renderer: renderer)
+Future<bool> compileUnitTest(FilePath input, {required Renderer renderer, required bool isWasm}) async {
+  return isWasm ? compileUnitTestToWasm(input, renderer: renderer)
     : compileUnitTestToJS(input, renderer: renderer);
 }
 

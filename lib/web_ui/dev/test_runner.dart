@@ -95,7 +95,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get failEarly => boolArg('fail-early');
 
-  bool get wasm => boolArg('wasm');
+  bool get isWasm => boolArg('wasm');
 
   /// Whether to start the browser in debug mode.
   ///
@@ -137,12 +137,12 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      CompileTestsStep(testFiles: testFiles, useLocalCanvasKit: useLocalCanvasKit, wasm: wasm),
+      CompileTestsStep(testFiles: testFiles, useLocalCanvasKit: useLocalCanvasKit, isWasm: isWasm),
       RunTestsStep(
         browserName: browserName,
         testFiles: testFiles,
         isDebug: isDebug,
-        wasm: wasm,
+        isWasm: isWasm,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         requireSkiaGold: requireSkiaGold,
         overridePathToCanvasKit: overridePathToCanvasKit,

@@ -42,7 +42,7 @@ class RunCommand extends Command<bool> with ArgUtils<bool> {
   @override
   String get name => 'run';
 
-  bool get wasm => boolArg('wasm');
+  bool get isWasm => boolArg('wasm');
 
   bool get isListSteps => boolArg('list');
 
@@ -65,7 +65,7 @@ class RunCommand extends Command<bool> with ArgUtils<bool> {
         'run_tests_$browserName': RunTestsStep(
           browserName: browserName,
           isDebug: false,
-          wasm: wasm,
+          isWasm: isWasm,
           doUpdateScreenshotGoldens: false,
           requireSkiaGold: requireSkiaGold,
           overridePathToCanvasKit: null,
