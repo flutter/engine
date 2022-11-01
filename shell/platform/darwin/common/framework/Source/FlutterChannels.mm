@@ -101,8 +101,11 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
     }
     return;
   }
+
   // Grab reference to avoid retain on self.
-  __weak NSObject<FlutterMessageCodec>* codec = _codec;
+  // `self` might be released before the block, so the block needs to retain the codec to
+  // make sure it is not released with `self`
+  NSObject<FlutterMessageCodec>* codec = _codec;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     handler([codec decode:message], ^(id reply) {
       callback([codec encode:reply]);
@@ -257,7 +260,9 @@ NSObject const* FlutterMethodNotImplemented = [[NSObject alloc] init];
     return;
   }
   // Make sure the block captures the codec, not self.
-  __weak NSObject<FlutterMethodCodec>* codec = _codec;
+  // `self` might be released before the block, so the block needs to retain the codec to
+  // make sure it is not released with `self`
+  NSObject<FlutterMethodCodec>* codec = _codec;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
     handler(call, ^(id result) {
