@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show jsonDecode, LineSplitter;
+import 'dart:convert' show LineSplitter, jsonDecode;
 import 'dart:io' as io show File, stderr, stdout;
 
 import 'package:meta/meta.dart';
@@ -244,6 +244,8 @@ class ClangTidy {
     }
   }
 
+  /// Visible for testing.
+  /// Function for trimming raw clang-tidy output.
   @visibleForTesting
   static String trimOutput(String output) => _trimGenerator(output).join('\n');
 
