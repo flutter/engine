@@ -44,6 +44,11 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
     std::string label_str = std::string(label);
 
+    if (!device_) {
+      FML_LOG(ERROR) << "SetDebugName called on a null device";
+      return false;
+    }
+
     auto ret = device_->setDebugUtilsObjectNameEXT(
         vk::DebugUtilsObjectNameInfoEXT()
             .setObjectType(T::objectType)

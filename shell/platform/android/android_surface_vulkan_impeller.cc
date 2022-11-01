@@ -20,11 +20,6 @@ namespace flutter {
 std::shared_ptr<impeller::Context> CreateImpellerContext(
     const fml::RefPtr<vulkan::VulkanProcTable>& proc_table,
     const std::shared_ptr<fml::ConcurrentMessageLoop>& concurrent_loop) {
-  if (!proc_table->IsValid()) {
-    FML_LOG(ERROR) << "Invalid Vulkan Proc Table.";
-    return nullptr;
-  }
-
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
                                              impeller_entity_shaders_vk_length),

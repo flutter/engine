@@ -62,12 +62,13 @@ bool VulkanProcTable::AreDeviceProcsSetup() const {
 
 bool VulkanProcTable::SetupGetInstanceProcAddress() {
   if (!handle_) {
+    FML_LOG(ERROR) << "Invalid library handle.";
     return true;
   }
 
   GetInstanceProcAddr = NativeGetInstanceProcAddr();
   if (!GetInstanceProcAddr) {
-    FML_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
+    FML_LOG(ERROR) << "Could not acquire vkGetInstanceProcAddr.";
     return false;
   }
 
@@ -76,10 +77,12 @@ bool VulkanProcTable::SetupGetInstanceProcAddress() {
 
 PFN_vkGetInstanceProcAddr VulkanProcTable::NativeGetInstanceProcAddr() const {
   if (GetInstanceProcAddr) {
+    FML_LOG(ERROR) << "Instance proc address already acquired.";
     return GetInstanceProcAddr;
   }
 
 #if VULKAN_LINK_STATICALLY
+  FML_LOG(ERROR) << "argh static";
   return &vkGetInstanceProcAddr;
 #else   // VULKAN_LINK_STATICALLY
   auto instance_proc =
@@ -209,7 +212,7 @@ bool VulkanProcTable::OpenLibraryHandle(const char* path) {
   handle_ = fml::NativeLibrary::Create(path);
 #endif  // VULKAN_LINK_STATICALLY
   if (!handle_) {
-    FML_DLOG(ERROR) << "Could not open Vulkan library handle: " << path;
+    FML_LOG(ERROR) << "Could not open Vulkan library handle: " << path;
     return false;
   }
   return true;
@@ -228,8 +231,16 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
   }
 
   // A VK_NULL_HANDLE as the instance is an acceptable parameter.
-  return reinterpret_cast<PFN_vkVoidFunction>(
+  PFN_vkVoidFunction res = reinterpret_cast<PFN_vkVoidFunction>(
       GetInstanceProcAddr(instance, proc_name));
+  if (res == nullptr) {
+    FML_LOG(ERROR) << "Could not acquire Vulkan instance proc address: "
+                   << proc_name;
+  } else {
+    FML_LOG(ERROR) << "Acquired Vulkan instance proc address: " << proc_name;
+  }
+
+  return res;
 }
 
 PFN_vkVoidFunction VulkanProcTable::AcquireProc(
