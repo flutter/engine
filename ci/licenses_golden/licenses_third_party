@@ -1,4 +1,4 @@
-Signature: 36e67619dd1da61614875cdd230dc6ee
+Signature: 58d298ea43ee942a4676eb4e528904c6
 
 UNUSED LICENSES:
 
@@ -14048,6 +14048,7 @@ FILE: ../../../third_party/dart/runtime/bin/test_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/test_utils.h
 FILE: ../../../third_party/dart/runtime/bin/thread_absl.cc
 FILE: ../../../third_party/dart/runtime/bin/thread_absl.h
+FILE: ../../../third_party/dart/runtime/lib/integers.h
 FILE: ../../../third_party/dart/runtime/platform/mach_o.h
 FILE: ../../../third_party/dart/runtime/platform/pe.h
 FILE: ../../../third_party/dart/runtime/tools/heapsnapshot/bin/explore.dart
@@ -14072,6 +14073,7 @@ FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
 FILE: ../../../third_party/dart/runtime/vm/simulator_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/simulator_x64.h
+FILE: ../../../third_party/dart/sdk/lib/_http/http_testing.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/runtime_metrics.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart
@@ -14105,6 +14107,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/print_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/regexp_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/regexp_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/simd_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/stack_trace_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/stopwatch_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart

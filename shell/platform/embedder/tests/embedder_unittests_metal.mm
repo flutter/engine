@@ -53,7 +53,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithMetal) {
   // ASSERT_TRUE(ImageMatchesFixture("gradient_metal.png", rendered_scene));
 }
 
-static sk_sp<SkSurface> GetSurfaceFromTexture(sk_sp<GrDirectContext> skia_context,
+static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia_context,
                                               SkISize texture_size,
                                               void* texture) {
   GrMtlTextureInfo info;
@@ -465,20 +465,24 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
   auto canvas = skia_surface->getCanvas();
 
   Texture* texture_ = &texture;
-  texture_->Paint(*canvas, SkRect::MakeXYWH(0, 0, 100, 100), false, surface->GetGrContext().get(),
+  Texture::PaintContext ctx{
+      .canvas = canvas,
+      .gr_context = surface->GetGrContext().get(),
+  };
+  texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
                   SkSamplingOptions(SkFilterMode::kLinear));
 
   EXPECT_TRUE(resolve_called);
   resolve_called = false;
 
-  texture_->Paint(*canvas, SkRect::MakeXYWH(0, 0, 100, 100), false, surface->GetGrContext().get(),
+  texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
                   SkSamplingOptions(SkFilterMode::kLinear));
 
   EXPECT_FALSE(resolve_called);
 
   texture_->MarkNewFrameAvailable();
 
-  texture_->Paint(*canvas, SkRect::MakeXYWH(0, 0, 100, 100), false, surface->GetGrContext().get(),
+  texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false,
                   SkSamplingOptions(SkFilterMode::kLinear));
 
   EXPECT_TRUE(resolve_called);

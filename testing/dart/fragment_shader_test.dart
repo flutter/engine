@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert' as convert;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -19,6 +20,26 @@ void main() async {
     assertsEnabled = true;
     return true;
   }());
+
+  test('impellerc produces reasonable JSON encoded IPLR files', () async {
+    final Directory directory = shaderDirectory('iplr-json');
+    final Object? rawData = convert.json.decode(
+      File(path.join(directory.path, 'ink_sparkle.frag.iplr')).readAsStringSync());
+
+    expect(rawData is Map<String, Object?>, true);
+
+    final Map<String, Object?> data = rawData! as Map<String, Object?>;
+    expect(data['sksl'] is String, true);
+    expect(data['uniforms'] is List<Object?>, true);
+
+    final Object? rawUniformData = (data['uniforms']! as List<Object?>)[0];
+
+    expect(rawUniformData is Map<String, Object?>, true);
+
+    final Map<String, Object?> uniformData = rawUniformData! as Map<String, Object?>;
+
+    expect(uniformData['location'] is int, true);
+  });
 
   test('FragmentShader setSampler throws with out-of-bounds index', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
@@ -226,7 +247,7 @@ void main() async {
     );
 
     final FragmentShader shader = program.fragmentShader();
-    for (int i = 0; i < 24; i++) {
+    for (int i = 0; i < 20; i++) {
       shader.setFloat(i, i.toDouble());
     }
 

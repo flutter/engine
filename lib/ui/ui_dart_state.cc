@@ -30,7 +30,7 @@ UIDartState::Context::Context(const TaskRunners& task_runners)
 
 UIDartState::Context::Context(
     const TaskRunners& task_runners,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<IOManager> io_manager,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
     fml::WeakPtr<ImageDecoder> image_decoder,
@@ -49,7 +49,7 @@ UIDartState::Context::Context(
       advisory_script_uri(std::move(advisory_script_uri)),
       advisory_script_entrypoint(std::move(advisory_script_entrypoint)),
       volatile_path_tracker(std::move(volatile_path_tracker)),
-      concurrent_task_runner(concurrent_task_runner),
+      concurrent_task_runner(std::move(concurrent_task_runner)),
       enable_impeller(enable_impeller) {}
 
 UIDartState::UIDartState(
@@ -180,7 +180,8 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
   }
 }
 
-fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
+fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>
+UIDartState::GetSnapshotDelegate() const {
   return context_.snapshot_delegate;
 }
 

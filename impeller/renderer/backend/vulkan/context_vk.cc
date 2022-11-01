@@ -2,14 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/68331
+
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/string_conversion.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/base/work_queue_common.h"
@@ -19,9 +23,30 @@
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
+namespace {
+
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagsEXT type,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+  const auto prefix = impeller::vk::to_string(
+      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+
+  FML_DCHECK(false) << prefix << "[" << pCallbackData->messageIdNumber << "]["
+                    << pCallbackData->pMessageIdName
+                    << "] : " << pCallbackData->pMessage;
+
+  // The return value of this callback controls whether the Vulkan call that
+  // caused the validation message will be aborted or not We return VK_TRUE as
+  // we DO want Vulkan calls that cause a validation message to abort
+  return VK_TRUE;
+}
+
+}  // namespace
 
 namespace impeller {
 
@@ -29,6 +54,20 @@ static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #if FML_OS_MACOSX
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
+#endif
+};
+
+std::vector<std::string> kRequiredWSIInstanceExtensions = {
+#if FML_OS_WIN
+    "VK_KHR_win32_surface",
+#elif FML_OS_ANDROID
+    "VK_KHR_android_surface",
+#elif FML_OS_LINUX
+    "VK_KHR_xcb_surface",
+    "VK_KHR_xlib_surface",
+    "VK_KHR_wayland_surface",
+#elif FML_OS_MACOSX
+    "VK_EXT_metal_surface",
 #endif
 };
 
@@ -50,17 +89,19 @@ static bool HasRequiredQueues(const vk::PhysicalDevice& device) {
                                     vk::QueueFlagBits::eTransfer));
 }
 
-static bool HasRequiredExtensions(const vk::PhysicalDevice& device) {
+static std::vector<std::string> HasRequiredExtensions(
+    const vk::PhysicalDevice& device) {
   std::set<std::string> exts;
+  std::vector<std::string> missing;
   for (const auto& ext : device.enumerateDeviceExtensionProperties().value) {
     exts.insert(ext.extensionName);
   }
   for (const auto& req_ext : kRequiredDeviceExtensions) {
     if (exts.count(req_ext) != 1u) {
-      return false;
+      missing.push_back(req_ext);
     }
   }
-  return true;
+  return missing;
 }
 
 static vk::PhysicalDeviceFeatures GetRequiredPhysicalDeviceFeatures() {
@@ -80,15 +121,17 @@ static bool HasRequiredProperties(const vk::PhysicalDevice& device) {
 
 static bool IsPhysicalDeviceCompatible(const vk::PhysicalDevice& device) {
   if (!HasRequiredQueues(device)) {
-    VALIDATION_LOG << "Device doesn't have required queues.";
+    FML_LOG(ERROR) << "Device doesn't have required queues.";
     return false;
   }
-  if (!HasRequiredExtensions(device)) {
-    VALIDATION_LOG << "Device doesn't have required extensions.";
+  auto missing_exts = HasRequiredExtensions(device);
+  if (!missing_exts.empty()) {
+    FML_LOG(ERROR) << "Device doesn't have required extensions: "
+                   << fml::Join(missing_exts, ", ");
     return false;
   }
   if (!HasRequiredProperties(device)) {
-    VALIDATION_LOG << "Device doesn't have required properties.";
+    FML_LOG(ERROR) << "Device doesn't have required properties.";
     return false;
   }
   return true;
@@ -252,6 +295,23 @@ ContextVK::ContextVK(
   enabled_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
   //----------------------------------------------------------------------------
+  /// Enable WSI Instance Extensions. Having any one of these is sufficient.
+  ///
+  bool has_wsi_extensions = false;
+  for (const auto& wsi_ext : kRequiredWSIInstanceExtensions) {
+    if (capabilities->HasExtension(wsi_ext)) {
+      enabled_extensions.push_back(wsi_ext.c_str());
+      has_wsi_extensions = true;
+    }
+  }
+  if (!has_wsi_extensions) {
+    VALIDATION_LOG
+        << "Instance doesn't have any of the required WSI extensions: "
+        << fml::Join(kRequiredWSIInstanceExtensions, ", ");
+    return;
+  }
+
+  //----------------------------------------------------------------------------
   /// Enable any and all validation as well as debug toggles.
   ///
   auto has_debug_utils = false;
@@ -296,7 +356,6 @@ ContextVK::ContextVK(
 
   if (has_debug_utils) {
     vk::DebugUtilsMessengerCreateInfoEXT debug_messenger_info;
-
     debug_messenger_info.messageSeverity =
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
@@ -305,16 +364,7 @@ ContextVK::ContextVK(
         vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
         vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
     debug_messenger_info.pUserData = nullptr;
-    debug_messenger_info.pfnUserCallback =
-        [](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-           VkDebugUtilsMessageTypeFlagsEXT type,
-           const VkDebugUtilsMessengerCallbackDataEXT* data,
-           void* user_data) -> VkBool32 {
-      FML_DCHECK(false)
-          << vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT{severity})
-          << ": " << data->pMessage;
-      return true;
-    };
+    debug_messenger_info.pfnUserCallback = DebugUtilsMessengerCallback;
 
     auto debug_messenger_result =
         instance.value->createDebugUtilsMessengerEXTUnique(

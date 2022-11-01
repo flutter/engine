@@ -55,7 +55,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     fml::WeakPtr<IOManager> io_manager,
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const {
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
   UIDartState::Context spawned_context{
       context_.task_runners,          std::move(snapshot_delegate),
       std::move(io_manager),          context_.unref_queue,
@@ -455,7 +455,8 @@ void RuntimeController::LoadDartDeferredLibrary(
 
 void RuntimeController::LoadDartDeferredLibraryError(
     intptr_t loading_unit_id,
-    const std::string error_message,
+    const std::string
+        error_message,  // NOLINT(performance-unnecessary-value-param)
     bool transient) {
   root_isolate_.lock()->LoadLoadingUnitError(loading_unit_id, error_message,
                                              transient);

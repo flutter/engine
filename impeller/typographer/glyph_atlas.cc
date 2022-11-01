@@ -4,7 +4,22 @@
 
 #include "impeller/typographer/glyph_atlas.h"
 
+#include <utility>
+
 namespace impeller {
+
+GlyphAtlasContext::GlyphAtlasContext()
+    : atlas_(std::make_shared<GlyphAtlas>(GlyphAtlas::Type::kAlphaBitmap)) {}
+
+GlyphAtlasContext::~GlyphAtlasContext() {}
+
+std::shared_ptr<GlyphAtlas> GlyphAtlasContext::GetGlyphAtlas() const {
+  return atlas_;
+}
+
+void GlyphAtlasContext::UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas) {
+  atlas_ = std::move(atlas);
+}
 
 GlyphAtlas::GlyphAtlas(Type type) : type_(type) {}
 
@@ -59,6 +74,15 @@ size_t GlyphAtlas::IterateGlyphs(
     }
   }
   return count;
+}
+
+bool GlyphAtlas::HasSamePairs(const FontGlyphPair::Vector& new_glyphs) {
+  for (const auto& pair : new_glyphs) {
+    if (positions_.find(pair) == positions_.end()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace impeller

@@ -159,6 +159,8 @@ NSData* currentKeyboardLayoutData() {
  */
 @interface FlutterViewWrapper : NSView
 
+- (void)setBackgroundColor:(NSColor*)color;
+
 @end
 
 /**
@@ -266,6 +268,10 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   return self;
 }
 
+- (void)setBackgroundColor:(NSColor*)color {
+  [_flutterView setBackgroundColor:color];
+}
+
 - (NSArray*)accessibilityChildren {
   return @[ _flutterView ];
 }
@@ -329,18 +335,21 @@ static void CommonInit(FlutterViewController* controller) {
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
+  NSAssert(engine.viewController == nil,
+           @"The supplied FlutterEngine is already used with FlutterViewController "
+            "instance. One instance of the FlutterEngine can only be attached to one "
+            "FlutterViewController at a time. Set FlutterEngine.viewController "
+            "to nil before attaching it to another FlutterViewController.");
+
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    if (engine.viewController) {
-      NSLog(@"The supplied FlutterEngine %@ is already used with FlutterViewController "
-             "instance %@. One instance of the FlutterEngine can only be attached to one "
-             "FlutterViewController at a time. Set FlutterEngine.viewController "
-             "to nil before attaching it to another FlutterViewController.",
-            [engine description], [engine.viewController description]);
-    }
     _engine = engine;
     CommonInit(self);
-    [engine setViewController:self];
+    if (engine.running) {
+      [self loadView];
+      engine.viewController = self;
+      [self initializeKeyboard];
+    }
   }
 
   return self;
@@ -372,6 +381,9 @@ static void CommonInit(FlutterViewController* controller) {
       return;
     }
     flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
+  }
+  if (_backgroundColor != nil) {
+    [flutterView setBackgroundColor:_backgroundColor];
   }
   FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView];
   self.view = wrapperView;
@@ -413,6 +425,11 @@ static void CommonInit(FlutterViewController* controller) {
   }
   _mouseTrackingMode = mode;
   [self configureTrackingArea];
+}
+
+- (void)setBackgroundColor:(NSColor*)color {
+  _backgroundColor = color;
+  [_flutterView setBackgroundColor:_backgroundColor];
 }
 
 - (void)onPreEngineRestart {

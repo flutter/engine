@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -10,16 +11,19 @@
 
 #include "flutter/testing/testing.h"
 #include "fml/logging.h"
+#include "fml/time/time_point.h"
 #include "gtest/gtest.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
@@ -36,6 +40,7 @@
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
@@ -151,8 +156,8 @@ TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
 
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   auto image = CreateTextureForFixture("boston.jpg");
-  auto filter = FilterContents::MakeBlend(BlendMode::kSoftLight,
-                                          FilterInput::Make({image}));
+  auto filter = ColorFilterContents::MakeBlend(BlendMode::kSoftLight,
+                                               FilterInput::Make({image}));
 
   // Without the crop rect (default behavior).
   {
@@ -175,11 +180,23 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
 }
 
 TEST_P(EntityTest, CanDrawRect) {
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRect({100, 100, 100, 100}));
+  contents->SetColor(Color::Red());
+
   Entity entity;
   entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(
-      PathBuilder{}.AddRect({100, 100, 100, 100}).TakePath(), Color::Red()));
+  entity.SetContents(contents);
+
   ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, GeometryBoundsAreTransformed) {
+  auto geometry = Geometry::MakeRect({100, 100, 100, 100});
+  auto transform = Matrix::MakeScale({2.0, 2.0, 2.0});
+
+  ASSERT_RECT_NEAR(geometry->GetCoverage(transform).value(),
+                   Rect(200, 200, 200, 200));
 }
 
 TEST_P(EntityTest, ThreeStrokesInOnePath) {
@@ -194,10 +211,9 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
 
   Entity entity;
   entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-  auto contents = std::make_unique<SolidStrokeContents>();
-  contents->SetPath(std::move(path));
+  auto contents = std::make_unique<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
   contents->SetColor(Color::Red());
-  contents->SetStrokeSize(5.0);
   entity.SetContents(std::move(contents));
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
@@ -234,10 +250,9 @@ TEST_P(EntityTest, TriangleInsideASquare) {
 
     Entity entity;
     entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-    auto contents = std::make_unique<SolidStrokeContents>();
-    contents->SetPath(std::move(path));
+    auto contents = std::make_unique<SolidColorContents>();
+    contents->SetGeometry(Geometry::MakeStrokePath(path, 20.0));
     contents->SetColor(Color::Red());
-    contents->SetStrokeSize(20.0);
     entity.SetContents(std::move(contents));
 
     return entity.Render(context, pass);
@@ -249,22 +264,14 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
   const Point padding(300, 250);
   const Point margin(140, 180);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({300, 100});
-      ImGui::SetNextWindowPos(
-          {0 * padding.x + margin.x, 1.7f * padding.y + margin.y});
-    }
-
     // Slightly above sqrt(2) by default, so that right angles are just below
     // the limit and acute angles are over the limit (causing them to get
     // beveled).
     static Scalar miter_limit = 1.41421357;
     static Scalar width = 30;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
       ImGui::SliderFloat("Miter limit", &miter_limit, 0, 30);
       ImGui::SliderFloat("Stroke width", &width, 0, 100);
@@ -277,15 +284,11 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
 
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     auto render_path = [width = width, &context, &pass, &world_matrix](
-                           Path path, SolidStrokeContents::Cap cap,
-                           SolidStrokeContents::Join join) {
-      auto contents = std::make_unique<SolidStrokeContents>();
-      contents->SetPath(path);
+                           const Path& path, Cap cap, Join join) {
+      auto contents = std::make_unique<SolidColorContents>();
+      contents->SetGeometry(
+          Geometry::MakeStrokePath(path, width, miter_limit, cap, join));
       contents->SetColor(Color::Red());
-      contents->SetStrokeSize(width);
-      contents->SetStrokeCap(cap);
-      contents->SetStrokeJoin(join);
-      contents->SetStrokeMiter(miter_limit);
 
       Entity entity;
       entity.SetTransformation(world_matrix);
@@ -294,7 +297,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       auto coverage = entity.GetCoverage();
       if (coverage.has_value()) {
         auto bounds_contents = std::make_unique<SolidColorContents>();
-        bounds_contents->SetGeometry(Geometry::MakePath(
+        bounds_contents->SetGeometry(Geometry::MakeFillPath(
             PathBuilder{}.AddRect(entity.GetCoverage().value()).TakePath()));
         bounds_contents->SetColor(Color::Green().WithAlpha(0.5));
         Entity bounds_entity;
@@ -316,8 +319,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
                                              Color::Black(), Color::White());
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
-                  SolidStrokeContents::Cap::kButt,
-                  SolidStrokeContents::Join::kBevel);
+                  Cap::kButt, Join::kBevel);
     }
 
     // Cap::kSquare demo.
@@ -328,8 +330,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
                                              Color::Black(), Color::White());
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
-                  SolidStrokeContents::Cap::kSquare,
-                  SolidStrokeContents::Join::kBevel);
+                  Cap::kSquare, Join::kBevel);
     }
 
     // Cap::kRound demo.
@@ -340,8 +341,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
                                              Color::Black(), Color::White());
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
-                  SolidStrokeContents::Cap::kRound,
-                  SolidStrokeContents::Join::kBevel);
+                  Cap::kRound, Join::kBevel);
     }
 
     // Join::kBevel demo.
@@ -352,7 +352,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
-          SolidStrokeContents::Cap::kButt, SolidStrokeContents::Join::kBevel);
+          Cap::kButt, Join::kBevel);
     }
 
     // Join::kMiter demo.
@@ -363,7 +363,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
-          SolidStrokeContents::Cap::kButt, SolidStrokeContents::Join::kMiter);
+          Cap::kButt, Join::kMiter);
     }
 
     // Join::kRound demo.
@@ -374,7 +374,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
-          SolidStrokeContents::Cap::kButt, SolidStrokeContents::Join::kRound);
+          Cap::kButt, Join::kRound);
     }
 
     return true;
@@ -632,36 +632,46 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
-TEST_P(EntityTest, SolidStrokeContentsSetStrokeCapsAndJoins) {
+TEST_P(EntityTest, SolidColorContentsStrokeSetStrokeCapsAndJoins) {
   {
-    SolidStrokeContents stroke;
+    auto geometry = Geometry::MakeStrokePath(Path{});
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
     // Defaults.
-    ASSERT_EQ(stroke.GetStrokeCap(), SolidStrokeContents::Cap::kButt);
-    ASSERT_EQ(stroke.GetStrokeJoin(), SolidStrokeContents::Join::kMiter);
+    ASSERT_EQ(path_geometry->GetStrokeCap(), Cap::kButt);
+    ASSERT_EQ(path_geometry->GetStrokeJoin(), Join::kMiter);
   }
 
   {
-    SolidStrokeContents stroke;
-    stroke.SetStrokeCap(SolidStrokeContents::Cap::kSquare);
-    ASSERT_EQ(stroke.GetStrokeCap(), SolidStrokeContents::Cap::kSquare);
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, 4.0, Cap::kSquare);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_EQ(path_geometry->GetStrokeCap(), Cap::kSquare);
   }
 
   {
-    SolidStrokeContents stroke;
-    stroke.SetStrokeCap(SolidStrokeContents::Cap::kRound);
-    ASSERT_EQ(stroke.GetStrokeCap(), SolidStrokeContents::Cap::kRound);
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, 4.0, Cap::kRound);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_EQ(path_geometry->GetStrokeCap(), Cap::kRound);
   }
 }
 
-TEST_P(EntityTest, SolidStrokeContentsSetMiter) {
-  SolidStrokeContents contents;
-  ASSERT_FLOAT_EQ(contents.GetStrokeMiter(), 4);
+TEST_P(EntityTest, SolidColorContentsStrokeSetMiterLimit) {
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{});
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_FLOAT_EQ(path_geometry->GetMiterLimit(), 4);
+  }
 
-  contents.SetStrokeMiter(8);
-  ASSERT_FLOAT_EQ(contents.GetStrokeMiter(), 8);
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, /*miter_limit=*/8.0);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_FLOAT_EQ(path_geometry->GetMiterLimit(), 8);
+  }
 
-  contents.SetStrokeMiter(-1);
-  ASSERT_FLOAT_EQ(contents.GetStrokeMiter(), 8);
+  {
+    auto geometry = Geometry::MakeStrokePath(Path{}, 1.0, /*miter_limit=*/-1.0);
+    auto path_geometry = static_cast<StrokePathGeometry*>(geometry.get());
+    ASSERT_FLOAT_EQ(path_geometry->GetMiterLimit(), 4);
+  }
 }
 
 TEST_P(EntityTest, BlendingModeOptions) {
@@ -723,14 +733,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
     };
   }
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({350, 200});
-      ImGui::SetNextWindowPos({200, 450});
-    }
-
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
@@ -774,7 +777,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
       return pass.AddCommand(std::move(cmd));
     };
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     static Color color1(1, 0, 0, 0.5), color2(0, 1, 0, 0.5);
     ImGui::ColorEdit4("Color 1", reinterpret_cast<float*>(&color1));
     ImGui::ColorEdit4("Color 2", reinterpret_cast<float*>(&color2));
@@ -840,10 +843,10 @@ TEST_P(EntityTest, Filters) {
     auto fi_boston = FilterInput::Make(boston);
     auto fi_kalimba = FilterInput::Make(kalimba);
 
-    auto blend0 = FilterContents::MakeBlend(BlendMode::kModulate,
-                                            {fi_kalimba, fi_boston});
+    std::shared_ptr<FilterContents> blend0 = ColorFilterContents::MakeBlend(
+        BlendMode::kModulate, {fi_kalimba, fi_boston});
 
-    auto blend1 = FilterContents::MakeBlend(
+    auto blend1 = ColorFilterContents::MakeBlend(
         BlendMode::kScreen,
         {fi_bridge, FilterInput::Make(blend0), fi_bridge, fi_bridge});
 
@@ -861,13 +864,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(boston);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* input_type_names[] = {"Texture", "Solid Color"};
     const char* blur_type_names[] = {"Image blur", "Mask blur"};
     const char* pass_variation_names[] = {"Two pass", "Directional"};
@@ -950,7 +947,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       auto fill = std::make_shared<SolidColorContents>();
       fill->SetColor(input_color);
       fill->SetGeometry(
-          Geometry::MakePath(PathBuilder{}.AddRect(input_rect).TakePath()));
+          Geometry::MakeFillPath(PathBuilder{}.AddRect(input_rect).TakePath()));
 
       input = fill;
       input_size = input_rect.size;
@@ -1017,13 +1014,7 @@ TEST_P(EntityTest, MorphologyFilter) {
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(boston);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* morphology_type_names[] = {"Dilate", "Erode"};
     const FilterContents::MorphType morphology_types[] = {
         FilterContents::MorphType::kDilate, FilterContents::MorphType::kErode};
@@ -1135,12 +1126,13 @@ TEST_P(EntityTest, ContentsGetBoundsForEmptyPathReturnsNullopt) {
 
 TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
   {
+    auto geometry = Geometry::MakeStrokePath(
+        PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath(), 4.0, 4.0,
+        Cap::kButt, Join::kBevel);
+
     Entity entity;
-    auto contents = std::make_unique<SolidStrokeContents>();
-    contents->SetPath(PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath());
-    contents->SetStrokeCap(SolidStrokeContents::Cap::kButt);
-    contents->SetStrokeJoin(SolidStrokeContents::Join::kBevel);
-    contents->SetStrokeSize(4);
+    auto contents = std::make_unique<SolidColorContents>();
+    contents->SetGeometry(std::move(geometry));
     contents->SetColor(Color::Black());
     entity.SetContents(std::move(contents));
     auto actual = entity.GetCoverage();
@@ -1151,12 +1143,13 @@ TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
 
   // Cover the Cap::kSquare case.
   {
+    auto geometry = Geometry::MakeStrokePath(
+        PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath(), 4.0, 4.0,
+        Cap::kSquare, Join::kBevel);
+
     Entity entity;
-    auto contents = std::make_unique<SolidStrokeContents>();
-    contents->SetPath(PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath());
-    contents->SetStrokeCap(SolidStrokeContents::Cap::kSquare);
-    contents->SetStrokeJoin(SolidStrokeContents::Join::kBevel);
-    contents->SetStrokeSize(4);
+    auto contents = std::make_unique<SolidColorContents>();
+    contents->SetGeometry(std::move(geometry));
     contents->SetColor(Color::Black());
     entity.SetContents(std::move(contents));
     auto actual = entity.GetCoverage();
@@ -1168,13 +1161,13 @@ TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
 
   // Cover the Join::kMiter case.
   {
+    auto geometry = Geometry::MakeStrokePath(
+        PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath(), 4.0, 2.0,
+        Cap::kSquare, Join::kMiter);
+
     Entity entity;
-    auto contents = std::make_unique<SolidStrokeContents>();
-    contents->SetPath(PathBuilder{}.AddLine({0, 0}, {10, 10}).TakePath());
-    contents->SetStrokeCap(SolidStrokeContents::Cap::kSquare);
-    contents->SetStrokeJoin(SolidStrokeContents::Join::kMiter);
-    contents->SetStrokeSize(4);
-    contents->SetStrokeMiter(2);
+    auto contents = std::make_unique<SolidColorContents>();
+    contents->SetGeometry(std::move(geometry));
     contents->SetColor(Color::Black());
     entity.SetContents(std::move(contents));
     auto actual = entity.GetCoverage();
@@ -1186,7 +1179,7 @@ TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
 
 TEST_P(EntityTest, BorderMaskBlurCoverageIsCorrect) {
   auto fill = std::make_shared<SolidColorContents>();
-  fill->SetGeometry(Geometry::MakePath(
+  fill->SetGeometry(Geometry::MakeFillPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath()));
   fill->SetColor(Color::CornflowerBlue());
   auto border_mask_blur = FilterContents::MakeBorderMaskBlur(
@@ -1224,6 +1217,37 @@ TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
   contents->SetGeometry(Geometry::MakeVertices(vertices));
   contents->SetBlendMode(BlendMode::kSourceOver);
   contents->SetColor(Color::Red().WithAlpha(0.5));
+
+  Entity e;
+  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(e));
+}
+
+TEST_P(EntityTest, DrawVerticesLinearGradientWithoutIndices) {
+  std::vector<Point> positions = {Point(100, 300), Point(200, 100),
+                                  Point(300, 300)};
+
+  Vertices vertices = Vertices(positions, {} /* indices */, {} /* colors */,
+                               VertexMode::kTriangle, Rect(100, 100, 300, 300));
+
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+  Matrix matrix = {
+      1, 0, 0, 0,  //
+      0, 1, 0, 0,  //
+      0, 0, 1, 0,  //
+      0, 0, 0, 1   //
+  };
+  auto contents = std::make_shared<LinearGradientContents>();
+  contents->SetEndPoints({100, 100}, {300, 300});
+  contents->SetColors(std::move(colors));
+  contents->SetStops(std::move(stops));
+  contents->SetTileMode(Entity::TileMode::kRepeat);
+  contents->SetMatrix(matrix);
+  contents->SetGeometry(Geometry::MakeVertices(vertices));
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
@@ -1419,7 +1443,7 @@ TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
     fill->SetColor(Color::CornflowerBlue());
     auto expected = Rect::MakeLTRB(100, 110, 200, 220);
     fill->SetGeometry(
-        Geometry::MakePath(PathBuilder{}.AddRect(expected).TakePath()));
+        Geometry::MakeFillPath(PathBuilder{}.AddRect(expected).TakePath()));
 
     auto coverage = fill->GetCoverage({});
     ASSERT_TRUE(coverage.has_value());
@@ -1430,7 +1454,7 @@ TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
   {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::CornflowerBlue());
-    fill->SetGeometry(Geometry::MakePath(
+    fill->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(100, 110, 200, 220)).TakePath()));
 
     Entity entity;
@@ -1447,7 +1471,7 @@ TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
   {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::WhiteTransparent());
-    fill->SetGeometry(Geometry::MakePath(
+    fill->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(100, 110, 200, 220)).TakePath()));
 
     auto coverage = fill->GetCoverage({});
@@ -1469,7 +1493,7 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
   {
     auto fill = std::make_shared<SolidColorContents>();
     fill->SetColor(Color::CornflowerBlue());
-    fill->SetGeometry(Geometry::MakePath(
+    fill->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath()));
     ASSERT_TRUE(fill->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
     ASSERT_FALSE(
@@ -1494,7 +1518,7 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
   {
     auto clip = std::make_shared<ClipContents>();
     ASSERT_TRUE(clip->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
-    clip->SetGeometry(Geometry::MakePath(
+    clip->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath()));
     ASSERT_TRUE(clip->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
     ASSERT_TRUE(
@@ -1512,13 +1536,7 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
 }
 
 TEST_P(EntityTest, RRectShadowTest) {
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static Color color = Color::Red();
     static float corner_radius = 100;
     static float blur_radius = 100;
@@ -1554,7 +1572,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     auto coverage = entity.GetCoverage();
     if (show_coverage && coverage.has_value()) {
       auto bounds_contents = std::make_unique<SolidColorContents>();
-      bounds_contents->SetGeometry(Geometry::MakePath(
+      bounds_contents->SetGeometry(Geometry::MakeFillPath(
           PathBuilder{}.AddRect(entity.GetCoverage().value()).TakePath()));
       bounds_contents->SetColor(coverage_color.Premultiply());
       Entity bounds_entity;
@@ -1570,7 +1588,7 @@ TEST_P(EntityTest, RRectShadowTest) {
 TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   // Set up a simple color background.
   auto fill = std::make_shared<SolidColorContents>();
-  fill->SetGeometry(Geometry::MakePath(
+  fill->SetGeometry(Geometry::MakeFillPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath()));
   fill->SetColor(Color::Coral());
 
@@ -1583,7 +1601,7 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   };
 
   auto filter =
-      FilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
+      ColorFilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1600,14 +1618,7 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
   auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
   ASSERT_TRUE(bay_bridge);
 
-  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    // If this is the first frame, set the ImGui's initial size and postion.
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     // UI state.
     static FilterContents::ColorMatrix color_matrix = {
         1, 0, 0, 0, 0,  //
@@ -1640,8 +1651,8 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
     ImGui::End();
 
     // Set the color matrix filter.
-    auto filter = FilterContents::MakeColorMatrix(FilterInput::Make(bay_bridge),
-                                                  color_matrix);
+    auto filter = ColorFilterContents::MakeColorMatrix(
+        FilterInput::Make(bay_bridge), color_matrix);
 
     // Define the entity with the color matrix filter.
     Entity entity;
@@ -1664,11 +1675,12 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
 TEST_P(EntityTest, LinearToSrgbFilterCoverageIsCorrect) {
   // Set up a simple color background.
   auto fill = std::make_shared<SolidColorContents>();
-  fill->SetGeometry(Geometry::MakePath(
+  fill->SetGeometry(Geometry::MakeFillPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath()));
   fill->SetColor(Color::MintCream());
 
-  auto filter = FilterContents::MakeLinearToSrgbFilter(FilterInput::Make(fill));
+  auto filter =
+      ColorFilterContents::MakeLinearToSrgbFilter(FilterInput::Make(fill));
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1687,7 +1699,7 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     auto filtered =
-        FilterContents::MakeLinearToSrgbFilter(FilterInput::Make(image));
+        ColorFilterContents::MakeLinearToSrgbFilter(FilterInput::Make(image));
 
     // Define the entity that will serve as the control image as a Gaussian blur
     // filter with no filter at all.
@@ -1715,11 +1727,12 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
 TEST_P(EntityTest, SrgbToLinearFilterCoverageIsCorrect) {
   // Set up a simple color background.
   auto fill = std::make_shared<SolidColorContents>();
-  fill->SetGeometry(Geometry::MakePath(
+  fill->SetGeometry(Geometry::MakeFillPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 300, 400)).TakePath()));
   fill->SetColor(Color::DeepPink());
 
-  auto filter = FilterContents::MakeSrgbToLinearFilter(FilterInput::Make(fill));
+  auto filter =
+      ColorFilterContents::MakeSrgbToLinearFilter(FilterInput::Make(fill));
 
   Entity e;
   e.SetTransformation(Matrix());
@@ -1738,7 +1751,7 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     auto filtered =
-        FilterContents::MakeSrgbToLinearFilter(FilterInput::Make(image));
+        ColorFilterContents::MakeSrgbToLinearFilter(FilterInput::Make(image));
 
     // Define the entity that will serve as the control image as a Gaussian blur
     // filter with no filter at all.
@@ -2008,7 +2021,7 @@ TEST_P(EntityTest, SdfText) {
     EXPECT_FALSE(lazy_glyph_atlas->HasColor());
 
     auto text_contents = std::make_shared<TextContents>();
-    text_contents->SetTextFrame(std::move(frame));
+    text_contents->SetTextFrame(frame);
     text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
     text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
     Entity entity;
@@ -2019,6 +2032,38 @@ TEST_P(EntityTest, SdfText) {
 
     // Force SDF rendering.
     return text_contents->RenderSdf(context, entity, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, RuntimeEffect) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This test only has a Metal fixture at the moment.");
+  }
+
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    auto contents = std::make_shared<RuntimeEffectContents>();
+    contents->SetGeometry(Geometry::MakeCover());
+
+    auto runtime_stage =
+        OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+    contents->SetRuntimeStage(runtime_stage);
+
+    struct FragUniforms {
+      Scalar iTime;
+      Vector2 iResolution;
+    } frag_uniforms = {
+        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
+        .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
+    };
+    auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+    uniform_data->resize(sizeof(FragUniforms));
+    memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
+    contents->SetUniformData(uniform_data);
+
+    Entity entity;
+    entity.SetContents(contents);
+    return contents->Render(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
