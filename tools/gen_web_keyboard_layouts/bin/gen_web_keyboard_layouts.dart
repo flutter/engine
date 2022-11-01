@@ -65,6 +65,6 @@ Future<void> main(List<String> rawArguments) async {
     libRoot: path.join(packageRoot.path, 'lib'),
     force: parsedArguments['force'] as bool,
     outputRoot: path.join(packageRoot.parent.parent.path,
-        'lib', 'web_ui', 'lib', 'src', 'engine'),
+        'third_party', 'web_keyboard_layouts'),
   ));
 }

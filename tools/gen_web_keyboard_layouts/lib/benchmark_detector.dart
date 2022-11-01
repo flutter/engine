@@ -57,7 +57,8 @@ final Map<String, String> _kMandatoryGoalsByChar = Map<String, String>.fromEntri
     .map((MapEntry<String, String?> entry) => MapEntry<String, String>(entry.value!, entry.key))
 );
 
-Map<String, int> _buildLayout(Map<String, LayoutEntry> entries) {
+// Returns a mapping from eventCode to logical key for this layout.
+Map<String, int> buildLayout(Map<String, LayoutEntry> entries) {
   // Unresolved mandatory goals, mapped from printables to KeyboardEvent.code.
   // This map will be modified during this function and thus is a clone.
   final Map<String, String> mandatoryGoalsByChar = <String, String>{..._kMandatoryGoalsByChar};
@@ -129,7 +130,7 @@ bool _mappedToKeyCode(int charCode) {
 Map<String, Map<String, int>> buildMap(Iterable<Layout> layouts) {
   final Map<String, Map<String, int>> result = <String, Map<String, int>>{};
   for (final Layout layout in layouts) {
-    _buildLayout(layout.entries).forEach((String eventCode, int logicalKey) {
+    buildLayout(layout.entries).forEach((String eventCode, int logicalKey) {
       final Map<String, int> codeMap = result.putIfAbsent(eventCode, () => <String, int>{});
       final LayoutEntry entry = layout.entries[eventCode]!;
       for (int charIndex = 0; charIndex < 4; charIndex += 1) {

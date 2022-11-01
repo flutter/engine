@@ -138,6 +138,31 @@ ${codeStringBodies.join('\n').trimRight()}
   return '<String, Map<String, int>>{\n${codeStrings.join('\n')}\n}';
 }
 
+String _buildTestCasesString(List<Layout> layouts) {
+  final List<String> layoutsString = <String>[];
+  for (final Layout layout in layouts) {
+    final List<String> layoutEntries = <String>[];
+    _sortedForEach(buildLayout(layout.entries), (String eventCode, int logicalKey) {
+      final LayoutEntry entry = layout.entries[eventCode]!;
+      layoutEntries.add("    verifyEntry(mapping, '$eventCode', <String>["
+          '${List<String>.generate(4, (int modifierIndex) {
+            if (entry.deadMasks & (1 << modifierIndex) != 0) {
+              return "'Dead'";
+            } else {
+              return _escapeEventKey(entry.printables[modifierIndex]);
+            }
+          }).join(', ')}'
+          '], 0x${logicalKey.toRadixString(16)});');
+    });
+    layoutsString.add('''
+  group('${layout.language}', () {
+${layoutEntries.join('\n')}
+});
+''');
+  }
+  return layoutsString.join('\n').trimRight();
+}
+
 Future<void> generate(Options options) async {
   final List<Layout> layouts = await fetchFromGithub(
     githubToken: options.githubToken,
@@ -147,43 +172,41 @@ Future<void> generate(Options options) async {
   // Build store.
   final LayoutStore store = LayoutStore(kLayoutGoals, layouts);
 
-  _buildMapString(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.linux));
-  _buildMapString(store.layouts.where((Layout layout) => layout.platform == LayoutPlatform.darwin));
-
-  // final String body = marshallStoreCompressed(store);
-
-  // // Verify that the store can be unmarshalled correctly.
-  // // Inconcistencies will cause exceptions.
-  // verifyLayoutStoreEqual(store, unmarshallStoreCompressed(body));
+  final List<Layout> winLayouts = store.layouts.where((Layout layout) =>
+            layout.platform == LayoutPlatform.win).toList();
+  final List<Layout> linuxLayouts = store.layouts.where((Layout layout) =>
+            layout.platform == LayoutPlatform.linux).toList();
+  final List<Layout> darwinLayouts = store.layouts.where((Layout layout) =>
+            layout.platform == LayoutPlatform.darwin).toList();
 
   // Generate the definition file.
   _writeFileTo(
-    options.outputRoot,
+    path.join(options.outputRoot, 'lib'),
     'key_mappings.g.dart',
     _renderTemplate(
       File(path.join(options.dataRoot, 'key_mappings.dart.tmpl')).readAsStringSync(),
       <String, String>{
-        'WIN_MAPPING': _buildMapString(store.layouts.where((Layout layout) =>
-            layout.platform == LayoutPlatform.win)),
-        'LINUX_MAPPING': _buildMapString(store.layouts.where((Layout layout) =>
-            layout.platform == LayoutPlatform.linux)),
-        'DARWIN_MAPPING': _buildMapString(store.layouts.where((Layout layout) =>
-            layout.platform == LayoutPlatform.darwin)),
+        'WIN_MAPPING': _buildMapString(winLayouts),
+        'LINUX_MAPPING': _buildMapString(linuxLayouts),
+        'DARWIN_MAPPING': _buildMapString(darwinLayouts),
       },
     ),
   );
 
-  // // Generate the type file.
-  // _writeFileTo(
-  //   options.outputRoot,
-  //   'types.g.dart',
-  //   _renderTemplate(
-  //     File(path.join(options.dataRoot, 'types.dart.tmpl')).readAsStringSync(),
-  //     <String, String>{
-  //       'BODY': _readSharedSegment(path.join(options.libRoot, 'layout_types.dart')),
-  //     },
-  //   ),
-  // );
+  // Generate the test cases.
+  _writeFileTo(
+    path.join(options.outputRoot, 'test'),
+    'test_cases.g.dart',
+    _renderTemplate(
+      File(path.join(options.dataRoot, 'test_cases.dart.tmpl')).readAsStringSync(),
+      <String, String>{
+        'WIN_CASES': _buildTestCasesString(winLayouts),
+        'LINUX_CASES': _buildTestCasesString(linuxLayouts),
+        'DARWIN_CASES': _buildTestCasesString(darwinLayouts),
+      },
+    ),
+  );
+
 
   // // Generate the JSON file.
   // _writeFileTo(

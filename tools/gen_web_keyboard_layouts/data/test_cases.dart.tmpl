@@ -13,10 +13,18 @@
 //
 // See flutter/engine:flutter/tools/gen_web_keyboard_layouts/README.md for more information.
 
-part of web_keyboard_layouts;
+import 'package:test/test.dart';
+import 'package:web_keyboard_layouts/web_keyboard_layouts.dart';
+import 'testing.dart';
 
-final Map<String, Map<String, int>> kWinMapping = @@@WIN_MAPPING@@@;
+void testWin(LayoutMapping mapping) {
+@@@WIN_CASES@@@
+}
 
-final Map<String, Map<String, int>> kLinuxMapping = @@@LINUX_MAPPING@@@;
+void testLinux(LayoutMapping mapping) {
+@@@LINUX_CASES@@@
+}
 
-final Map<String, Map<String, int>> kDarwinMapping = @@@DARWIN_MAPPING@@@;
+void testDarwin(LayoutMapping mapping) {
+@@@DARWIN_CASES@@@
+}
