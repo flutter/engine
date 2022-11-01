@@ -253,8 +253,10 @@ class MouseInputTest : public PortableUITest,
 
  private:
   void ExtendRealm() override {
+    FML_LOG(INFO) << "Extending realm";
     mouse_input_listener_ =
         std::make_unique<MouseInputListenerServer>(dispatcher());
+
     // Key part of service setup: have this test component vend the
     // |MouseInputListener| service in the constructed realm.
     realm_builder()->AddLocalChild(kMouseInputListener,
@@ -265,16 +267,16 @@ class MouseInputTest : public PortableUITest,
                                   .environment = kFlutterRunnerEnvironment,
                               });
 
-    realm_builder()->AddRoute(
-        Route{.capabilities = {Protocol{
+    realm_builder()->AddRoute(Route{
+        .capabilities = {Protocol{
                   fuchsia::ui::test::input::MouseInputListener::Name_}},
-              .source = kMouseInputListenerRef,
-              .targets = {kFlutterJitRunnerRef, kMouseInputViewRef}});
+        .source = kMouseInputListenerRef,
+        .targets = {kFlutterJitRunnerRef, kMouseInputViewRef}});
 
-    realm_builder()->AddRoute(
-        Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-              .source = kMouseInputViewRef,
-              .targets = {ParentRef()}});
+    realm_builder()->AddRoute(Route{
+        .capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
+        .source = kMouseInputViewRef,
+        .targets = {ParentRef()}});
   }
 
   ParamType GetTestUIStackUrl() override { return GetParam(); };
@@ -294,7 +296,7 @@ INSTANTIATE_TEST_SUITE_P(
     MouseInputTestParameterized,
     MouseInputTest,
     ::testing::Values(
-        "fuchsia-pkg://fuchsia.com/gfx-root-presenter-test-ui-stack#meta/"
+        "fuchsia-pkg://fuchsia.com/flatland-scene-manager-test-ui-stack#meta/"
         "test-ui-stack.cm"));
 
 TEST_P(MouseInputTest, FlutterMouseMove) {

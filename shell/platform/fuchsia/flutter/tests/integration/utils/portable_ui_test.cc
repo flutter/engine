@@ -70,36 +70,28 @@ void PortableUITest::SetUpRealmBase() {
   realm_builder_.AddChild(kTestUIStack, GetTestUIStackUrl());
 
   // // Route base system services to flutter and the test UI stack.
-  realm_builder_.AddRoute(
-      Route{.capabilities =
-                {
-                    Protocol{fuchsia::logger::LogSink::Name_},
-                    Protocol{fuchsia::sys::Environment::Name_},
-                    Protocol{fuchsia::sysmem::Allocator::Name_},
-                    Protocol{fuchsia::tracing::provider::Registry::Name_},
-                    Protocol{fuchsia::ui::input::ImeService::Name_},
-                    Protocol{kPointerInjectorRegistryName},
-                    Protocol{kPosixSocketProviderName},
-                    Protocol{kVulkanLoaderServiceName},
-                    component_testing::Directory{"config-data"},
-                },
-            .source = ParentRef(),
-            .targets = {kFlutterJitRunnerRef, kTestUIStackRef}});
-
-  // Capabilities routed to test driver.
   realm_builder_.AddRoute(Route{
-      .capabilities = {Protocol{fuchsia::ui::test::input::Registry::Name_},
-                       Protocol{fuchsia::ui::test::scene::Controller::Name_},
-                       Protocol{fuchsia::ui::scenic::Scenic::Name_}},
-      .source = kTestUIStackRef,
-      .targets = {ParentRef()}});
+      .capabilities = {Protocol{fuchsia::logger::LogSink::Name_},
+                       Protocol{fuchsia::sys::Environment::Name_},
+                       Protocol{fuchsia::sysmem::Allocator::Name_},
+                       Protocol{fuchsia::tracing::provider::Registry::Name_},
+                       Protocol{fuchsia::ui::input::ImeService::Name_},
+                       Protocol{kPointerInjectorRegistryName},
+                       Protocol{kPosixSocketProviderName},
+                       Protocol{kVulkanLoaderServiceName},
+                       component_testing::Directory{"config-data"}},
+      .source = ParentRef(),
+      .targets = {kFlutterJitRunnerRef, kTestUIStackRef}});
 
-  // Route UI capabilities from test UI stack to flutter runners.
+  // Route UI capabilities to test driver and Flutter runner
   realm_builder_.AddRoute(Route{
-      .capabilities = {Protocol{fuchsia::ui::composition::Flatland::Name_},
-                       Protocol{fuchsia::ui::scenic::Scenic::Name_}},
+      .capabilities = {Protocol{fuchsia::ui::composition::Allocator::Name_},
+                       Protocol{fuchsia::ui::composition::Flatland::Name_},
+                       Protocol{fuchsia::ui::scenic::Scenic::Name_},
+                       Protocol{fuchsia::ui::test::input::Registry::Name_},
+                       Protocol{fuchsia::ui::test::scene::Controller::Name_}},
       .source = kTestUIStackRef,
-      .targets = {kFlutterJitRunnerRef}});
+      .targets = {ParentRef(), kFlutterJitRunnerRef}});
 }
 
 void PortableUITest::ProcessViewGeometryResponse(
@@ -219,11 +211,12 @@ void PortableUITest::SimulateMouseEvent(
     std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
     int movement_x,
     int movement_y) {
-  FML_LOG(INFO) << "Requesting mouse event";
   fuchsia::ui::test::input::MouseSimulateMouseEventRequest request;
   request.set_pressed_buttons(std::move(pressed_buttons));
   request.set_movement_x(movement_x);
   request.set_movement_y(movement_y);
+
+  FML_LOG(INFO) << "Injecting mouse input";
 
   fake_mouse_->SimulateMouseEvent(
       std::move(request), [] { FML_LOG(INFO) << "Mouse event injected"; });

@@ -282,16 +282,15 @@ class FlutterTapTest : public PortableUITest,
                               });
 
     // Route the TouchInput protocol capability to the Dart component
-    realm_builder()->AddRoute(
-        Route{.capabilities = {Protocol{
-                  fuchsia::ui::test::input::TouchInputListener::Name_}},
-              .source = kMockTouchInputListenerRef,
-              .targets = {kFlutterJitRunnerRef, kTouchInputViewRef}});
+    realm_builder()->AddRoute(Route{
+        .capabilities = {Protocol{fuchsia::ui::test::input::TouchInputListener::Name_}},
+        .source = kMockTouchInputListenerRef,
+        .targets = {kFlutterJitRunnerRef, kTouchInputViewRef}});
 
-    realm_builder()->AddRoute(
-        Route{.capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
-              .source = kTouchInputViewRef,
-              .targets = {ParentRef()}});
+    realm_builder()->AddRoute(Route{
+        .capabilities = {Protocol{fuchsia::ui::app::ViewProvider::Name_}},
+        .source = kTouchInputViewRef,
+        .targets = {ParentRef()}});
   }
 
   ParamType GetTestUIStackUrl() override { return GetParam(); };

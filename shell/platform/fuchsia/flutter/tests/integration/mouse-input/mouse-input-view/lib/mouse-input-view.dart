@@ -70,6 +70,8 @@ class MyApp {
   final _responseListener = test_mouse.MouseInputListenerProxy();
 
   void run() {
+    Incoming.fromSvcPath()
+      ..connectToService(_responseListener);
     // Set up window callbacks.
     window.onPointerDataPacket = (PointerDataPacket packet) {
       this.pointerDataPacket(packet);
@@ -120,9 +122,9 @@ class MyApp {
           _touchCounter++;
         }
 
-        Incoming.fromSvcPath()
-          ..connectToService(_responseListener)
-          ..close();
+        // Incoming.fromSvcPath()
+        //   ..connectToService(_responseListener)
+          // ..close();
 
         _respond(test_mouse.MouseInputListenerReportMouseInputRequest(
           localX: data.physicalX,
