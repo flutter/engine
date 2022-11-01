@@ -883,7 +883,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     '!': 0x31,
     '&': 0x31,
     '1': 0x31,
-    'Deadkey': 0x31,
+    'Dead': 0x31,
     '|': 0x31,
     '¡': 0x31,
     '©': 0x31,
@@ -964,7 +964,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     '&': 0x36,
     ',': 0x36,
     '6': 0x36,
-    'Deadkey': 0x36,
+    'Dead': 0x36,
     ']': 0x36,
     '^': 0x36,
     '§': 0x36,
@@ -999,7 +999,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     '*': 0x38,
     '8': 0x38,
     ';': 0x38,
-    'Deadkey': 0x38,
+    'Dead': 0x38,
     '[': 0x38,
     '{': 0x38,
     '¡': 0x38,
@@ -1018,7 +1018,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     '(': 0x39,
     ')': 0x39,
     '9': 0x39,
-    'Deadkey': 0x39,
+    'Dead': 0x39,
     ']': 0x39,
     '{': 0x39,
     '}': 0x39,
@@ -1035,7 +1035,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   },
   'KeyA': <String, int>{
     'A': 0x41,
-    'Deadkey': 0x41,
+    'Dead': 0x41,
     'Q': 0x51,
     'a': 0x41,
     'q': 0x51,
@@ -1055,7 +1055,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   },
   'KeyB': <String, int>{
     'B': 0x42,
-    'Deadkey': 0x42,
+    'Dead': 0x42,
     'X': 0x58,
     'b': 0x42,
     'x': 0x58,
@@ -1078,7 +1078,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   'KeyC': <String, int>{
     ' ': 0x43,
     'C': 0x43,
-    'Deadkey': 0x43,
+    'Dead': 0x43,
     'J': 0x4a,
     'c': 0x43,
     'j': 0x4a,
@@ -1099,7 +1099,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   },
   'KeyD': <String, int>{
     'D': 0x44,
-    'Deadkey': 0x45,
+    'Dead': 0x45,
     'E': 0x45,
     'd': 0x44,
     'e': 0x45,
@@ -1119,7 +1119,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㅇ': 0x44,
   },
   'KeyE': <String, int>{
-    'Deadkey': 0x45,
+    'Dead': 0x45,
     'E': 0x45,
     'e': 0x45,
     '´': 0x45,
@@ -1141,7 +1141,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㄸ': 0x45,
   },
   'KeyF': <String, int>{
-    'Deadkey': 0x55,
+    'Dead': 0x55,
     'F': 0x46,
     'U': 0x55,
     'f': 0x46,
@@ -1161,7 +1161,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ﬁ': 0x46,
   },
   'KeyG': <String, int>{
-    'Deadkey': 0x1,
+    'Dead': 0x1,
     'G': 0x47,
     'I': 0x49,
     'g': 0x47,
@@ -1185,7 +1185,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   'KeyH': <String, int>{
     ' ': 0x48,
     'D': 0x44,
-    'Deadkey': 0x48,
+    'Dead': 0x48,
     'H': 0x48,
     'd': 0x44,
     'h': 0x48,
@@ -1210,7 +1210,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   'KeyI': <String, int>{
     ' ': 0x49,
     'C': 0x43,
-    'Deadkey': 0x49,
+    'Dead': 0x49,
     'I': 0x49,
     'c': 0x43,
     'i': 0x49,
@@ -1234,7 +1234,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㅑ': 0x49,
   },
   'KeyJ': <String, int>{
-    'Deadkey': 0x4a,
+    'Dead': 0x4a,
     'H': 0x48,
     'J': 0x4a,
     'h': 0x48,
@@ -1261,7 +1261,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㅓ': 0x4a,
   },
   'KeyK': <String, int>{
-    'Deadkey': 0x4b,
+    'Dead': 0x4b,
     'K': 0x4b,
     'T': 0x54,
     'k': 0x4b,
@@ -1290,7 +1290,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   'KeyL': <String, int>{
     ' ': 0x4c,
     '@': 0x4c,
-    'Deadkey': 0x1,
+    'Dead': 0x1,
     'L': 0x4c,
     'N': 0x4e,
     'l': 0x4c,
@@ -1312,7 +1312,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ﬂ': 0x4c,
   },
   'KeyM': <String, int>{
-    'Deadkey': 0x4d,
+    'Dead': 0x4d,
     'M': 0x4d,
     'm': 0x4d,
     '~': 0x4d,
@@ -1334,7 +1334,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   'KeyN': <String, int>{
     ' ': 0x4e,
     'B': 0x42,
-    'Deadkey': 0x4e,
+    'Dead': 0x4e,
     'N': 0x4e,
     'b': 0x42,
     'n': 0x4e,
@@ -1376,7 +1376,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㅒ': 0x4f,
   },
   'KeyP': <String, int>{
-    'Deadkey': 0x50,
+    'Dead': 0x50,
     'L': 0x4c,
     'P': 0x50,
     'l': 0x4c,
@@ -1485,7 +1485,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   },
   'KeyU': <String, int>{
     ' ': 0x55,
-    'Deadkey': 0x55,
+    'Dead': 0x55,
     'G': 0x47,
     'U': 0x55,
     'g': 0x47,
@@ -1509,7 +1509,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㅕ': 0x55,
   },
   'KeyV': <String, int>{
-    'Deadkey': 0x56,
+    'Dead': 0x56,
     'K': 0x4b,
     'V': 0x56,
     'k': 0x4b,
@@ -1528,7 +1528,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     '': 0x4b,
   },
   'KeyW': <String, int>{
-    'Deadkey': 0x57,
+    'Dead': 0x57,
     'W': 0x57,
     'Z': 0x5a,
     'w': 0x57,
@@ -1551,7 +1551,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
     'ㅉ': 0x57,
   },
   'KeyX': <String, int>{
-    'Deadkey': 0x58,
+    'Dead': 0x58,
     'Q': 0x51,
     'X': 0x58,
     'q': 0x51,
@@ -1603,7 +1603,7 @@ final Map<String, Map<String, int>> kDarwinMapping = <String, Map<String, int>>{
   },
   'KeyZ': <String, int>{
     ' ': 0x5a,
-    'Deadkey': 0x5a,
+    'Dead': 0x5a,
     'W': 0x57,
     'Y': 0x59,
     'Z': 0x5a,

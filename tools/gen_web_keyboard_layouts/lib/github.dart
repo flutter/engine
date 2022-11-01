@@ -136,10 +136,13 @@ _GitHubFile _jsonGetGithubFile(JsonContext<JsonArray> files, int index) {
   );
 }
 
-String _parsePrintable(String rawString) {
+String _parsePrintable(String rawString, int isDeadKey) {
   // Parse a char represented in unicode hex, such as \u001b.
   final RegExp hexParser = RegExp(r'^\\u([0-9a-fA-F]+)$');
 
+  if (isDeadKey != 0) {
+    return LayoutEntry.kDeadKey;
+  }
   if (rawString.isEmpty) {
     return '';
   }
@@ -206,12 +209,11 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
 
     entries[eventKey] = LayoutEntry(
       <String>[
-        _parsePrintable(listMatch.group(1)!),
-        _parsePrintable(listMatch.group(2)!),
-        _parsePrintable(listMatch.group(3)!),
-        _parsePrintable(listMatch.group(4)!),
+        _parsePrintable(listMatch.group(1)!, deadMask & 0x1),
+        _parsePrintable(listMatch.group(2)!, deadMask & 0x2),
+        _parsePrintable(listMatch.group(3)!, deadMask & 0x4),
+        _parsePrintable(listMatch.group(4)!, deadMask & 0x8),
       ],
-      deadMask,
     );
   });
 

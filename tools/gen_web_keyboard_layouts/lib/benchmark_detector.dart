@@ -74,13 +74,11 @@ Map<String, int> buildLayout(Map<String, LayoutEntry> entries) {
 
   entries.forEach((String eventCode, LayoutEntry entry) {
     // bool anyEascii = false;
-    for (int index = 0; index < 4; index += 1) {
+    for (final String printable in entry.printables) {
       // Ignore dead keys.
-      if (entry.deadMasks & (1 << index) != 0) {
+      if (printable == LayoutEntry.kDeadKey) {
         continue;
       }
-      // A printable of this key is a mandatory goal: Use it.
-      final String printable = entry.printables[index];
       if (mandatoryGoalsByChar.containsKey(printable)) {
         result[eventCode] = printable.codeUnitAt(0);
         mandatoryGoalsByChar.remove(printable);
@@ -133,13 +131,10 @@ Map<String, Map<String, int>> buildMap(Iterable<Layout> layouts) {
     buildLayout(layout.entries).forEach((String eventCode, int logicalKey) {
       final Map<String, int> codeMap = result.putIfAbsent(eventCode, () => <String, int>{});
       final LayoutEntry entry = layout.entries[eventCode]!;
-      for (int charIndex = 0; charIndex < 4; charIndex += 1) {
-        final bool isDeadKey = entry.deadMasks & (1 << charIndex) != 0;
-        final String printable = entry.printables[charIndex];
-        if (!isDeadKey && printable.isEmpty) {
+      for (final String eventKey in entry.printables) {
+        if (eventKey.isEmpty) {
           continue;
         }
-        final String eventKey = isDeadKey ? 'Deadkey' : printable;
         if (codeMap.containsKey(eventKey) && codeMap[eventKey] != logicalKey) {
           assert(_mappedToKeyCode(codeMap[eventKey]!));
           assert(_mappedToKeyCode(logicalKey));

@@ -145,13 +145,7 @@ String _buildTestCasesString(List<Layout> layouts) {
     _sortedForEach(buildLayout(layout.entries), (String eventCode, int logicalKey) {
       final LayoutEntry entry = layout.entries[eventCode]!;
       layoutEntries.add("    verifyEntry(mapping, '$eventCode', <String>["
-          '${List<String>.generate(4, (int modifierIndex) {
-            if (entry.deadMasks & (1 << modifierIndex) != 0) {
-              return "'Dead'";
-            } else {
-              return _escapeEventKey(entry.printables[modifierIndex]);
-            }
-          }).join(', ')}'
+          '${entry.printables.map(_escapeEventKey).join(', ')}'
           '], 0x${logicalKey.toRadixString(16)});');
     });
     layoutsString.add('''

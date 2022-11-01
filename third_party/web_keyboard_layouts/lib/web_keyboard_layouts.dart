@@ -13,7 +13,6 @@ class LayoutMapping {
   LayoutMapping.darwin() : _mapping = kDarwinMapping;
 
   int? getLogicalKey(String eventCode, String eventKey, String eventKeyCode) {
-    print('$eventCode, $eventKey, $eventKeyCode');
     final int? result = _mapping[eventCode]?[eventKey];
     if (result == _kUseKeyCode) {
       return getLetterCode(eventKeyCode.toUpperCase());
