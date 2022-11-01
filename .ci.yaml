@@ -194,6 +194,17 @@ targets:
       lint_android: "false"
       lint_host: "true"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
 
   - name: Linux Android clang-tidy
     recipe: engine/engine_lint
@@ -203,6 +214,18 @@ targets:
       lint_android: "true"
       lint_host: "false"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
     recipe: engine/engine_arm
@@ -215,6 +238,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_arm_host_engine
       environment: Production
 
@@ -222,6 +246,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_host_engine
       environment: Production
 
@@ -229,6 +254,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_android_aot_engine
       environment: Production
 
@@ -236,6 +262,7 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_android_debug_engine
       environment: Production
 
@@ -336,6 +363,19 @@ targets:
       lint_host: "true"
       lint_ios: "false"
     timeout: 75
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac iOS clang-tidy
     recipe: engine/engine_lint
@@ -345,6 +385,19 @@ targets:
       lint_host: "false"
       lint_ios: "true"
     timeout: 75
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac iOS Engine
     recipe: engine/engine
