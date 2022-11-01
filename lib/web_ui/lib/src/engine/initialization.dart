@@ -69,11 +69,11 @@ void debugEmulateHotRestart() {
 /// Fully initializes the engine, including services and UI.
 Future<void> initializeEngine({
   AssetManager? assetManager,
-  JsFlutterConfiguration? jsParams,
+  JsFlutterConfiguration? runtimeConfiguration,
 }) async {
   await initializeEngineServices(
     assetManager: assetManager,
-    runtimeConfiguration: jsParams);
+    runtimeConfiguration: runtimeConfiguration);
   await initializeEngineUi();
 }
 
