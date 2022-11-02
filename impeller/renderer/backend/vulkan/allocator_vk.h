@@ -5,6 +5,8 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -21,8 +23,10 @@ class AllocatorVK final : public Allocator {
  private:
   friend class ContextVK;
 
+  fml::RefPtr<vulkan::VulkanProcTable> vk_;
   VmaAllocator allocator_ = {};
   ContextVK& context_;
+  vk::Device device_;
   bool is_valid_ = false;
 
   AllocatorVK(ContextVK& context,
