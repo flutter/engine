@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:collection';
+import 'dart:io' as io;
 
 import 'package:kernel/kernel.dart';
 
@@ -13,6 +14,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     this.className,
   )  : _visitedInstances = <String>{},
        constantInstances = <Map<String, dynamic>>[],
+       skippedConstantInstances = <Map<String, dynamic>>[],
        nonConstantLocations = <Map<String, dynamic>>[];
 
   /// The path to the file to open.
@@ -26,7 +28,10 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   final Set<String> _visitedInstances;
   final List<Map<String, dynamic>> constantInstances;
+  final List<Map<String, dynamic>> skippedConstantInstances;
   final List<Map<String, dynamic>> nonConstantLocations;
+
+  bool inIconClass = false;
 
   // A cache of previously evaluated classes.
   static final Map<Class, bool> _classHeirarchyCache = <Class, bool>{};
@@ -73,11 +78,23 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   }
 
   @override
+  void visitClass(Class node) {
+    if (node.name == 'Icons' && node.enclosingLibrary.importUri.toString() == 'package:flutter/src/material/icons.dart') {
+      inIconClass = true;
+      super.visitClass(node);
+      inIconClass = false;
+    } else {
+      super.visitClass(node);
+    }
+  }
+
+  @override
   void visitInstanceConstantReference(InstanceConstant node) {
     super.visitInstanceConstantReference(node);
     if (!_matches(node.classNode)) {
       return;
     }
+
     final Map<String, dynamic> instance = <String, dynamic>{};
     for (final MapEntry<Reference, Constant> kvp in node.fieldValues.entries) {
       if (kvp.value is! PrimitiveConstant<dynamic>) {
@@ -87,10 +104,21 @@ class _ConstVisitor extends RecursiveVisitor<void> {
       instance[kvp.key.asField.name.text] = value.value;
     }
     if (_visitedInstances.add(instance.toString())) {
-      constantInstances.add(instance);
+      if (inIconClass) {
+        skippedConstantInstances.add(instance);
+      } else {
+        constantInstances.add(instance);
+      }
     }
   }
 }
+
+void _printStackTrace(Node node) {
+  io.stderr.writeln(StackTrace.current);
+}
+
+/// For debugging.
+Library? lastLibrary;
 
 /// A kernel AST visitor that finds const references.
 class ConstFinder {
@@ -114,11 +142,15 @@ class ConstFinder {
   Map<String, dynamic> findInstances() {
     _visitor._visitedInstances.clear();
     for (final Library library in loadComponentFromBinary(_visitor.kernelFilePath).libraries) {
+      //io.stderr.writeln('loadComponentFromBinary($library)');
+      lastLibrary = library;
       library.visitChildren(_visitor);
     }
+    //io.stderr.flush();
     return <String, dynamic>{
       'constantInstances': _visitor.constantInstances,
       'nonConstantLocations': _visitor.nonConstantLocations,
+      'skippedConstantInstances': _visitor.skippedConstantInstances,
     };
   }
 }
