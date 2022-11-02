@@ -25,7 +25,7 @@ import java.util.Map;
  * io.flutter.embedding.android.FlutterFragment#withNewEngineInGroup(String)} for related APIs.
  */
 public class FlutterEngineGroupCache {
-  private static FlutterEngineGroupCache instance;
+  private volatile static FlutterEngineGroupCache instance;
 
   /**
    * Returns the static singleton instance of {@code FlutterEngineGroupCache}.
