@@ -8,8 +8,9 @@ import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
 
 // Path to root of the flutter/engine repository containing this script.
-final String _engineRoot = path.dirname(path.dirname(path.dirname(path.dirname(path.fromUri(io.Platform.script)))));
-
+String _engineRoot() {
+  return path.dirname(path.dirname(io.Directory.current.path));
+}
 
 /// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
 String? _platformSpecificWarningsAsErrors(ArgResults options) {
@@ -153,7 +154,7 @@ class Options {
       'src-dir',
       help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
       valueHelp: 'path/to/engine/src',
-      defaultsTo: path.dirname(_engineRoot),
+      defaultsTo: path.dirname(_engineRoot()),
     )
     ..addOption(
       'checks',
@@ -172,7 +173,7 @@ class Options {
   final io.File buildCommandsPath;
 
   /// The root of the flutter/engine repository.
-  final io.Directory repoPath = io.Directory(_engineRoot);
+  final io.Directory repoPath = io.Directory(_engineRoot());
 
   /// Argument sent as `warnings-as-errors` to clang-tidy.
   final String? warningsAsErrors;

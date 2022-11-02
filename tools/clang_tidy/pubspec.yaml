@@ -25,8 +25,8 @@ dependencies:
 dev_dependencies:
   async_helper: any
   expect: any
-  litetest: any
   smith: any
+  test: any
 
 dependency_overrides:
   args:

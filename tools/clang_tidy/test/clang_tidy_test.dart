@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io show File, Platform, stderr;
+import 'dart:io' as io show Directory, File, Platform, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
 import 'package:clang_tidy/src/options.dart';
-import 'package:litetest/litetest.dart';
+import 'package:path/path.dart' as path;
 import 'package:process_runner/process_runner.dart';
+import 'package:test/test.dart';
 
 // Recorded locally from clang-tidy.
 const String _tidyOutput = '''
@@ -38,14 +39,26 @@ Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
 Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
 1 warning treated as error''';
 
-Future<int> main(List<String> args) async {
-  if (args.isEmpty) {
-    io.stderr.writeln(
-      'Usage: clang_tidy_test.dart [path/to/compile_commands.json]',
-    );
-    return 1;
+Future<void> main() async {
+  String buildCommands() {
+    const String key = 'CLANG_TIDY_TEST_COMPILE_COMMANDS';
+    if (io.Platform.environment.containsKey(key)) {
+      return io.Platform.environment[key]!;
+    }
+
+    final String srcPath = path.dirname(path.dirname(path.dirname(io.Directory.current.path)));
+    final String hostDebugPath = path.join(srcPath, 'out', 'host_debug', 'compile_commands.json');
+    if (io.File(hostDebugPath).existsSync()) {
+      return hostDebugPath;
+    }
+
+    final String hostDebugUnoptPath = path.join(srcPath, 'out', 'host_debug_unopt', 'compile_commands.json');
+    if (io.File(hostDebugUnoptPath).existsSync()) {
+      return hostDebugUnoptPath;
+    }
+
+    throw Exception('The "$key" environment variable is not set to the path of compile_commands.json.');
   }
-  final String buildCommands = args[0];
 
   test('--help gives help', () async {
     final StringBuffer outBuffer = StringBuffer();
@@ -131,7 +144,7 @@ Future<int> main(List<String> args) async {
 
     expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString().split('\n')[0], hasMatch(
+    expect(errBuffer.toString().split('\n')[0], matches(
       r"ERROR: Build commands path .*/does/not/exist doesn't exist.",
     ));
   });
@@ -154,7 +167,7 @@ Future<int> main(List<String> args) async {
 
     expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString().split('\n')[0], hasMatch(
+    expect(errBuffer.toString().split('\n')[0], matches(
       r'ERROR: Build commands path .*/does/not/exist'
       r'[/\\]out[/\\]ios_debug_unopt[/\\]compile_commands.json'
       r" doesn't exist.",
@@ -188,7 +201,7 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPath: io.File(buildCommands()),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
@@ -201,7 +214,7 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPath: io.File(buildCommands()),
       outSink: outBuffer,
       errSink: errBuffer,
     );
@@ -213,7 +226,7 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPath: io.File(buildCommands()),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
@@ -234,51 +247,62 @@ Future<int> main(List<String> args) async {
     expect(commands, isEmpty);
   });
 
+  void _withTempFile(String prefix, void Function(String path) func) {
+    final String filePath = path.join(io.Directory.systemTemp.path, '$prefix-temp-file');
+    final io.File file = io.File(filePath);
+    file.createSync();
+    try {
+      func(file.path);
+    } finally {
+      file.deleteSync();
+    }
+  }
+
   test('A Command is produced when a file is changed', () async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPath: io.File(buildCommands()),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
     );
 
-    // This file needs to exist, and be UTF8 line-parsable.
-    final String filePath = io.Platform.script.toFilePath();
-    final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
-      <String, dynamic>{
-        'directory': '/unused',
-        'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
-        'file': filePath,
-      },
-    ];
-    final List<Command> commands = await clangTidy.getLintCommandsForChangedFiles(
-      buildCommandsData,
-      <io.File>[io.File(filePath)],
-    );
+    _withTempFile('file-changed', (String filePath) async {
+      final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'directory': '/unused',
+          'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
+          'file': filePath,
+        },
+      ];
+      final List<Command> commands = await clangTidy.getLintCommandsForChangedFiles(
+        buildCommandsData,
+        <io.File>[io.File(filePath)],
+      );
 
-    expect(commands, isNotEmpty);
-    final Command command = commands.first;
-    expect(command.tidyPath, contains('clang/bin/clang-tidy'));
-    final Options noFixOptions = Options(buildCommandsPath: io.File('.'));
-    expect(noFixOptions.fix, isFalse);
-    final WorkerJob jobNoFix = command.createLintJob(noFixOptions);
-    expect(jobNoFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
-    expect(jobNoFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
-    expect(jobNoFix.command[2], '--');
-    expect(jobNoFix.command[3], '');
-    expect(jobNoFix.command[4], endsWith(filePath));
+      expect(commands, isNotEmpty);
+      final Command command = commands.first;
+      expect(command.tidyPath, contains('clang/bin/clang-tidy'));
+      final Options noFixOptions = Options(buildCommandsPath: io.File('.'));
+      expect(noFixOptions.fix, isFalse);
+      final WorkerJob jobNoFix = command.createLintJob(noFixOptions);
+      expect(jobNoFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
+      expect(jobNoFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
+      expect(jobNoFix.command[2], '--');
+      expect(jobNoFix.command[3], '');
+      expect(jobNoFix.command[4], endsWith(filePath));
 
-    final Options fixOptions = Options(buildCommandsPath: io.File('.'), fix: true);
-    final WorkerJob jobWithFix = command.createLintJob(fixOptions);
-    expect(jobWithFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
-    expect(jobWithFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
-    expect(jobWithFix.command[2], '--fix');
-    expect(jobWithFix.command[3], '--format-style=file');
-    expect(jobWithFix.command[4], '--');
-    expect(jobWithFix.command[5], '');
-    expect(jobWithFix.command[6], endsWith(filePath));
+      final Options fixOptions = Options(buildCommandsPath: io.File('.'), fix: true);
+      final WorkerJob jobWithFix = command.createLintJob(fixOptions);
+      expect(jobWithFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
+      expect(jobWithFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
+      expect(jobWithFix.command[2], '--fix');
+      expect(jobWithFix.command[3], '--format-style=file');
+      expect(jobWithFix.command[4], '--');
+      expect(jobWithFix.command[5], '');
+      expect(jobWithFix.command[6], endsWith(filePath));
+    });
   });
 
   test('Command getLintAction flags third_party files', () async {
@@ -342,6 +366,4 @@ Future<int> main(List<String> args) async {
 
     expect(lintAction, equals(LintAction.lint));
   });
-
-  return 0;
 }
