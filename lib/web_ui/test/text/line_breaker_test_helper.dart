@@ -18,9 +18,10 @@ bool isValidTestCase(String line) {
 
 String _checkReplacement(String line) {
   String replacement = line;
-  // Special cases for rules LB13, LB14, LB15, LB16, LB17 to allow line breaks
-  // after spaces.
-  final RegExp spacesRegex = RegExp(r'SPACE \(SP\) × \[(13|14|15|16|17)\.');
+
+  // Special cases for rules LB8, LB11, LB13, LB14, LB15, LB16, LB17 to allow
+  // line breaks after spaces.
+  final RegExp spacesRegex = RegExp(r'SPACE \(SP\) × \[(8|11|13|14|15|16|17)\.');
   if (replacement.contains(spacesRegex)) {
     replacement = replacement
         .replaceAll('0020 ×', '0020 ÷') // SPACE (SP)
