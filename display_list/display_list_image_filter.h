@@ -487,6 +487,10 @@ class DlMatrixImageFilter final : public DlImageFilter {
     return SkImageFilters::MatrixTransform(matrix_, ToSk(sampling_), nullptr);
   }
 
+  MatrixCapability matrix_capability() const override {
+    return MatrixCapability::kComplex;
+  }
+
  protected:
   bool equals_(const DlImageFilter& other) const override {
     FML_DCHECK(other.type() == DlImageFilterType::kMatrix);
@@ -721,6 +725,11 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
       return nullptr;
     }
     return skia_object->makeWithLocalMatrix(matrix_);
+  }
+
+  MatrixCapability matrix_capability() const override {
+    return image_filter_ ? image_filter_->matrix_capability()
+                         : MatrixCapability::kScaleTranslate;
   }
 
  protected:
