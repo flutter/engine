@@ -236,7 +236,7 @@ targets:
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 120
     properties:
       release_build: "true"
       config_name: linux_arm_host_engine
@@ -244,7 +244,7 @@ targets:
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 120
     properties:
       release_build: "true"
       config_name: linux_host_engine
@@ -252,7 +252,7 @@ targets:
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 120
     properties:
       release_build: "true"
       config_name: linux_android_aot_engine
@@ -260,7 +260,7 @@ targets:
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 120
     properties:
       release_build: "true"
       config_name: linux_android_debug_engine
