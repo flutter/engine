@@ -138,8 +138,10 @@ bool PortableUITest::HasViewConnected(zx_koid_t view_ref_koid) {
 
 void PortableUITest::LaunchClient() {
   scene_provider_ = realm_->Connect<fuchsia::ui::test::scene::Controller>();
-  scene_provider_.set_error_handler(
-      [](auto) { FML_LOG(ERROR) << "Error from test scene provider: " << &zx_status_get_string; });
+  scene_provider_.set_error_handler([](auto) {
+    FML_LOG(ERROR) << "Error from test scene provider: "
+                   << &zx_status_get_string;
+  });
   fuchsia::ui::test::scene::ControllerAttachClientViewRequest request;
   request.set_view_provider(realm_->Connect<fuchsia::ui::app::ViewProvider>());
   scene_provider_->RegisterViewTreeWatcher(view_tree_watcher_.NewRequest(),
@@ -163,8 +165,9 @@ void PortableUITest::LaunchClient() {
 void PortableUITest::RegisterTouchScreen() {
   FML_LOG(INFO) << "Registering fake touch screen";
   input_registry_ = realm_->Connect<fuchsia::ui::test::input::Registry>();
-  input_registry_.set_error_handler(
-      [](auto) { FML_LOG(ERROR) << "Error from input helper: " << &zx_status_get_string; });
+  input_registry_.set_error_handler([](auto) {
+    FML_LOG(ERROR) << "Error from input helper: " << &zx_status_get_string;
+  });
 
   bool touchscreen_registered = false;
   fuchsia::ui::test::input::RegistryRegisterTouchScreenRequest request;
@@ -180,8 +183,9 @@ void PortableUITest::RegisterTouchScreen() {
 void PortableUITest::RegisterMouse() {
   FML_LOG(INFO) << "Registering fake mouse";
   input_registry_ = realm_->Connect<fuchsia::ui::test::input::Registry>();
-  input_registry_.set_error_handler(
-      [](auto) { FML_LOG(ERROR) << "Error from input helper: " << &zx_status_get_string; });
+  input_registry_.set_error_handler([](auto) {
+    FML_LOG(ERROR) << "Error from input helper: " << &zx_status_get_string;
+  });
 
   bool mouse_registered = false;
   fuchsia::ui::test::input::RegistryRegisterMouseRequest request;
