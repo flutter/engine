@@ -603,7 +603,9 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
   }
 }
 
-std::shared_ptr<AccessibilityBridge> FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine, FlutterWindowsView* view) {
+std::shared_ptr<AccessibilityBridge>
+FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine,
+                                                FlutterWindowsView* view) {
   return std::make_shared<AccessibilityBridgeWindows>(engine, view);
 }
 

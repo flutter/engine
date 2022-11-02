@@ -24,7 +24,8 @@ class FlutterPlatformNodeDelegateWindows;
 // for each node in the semantics tree.
 class AccessibilityBridgeWindows : public AccessibilityBridge {
  public:
-  AccessibilityBridgeWindows(FlutterWindowsEngine* engine, FlutterWindowsView* view);
+  AccessibilityBridgeWindows(FlutterWindowsEngine* engine,
+                             FlutterWindowsView* view);
   virtual ~AccessibilityBridgeWindows() = default;
 
   // |AccessibilityBridge|

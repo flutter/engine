@@ -60,8 +60,7 @@ FlutterEngine* CreateTestEngine() {
 }
 }  // namespace
 
-TEST(AccessibilityBridgeMacTest,
-     sendsAccessibilityCreateNotificationToWindowOfFlutterView) {
+TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
