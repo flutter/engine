@@ -261,6 +261,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // If the engine in FlutterEngineGroup is being used, it should have sent a resumed lifecycle
     // event.
+    // Note: "/fake/path" and "main" come from `setUp()`.
     DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint("/fake/path", "main");
     verify(flutterEngineGroup, times(1))
         .createAndRunEngine(mockHost.getContext(), entrypoint, mockHost.getInitialRoute());
