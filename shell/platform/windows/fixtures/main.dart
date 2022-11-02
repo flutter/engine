@@ -3,29 +3,46 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
+import 'dart:typed_data' show ByteData;
 import 'dart:ui' as ui;
 
 // Signals a waiting latch in the native test.
-void signal() native 'Signal';
+@pragma('vm:external-name', 'Signal')
+external void signal();
 
 // Signals a waiting latch in the native test, passing a boolean value.
-void signalBoolValue(bool value) native 'SignalBoolValue';
+@pragma('vm:external-name', 'SignalBoolValue')
+external void signalBoolValue(bool value);
 
 // Signals a waiting latch in the native test, passing a string value.
-void signalStringValue(String value) native 'SignalStringValue';
+@pragma('vm:external-name', 'SignalStringValue')
+external void signalStringValue(String value);
 
 // Signals a waiting latch in the native test, which returns a value to the fixture.
-bool signalBoolReturn() native 'SignalBoolReturn';
+@pragma('vm:external-name', 'SignalBoolReturn')
+external bool signalBoolReturn();
 
 // Notify the native test that the first frame has been scheduled.
-void notifyFirstFrameScheduled() native 'NotifyFirstFrameScheduled';
+@pragma('vm:external-name', 'NotifyFirstFrameScheduled')
+external void notifyFirstFrameScheduled();
 
-void main() {
+void main() {}
+
+@pragma('vm:entry-point')
+void hiPlatformChannels() {
+  ui.channelBuffers.setListener('hi',
+      (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
+    ui.PlatformDispatcher.instance.sendPlatformMessage('hi', data,
+        (ByteData? reply) {
+      ui.PlatformDispatcher.instance
+          .sendPlatformMessage('hi', reply, (ByteData? reply) {});
+    });
+    callback(data);
+  });
 }
 
 @pragma('vm:entry-point')
-void customEntrypoint() {
-}
+void customEntrypoint() {}
 
 @pragma('vm:entry-point')
 void verifyNativeFunction() {
@@ -51,8 +68,8 @@ void readPlatformExecutable() {
 @pragma('vm:entry-point')
 void drawHelloWorld() {
   ui.PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
-    final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle())
-      ..addText('Hello world');
+    final ui.ParagraphBuilder paragraphBuilder =
+        ui.ParagraphBuilder(ui.ParagraphStyle())..addText('Hello world');
     final ui.Paragraph paragraph = paragraphBuilder.build();
 
     paragraph.layout(const ui.ParagraphConstraints(width: 800.0));

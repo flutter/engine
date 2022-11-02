@@ -56,7 +56,7 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
-      xcode: 13a233 # xcode 13.0
+      xcode: 14a5294e # xcode 14.0 beta 5
   windows:
     properties:
       build_host: "false"
@@ -194,6 +194,17 @@ targets:
       lint_android: "false"
       lint_host: "true"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
 
   - name: Linux Android clang-tidy
     recipe: engine/engine_lint
@@ -203,6 +214,18 @@ targets:
       lint_android: "true"
       lint_host: "false"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
     recipe: engine/engine_arm
@@ -213,34 +236,35 @@ targets:
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_arm_host_engine
-      environment: Staging
+      environment: Production
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_host_engine
       environment: Production
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_android_aot_engine
-      environment: Staging
+      environment: Production
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_android_debug_engine
-      environment: Staging
+      environment: Production
 
   - name: Linux Web Engine
     recipe: engine/web_engine
@@ -329,7 +353,6 @@ targets:
           "ios-13-0",
           "ios-16-0_14a5294e"
         ]
-      xcode: 14a5294e # xcode 14.0 beta 5
     timeout: 75
 
   - name: Mac Host clang-tidy
@@ -337,20 +360,44 @@ targets:
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
-      xcode: 14a5294e # xcode 14.0 beta 5
       lint_host: "true"
       lint_ios: "false"
     timeout: 75
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac iOS clang-tidy
     recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
-      xcode: 14a5294e # xcode 14.0 beta 5
       lint_host: "false"
       lint_ios: "true"
     timeout: 75
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac iOS Engine
     recipe: engine/engine
@@ -382,11 +429,10 @@ targets:
 
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_ios_engine
-      environment: Staging
+      environment: Production
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
@@ -394,11 +440,10 @@ targets:
 
   - name:  Mac mac_ios_engine_profile
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_ios_engine_profile
-      environment: Staging
+      environment: Production
 
   - name:  Mac mac_ios_engine_release
     recipe: engine_v2/engine_v2
@@ -466,6 +511,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
+      - ci/**
 
   - name: Mac iOS Engine Release
     recipe: engine/engine
@@ -477,6 +523,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
+      - ci/**
 
   - name: Linux ci_yaml engine roller
     bringup: true

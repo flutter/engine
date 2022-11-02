@@ -51,6 +51,7 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -95,6 +96,7 @@ TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -115,6 +117,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -130,6 +133,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {0, 0, 50, 50};  // LTRB
@@ -159,6 +163,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -174,6 +179,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {90, 90, 100, 100};  // LTRB
@@ -203,6 +209,7 @@ TEST(FlutterPlatformNodeDelegateTest, canUseOwnerBridge) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -218,6 +225,7 @@ TEST(FlutterPlatformNodeDelegateTest, canUseOwnerBridge) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {0, 0, 50, 50};  // LTRB

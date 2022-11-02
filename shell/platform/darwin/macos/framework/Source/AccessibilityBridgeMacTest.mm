@@ -92,6 +92,7 @@ TEST(AccessibilityBridgeMacTest,
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -144,6 +145,7 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenH
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -196,6 +198,7 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenN
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);

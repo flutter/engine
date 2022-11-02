@@ -28,7 +28,8 @@ struct AllocatedTextureInfoVK {
   VmaAllocator* allocator = nullptr;
   VmaAllocation allocation = nullptr;
   VmaAllocationInfo allocation_info = {};
-  VkImage image = nullptr;
+  VkImage image = VK_NULL_HANDLE;
+  VkImageView image_view = VK_NULL_HANDLE;
 };
 
 struct TextureInfoVK {
@@ -51,6 +52,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   bool IsWrapped() const;
 
   vk::Image GetImage() const;
+
+  vk::ImageView GetImageView() const;
 
   TextureInfoVK* GetTextureInfo() const;
 

@@ -15,7 +15,7 @@
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/path_utils.h"
-#include "flutter/shell/platform/windows/accessibility_bridge_delegate_windows.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
@@ -152,9 +152,12 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
-FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
+FlutterWindowsEngine::FlutterWindowsEngine(
+    const FlutterProjectBundle& project,
+    std::unique_ptr<WindowsRegistry> registry)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
-      aot_data_(nullptr, nullptr) {
+      aot_data_(nullptr, nullptr),
+      windows_registry_(std::move(registry)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -525,7 +528,8 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  std::vector<LanguageInfo> languages =
+      GetPreferredLanguageInfo(*windows_registry_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -594,10 +598,13 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
     if (!semantics_enabled_ && accessibility_bridge_) {
       accessibility_bridge_.reset();
     } else if (semantics_enabled_ && !accessibility_bridge_) {
-      accessibility_bridge_ = std::make_shared<AccessibilityBridge>(
-          std::make_unique<AccessibilityBridgeDelegateWindows>(this));
+      accessibility_bridge_ = CreateAccessibilityBridge(this, view());
     }
   }
+}
+
+std::shared_ptr<AccessibilityBridge> FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine, FlutterWindowsView* view) {
+  return std::make_shared<AccessibilityBridgeWindows>(engine, view);
 }
 
 gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
