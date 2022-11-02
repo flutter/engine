@@ -106,6 +106,10 @@ struct AOTDataDeleter {
 };
 
 using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
+/// Maintains one ref on the FlutterDesktopMessenger's internal reference count.
+using FlutterDesktopMessengerReferenceOwner =
+    std::unique_ptr<FlutterDesktopMessenger,
+                    decltype(&FlutterDesktopMessengerRelease)>;
 
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
@@ -116,7 +120,8 @@ struct FlutterDesktopEngineState {
   std::unique_ptr<flutter::EventLoop> event_loop;
 
   // The plugin messenger handle given to API clients.
-  std::shared_ptr<FlutterDesktopMessenger> messenger;
+  FlutterDesktopMessengerReferenceOwner messenger = {
+      nullptr, [](FlutterDesktopMessengerRef ref) {}};
 
   // Message dispatch manager for messages from the Flutter engine.
   std::unique_ptr<flutter::IncomingMessageDispatcher> message_dispatcher;
@@ -792,7 +797,7 @@ static void SetUpLocales(FlutterDesktopEngineState* state) {
 static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
                                    GLFWwindow* window) {
   // Messaging.
-  state->messenger = std::shared_ptr<FlutterDesktopMessenger>(
+  state->messenger = FlutterDesktopMessengerReferenceOwner(
       FlutterDesktopMessengerAddRef(new FlutterDesktopMessenger()),
       &FlutterDesktopMessengerRelease);
   state->messenger->SetEngine(state);
