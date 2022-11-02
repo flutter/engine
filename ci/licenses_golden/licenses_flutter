@@ -777,9 +777,6 @@ FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.cc
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.h
-FILE: ../../../flutter/flow/layers/layer_state_stack.cc
-FILE: ../../../flutter/flow/layers/layer_state_stack.h
-FILE: ../../../flutter/flow/layers/layer_state_stack_unittests.cc
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
 FILE: ../../../flutter/flow/layers/layer_tree_unittests.cc
@@ -1110,6 +1107,7 @@ FILE: ../../../flutter/impeller/compiler/reflector.cc
 FILE: ../../../flutter/impeller/compiler/reflector.h
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
+FILE: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
@@ -2116,6 +2114,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h
+FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.cc
+FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.h
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/android_choreographer.cc
 FILE: ../../../flutter/shell/platform/android/android_choreographer.h
