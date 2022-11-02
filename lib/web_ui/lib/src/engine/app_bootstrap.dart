@@ -8,21 +8,22 @@ import 'configuration.dart';
 import 'js_interop/js_loader.dart';
 import 'js_interop/js_promise.dart';
 
-/// The type of a function that initializes an engine (in Dart)
+/// The type of a function that initializes an engine (in Dart).
 typedef InitEngineFn = Future<void> Function([JsFlutterConfiguration? params]);
 
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
-  /// Construct a FlutterLoader
+  /// Construct an AppBootstrap.
   AppBootstrap({required InitEngineFn initEngine, required Function runApp}) :
     _initEngine = initEngine, _runApp = runApp;
 
-  // TODO(dit): Be more strict with the below typedefs, so we can add incoming params for each function.
-
-  // A function to initialize the engine
+  // A function to initialize the engine.
   final InitEngineFn _initEngine;
 
-  // A function to run the app
+  // A function to run the app.
+  //
+  // TODO(dit): Be more strict with the typedef of this function, so we can add
+  // typed params to the function. (See InitEngineFn).
   final Function _runApp;
 
   /// Immediately bootstraps the app.
@@ -53,8 +54,7 @@ class AppBootstrap {
       // app runner object.
       initializeEngine: allowInterop(([JsFlutterConfiguration? params]) {
         // `params` coming from Javascript may be used to configure the engine intialization.
-        // The internal `initEngine` function must accept those params, and then this
-        // code needs to be slightly modified to pass them to the initEngine call below.
+        // The internal `initEngine` function must accept those params.
         return Promise<FlutterAppRunner>(allowInterop((
           PromiseResolver<FlutterAppRunner> resolve,
           PromiseRejecter _,

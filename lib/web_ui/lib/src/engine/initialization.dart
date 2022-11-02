@@ -144,9 +144,9 @@ Future<void> initializeEngineServices({
   }
   _initializationState = DebugEngineInitializationState.initializingServices;
 
-  // Store the `runtimeConfiguration` so all the possible overrides are ready
-  // when needed by the code below...
-  configuration.addConfigurationOverrides(runtimeConfiguration);
+  // Store the `runtimeConfiguration` so the overrides are ready when needed by
+  // the code below...
+  configuration.setRuntimeConfiguration(runtimeConfiguration);
 
   // Setup the hook that allows users to customize URL strategy before running
   // the app.
