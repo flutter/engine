@@ -35,7 +35,11 @@ public class FlutterEngineGroupCache {
   @NonNull
   public static FlutterEngineGroupCache getInstance() {
     if (instance == null) {
-      instance = new FlutterEngineGroupCache();
+      synchronized (FlutterEngineGroupCache.class) {
+        if(instance == null) {
+          instance = new FlutterEngineGroupCache();
+        }
+      }
     }
     return instance;
   }
