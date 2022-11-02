@@ -106,10 +106,11 @@ TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
   auto layer = std::make_shared<DisplayListLayer>(
       layer_offset, SkiaGPUObject(display_list, unref_queue()), true, false);
 
-  SkRect original_cull_rect = preroll_context()->cull_rect;
+  SkRect original_cull_rect = preroll_context()->state_stack.device_cull_rect();
   use_mock_raster_cache();
-  layer->Preroll(preroll_context(), SkMatrix::I());
-  ASSERT_EQ(preroll_context()->cull_rect, original_cull_rect);
+  layer->Preroll(preroll_context());
+  ASSERT_EQ(preroll_context()->state_stack.device_cull_rect(),
+            original_cull_rect);
 }
 
 TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
