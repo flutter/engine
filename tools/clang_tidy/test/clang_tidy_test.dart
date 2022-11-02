@@ -193,7 +193,7 @@ Future<int> main(List<String> args) async {
       outSink: outBuffer,
       errSink: errBuffer,
     );
-    final List<io.File> fileList = await clangTidy.computeChangedFiles();
+    final List<io.File> fileList = await clangTidy.computeFilesOfInterest();
     expect(fileList.length, greaterThan(1000));
   });
 
@@ -205,7 +205,7 @@ Future<int> main(List<String> args) async {
       outSink: outBuffer,
       errSink: errBuffer,
     );
-    final List<io.File> fileList = await clangTidy.computeChangedFiles();
+    final List<io.File> fileList = await clangTidy.computeFilesOfInterest();
     expect(fileList.length, lessThan(300));
   });
 
@@ -226,9 +226,11 @@ Future<int> main(List<String> args) async {
         'file': filePath,
       },
     ];
-    final List<Command> commands = await clangTidy.getLintCommandsForChangedFiles(
+    final List<Command> commands = await clangTidy.getLintCommandsForFiles(
       buildCommandsData,
       <io.File>[],
+      <List<dynamic>>[],
+      null,
     );
 
     expect(commands, isEmpty);
@@ -253,9 +255,11 @@ Future<int> main(List<String> args) async {
         'file': filePath,
       },
     ];
-    final List<Command> commands = await clangTidy.getLintCommandsForChangedFiles(
+    final List<Command> commands = await clangTidy.getLintCommandsForFiles(
       buildCommandsData,
       <io.File>[io.File(filePath)],
+      <List<dynamic>>[],
+      null,
     );
 
     expect(commands, isNotEmpty);

@@ -29,6 +29,17 @@ class _ComputeJobsResult {
   final bool sawMalformed;
 }
 
+enum _SetStatus {
+  Intersection,
+  Difference,
+}
+
+class _SetStatusCommand {
+  _SetStatusCommand(this.setStatus, this.command);
+  final _SetStatus setStatus;
+  final Command command;
+}
+
 /// A class that runs clang-tidy on all or only the changed files in a git
 /// repo.
 class ClangTidy {
@@ -92,14 +103,14 @@ class ClangTidy {
 
     _outSink.writeln(_linterOutputHeader);
 
-    final List<io.File> changedFiles = await computeChangedFiles();
+    final List<io.File> filesOfInterest = await computeFilesOfInterest();
 
     if (options.verbose) {
       _outSink.writeln('Checking lint in repo at ${options.repoPath.path}.');
       if (options.checksArg.isNotEmpty) {
         _outSink.writeln('Checking for specific checks: ${options.checks}.');
       }
-      final int changedFilesCount = changedFiles.length;
+      final int changedFilesCount = filesOfInterest.length;
       if (options.lintAll) {
         _outSink.writeln('Checking all $changedFilesCount files the repo dir.');
       } else {
@@ -112,9 +123,16 @@ class ClangTidy {
     final List<dynamic> buildCommandsData = jsonDecode(
       options.buildCommandsPath.readAsStringSync(),
     ) as List<dynamic>;
-    final List<Command> changedFileBuildCommands = await getLintCommandsForChangedFiles(
+    final List<List<dynamic>> shardBuildCommandsData = options
+        .shardCommandsPaths
+        .map((io.File file) =>
+            jsonDecode(file.readAsStringSync()) as List<dynamic>)
+        .toList();
+    final List<Command> changedFileBuildCommands = await getLintCommandsForFiles(
       buildCommandsData,
-      changedFiles,
+      filesOfInterest,
+      shardBuildCommandsData,
+      options.shardId,
     );
 
     if (changedFileBuildCommands.isEmpty) {
@@ -153,7 +171,7 @@ class ClangTidy {
   /// The files with local modifications or all the files if `lintAll` was
   /// specified.
   @visibleForTesting
-  Future<List<io.File>> computeChangedFiles() async {
+  Future<List<io.File>> computeFilesOfInterest() async {
     if (options.lintAll) {
       return options.repoPath
         .listSync(recursive: true)
@@ -171,23 +189,82 @@ class ClangTidy {
     return repo.changedFiles;
   }
 
+  Iterable<T> _takeShard<T>(Iterable<T> values, int id, int shardCount) sync*{
+    int count = 0;
+    for(final T val in values) {
+      if (count % shardCount == id) {
+        yield val;
+      }
+      count++;
+    }
+  }
+
+  Iterable<_SetStatusCommand> _calcIntersection(Iterable<Command> items, Iterable<List<Command>> sets) sync* {
+    bool allSetsContain(Command command) {
+      for (final List<Command> set in sets) {
+        final Iterable<String> filePaths = set.map((Command e) => e.filePath);
+        if (!filePaths.contains(command.filePath)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    for (final Command command in items) {
+      if (allSetsContain(command)) {
+        yield _SetStatusCommand(_SetStatus.Intersection, command);
+      } else {
+        yield _SetStatusCommand(_SetStatus.Difference, command);
+      }
+    }
+  }
+
   /// Given a build commands json file, and the files with local changes,
   /// compute the lint commands to run.
   @visibleForTesting
-  Future<List<Command>> getLintCommandsForChangedFiles(
+  Future<List<Command>> getLintCommandsForFiles(
     List<dynamic> buildCommandsData,
-    List<io.File> changedFiles,
+    List<io.File> files,
+    List<List<dynamic>> sharedBuildCommandsData,
+    int? shardId,
   ) async {
-    final List<Command> buildCommands = <Command>[];
-    for (final dynamic data in buildCommandsData) {
-      final Command command = Command.fromMap(data as Map<String, dynamic>);
-      final LintAction lintAction = await command.lintAction;
-      // Short-circuit the expensive containsAny call for the many third_party files.
-      if (lintAction != LintAction.skipThirdParty && command.containsAny(changedFiles)) {
-        buildCommands.add(command);
+    final List<Command> totalCommands = <Command>[];
+    if (sharedBuildCommandsData.isNotEmpty) {
+      final Iterable<Command> buildCommands = buildCommandsData
+          .map((dynamic data) => Command.fromMap(data as Map<String, dynamic>));
+      final Iterable<List<Command>> shardBuildCommands =
+          sharedBuildCommandsData.map((List<dynamic> list) => list
+              .map((dynamic data) =>
+                  Command.fromMap(data as Map<String, dynamic>))
+              .toList());
+      final Iterable<_SetStatusCommand> intersectionResults =
+          _calcIntersection(buildCommands, shardBuildCommands);
+      totalCommands.addAll(intersectionResults
+          .where((_SetStatusCommand element) =>
+              element.setStatus == _SetStatus.Difference)
+          .map((_SetStatusCommand e) => e.command));
+      final List<Command> intersection = intersectionResults
+          .where((_SetStatusCommand element) =>
+              element.setStatus == _SetStatus.Intersection)
+          .map((_SetStatusCommand e) => e.command)
+          .toList();
+      // Make sure to sort results, not sure if there is a defined order in the json file.
+      intersection
+          .sort((Command x, Command y) => x.filePath.compareTo(y.filePath));
+      totalCommands.addAll(
+          _takeShard(intersection, shardId!, 1 + shardBuildCommands.length));
+    } else {
+      totalCommands.addAll(buildCommandsData.map((dynamic data) => Command.fromMap(data as Map<String, dynamic>)));
+    }
+    Stream<Command> filterCommands() async* {
+      for (final Command command in totalCommands) {
+        final LintAction lintAction = await command.lintAction;
+        // Short-circuit the expensive containsAny call for the many third_party files.
+        if (lintAction != LintAction.skipThirdParty && command.containsAny(files)) {
+          yield command;
+        }
       }
     }
-    return buildCommands;
+    return filterCommands().toList();
   }
 
   Future<_ComputeJobsResult> _computeJobs(
