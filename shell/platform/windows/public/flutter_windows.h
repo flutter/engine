@@ -182,7 +182,11 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
 
 // Returns the messenger associated with the engine.
 //
-// This does not effect the reference count of the FlutterDesktopMessenger.
+// This does not provide an owning reference, so should *not* be balanced with a
+// call to |FlutterDesktopMessengerRelease|.
+//
+// Callers should use |FlutterDesktopMessengerAddRef| if the returned pointer
+// will potentially outlive 'engine', such as when passing it to another thread.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 

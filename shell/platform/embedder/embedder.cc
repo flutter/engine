@@ -2325,12 +2325,12 @@ FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
   return kSuccess;
 }
 
+// Note: This can execute on any thread.
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
-  // Note: This can execute on any thread.
   if (data_length != 0 && data == nullptr) {
     return LOG_EMBEDDER_ERROR(
         kInvalidArguments,

@@ -26,6 +26,11 @@ namespace flutter {
 // ========== binary_messenger_impl.h ==========
 
 namespace {
+
+using FlutterDesktopMessengerScopedLock =
+    std::unique_ptr<FlutterDesktopMessenger,
+                    decltype(&FlutterDesktopMessengerUnlock)>;
+
 // Passes |message| to |user_data|, which must be a BinaryMessageHandler, along
 // with a BinaryReply that will send a response on |message|'s response handle.
 //
@@ -42,9 +47,8 @@ void ForwardToHandler(FlutterDesktopMessengerRef messenger,
   BinaryReply reply_handler = [messenger_ptr, response_handle](
                                   const uint8_t* reply,
                                   size_t reply_size) mutable {
-    // Note: This can be called on any thread.
-    auto lock = std::unique_ptr<FlutterDesktopMessenger,
-                                decltype(&FlutterDesktopMessengerUnlock)>(
+    // Note: This lambda can be called on any thread.
+    auto lock = FlutterDesktopMessengerScopedLock(
         FlutterDesktopMessengerLock(messenger_ptr.get()),
         &FlutterDesktopMessengerUnlock);
     if (!FlutterDesktopMessengerIsAvailable(messenger_ptr.get())) {

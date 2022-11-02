@@ -156,8 +156,15 @@ struct FlutterDesktopPluginRegistrar {
 struct FlutterDesktopMessenger {
   FlutterDesktopMessenger() = default;
 
+  /// Increments the reference count.
+  ///
+  /// Thread-safe.
   void AddRef() { ref_count_.fetch_add(1); }
 
+  /// Decrements the reference count and deletes the object if the count has
+  /// gone to zero.
+  ///
+  /// Thread-safe.
   void Release() {
     int32_t old_count = ref_count_.fetch_sub(1);
     if (old_count <= 1) {
@@ -165,18 +172,27 @@ struct FlutterDesktopMessenger {
     }
   }
 
+  /// Getter for the engine field.
   FlutterDesktopEngineState* GetEngine() const { return engine_; }
+
+  /// Setter for the engine field.
+  /// Thread-safe.
   void SetEngine(FlutterDesktopEngineState* engine) {
     std::scoped_lock lock(mutex_);
     engine_ = engine;
   }
 
+  /// Returns the mutex associated with the |FlutterDesktopMessenger|.
+  ///
+  /// This mutex is used to synchronize reading or writing state inside the
+  /// |FlutterDesktopMessenger| (ie |engine_|).
   std::mutex& GetMutex() { return mutex_; }
 
- private:
   FlutterDesktopMessenger(const FlutterDesktopMessenger& value) = delete;
   FlutterDesktopMessenger& operator=(const FlutterDesktopMessenger& value) =
       delete;
+
+ private:
   // The engine that backs this messenger.
   FlutterDesktopEngineState* engine_;
   std::atomic<int32_t> ref_count_ = 0;
