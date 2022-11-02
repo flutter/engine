@@ -74,9 +74,12 @@ bool BlitCopyTextureToBufferCommandMTL::Encode(
   auto source_size_mtl =
       MTLSizeMake(source_region.size.width, source_region.size.height, 1);
 
-  NSUInteger bytesPerRow = source->GetTextureDescriptor().GetBytesPerRow();
-  NSUInteger bytesPerImage =
-      source->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+  auto destination_bytes_per_pixel =
+      BytesPerPixelForPixelFormat(source->GetTextureDescriptor().format);
+  auto destination_bytes_per_row =
+      source_size_mtl.width * destination_bytes_per_pixel;
+  auto destination_bytes_per_image =
+      source_size_mtl.height * destination_bytes_per_row;
 
   [encoder copyFromTexture:source_mtl
                    sourceSlice:0
@@ -85,8 +88,8 @@ bool BlitCopyTextureToBufferCommandMTL::Encode(
                     sourceSize:source_size_mtl
                       toBuffer:destination_mtl
              destinationOffset:destination_offset
-        destinationBytesPerRow:bytesPerRow
-      destinationBytesPerImage:bytesPerImage];
+        destinationBytesPerRow:destination_bytes_per_row
+      destinationBytesPerImage:destination_bytes_per_image];
 
   return true;
 };

@@ -95,8 +95,10 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
     source_region = IRect::MakeSize(source->GetSize());
   }
 
-  if (destination_offset +
-          source->GetTextureDescriptor().GetByteSizeOfBaseMipLevel() >
+  auto bytes_per_pixel =
+      BytesPerPixelForPixelFormat(source->GetTextureDescriptor().format);
+  auto bytes_per_image = source_region->size.Area() * bytes_per_pixel;
+  if (destination_offset + bytes_per_image >
       destination->GetDeviceBufferDescriptor().size) {
     VALIDATION_LOG
         << "Attempted to add a texture blit with out fo bounds access.";
