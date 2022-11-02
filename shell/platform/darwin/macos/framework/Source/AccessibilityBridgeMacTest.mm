@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 #include "flutter/testing/testing.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -60,8 +60,7 @@ FlutterEngine* CreateTestEngine() {
 }
 }  // namespace
 
-TEST(AccessibilityBridgeMacDelegateTest,
-     sendsAccessibilityCreateNotificationToWindowOfFlutterView) {
+TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -120,7 +119,7 @@ TEST(AccessibilityBridgeMacDelegateTest,
   [engine shutDownEngine];
 }
 
-TEST(AccessibilityBridgeMacDelegateTest, doesNotSendAccessibilityCreateNotificationWhenHeadless) {
+TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenHeadless) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -171,7 +170,7 @@ TEST(AccessibilityBridgeMacDelegateTest, doesNotSendAccessibilityCreateNotificat
   [engine shutDownEngine];
 }
 
-TEST(AccessibilityBridgeMacDelegateTest, doesNotSendAccessibilityCreateNotificationWhenNoWindow) {
+TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenNoWindow) {
   FlutterEngine* engine = CreateTestEngine();
   // Create a view controller without attaching it to a window.
   NSString* fixtures = @(testing::GetFixturesPath());

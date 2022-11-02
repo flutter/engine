@@ -2574,9 +2574,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlug
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegateTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm

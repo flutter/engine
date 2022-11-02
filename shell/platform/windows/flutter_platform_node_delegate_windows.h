@@ -20,7 +20,8 @@ class AccessibilityBridgeWindows;
 // that compose the accessibility tree.
 class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
  public:
-  FlutterPlatformNodeDelegateWindows(AccessibilityBridgeWindows* bridge, FlutterWindowsView* view);
+  FlutterPlatformNodeDelegateWindows(AccessibilityBridgeWindows* bridge,
+                                     FlutterWindowsView* view);
   virtual ~FlutterPlatformNodeDelegateWindows();
 
   // |ui::AXPlatformNodeDelegate|

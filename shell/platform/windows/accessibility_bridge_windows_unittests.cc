@@ -33,10 +33,10 @@ struct MsaaEvent {
 };
 
 // Accessibility bridge delegate that captures events dispatched to the OS.
-class AccessibilityBridgeWindowsSpy
-    : public AccessibilityBridgeWindows {
+class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
  public:
-  explicit AccessibilityBridgeWindowsSpy(FlutterWindowsEngine* engine, FlutterWindowsView* view)
+  explicit AccessibilityBridgeWindowsSpy(FlutterWindowsEngine* engine,
+                                         FlutterWindowsView* view)
       : AccessibilityBridgeWindows(engine, view) {}
 
   void DispatchWinAccessibilityEvent(
@@ -71,10 +71,12 @@ class AccessibilityBridgeWindowsSpy
 class FlutterWindowsEngineSpy : public FlutterWindowsEngine {
  public:
   explicit FlutterWindowsEngineSpy(const FlutterProjectBundle& project)
-    : FlutterWindowsEngine(project) {}
+      : FlutterWindowsEngine(project) {}
 
  protected:
-  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(FlutterWindowsEngine* engine, FlutterWindowsView* view) override {
+  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
+      FlutterWindowsEngine* engine,
+      FlutterWindowsView* view) override {
     return std::make_shared<AccessibilityBridgeWindowsSpy>(engine, view);
   }
 };
@@ -174,7 +176,7 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
 
   bridge->Reset();
   bridge->OnAccessibilityEvent({AXNodeFromID(bridge, node_id),
-                            {ax_event, ax::mojom::EventFrom::kNone, {}}});
+                                {ax_event, ax::mojom::EventFrom::kNone, {}}});
   ASSERT_EQ(bridge->dispatched_events().size(), 1);
   EXPECT_EQ(bridge->dispatched_events()[0].event_type, expected_event);
 }
@@ -259,9 +261,9 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
 
   bridge->Reset();
   bridge->OnAccessibilityEvent({AXNodeFromID(bridge, 1),
-                            {ui::AXEventGenerator::Event::FOCUS_CHANGED,
-                             ax::mojom::EventFrom::kNone,
-                             {}}});
+                                {ui::AXEventGenerator::Event::FOCUS_CHANGED,
+                                 ax::mojom::EventFrom::kNone,
+                                 {}}});
   ASSERT_EQ(bridge->dispatched_events().size(), 1);
   EXPECT_EQ(bridge->dispatched_events()[0].event_type, EVENT_OBJECT_FOCUS);
 
@@ -275,8 +277,7 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventIgnoredChanged) {
                             EVENT_OBJECT_HIDE);
 }
 
-TEST(AccessibilityBridgeWindows,
-     OnAccessibilityImageAnnotationChanged) {
+TEST(AccessibilityBridgeWindows, OnAccessibilityImageAnnotationChanged) {
   ExpectWinEventFromAXEvent(
       1, ui::AXEventGenerator::Event::IMAGE_ANNOTATION_CHANGED,
       EVENT_OBJECT_NAMECHANGE);
@@ -309,8 +310,7 @@ TEST(AccessibilityBridgeWindows, OnAccessibilitySelectedChanged) {
                             EVENT_OBJECT_VALUECHANGE);
 }
 
-TEST(AccessibilityBridgeWindows,
-     OnAccessibilitySelectedChildrenChanged) {
+TEST(AccessibilityBridgeWindows, OnAccessibilitySelectedChildrenChanged) {
   ExpectWinEventFromAXEvent(
       2, ui::AXEventGenerator::Event::SELECTED_CHILDREN_CHANGED,
       EVENT_OBJECT_SELECTIONWITHIN);

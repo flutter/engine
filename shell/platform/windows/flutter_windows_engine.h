@@ -245,7 +245,9 @@ class FlutterWindowsEngine {
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
  protected:
-  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(FlutterWindowsEngine* engine, FlutterWindowsView* view);
+  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
+      FlutterWindowsEngine* engine,
+      FlutterWindowsView* view);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
