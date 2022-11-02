@@ -5,10 +5,17 @@
 /// JavaScript API a Flutter Web application can use to configure the Web
 /// Engine.
 ///
-/// The configuration is a plain JavaScript object set as the
-/// `flutterConfiguration` property of the top-level `window` object.
+/// The configuration is passed from JavaScript to the engine as part of the
+/// bootstrap process, through the `FlutterEngineInitializer.initializeEngine`
+/// JS method, with an (optional) object of type [JsFlutterConfiguration].
 ///
-/// Example:
+/// This library also supports the legacy method of setting a plain JavaScript
+/// object set as the `flutterConfiguration` property of the top-level `window`
+/// object, but that approach is now deprecated and will warn users.
+///
+/// Both methods are **disallowed** to be used at the same time.
+///
+/// Example (Before):
 ///
 ///     <head>
 ///       <script>
@@ -18,16 +25,28 @@
 ///       </script>
 ///     </head>
 ///
-/// Configuration properties supplied via `window.flutterConfiguration`
-/// override those supplied using the corresponding environment variables. For
-/// example, if both `window.flutterConfiguration.canvasKitBaseUrl` and the
-/// `FLUTTER_WEB_CANVASKIT_URL` environment variables are provided,
-/// `window.flutterConfiguration.canvasKitBaseUrl` is used.
+/// Example (After):
+///
+///     _flutter.loader.loadEntrypoint({
+///       // ...
+///       onEntrypointLoaded: async function(engineInitializer) {
+///         let appRunner = await engineInitializer.initializeEngine({
+///           canvasKitBaseUrl: "https://example.com/my-custom-canvaskit/"
+///         });
+///         appRunner.runApp();
+///       }
+///     });
+///
+/// Configuration properties supplied via this object override those supplied
+/// using the corresponding environment variables. For example, if both the
+/// `canvasKitBaseUrl` config entry and the `FLUTTER_WEB_CANVASKIT_URL`
+/// environment variables are provided, the `canvasKitBaseUrl` entry is used.
 
 @JS()
 library configuration;
 
 import 'package:js/js.dart';
+import 'package:meta/meta.dart';
 import 'dom.dart';
 
 /// The version of CanvasKit used by the web engine by default.
@@ -36,7 +55,7 @@ import 'dom.dart';
 const String _canvaskitVersion = '0.37.0';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration => _configuration ??= FlutterConfiguration(_jsConfiguration);
+FlutterConfiguration get configuration => _configuration ??= FlutterConfiguration.fromJsGlobals(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
 /// Sets the given configuration as the current one.
@@ -44,51 +63,57 @@ FlutterConfiguration? _configuration;
 /// This must be called before the engine is initialized. Calling it after the
 /// engine is initialized will result in some of the properties not taking
 /// effect because they are consumed during initialization.
+@visibleForTesting
 void debugSetConfiguration(FlutterConfiguration configuration) {
   _configuration = configuration;
 }
 
 /// Supplies Web Engine configuration properties.
 class FlutterConfiguration {
-  /// Constructs a configuration from a JavaScript object containing
-  /// runtime-supplied properties.
-  FlutterConfiguration(JsFlutterConfiguration? config) {
-    addConfigurationOverrides(config);
-  }
+  /// Constructs an unitialized configuration object.
+  @visibleForTesting
+  FlutterConfiguration();
 
-  final List<JsFlutterConfiguration> _configurations = <JsFlutterConfiguration>[];
-
-  /// Adds a configuration [overrides] object that will take precedence over
-  /// any existing configuration.
+  /// Constucts a "tainted by JS globals" configuration object.
   ///
-  /// This is used so we support multiple sources of configuration with a consistent
-  /// precedence. From lowest to highest:
-  ///
-  /// * default static values
-  /// * window.flutterConfiguration object
-  /// * engineInitializer.initEngine(runtimeConfig)
-  ///
-  /// Overrides are always added at position [0] of the array, so the order in
-  /// which this method is called (first with flutterConfiguration), then with
-  /// the runtimeConfig, matters.
-  void addConfigurationOverrides(JsFlutterConfiguration? overrides) {
-    if (overrides != null) {
-      _configurations.insert(0, overrides);
+  /// This is deprecated, and warns the user about the new API.
+  FlutterConfiguration.fromJsGlobals(JsFlutterConfiguration? config) {
+    if (config != null) {
+      domWindow.console.warn('Using the window.flutterConfiguration object is now deprecated. '
+      'Please, set your flutter configuration using the engineInitializer.initializeEngine(config) API instead. '
+      'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+      _createdFromJsGlobals = true;
+      _configuration = config;
+    }
+    if (_requestedRendererType != null) {
+      domWindow.console.warn('Using the window.flutterWebRenderer string is now deprecated. '
+      'Please, set your flutter configuration using the engineInitializer.initializeEngine(config) API instead. '
+      'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
     }
   }
 
-  T getConfigValue<T>(T? Function(JsFlutterConfiguration) extractor, T defaultValue) {
-    try {
-      final JsFlutterConfiguration config = _configurations
-          .firstWhere(
-            (JsFlutterConfiguration config) => extractor(config) != null
-          );
-      return extractor(config)!; // Guaranteed not null, because two lines above.
-    } on StateError {
-      // None of the _configurations defined the value,
-      // so we end up returning `defaultValue`. Noop here.
+  bool _createdFromJsGlobals = false;
+  JsFlutterConfiguration? _configuration;
+
+  /// Sets a value for [_configuration].
+  ///
+  /// This method is called by the engine initialization process, through the
+  /// [initEngineServices] method.
+  ///
+  /// This method throws an AssertionError, if the _configuration object has
+  /// been set to anything non-null through the [FlutterConfiguration.fromJsGlobals]
+  /// constructor.
+  void setRuntimeConfiguration(JsFlutterConfiguration? configuration) {
+    if (configuration != null) {
+      assert(!_createdFromJsGlobals, 'Do not mix-and-match runtime configuration.'
+        'Prefer the engineInitializer.initializeEngine(config) API over the'
+        'window.flutterConfiguration global object.');
+      assert(_requestedRendererType == null || configuration.renderer == null,
+        'Do not mix-and-match runtime configuration.'
+        'Prefer the engineInitializer.initializeEngine(config) API over the'
+        'window.flutterWebRenderer global string.');
+      _configuration = configuration;
     }
-    return defaultValue;
   }
 
   // Static constant parameters.
@@ -146,9 +171,7 @@ class FlutterConfiguration {
   ///   --web-renderer=canvaskit \
   ///   --dart-define=FLUTTER_WEB_CANVASKIT_URL=https://example.com/custom-canvaskit-build/
   /// ```
-  String get canvasKitBaseUrl => getConfigValue<String>(
-    (JsFlutterConfiguration c) => c.canvasKitBaseUrl,
-    _defaultCanvasKitBaseUrl);
+  String get canvasKitBaseUrl => _configuration?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
     defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
@@ -159,9 +182,7 @@ class FlutterConfiguration {
   ///
   /// This is mainly used for testing or for apps that want to ensure they
   /// run on devices which don't support WebGL.
-  bool get canvasKitForceCpuOnly => getConfigValue<bool>(
-    (JsFlutterConfiguration c) => c.canvasKitForceCpuOnly,
-    _defaultCanvasKitForceCpuOnly);
+  bool get canvasKitForceCpuOnly => _configuration?.canvasKitForceCpuOnly ?? _defaultCanvasKitForceCpuOnly;
   static const bool _defaultCanvasKitForceCpuOnly = bool.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
@@ -175,9 +196,7 @@ class FlutterConfiguration {
   ///
   /// This value can be specified using either the `FLUTTER_WEB_MAXIMUM_SURFACES`
   /// environment variable, or using the runtime configuration.
-  int get canvasKitMaximumSurfaces => getConfigValue<int>(
-    (JsFlutterConfiguration c) => c.canvasKitMaximumSurfaces,
-    _defaultCanvasKitMaximumSurfaces);
+  int get canvasKitMaximumSurfaces => _configuration?.canvasKitMaximumSurfaces ?? _defaultCanvasKitMaximumSurfaces;
   static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
     'FLUTTER_WEB_MAXIMUM_SURFACES',
     defaultValue: 8,
@@ -194,18 +213,14 @@ class FlutterConfiguration {
   /// ```
   /// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
   /// ```
-  bool get debugShowSemanticsNodes => getConfigValue<bool>(
-    (JsFlutterConfiguration c) => c.debugShowSemanticsNodes,
-    _defaultDebugShowSemanticsNodes);
+  bool get debugShowSemanticsNodes => _configuration?.debugShowSemanticsNodes ?? _defaultDebugShowSemanticsNodes;
   static const bool _defaultDebugShowSemanticsNodes = bool.fromEnvironment(
     'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
   );
 
   /// Returns the [hostElement] in which the Flutter Application is supposed
   /// to render, or `null` if the user hasn't specified anything.
-  DomElement? get hostElement => getConfigValue<DomElement?>(
-    (JsFlutterConfiguration c) => c.hostElement,
-    null);
+  DomElement? get hostElement => _configuration?.hostElement;
 
   /// Returns the [requestedRendererType] to be used with the current Flutter
   /// application, normally 'canvaskit' or 'auto'.
@@ -214,9 +229,7 @@ class FlutterConfiguration {
   /// `window.flutterWebRenderer`.
   ///
   /// This is used by the Renderer class to decide how to initialize the engine.
-  String? get requestedRendererType => getConfigValue<String?>(
-    (JsFlutterConfiguration c) => c.renderer,
-    _requestedRendererType);
+  String? get requestedRendererType => _configuration?.renderer ?? _requestedRendererType;
 }
 
 @JS('window.flutterConfiguration')

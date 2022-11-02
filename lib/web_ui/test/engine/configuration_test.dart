@@ -10,6 +10,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import '../matchers.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -17,13 +19,13 @@ void main() {
 void testMain() {
   group('FlutterConfiguration', () {
     test('initializes with null', () async {
-      final FlutterConfiguration config = FlutterConfiguration(null);
+      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(null);
 
       expect(config.canvasKitMaximumSurfaces, 8); // _defaultCanvasKitMaximumSurfaces
     });
 
-    test('initializes with a Js Object', () async {
-      final FlutterConfiguration config = FlutterConfiguration(
+    test('fromJsGlobals initializes with a Js Object', () async {
+      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(
         js_util.jsify(<String, Object?>{
           'canvasKitMaximumSurfaces': 16,
         }) as JsFlutterConfiguration);
@@ -32,85 +34,30 @@ void testMain() {
     });
   });
 
-  group('addConfigurationOverrides', () {
-    test('accepts a null override', () async {
-      final FlutterConfiguration config = FlutterConfiguration(
+  group('setRuntimeConfiguration', () {
+    test('throws assertion error if already initialized from JS', () async {
+      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(
+        js_util.jsify(<String, Object?>{
+          'canvasKitMaximumSurfaces': 12,
+        }) as JsFlutterConfiguration);
+
+      expect(() {
+        config.setRuntimeConfiguration(
+          js_util.jsify(<String, Object?>{
+            'canvasKitMaximumSurfaces': 16,
+          }) as JsFlutterConfiguration);
+      }, throwsAssertionError);
+    });
+
+    test('stores config if JS configuration was null', () async {
+      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(null);
+
+      config.setRuntimeConfiguration(
         js_util.jsify(<String, Object?>{
           'canvasKitMaximumSurfaces': 16,
         }) as JsFlutterConfiguration);
-
-      config.addConfigurationOverrides(null);
 
       expect(config.canvasKitMaximumSurfaces, 16);
-    });
-
-    test('accepts a Js Object override', () async {
-      final FlutterConfiguration config = FlutterConfiguration(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 16,
-        }) as JsFlutterConfiguration);
-
-      config.addConfigurationOverrides(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 8,
-        }) as JsFlutterConfiguration);
-
-      expect(config.canvasKitMaximumSurfaces, 8);
-    });
-
-    test('returns last non-null value set for a given field', () async {
-      final FlutterConfiguration config = FlutterConfiguration(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 16,
-        }) as JsFlutterConfiguration);
-
-      config.addConfigurationOverrides(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': null,
-        }) as JsFlutterConfiguration);
-
-      config.addConfigurationOverrides(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 8,
-        }) as JsFlutterConfiguration);
-
-      config.addConfigurationOverrides(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': null,
-        }) as JsFlutterConfiguration);
-
-      expect(config.canvasKitMaximumSurfaces, 8);
-    });
-  });
-
-  group('getConfigValue', () {
-
-    test('Without configs, the extractor does not run (default returned)', () async {
-      final FlutterConfiguration config = FlutterConfiguration(null);
-
-      final String value = config.getConfigValue<String>(
-        (JsFlutterConfiguration c) => throw Exception('Fail'), 'Pass');
-
-      expect(value, 'Pass');
-    });
-
-    test('Returns anything that the extractor finds not null', () async {
-      final FlutterConfiguration config = FlutterConfiguration(
-        js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration);
-
-      final String value = config.getConfigValue<String>(
-        (JsFlutterConfiguration c) => 'Pass', 'Fail');
-
-      expect(value, 'Pass');
-    });
-
-    test('Returns the default if the extractor finds only null', () async {
-      final FlutterConfiguration config = FlutterConfiguration(null);
-
-      final String value = config.getConfigValue<String>(
-        (JsFlutterConfiguration c) => null, 'Default');
-
-      expect(value, 'Default');
     });
   });
 }

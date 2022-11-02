@@ -805,10 +805,13 @@ void testMain() {
 
     test('works correctly with max overlays == 2', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      debugSetConfiguration(FlutterConfiguration(
-        js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 2,
-        }) as JsFlutterConfiguration));
+      final FlutterConfiguration config = FlutterConfiguration()
+        ..setRuntimeConfiguration(
+          js_util.jsify(<String, Object?>{
+            'canvasKitMaximumSurfaces': 2,
+          }) as JsFlutterConfiguration);
+      debugSetConfiguration(config);
+
       SurfaceFactory.instance.debugClear();
 
       expect(SurfaceFactory.instance.maximumSurfaces, 2);
@@ -850,7 +853,7 @@ void testMain() {
       ]);
 
       // Reset configuration
-      debugSetConfiguration(FlutterConfiguration(null));
+      debugSetConfiguration(FlutterConfiguration());
     });
 
     test(
