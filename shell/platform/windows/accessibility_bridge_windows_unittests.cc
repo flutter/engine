@@ -66,6 +66,8 @@ class AccessibilityBridgeWindowsSpy
   std::vector<int32_t> focused_nodes_;
 };
 
+// A FlutterWindowsEngine whose accessibility bridge is a
+// AccessibilityBridgeWindowsSpy.
 class FlutterWindowsEngineSpy : public FlutterWindowsEngine {
  public:
   explicit FlutterWindowsEngineSpy(const FlutterProjectBundle& project)
@@ -153,6 +155,11 @@ ui::AXNode* AXNodeFromID(std::shared_ptr<AccessibilityBridge> bridge,
   return node_delegate ? node_delegate->GetAXNode() : nullptr;
 }
 
+std::shared_ptr<AccessibilityBridgeWindowsSpy> getAccessibilityBridgeSpy(FlutterWindowsEngine* engine) {
+  FlutterWindowsEngineSpy* engine_spy = reinterpret_cast<FlutterWindowsEngineSpy*>(engine);
+  return std::reinterpret_pointer_cast<AccessibilityBridgeWindowsSpy>(engine_spy->accessibility_bridge().lock());
+}
+
 void ExpectWinEventFromAXEvent(int32_t node_id,
                                ui::AXEventGenerator::Event ax_event,
                                DWORD expected_event) {
@@ -162,10 +169,10 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  FlutterWindowsEngineSpy* engine = reinterpret_cast<FlutterWindowsEngineSpy*>(view.GetEngine());
-  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeWindowsSpy>(engine->accessibility_bridge().lock());
+  auto bridge = getAccessibilityBridgeSpy(view.GetEngine());
   PopulateAXTree(bridge);
 
+  bridge->Reset();
   bridge->OnAccessibilityEvent({AXNodeFromID(bridge, node_id),
                             {ax_event, ax::mojom::EventFrom::kNone, {}}});
   ASSERT_EQ(bridge->dispatched_events().size(), 1);
@@ -247,10 +254,10 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  FlutterWindowsEngineSpy* engine = reinterpret_cast<FlutterWindowsEngineSpy*>(view.GetEngine());
-  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeWindowsSpy>(engine->accessibility_bridge().lock());
+  auto bridge = getAccessibilityBridgeSpy(view.GetEngine());
   PopulateAXTree(bridge);
 
+  bridge->Reset();
   bridge->OnAccessibilityEvent({AXNodeFromID(bridge, 1),
                             {ui::AXEventGenerator::Event::FOCUS_CHANGED,
                              ax::mojom::EventFrom::kNone,
