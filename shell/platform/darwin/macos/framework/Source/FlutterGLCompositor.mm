@@ -77,7 +77,9 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
   return true;
 }
 
-bool FlutterGLCompositor::Present(uint64_t surface_id, const FlutterLayer** layers, size_t layers_count) {
+bool FlutterGLCompositor::Present(uint64_t surface_id,
+                                  const FlutterLayer** layers,
+                                  size_t layers_count) {
   FlutterView* view = GetView(surface_id);
   if (!view) {
     return false;
