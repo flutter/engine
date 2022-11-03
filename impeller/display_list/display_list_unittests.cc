@@ -659,7 +659,7 @@ TEST_P(DisplayListTest, CanDrawShadow) {
   flutter::DisplayListBuilder builder;
 
   constexpr size_t star_spikes = 5;
-  constexpr SkScalar half_spike_rotation = kPi / 5;
+  constexpr SkScalar half_spike_rotation = kPi / star_spikes;
   constexpr SkScalar radius = 40;
   constexpr SkScalar spike_size = 10;
   constexpr SkScalar outer_radius = radius + spike_size;
