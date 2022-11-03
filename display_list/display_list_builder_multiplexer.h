@@ -21,11 +21,13 @@ class DisplayListBuilderMultiplexer {
 
   void addBuilder(DisplayListBuilder* builder);
 
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa);
+
+  void save();
+
   void saveLayer(const SkRect* bounds,
                  const DlPaint* paint,
                  const DlImageFilter* backdrop_filter = nullptr);
-
-  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa);
 
   void restore();
 

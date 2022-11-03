@@ -10,14 +10,6 @@ void DisplayListBuilderMultiplexer::addBuilder(DisplayListBuilder* builder) {
   builders_.push_back(builder);
 }
 
-void DisplayListBuilderMultiplexer::saveLayer(
-    const SkRect* bounds,
-    const DlPaint* paint,
-    const DlImageFilter* backdrop_filter) {
-  for (auto* builder : builders_) {
-    builder->saveLayer(bounds, paint, backdrop_filter);
-  }
-}
 
 void DisplayListBuilderMultiplexer::clipRect(
     const SkRect& rect,
@@ -25,6 +17,21 @@ void DisplayListBuilderMultiplexer::clipRect(
     bool is_aa) {
   for (auto* builder : builders_) {
     builder->clipRect(rect, clip_op, is_aa);
+  }
+}
+
+void DisplayListBuilderMultiplexer::save() {
+  for (auto* builder : builders_) {
+    builder->save();
+  }
+}
+
+void DisplayListBuilderMultiplexer::saveLayer(
+    const SkRect* bounds,
+    const DlPaint* paint,
+    const DlImageFilter* backdrop_filter) {
+  for (auto* builder : builders_) {
+    builder->saveLayer(bounds, paint, backdrop_filter);
   }
 }
 
