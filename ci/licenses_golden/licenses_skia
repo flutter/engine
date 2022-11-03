@@ -1,4 +1,4 @@
-Signature: 57aa75d4922a54e0bdab70f489f5739c
+Signature: a1eedc9a5da868d61a513743a5873d1e
 
 UNUSED LICENSES:
 
@@ -3130,7 +3130,6 @@ FILE: ../../../third_party/skia/gm/imagefilters.cpp
 FILE: ../../../third_party/skia/gm/imagefiltersstroked.cpp
 FILE: ../../../third_party/skia/gm/imagefilterstransformed.cpp
 FILE: ../../../third_party/skia/gm/imagefromyuvtextures.cpp
-FILE: ../../../third_party/skia/gm/imagescalealigned.cpp
 FILE: ../../../third_party/skia/gm/imagesource2.cpp
 FILE: ../../../third_party/skia/gm/largeglyphblur.cpp
 FILE: ../../../third_party/skia/gm/lcdblendmodes.cpp
@@ -3143,7 +3142,6 @@ FILE: ../../../third_party/skia/gm/pathcontourstart.cpp
 FILE: ../../../third_party/skia/gm/pdf_never_embed.cpp
 FILE: ../../../third_party/skia/gm/perspshaders.cpp
 FILE: ../../../third_party/skia/gm/pictureimagegenerator.cpp
-FILE: ../../../third_party/skia/gm/pixelsnap.cpp
 FILE: ../../../third_party/skia/gm/plus.cpp
 FILE: ../../../third_party/skia/gm/repeated_bitmap.cpp
 FILE: ../../../third_party/skia/gm/scaledstrokes.cpp
@@ -7679,6 +7677,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/gm/nearesthalfpixelimage.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/include/gpu/mtl/MtlMemoryAllocator.h
