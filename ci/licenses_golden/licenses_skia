@@ -1,4 +1,4 @@
-Signature: 866c4115f478457b6c26bf942220cce7
+Signature: a6a264386497531194fa6be33bb2a1d4
 
 UNUSED LICENSES:
 
@@ -653,6 +653,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/armhf_sysroot/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel_build_task_driver/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_linux_arm64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_mac_arm64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_win_amd64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/binutils_linux_x64/VERSION
@@ -3129,7 +3130,6 @@ FILE: ../../../third_party/skia/gm/imagefilters.cpp
 FILE: ../../../third_party/skia/gm/imagefiltersstroked.cpp
 FILE: ../../../third_party/skia/gm/imagefilterstransformed.cpp
 FILE: ../../../third_party/skia/gm/imagefromyuvtextures.cpp
-FILE: ../../../third_party/skia/gm/imagescalealigned.cpp
 FILE: ../../../third_party/skia/gm/imagesource2.cpp
 FILE: ../../../third_party/skia/gm/largeglyphblur.cpp
 FILE: ../../../third_party/skia/gm/lcdblendmodes.cpp
@@ -3142,7 +3142,6 @@ FILE: ../../../third_party/skia/gm/pathcontourstart.cpp
 FILE: ../../../third_party/skia/gm/pdf_never_embed.cpp
 FILE: ../../../third_party/skia/gm/perspshaders.cpp
 FILE: ../../../third_party/skia/gm/pictureimagegenerator.cpp
-FILE: ../../../third_party/skia/gm/pixelsnap.cpp
 FILE: ../../../third_party/skia/gm/plus.cpp
 FILE: ../../../third_party/skia/gm/repeated_bitmap.cpp
 FILE: ../../../third_party/skia/gm/scaledstrokes.cpp
@@ -7678,6 +7677,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/gm/nearesthalfpixelimage.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/include/gpu/mtl/MtlMemoryAllocator.h
@@ -7696,6 +7696,7 @@ FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLDiscardStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInterfaceBlock.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLLayout.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLLiteral.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h
 FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
