@@ -145,7 +145,8 @@ void AccessibilityBridgeWindows::DispatchAccessibilityAction(
 
 std::shared_ptr<FlutterPlatformNodeDelegate>
 AccessibilityBridgeWindows::CreateFlutterPlatformNodeDelegate() {
-  return std::make_shared<FlutterPlatformNodeDelegateWindows>(this, view_);
+  return std::make_shared<FlutterPlatformNodeDelegateWindows>(
+      shared_from_this(), view_);
 }
 
 void AccessibilityBridgeWindows::DispatchWinAccessibilityEvent(
