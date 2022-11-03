@@ -209,6 +209,73 @@ Future<int> main(List<String> args) async {
     expect(fileList.length, lessThan(300));
   });
 
+  test('Sharding', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy(
+      buildCommandsPath: io.File(buildCommands),
+      lintAll: true,
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+    Map<String, dynamic> makeBuildCommandEntry(String filePath) => <String, dynamic>{
+          'directory': '/unused',
+          'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
+          'file': filePath,
+        };
+    final List<String> filePaths = () sync* {
+      for (int i = 0; i < 10; ++i) {
+        yield '/path/to/a/source_file_$i.cc';
+      }
+    }().toList();
+    final List<dynamic> buildCommandsData =
+        filePaths.map((String e) => makeBuildCommandEntry(e)).toList();
+    final List<dynamic> shardBuildCommandsData =
+      filePaths.sublist(6).map((String e) => makeBuildCommandEntry(e)).toList();
+
+    {
+      final List<Command> commands = await clangTidy.getLintCommandsForFiles(
+        buildCommandsData,
+        filePaths.map((String e) => io.File(e)).toList(),
+        <List<dynamic>>[shardBuildCommandsData],
+        0,
+      );
+      final Iterable<String> commandFilePaths = commands.map((Command e) => e.filePath);
+      expect(commands.length, equals(8));
+      expect(commandFilePaths.contains('/path/to/a/source_file_0.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_1.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_2.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_3.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_4.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_5.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_6.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_7.cc'), false);
+      expect(commandFilePaths.contains('/path/to/a/source_file_8.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_9.cc'), false);
+    }
+    {
+      final List<Command> commands = await clangTidy.getLintCommandsForFiles(
+        buildCommandsData,
+        filePaths.map((String e) => io.File(e)).toList(),
+        <List<dynamic>>[shardBuildCommandsData],
+        1,
+      );
+
+      final Iterable<String> commandFilePaths = commands.map((Command e) => e.filePath);
+      expect(commands.length, equals(8));
+      expect(commandFilePaths.contains('/path/to/a/source_file_0.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_1.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_2.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_3.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_4.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_5.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_6.cc'), false);
+      expect(commandFilePaths.contains('/path/to/a/source_file_7.cc'), true);
+      expect(commandFilePaths.contains('/path/to/a/source_file_8.cc'), false);
+      expect(commandFilePaths.contains('/path/to/a/source_file_9.cc'), true);
+    }
+  });
+
   test('No Commands are produced when no files changed', () async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
