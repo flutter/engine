@@ -207,16 +207,27 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
         reg.set_value(result);
       }));
   ASSERT_TRUE(future.get());
-  auto function =
-      library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
-  ASSERT_NE(function, nullptr);
+  {
+    auto function =
+        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+    ASSERT_NE(function, nullptr);
+  }
+
+  // Check if unregistering works.
+
+  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+  {
+    auto function =
+        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+    ASSERT_EQ(function, nullptr);
+  }
 }
 
 TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP_("Skipped: https://github.com/flutter/flutter/issues/105538");
   }
-  auto stage = CreateStageFromFixture("ink_sparkle.frag.iplr");
+  auto stage = OpenAssetAsRuntimeStage("ink_sparkle.frag.iplr");
   ASSERT_NE(stage, nullptr);
   ASSERT_TRUE(RegisterStage(*stage));
   auto library = GetContext()->GetShaderLibrary();

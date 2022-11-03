@@ -77,7 +77,7 @@ Playground::Playground()
 Playground::~Playground() = default;
 
 std::shared_ptr<Context> Playground::GetContext() const {
-  return renderer_ ? renderer_->GetContext() : nullptr;
+  return context_;
 }
 
 bool Playground::SupportsBackend(PlaygroundBackend backend) {
@@ -104,18 +104,24 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-void Playground::SetupWindow(PlaygroundBackend backend) {
+void Playground::SetupContext(PlaygroundBackend backend) {
   FML_CHECK(SupportsBackend(backend));
 
   impl_ = PlaygroundImpl::Create(backend);
   if (!impl_) {
     return;
   }
-  auto context = impl_->GetContext();
-  if (!context) {
+
+  context_ = impl_->GetContext();
+}
+
+void Playground::SetupWindow() {
+  if (!context_) {
+    FML_LOG(WARNING)
+        << "Asked to setup a window with no context (call SetupContext first).";
     return;
   }
-  auto renderer = std::make_unique<Renderer>(std::move(context));
+  auto renderer = std::make_unique<Renderer>(context_);
   if (!renderer->IsValid()) {
     return;
   }
@@ -123,6 +129,7 @@ void Playground::SetupWindow(PlaygroundBackend backend) {
 }
 
 void Playground::TeardownWindow() {
+  context_.reset();
   renderer_.reset();
   impl_.reset();
 }
@@ -212,6 +219,8 @@ bool Playground::OpenPlaygroundHere(
   ImGui_ImplImpeller_Init(renderer_->GetContext());
   fml::ScopedCleanupClosure shutdown_imgui_impeller(
       []() { ImGui_ImplImpeller_Shutdown(); });
+
+  ImGui::SetNextWindowPos({10, 10});
 
   ::glfwSetWindowSize(window, GetWindowSize().width, GetWindowSize().height);
   ::glfwSetWindowPos(window, 200, 100);
@@ -435,22 +444,6 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
   }
 
   return texture;
-}
-
-std::shared_ptr<RuntimeStage> Playground::LoadFixtureRuntimeStage(
-    const char* fixture_name) const {
-  if (fixture_name == nullptr) {
-    return nullptr;
-  }
-
-  auto runtime_stage =
-      std::make_shared<RuntimeStage>(OpenAssetAsMapping(fixture_name));
-
-  if (!runtime_stage->IsValid()) {
-    VALIDATION_LOG << "Could not load valid runtime stage.";
-    return nullptr;
-  }
-  return runtime_stage;
 }
 
 void Playground::SetWindowSize(ISize size) {

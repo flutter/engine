@@ -23,9 +23,10 @@ import '../utils.dart';
 ///  * test/        - compiled test code
 ///  * test_images/ - test images copied from Skis sources.
 class CompileTestsStep implements PipelineStep {
-  CompileTestsStep({this.testFiles, this.useLocalCanvasKit = false});
+  CompileTestsStep({this.testFiles, this.useLocalCanvasKit = false, this.isWasm = false});
 
   final List<FilePath>? testFiles;
+  final bool isWasm;
 
   final bool useLocalCanvasKit;
 
@@ -43,11 +44,15 @@ class CompileTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webUiBuildDir.create();
+    if (isWasm) {
+      await copyDart2WasmTestScript();
+      await copyDart2WasmRuntime();
+    }
     await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
-    await compileTests(testFiles ?? findAllTests());
+    await compileTests(testFiles ?? findAllTests(), isWasm);
   }
 }
 
@@ -124,6 +129,32 @@ Future<void> copySkiaTestImages() async {
   }
 }
 
+Future<void> copyDart2WasmRuntime() async {
+  final io.File sourceFile = io.File(pathlib.join(
+    environment.dartSdkDir.path,
+    'bin',
+    'dart2wasm_runtime.mjs',
+  ));
+  final io.Directory targetDir = io.Directory(pathlib.join(
+    environment.webUiBuildDir.path,
+    'dart2wasm_runtime.mjs',
+  ));
+
+  await sourceFile.copy(targetDir.path);
+}
+
+Future<void> copyDart2WasmTestScript() async {
+  final io.File sourceFile = io.File(pathlib.join(
+    environment.webUiDevDir.path,
+    'test_dart2wasm.js',
+  ));
+  final io.Directory targetDir = io.Directory(pathlib.join(
+    environment.webUiBuildDir.path,
+    'test_dart2wasm.js',
+  ));
+  await sourceFile.copy(targetDir.path);
+}
+
 Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
   final io.File localCanvasKitWasm = io.File(pathlib.join(
@@ -191,43 +222,26 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
 }
 
 /// Compiles the specified unit tests.
-Future<void> compileTests(List<FilePath> testFiles) async {
+Future<void> compileTests(List<FilePath> testFiles, bool isWasm) async {
   final Stopwatch stopwatch = Stopwatch()..start();
 
-  // Separate HTML targets from CanvasKit targets because the two use
-  // different dart2js options.
-  final List<FilePath> htmlTargets = <FilePath>[];
-  final List<FilePath> canvasKitTargets = <FilePath>[];
-  final List<FilePath> skwasmTargets = <FilePath>[];
-  final String canvasKitTestDirectory =
-      pathlib.join(environment.webUiTestDir.path, 'canvaskit');
-  final String skwasmTestDirectory =
-      pathlib.join(environment.webUiTestDir.path, 'skwasm');
-  for (final FilePath testFile in testFiles) {
-    if (pathlib.isWithin(canvasKitTestDirectory, testFile.absolute)) {
-      canvasKitTargets.add(testFile);
-    } else if (pathlib.isWithin(skwasmTestDirectory, testFile.absolute)) {
-      skwasmTargets.add(testFile);
-    } else {
-      htmlTargets.add(testFile);
-    }
-  }
+  final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
   await Future.wait(<Future<void>>[
-    if (htmlTargets.isNotEmpty)
-      _compileTestsInParallel(targets: htmlTargets),
-    if (canvasKitTargets.isNotEmpty)
-      _compileTestsInParallel(targets: canvasKitTargets, forCanvasKit: true),
-    if (skwasmTargets.isNotEmpty)
-      _compileTestsInParallel(targets: skwasmTargets, forSkwasm: true),
+    if (sortedTests.htmlTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.htmlTests, isWasm: isWasm),
+    if (sortedTests.canvasKitTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.canvasKitTests, renderer: Renderer.canvasKit, isWasm: isWasm),
+    if (sortedTests.skwasmTests.isNotEmpty)
+      _compileTestsInParallel(targets: sortedTests.skwasmTests, renderer: Renderer.skwasm, isWasm: isWasm),
   ]);
 
   stopwatch.stop();
 
-  final int targetCount = htmlTargets.length + canvasKitTargets.length;
+  final int targetCount = sortedTests.numTargetsToCompile;
   print(
     'Built $targetCount tests in ${stopwatch.elapsedMilliseconds ~/ 1000} '
-    'seconds using $_dart2jsConcurrency concurrent dart2js processes.',
+    'seconds using $_dart2jsConcurrency concurrent compile processes.',
   );
 }
 
@@ -239,18 +253,23 @@ final Pool _dart2jsPool = Pool(_dart2jsConcurrency);
 /// Spawns multiple dart2js processes to compile [targets] in parallel.
 Future<void> _compileTestsInParallel({
   required List<FilePath> targets,
-  bool forCanvasKit = false,
-  bool forSkwasm = false,
+  Renderer renderer = Renderer.html,
+  bool isWasm = false,
 }) async {
   final Stream<bool> results = _dart2jsPool.forEach(
     targets,
-    (FilePath file) => compileUnitTest(file, forCanvasKit: forCanvasKit, forSkwasm: forSkwasm),
+    (FilePath file) => compileUnitTest(file, renderer: renderer, isWasm: isWasm),
   );
   await for (final bool isSuccess in results) {
     if (!isSuccess) {
       throw ToolExit('Failed to compile tests.');
     }
   }
+}
+
+Future<bool> compileUnitTest(FilePath input, {required Renderer renderer, required bool isWasm}) async {
+  return isWasm ? compileUnitTestToWasm(input, renderer: renderer)
+    : compileUnitTestToJS(input, renderer: renderer);
 }
 
 /// Compiles one unit test using `dart2js`.
@@ -261,7 +280,7 @@ Future<void> _compileTestsInParallel({
 /// Dart2js creates the following outputs:
 /// - target.browser_test.dart.js
 /// - target.browser_test.dart.js.deps
-/// - target.browser_test.dart.js.maps
+/// - target.browser_test.dart.js.map
 /// under the same directory with test file. If all these files are not in
 /// the same directory, Chrome dev tools cannot load the source code during
 /// debug.
@@ -270,14 +289,18 @@ Future<void> _compileTestsInParallel({
 /// directory before test are build. See [_copyFilesFromTestToBuild].
 ///
 /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
-Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, required bool forSkwasm}) async {
+Future<bool> compileUnitTestToJS(FilePath input, {required Renderer renderer}) async {
+  // Compile to different directories for different renderers. This allows us
+  // to run the same test in multiple renderers.
   final String targetFileName = pathlib.join(
     environment.webUiBuildDir.path,
+    getBuildDirForRenderer(renderer),
     '${input.relativeToWebUi}.browser_test.dart.js',
   );
 
   final io.Directory directoryToTarget = io.Directory(pathlib.join(
       environment.webUiBuildDir.path,
+      getBuildDirForRenderer(renderer),
       pathlib.dirname(input.relativeToWebUi)));
 
   if (!directoryToTarget.existsSync()) {
@@ -295,8 +318,8 @@ Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, requir
     // are designed to run in one specific mode. So instead, we specify the
     // renderer explicitly.
     '-DFLUTTER_WEB_AUTO_DETECT=false',
-    '-DFLUTTER_WEB_USE_SKIA=$forCanvasKit',
-    '-DFLUTTER_WEB_USE_SKWASM=$forSkwasm',
+    '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvasKit}',
+    '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
 
     '-O2',
     '-o',
@@ -313,6 +336,50 @@ Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit, requir
   if (exitCode != 0) {
     io.stderr.writeln('ERROR: Failed to compile test $input. '
         'Dart2js exited with exit code $exitCode');
+    return false;
+  } else {
+    return true;
+  }
+}
+
+Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer}) async {
+  final String targetFileName = pathlib.join(
+    environment.webUiBuildDir.path,
+    '${input.relativeToWebUi}.browser_test.dart.wasm',
+  );
+
+  final io.Directory directoryToTarget = io.Directory(pathlib.join(
+      environment.webUiBuildDir.path,
+      pathlib.dirname(input.relativeToWebUi)));
+
+  if (!directoryToTarget.existsSync()) {
+    directoryToTarget.createSync(recursive: true);
+  }
+
+  final List<String> arguments = <String>[
+    environment.dart2wasmSnapshotPath,
+
+    '--dart-sdk=${environment.dartSdkDir.path}',
+
+    // We do not want to auto-select a renderer in tests. As of today, tests
+    // are designed to run in one specific mode. So instead, we specify the
+    // renderer explicitly.
+    '-DFLUTTER_WEB_AUTO_DETECT=false',
+    '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvasKit}',
+    '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
+    input.relativeToWebUi, // current path.
+    targetFileName, // target path.
+  ];
+
+  final int exitCode = await runProcess(
+    environment.dartAotRuntimePath,
+    arguments,
+    workingDirectory: environment.webUiRootDir.path,
+  );
+
+  if (exitCode != 0) {
+    io.stderr.writeln('ERROR: Failed to compile test $input. '
+        'dart2wasm exited with exit code $exitCode');
     return false;
   } else {
     return true;

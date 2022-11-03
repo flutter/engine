@@ -356,6 +356,9 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
       options_.target_platform              //
   );
   data->SetShaderData(shader_data_);
+  if (sksl_data_) {
+    data->SetSkSLData(sksl_data_);
+  }
   ir_->for_each_typed_id<spirv_cross::SPIRVariable>(
       [&](uint32_t, const spirv_cross::SPIRVariable& var) {
         if (var.storage != spv::StorageClassUniformConstant) {
@@ -602,6 +605,29 @@ std::vector<StructMember> Reflector::ReadStructMembers(
                          (member.width / 8) * member.columns * member.vecsize);
 
     FML_CHECK(current_byte_offset == struct_member_offset);
+
+    // A user defined struct.
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Struct) {
+      const size_t size =
+          GetReflectedStructSize(ReadStructMembers(member.self));
+      uint32_t stride = GetArrayStride<0>(struct_type, member, i);
+      if (stride == 0) {
+        stride = size;
+      }
+      uint32_t element_padding = stride - size;
+      result.emplace_back(StructMember{
+          compiler_->get_name(member.self),      // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          size,                                  // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
 
     // Tightly packed 4x4 Matrix is special cased as we know how to work with
     // those.
