@@ -24,11 +24,9 @@ class SkwasmVertices implements ui.Vertices {
   }
   
   @override
-  // TODO: implement debugDisposed
   bool get debugDisposed => throw UnimplementedError();
   
   @override
   void dispose() {
-    // TODO: implement dispose
   }
 }

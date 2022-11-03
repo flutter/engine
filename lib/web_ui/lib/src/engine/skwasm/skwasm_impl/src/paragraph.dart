@@ -1,5 +1,6 @@
 import 'package:ui/ui.dart' as ui;
 
+// TODO(jacksongardner): implement this
 class SkwasmLineMetrics implements ui.LineMetrics {
   factory SkwasmLineMetrics({
     required bool hardBreak,
@@ -140,11 +141,9 @@ class SkwasmParagraph implements ui.Paragraph {
   }
   
   @override
-  // TODO: implement debugDisposed
   bool get debugDisposed => throw UnimplementedError();
   
   @override
   void dispose() {
-    // TODO: implement dispose
   }
 }

@@ -245,24 +245,24 @@ class SkwasmCanvas implements ui.Canvas {
   
   @override
   ui.Rect getDestinationClipBounds() {
-    // TODO: implement getDestinationClipBounds
+    // TODO(jacksongardner): implement getDestinationClipBounds
     throw UnimplementedError();
   }
   
   @override
   ui.Rect getLocalClipBounds() {
-    // TODO: implement getLocalClipBounds
+    // TODO(jacksongardner): implement getLocalClipBounds
     throw UnimplementedError();
   }
   
   @override
   Float64List getTransform() {
-    // TODO: implement getTransform
+    // TODO(jacksongardner): implement getTransform
     throw UnimplementedError();
   }
   
   @override
   void restoreToCount(int count) {
-    // TODO: implement restoreToCount
+    // TODO(jacksongardner): implement restoreToCount
   }
 }

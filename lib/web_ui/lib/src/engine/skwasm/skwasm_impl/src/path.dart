@@ -256,7 +256,7 @@ class SkwasmPath implements ui.Path {
   
   @override
   ui.PathMetrics computeMetrics({bool forceClosed = false}) {
-    // TODO: implement computeMetrics
+    // TODO(jacksongardner): implement computeMetrics
     throw UnimplementedError();
   }
 }
