@@ -133,12 +133,13 @@ class NinjaPipelineStep extends ProcessStep {
   Future<ProcessManager> createProcess() {
     print('Running autoninja...');
     return startProcess(
-      // When build the wasm target that includes CanvasKit, we need to use
-      // `ninja` directly to avoid having a high `-j` value that could
-      // potentially slow down the entire machine because emscripten doesn't use
-      // goma.
-      host ? 'autoninja' : 'ninja',
+      'autoninja',
       <String>[
+        // When building the wasm target that includes CanvasKit, we need to use
+        // `--offline` to prevent `autoninja` from using `goma` which would lead
+        // to a high `-j` value that causes high CPU usage. This is because goma
+        // doesn't support emscripten yet.
+        if (!host) '--offline',
         '-C',
         target.path,
       ],
