@@ -67,18 +67,39 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
+  // If the color filter modifies transparent black, then when it's applied to
+  // a saveLayer, that layer will extend beyond the paint bounds provided in the
+  // SaveLayerRec (which defines the bounds of the content within the layer, not
+  // the extent of the layer during the restore()). ColorFilterLayer must clip
+  // before the saveLayer in these cases to ensure it doesn't go beyond its
+  // reported paint_bounds().
+  const bool needs_clip = filter_->modifies_transparent_black();
   AutoCachePaint cache_paint(context);
   cache_paint.setColorFilter(filter_.get());
   if (context.leaf_nodes_builder) {
     FML_DCHECK(context.builder_multiplexer);
+    if (needs_clip) {
+      context.builder_multiplexer->save();
+      context.builder_multiplexer->clipRect(paint_bounds());
+    }
     context.builder_multiplexer->saveLayer(&paint_bounds(),
                                            cache_paint.dl_paint());
     PaintChildren(context);
     context.builder_multiplexer->restore();
+    if (needs_clip) {
+      context.builder_multiplexer->restore();
+    }
   } else {
+    if (needs_clip) {
+      context.internal_nodes_canvas->save();
+      context.internal_nodes_canvas->clipRect(paint_bounds());
+    }
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());
     PaintChildren(context);
+    if (needs_clip) {
+      context.internal_nodes_canvas->restore();
+    }
   }
 }
 

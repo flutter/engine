@@ -453,5 +453,46 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
   EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
 }
 
+TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
+  // In Skia, saveLayers with a color filter that modifies transparent black will fill all pixels
+  // within the clip, going beyond the user bounds hint. ColorFilterLayer must insert a clipRect
+  // before saveLayer to ensure it doesn't draw beyond its reported bounds.
+  // clang-format off
+  float matrix[20] = {
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    1, 0, 0, 0, 0,
+    0, 0, 0, 1, 0,
+  };
+  // clang-format on
+  auto layer_filter = DlMatrixColorFilter(matrix);
+  ASSERT_TRUE(layer_filter.modifies_transparent_black());
+
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto color_filter_layer = std::make_shared<ColorFilterLayer>(
+      std::make_shared<DlMatrixColorFilter>(matrix));
+  color_filter_layer->Add(mock_layer);
+
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  color_filter_layer->Preroll(preroll_context(), SkMatrix::I());
+
+  DisplayListBuilder expected_builder;
+  /* ColorFilterLayer::Paint() */ {
+    DlPaint dl_paint;
+    dl_paint.setColorFilter(&layer_filter);
+    expected_builder.clipRect(child_path.getBounds());
+    expected_builder.saveLayer(&child_path.getBounds(), &dl_paint);
+      /* MockLayer::Paint() */ {
+        expected_builder.drawPath(child_path, DlPaint().setColor(0xFF000000));
+      }
+    expected_builder.restore();
+  }
+
+  opacity_layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+}
+
 }  // namespace testing
 }  // namespace flutter
