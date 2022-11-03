@@ -243,10 +243,8 @@ class JsFlutterConfiguration {}
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external String? get canvasKitBaseUrl;
   external bool? get canvasKitForceCpuOnly;
-  external bool? get debugShowSemanticsNodes;
-
   external int? get canvasKitMaximumSurfaces;
-
+  external bool? get debugShowSemanticsNodes;
   external DomElement? get hostElement;
   external String? get renderer;
 }
