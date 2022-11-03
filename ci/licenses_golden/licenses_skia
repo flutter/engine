@@ -1,4 +1,4 @@
-Signature: 923e03b6fd5c8ea1da022f3e759dc239
+Signature: 9a0ebd5a78b871739213423362fa530a
 
 UNUSED LICENSES:
 
@@ -3130,7 +3130,6 @@ FILE: ../../../third_party/skia/gm/imagefilters.cpp
 FILE: ../../../third_party/skia/gm/imagefiltersstroked.cpp
 FILE: ../../../third_party/skia/gm/imagefilterstransformed.cpp
 FILE: ../../../third_party/skia/gm/imagefromyuvtextures.cpp
-FILE: ../../../third_party/skia/gm/imagescalealigned.cpp
 FILE: ../../../third_party/skia/gm/imagesource2.cpp
 FILE: ../../../third_party/skia/gm/largeglyphblur.cpp
 FILE: ../../../third_party/skia/gm/lcdblendmodes.cpp
@@ -3143,7 +3142,6 @@ FILE: ../../../third_party/skia/gm/pathcontourstart.cpp
 FILE: ../../../third_party/skia/gm/pdf_never_embed.cpp
 FILE: ../../../third_party/skia/gm/perspshaders.cpp
 FILE: ../../../third_party/skia/gm/pictureimagegenerator.cpp
-FILE: ../../../third_party/skia/gm/pixelsnap.cpp
 FILE: ../../../third_party/skia/gm/plus.cpp
 FILE: ../../../third_party/skia/gm/repeated_bitmap.cpp
 FILE: ../../../third_party/skia/gm/scaledstrokes.cpp
@@ -6227,6 +6225,7 @@ FILE: ../../../third_party/skia/modules/skplaintexteditor/src/stringslice.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.h
 FILE: ../../../third_party/skia/samplecode/SamplePathTessellators.cpp
+FILE: ../../../third_party/skia/src/core/SkContainers.cpp
 FILE: ../../../third_party/skia/src/core/SkMalloc.cpp
 FILE: ../../../third_party/skia/src/core/SkPixelRefPriv.h
 FILE: ../../../third_party/skia/src/core/SkTextBlobTrace.cpp
@@ -7678,6 +7677,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/gm/nearesthalfpixelimage.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/include/gpu/mtl/MtlMemoryAllocator.h
@@ -7961,6 +7961,7 @@ FILE: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanExtensions.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanTypes.h
+FILE: ../../../third_party/skia/include/private/SkContainers.h
 FILE: ../../../third_party/skia/include/private/gpu/graphite/DawnTypesPriv.h
 FILE: ../../../third_party/skia/include/private/gpu/graphite/VulkanGraphiteTypesPriv.h
 FILE: ../../../third_party/skia/include/private/gpu/vk/VulkanTypesPriv.h
