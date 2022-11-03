@@ -438,10 +438,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  flutter::FlutterCompositor::ViewProvider getViewCallback = [weakSelf](uint64_t view_id) {
-    return weakSelf.viewController == nullptr ? nullptr : weakSelf.viewController.flutterView;
-  };
-
   if ([FlutterRenderingBackend renderUsingMetal]) {
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
     _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
