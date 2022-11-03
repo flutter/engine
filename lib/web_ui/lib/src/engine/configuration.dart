@@ -79,15 +79,15 @@ class FlutterConfiguration {
   /// This is deprecated, and warns the user about the new API.
   FlutterConfiguration.fromJsGlobals(JsFlutterConfiguration? config) {
     if (config != null) {
-      domWindow.console.warn('Using the window.flutterConfiguration object is now deprecated. '
-      'Please, set your flutter configuration using the engineInitializer.initializeEngine(config) API instead. '
+      domWindow.console.warn('window.flutterConfiguration is now deprecated.\n'
+      'Use engineInitializer.initializeEngine(config) instead.\n'
       'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
       _createdFromJsGlobals = true;
       _configuration = config;
     }
     if (_requestedRendererType != null) {
-      domWindow.console.warn('Using the window.flutterWebRenderer string is now deprecated. '
-      'Please, set your flutter configuration using the engineInitializer.initializeEngine(config) API instead. '
+      domWindow.console.warn('window.flutterWebRenderer is now deprecated.\n'
+      'Use engineInitializer.initializeEngine(config) instead.\n'
       'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
     }
   }
@@ -105,13 +105,13 @@ class FlutterConfiguration {
   /// constructor.
   void setRuntimeConfiguration(JsFlutterConfiguration? configuration) {
     if (configuration != null) {
-      assert(!_createdFromJsGlobals, 'Do not mix-and-match runtime configuration.'
-        'Prefer the engineInitializer.initializeEngine(config) API over the'
-        'window.flutterConfiguration global object.');
+      assert(!_createdFromJsGlobals, 'Do not mix-and-match configuration styles. '
+        'Use engineInitializer.initializeEngine(config) instead of '
+        'window.flutterConfiguration.');
       assert(_requestedRendererType == null || configuration.renderer == null,
-        'Do not mix-and-match runtime configuration.'
-        'Prefer the engineInitializer.initializeEngine(config) API over the'
-        'window.flutterWebRenderer global string.');
+        'Do not mix-and-match configuration styles. '
+        'Use engineInitializer.initializeEngine(config) instead of '
+        'window.flutterWebRenderer.');
       _configuration = configuration;
     }
   }
