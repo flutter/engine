@@ -113,21 +113,21 @@ class BlitPass {
 
   virtual void OnSetLabel(std::string label) = 0;
 
-  virtual void OnCopyTextureToTextureCommand(
+  virtual bool OnCopyTextureToTextureCommand(
       std::shared_ptr<Texture> source,
       std::shared_ptr<Texture> destination,
       IRect source_region,
       IPoint destination_origin,
       std::string label) = 0;
 
-  virtual void OnCopyTextureToBufferCommand(
+  virtual bool OnCopyTextureToBufferCommand(
       std::shared_ptr<Texture> source,
       std::shared_ptr<DeviceBuffer> destination,
       IRect source_region,
       size_t destination_offset,
       std::string label) = 0;
 
-  virtual void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
+  virtual bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                        std::string label) = 0;
 
  private:

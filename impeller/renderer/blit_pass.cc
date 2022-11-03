@@ -71,10 +71,9 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
     return true;  // Nothing to blit.
   }
 
-  OnCopyTextureToTextureCommand(std::move(source), std::move(destination),
-                                source_region.value(), destination_origin,
-                                std::move(label));
-  return true;
+  return OnCopyTextureToTextureCommand(
+      std::move(source), std::move(destination), source_region.value(),
+      destination_origin, std::move(label));
 }
 
 bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
@@ -112,10 +111,9 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
     return true;  // Nothing to blit.
   }
 
-  OnCopyTextureToBufferCommand(std::move(source), std::move(destination),
-                               source_region.value(), destination_offset,
-                               std::move(label));
-  return true;
+  return OnCopyTextureToBufferCommand(std::move(source), std::move(destination),
+                                      source_region.value(), destination_offset,
+                                      std::move(label));
 }
 
 bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,
@@ -126,8 +124,7 @@ bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,
     return false;
   }
 
-  OnGenerateMipmapCommand(std::move(texture), std::move(label));
-  return true;
+  return OnGenerateMipmapCommand(std::move(texture), std::move(label));
 }
 
 }  // namespace impeller
