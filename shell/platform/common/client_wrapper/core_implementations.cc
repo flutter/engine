@@ -52,9 +52,7 @@ void ForwardToHandler(FlutterDesktopMessengerRef messenger,
         FlutterDesktopMessengerLock(messenger_ptr.get()),
         &FlutterDesktopMessengerUnlock);
     if (!FlutterDesktopMessengerIsAvailable(messenger_ptr.get())) {
-      std::cerr << "Error: Responding to platform channel after the engine has"
-                   "been deleted."
-                << std::endl;
+      // Drop reply if it comes in after the engine is destroyed.
       return;
     }
     if (!response_handle) {
