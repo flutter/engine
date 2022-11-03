@@ -33,6 +33,9 @@ namespace flutter {
 ///
 /// To use this class, you must implement this class and provide your own
 /// implementation of FlutterPlatformNodeDelegate.
+///
+/// AccessibilityBridge must be created as a shared_ptr, since some methods
+/// acquires its weak_ptr.
 class AccessibilityBridge
     : public std::enable_shared_from_this<AccessibilityBridge>,
       public FlutterPlatformNodeDelegate::OwnerBridge,

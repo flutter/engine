@@ -37,8 +37,8 @@ FlutterSemanticsNode CreateSemanticsNode(
 }
 
 TEST(AccessibilityBridgeTest, basicTest) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   std::vector<int32_t> children{1, 2};
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root", &children);
@@ -66,8 +66,8 @@ TEST(AccessibilityBridgeTest, basicTest) {
 }
 
 TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   std::vector<int32_t> children{1};
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root", &children);
@@ -114,8 +114,8 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 }
 
 TEST(AccessibilityBridgeTest, canRecreateNodeDelegates) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   std::vector<int32_t> children{1};
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root", &children);
@@ -148,8 +148,8 @@ TEST(AccessibilityBridgeTest, canRecreateNodeDelegates) {
 }
 
 TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -178,8 +178,8 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
 }
 
 TEST(AccessibilityBridgeTest, doesNotAssignEditableRootToSelectableText) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField |
@@ -194,8 +194,8 @@ TEST(AccessibilityBridgeTest, doesNotAssignEditableRootToSelectableText) {
 }
 
 TEST(AccessibilityBridgeTest, ToggleHasToggleButtonRole) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState |
@@ -209,8 +209,8 @@ TEST(AccessibilityBridgeTest, ToggleHasToggleButtonRole) {
 }
 
 TEST(AccessibilityBridgeTest, SliderHasSliderRole) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsSlider |
@@ -230,8 +230,8 @@ TEST(AccessibilityBridgeTest, SliderHasSliderRole) {
 // https://github.com/flutter/flutter/issues/96218
 // As this fix involved code run on all platforms, it is included here.
 TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
@@ -247,8 +247,8 @@ TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
 
 // Verify that a node can be moved from one parent to another.
 TEST(AccessibilityBridgeTest, CanReparentNode) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   std::vector<int32_t> root_children{1};
   std::vector<int32_t> child1_children{2};
@@ -310,8 +310,8 @@ TEST(AccessibilityBridgeTest, CanReparentNode) {
 
 // Verify that multiple nodes can be moved to new parents.
 TEST(AccessibilityBridgeTest, CanReparentMultipleNodes) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   int32_t root_id = 0;
   int32_t intermediary1_id = 1;
@@ -404,8 +404,8 @@ TEST(AccessibilityBridgeTest, CanReparentMultipleNodes) {
 
 // Verify that a node with a child can be moved from one parent to another.
 TEST(AccessibilityBridgeTest, CanReparentNodeWithChild) {
-  std::unique_ptr<TestAccessibilityBridge> bridge =
-      std::make_unique<TestAccessibilityBridge>();
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   int32_t root_id = 0;
   int32_t intermediary1_id = 1;

@@ -21,6 +21,9 @@ class FlutterPlatformNodeDelegateWindows;
 // accessibility events fired from the framework to Windows, routing native
 // Windows accessibility events to the framework, and creating Windows-specific
 // FlutterPlatformNodeDelegate objects for each node in the semantics tree.
+///
+/// AccessibilityBridgeWindows must be created as a shared_ptr, since some
+/// methods acquires its weak_ptr.
 class AccessibilityBridgeWindows : public AccessibilityBridge {
  public:
   AccessibilityBridgeWindows(FlutterWindowsEngine* engine,

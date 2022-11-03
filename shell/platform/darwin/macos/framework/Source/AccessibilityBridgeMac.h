@@ -21,6 +21,9 @@ namespace flutter {
 /// accessibility events fired from the framework to macOS, routing native
 /// macOS accessibility events to the framework, and creating macOS-specific
 /// FlutterPlatformNodeDelegate objects for each node in the semantics tree.
+///
+/// AccessibilityBridgeMac must be created as a shared_ptr, since some methods
+/// acquires its weak_ptr.
 class AccessibilityBridgeMac : public AccessibilityBridge {
  public:
   //---------------------------------------------------------------------------
