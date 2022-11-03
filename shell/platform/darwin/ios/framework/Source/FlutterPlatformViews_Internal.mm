@@ -198,7 +198,7 @@ static BOOL _preparedOnce = NO;
 
 - (void)applyBlurBackdropFilters:(NSArray<PlatformViewFilter*>*)filters {
   FML_DCHECK(self.filters.count == self.backdropFilterSubviews.count);
-  if ((!self.filters || self.filters.count == 0) && filters.count == 0) {
+  if (self.filters.count == 0 && filters.count == 0) {
     return;
   }
   self.filters = filters;
