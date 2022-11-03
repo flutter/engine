@@ -247,7 +247,8 @@ class FlutterWindowsEngine {
  protected:
   // Creates an accessibility bridge with the provided parameters.
   //
-  // This method allows unit tests to override in order to capture information.
+  // By default this method calls AccessibilityBridge's constructor. Exposing
+  // this method allows unit tests to override in order to capture information.
   virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
       FlutterWindowsEngine* engine,
       FlutterWindowsView* view);

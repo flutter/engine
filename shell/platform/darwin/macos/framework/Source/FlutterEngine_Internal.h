@@ -96,6 +96,11 @@
 @end
 
 @interface FlutterEngine (TestMethods)
+/* Creates an accessibility bridge with the provided parameters.
+ *
+ * By default this method calls AccessibilityBridgeMac's initializer. Exposing
+ * this method allows unit tests to override in order to capture information.
+ */
 - (std::shared_ptr<flutter::AccessibilityBridgeMac>)
     createAccessibilityBridge:(nonnull FlutterEngine*)engine
                viewController:(nonnull FlutterViewController*)viewController;
