@@ -112,7 +112,7 @@ class DirectManipulationEventHandler
     float pan_y;
   };
   // Convert transform array to Flutter-usable values.
-  GestureData convertToGestureData(float transform[6]);
+  GestureData ConvertToGestureData(float transform[6]);
   // Unique identifier to associate with all gesture event updates.
   int32_t GetDeviceId();
   // Parent object, used to store the target for gesture event updates.

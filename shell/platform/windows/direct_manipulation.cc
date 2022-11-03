@@ -46,7 +46,7 @@ STDMETHODIMP DirectManipulationEventHandler::QueryInterface(REFIID iid,
 }
 
 DirectManipulationEventHandler::GestureData
-DirectManipulationEventHandler::convertToGestureData(float transform[6]) {
+DirectManipulationEventHandler::ConvertToGestureData(float transform[6]) {
   // DirectManipulation provides updates with very high precision. If the user
   // holds their fingers steady on a trackpad, DirectManipulation sends
   // jittery updates. This calculation will reduce the precision of the scale
@@ -77,7 +77,7 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
       float transform[6];
       hr = content->GetContentTransform(transform, ARRAYSIZE(transform));
       if (SUCCEEDED(hr)) {
-        initial_gesture_data_ = convertToGestureData(transform);
+        initial_gesture_data_ = ConvertToGestureData(transform);
       } else {
         FML_LOG(ERROR) << "GetContentTransform failed";
       }
@@ -140,7 +140,7 @@ HRESULT DirectManipulationEventHandler::OnContentUpdated(
     return S_OK;
   }
   if (!during_synthesized_reset_) {
-    GestureData data = convertToGestureData(transform);
+    GestureData data = ConvertToGestureData(transform);
     float scale = data.scale / initial_gesture_data_.scale;
     float pan_x = data.pan_x - initial_gesture_data_.pan_x;
     float pan_y = data.pan_y - initial_gesture_data_.pan_y;
