@@ -51,7 +51,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
       GnPipelineStep(buildCanvasKit: buildCanvasKit, host: host),
-      NinjaPipelineStep(host: host),
+      NinjaPipelineStep(target: host ? environment.hostDebugUnoptDir : environment.wasmReleaseOutDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
     await buildPipeline.run();
@@ -115,7 +115,7 @@ class GnPipelineStep extends ProcessStep {
 ///
 /// Can be safely interrupted.
 class NinjaPipelineStep extends ProcessStep {
-  NinjaPipelineStep({required this.host});
+  NinjaPipelineStep({required this.target});
 
   @override
   String get description => 'ninja';
@@ -123,11 +123,8 @@ class NinjaPipelineStep extends ProcessStep {
   @override
   bool get isSafeToInterrupt => true;
 
-  final bool host;
-
   /// The target directory to build.
-  Directory get target =>
-      host ? environment.hostDebugUnoptDir : environment.wasmReleaseOutDir;
+  final Directory target;
 
   @override
   Future<ProcessManager> createProcess() {
@@ -135,11 +132,6 @@ class NinjaPipelineStep extends ProcessStep {
     return startProcess(
       'autoninja',
       <String>[
-        // When building the wasm target that includes CanvasKit, we need to use
-        // `--offline` to prevent `autoninja` from using `goma` which would lead
-        // to a high `-j` value that causes high CPU usage. This is because goma
-        // doesn't support emscripten yet.
-        if (!host) '--offline',
         '-C',
         target.path,
       ],
