@@ -113,7 +113,7 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
               Contains(ui::AXEventGenerator::Event::SUBTREE_CREATED));
 }
 
-TEST(AccessibilityBridgeTest, canUpdateDelegate) {
+TEST(AccessibilityBridgeTest, canRecreateNodeDelegates) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
 
@@ -130,8 +130,7 @@ TEST(AccessibilityBridgeTest, canUpdateDelegate) {
   EXPECT_FALSE(root_node.expired());
   EXPECT_FALSE(child1_node.expired());
 
-  // Update bridge
-  bridge->Update();
+  bridge->RecreateNodeDelegates();
 
   // Old tree is destroyed.
   EXPECT_TRUE(root_node.expired());

@@ -13,18 +13,21 @@ class TestAccessibilityBridge : public AccessibilityBridge {
  public:
   TestAccessibilityBridge() = default;
 
-  void OnAccessibilityEvent(
-      ui::AXEventGenerator::TargetedEvent targeted_event) override;
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
                                    fml::MallocMapping data) override;
-  std::shared_ptr<FlutterPlatformNodeDelegate>
-  CreateFlutterPlatformNodeDelegate() override;
 
-  void Update() { Reset(); }
+  using AccessibilityBridge::RecreateNodeDelegates;
 
   std::vector<ui::AXEventGenerator::Event> accessibility_events;
   std::vector<FlutterSemanticsAction> performed_actions;
+
+ protected:
+  void OnAccessibilityEvent(
+      ui::AXEventGenerator::TargetedEvent targeted_event) override;
+
+  std::shared_ptr<FlutterPlatformNodeDelegate>
+  CreateFlutterPlatformNodeDelegate() override;
 };
 
 }  // namespace flutter

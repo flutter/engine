@@ -132,9 +132,7 @@ AccessibilityBridge::GetPendingEvents() const {
   return result;
 }
 
-void AccessibilityBridge::Reset() {
-  // Recreate FlutterPlatformNodeDelegates since they may contain stale state
-  // from the previous AccessibilityBridgeDelegate.
+void AccessibilityBridge::RecreateNodeDelegates() {
   for (const auto& [node_id, old_platform_node_delegate] : id_wrapper_map_) {
     std::shared_ptr<FlutterPlatformNodeDelegate> platform_node_delegate =
         CreateFlutterPlatformNodeDelegate();

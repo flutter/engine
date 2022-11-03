@@ -43,26 +43,6 @@ class AccessibilityBridge
   AccessibilityBridge();
   virtual ~AccessibilityBridge();
 
-  //---------------------------------------------------------------------------
-  /// @brief      Handle accessibility events generated due to accessibility
-  ///             tree changes. These events are generated in accessibility
-  ///             bridge and needed to be sent to native accessibility system.
-  ///             See ui::AXEventGenerator::Event for possible events.
-  ///
-  /// @param[in]  targeted_event      The object that contains both the
-  ///                                 generated event and the event target.
-  virtual void OnAccessibilityEvent(
-      ui::AXEventGenerator::TargetedEvent targeted_event) = 0;
-
-  //---------------------------------------------------------------------------
-  /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
-  ///             Ownership passes to the caller. This method will be called
-  ///             whenever a new AXNode is created in AXTree. Each platform
-  ///             needs to implement this method in order to inject its
-  ///             subclass into the accessibility bridge.
-  virtual std::shared_ptr<FlutterPlatformNodeDelegate>
-  CreateFlutterPlatformNodeDelegate() = 0;
-
   //-----------------------------------------------------------------------------
   /// @brief      The ID of the root node in the accessibility tree. In Flutter,
   //              this is always 0.
@@ -124,10 +104,35 @@ class AccessibilityBridge
       const;
 
  protected:
+  //---------------------------------------------------------------------------
+  /// @brief      Handle accessibility events generated due to accessibility
+  ///             tree changes. These events are generated in accessibility
+  ///             bridge and needed to be sent to native accessibility system.
+  ///             See ui::AXEventGenerator::Event for possible events.
+  ///
+  /// @param[in]  targeted_event      The object that contains both the
+  ///                                 generated event and the event target.
+  virtual void OnAccessibilityEvent(
+      ui::AXEventGenerator::TargetedEvent targeted_event) = 0;
+
+  //---------------------------------------------------------------------------
+  /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
+  ///             Ownership passes to the caller. This method will be called
+  ///             whenever a new AXNode is created in AXTree. Each platform
+  ///             needs to implement this method in order to inject its
+  ///             subclass into the accessibility bridge.
+  virtual std::shared_ptr<FlutterPlatformNodeDelegate>
+  CreateFlutterPlatformNodeDelegate() = 0;
+
   //------------------------------------------------------------------------------
-  /// @brief      Update the AccessibilityBridgeDelegate stored in the
-  ///             accessibility bridge to a new one.
-  void Reset();
+  /// @brief      Recreate all FlutterPlatformNodeDelegates.
+  ///
+  ///             This can be useful for subclasses when updating some
+  ///             properties that are used by node delegates, such as views.
+  ///             Each node is recreated using
+  ///             CreateFlutterPlatformNodeDelegate, then initialized using
+  ///             AXNodes from their corresponding old one.
+  void RecreateNodeDelegates();
 
  private:
   // See FlutterSemanticsNode in embedder.h

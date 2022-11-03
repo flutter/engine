@@ -26,18 +26,23 @@ class AccessibilityBridgeMac : public AccessibilityBridge {
                                   __weak FlutterViewController* view_controller);
   virtual ~AccessibilityBridgeMac() = default;
 
-  // |AccessibilityBridge|
-  void OnAccessibilityEvent(ui::AXEventGenerator::TargetedEvent targeted_event) override;
-
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
                                    fml::MallocMapping data) override;
 
+  // Update the default view controller, and recreate the corresponding
+  // accessibility node delegate.
+  //
+  // This is called by the engine when the default view controller is updated.
+  void UpdateDefaultViewController(__weak FlutterViewController* view_controller);
+
+ protected:
+  // |AccessibilityBridge|
+  void OnAccessibilityEvent(ui::AXEventGenerator::TargetedEvent targeted_event) override;
+
   // |AccessibilityBridge|
   std::shared_ptr<FlutterPlatformNodeDelegate> CreateFlutterPlatformNodeDelegate() override;
-
-  void Update(__weak FlutterEngine* engine, __weak FlutterViewController* view_controller);
 
  private:
   /// A wrapper structure to wraps macOS native accessibility events.

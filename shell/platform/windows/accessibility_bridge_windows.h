@@ -23,17 +23,9 @@ class AccessibilityBridgeWindows : public AccessibilityBridge {
   virtual ~AccessibilityBridgeWindows() = default;
 
   // |AccessibilityBridge|
-  void OnAccessibilityEvent(
-      ui::AXEventGenerator::TargetedEvent targeted_event) override;
-
-  // |AccessibilityBridge|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
                                    fml::MallocMapping data) override;
-
-  // |AccessibilityBridge|
-  std::shared_ptr<FlutterPlatformNodeDelegate>
-  CreateFlutterPlatformNodeDelegate() override;
 
   // Dispatches a Windows accessibility event of the specified type, generated
   // by the accessibility node associated with the specified semantics node.
@@ -49,6 +41,15 @@ class AccessibilityBridgeWindows : public AccessibilityBridge {
   // This is a virtual method for the convenience of unit tests.
   virtual void SetFocus(
       std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate);
+
+ protected:
+  // |AccessibilityBridge|
+  void OnAccessibilityEvent(
+      ui::AXEventGenerator::TargetedEvent targeted_event) override;
+
+  // |AccessibilityBridge|
+  std::shared_ptr<FlutterPlatformNodeDelegate>
+  CreateFlutterPlatformNodeDelegate() override;
 
  private:
   FlutterWindowsEngine* engine_;

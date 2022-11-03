@@ -417,7 +417,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     [_renderer setFlutterView:controller.flutterView];
 
     if (_semanticsEnabled && _bridge) {
-      _bridge->Update(self, _viewController);
+      _bridge->UpdateDefaultViewController(_viewController);
     }
 
     if (!controller && !_allowHeadlessExecution) {
