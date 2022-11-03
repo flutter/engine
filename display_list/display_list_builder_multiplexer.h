@@ -25,6 +25,8 @@ class DisplayListBuilderMultiplexer {
                  const DlPaint* paint,
                  const DlImageFilter* backdrop_filter = nullptr);
 
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa);
+
   void restore();
 
  private:

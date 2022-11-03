@@ -19,6 +19,15 @@ void DisplayListBuilderMultiplexer::saveLayer(
   }
 }
 
+void DisplayListBuilderMultiplexer::clipRect(
+    const SkRect& rect,
+    SkClipOp clip_op,
+    bool is_aa) {
+  for (auto* builder : builders_) {
+    builder->clipRect(rect, clip_op, is_aa);
+  }
+}
+
 void DisplayListBuilderMultiplexer::restore() {
   for (auto* builder : builders_) {
     builder->restore();
