@@ -37,6 +37,7 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "third_party/rapidjson/include/rapidjson/writer.h"
+#include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
@@ -844,7 +845,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   auto mutator = *external_view_embedder->GetStack(50).Begin();
   ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
-  ASSERT_EQ(mutator->GetFilter(), filter);
+  ASSERT_EQ(mutator->GetFilterMutation().GetFilter(), filter);
 
   DestroyShell(std::move(shell));
 }
@@ -1850,12 +1851,10 @@ class MockTexture : public Texture {
   ~MockTexture() override = default;
 
   // Called from raster thread.
-  void Paint(SkCanvas& canvas,
+  void Paint(PaintContext& context,
              const SkRect& bounds,
              bool freeze,
-             GrDirectContext* context,
-             const SkSamplingOptions&,
-             const SkPaint* paint) override {}
+             const SkSamplingOptions&) override {}
 
   void OnGrContextCreated() override {}
 

@@ -7,11 +7,41 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #import "flutter/testing/testing.h"
 
-namespace flutter::testing {
+@interface FlutterViewMockProviderMetal : NSObject <FlutterViewProvider> {
+  FlutterView* _defaultView;
+}
+/**
+ * Create a FlutterViewMockProviderMetal with the provided view as the default view.
+ */
+- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view;
+@end
 
-flutter::FlutterCompositor::ViewProvider MockGetViewCallback() {
+@implementation FlutterViewMockProviderMetal
+
+- (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view {
+  self = [super init];
+  if (self != nil) {
+    _defaultView = view;
+  }
+  return self;
+}
+
+- (nullable FlutterView*)getView:(uint64_t)viewId {
+  if (viewId == kFlutterDefaultViewId) {
+    return _defaultView;
+  }
+  return nil;
+}
+
+@end
+
+namespace flutter::testing {
+namespace {
+
+id<FlutterViewProvider> MockViewProvider() {
   FlutterView* viewMock = OCMClassMock([FlutterView class]);
   FlutterMetalRenderBackingStore* backingStoreMock =
       OCMClassMock([FlutterMetalRenderBackingStore class]);
@@ -27,13 +57,15 @@ flutter::FlutterCompositor::ViewProvider MockGetViewCallback() {
         OCMStub([textureMock height]).andReturn(size.height);
       })
       .andReturn(backingStoreMock);
-  return [viewMock](uint64_t view_id) { return viewMock; };
+
+  return [[FlutterViewMockProviderMetal alloc] initWithDefaultView:viewMock];
 }
+}  // namespace
 
 TEST(FlutterMetalCompositorTest, TestPresent) {
   std::unique_ptr<flutter::FlutterMetalCompositor> macos_compositor =
       std::make_unique<FlutterMetalCompositor>(
-          MockGetViewCallback(), /*platform_view_controller*/ nullptr, /*mtl_device*/ nullptr);
+          MockViewProvider(), /*platform_view_controller*/ nullptr, /*mtl_device*/ nullptr);
 
   bool flag = false;
   macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content) {
@@ -48,7 +80,7 @@ TEST(FlutterMetalCompositorTest, TestPresent) {
 TEST(FlutterMetalCompositorTest, TestCreate) {
   std::unique_ptr<flutter::FlutterMetalCompositor> macos_compositor =
       std::make_unique<FlutterMetalCompositor>(
-          MockGetViewCallback(), /*platform_view_controller*/ nullptr, /*mtl_device*/ nullptr);
+          MockViewProvider(), /*platform_view_controller*/ nullptr, /*mtl_device*/ nullptr);
 
   FlutterBackingStore backing_store;
   FlutterBackingStoreConfig config;
@@ -67,7 +99,7 @@ TEST(FlutterMetalCompositorTest, TestCreate) {
 TEST(FlutterMetalCompositorTest, TestCompositing) {
   std::unique_ptr<flutter::FlutterMetalCompositor> macos_compositor =
       std::make_unique<FlutterMetalCompositor>(
-          MockGetViewCallback(), /*platform_view_controller*/ nullptr, /*mtl_device*/ nullptr);
+          MockViewProvider(), /*platform_view_controller*/ nullptr, /*mtl_device*/ nullptr);
 
   FlutterBackingStore backing_store;
   FlutterBackingStoreConfig config;

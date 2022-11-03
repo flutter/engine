@@ -7,8 +7,9 @@
 
 namespace flutter {
 
-FlutterCompositor::FlutterCompositor(ViewProvider get_view_callback) {
-  get_view_callback_ = std::move(get_view_callback);
+FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider)
+    : view_provider_(view_provider) {
+  FML_CHECK(view_provider != nullptr) << "FlutterViewProvider* cannot be nullptr";
 }
 
 void FlutterCompositor::SetPresentCallback(
@@ -33,8 +34,8 @@ bool FlutterCompositor::EndFrame(bool has_flutter_content) {
   return status;
 }
 
-FlutterView* FlutterCompositor::GetView(uint64_t surface_id) {
-  return get_view_callback_(surface_id);
+FlutterView* FlutterCompositor::GetView(uint64_t view_id) {
+  return [view_provider_ getView:view_id];
 }
 
 void FlutterCompositor::SetFrameStatus(FlutterCompositor::FrameStatus frame_status) {

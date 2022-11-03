@@ -11,16 +11,19 @@
 namespace flutter {
 
 FlutterMetalCompositor::FlutterMetalCompositor(
-    ViewProvider get_view_callback,
+    id<FlutterViewProvider> view_provider,
     FlutterPlatformViewController* platform_views_controller,
     id<MTLDevice> mtl_device)
-    : FlutterCompositor(get_view_callback),
+    : FlutterCompositor(view_provider),
       mtl_device_(mtl_device),
       platform_views_controller_(platform_views_controller) {}
 
 bool FlutterMetalCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                                 FlutterBackingStore* backing_store_out) {
-  FlutterView* view = GetView(config->surface_id);
+  // TODO(dkwingsmt): This class only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere.
+  FlutterView* view = GetView(kFlutterDefaultViewId);
   if (!view) {
     return false;
   }
@@ -77,10 +80,11 @@ bool FlutterMetalCompositor::CollectBackingStore(const FlutterBackingStore* back
   return true;
 }
 
-bool FlutterMetalCompositor::Present(uint64_t surface_id,
-                                     const FlutterLayer** layers,
-                                     size_t layers_count) {
-  FlutterView* view = GetView(surface_id);
+bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  // TODO(dkwingsmt): This class only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere.
+  FlutterView* view = GetView(kFlutterDefaultViewId);
   if (!view) {
     return false;
   }
@@ -113,7 +117,7 @@ bool FlutterMetalCompositor::Present(uint64_t surface_id,
   return EndFrame(has_flutter_content);
 }
 
-void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_super_view,
+void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_base_view,
                                                  const FlutterLayer* layer,
                                                  size_t layer_position) {
   // TODO (https://github.com/flutter/flutter/issues/96668)
@@ -130,7 +134,7 @@ void FlutterMetalCompositor::PresentPlatformView(FlutterView* default_super_view
   platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
                                    layer->size.width / scale, layer->size.height / scale);
   if (platform_view.superview == nil) {
-    [default_super_view addSubview:platform_view];
+    [default_base_view addSubview:platform_view];
   }
   platform_view.layer.zPosition = layer_position;
 }

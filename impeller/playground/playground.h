@@ -8,9 +8,11 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/texture.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
 
@@ -36,7 +38,9 @@ class Playground {
 
   static bool ShouldOpenNewPlaygrounds();
 
-  void SetupWindow(PlaygroundBackend backend);
+  void SetupContext(PlaygroundBackend backend);
+
+  void SetupWindow();
 
   void TeardownWindow();
 
@@ -79,6 +83,7 @@ class Playground {
   struct GLFWInitializer;
   std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
+  std::shared_ptr<Context> context_;
   std::unique_ptr<Renderer> renderer_;
   Point cursor_position_;
   ISize window_size_ = ISize{1024, 768};

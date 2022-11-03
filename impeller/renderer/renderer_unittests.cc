@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
 #include "impeller/fixtures/array.frag.h"
@@ -92,7 +91,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
     FS::FrameInfo frame_info;
-    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.current_time = GetSecondsElapsed();
     frame_info.cursor_position = GetCursorPosition();
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
@@ -165,18 +164,11 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   ASSERT_TRUE(sampler);
 
   Vector3 euler_angles;
-  bool first_frame = true;
   SinglePassCallback callback = [&](RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 80});
-      ImGui::SetNextWindowPos({20, 20});
-    }
-
     static Degrees fov_y(60);
     static Scalar distance = 10;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Field of view", &fov_y.degrees, 0, 180);
     ImGui::SliderFloat("Camera distance", &distance, 0, 30);
     ImGui::End();
@@ -188,7 +180,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     cmd.BindVertices(vertex_buffer);
 
     VS::UniformBuffer uniforms;
-    Scalar time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    Scalar time = GetSecondsElapsed();
     euler_angles = Vector3(0.19 * time, 0.7 * time, 0.43 * time);
 
     uniforms.mvp =
@@ -251,7 +243,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     cmd.BindVertices(vertex_buffer);
 
     FS::FrameInfo frame_info;
-    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.current_time = GetSecondsElapsed();
     frame_info.cursor_position = GetCursorPosition();
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
@@ -366,7 +358,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   cmd.BindVertices(vertex_buffer);
 
   FS::FrameInfo frame_info;
-  frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+  frame_info.current_time = GetSecondsElapsed();
   frame_info.cursor_position = GetCursorPosition();
   frame_info.window_size.x = GetWindowSize().width;
   frame_info.window_size.y = GetWindowSize().height;
@@ -397,18 +389,25 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   VertexBufferBuilder<VS::PerVertexData> builder;
 
-  ASSERT_EQ(
-      Tessellator::Result::kSuccess,
-      Tessellator{}.Tessellate(FillType::kPositive,
-                               PathBuilder{}
-                                   .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                                   .TakePath()
-                                   .CreatePolyline(),
-                               [&builder](Point vtx) {
-                                 VS::PerVertexData data;
-                                 data.vtx = vtx;
-                                 builder.AppendVertex(data);
-                               }));
+  ASSERT_EQ(Tessellator::Result::kSuccess,
+            Tessellator{}.Tessellate(
+                FillType::kPositive,
+                PathBuilder{}
+                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
+                    .TakePath()
+                    .CreatePolyline(),
+                [&builder](const float* vertices, size_t vertices_size,
+                           const uint16_t* indices, size_t indices_size) {
+                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    VS::PerVertexData data;
+                    data.vtx = {vertices[i], vertices[i + 1]};
+                    builder.AppendVertex(data);
+                  }
+                  for (auto i = 0u; i < indices_size; i++) {
+                    builder.AppendIndex(indices[i]);
+                  }
+                  return true;
+                }));
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -425,11 +424,9 @@ TEST_P(RendererTest, CanRenderInstanced) {
   cmd.label = "InstancedDraw";
 
   static constexpr size_t kInstancesCount = 5u;
-  std::vector<VS::InstanceInfo> instances;
+  VS::InstanceInfo<kInstancesCount> instances;
   for (size_t i = 0; i < kInstancesCount; i++) {
-    VS::InstanceInfo info;
-    info.colors = Color::Random();
-    instances.emplace_back(info);
+    instances.colors[i] = Color::Random();
   }
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
@@ -593,10 +590,6 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    if (first_frame) {
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
     const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
                                      MipFilter::kLinear};
@@ -728,7 +721,7 @@ TEST_P(RendererTest, TheImpeller) {
 
     FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
-    fs_uniform.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    fs_uniform.time = GetSecondsElapsed();
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
@@ -774,7 +767,7 @@ TEST_P(RendererTest, ArrayUniforms) {
     VS::BindVertInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
 
-    auto time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    auto time = GetSecondsElapsed();
     auto y_pos = [&time](float x) {
       return 400 + 10 * std::cos(time * 5 + x / 6);
     };
@@ -876,6 +869,37 @@ TEST_P(RendererTest, CanCreateCPUBackedTexture) {
 
     dimension *= 2;
   } while (dimension <= 8192);
+}
+
+TEST_P(RendererTest, DefaultIndexSize) {
+  using VS = BoxFadeVertexShader;
+
+  // Default to 16bit index buffer size, as this is a reasonable default and
+  // supported on all backends without extensions.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  ASSERT_EQ(vertex_builder.GetIndexType(), IndexType::k16bit);
+}
+
+TEST_P(RendererTest, VertexBufferBuilder) {
+  // Does not create index buffer if one is provided.
+  using VS = BoxFadeVertexShader;
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  vertex_builder.AppendIndex(0);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(1);
+  vertex_builder.AppendIndex(2);
+  vertex_builder.AppendIndex(3);
+
+  ASSERT_EQ(vertex_builder.GetIndexCount(), 6u);
+  ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
 }
 
 }  // namespace testing

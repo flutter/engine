@@ -19,13 +19,16 @@
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(ViewProvider get_view_callback,
+FlutterGLCompositor::FlutterGLCompositor(id<FlutterViewProvider> view_provider,
                                          NSOpenGLContext* opengl_context)
-    : FlutterCompositor(get_view_callback), open_gl_context_(opengl_context) {}
+    : FlutterCompositor(view_provider), open_gl_context_(opengl_context) {}
 
 bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                              FlutterBackingStore* backing_store_out) {
-  FlutterView* view = GetView(config->surface_id);
+  // TODO(dkwingsmt): This class only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere.
+  FlutterView* view = GetView(kFlutterDefaultViewId);
   if (!view) {
     return false;
   }
@@ -74,12 +77,11 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
   return true;
 }
 
-bool FlutterGLCompositor::Present(uint64_t surface_id,
-                                  const FlutterLayer** layers,
-                                  size_t layers_count) {
-  // Always gets the first view, #0. After Flutter supports multi-view, it
-  // should get the view ID from somewhere.
-  FlutterView* view = GetView(0);
+bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  // TODO(dkwingsmt): This class only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere.
+  FlutterView* view = GetView(kFlutterDefaultViewId);
   if (!view) {
     return false;
   }

@@ -101,6 +101,67 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
+TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
+  EXPECT_TRUE(engine.running);
+
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+
+  // Latch to ensure the entire layer tree has been generated and presented.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      CALayer* rootLayer = engine.viewController.flutterView.layer;
+                      EXPECT_TRUE(rootLayer.backgroundColor != nil);
+                      if (rootLayer.backgroundColor != nil) {
+                        NSColor* actualBackgroundColor =
+                            [NSColor colorWithCGColor:rootLayer.backgroundColor];
+                        EXPECT_EQ(actualBackgroundColor, [NSColor blackColor]);
+                      }
+                      latch.Signal();
+                    }));
+  latch.Wait();
+}
+
+TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
+  EXPECT_TRUE(engine.running);
+
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+  viewController.flutterView.backgroundColor = [NSColor whiteColor];
+
+  // Latch to ensure the entire layer tree has been generated and presented.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      CALayer* rootLayer = engine.viewController.flutterView.layer;
+                      EXPECT_TRUE(rootLayer.backgroundColor != nil);
+                      if (rootLayer.backgroundColor != nil) {
+                        NSColor* actualBackgroundColor =
+                            [NSColor colorWithCGColor:rootLayer.backgroundColor];
+                        EXPECT_EQ(actualBackgroundColor, [NSColor whiteColor]);
+                      }
+                      latch.Signal();
+                    }));
+  latch.Wait();
+}
+
 TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
@@ -145,6 +206,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -162,6 +224,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   update_node_callback(&child1, (void*)CFBridgingRetain(engine));
@@ -238,6 +301,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -255,6 +319,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   update_node_callback(&child1, (void*)CFBridgingRetain(engine));
@@ -327,6 +392,7 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -344,6 +410,7 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   update_node_callback(&child1, (void*)CFBridgingRetain(engine));

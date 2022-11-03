@@ -66,11 +66,11 @@ class EmbedderTestCompositor {
 
   size_t GetBackingStoresCollectedCount() const;
 
-  void AddOnCreateRenderTargetCallback(fml::closure callback);
+  void AddOnCreateRenderTargetCallback(const fml::closure& callback);
 
-  void AddOnCollectRenderTargetCallback(fml::closure callback);
+  void AddOnCollectRenderTargetCallback(const fml::closure& callback);
 
-  void AddOnPresentCallback(fml::closure callback);
+  void AddOnPresentCallback(const fml::closure& callback);
 
   sk_sp<GrDirectContext> GetGrContext();
 
