@@ -177,7 +177,7 @@ static BOOL _preparedOnce = NO;
 
 @interface ChildClippingView ()
 
-@property(retain, nonatomic) NSMutableArray<PlatformViewFilter*>* filters;
+@property(retain, nonatomic) NSArray<PlatformViewFilter*>* filters;
 @property(retain, nonatomic) NSMutableArray<UIVisualEffectView*>* backdropFilterSubviews;
 
 @end
@@ -196,7 +196,7 @@ static BOOL _preparedOnce = NO;
   return NO;
 }
 
-- (void)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters {
+- (void)applyBlurBackdropFilters:(NSArray<PlatformViewFilter*>*)filters {
   FML_DCHECK(self.filters.count == self.backdropFilterSubviews.count);
   if (self.filters.count == 0 && filters.count == 0) {
     return;
