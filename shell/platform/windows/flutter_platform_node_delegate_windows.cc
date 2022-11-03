@@ -14,7 +14,7 @@
 namespace flutter {
 
 FlutterPlatformNodeDelegateWindows::FlutterPlatformNodeDelegateWindows(
-    std::weak_ptr<AccessibilityBridgeWindows> bridge,
+    std::weak_ptr<AccessibilityBridge> bridge,
     FlutterWindowsView* view)
     : bridge_(bridge), view_(view) {
   assert(!bridge_.expired());
@@ -56,7 +56,7 @@ gfx::NativeViewAccessible FlutterPlatformNodeDelegateWindows::HitTestSync(
   }
 
   // If any child in this node's subtree contains the point, return that child.
-  auto bridge = bridge_().lock();
+  auto bridge = bridge_.lock();
   assert(bridge);
   for (const ui::AXNode* child : GetAXNode()->children()) {
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =

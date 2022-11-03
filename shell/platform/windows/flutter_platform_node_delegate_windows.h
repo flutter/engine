@@ -12,8 +12,6 @@
 
 namespace flutter {
 
-class AccessibilityBridgeWindows;
-
 // The Windows implementation of FlutterPlatformNodeDelegate.
 //
 // This class implements a wrapper around the Windows accessibility objects
@@ -21,7 +19,7 @@ class AccessibilityBridgeWindows;
 class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
  public:
   FlutterPlatformNodeDelegateWindows(
-      std::weak_ptr<AccessibilityBridgeWindows> bridge,
+      std::weak_ptr<AccessibilityBridge> bridge,
       FlutterWindowsView* view);
   virtual ~FlutterPlatformNodeDelegateWindows();
 
@@ -53,7 +51,7 @@ class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
 
  private:
   ui::AXPlatformNode* ax_platform_node_;
-  std::weak_ptr<AccessibilityBridgeWindows> bridge;
+  std::weak_ptr<AccessibilityBridge> bridge_;
   FlutterWindowsView* view_;
 };
 
