@@ -4,8 +4,6 @@
 
 #include "impeller/compiler/spirv_sksl.h"
 
-#include <algorithm>
-
 using namespace spv;
 using namespace SPIRV_CROSS_NAMESPACE;
 
