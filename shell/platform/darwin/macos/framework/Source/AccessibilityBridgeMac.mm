@@ -24,7 +24,8 @@ AccessibilityBridgeMac::AccessibilityBridgeMac(__weak FlutterEngine* flutter_eng
                                                __weak FlutterViewController* view_controller)
     : flutter_engine_(flutter_engine), view_controller_(view_controller) {}
 
-void AccessibilityBridgeMac::UpdateDefaultViewController(__weak FlutterViewController* view_controller) {
+void AccessibilityBridgeMac::UpdateDefaultViewController(
+    __weak FlutterViewController* view_controller) {
   view_controller_ = view_controller;
   RecreateNodeDelegates();
 }
