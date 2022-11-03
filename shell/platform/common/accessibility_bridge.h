@@ -31,7 +31,7 @@ namespace flutter {
 /// FlutterPlatformNodeDelegate to wrap each AXNode in order to provide
 /// an accessibility tree in the native format.
 ///
-/// To use this class, you must implement this class and provide your own
+/// To use this class, one must subclass this class and provide their own
 /// implementation of FlutterPlatformNodeDelegate.
 ///
 /// AccessibilityBridge must be created as a shared_ptr, since some methods
@@ -109,9 +109,9 @@ class AccessibilityBridge
  protected:
   //---------------------------------------------------------------------------
   /// @brief      Handle accessibility events generated due to accessibility
-  ///             tree changes. These events are generated in accessibility
-  ///             bridge and needed to be sent to native accessibility system.
-  ///             See ui::AXEventGenerator::Event for possible events.
+  ///             tree changes. These events are needed to be sent to native
+  ///             accessibility system.  See ui::AXEventGenerator::Event for
+  ///             possible events.
   ///
   /// @param[in]  targeted_event      The object that contains both the
   ///                                 generated event and the event target.

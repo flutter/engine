@@ -159,7 +159,7 @@ ui::AXNode* AXNodeFromID(std::shared_ptr<AccessibilityBridge> bridge,
   return node_delegate ? node_delegate->GetAXNode() : nullptr;
 }
 
-std::shared_ptr<AccessibilityBridgeWindowsSpy> getAccessibilityBridgeSpy(
+std::shared_ptr<AccessibilityBridgeWindowsSpy> GetAccessibilityBridgeSpy(
     FlutterWindowsEngine* engine) {
   FlutterWindowsEngineSpy* engine_spy =
       reinterpret_cast<FlutterWindowsEngineSpy*>(engine);
@@ -176,7 +176,7 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = getAccessibilityBridgeSpy(view.GetEngine());
+  auto bridge = GetAccessibilityBridgeSpy(view.GetEngine());
   PopulateAXTree(bridge);
 
   bridge->ResetRecords();
@@ -261,7 +261,7 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
   view.SetEngine(GetTestEngine());
   view.OnUpdateSemanticsEnabled(true);
 
-  auto bridge = getAccessibilityBridgeSpy(view.GetEngine());
+  auto bridge = GetAccessibilityBridgeSpy(view.GetEngine());
   PopulateAXTree(bridge);
 
   bridge->ResetRecords();
