@@ -133,7 +133,6 @@ AccessibilityBridge::GetPendingEvents() const {
 }
 
 void AccessibilityBridge::Reset() {
-  // delegate_ = std::move(delegate);
   // Recreate FlutterPlatformNodeDelegates since they may contain stale state
   // from the previous AccessibilityBridgeDelegate.
   for (const auto& [node_id, old_platform_node_delegate] : id_wrapper_map_) {

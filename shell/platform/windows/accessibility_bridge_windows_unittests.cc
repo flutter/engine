@@ -50,7 +50,7 @@ class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
     focused_nodes_.push_back(node_delegate->GetAXNode()->id());
   }
 
-  void Reset() {
+  void ResetRecords() {
     dispatched_events_.clear();
     focused_nodes_.clear();
   }
@@ -174,7 +174,7 @@ void ExpectWinEventFromAXEvent(int32_t node_id,
   auto bridge = getAccessibilityBridgeSpy(view.GetEngine());
   PopulateAXTree(bridge);
 
-  bridge->Reset();
+  bridge->ResetRecords();
   bridge->OnAccessibilityEvent({AXNodeFromID(bridge, node_id),
                                 {ax_event, ax::mojom::EventFrom::kNone, {}}});
   ASSERT_EQ(bridge->dispatched_events().size(), 1);
@@ -259,7 +259,7 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
   auto bridge = getAccessibilityBridgeSpy(view.GetEngine());
   PopulateAXTree(bridge);
 
-  bridge->Reset();
+  bridge->ResetRecords();
   bridge->OnAccessibilityEvent({AXNodeFromID(bridge, 1),
                                 {ui::AXEventGenerator::Event::FOCUS_CHANGED,
                                  ax::mojom::EventFrom::kNone,

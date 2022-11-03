@@ -57,9 +57,9 @@ class AccessibilityBridge
   //---------------------------------------------------------------------------
   /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
   ///             Ownership passes to the caller. This method will be called
-  ///             by accessibility bridge whenever a new AXNode is created in
-  ///             AXTree. Each platform needs to implement this method in
-  ///             order to inject its subclass into the accessibility bridge.
+  ///             whenever a new AXNode is created in AXTree. Each platform
+  ///             needs to implement this method in order to inject its
+  ///             subclass into the accessibility bridge.
   virtual std::shared_ptr<FlutterPlatformNodeDelegate>
   CreateFlutterPlatformNodeDelegate() = 0;
 
