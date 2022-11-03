@@ -698,7 +698,7 @@ TEST_P(DisplayListTest, CanDrawShadow) {
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}  // namespace testing
+}
 
 // Draw a hexagon using triangle fan
 TEST_P(DisplayListTest, CanConvertTriangleFanToTriangles) {
