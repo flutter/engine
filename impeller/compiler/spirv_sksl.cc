@@ -195,14 +195,22 @@ void CompilerSkSL::detect_unsupported_resources() {
     }
   }
 
-  // Push constant blocks are not supported.
   for (auto& id : ir.ids) {
     if (id.get_type() == TypeVariable) {
       auto& var = id.get<SPIRVariable>();
       auto& type = get<SPIRType>(var.basetype);
+
+      // Push constant blocks are not supported.
       if (!is_hidden_variable(var) && var.storage != StorageClassFunction &&
           type.pointer && type.storage == StorageClassPushConstant) {
         FLUTTER_CROSS_THROW("SkSL does not support push constant blocks: '" +
+                            get_name(var.self) + "'");
+      }
+
+      // User specified inputs are not supported.
+      if (!is_hidden_variable(var) && var.storage != StorageClassFunction &&
+          type.pointer && type.storage == StorageClassInput) {
+        FLUTTER_CROSS_THROW("SkSL does not support inputs: '" +
                             get_name(var.self) + "'");
       }
     }
