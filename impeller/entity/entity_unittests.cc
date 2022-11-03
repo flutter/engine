@@ -2105,6 +2105,11 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
 }
 
 TEST_P(EntityTest, YUVToRGBFilter) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    // TODO(114588) : Support YUV to RGB filter on OpenGLES backend.
+    GTEST_SKIP_("YUV to RGB filter is not supported on OpenGLES backend yet.");
+  }
+
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     YUVColorSpace yuv_color_space_array[2]{YUVColorSpace::kBT601FullRange,
                                            YUVColorSpace::kBT601LimitedRange};
