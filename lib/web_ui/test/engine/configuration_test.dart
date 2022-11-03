@@ -34,7 +34,7 @@ void testMain() {
     });
   });
 
-  group('setRuntimeConfiguration', () {
+  group('setUserConfiguration', () {
     test('throws assertion error if already initialized from JS', () async {
       final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(
         js_util.jsify(<String, Object?>{
@@ -42,7 +42,7 @@ void testMain() {
         }) as JsFlutterConfiguration);
 
       expect(() {
-        config.setRuntimeConfiguration(
+        config.setUserConfiguration(
           js_util.jsify(<String, Object?>{
             'canvasKitMaximumSurfaces': 16,
           }) as JsFlutterConfiguration);
@@ -52,7 +52,7 @@ void testMain() {
     test('stores config if JS configuration was null', () async {
       final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(null);
 
-      config.setRuntimeConfiguration(
+      config.setUserConfiguration(
         js_util.jsify(<String, Object?>{
           'canvasKitMaximumSurfaces': 16,
         }) as JsFlutterConfiguration);

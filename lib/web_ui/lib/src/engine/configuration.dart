@@ -103,7 +103,7 @@ class FlutterConfiguration {
   /// This method throws an AssertionError, if the _configuration object has
   /// been set to anything non-null through the [FlutterConfiguration.fromJsGlobals]
   /// constructor.
-  void setRuntimeConfiguration(JsFlutterConfiguration? configuration) {
+  void setUserConfiguration(JsFlutterConfiguration? configuration) {
     if (configuration != null) {
       assert(!_createdFromJsGlobals, 'Do not mix-and-match configuration styles. '
         'Use engineInitializer.initializeEngine(config) instead of '

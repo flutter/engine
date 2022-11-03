@@ -13,9 +13,9 @@ void main() {
 
 void testMain() {
   group('initializeEngineServices', () {
-    test('stores runtimeConfiguration', () async {
+    test('stores user configuration', () async {
       await initializeEngineServices(
-        runtimeConfiguration: js_util.jsify(<String, Object?>{
+        jsConfiguration: js_util.jsify(<String, Object?>{
           'canvasKitMaximumSurfaces': 32,
         }) as JsFlutterConfiguration);
 

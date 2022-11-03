@@ -66,8 +66,8 @@ Future<void> webOnlyWarmupEngine({
 }) async {
   // Create the object that knows how to bootstrap an app from JS and Dart.
   final engine.AppBootstrap bootstrap = engine.AppBootstrap(
-    initEngine: ([engine.JsFlutterConfiguration? runtimeConfig]) async {
-      await engine.initializeEngineServices(runtimeConfiguration: runtimeConfig);
+    initializeEngine: ([engine.JsFlutterConfiguration? configuration]) async {
+      await engine.initializeEngineServices(jsConfiguration: configuration);
     }, runApp: () async {
       if (registerPlugins != null) {
         registerPlugins();

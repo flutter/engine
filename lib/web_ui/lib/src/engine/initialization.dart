@@ -69,11 +69,8 @@ void debugEmulateHotRestart() {
 /// Fully initializes the engine, including services and UI.
 Future<void> initializeEngine({
   AssetManager? assetManager,
-  JsFlutterConfiguration? runtimeConfiguration,
 }) async {
-  await initializeEngineServices(
-    assetManager: assetManager,
-    runtimeConfiguration: runtimeConfiguration);
+  await initializeEngineServices(assetManager: assetManager);
   await initializeEngineUi();
 }
 
@@ -130,7 +127,7 @@ void debugResetEngineInitializationState() {
 ///    puts UI elements on the page.
 Future<void> initializeEngineServices({
   AssetManager? assetManager,
-  JsFlutterConfiguration? runtimeConfiguration
+  JsFlutterConfiguration? jsConfiguration
 }) async {
   if (_initializationState != DebugEngineInitializationState.uninitialized) {
     assert(() {
@@ -144,9 +141,8 @@ Future<void> initializeEngineServices({
   }
   _initializationState = DebugEngineInitializationState.initializingServices;
 
-  // Store the `runtimeConfiguration` so the overrides are ready when needed by
-  // the code below...
-  configuration.setRuntimeConfiguration(runtimeConfiguration);
+  // Store `jsConfiguration` so user settings are available to the engine.
+  configuration.setUserConfiguration(jsConfiguration);
 
   // Setup the hook that allows users to customize URL strategy before running
   // the app.

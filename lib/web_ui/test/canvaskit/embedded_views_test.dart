@@ -806,7 +806,7 @@ void testMain() {
     test('works correctly with max overlays == 2', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       final FlutterConfiguration config = FlutterConfiguration()
-        ..setRuntimeConfiguration(
+        ..setUserConfiguration(
           js_util.jsify(<String, Object?>{
             'canvasKitMaximumSurfaces': 2,
           }) as JsFlutterConfiguration);
