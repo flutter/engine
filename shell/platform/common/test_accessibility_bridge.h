@@ -11,13 +11,13 @@ namespace flutter {
 
 class TestAccessibilityBridge : public AccessibilityBridge {
  public:
+  using AccessibilityBridge::RecreateNodeDelegates;
+
   TestAccessibilityBridge() = default;
 
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
                                    fml::MallocMapping data) override;
-
-  using AccessibilityBridge::RecreateNodeDelegates;
 
   std::vector<ui::AXEventGenerator::Event> accessibility_events;
   std::vector<FlutterSemanticsAction> performed_actions;

@@ -14,6 +14,8 @@ namespace {
 
 class AccessibilityBridgeMacSpy : public AccessibilityBridgeMac {
  public:
+  using AccessibilityBridgeMac::OnAccessibilityEvent;
+
   AccessibilityBridgeMacSpy(__weak FlutterEngine* flutter_engine,
                             __weak FlutterViewController* view_controller)
       : AccessibilityBridgeMac(flutter_engine, view_controller) {}

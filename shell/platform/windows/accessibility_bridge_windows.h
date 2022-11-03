@@ -16,6 +16,11 @@ class FlutterWindowsEngine;
 class FlutterPlatformNodeDelegateWindows;
 
 // The Win32 implementation of AccessibilityBridge.
+//
+// This interacts with Windows accessibility APIs, which includes routing
+// accessibility events fired from the framework to Windows, routing native
+// Windows accessibility events to the framework, and creating Windows-specific
+// FlutterPlatformNodeDelegate objects for each node in the semantics tree.
 class AccessibilityBridgeWindows : public AccessibilityBridge {
  public:
   AccessibilityBridgeWindows(FlutterWindowsEngine* engine,

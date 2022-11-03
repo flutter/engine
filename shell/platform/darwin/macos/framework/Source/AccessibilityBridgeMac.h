@@ -16,6 +16,11 @@ namespace flutter {
 
 //------------------------------------------------------------------------------
 /// The macOS implementation of AccessibilityBridge.
+///
+/// This interacts with macOS accessibility APIs, which includes routing
+/// accessibility events fired from the framework to macOS, routing native
+/// macOS accessibility events to the framework, and creating macOS-specific
+/// FlutterPlatformNodeDelegate objects for each node in the semantics tree.
 class AccessibilityBridgeMac : public AccessibilityBridge {
  public:
   //---------------------------------------------------------------------------

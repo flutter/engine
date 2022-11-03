@@ -35,6 +35,8 @@ struct MsaaEvent {
 // Accessibility bridge delegate that captures events dispatched to the OS.
 class AccessibilityBridgeWindowsSpy : public AccessibilityBridgeWindows {
  public:
+  using AccessibilityBridgeWindows::OnAccessibilityEvent;
+
   explicit AccessibilityBridgeWindowsSpy(FlutterWindowsEngine* engine,
                                          FlutterWindowsView* view)
       : AccessibilityBridgeWindows(engine, view) {}
