@@ -35,26 +35,15 @@ void expectInstances(dynamic value, dynamic expected) {
   }
 }
 
-final String basePath =
-    path.canonicalize(path.join(path.dirname(Platform.script.toFilePath()), '..'));
-final String fixtures = path.join(basePath, 'test', 'fixtures');
-final String box = path.join(fixtures, 'lib', 'box.dart');
-final String consts = path.join(fixtures, 'lib', 'consts.dart');
-final String packageConfig = path.join(fixtures, '.dart_tool', 'package_config.json');
-final String constsAndNon = path.join(fixtures, 'lib', 'consts_and_non.dart');
-final String boxDill = path.join(fixtures, 'box.dill');
-final String constsDill = path.join(fixtures, 'consts.dill');
-final String constsAndNonDill = path.join(fixtures, 'consts_and_non.dill');
-
 // This test is assuming the `dart` used to invoke the tests is compatible
 // with the version of package:kernel in //third-party/dart/pkg/kernel
 final String dart = Platform.resolvedExecutable;
 final String bat = Platform.isWindows ? '.bat' : '';
 
-void _checkRecursion() {
+void _checkRecursion(String dillPath) {
   stdout.writeln('Checking recursive calls.');
   final ConstFinder finder = ConstFinder(
-    kernelFilePath: boxDill,
+    kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/box.dart',
     className: 'Box',
   );
@@ -62,10 +51,10 @@ void _checkRecursion() {
   jsonEncode(finder.findInstances());
 }
 
-void _checkConsts() {
+void _checkConsts(String dillPath) {
   stdout.writeln('Checking for expected constants.');
   final ConstFinder finder = ConstFinder(
-    kernelFilePath: constsDill,
+    kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
   );
@@ -99,7 +88,7 @@ void _checkConsts() {
   );
 
   final ConstFinder finder2 = ConstFinder(
-    kernelFilePath: constsDill,
+    kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'MixedInTarget',
   );
@@ -114,10 +103,10 @@ void _checkConsts() {
   );
 }
 
-void _checkNonConsts() {
+void _checkNonConsts(String dillPath) {
   stdout.writeln('Checking for non-constant instances.');
   final ConstFinder finder = ConstFinder(
-    kernelFilePath: constsAndNonDill,
+    kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
   );
@@ -168,68 +157,168 @@ void _checkNonConsts() {
   );
 }
 
+void checkProcessResult(ProcessResult result) {
+  if (result.exitCode != 0) {
+    stdout.writeln(result.stdout);
+    stderr.writeln(result.stderr);
+  }
+  expect(result.exitCode, 0);
+}
+
 Future<void> main(List<String> args) async {
-  if (args.length != 2) {
-    stderr.writeln('The first argument must be the path to the forntend server dill.');
+  if (args.length != 3) {
+    stderr.writeln('The first argument must be the path to the frontend server dill.');
     stderr.writeln('The second argument must be the path to the flutter_patched_sdk');
+    stderr.writeln('The third argument must be the path to libraries.json');
     exit(-1);
   }
-  final String frontendServer = args[0];
-  final String sdkRoot = args[1];
-  try {
-    void checkProcessResult(ProcessResult result) {
-      if (result.exitCode != 0) {
-        stdout.writeln(result.stdout);
-        stderr.writeln(result.stderr);
-      }
-      expect(result.exitCode, 0);
-    }
 
-    stdout.writeln('Generating kernel fixtures...');
-    stdout.writeln(consts);
+  TestRunner(
+    frontendServer: args[0],
+    sdkRoot: args[1],
+    librariesSpec: args[2],
+  ).test();
+}
 
-    checkProcessResult(Process.runSync(dart, <String>[
-      frontendServer,
-      '--sdk-root=$sdkRoot',
-      '--target=flutter',
-      '--aot',
-      '--tfa',
-      '--packages=$packageConfig',
-      '--output-dill=$boxDill',
-      box,
-    ]));
+final String basePath =
+    path.canonicalize(path.join(path.dirname(Platform.script.toFilePath()), '..'));
+final String fixtures = path.join(basePath, 'test', 'fixtures');
+final String packageConfig = path.join(fixtures, '.dart_tool', 'package_config.json');
 
-    checkProcessResult(Process.runSync(dart, <String>[
-      frontendServer,
-      '--sdk-root=$sdkRoot',
-      '--target=flutter',
-      '--aot',
-      '--tfa',
-      '--packages=$packageConfig',
-      '--output-dill=$constsDill',
-      consts,
-    ]));
+class TestRunner {
+  TestRunner({
+    required this.frontendServer,
+    required this.sdkRoot,
+    required this.librariesSpec,
+  });
 
-    checkProcessResult(Process.runSync(dart, <String>[
-      frontendServer,
-      '--sdk-root=$sdkRoot',
-      '--target=flutter',
-      '--aot',
-      '--tfa',
-      '--packages=$packageConfig',
-      '--output-dill=$constsAndNonDill',
-      constsAndNon,
-    ]));
+  //static final String box = path.join(fixtures, 'lib', 'box.dart');
+  //static final String consts = path.join(fixtures, 'lib', 'consts.dart');
+  //static final String constsAndNon = path.join(fixtures, 'lib', 'consts_and_non.dart');
 
-    _checkRecursion();
-    _checkConsts();
-    _checkNonConsts();
-  } finally {
+  final String frontendServer;
+  final String sdkRoot;
+  final String librariesSpec;
+
+  void test() {
+    final List<_Test> tests = <_Test>[
+      _Test(
+        name: 'box',
+        dartSource: path.join(fixtures, 'lib', 'box.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkRecursion,
+      ),
+      _Test(
+        name: 'consts',
+        dartSource: path.join(fixtures, 'lib', 'consts.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkConsts,
+      ),
+      _Test(
+        name: 'consts_and_non',
+        dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkNonConsts,
+      ),
+    ];
     try {
-      File(constsDill).deleteSync();
-      File(constsAndNonDill).deleteSync();
+      stdout.writeln('Generating kernel fixtures...');
+
+      for (final _Test test in tests) {
+        test.run();
+      }
     } finally {
-      stdout.writeln('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
+      try {
+        for (final _Test test in tests) {
+          test.dispose();
+        }
+      } finally {
+        stdout.writeln('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
+      }
     }
   }
+
+}
+
+class _Test {
+  _Test({
+    required this.name,
+    required this.dartSource,
+    required this.sdkRoot,
+    required this.verify,
+    required this.frontendServer,
+    required this.librariesSpec,
+  });
+
+  final String name;
+  final String dartSource;
+  final String sdkRoot;
+  final String frontendServer;
+  final String librariesSpec;
+  void Function(String dillPath) verify;
+
+  final List<String> resourcesToDispose = <String>[];
+
+  void run() {
+    final String tfaDill = path.join(fixtures, '$name-tfa.dill');
+    stdout.writeln('Compiling $dartSource to $tfaDill');
+    _compileTFADill(tfaDill);
+    stdout.writeln('Testing $tfaDill');
+    verify(tfaDill);
+
+    final String webDill = path.join(fixtures, '$name-web.dill');
+    stdout.writeln('Compiling $dartSource to $webDill');
+    _compileWebDill(webDill, dartSource);
+    verify(webDill);
+    stdout.writeln('Testing $webDill');
+  }
+
+  void dispose() {
+    for (final String resource in resourcesToDispose) {
+      stdout.writeln('Deleting $resource');
+      File(resource).deleteSync();
+    }
+  }
+
+  void _compileTFADill(String dillPath) {
+    checkProcessResult(Process.runSync(dart, <String>[
+      frontendServer,
+      '--sdk-root=$sdkRoot',
+      '--target=flutter',
+      '--aot',
+      '--tfa',
+      '--packages=$packageConfig',
+      '--output-dill=$dillPath',
+      dartSource,
+    ]));
+
+    resourcesToDispose.add(dillPath);
+  }
+
+  void _compileWebDill(String dillPath, String dartSource) {
+    checkProcessResult(Process.runSync(dart, <String>[
+      'compile',
+      'js',
+      '--libraries-spec=$librariesSpec',
+      '-Ddart.vm.product=true',
+      '-o',
+      dillPath,
+      '--packages=$packageConfig',
+      '--cfe-only',
+      dartSource,
+    ]));
+
+    resourcesToDispose.add(dillPath);
+  }
+}
+
+enum Compiler {
+  frontendServer,
+  dart2js,
 }

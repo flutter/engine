@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:collection';
-import 'dart:io' as io;
 
 import 'package:kernel/kernel.dart';
 
@@ -113,10 +112,6 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   }
 }
 
-void _printStackTrace(Node node) {
-  io.stderr.writeln(StackTrace.current);
-}
-
 /// For debugging.
 Library? lastLibrary;
 
@@ -150,7 +145,7 @@ class ConstFinder {
     return <String, dynamic>{
       'constantInstances': _visitor.constantInstances,
       'nonConstantLocations': _visitor.nonConstantLocations,
-      'skippedConstantInstances': _visitor.skippedConstantInstances,
+      //'skippedConstantInstances': _visitor.skippedConstantInstances,
     };
   }
 }
