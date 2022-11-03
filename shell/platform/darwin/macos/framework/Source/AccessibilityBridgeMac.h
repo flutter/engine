@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITYBRIDGEMACDELEGATE_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITYBRIDGEMACDELEGATE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_MAC_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_MAC_H_
 
 #import <Cocoa/Cocoa.h>
 
@@ -15,8 +15,7 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// The macOS implementation of AccessibilityBridge::AccessibilityBridgeDelegate.
-/// This delegate is used to create AccessibilityBridge in the macOS embedding.
+/// The macOS implementation of AccessibilityBridge.
 class AccessibilityBridgeMac : public AccessibilityBridge {
  public:
   //---------------------------------------------------------------------------
@@ -86,4 +85,4 @@ class AccessibilityBridgeMac : public AccessibilityBridge {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITYBRIDGEMACDELEGATE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_MAC_H_

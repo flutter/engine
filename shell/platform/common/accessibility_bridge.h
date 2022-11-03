@@ -31,12 +31,8 @@ namespace flutter {
 /// FlutterPlatformNodeDelegate to wrap each AXNode in order to provide
 /// an accessibility tree in the native format.
 ///
-/// This class takes in a AccessibilityBridgeDelegate instance and is in charge
-/// of its lifecycle. The delegate are used to handle the accessibility events
-/// and actions.
-///
-/// To use this class, you must provide your own implementation of
-/// FlutterPlatformNodeDelegate and AccessibilityBridgeDelegate.
+/// To use this class, you must implement this class and provide your own
+/// implementation of FlutterPlatformNodeDelegate.
 class AccessibilityBridge
     : public std::enable_shared_from_this<AccessibilityBridge>,
       public FlutterPlatformNodeDelegate::OwnerBridge,
@@ -44,10 +40,6 @@ class AccessibilityBridge
  public:
   //-----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a accessibility bridge.
-  ///
-  /// @param[in]  user_data           A custom pointer to the data of your
-  ///                                 choice. This pointer can be retrieve later
-  ///                                 through GetUserData().
   AccessibilityBridge();
   virtual ~AccessibilityBridge();
 
