@@ -55,7 +55,7 @@ static int ToTessWindingRule(FillType fill_type) {
 Tessellator::Result Tessellator::Tessellate(
     FillType fill_type,
     const Path::Polyline& polyline,
-    const VertexCallback& callback) const {
+    const BuilderCallback& callback) const {
   if (!callback) {
     return Result::kInputError;
   }
@@ -105,26 +105,20 @@ Tessellator::Result Tessellator::Tessellate(
     return Result::kTessellationError;
   }
 
-  // TODO(csg): This copy can be elided entirely for the current use case.
-  std::vector<Point> points;
-  std::vector<uint32_t> indices;
-
   int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
   auto vertices = tessGetVertices(tessellator);
-  for (int i = 0; i < vertexItemCount; i += 2) {
-    points.emplace_back(vertices[i], vertices[i + 1]);
-  }
-
   int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
   auto elements = tessGetElements(tessellator);
+  // libtess uses an int index internally due to usage of -1 as a sentinel
+  // value.
+  std::vector<uint16_t> indices(elementItemCount);
   for (int i = 0; i < elementItemCount; i++) {
-    indices.emplace_back(elements[i]);
+    indices[i] = static_cast<uint16_t>(elements[i]);
+  }
+  if (!callback(vertices, vertexItemCount, indices.data(), elementItemCount)) {
+    return Result::kInputError;
   }
 
-  for (auto index : indices) {
-    auto vtx = points[index];
-    callback(vtx);
-  }
   return Result::kSuccess;
 }
 

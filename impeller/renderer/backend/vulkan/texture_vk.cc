@@ -46,9 +46,13 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
 
   // currently we are only supporting 2d textures, no cube textures etc.
   auto mapping = texture_info_->allocated_texture.allocation_info.pMappedData;
-  memcpy(mapping, contents, length);
 
-  return true;
+  if (mapping) {
+    memcpy(mapping, contents, length);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
@@ -81,12 +85,23 @@ bool TextureVK::IsWrapped() const {
   return texture_info_->backing_type == TextureBackingTypeVK::kWrappedTexture;
 }
 
+vk::ImageView TextureVK::GetImageView() const {
+  switch (texture_info_->backing_type) {
+    case TextureBackingTypeVK::kUnknownType:
+      return nullptr;
+    case TextureBackingTypeVK::kAllocatedTexture:
+      return vk::ImageView{texture_info_->allocated_texture.image_view};
+    case TextureBackingTypeVK::kWrappedTexture:
+      return texture_info_->wrapped_texture.swapchain_image->GetImageView();
+  }
+}
+
 vk::Image TextureVK::GetImage() const {
   switch (texture_info_->backing_type) {
     case TextureBackingTypeVK::kUnknownType:
       FML_CHECK(false) << "Unknown texture backing type";
     case TextureBackingTypeVK::kAllocatedTexture:
-      return texture_info_->allocated_texture.image;
+      return vk::Image{texture_info_->allocated_texture.image};
     case TextureBackingTypeVK::kWrappedTexture:
       return texture_info_->wrapped_texture.swapchain_image->GetImage();
   }

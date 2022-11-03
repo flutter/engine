@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <optional>
+#include <utility>
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -32,11 +33,11 @@ std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
 }
 
 void TextureContents::SetLabel(std::string label) {
-  label_ = label;
+  label_ = std::move(label);
 }
 
-void TextureContents::SetPath(Path path) {
-  path_ = std::move(path);
+void TextureContents::SetPath(const Path& path) {
+  path_ = path;
   is_rect_ = false;
 }
 
@@ -74,13 +75,14 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
   // Passthrough textures that have simple rectangle paths and complete source
   // rects.
   if (is_rect_ && source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
-      opacity_ >= 1 - kEhCloseEnough) {
+      (opacity_ >= 1 - kEhCloseEnough || defer_applying_opacity_)) {
     auto scale = Vector2(bounds->size / Size(texture_->GetSize()));
     return Snapshot{.texture = texture_,
                     .transform = entity.GetTransformation() *
                                  Matrix::MakeTranslation(bounds->origin) *
                                  Matrix::MakeScale(scale),
-                    .sampler_descriptor = sampler_descriptor_};
+                    .sampler_descriptor = sampler_descriptor_,
+                    .opacity = opacity_};
   }
   return Contents::RenderToSnapshot(renderer, entity);
 }
@@ -118,15 +120,25 @@ bool TextureContents::Render(const ContentContext& renderer,
   {
     const auto tess_result = renderer.GetTessellator()->Tessellate(
         path_.GetFillType(), path_.CreatePolyline(),
-        [this, &vertex_builder, &coverage_rect, &texture_size](Point vtx) {
-          VS::PerVertexData data;
-          data.position = vtx;
-          auto coverage_coords =
-              (vtx - coverage_rect->origin) / coverage_rect->size;
-          data.texture_coords =
-              (source_rect_.origin + source_rect_.size * coverage_coords) /
-              texture_size;
-          vertex_builder.AppendVertex(data);
+        [this, &vertex_builder, &coverage_rect, &texture_size](
+            const float* vertices, size_t vertices_size,
+            const uint16_t* indices, size_t indices_size) {
+          for (auto i = 0u; i < vertices_size; i += 2) {
+            VS::PerVertexData data;
+            Point vtx = {vertices[i], vertices[i + 1]};
+            data.position = vtx;
+            auto coverage_coords =
+                (vtx - coverage_rect->origin) / coverage_rect->size;
+            data.texture_coords =
+                (source_rect_.origin + source_rect_.size * coverage_coords) /
+                texture_size;
+            vertex_builder.AppendVertex(data);
+          }
+          FML_DCHECK(vertex_builder.GetVertexCount() == vertices_size / 2);
+          for (auto i = 0u; i < indices_size; i++) {
+            vertex_builder.AppendIndex(indices[i]);
+          }
+          return true;
         });
 
     if (tess_result == Tessellator::Result::kInputError) {
@@ -188,6 +200,10 @@ void TextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
 
 const SamplerDescriptor& TextureContents::GetSamplerDescriptor() const {
   return sampler_descriptor_;
+}
+
+void TextureContents::SetDeferApplyingOpacity(bool defer_applying_opacity) {
+  defer_applying_opacity_ = defer_applying_opacity;
 }
 
 }  // namespace impeller

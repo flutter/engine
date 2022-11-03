@@ -17,6 +17,7 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
+#include "path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -1426,8 +1427,7 @@ TEST(GeometryTest, RectGetPositive) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  SmoothingApproximation approximation;
-  auto polyline = component.CreatePolyline(approximation);
+  auto polyline = component.CreatePolyline();
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1616,32 +1616,94 @@ TEST(GeometryTest, VerticesConstructorAndGetters) {
 }
 
 TEST(GeometryTest, MatrixPrinting) {
-  std::stringstream stream;
-
-  Matrix m;
-
-  stream << m;
-
-  ASSERT_EQ(stream.str(), R"((
+  {
+    std::stringstream stream;
+    Matrix m;
+    stream << m;
+    ASSERT_EQ(stream.str(), R"((
        1.000000,       0.000000,       0.000000,       0.000000,
        0.000000,       1.000000,       0.000000,       0.000000,
        0.000000,       0.000000,       1.000000,       0.000000,
        0.000000,       0.000000,       0.000000,       1.000000,
 ))");
+  }
 
-  stream.str("");
-  stream.clear();
+  {
+    std::stringstream stream;
+    Matrix m = Matrix::MakeTranslation(Vector3(10, 20, 30));
+    stream << m;
 
-  m = Matrix::MakeTranslation(Vector3(10, 20, 30));
-
-  stream << m;
-
-  ASSERT_EQ(stream.str(), R"((
+    ASSERT_EQ(stream.str(), R"((
        1.000000,       0.000000,       0.000000,      10.000000,
        0.000000,       1.000000,       0.000000,      20.000000,
        0.000000,       0.000000,       1.000000,      30.000000,
        0.000000,       0.000000,       0.000000,       1.000000,
 ))");
+  }
+}
+
+TEST(GeometryTest, PointPrinting) {
+  {
+    std::stringstream stream;
+    Point m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0)");
+  }
+
+  {
+    std::stringstream stream;
+    Point m(13, 37);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(13, 37)");
+  }
+}
+
+TEST(GeometryTest, Vector3Printing) {
+  {
+    std::stringstream stream;
+    Vector3 m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0, 0)");
+  }
+
+  {
+    std::stringstream stream;
+    Vector3 m(1, 2, 3);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(1, 2, 3)");
+  }
+}
+
+TEST(GeometryTest, Vector4Printing) {
+  {
+    std::stringstream stream;
+    Vector4 m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0, 0, 1)");
+  }
+
+  {
+    std::stringstream stream;
+    Vector4 m(1, 2, 3, 4);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(1, 2, 3, 4)");
+  }
+}
+
+TEST(GeometryTest, ColorPrinting) {
+  {
+    std::stringstream stream;
+    Color m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0, 0, 0)");
+  }
+
+  {
+    std::stringstream stream;
+    Color m(1, 2, 3, 4);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(1, 2, 3, 4)");
+  }
 }
 
 TEST(GeometryTest, Gradient) {

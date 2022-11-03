@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show jsonDecode;
-import 'dart:io' as io show Directory, File, stderr, stdout;
+import 'dart:convert' show LineSplitter, jsonDecode;
+import 'dart:io' as io show File, stderr, stdout;
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -134,8 +134,7 @@ class ClangTidy {
 
     final _ComputeJobsResult computeJobsResult = await _computeJobs(
       changedFileBuildCommands,
-      options.repoPath,
-      options.checks,
+      options,
     );
     final int computeResult = computeJobsResult.sawMalformed ? 1 : 0;
     final List<WorkerJob> jobs = computeJobsResult.jobs;
@@ -193,15 +192,14 @@ class ClangTidy {
 
   Future<_ComputeJobsResult> _computeJobs(
     List<Command> commands,
-    io.Directory repoPath,
-    String? checks,
+    Options options,
   ) async {
     bool sawMalformed = false;
     final List<WorkerJob> jobs = <WorkerJob>[];
     for (final Command command in commands) {
       final String relativePath = path.relative(
         command.filePath,
-        from: repoPath.parent.path,
+        from: options.repoPath.parent.path,
       );
       final LintAction action = await command.lintAction;
       switch (action) {
@@ -217,7 +215,7 @@ class ClangTidy {
           break;
         case LintAction.lint:
           _outSink.writeln('🔶 linting $relativePath');
-          jobs.add(command.createLintJob(checks, options.fix));
+          jobs.add(command.createLintJob(options));
           break;
         case LintAction.skipThirdParty:
           _outSink.writeln('🔷 ignoring $relativePath (third_party)');
@@ -230,6 +228,27 @@ class ClangTidy {
     return _ComputeJobsResult(jobs, sawMalformed);
   }
 
+  static Iterable<String> _trimGenerator(String output) sync* {
+    const LineSplitter splitter = LineSplitter();
+    final List<String> lines = splitter.convert(output);
+    bool isPrintingError = false;
+    for (final String line in lines) {
+      if (line.contains(': error:') || line.contains(': warning:')) {
+        isPrintingError = true;
+        yield line;
+      } else if (line == ':') {
+          isPrintingError = false;
+      } else if (isPrintingError) {
+        yield line;
+      }
+    }
+  }
+
+  /// Visible for testing.
+  /// Function for trimming raw clang-tidy output.
+  @visibleForTesting
+  static String trimOutput(String output) => _trimGenerator(output).join('\n');
+
   Future<int> _runJobs(List<WorkerJob> jobs) async {
     int result = 0;
     final ProcessPool pool = ProcessPool();
@@ -238,10 +257,13 @@ class ClangTidy {
         continue;
       }
       _errSink.writeln('❌ Failures for ${job.name}:');
-      _errSink.writeln(job.result.stdout);
-      final Exception? exception = job.exception;
-      if (exception != null) {
-        _errSink.writeln(exception);
+      if (!job.printOutput) {
+        final Exception? exception = job.exception;
+        if (exception != null) {
+          _errSink.writeln(trimOutput(exception.toString()));
+        } else {
+          _errSink.writeln(trimOutput(job.result.stdout));
+        }
       }
       result = 1;
     }

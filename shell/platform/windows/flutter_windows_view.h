@@ -90,6 +90,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Send the initial accessibility features to the window
   void SendInitialAccessibilityFeatures();
 
+  // Set the text of the alert, and create it if it does not yet exist.
+  void AnnounceAlert(const std::wstring& text);
+
   // |WindowBindingHandlerDelegate|
   void UpdateHighContrastEnabled(bool enabled) override;
 
@@ -181,6 +184,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                 int32_t device_id) override;
 
   // |WindowBindingHandlerDelegate|
+  void OnScrollInertiaCancel(int32_t device_id) override;
+
+  // |WindowBindingHandlerDelegate|
   virtual void OnUpdateSemanticsEnabled(bool enabled) override;
 
   // |WindowBindingHandlerDelegate|
@@ -207,6 +213,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Called to create text input plugin.
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       BinaryMessenger* messenger);
+
+  virtual void NotifyWinEventWrapper(DWORD event,
+                                     HWND hwnd,
+                                     LONG idObject,
+                                     LONG idChild);
 
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep
@@ -330,6 +341,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                   int scroll_offset_multiplier,
                   FlutterPointerDeviceKind device_kind,
                   int32_t device_id);
+
+  // Reports scroll inertia cancel events to Flutter engine.
+  void SendScrollInertiaCancel(int32_t device_id, double x, double y);
 
   // Creates a PointerState object unless it already exists.
   PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,

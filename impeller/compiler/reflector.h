@@ -25,7 +25,7 @@ struct StructMember {
   size_t offset = 0u;
   size_t size = 0u;
   size_t byte_length = 0u;
-  size_t array_elements = 1u;
+  std::optional<size_t> array_elements = std::nullopt;
   size_t element_padding = 0u;
 
   StructMember(std::string p_type,
@@ -34,7 +34,7 @@ struct StructMember {
                size_t p_offset,
                size_t p_size,
                size_t p_byte_length,
-               size_t p_array_elements,
+               std::optional<size_t> p_array_elements,
                size_t p_element_padding)
       : type(std::move(p_type)),
         base_type(std::move(p_base_type)),
@@ -94,6 +94,7 @@ class Reflector {
   const Options options_;
   const std::shared_ptr<const spirv_cross::ParsedIR> ir_;
   const std::shared_ptr<fml::Mapping> shader_data_;
+  const std::shared_ptr<fml::Mapping> sksl_data_;
   const CompilerBackend compiler_;
   std::unique_ptr<const nlohmann::json> template_arguments_;
   std::shared_ptr<fml::Mapping> reflection_header_;
@@ -149,13 +150,14 @@ class Reflector {
   std::vector<StructMember> ReadStructMembers(
       const spirv_cross::TypeID& type_id) const;
 
-  uint32_t GetArrayElements(const spirv_cross::SPIRType& type) const;
+  std::optional<uint32_t> GetArrayElements(
+      const spirv_cross::SPIRType& type) const;
 
   template <uint32_t Size>
   uint32_t GetArrayStride(const spirv_cross::SPIRType& struct_type,
                           const spirv_cross::SPIRType& member_type,
                           uint32_t index) const {
-    auto element_count = GetArrayElements(member_type);
+    auto element_count = GetArrayElements(member_type).value_or(1);
     if (element_count <= 1) {
       return Size;
     }

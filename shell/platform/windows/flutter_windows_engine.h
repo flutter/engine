@@ -27,6 +27,7 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
@@ -66,8 +67,13 @@ static void WindowsPlatformThreadPrioritySetter(
 // run in headless mode.
 class FlutterWindowsEngine {
  public:
+  // Creates a new Flutter engine with an injectible windows registry.
+  FlutterWindowsEngine(const FlutterProjectBundle& project,
+                       std::unique_ptr<WindowsRegistry> windows_registry);
+
   // Creates a new Flutter engine object configured to run |project|.
-  explicit FlutterWindowsEngine(const FlutterProjectBundle& project);
+  explicit FlutterWindowsEngine(const FlutterProjectBundle& project)
+      : FlutterWindowsEngine(project, std::make_unique<WindowsRegistry>()) {}
 
   virtual ~FlutterWindowsEngine();
 
@@ -248,6 +254,9 @@ class FlutterWindowsEngine {
   // system changes.
   void SendSystemLocales();
 
+  void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
+                                  const FlutterDesktopMessage* message);
+
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
 
@@ -320,6 +329,9 @@ class FlutterWindowsEngine {
 
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
+
+  // Wrapper providing Windows registry access.
+  std::unique_ptr<WindowsRegistry> windows_registry_;
 };
 
 }  // namespace flutter
