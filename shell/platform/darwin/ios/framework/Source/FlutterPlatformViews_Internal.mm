@@ -201,7 +201,7 @@ static BOOL _preparedOnce = NO;
   if (self.filters.count == 0 && filters.count == 0) {
     return;
   }
-  self.filters = [filters retain];
+  self.filters = filters;
   NSUInteger index = 0;
   for (index = 0; index < self.filters.count; index++) {
     UIVisualEffectView* backdropFilterView;
