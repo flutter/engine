@@ -120,13 +120,13 @@ class ClangTidy {
       }
     }
 
-    final List<dynamic> buildCommandsData = jsonDecode(
+    final List<Object?> buildCommandsData = jsonDecode(
       options.buildCommandsPath.readAsStringSync(),
-    ) as List<dynamic>;
-    final List<List<dynamic>> shardBuildCommandsData = options
+    ) as List<Object?>;
+    final List<List<Object?>> shardBuildCommandsData = options
         .shardCommandsPaths
         .map((io.File file) =>
-            jsonDecode(file.readAsStringSync()) as List<dynamic>)
+            jsonDecode(file.readAsStringSync()) as List<Object?>)
         .toList();
     final List<Command> changedFileBuildCommands = await getLintCommandsForFiles(
       buildCommandsData,
@@ -189,9 +189,9 @@ class ClangTidy {
     return repo.changedFiles;
   }
 
-  Iterable<T> _takeShard<T>(Iterable<T> values, int id, int shardCount) sync*{
+  Iterable<T> _takeShard<T>(Iterable<T> values, int id, int shardCount) sync* {
     int count = 0;
-    for(final T val in values) {
+    for (final T val in values) {
       if (count % shardCount == id) {
         yield val;
       }
@@ -199,7 +199,11 @@ class ClangTidy {
     }
   }
 
-  Iterable<_SetStatusCommand> _calcIntersection(Iterable<Command> items, Iterable<List<Command>> sets) sync* {
+  /// This returns a `_SetStatusCommand` for each [Command] in [items].
+  /// `Intersection` if the Command shows up in [items] and all [sets],
+  /// otherwise `Difference`.
+  Iterable<_SetStatusCommand> _calcIntersection(
+      Iterable<Command> items, Iterable<List<Command>> sets) sync* {
     bool allSetsContain(Command command) {
       for (final List<Command> set in sets) {
         final Iterable<String> filePaths = set.map((Command e) => e.filePath);
@@ -222,19 +226,19 @@ class ClangTidy {
   /// compute the lint commands to run.
   @visibleForTesting
   Future<List<Command>> getLintCommandsForFiles(
-    List<dynamic> buildCommandsData,
+    List<Object?> buildCommandsData,
     List<io.File> files,
-    List<List<dynamic>> sharedBuildCommandsData,
+    List<List<Object?>> sharedBuildCommandsData,
     int? shardId,
   ) async {
     final List<Command> totalCommands = <Command>[];
     if (sharedBuildCommandsData.isNotEmpty) {
       final Iterable<Command> buildCommands = buildCommandsData
-          .map((dynamic data) => Command.fromMap(data as Map<String, dynamic>));
+          .map((dynamic data) => Command.fromMap(data as Map<String, Object?>));
       final Iterable<List<Command>> shardBuildCommands =
-          sharedBuildCommandsData.map((List<dynamic> list) => list
-              .map((dynamic data) =>
-                  Command.fromMap(data as Map<String, dynamic>))
+          sharedBuildCommandsData.map((List<Object?> list) => list
+              .map((Object? data) =>
+                  Command.fromMap((data as Map<String, Object?>?)!))
               .toList());
       final Iterable<_SetStatusCommand> intersectionResults =
           _calcIntersection(buildCommands, shardBuildCommands);
@@ -253,7 +257,7 @@ class ClangTidy {
       totalCommands.addAll(
           _takeShard(intersection, shardId!, 1 + shardBuildCommands.length));
     } else {
-      totalCommands.addAll(buildCommandsData.map((dynamic data) => Command.fromMap(data as Map<String, dynamic>)));
+      totalCommands.addAll(buildCommandsData.map((Object? data) => Command.fromMap((data as Map<String, Object?>?)!)));
     }
     Stream<Command> filterCommands() async* {
       for (final Command command in totalCommands) {
