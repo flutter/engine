@@ -14,6 +14,9 @@
 
 static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
                                              const FlutterFrameInfo* frameInfo) {
+  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere, and accordingly pick the correct view from the engine.
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
     return FlutterMetalTexture{};  // TODO
@@ -24,6 +27,9 @@ static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
 }
 
 static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
+  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere, and accordingly pick the correct view from the engine.
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
     return false;

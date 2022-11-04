@@ -448,6 +448,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
         std::make_unique<flutter::FlutterGLCompositor>(_viewProvider, openGLRenderer.openGLContext);
   }
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+    // TODO(dkwingsmt): The renderer and the engine only support single-view for
+    // now. As more classes are gradually converted to multi-view, it should get
+    // the view ID from somewhere, and accordingly pick the correct view.
     FlutterView* view = weakSelf.viewController.flutterView;
     if (has_flutter_content) {
       return [weakSelf.renderer present:view] == YES;

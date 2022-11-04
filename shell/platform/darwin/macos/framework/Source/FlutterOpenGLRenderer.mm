@@ -20,6 +20,9 @@ static bool OnClearCurrent(FlutterEngine* engine) {
 }
 
 static bool OnPresent(FlutterEngine* engine) {
+  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere, and accordingly pick the correct view from the engine.
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
     return false;
@@ -28,6 +31,9 @@ static bool OnPresent(FlutterEngine* engine) {
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
+  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere, and accordingly pick the correct view from the engine.
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
     return -1;  // TODO
@@ -67,13 +73,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   self = [super initWithDelegate:self engine:flutterEngine];
   return self;
 }
-
-// - (void)setFlutterView:(FlutterView*)view {
-//   _flutterView = view;
-//   if (!view) {
-//     _resourceContext = nil;
-//   }
-// }
 
 - (BOOL)makeCurrent {
   if (!_openGLContext) {
