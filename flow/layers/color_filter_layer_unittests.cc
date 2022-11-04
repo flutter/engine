@@ -490,6 +490,7 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
       expected_builder.drawPath(child_path, DlPaint().setColor(0xFF000000));
     }
     expected_builder.restore();
+    expected_builder.restore();
   }
 
   color_filter_layer->Paint(display_list_paint_context());

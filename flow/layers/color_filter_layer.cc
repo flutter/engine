@@ -73,7 +73,7 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   // the extent of the layer during the restore()). ColorFilterLayer must clip
   // before the saveLayer in these cases to ensure it doesn't go beyond its
   // reported paint_bounds().
-  const bool needs_clip = filter_->modifies_transparent_black();
+  const bool needs_clip = filter_ && filter_->modifies_transparent_black();
   AutoCachePaint cache_paint(context);
   cache_paint.setColorFilter(filter_.get());
   if (context.leaf_nodes_builder) {
