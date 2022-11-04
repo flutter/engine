@@ -13,8 +13,10 @@ namespace {
 
 TEST(ContainerTest, MapEraseIf) {
   std::unordered_map<int, int> map = {{0, 1}, {2, 3}, {4, 5}};
-  fml::erase_if(map, [&](auto it) { return it.first == 0 || it.second == 5; });
-  EXPECT_EQ(map.size(), 1);
+
+  fml::erase_if(map, [](auto it) { return it->first == 0 || it->second == 5; });
+
+  EXPECT_EQ(map.size(), 1u);
   EXPECT_TRUE(map.find(2) != map.end());
 }
 
