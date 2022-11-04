@@ -493,7 +493,7 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
     expected_builder.restore();
   }
 
-  opacity_layer->Paint(display_list_paint_context());
+  color_filter_layer->Paint(display_list_paint_context());
   EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
 }
 
