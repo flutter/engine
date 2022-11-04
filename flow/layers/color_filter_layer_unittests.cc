@@ -483,6 +483,7 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
   /* ColorFilterLayer::Paint() */ {
     DlPaint dl_paint;
     dl_paint.setColorFilter(&layer_filter);
+    expected_builder.save();
     expected_builder.clipRect(child_path.getBounds(), SkClipOp::kIntersect,
                               /*is_aa=*/false);
     expected_builder.saveLayer(&child_path.getBounds(), &dl_paint);
