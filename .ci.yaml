@@ -327,13 +327,13 @@ targets:
       jazzy_version: "0.14.1"
     timeout: 75
 
-  - name: Mac mac_android_aot_engine
+  - name: Linux mac_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       config_name: mac_android_aot_engine
 
-  - name: Mac mac_host_engine
+  - name: Linux mac_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
@@ -425,7 +425,7 @@ targets:
       - ci/**
       - flutter_frontend_server/**
 
-  - name: Mac mac_ios_engine
+  - name: Linux mac_ios_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
@@ -435,13 +435,13 @@ targets:
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
 
-  - name:  Mac mac_ios_engine_profile
+  - name:  Linux mac_ios_engine_profile
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       config_name: mac_ios_engine_profile
 
-  - name:  Mac mac_ios_engine_release
+  - name:  Linux mac_ios_engine_release
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
