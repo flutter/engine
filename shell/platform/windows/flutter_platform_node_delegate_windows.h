@@ -18,9 +18,8 @@ namespace flutter {
 // that compose the accessibility tree.
 class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
  public:
-  FlutterPlatformNodeDelegateWindows(
-      std::weak_ptr<AccessibilityBridge> bridge,
-      FlutterWindowsView* view);
+  FlutterPlatformNodeDelegateWindows(std::weak_ptr<AccessibilityBridge> bridge,
+                                     FlutterWindowsView* view);
   virtual ~FlutterPlatformNodeDelegateWindows();
 
   // |ui::AXPlatformNodeDelegate|
