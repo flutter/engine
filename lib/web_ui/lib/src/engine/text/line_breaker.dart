@@ -341,6 +341,8 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     // The above is a quote from unicode.org. In our implementation, we did the
     // following modification: When there are spaces present, we consider it a
     // line break opportunity.
+    //
+    // We made this modification to match the browser behavior.
     if (prev1 != LineCharProperty.SP &&
         (curr == LineCharProperty.CL ||
             curr == LineCharProperty.CP ||
@@ -356,6 +358,8 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     //
     // The above is a quote from unicode.org. In our implementation, we did the
     // following modification: Allow breaks when there are spaces.
+    //
+    // We made this modification to match the browser behavior.
     if (prev1 == LineCharProperty.OP) {
       setBreak(LineBreakType.prohibited, 14);
       continue;
@@ -366,6 +370,8 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     //
     // The above is a quote from unicode.org. In our implementation, we did the
     // following modification: Allow breaks when there are spaces.
+    //
+    // We made this modification to match the browser behavior.
     if (prev1 == LineCharProperty.QU && curr == LineCharProperty.OP) {
       setBreak(LineBreakType.prohibited, 15);
       continue;
@@ -377,6 +383,8 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     //
     // The above is a quote from unicode.org. In our implementation, we did the
     // following modification: Allow breaks when there are spaces.
+    //
+    // We made this modification to match the browser behavior.
     if ((prev1 == LineCharProperty.CL || prev1 == LineCharProperty.CP) &&
         curr == LineCharProperty.NS) {
       setBreak(LineBreakType.prohibited, 16);
@@ -388,6 +396,8 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     //
     // The above is a quote from unicode.org. In our implementation, we did the
     // following modification: Allow breaks when there are spaces.
+    //
+    // We made this modification to match the browser behavior.
     if (prev1 == LineCharProperty.B2 && curr == LineCharProperty.B2) {
       setBreak(LineBreakType.prohibited, 17);
       continue;
