@@ -202,7 +202,7 @@ class ClangTidy {
 
   /// This returns a `_SetStatusCommand` for each [Command] in [items].
   /// `Intersection` if the Command shows up in [items] and its filePath in all
-  /// [sets], otherwise `Difference`.
+  /// [filePathSets], otherwise `Difference`.
   Iterable<_SetStatusCommand> _calcIntersection(
       Iterable<Command> items, Iterable<Set<String>> filePathSets) sync* {
     bool allSetsContain(Command command) {
