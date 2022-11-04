@@ -19,13 +19,13 @@ void main() {
 void testMain() {
   group('FlutterConfiguration', () {
     test('initializes with null', () async {
-      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(null);
+      final FlutterConfiguration config = FlutterConfiguration.legacy(null);
 
       expect(config.canvasKitMaximumSurfaces, 8); // _defaultCanvasKitMaximumSurfaces
     });
 
-    test('fromJsGlobals initializes with a Js Object', () async {
-      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(
+    test('legacy constructor initializes with a Js Object', () async {
+      final FlutterConfiguration config = FlutterConfiguration.legacy(
         js_util.jsify(<String, Object?>{
           'canvasKitMaximumSurfaces': 16,
         }) as JsFlutterConfiguration);
@@ -36,7 +36,7 @@ void testMain() {
 
   group('setUserConfiguration', () {
     test('throws assertion error if already initialized from JS', () async {
-      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(
+      final FlutterConfiguration config = FlutterConfiguration.legacy(
         js_util.jsify(<String, Object?>{
           'canvasKitMaximumSurfaces': 12,
         }) as JsFlutterConfiguration);
@@ -50,7 +50,7 @@ void testMain() {
     });
 
     test('stores config if JS configuration was null', () async {
-      final FlutterConfiguration config = FlutterConfiguration.fromJsGlobals(null);
+      final FlutterConfiguration config = FlutterConfiguration.legacy(null);
 
       config.setUserConfiguration(
         js_util.jsify(<String, Object?>{

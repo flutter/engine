@@ -15,27 +15,26 @@
 ///
 /// Both methods are **disallowed** to be used at the same time.
 ///
-/// Example (Before):
-///
-///     <head>
-///       <script>
-///         window.flutterConfiguration = {
-///           canvasKitBaseUrl: "https://example.com/my-custom-canvaskit/"
-///         };
-///       </script>
-///     </head>
-///
-/// Example (After):
+/// Example:
 ///
 ///     _flutter.loader.loadEntrypoint({
 ///       // ...
 ///       onEntrypointLoaded: async function(engineInitializer) {
 ///         let appRunner = await engineInitializer.initializeEngine({
-///           canvasKitBaseUrl: "https://example.com/my-custom-canvaskit/"
+///           // JsFlutterConfiguration goes here...
+///           canvasKitBaseUrl: "https://example.com/my-custom-canvaskit/",
 ///         });
 ///         appRunner.runApp();
 ///       }
 ///     });
+///
+/// Example of the **deprecated** style (this will issue a JS console warning!):
+///
+///     <script>
+///       window.flutterConfiguration = {
+///         canvasKitBaseUrl: "https://example.com/my-custom-canvaskit/"
+///       };
+///     </script>
 ///
 /// Configuration properties supplied via this object override those supplied
 /// using the corresponding environment variables. For example, if both the
@@ -55,7 +54,8 @@ import 'dom.dart';
 const String _canvaskitVersion = '0.37.0';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration => _configuration ??= FlutterConfiguration.fromJsGlobals(_jsConfiguration);
+FlutterConfiguration get configuration =>
+  _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
 /// Sets the given configuration as the current one.
@@ -76,23 +76,30 @@ class FlutterConfiguration {
 
   /// Constucts a "tainted by JS globals" configuration object.
   ///
-  /// This is deprecated, and warns the user about the new API.
-  FlutterConfiguration.fromJsGlobals(JsFlutterConfiguration? config) {
+  /// This configuration style is deprecated. It will warn the user about the
+  /// new API (if used)
+  FlutterConfiguration.legacy(JsFlutterConfiguration? config) {
     if (config != null) {
-      domWindow.console.warn('window.flutterConfiguration is now deprecated.\n'
-      'Use engineInitializer.initializeEngine(config) instead.\n'
-      'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
-      _createdFromJsGlobals = true;
+      _usedLegacyConfigStyle = true;
       _configuration = config;
     }
-    if (_requestedRendererType != null) {
-      domWindow.console.warn('window.flutterWebRenderer is now deprecated.\n'
-      'Use engineInitializer.initializeEngine(config) instead.\n'
-      'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
-    }
+    // Warn the user of the deprecated behavior.
+    assert(() {
+      if (config != null) {
+        domWindow.console.warn('window.flutterConfiguration is now deprecated.\n'
+          'Use engineInitializer.initializeEngine(config) instead.\n'
+          'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+      }
+      if (_requestedRendererType != null) {
+        domWindow.console.warn('window.flutterWebRenderer is now deprecated.\n'
+          'Use engineInitializer.initializeEngine(config) instead.\n'
+          'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+      }
+      return true;
+    }());
   }
 
-  bool _createdFromJsGlobals = false;
+  bool _usedLegacyConfigStyle = false;
   JsFlutterConfiguration? _configuration;
 
   /// Sets a value for [_configuration].
@@ -101,17 +108,18 @@ class FlutterConfiguration {
   /// [initEngineServices] method.
   ///
   /// This method throws an AssertionError, if the _configuration object has
-  /// been set to anything non-null through the [FlutterConfiguration.fromJsGlobals]
+  /// been set to anything non-null through the [FlutterConfiguration.legacy]
   /// constructor.
   void setUserConfiguration(JsFlutterConfiguration? configuration) {
     if (configuration != null) {
-      assert(!_createdFromJsGlobals, 'Do not mix-and-match configuration styles. '
-        'Use engineInitializer.initializeEngine(config) instead of '
-        'window.flutterConfiguration.');
+      assert(!_usedLegacyConfigStyle,
+        'Use engineInitializer.initializeEngine(config) only. '
+        'Using the (deprecated) window.flutterConfiguration and initializeEngine '
+        'configuration simultaneously is not supported.');
       assert(_requestedRendererType == null || configuration.renderer == null,
-        'Do not mix-and-match configuration styles. '
-        'Use engineInitializer.initializeEngine(config) instead of '
-        'window.flutterWebRenderer.');
+        'Use engineInitializer.initializeEngine(config) only. '
+        'Using the (deprecated) window.flutterWebRenderer and initializeEngine '
+        'configuration simultaneously is not supported.');
       _configuration = configuration;
     }
   }
