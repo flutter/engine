@@ -10,7 +10,6 @@ void DisplayListBuilderMultiplexer::addBuilder(DisplayListBuilder* builder) {
   builders_.push_back(builder);
 }
 
-
 void DisplayListBuilderMultiplexer::clipRect(const SkRect& rect,
                                              SkClipOp clip_op,
                                              bool is_aa) {
