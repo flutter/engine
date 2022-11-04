@@ -3039,7 +3039,7 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
 
 sk_sp<SkPicture> makeTestPicture() {
   SkPictureRecorder recorder;
-  SkCanvas* cv = recorder.beginRecording(kRenderBounds);
+  SkCanvas* cv = recorder.beginRecording(kTestBounds);
   SkPaint p;
   p.setStyle(SkPaint::kFill_Style);
   p.setColor(SK_ColorRED);

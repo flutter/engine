@@ -483,13 +483,12 @@ TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
   /* ColorFilterLayer::Paint() */ {
     DlPaint dl_paint;
     dl_paint.setColorFilter(&layer_filter);
-    expected_builder.clipRect(child_path.getBounds(),
-                              SkClipOp::kIntersect,
+    expected_builder.clipRect(child_path.getBounds(), SkClipOp::kIntersect,
                               /*is_aa=*/false);
     expected_builder.saveLayer(&child_path.getBounds(), &dl_paint);
-      /* MockLayer::Paint() */ {
-        expected_builder.drawPath(child_path, DlPaint().setColor(0xFF000000));
-      }
+    /* MockLayer::Paint() */ {
+      expected_builder.drawPath(child_path, DlPaint().setColor(0xFF000000));
+    }
     expected_builder.restore();
   }
 
