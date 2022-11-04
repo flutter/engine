@@ -145,7 +145,8 @@ void _checkDenyList(String dillPath, Compiler compiler) {
     compiler,
   );
 }
-void _checkNonConsts(String dillPath, Compiler compiler) {
+
+void _checkNonConstsFrontend(String dillPath, Compiler compiler) {
   stdout.writeln('Checking for non-constant instances with $compiler');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: dillPath,
@@ -196,7 +197,36 @@ void _checkNonConsts(String dillPath, Compiler compiler) {
         }
       ]
     },
-    Compiler.frontendServer, // TODO foo bar
+    compiler,
+  );
+}
+
+// Note, since web dills don't have tree shaking, we aren't able to eliminate 
+void _checkNonConstsWeb(String dillPath, Compiler compiler) {
+  assert(compiler == Compiler.dart2js);
+  stdout.writeln('Checking for non-constant instances with $compiler');
+  final ConstFinder finder = ConstFinder(
+    kernelFilePath: dillPath,
+    classLibraryUri: 'package:const_finder_fixtures/target.dart',
+    className: 'Target',
+  );
+
+  expectInstances(
+    finder.findInstances(),
+    <String, dynamic>{
+      'constantInstances': <dynamic>[
+        <String, dynamic>{'stringValue': '1', 'intValue': 1, 'targetValue': null},
+        <String, dynamic>{'stringValue': '4', 'intValue': 4, 'targetValue': null},
+        <String, dynamic>{'stringValue': '6', 'intValue': 6, 'targetValue': null},
+        <String, dynamic>{'stringValue': '8', 'intValue': 8, 'targetValue': null},
+        <String, dynamic>{'stringValue': '10', 'intValue': 10, 'targetValue': null},
+        <String, dynamic>{'stringValue': '9', 'intValue': 9},
+        <String, dynamic>{'stringValue': '7', 'intValue': 7, 'targetValue': null},
+        <String, dynamic>{'stringValue': 'package', 'intValue': -1, 'targetValue': null},
+      ],
+      'nonConstantLocations': <dynamic>[]
+    },
+    compiler,
   );
 }
 
@@ -245,69 +275,69 @@ class TestRunner {
 
   void test() {
     final List<_Test> tests = <_Test>[
-      //_Test(
-      //  name: 'box_frontend',
-      //  dartSource: path.join(fixtures, 'lib', 'box.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkRecursion,
-      //  compiler: Compiler.frontendServer,
-      //),
-      //_Test(
-      //  name: 'box_web',
-      //  dartSource: path.join(fixtures, 'lib', 'box.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkRecursion,
-      //  compiler: Compiler.dart2js,
-      //),
-      //_Test(
-      //  name: 'consts_frontend',
-      //  dartSource: path.join(fixtures, 'lib', 'consts.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkConsts,
-      //  compiler: Compiler.frontendServer,
-      //),
-      //_Test(
-      //  name: 'consts_web',
-      //  dartSource: path.join(fixtures, 'lib', 'consts.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkConsts,
-      //  compiler: Compiler.dart2js,
-      //),
-      //_Test(
-      //  name: 'consts_and_non_frontend',
-      //  dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkNonConsts,
-      //  compiler: Compiler.frontendServer,
-      //),
-      //_Test(
-      //  name: 'consts_and_non_web',
-      //  dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkNonConsts,
-      //  compiler: Compiler.dart2js,
-      //),
-      //_Test(
-      //  name: 'denylist_frontend',
-      //  dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
-      //  frontendServer: frontendServer,
-      //  sdkRoot: sdkRoot,
-      //  librariesSpec: librariesSpec,
-      //  verify: _checkDenyList,
-      //  compiler: Compiler.frontendServer,
-      //),
+      _Test(
+        name: 'box_frontend',
+        dartSource: path.join(fixtures, 'lib', 'box.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkRecursion,
+        compiler: Compiler.frontendServer,
+      ),
+      _Test(
+        name: 'box_web',
+        dartSource: path.join(fixtures, 'lib', 'box.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkRecursion,
+        compiler: Compiler.dart2js,
+      ),
+      _Test(
+        name: 'consts_frontend',
+        dartSource: path.join(fixtures, 'lib', 'consts.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkConsts,
+        compiler: Compiler.frontendServer,
+      ),
+      _Test(
+        name: 'consts_web',
+        dartSource: path.join(fixtures, 'lib', 'consts.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkConsts,
+        compiler: Compiler.dart2js,
+      ),
+      _Test(
+        name: 'consts_and_non_frontend',
+        dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkNonConstsFrontend,
+        compiler: Compiler.frontendServer,
+      ),
+      _Test(
+        name: 'consts_and_non_web',
+        dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkNonConstsWeb,
+        compiler: Compiler.dart2js,
+      ),
+      _Test(
+        name: 'denylist_frontend',
+        dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
+        frontendServer: frontendServer,
+        sdkRoot: sdkRoot,
+        librariesSpec: librariesSpec,
+        verify: _checkDenyList,
+        compiler: Compiler.frontendServer,
+      ),
       _Test(
         name: 'denylist_web',
         dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
