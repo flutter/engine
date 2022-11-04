@@ -23,7 +23,7 @@ namespace flutter {  // namespace
 FlutterPlatformNodeDelegateMac::FlutterPlatformNodeDelegateMac(
     std::weak_ptr<AccessibilityBridge> bridge,
     __weak FlutterViewController* view_controller)
-    : bridge_(bridge), view_controller_(view_controller) {}
+    : bridge_(std::move(bridge)), view_controller_(view_controller) {}
 
 void FlutterPlatformNodeDelegateMac::Init(std::weak_ptr<OwnerBridge> bridge, ui::AXNode* node) {
   FlutterPlatformNodeDelegate::Init(bridge, node);
