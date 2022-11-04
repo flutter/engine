@@ -134,6 +134,8 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
 // |PipelineLibrary|
 void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
     std::shared_ptr<const ShaderFunction> function) {
+  Lock lock(pipelines_mutex_);
+
   for (auto it = pipelines_.begin(); it != pipelines_.end();) {
     if (it->first.GetEntrypointForStage(function->GetStage())
             ->IsEqual(*function)) {
