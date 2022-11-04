@@ -54,7 +54,7 @@ cd "$SCRIPT_DIR"
   --src-dir="$SRC_DIR" \
   --mac-host-warnings-as-errors="$MAC_HOST_WARNINGS_AS_ERRORS" \
   --shard-variants="ios_debug"
-  --shard-id 0
+  --shard-id=0
   "$@"
 
 echo "$(date +%T) Running pylint"
