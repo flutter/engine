@@ -810,8 +810,9 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
         auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
         auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
         if (!sk_local_filter || !dl_local_filter) {
-          ASSERT_TRUE(!sk_local_filter);
-          ASSERT_TRUE(!dl_local_filter);
+          // Allow the SkImageFilter to support at least, but possibly more,
+          // matrices than DlImageFilter.
+          ASSERT_TRUE(sk_local_filter || !dl_local_filter);
           continue;
         }
         {
