@@ -110,8 +110,9 @@ void Window::InitializeChild(const char* title,
   SetUserObjectInformationA(GetCurrentProcess(),
                             UOI_TIMERPROC_EXCEPTION_SUPPRESSION, FALSE, 1);
   // SetTimer is not precise, if a 16 ms interval is requested, it will instead
-  // often fire after 32 ms. Providing a value of 14 will ensure it runs every
-  // 16 ms, which will allow for 60 Hz trackpad gesture events.
+  // often fire in an interval of 32 ms. Providing a value of 14 will ensure it
+  // runs every 16 ms, which will allow for 60 Hz trackpad gesture events, which
+  // is the maximal frequency supported by SetTimer.
   SetTimer(result, kDirectManipulationTimer, 14, nullptr);
   direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
   direct_manipulation_owner_->Init(width, height);
