@@ -263,16 +263,18 @@ class ClangTidy {
     } else {
       totalCommands.addAll(buildCommandsData.map((Object? data) => Command.fromMap((data as Map<String, Object?>?)!)));
     }
-    Stream<Command> filterCommands() async* {
+    return () async {
+      final List<Command> result = <Command>[];
       for (final Command command in totalCommands) {
         final LintAction lintAction = await command.lintAction;
         // Short-circuit the expensive containsAny call for the many third_party files.
-        if (lintAction != LintAction.skipThirdParty && command.containsAny(files)) {
-          yield command;
+        if (lintAction != LintAction.skipThirdParty &&
+            command.containsAny(files)) {
+          result.add(command);
         }
       }
-    }
-    return filterCommands().toList();
+      return result;
+    }();
   }
 
   Future<_ComputeJobsResult> _computeJobs(
