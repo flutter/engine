@@ -234,7 +234,7 @@ class ClangTidy {
     List<io.File> files,
     List<List<Object?>> sharedBuildCommandsData,
     int? shardId,
-  ) async {
+  ) {
     final List<Command> totalCommands = <Command>[];
     if (sharedBuildCommandsData.isNotEmpty) {
       final Iterable<Command> buildCommands = buildCommandsData
