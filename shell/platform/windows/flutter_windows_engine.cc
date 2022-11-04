@@ -185,9 +185,10 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
-  messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
+  messenger_wrapper_ =
+      std::make_unique<BinaryMessengerImpl>(messenger_->ToRef());
   message_dispatcher_ =
-      std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+      std::make_unique<IncomingMessageDispatcher>(messenger_->ToRef());
   message_dispatcher_->SetMessageCallback(
       kAccessibilityChannelName,
       [](FlutterDesktopMessengerRef messenger,

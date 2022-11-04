@@ -262,8 +262,9 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
                                           const size_t message_size,
                                           const FlutterDesktopBinaryReply reply,
                                           void* user_data) {
-  return messenger->GetEngine()->SendPlatformMessage(
-      channel, message, message_size, reply, user_data);
+  return flutter::FlutterDesktopMessenger::FromRef(messenger)
+      ->GetEngine()
+      ->SendPlatformMessage(channel, message, message_size, reply, user_data);
 }
 
 bool FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
@@ -279,39 +280,45 @@ void FlutterDesktopMessengerSendResponse(
     const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
-  messenger->GetEngine()->SendPlatformMessageResponse(handle, data,
-                                                      data_length);
+  flutter::FlutterDesktopMessenger::FromRef(messenger)
+      ->GetEngine()
+      ->SendPlatformMessageResponse(handle, data, data_length);
 }
 
 void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         const char* channel,
                                         FlutterDesktopMessageCallback callback,
                                         void* user_data) {
-  messenger->GetEngine()->message_dispatcher()->SetMessageCallback(
-      channel, callback, user_data);
+  flutter::FlutterDesktopMessenger::FromRef(messenger)
+      ->GetEngine()
+      ->message_dispatcher()
+      ->SetMessageCallback(channel, callback, user_data);
 }
 
 FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(
     FlutterDesktopMessengerRef messenger) {
-  return messenger->AddRef();
+  return flutter::FlutterDesktopMessenger::FromRef(messenger)
+      ->AddRef()
+      ->ToRef();
 }
 
 void FlutterDesktopMessengerRelease(FlutterDesktopMessengerRef messenger) {
-  messenger->Release();
+  flutter::FlutterDesktopMessenger::FromRef(messenger)->Release();
 }
 
 bool FlutterDesktopMessengerIsAvailable(FlutterDesktopMessengerRef messenger) {
-  return messenger->GetEngine() != nullptr;
+  return flutter::FlutterDesktopMessenger::FromRef(messenger)->GetEngine() !=
+         nullptr;
 }
 
 FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
     FlutterDesktopMessengerRef messenger) {
-  messenger->GetMutex().lock();
+  flutter::FlutterDesktopMessenger::FromRef(messenger)->GetMutex().lock();
   return messenger;
 }
 
 void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
-  messenger->GetMutex().unlock();
+  flutter::FlutterDesktopMessenger::FromRef(messenger)->GetMutex().unlock();
 }
 
 FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
