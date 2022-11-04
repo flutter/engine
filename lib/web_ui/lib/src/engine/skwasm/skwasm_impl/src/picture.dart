@@ -18,11 +18,11 @@ class SkwasmPicture implements ui.Picture {
 
   @override
   int get approximateBytesUsed => pictureApproximateBytesUsed(_handle);
-  
+
   @override
   // TODO(jacksongardner): implement debugDisposed
   bool get debugDisposed => throw UnimplementedError();
-  
+
   @override
   ui.Image toImageSync(int width, int height) {
     // TODO(jacksongardner): implement toImageSync
@@ -31,7 +31,7 @@ class SkwasmPicture implements ui.Picture {
 }
 
 class SkwasmPictureRecorder implements ui.PictureRecorder {
-  factory SkwasmPictureRecorder() => 
+  factory SkwasmPictureRecorder() =>
     SkwasmPictureRecorder._fromHandle(pictureRecorderCreate());
 
   SkwasmPictureRecorder._fromHandle(this._handle);
@@ -42,7 +42,7 @@ class SkwasmPictureRecorder implements ui.PictureRecorder {
   void delete() => pictureRecorderDestroy(_handle);
 
   @override
-  SkwasmPicture endRecording() => 
+  SkwasmPicture endRecording() =>
     SkwasmPicture.fromHandle(pictureRecorderEndRecording(_handle));
 
   @override

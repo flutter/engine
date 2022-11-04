@@ -91,7 +91,7 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawColor(ui.Color color, ui.BlendMode blendMode) => 
+  void drawColor(ui.Color color, ui.BlendMode blendMode) =>
     canvasDrawColor(_handle, color.value, blendMode.index);
 
   @override
@@ -242,25 +242,25 @@ class SkwasmCanvas implements ui.Canvas {
   ) {
     throw UnimplementedError();
   }
-  
+
   @override
   ui.Rect getDestinationClipBounds() {
     // TODO(jacksongardner): implement getDestinationClipBounds
     throw UnimplementedError();
   }
-  
+
   @override
   ui.Rect getLocalClipBounds() {
     // TODO(jacksongardner): implement getLocalClipBounds
     throw UnimplementedError();
   }
-  
+
   @override
   Float64List getTransform() {
     // TODO(jacksongardner): implement getTransform
     throw UnimplementedError();
   }
-  
+
   @override
   void restoreToCount(int count) {
     // TODO(jacksongardner): implement restoreToCount

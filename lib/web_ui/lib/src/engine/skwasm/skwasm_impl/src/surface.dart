@@ -16,9 +16,9 @@ class Surface {
   Surface._fromHandle(this._handle);
   final SurfaceHandle _handle;
 
-  void setSize(int width, int height) => 
+  void setSize(int width, int height) =>
     surfaceSetCanvasSize(_handle, width, height);
 
-  void renderPicture(SkwasmPicture picture) => 
+  void renderPicture(SkwasmPicture picture) =>
     surfaceRenderPicture(_handle, picture.handle);
 }

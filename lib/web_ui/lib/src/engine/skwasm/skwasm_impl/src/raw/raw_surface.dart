@@ -18,8 +18,8 @@ external void surfaceDestroy(SurfaceHandle surface);
   'skwasm.surface_setCanvasSize',
   isLeaf: true)
 external void surfaceSetCanvasSize(
-  SurfaceHandle surface, 
-  int width, 
+  SurfaceHandle surface,
+  int width,
   int height
 );
 

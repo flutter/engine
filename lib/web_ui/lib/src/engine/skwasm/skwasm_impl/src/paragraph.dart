@@ -139,10 +139,10 @@ class SkwasmParagraph implements ui.Paragraph {
   List<SkwasmLineMetrics> computeLineMetrics() {
     throw UnimplementedError();
   }
-  
+
   @override
   bool get debugDisposed => throw UnimplementedError();
-  
+
   @override
   void dispose() {
   }

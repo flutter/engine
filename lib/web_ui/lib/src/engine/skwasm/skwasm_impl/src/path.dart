@@ -221,7 +221,7 @@ class SkwasmPath implements ui.Path {
   bool contains(ui.Offset point) => pathContains(_handle, point.dx, point.dy);
 
   @override
-  ui.Path shift(ui.Offset offset) => 
+  ui.Path shift(ui.Offset offset) =>
     transform(engine.Matrix4.translationValues(offset.dx, offset.dy, 0.0).toFloat64());
 
   @override
@@ -239,21 +239,21 @@ class SkwasmPath implements ui.Path {
       final Pointer<Float> rectBuffer = s.allocFloatArray(4);
       pathGetBounds(_handle, rectBuffer);
       return ui.Rect.fromLTRB(
-        rectBuffer[0], 
-        rectBuffer[1], 
-        rectBuffer[2], 
+        rectBuffer[0],
+        rectBuffer[1],
+        rectBuffer[2],
         rectBuffer[3]
       );
     });
   }
 
   static SkwasmPath combine(
-    ui.PathOperation operation, 
-    SkwasmPath path1, 
+    ui.PathOperation operation,
+    SkwasmPath path1,
     SkwasmPath path2) =>
     SkwasmPath._fromHandle(pathCombine(
         operation.index, path1._handle, path2._handle));
-  
+
   @override
   ui.PathMetrics computeMetrics({bool forceClosed = false}) {
     // TODO(jacksongardner): implement computeMetrics

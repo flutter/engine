@@ -133,7 +133,7 @@ class SkwasmRenderer implements Renderer {
       List<int>? indices
     }) =>
     SkwasmVertices(
-      mode, 
+      mode,
       positions,
       textureCoordinates: textureCoordinates,
       colors: colors,

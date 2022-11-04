@@ -64,26 +64,26 @@ class SkwasmPaint implements ui.Paint {
 
   @override
   double get strokeMiterLimit => paintGetMiterLimit(_handle);
-  
+
   @override
   set strokeMiterLimit(double limit) => paintSetMiterLimit(_handle, limit);
 
   // Unimplemented stuff below
   @override
   ui.ColorFilter? colorFilter;
-  
+
   @override
   ui.FilterQuality filterQuality = ui.FilterQuality.none;
-  
+
   @override
   ui.ImageFilter? imageFilter;
-  
+
   @override
   bool invertColors = false;
-  
+
   @override
   ui.MaskFilter? maskFilter;
-  
+
   @override
-  ui.Shader? shader;  
+  ui.Shader? shader;
 }

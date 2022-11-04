@@ -51,7 +51,7 @@ external void pathRelativeQuadraticBezierTo(
   'skwasm.path_cubicTo',
   isLeaf: true)
 external void pathCubicTo(
-  PathHandle path, 
+  PathHandle path,
   double x1,
   double y1,
   double x2,
@@ -61,7 +61,7 @@ external void pathCubicTo(
 );
 
 @FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float, Float)>(
-  'skwasm.path_relativeCubicTo', 
+  'skwasm.path_relativeCubicTo',
   isLeaf: true)
 external void pathRelativeCubicTo(
   PathHandle path,
@@ -74,7 +74,7 @@ external void pathRelativeCubicTo(
 );
 
 @FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float)>(
-  'skwasm.path_conicTo', 
+  'skwasm.path_conicTo',
   isLeaf: true)
 external void pathConicTo(
   PathHandle path,
@@ -86,7 +86,7 @@ external void pathConicTo(
 );
 
 @FfiNative<Void Function(PathHandle, Float, Float, Float, Float, Float)>(
-  'skwasm.path_relativeConicTo', 
+  'skwasm.path_relativeConicTo',
   isLeaf: true)
 external void pathRelativeConicTo(
   PathHandle path,
@@ -98,7 +98,7 @@ external void pathRelativeConicTo(
 );
 
 @FfiNative<Void Function(PathHandle, RawRect, Float, Float, Bool)>(
-  'skwasm.path_arcToOval', 
+  'skwasm.path_arcToOval',
   isLeaf: true)
 external void pathArcToOval(
   PathHandle path,
@@ -109,7 +109,7 @@ external void pathArcToOval(
 );
 
 @FfiNative<Void Function(PathHandle, Float, Float, Float, Int, Int, Float, Float)>(
-  'skwasm.path_arcToRotated', 
+  'skwasm.path_arcToRotated',
   isLeaf: true)
 external void pathArcToRotated(
     PathHandle path,
@@ -123,7 +123,7 @@ external void pathArcToRotated(
 );
 
 @FfiNative<Void Function(PathHandle, Float, Float, Float, Int, Int, Float, Float)>(
-  'skwasm.path_relativeArcToRotated', 
+  'skwasm.path_relativeArcToRotated',
   isLeaf: true)
 external void pathRelativeArcToRotated(
     PathHandle path,
