@@ -426,6 +426,7 @@ TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles) {
     } else if (path.isWithin(uiTestDirectory, testFile.absolute)) {
       htmlTargets.add(testFile);
       canvasKitTargets.add(testFile);
+      skwasmTargets.add(testFile);
     } else {
       htmlTargets.add(testFile);
     }

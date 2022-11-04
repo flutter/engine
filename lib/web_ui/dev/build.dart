@@ -28,6 +28,10 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       defaultsTo: true
     );
     argParser.addFlag(
+      'build-skwasm',
+      help: 'Build skwasm library',
+    );
+    argParser.addFlag(
       'host',
       help: 'Build the host build instead of the wasm build, which is '
           'currently needed for `flutter run --local-engine` to work.'
@@ -44,13 +48,15 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get buildCanvasKit => boolArg('build-canvaskit');
 
+  bool get buildSkwasm => boolArg('build-skwasm');
+
   bool get host => boolArg('host');
 
   @override
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(buildCanvasKit: buildCanvasKit, host: host),
+      GnPipelineStep(buildCanvasKit: buildCanvasKit, buildSkwasm: buildSkwasm, host: host),
       NinjaPipelineStep(target: host ? environment.hostDebugUnoptDir : environment.wasmReleaseOutDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -75,9 +81,10 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 /// Not safe to interrupt as it may leave the `out/` directory in a corrupted
 /// state. GN is pretty quick though, so it's OK to not support interruption.
 class GnPipelineStep extends ProcessStep {
-  GnPipelineStep({required this.buildCanvasKit, required this.host});
+  GnPipelineStep({required this.buildCanvasKit, required this.buildSkwasm, required this.host});
 
   final bool buildCanvasKit;
+  final bool buildSkwasm;
   final bool host;
 
   @override
@@ -97,6 +104,7 @@ class GnPipelineStep extends ProcessStep {
         '--web',
         '--runtime-mode=release',
         if (buildCanvasKit) '--build-canvaskit',
+        if (buildSkwasm) '--build-skwasm',
       ];
     }
   }

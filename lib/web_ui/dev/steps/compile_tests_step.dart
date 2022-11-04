@@ -23,10 +23,15 @@ import '../utils.dart';
 ///  * test/        - compiled test code
 ///  * test_images/ - test images copied from Skis sources.
 class CompileTestsStep implements PipelineStep {
-  CompileTestsStep({this.testFiles, this.useLocalCanvasKit = false, this.isWasm = false});
+  CompileTestsStep({
+    this.testFiles,
+    this.useLocalCanvasKit = false,
+    this.useSkwasm = false,
+    this.isWasm = false});
 
   final List<FilePath>? testFiles;
   final bool isWasm;
+  final bool useSkwasm;
 
   final bool useLocalCanvasKit;
 
@@ -49,6 +54,9 @@ class CompileTestsStep implements PipelineStep {
       await copyDart2WasmRuntime();
     }
     await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
+    if (useSkwasm) {
+      await copySkwasm();
+    }
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
@@ -135,12 +143,12 @@ Future<void> copyDart2WasmRuntime() async {
     'bin',
     'dart2wasm_runtime.mjs',
   ));
-  final io.Directory targetDir = io.Directory(pathlib.join(
+  final io.File targetFile = io.File(pathlib.join(
     environment.webUiBuildDir.path,
     'dart2wasm_runtime.mjs',
   ));
 
-  await sourceFile.copy(targetDir.path);
+  await sourceFile.copy(targetFile.path);
 }
 
 Future<void> copyDart2WasmTestScript() async {
@@ -148,11 +156,36 @@ Future<void> copyDart2WasmTestScript() async {
     environment.webUiDevDir.path,
     'test_dart2wasm.js',
   ));
-  final io.Directory targetDir = io.Directory(pathlib.join(
+  final io.File targetFile = io.File(pathlib.join(
     environment.webUiBuildDir.path,
     'test_dart2wasm.js',
   ));
-  await sourceFile.copy(targetDir.path);
+  await sourceFile.copy(targetFile.path);
+}
+
+Future<void> copySkwasm() async {
+  final io.Directory targetDir = io.Directory(pathlib.join(
+    environment.webUiBuildDir.path,
+    'skwasm',
+  ));
+
+  await targetDir.create(recursive: true);
+
+  for (final String fileName in <String>[
+    'skwasm.wasm',
+    'skwasm.js',
+    'skwasm.worker.js',
+  ]) {
+    final io.File sourceFile = io.File(pathlib.join(
+      environment.wasmReleaseOutDir.path,
+      fileName,
+    ));
+    final io.File targetFile = io.File(pathlib.join(
+      targetDir.path,
+      fileName,
+    ));
+    await sourceFile.copy(targetFile.path);
+  }
 }
 
 Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {

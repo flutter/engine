@@ -8,6 +8,7 @@ import("//third_party/dart/build/dart/dart_action.gni")
 
 declare_args() {
   build_canvaskit = false
+  build_skwasm = false
   archive_flutter_web_sdk = true
 }
 
@@ -593,6 +594,10 @@ if (!is_fuchsia) {
       deps += [ "//third_party/skia/modules/canvaskit" ]
     }
 
+    if (build_skwasm) {
+      deps += [ "//flutter/lib/web_ui/skwasm" ]
+    }
+
     # flutter_ddc_modules
     sources = get_target_outputs(":flutter_dartdevc_kernel_sdk")
     sources += get_target_outputs(":flutter_dartdevc_canvaskit_kernel_sdk")
@@ -646,6 +651,22 @@ if (!is_fuchsia) {
         {
           source = rebase_path("$root_out_dir/canvaskit.wasm")
           destination = "canvaskit/canvaskit.wasm"
+        },
+      ]
+    }
+    if (build_skwasm) {
+      tmp_files += [
+        {
+          source = rebase_path("$root_out_dir/skwasm.js")
+          destination = "skwasm/skwasm.js"
+        },
+        {
+          source = rebase_path("$root_out_dir/skwasm.js")
+          destination = "skwasm/skwasm.worker.js"
+        },
+        {
+          source = rebase_path("$root_out_dir/canvaskit.wasm")
+          destination = "skwasm/skwasm.wasm"
         },
       ]
     }

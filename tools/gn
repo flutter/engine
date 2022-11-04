@@ -261,6 +261,7 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
   if args.build_web_sdk or args.full_dart_sdk:
     gn_args['build_canvaskit'] = args.build_canvaskit
+    gn_args['build_skwasm'] = args.build_skwasm
 
   if args.enable_unittests:
     gn_args['enable_unittests'] = args.enable_unittests
@@ -646,6 +647,7 @@ def to_gn_wasm_args(args, gn_args):
   # than forced to true, once the recipes are updated.
   # https://github.com/flutter/flutter/issues/113303
   gn_args['build_canvaskit'] = True
+  gn_args['build_skwasm'] = args.build_skwasm
   gn_args['flutter_build_web_sdk'] = True
 
 
@@ -864,6 +866,16 @@ def parse_args(args):
   )
   parser.add_argument(
       '--no-build-canvaskit', dest='build_canvaskit', action='store_false'
+  )
+
+  parser.add_argument(
+      '--build-skwasm',
+      default=False,
+      action='store_true',
+      help='build skwasm library'
+  )
+  parser.add_argument(
+      '--no-build-skwasm', dest='build_skwasm', action='store_false'
   )
 
   parser.add_argument(
