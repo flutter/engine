@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
@@ -136,14 +137,10 @@ void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
     std::shared_ptr<const ShaderFunction> function) {
   Lock lock(pipelines_mutex_);
 
-  for (auto it = pipelines_.begin(); it != pipelines_.end();) {
-    if (it->first.GetEntrypointForStage(function->GetStage())
-            ->IsEqual(*function)) {
-      it = pipelines_.erase(it);
-      continue;
-    }
-    it++;
-  }
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
 }
 
 //----------------------------------------------------------------------------
