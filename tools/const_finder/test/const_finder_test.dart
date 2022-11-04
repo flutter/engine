@@ -38,8 +38,8 @@ void expectInstances(dynamic value, dynamic expected, Compiler compiler) {
     equality = const DeepCollectionEquality();
   }
   if (!equality.equals(value, expected)) {
-    stderr.writeln('Expected: ${const JsonEncoder.withIndent('  ').convert(expected)}');
-    stderr.writeln('Actual:   ${const JsonEncoder.withIndent('  ').convert(value)}');
+    stderr.writeln('Expected: ${jsonEncode(expected)}');
+    stderr.writeln('Actual:   ${jsonEncode(value)}');
     exitCode = -1;
   }
 }
@@ -114,6 +114,7 @@ void _checkConsts(String dillPath, Compiler compiler) {
   );
 }
 
+// Verify constants declared in a class specified in ignoredClasses will be ignored.
 void _checkDenyList(String dillPath, Compiler compiler) {
   stdout.writeln('Checking constant instances in a denylist are ignored with $compiler');
   final ConstFinder finder = ConstFinder(
@@ -239,6 +240,11 @@ void checkProcessResult(ProcessResult result) {
   expect(result.exitCode, 0);
 }
 
+final String basePath =
+    path.canonicalize(path.join(path.dirname(Platform.script.toFilePath()), '..'));
+final String fixtures = path.join(basePath, 'test', 'fixtures');
+final String packageConfig = path.join(fixtures, '.dart_tool', 'package_config.json');
+
 Future<void> main(List<String> args) async {
   if (args.length != 3) {
     stderr.writeln('The first argument must be the path to the frontend server dill.');
@@ -247,128 +253,105 @@ Future<void> main(List<String> args) async {
     exit(-1);
   }
 
-  TestRunner(
-    frontendServer: args[0],
-    sdkRoot: args[1],
-    librariesSpec: args[2],
-  ).test();
-}
+  final String frontendServer = args[0];
+  final String sdkRoot = args[1];
+  final String librariesSpec = args[2];
 
-final String basePath =
-    path.canonicalize(path.join(path.dirname(Platform.script.toFilePath()), '..'));
-final String fixtures = path.join(basePath, 'test', 'fixtures');
-final String packageConfig = path.join(fixtures, '.dart_tool', 'package_config.json');
+  final List<_Test> tests = <_Test>[
+    _Test(
+      name: 'box_frontend',
+      dartSource: path.join(fixtures, 'lib', 'box.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkRecursion,
+      compiler: Compiler.frontendServer,
+    ),
+    _Test(
+      name: 'box_web',
+      dartSource: path.join(fixtures, 'lib', 'box.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkRecursion,
+      compiler: Compiler.dart2js,
+    ),
+    _Test(
+      name: 'consts_frontend',
+      dartSource: path.join(fixtures, 'lib', 'consts.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkConsts,
+      compiler: Compiler.frontendServer,
+    ),
+    _Test(
+      name: 'consts_web',
+      dartSource: path.join(fixtures, 'lib', 'consts.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkConsts,
+      compiler: Compiler.dart2js,
+    ),
+    _Test(
+      name: 'consts_and_non_frontend',
+      dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkNonConstsFrontend,
+      compiler: Compiler.frontendServer,
+    ),
+    _Test(
+      name: 'consts_and_non_web',
+      dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkNonConstsWeb,
+      compiler: Compiler.dart2js,
+    ),
+    _Test(
+      name: 'denylist_frontend',
+      dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkDenyList,
+      compiler: Compiler.frontendServer,
+    ),
+    _Test(
+      name: 'denylist_web',
+      dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
+      frontendServer: frontendServer,
+      sdkRoot: sdkRoot,
+      librariesSpec: librariesSpec,
+      verify: _checkDenyList,
+      compiler: Compiler.dart2js,
+    ),
+  ];
+  try {
+    stdout.writeln('Generating kernel fixtures...');
 
-class TestRunner {
-  TestRunner({
-    required this.frontendServer,
-    required this.sdkRoot,
-    required this.librariesSpec,
-  });
-
-  //static final String box = path.join(fixtures, 'lib', 'box.dart');
-  //static final String consts = path.join(fixtures, 'lib', 'consts.dart');
-  //static final String constsAndNon = path.join(fixtures, 'lib', 'consts_and_non.dart');
-
-  final String frontendServer;
-  final String sdkRoot;
-  final String librariesSpec;
-
-  void test() {
-    final List<_Test> tests = <_Test>[
-      _Test(
-        name: 'box_frontend',
-        dartSource: path.join(fixtures, 'lib', 'box.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkRecursion,
-        compiler: Compiler.frontendServer,
-      ),
-      _Test(
-        name: 'box_web',
-        dartSource: path.join(fixtures, 'lib', 'box.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkRecursion,
-        compiler: Compiler.dart2js,
-      ),
-      _Test(
-        name: 'consts_frontend',
-        dartSource: path.join(fixtures, 'lib', 'consts.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkConsts,
-        compiler: Compiler.frontendServer,
-      ),
-      _Test(
-        name: 'consts_web',
-        dartSource: path.join(fixtures, 'lib', 'consts.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkConsts,
-        compiler: Compiler.dart2js,
-      ),
-      _Test(
-        name: 'consts_and_non_frontend',
-        dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkNonConstsFrontend,
-        compiler: Compiler.frontendServer,
-      ),
-      _Test(
-        name: 'consts_and_non_web',
-        dartSource: path.join(fixtures, 'lib', 'consts_and_non.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkNonConstsWeb,
-        compiler: Compiler.dart2js,
-      ),
-      _Test(
-        name: 'denylist_frontend',
-        dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkDenyList,
-        compiler: Compiler.frontendServer,
-      ),
-      _Test(
-        name: 'denylist_web',
-        dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
-        frontendServer: frontendServer,
-        sdkRoot: sdkRoot,
-        librariesSpec: librariesSpec,
-        verify: _checkDenyList,
-        compiler: Compiler.dart2js,
-      ),
-    ];
+    for (final _Test test in tests) {
+      test.run();
+    }
+  } finally {
     try {
-      stdout.writeln('Generating kernel fixtures...');
-
       for (final _Test test in tests) {
-        test.run();
+        test.dispose();
       }
     } finally {
-      try {
-        for (final _Test test in tests) {
-          test.dispose();
-        }
-      } finally {
-        stdout.writeln('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
-      }
+      stdout.writeln('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
     }
   }
 }
 
 enum Compiler {
+  // Uses TFA tree-shaking.
   frontendServer,
+  // Does not have TFA tree-shaking.
   dart2js,
 }
 
@@ -395,7 +378,7 @@ class _Test {
   final List<String> resourcesToDispose = <String>[];
 
   void run() {
-    stdout.writeln('Compiling $dartSource to $dillPath');
+    stdout.writeln('Compiling $dartSource to $dillPath with $compiler');
 
     if (compiler == Compiler.frontendServer) {
       _compileTFADill();
