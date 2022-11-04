@@ -177,12 +177,12 @@ bool CompilerSkSL::emit_struct_resources() {
 }
 
 void CompilerSkSL::detect_unsupported_resources() {
-  // UBOs and SSBOs are not supported.
   for (auto& id : ir.ids) {
     if (id.get_type() == TypeVariable) {
       auto& var = id.get<SPIRVariable>();
       auto& type = get<SPIRType>(var.basetype);
 
+      // UBOs and SSBOs are not supported.
       if (var.storage != StorageClassFunction && type.pointer &&
           type.storage == StorageClassUniform && !is_hidden_variable(var) &&
           (ir.meta[type.self].decoration.decoration_flags.get(
@@ -192,17 +192,18 @@ void CompilerSkSL::detect_unsupported_resources() {
         FLUTTER_CROSS_THROW("SkSL does not support UBOs or SSBOs: '" +
                             get_name(var.self) + "'");
       }
-    }
-  }
 
-  // Push constant blocks are not supported.
-  for (auto& id : ir.ids) {
-    if (id.get_type() == TypeVariable) {
-      auto& var = id.get<SPIRVariable>();
-      auto& type = get<SPIRType>(var.basetype);
+      // Push constant blocks are not supported.
       if (!is_hidden_variable(var) && var.storage != StorageClassFunction &&
           type.pointer && type.storage == StorageClassPushConstant) {
         FLUTTER_CROSS_THROW("SkSL does not support push constant blocks: '" +
+                            get_name(var.self) + "'");
+      }
+
+      // User specified inputs are not supported.
+      if (!is_hidden_variable(var) && var.storage != StorageClassFunction &&
+          type.pointer && type.storage == StorageClassInput) {
+        FLUTTER_CROSS_THROW("SkSL does not support inputs: '" +
                             get_name(var.self) + "'");
       }
     }
@@ -442,6 +443,15 @@ std::string CompilerSkSL::to_function_args(const TextureFunctionArguments& args,
   std::string name = to_expression(args.base.img);
 
   std::string glsl_args = CompilerGLSL::to_function_args(args, p_forward);
+  // SkSL only supports coordinates. All other arguments to texture are
+  // unsupported and will generate invalid SkSL.
+  if (args.grad_x || args.grad_y || args.lod || args.coffset || args.offset ||
+      args.sample || args.min_lod || args.sparse_texel || args.bias ||
+      args.component) {
+    FLUTTER_CROSS_THROW(
+        "Only sampler and position arguments are supported in texture() "
+        "calls.");
+  }
 
   // GLSL puts the shader as the first argument, but in SkSL the shader is
   // implicitly passed as the reciever of the 'eval' method. Therefore, the
