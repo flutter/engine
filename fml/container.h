@@ -16,7 +16,7 @@ template <
 void erase_if(Collection container,
               std::function<bool(typename Collection::iterator)> predicate) {
   auto it = container.begin();
-  while (it != it.end()) {
+  while (it != container.end()) {
     if (predicate(it)) {
       it = container.erase(it);
       continue;
