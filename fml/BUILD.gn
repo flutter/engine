@@ -311,6 +311,7 @@ if (enable_unittests) {
       "backtrace_unittests.cc",
       "base32_unittest.cc",
       "command_line_unittest.cc",
+      "container_unittests.cc",
       "endianness_unittests.cc",
       "file_unittest.cc",
       "hash_combine_unittests.cc",
