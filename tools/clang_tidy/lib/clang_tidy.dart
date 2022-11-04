@@ -201,14 +201,13 @@ class ClangTidy {
   }
 
   /// This returns a `_SetStatusCommand` for each [Command] in [items].
-  /// `Intersection` if the Command shows up in [items] and all [sets],
-  /// otherwise `Difference`.
+  /// `Intersection` if the Command shows up in [items] and its filePath in all
+  /// [sets], otherwise `Difference`.
   Iterable<_SetStatusCommand> _calcIntersection(
-      Iterable<Command> items, Iterable<List<Command>> sets) sync* {
+      Iterable<Command> items, Iterable<Set<String>> filePathSets) sync* {
     bool allSetsContain(Command command) {
-      for (final List<Command> set in sets) {
-        final Iterable<String> filePaths = set.map((Command e) => e.filePath);
-        if (!filePaths.contains(command.filePath)) {
+      for (final Set<String> filePathSet in filePathSets) {
+        if (!filePathSet.contains(command.filePath)) {
           return false;
         }
       }
@@ -239,13 +238,13 @@ class ClangTidy {
     if (sharedBuildCommandsData.isNotEmpty) {
       final Iterable<Command> buildCommands = buildCommandsData
           .map((dynamic data) => Command.fromMap(data as Map<String, Object?>));
-      final Iterable<List<Command>> shardBuildCommands =
+      final Iterable<Set<String>> shardFilePaths =
           sharedBuildCommandsData.map((List<Object?> list) => list
               .map((Object? data) =>
-                  Command.fromMap((data as Map<String, Object?>?)!))
-              .toList());
+                  Command.fromMap((data as Map<String, Object?>?)!).filePath)
+              .toSet());
       final Iterable<_SetStatusCommand> intersectionResults =
-          _calcIntersection(buildCommands, shardBuildCommands);
+          _calcIntersection(buildCommands, shardFilePaths);
       totalCommands.addAll(intersectionResults
           .where((_SetStatusCommand element) =>
               element.setStatus == _SetStatus.Difference)
@@ -259,7 +258,7 @@ class ClangTidy {
       intersection
           .sort((Command x, Command y) => x.filePath.compareTo(y.filePath));
       totalCommands.addAll(
-          _takeShard(intersection, shardId!, 1 + shardBuildCommands.length));
+          _takeShard(intersection, shardId!, 1 + sharedBuildCommandsData.length));
     } else {
       totalCommands.addAll(buildCommandsData.map((Object? data) => Command.fromMap((data as Map<String, Object?>?)!)));
     }
