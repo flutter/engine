@@ -11,9 +11,9 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     this.kernelFilePath,
     this.classLibraryUri,
     this.className,
+    this.ignoredClasses,
   )  : _visitedInstances = <String>{},
        constantInstances = <Map<String, dynamic>>[],
-       skippedConstantInstances = <Map<String, dynamic>>[],
        nonConstantLocations = <Map<String, dynamic>>[];
 
   /// The path to the file to open.
@@ -25,12 +25,15 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   /// The name of the class to find.
   final String className;
 
+  /// A list of two-element tuples corresponding to library URI and class name
+  /// that should be ignored.
+  final List<List<String>> ignoredClasses;
+
   final Set<String> _visitedInstances;
   final List<Map<String, dynamic>> constantInstances;
-  final List<Map<String, dynamic>> skippedConstantInstances;
   final List<Map<String, dynamic>> nonConstantLocations;
 
-  bool inIconClass = false;
+  bool inIgnoredClass = false;
 
   // A cache of previously evaluated classes.
   static final Map<Class, bool> _classHeirarchyCache = <Class, bool>{};
@@ -78,13 +81,19 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   @override
   void visitClass(Class node) {
-    if (node.name == 'Icons' && node.enclosingLibrary.importUri.toString() == 'package:flutter/src/material/icons.dart') {
-      inIconClass = true;
-      super.visitClass(node);
-      inIconClass = false;
-    } else {
-      super.visitClass(node);
+    // check if this is a class that we should ignore
+    for (final List<String> tuple in ignoredClasses) {
+      final String libraryUri = tuple[0];
+      final String className = tuple[1];
+      if (node.name == className && node.enclosingLibrary.importUri.toString() == libraryUri) {
+        inIgnoredClass = true;
+        super.visitClass(node);
+        inIgnoredClass = false;
+        return;
+      }
     }
+    // not an ignored class
+    super.visitClass(node);
   }
 
   @override
@@ -102,10 +111,11 @@ class _ConstVisitor extends RecursiveVisitor<void> {
       final PrimitiveConstant<dynamic> value = kvp.value as PrimitiveConstant<dynamic>;
       instance[kvp.key.asField.name.text] = value.value;
     }
-    if (_visitedInstances.add(instance.toString())) {
-      if (inIconClass) {
-        skippedConstantInstances.add(instance);
-      } else {
+    if (!inIgnoredClass) {
+      if (_visitedInstances.add(instance.toString())) {
+        if (instance['stringValue'] == 'unused1') {
+          throw 'whoops';
+        }
         constantInstances.add(instance);
       }
     }
@@ -125,10 +135,12 @@ class ConstFinder {
     required String kernelFilePath,
     required String classLibraryUri,
     required String className,
+    List<List<String>> ignoredClasses = const <List<String>>[],
   })  : _visitor = _ConstVisitor(
                     kernelFilePath,
                     classLibraryUri,
                     className,
+                    ignoredClasses,
                   );
 
   final _ConstVisitor _visitor;
@@ -137,11 +149,9 @@ class ConstFinder {
   Map<String, dynamic> findInstances() {
     _visitor._visitedInstances.clear();
     for (final Library library in loadComponentFromBinary(_visitor.kernelFilePath).libraries) {
-      //io.stderr.writeln('loadComponentFromBinary($library)');
       lastLibrary = library;
       library.visitChildren(_visitor);
     }
-    //io.stderr.flush();
     return <String, dynamic>{
       'constantInstances': _visitor.constantInstances,
       'nonConstantLocations': _visitor.nonConstantLocations,
