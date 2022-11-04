@@ -187,4 +187,17 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryMTL::GetPipeline(
   return future;
 }
 
+// |PipelineLibrary|
+void PipelineLibraryMTL::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  for (auto it = pipelines_.begin(); it != pipelines_.end();) {
+    if (it->first.GetEntrypointForStage(function->GetStage())
+            ->IsEqual(*function)) {
+      it = pipelines_.erase(it);
+      continue;
+    }
+    it++;
+  }
+}
+
 }  // namespace impeller
