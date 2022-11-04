@@ -189,6 +189,7 @@ class ClangTidy {
     return repo.changedFiles;
   }
 
+  /// Returns f(n) = value(n * [shardCount] + [id]).
   Iterable<T> _takeShard<T>(Iterable<T> values, int id, int shardCount) sync* {
     int count = 0;
     for (final T val in values) {
@@ -222,8 +223,11 @@ class ClangTidy {
     }
   }
 
-  /// Given a build commands json file, and the files with local changes,
-  /// compute the lint commands to run.
+  /// Given a build commands json file's contents in [buildCommandsData], and
+  /// the [files] with local changes, compute the lint commands to run.  If
+  /// build commands are supplied in [sharedBuildCommandsData] the intersection
+  /// of those build commands will be calculated and distributed across
+  /// instances via the [shardId].
   @visibleForTesting
   Future<List<Command>> getLintCommandsForFiles(
     List<Object?> buildCommandsData,
