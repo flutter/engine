@@ -201,7 +201,8 @@ void _checkNonConstsFrontend(String dillPath, Compiler compiler) {
   );
 }
 
-// Note, since web dills don't have tree shaking, we aren't able to eliminate 
+// Note, since web dills don't have tree shaking, we aren't able to eliminate
+// an additional const versus _checkNonConstFrontend.
 void _checkNonConstsWeb(String dillPath, Compiler compiler) {
   assert(compiler == Compiler.dart2js);
   stdout.writeln('Checking for non-constant instances with $compiler');
