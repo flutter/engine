@@ -80,7 +80,9 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
     FML_DCHECK(context.builder_multiplexer);
     if (needs_clip) {
       context.builder_multiplexer->save();
-      context.builder_multiplexer->clipRect(paint_bounds());
+      context.builder_multiplexer->clipRect(paint_bounds(),
+                                            SkClipOp::kIntersect,
+                                            /*is_aa=*/false);
     }
     context.builder_multiplexer->saveLayer(&paint_bounds(),
                                            cache_paint.dl_paint());
@@ -92,7 +94,9 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   } else {
     if (needs_clip) {
       context.internal_nodes_canvas->save();
-      context.internal_nodes_canvas->clipRect(paint_bounds());
+      context.internal_nodes_canvas->clipRect(paint_bounds(),
+                                              SkClipOp::kIntersect,
+                                              /*is_aa=*/false);
     }
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());

@@ -454,15 +454,16 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
 }
 
 TEST_F(ColorFilterLayerTest, ModifiesTransparentBlack) {
-  // In Skia, saveLayers with a color filter that modifies transparent black will fill all pixels
-  // within the clip, going beyond the user bounds hint. ColorFilterLayer must insert a clipRect
-  // before saveLayer to ensure it doesn't draw beyond its reported bounds.
+  // In Skia, saveLayers with a color filter that modifies transparent black
+  // will fill all pixels within the clip, going beyond the user bounds hint.
+  // ColorFilterLayer must insert a clipRect before saveLayer to ensure it
+  // doesn't draw beyond its reported bounds.
   // clang-format off
   float matrix[20] = {
-    0, 1, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    1, 0, 0, 0, 0,
-    0, 0, 0, 1, 0,
+    -1, 0, 0, 0, 1,
+     0,-1, 0, 0, 1,
+     0, 0,-1, 0, 1,
+     0, 0, 0,-1, 1,
   };
   // clang-format on
   auto layer_filter = DlMatrixColorFilter(matrix);
