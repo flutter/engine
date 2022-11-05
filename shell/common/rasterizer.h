@@ -27,6 +27,7 @@
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
+#include "rasterizer_sleep_strategy.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -545,7 +546,7 @@ class Rasterizer final : public SnapshotDelegate,
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<SnapshotController> snapshot_controller_;
-  std::deque<int> history_latencies_;
+  RasterizerSleepStrategy sleep_strategy_;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;

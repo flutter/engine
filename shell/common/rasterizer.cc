@@ -814,47 +814,16 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 
 void Rasterizer::MaybeSleepBeforeSubmit(
     FrameTimingsRecorder& frame_timings_recorder) {
-  // A simple threshold. Can change to fancier approaches later.
-  static const int MAX_HISTORY = 10;
-  static const int HISTORY_THRESH = 2;
-  // a bit more than enough to allow errors
-  static const fml::TimeDelta SAFE_MARGIN =
-      fml::TimeDelta::FromMicroseconds(500);
-
+  fml::TimePoint now = fml::TimePoint::Now();
+  fml::TimePoint vsync_target_time =
+      frame_timings_recorder.GetVsyncTargetTime();
   const fml::TimeDelta frame_budget =
       fml::TimeDelta::FromMillisecondsF(delegate_.GetFrameBudget().count());
 
-  fml::TimePoint vsync_target_time =
-      frame_timings_recorder.GetVsyncTargetTime();
-  fml::TimePoint now = fml::TimePoint::Now();
+  auto wakeup_time =
+      sleep_strategy_.Handle(now, vsync_target_time, frame_budget);
 
-  int curr_latency = static_cast<int>(
-      (now - vsync_target_time + frame_budget * 2).ToMicroseconds() /
-      frame_budget.ToMicroseconds());
-
-  // naive heuristics currently
-  int history_larger_latency_count = 0;
-  for (int history_latency : history_latencies_) {
-    if (history_latency > curr_latency) {
-      history_larger_latency_count++;
-    }
-  }
-  bool should_sleep = history_larger_latency_count >= HISTORY_THRESH;
-
-  // Again, this is very naive and can be fancier later
-  int expect_latency = curr_latency + 1;
-  // we want to wake up at the *beginning* of that vsync interval
-  fml::TimePoint wakeup_time =
-      vsync_target_time + frame_budget * (expect_latency - 2) + SAFE_MARGIN;
-
-  {
-    history_latencies_.push_back(curr_latency);
-    while (history_latencies_.size() > MAX_HISTORY) {
-      history_latencies_.pop_front();
-    }
-  }
-
-  if (should_sleep) {
+  if (wakeup_time.has_value()) {
     // Use busy wait instead of thread sleep, because otherwise we cannot
     // guarantee we are scheduled at the desired time by OS.
     // It may be seemingly wasting to busy wait, but indeed it is not. The
@@ -862,7 +831,7 @@ void Rasterizer::MaybeSleepBeforeSubmit(
     // rasterization is significantly shorter than other rasterizations.
     // Then, we are just using the CPU cycles that should have been used in
     // normal cases.
-    while (fml::TimePoint::Now() < wakeup_time) {
+    while (fml::TimePoint::Now() < wakeup_time.value()) {
       // nothing here
     }
   }
