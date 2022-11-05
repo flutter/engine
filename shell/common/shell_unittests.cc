@@ -115,7 +115,7 @@ class MockSurface : public Surface {
  public:
   MOCK_METHOD0(IsValid, bool());
 
-  MOCK_METHOD1(AcquireFrame,
+  MOCK_METHOD2(AcquireFrame,
                std::unique_ptr<SurfaceFrame>(
                    const SkISize& size,
                    BeforePresentCallback before_present_callback));

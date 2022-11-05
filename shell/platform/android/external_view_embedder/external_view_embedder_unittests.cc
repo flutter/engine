@@ -21,6 +21,7 @@
 namespace flutter {
 namespace testing {
 
+using ::testing::_;
 using ::testing::ByMove;
 using ::testing::Return;
 
