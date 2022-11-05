@@ -2047,6 +2047,9 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
+FILE: ../../../flutter/shell/common/rasterizer_sleep_strategy.cc
+FILE: ../../../flutter/shell/common/rasterizer_sleep_strategy.h
+FILE: ../../../flutter/shell/common/rasterizer_sleep_strategy_unittests.cc
 FILE: ../../../flutter/shell/common/rasterizer_unittests.cc
 FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.cc
 FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.h
