@@ -44,6 +44,8 @@ class Animator final {
 
     virtual void OnAnimatorDrawLastLayerTree(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
+
+    virtual fml::Milliseconds GetFrameBudget() = 0;
   };
 
   Animator(Delegate& delegate,

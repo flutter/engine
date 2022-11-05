@@ -104,7 +104,12 @@ void Animator::BeginFrame(
       // for current frame.
       // Therefore, we use heuristics to solve this. We will skip this frame if
       // the ongoing rasterization has been running for more than normal time.
-      if (TODO) {
+      auto last_raster_start_time = layer_tree_pipeline_->LastConsumeTime();
+      bool should_skip_frame = fml::TimePoint::Now() - last_raster_start_time >
+                               fml::TimeDelta::FromMillisecondsF(
+                                   delegate_.GetFrameBudget().count()) *
+                                   2;
+      if (should_skip_frame) {
         RequestFrame();
         return;
       }

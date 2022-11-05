@@ -181,9 +181,7 @@ class Pipeline {
                            : PipelineConsumeResult::Done;
   }
 
-  fml::TimePoint LastConsumeTime() {
-    return last_consume_time_;
-  }
+  fml::TimePoint LastConsumeTime() { return last_consume_time_; }
 
  private:
   fml::Semaphore empty_;
