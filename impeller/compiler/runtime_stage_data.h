@@ -37,7 +37,11 @@ class RuntimeStageData {
 
   void SetShaderData(std::shared_ptr<fml::Mapping> shader);
 
+  void SetSkSLData(std::shared_ptr<fml::Mapping> sksl);
+
   std::shared_ptr<fml::Mapping> CreateMapping() const;
+
+  std::shared_ptr<fml::Mapping> CreateJsonMapping() const;
 
  private:
   const std::string entrypoint_;
@@ -45,6 +49,7 @@ class RuntimeStageData {
   const TargetPlatform target_platform_;
   std::vector<UniformDescription> uniforms_;
   std::shared_ptr<fml::Mapping> shader_;
+  std::shared_ptr<fml::Mapping> sksl_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeStageData);
 };

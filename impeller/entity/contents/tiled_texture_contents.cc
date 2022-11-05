@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
@@ -67,19 +68,32 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   cmd.pipeline =
       renderer.GetTiledTexturePipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
-  auto allocator = renderer.GetContext()->GetResourceAllocator();
-  auto geometry_result = GetGeometry()->GetPositionBuffer(
-      allocator, host_buffer, renderer.GetTessellator(),
-      pass.GetRenderTargetSize());
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetTiledTexturePipeline(options);
+
   cmd.BindVertices(geometry_result.vertex_buffer);
-  cmd.primitive_type = geometry_result.type;
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              sampler_descriptor_));
-  pass.AddCommand(std::move(cmd));
 
+  if (!pass.AddCommand(std::move(cmd))) {
+    return false;
+  }
+
+  if (geometry_result.prevent_overdraw) {
+    return ClipRestoreContents().Render(renderer, entity, pass);
+  }
   return true;
 }
 

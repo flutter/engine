@@ -6,8 +6,37 @@ import 'dart:io' as io show File, Platform, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
+import 'package:clang_tidy/src/options.dart';
 import 'package:litetest/litetest.dart';
 import 'package:process_runner/process_runner.dart';
+
+// Recorded locally from clang-tidy.
+const String _tidyOutput = '''
+/runtime.dart_isolate.o" in /Users/aaclarke/dev/engine/src/out/host_debug exited with code 1
+3467 warnings generated.
+/Users/aaclarke/dev/engine/src/flutter/runtime/dart_isolate.cc:167:32: error: std::move of the const variable 'dart_entrypoint_args' has no effect; remove std::move() or make the variable non-const [performance-move-const-arg,-warnings-as-errors]
+                               std::move(dart_entrypoint_args))) {
+                               ^~~~~~~~~~                    ~
+Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+1 warning treated as error
+:
+3467 warnings generated.
+Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+1 warning treated as error
+
+
+
+''';
+
+const String _tidyTrimmedOutput = '''
+/Users/aaclarke/dev/engine/src/flutter/runtime/dart_isolate.cc:167:32: error: std::move of the const variable 'dart_entrypoint_args' has no effect; remove std::move() or make the variable non-const [performance-move-const-arg,-warnings-as-errors]
+                               std::move(dart_entrypoint_args))) {
+                               ^~~~~~~~~~                    ~
+Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+1 warning treated as error''';
 
 Future<int> main(List<String> args) async {
   if (args.isEmpty) {
@@ -34,6 +63,10 @@ Future<int> main(List<String> args) async {
     expect(clangTidy.options.help, isTrue);
     expect(result, equals(0));
     expect(errBuffer.toString(), contains('Usage: '));
+  });
+
+  test('trimmed clang-tidy output', () {
+    expect(_tidyTrimmedOutput, equals(ClangTidy.trimOutput(_tidyOutput)));
   });
 
   test('Error when --compile-commands and --target-variant are used together', () async {
@@ -228,14 +261,17 @@ Future<int> main(List<String> args) async {
     expect(commands, isNotEmpty);
     final Command command = commands.first;
     expect(command.tidyPath, contains('clang/bin/clang-tidy'));
-    final WorkerJob jobNoFix = command.createLintJob(null, false);
+    final Options noFixOptions = Options(buildCommandsPath: io.File('.'));
+    expect(noFixOptions.fix, isFalse);
+    final WorkerJob jobNoFix = command.createLintJob(noFixOptions);
     expect(jobNoFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
     expect(jobNoFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
     expect(jobNoFix.command[2], '--');
     expect(jobNoFix.command[3], '');
     expect(jobNoFix.command[4], endsWith(filePath));
 
-    final WorkerJob jobWithFix = command.createLintJob(null, true);
+    final Options fixOptions = Options(buildCommandsPath: io.File('.'), fix: true);
+    final WorkerJob jobWithFix = command.createLintJob(fixOptions);
     expect(jobWithFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
     expect(jobWithFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
     expect(jobWithFix.command[2], '--fix');

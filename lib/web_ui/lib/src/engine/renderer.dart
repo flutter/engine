@@ -32,8 +32,8 @@ abstract class Renderer {
     }
     bool useCanvasKit;
     if (FlutterConfiguration.flutterWebAutoDetect) {
-      if (requestedRendererType != null) {
-        useCanvasKit = requestedRendererType == 'canvaskit';
+      if (configuration.requestedRendererType != null) {
+        useCanvasKit = configuration.requestedRendererType == 'canvaskit';
       } else {
         // If requestedRendererType is not specified, use CanvasKit for desktop and
         // html for mobile.
@@ -152,6 +152,9 @@ abstract class Renderer {
     Float64List matrix4,
     ui.FilterQuality? filterQuality,
   );
+
+  void clearFragmentProgramCache();
+  Future<ui.FragmentProgram> createFragmentProgram(String assetKey);
 
   ui.Path createPath();
   ui.Path copyPath(ui.Path src);

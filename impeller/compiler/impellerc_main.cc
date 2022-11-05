@@ -70,6 +70,7 @@ bool Main(const fml::CommandLine& command_line) {
   options.defines = switches.defines;
   options.entry_point_name = EntryPointFunctionNameFromSourceName(
       switches.source_file_name, options.type);
+  options.json_format = switches.json_format;
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = switches.target_platform;
@@ -81,6 +82,25 @@ bool Main(const fml::CommandLine& command_line) {
                  .filename()
                  .native());
 
+  // Generate SkSL if needed.
+  std::shared_ptr<fml::Mapping> sksl_mapping;
+  if (switches.iplr && TargetPlatformBundlesSkSL(switches.target_platform)) {
+    SourceOptions sksl_options = options;
+    sksl_options.target_platform = TargetPlatform::kSkSL;
+
+    Reflector::Options sksl_reflector_options = reflector_options;
+    sksl_reflector_options.target_platform = TargetPlatform::kSkSL;
+
+    Compiler sksl_compiler =
+        Compiler(*source_file_mapping, sksl_options, sksl_reflector_options);
+    if (!sksl_compiler.IsValid()) {
+      std::cerr << "Compilation to SkSL failed." << std::endl;
+      std::cerr << sksl_compiler.GetErrorMessages() << std::endl;
+      return false;
+    }
+    sksl_mapping = sksl_compiler.GetSLShaderSource();
+  }
+
   Compiler compiler(*source_file_mapping, options, reflector_options);
   if (!compiler.IsValid()) {
     std::cerr << "Compilation failed." << std::endl;
@@ -90,10 +110,9 @@ bool Main(const fml::CommandLine& command_line) {
 
   auto spriv_file_name = std::filesystem::absolute(
       std::filesystem::current_path() / switches.spirv_file_name);
-  if (!fml::WriteAtomically(
-          *switches.working_directory,
-          reinterpret_cast<const char*>(spriv_file_name.u8string().c_str()),
-          *compiler.GetSPIRVAssembly())) {
+  if (!fml::WriteAtomically(*switches.working_directory,
+                            Utf8FromPath(spriv_file_name).c_str(),
+                            *compiler.GetSPIRVAssembly())) {
     std::cerr << "Could not write file to " << switches.spirv_file_name
               << std::endl;
     return false;
@@ -114,15 +133,19 @@ bool Main(const fml::CommandLine& command_line) {
         std::cerr << "Runtime stage information was nil." << std::endl;
         return false;
       }
-      auto stage_data_mapping = stage_data->CreateMapping();
+      if (sksl_mapping) {
+        stage_data->SetSkSLData(sksl_mapping);
+      }
+      auto stage_data_mapping = options.json_format
+                                    ? stage_data->CreateJsonMapping()
+                                    : stage_data->CreateMapping();
       if (!stage_data_mapping) {
         std::cerr << "Runtime stage data could not be created." << std::endl;
         return false;
       }
-      if (!fml::WriteAtomically(*switches.working_directory,  //
-                                reinterpret_cast<const char*>(
-                                    sl_file_name.u8string().c_str()),  //
-                                *stage_data_mapping                    //
+      if (!fml::WriteAtomically(*switches.working_directory,         //
+                                Utf8FromPath(sl_file_name).c_str(),  //
+                                *stage_data_mapping                  //
                                 )) {
         std::cerr << "Could not write file to " << switches.sl_file_name
                   << std::endl;
@@ -134,10 +157,9 @@ bool Main(const fml::CommandLine& command_line) {
         return false;
       }
     } else {
-      if (!fml::WriteAtomically(
-              *switches.working_directory,
-              reinterpret_cast<const char*>(sl_file_name.u8string().c_str()),
-              *compiler.GetSLShaderSource())) {
+      if (!fml::WriteAtomically(*switches.working_directory,
+                                Utf8FromPath(sl_file_name).c_str(),
+                                *compiler.GetSLShaderSource())) {
         std::cerr << "Could not write file to " << switches.sl_file_name
                   << std::endl;
         return false;
@@ -151,8 +173,7 @@ bool Main(const fml::CommandLine& command_line) {
           std::filesystem::current_path() / switches.reflection_json_name);
       if (!fml::WriteAtomically(
               *switches.working_directory,
-              reinterpret_cast<const char*>(
-                  reflection_json_name.u8string().c_str()),
+              Utf8FromPath(reflection_json_name).c_str(),
               *compiler.GetReflector()->GetReflectionJSON())) {
         std::cerr << "Could not write reflection json to "
                   << switches.reflection_json_name << std::endl;
@@ -166,8 +187,7 @@ bool Main(const fml::CommandLine& command_line) {
                                     switches.reflection_header_name.c_str());
       if (!fml::WriteAtomically(
               *switches.working_directory,
-              reinterpret_cast<const char*>(
-                  reflection_header_name.u8string().c_str()),
+              Utf8FromPath(reflection_header_name).c_str(),
               *compiler.GetReflector()->GetReflectionHeader())) {
         std::cerr << "Could not write reflection header to "
                   << switches.reflection_header_name << std::endl;
@@ -180,8 +200,7 @@ bool Main(const fml::CommandLine& command_line) {
           std::filesystem::absolute(std::filesystem::current_path() /
                                     switches.reflection_cc_name.c_str());
       if (!fml::WriteAtomically(*switches.working_directory,
-                                reinterpret_cast<const char*>(
-                                    reflection_cc_name.u8string().c_str()),
+                                Utf8FromPath(reflection_cc_name).c_str(),
                                 *compiler.GetReflector()->GetReflectionCC())) {
         std::cerr << "Could not write reflection CC to "
                   << switches.reflection_cc_name << std::endl;
@@ -209,10 +228,9 @@ bool Main(const fml::CommandLine& command_line) {
     }
     auto depfile_path = std::filesystem::absolute(
         std::filesystem::current_path() / switches.depfile_path.c_str());
-    if (!fml::WriteAtomically(
-            *switches.working_directory,
-            reinterpret_cast<const char*>(depfile_path.u8string().c_str()),
-            *compiler.CreateDepfileContents({result_file}))) {
+    if (!fml::WriteAtomically(*switches.working_directory,
+                              Utf8FromPath(depfile_path).c_str(),
+                              *compiler.CreateDepfileContents({result_file}))) {
       std::cerr << "Could not write depfile to " << switches.depfile_path
                 << std::endl;
       return false;

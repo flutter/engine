@@ -38,13 +38,16 @@ import 'package:web_test_utils/image_compare.dart';
 
 import 'browser.dart';
 import 'environment.dart' as env;
+import 'utils.dart';
 
 /// Custom test platform that serves web engine unit tests.
 class BrowserPlatform extends PlatformPlugin {
   BrowserPlatform._({
     required this.browserEnvironment,
     required this.server,
+    required this.renderer,
     required this.isDebug,
+    required this.isWasm,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
     required this.skiaClient,
@@ -100,16 +103,20 @@ class BrowserPlatform extends PlatformPlugin {
   /// instead of failing the test on screenshot mismatches.
   static Future<BrowserPlatform> start({
     required BrowserEnvironment browserEnvironment,
+    required Renderer renderer,
     required bool doUpdateScreenshotGoldens,
     required SkiaGoldClient? skiaClient,
     required String? overridePathToCanvasKit,
+    required bool isWasm,
   }) async {
     final shelf_io.IOServer server =
         shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
       browserEnvironment: browserEnvironment,
+      renderer: renderer,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
+      isWasm: isWasm,
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       packageConfig: await loadPackageConfigUri((await Isolate.packageConfig)!),
       skiaClient: skiaClient,
@@ -122,11 +129,16 @@ class BrowserPlatform extends PlatformPlugin {
   /// breakpoints in the code.
   final bool isDebug;
 
+  final bool isWasm;
+
   /// The underlying server.
   final shelf.Server server;
 
   /// Provides the environment for the browser running tests.
   final BrowserEnvironment browserEnvironment;
+
+  /// The renderer that tests are running under.
+  final Renderer renderer;
 
   /// The URL for this server.
   Uri get url => server.url.resolve('/');
@@ -361,6 +373,7 @@ class BrowserPlatform extends PlatformPlugin {
 
   static const Map<String, String> contentTypes = <String, String>{
     '.js': 'text/javascript',
+    '.mjs': 'text/javascript',
     '.wasm': 'application/wasm',
     '.html': 'text/html',
     '.htm': 'text/html',
@@ -384,10 +397,20 @@ class BrowserPlatform extends PlatformPlugin {
   ///
   /// This is used for trivial use-cases, such as `favicon.ico`, host pages, etc.
   shelf.Response buildDirectoryHandler(shelf.Request request) {
-    final File fileInBuild = File(p.join(
+    File fileInBuild = File(p.join(
       env.environment.webUiBuildDir.path,
       request.url.path,
     ));
+
+    // If we can't find the file in the top-level `build` directory, then it
+    // may be in the renderer-specific `build` subdirectory.
+    if (!fileInBuild.existsSync()) {
+      fileInBuild = File(p.join(
+        env.environment.webUiBuildDir.path,
+        getBuildDirForRenderer(renderer),
+        request.url.path,
+      ));
+    }
 
     if (!fileInBuild.existsSync()) {
       return shelf.Response.notFound('File not found: ${request.url.path}');
@@ -422,6 +445,8 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase">';
 
+      final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
+
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
@@ -434,7 +459,7 @@ class BrowserPlatform extends PlatformPlugin {
             };
           </script>
           $link
-          <script src="packages/test/dart.js"></script>
+          <script src="$testRunner"></script>
         </head>
         </html>
       ''', headers: <String, String>{'Content-Type': 'text/html'});
@@ -485,10 +510,6 @@ class BrowserPlatform extends PlatformPlugin {
     return suite;
   }
 
-  @override
-  StreamChannel<dynamic> loadChannel(String path, SuitePlatform platform) =>
-      throw UnimplementedError();
-
   Future<BrowserManager?>? _browserManager;
   Future<BrowserManager> get browserManager async => (await _browserManager!)!;
 
@@ -516,7 +537,9 @@ class BrowserPlatform extends PlatformPlugin {
       url: hostUrl,
       future: completer.future,
       packageConfig: packageConfig,
+      isWasm: isWasm,
       debug: isDebug,
+      renderer: renderer,
     );
 
     // Store null values for browsers that error out so we know not to load them
@@ -612,7 +635,7 @@ class BrowserManager {
   /// Creates a new BrowserManager that communicates with the browser over
   /// [webSocket].
   BrowserManager._(this.packageConfig, this._browser, this._browserEnvironment,
-      WebSocketChannel webSocket) {
+      this._renderer, this._isWasm, WebSocketChannel webSocket) {
     // The duration should be short enough that the debugging console is open as
     // soon as the user is done setting breakpoints, but long enough that a test
     // doing a lot of synchronous work doesn't trigger a false positive.
@@ -658,6 +681,9 @@ class BrowserManager {
   /// The browser environment for this test.
   final BrowserEnvironment _browserEnvironment;
 
+  /// The renderer for this test.
+  final Renderer _renderer;
+
   /// The channel used to communicate with the browser.
   ///
   /// This is connected to a page running `static/host.dart`.
@@ -680,6 +706,9 @@ class BrowserManager {
 
   /// Whether the channel to the browser has closed.
   bool _closed = false;
+
+  /// Whether we are running tests that have been compiled to WebAssembly.
+  final bool _isWasm;
 
   /// The completer for [_BrowserEnvironment.displayPause].
   ///
@@ -722,6 +751,8 @@ class BrowserManager {
     required Uri url,
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
+    required Renderer renderer,
+    required bool isWasm,
     bool debug = false,
   }) async {
     final Browser browser =
@@ -732,6 +763,8 @@ class BrowserManager {
         future: future,
         packageConfig: packageConfig,
         browser: browser,
+        renderer: renderer,
+        isWasm: isWasm,
         debug: debug);
   }
 
@@ -741,6 +774,8 @@ class BrowserManager {
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
     required Browser browser,
+    required Renderer renderer,
+    required bool isWasm,
     bool debug = false,
   }) {
     final Completer<BrowserManager> completer = Completer<BrowserManager>();
@@ -762,7 +797,7 @@ class BrowserManager {
         return;
       }
       completer.complete(BrowserManager._(
-          packageConfig, browser, browserEnvironment, webSocket));
+          packageConfig, browser, browserEnvironment, renderer, isWasm, webSocket));
     }).catchError((Object error, StackTrace stackTrace) {
       browser.close();
       if (completer.isCompleted) {
@@ -824,6 +859,11 @@ class BrowserManager {
       sink.close();
     }));
 
+    if (Configuration.current.pauseAfterLoad) {
+      print('Browser loaded. Press enter to start tests...');
+      stdin.readLineSync();
+    }
+
     return _pool.withResource<RunnerSuite>(() async {
       _channel.sink.add(<String, dynamic>{
         'command': 'loadSuite',
@@ -841,24 +881,30 @@ class BrowserManager {
             suiteChannel,
             message);
 
-        final String sourceMapFileName =
-            '${p.basename(path)}.browser_test.dart.js.map';
-        final String pathToTest = p.dirname(path);
+        if (_isWasm) {
+          // We don't have mapping for wasm yet. But we should send a message
+          // to let the host page move forward.
+          controller!.channel('test.browser.mapper').sink.add(null);
+        } else {
+          final String sourceMapFileName =
+              '${p.basename(path)}.browser_test.dart.js.map';
+          final String pathToTest = p.dirname(path);
 
-        final String mapPath = p.join(env.environment.webUiRootDir.path,
-            'build', pathToTest, sourceMapFileName);
+          final String mapPath = p.join(env.environment.webUiRootDir.path,
+              'build', getBuildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
 
-        final Map<String, Uri> packageMap = <String, Uri>{
-          for (Package p in packageConfig.packages) p.name: p.packageUriRoot
-        };
-        final JSStackTraceMapper mapper = JSStackTraceMapper(
-          await File(mapPath).readAsString(),
-          mapUrl: p.toUri(mapPath),
-          packageMap: packageMap,
-          sdkRoot: p.toUri(sdkDir),
-        );
+          final Map<String, Uri> packageMap = <String, Uri>{
+            for (Package p in packageConfig.packages) p.name: p.packageUriRoot
+          };
+          final JSStackTraceMapper mapper = JSStackTraceMapper(
+            await File(mapPath).readAsString(),
+            mapUrl: p.toUri(mapPath),
+            packageMap: packageMap,
+            sdkRoot: p.toUri(sdkDir),
+          );
 
-        controller!.channel('test.browser.mapper').sink.add(mapper.serialize());
+          controller!.channel('test.browser.mapper').sink.add(mapper.serialize());
+        }
 
         _controllers.add(controller!);
         return await controller!.suite;
@@ -920,6 +966,10 @@ class BrowserManager {
   /// Closes the manager and releases any resources it owns, including closing
   /// the browser.
   Future<void> close() => _closeMemoizer.runOnce(() {
+        if (Configuration.current.pauseAfterLoad) {
+          print('Test run finished. Press enter to close browser...');
+          stdin.readLineSync();
+        }
         _closed = true;
         _timer.cancel();
         _pauseCompleter?.complete();

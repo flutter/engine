@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
@@ -131,6 +132,17 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   return desc;
 }
 
+// |PipelineLibrary|
+void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  Lock lock(pipelines_mutex_);
+
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
+}
+
 //----------------------------------------------------------------------------
 /// Render Pass
 /// We are NOT going to use the same render pass with the framebuffer (later)
@@ -147,8 +159,9 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   std::vector<vk::AttachmentDescription> render_pass_attachments;
   const auto sample_count = desc.GetSampleCount();
   // Set the color attachment.
+  const auto& format = desc.GetColorAttachmentDescriptor(0)->format;
   render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-      vk::Format::eB8G8R8A8Unorm, sample_count, true));
+      ToVKImageFormat(format), sample_count, true));
 
   std::vector<vk::AttachmentReference> color_attachment_references;
   std::vector<vk::AttachmentReference> resolve_attachment_references;
@@ -280,11 +293,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   //----------------------------------------------------------------------------
   /// Primitive Input Assembly State
-  /// TODO(106379): Move primitive topology to the the pipeline instead of it
-  ///               being on the draw call. This is hard-coded right now.
-  ///
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+  const auto topology = ToVKPrimitiveTopology(desc.GetPrimitiveType());
+  input_assembly.setTopology(topology);
   pipeline_info.setPInputAssemblyState(&input_assembly);
 
   //----------------------------------------------------------------------------
@@ -387,7 +398,8 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   auto pipeline =
       device_.createGraphicsPipelineUnique(cache_.get(), pipeline_info);
   if (pipeline.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
+    VALIDATION_LOG << "Could not create graphics pipeline - " << desc.GetLabel()
+                   << ": " << vk::to_string(pipeline.result);
     return nullptr;
   }
 

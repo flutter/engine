@@ -25,14 +25,6 @@ import '../profiler.dart';
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
 
-/// Whether to use a CanvasKit implementation provided by a JavaScript
-/// `window.h5vcc.canvasKit` object.
-///
-/// Cobalt may use this object to expose a native implementation of the
-/// CanvasKit bindings. If this exists, use it instead of using the normal
-/// downloaded CanvasKit library.
-final bool useH5vccCanvasKit = h5vcc != null;
-
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
 /// static APIs.
 ///
@@ -46,21 +38,6 @@ external set windowFlutterCanvasKit(CanvasKit? value);
 
 @JS('window.flutterCanvasKit')
 external CanvasKit? get windowFlutterCanvasKit;
-
-@JS('window.h5vcc')
-external H5vcc? get h5vcc;
-
-@JS('window.h5vcc')
-external set debugH5vccSetter(H5vcc? value);
-
-@JS()
-@anonymous
-@staticInterop
-abstract class H5vcc {}
-
-extension H5vccExtension on H5vcc {
-  external CanvasKit? get canvasKit;
-}
 
 @JS()
 @anonymous
@@ -160,15 +137,14 @@ extension CanvasKitExtension on CanvasKit {
     SkPartialImageInfo info,
   );
 
-  /// Gets a Skia surface from Cobalt's h5vcc object.
-  ///
-  /// This is only applicable when running on Cobalt and when using Cobalt's
-  /// h5vcc CanvasKit bindings.
-  ///
-  /// On Cobalt, this is the only way to get a Skia surface. Other CanvasKit
-  /// Make...Surface methods are not supported.
-  external SkSurface getH5vccSkSurface();
+  /// Retrieve the RuntimeEffect namespace for null checking.
+  external Object? get RuntimeEffect;
 }
+
+// TODO(jonahwilliams): remove this once all CanvasKit versions
+// are built in the SDK.
+// https://github.com/flutter/flutter/issues/114260
+final bool isRuntimeEffectAvailable = windowFlutterCanvasKit?.RuntimeEffect != null;
 
 @JS('window.CanvasKitInit')
 external CanvasKitInitPromise CanvasKitInit(CanvasKitInitOptions options);
@@ -2562,6 +2538,19 @@ external Object? get exports;
 @JS()
 external Object? get module;
 
+@JS('window.flutterCanvasKit.RuntimeEffect')
+@anonymous
+@staticInterop
+class SkRuntimeEffect {}
+
+@JS('window.flutterCanvasKit.RuntimeEffect.Make')
+external SkRuntimeEffect? MakeRuntimeEffect(String program);
+
+extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
+  external SkShader? makeShader(List<Object> uniforms);
+  external SkShader? makeShaderWithChildren(List<Object> uniforms, List<Object?> children);
+}
+
 /// Monkey-patch the top-level `module` and `exports` objects so that
 /// CanvasKit doesn't attempt to register itself as an anonymous module.
 ///
@@ -2652,7 +2641,7 @@ Future<void> _downloadCanvasKitJs() {
   final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
 
   final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
-  canvasKitScript.src = canvasKitJavaScriptUrl;
+  canvasKitScript.src = createTrustedScriptUrl(canvasKitJavaScriptUrl);
 
   final Completer<void> canvasKitLoadCompleter = Completer<void>();
   late DomEventListener callback;

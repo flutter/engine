@@ -28,6 +28,7 @@
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     [self setWantsLayer:YES];
+    [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _reshapeListener = reshapeListener;
     _resizableBackingStoreProvider =
@@ -51,6 +52,7 @@
   self = [super initWithFrame:frame];
   if (self) {
     [self setWantsLayer:YES];
+    [self setBackgroundColor:[NSColor blackColor]];
     _reshapeListener = reshapeListener;
     _resizableBackingStoreProvider =
         [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
@@ -84,6 +86,10 @@
                             }];
 }
 
+- (void)setBackgroundColor:(NSColor*)color {
+  self.layer.backgroundColor = color.CGColor;
+}
+
 #pragma mark - NSView overrides
 
 - (void)setFrameSize:(NSSize)newSize {
@@ -112,6 +118,15 @@
 
 - (BOOL)acceptsFirstResponder {
   return YES;
+}
+
+- (void)cursorUpdate:(NSEvent*)event {
+  // When adding/removing views AppKit will schedule call to current hit-test view
+  // cursorUpdate: at the end of frame to determine possible cursor change. If
+  // the view doesn't implement cursorUpdate: AppKit will set the default (arrow) cursor
+  // instead. This would replace the cursor set by FlutterMouseCursorPlugin.
+  // Empty cursorUpdate: implementation prevents this behavior.
+  // https://github.com/flutter/flutter/issues/111425
 }
 
 - (void)viewDidChangeBackingProperties {

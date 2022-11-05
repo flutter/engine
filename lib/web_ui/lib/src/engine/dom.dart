@@ -62,6 +62,10 @@ extension DomWindowExtension on DomWindow {
         targetOrigin,
         if (messagePorts != null) js_util.jsify(messagePorts)
       ]);
+
+  /// The Trusted Types API (when available).
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
+  external DomTrustedTypePolicyFactory? get trustedTypes;
 }
 
 typedef DomRequestAnimationFrameCallback = void Function(num highResTime);
@@ -72,6 +76,8 @@ class DomConsole {}
 
 extension DomConsoleExtension on DomConsole {
   external void warn(Object? arg);
+  external void error(Object? arg);
+  external void debug(Object? arg);
 }
 
 @JS('window')
@@ -327,6 +333,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set right(String value) => setProperty('right', value);
   set bottom(String value) => setProperty('bottom', value);
   set backgroundColor(String value) => setProperty('background-color', value);
+  set caretColor(String value) => setProperty('caret-color', value);
   set pointerEvents(String value) => setProperty('pointer-events', value);
   set filter(String value) => setProperty('filter', value);
   set zIndex(String value) => setProperty('z-index', value);
@@ -395,6 +402,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get right => getPropertyValue('right');
   String get bottom => getPropertyValue('bottom');
   String get backgroundColor => getPropertyValue('background-color');
+  String get caretColor => getPropertyValue('caret-color');
   String get pointerEvents => getPropertyValue('pointer-events');
   String get filter => getPropertyValue('filter');
   String get zIndex => getPropertyValue('z-index');
@@ -516,7 +524,7 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
 class DomHTMLScriptElement extends DomHTMLElement {}
 
 extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
-  external set src(String value);
+  external set src(Object /* String|TrustedScriptURL */ value);
 }
 
 DomHTMLScriptElement createDomHTMLScriptElement() =>
@@ -634,6 +642,8 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external set fillStyle(Object? style);
   external String get font;
   external set font(String value);
+  external String get direction;
+  external set direction(String value);
   external set lineWidth(num? value);
   external set strokeStyle(Object? value);
   external Object? get strokeStyle;
@@ -689,6 +699,14 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
       num startAngle, num endAngle, bool? antiClockwise);
   external void strokeText(String text, num x, num y);
   external set globalAlpha(num? value);
+}
+
+@JS()
+@staticInterop
+class DomCanvasRenderingContextWebGl {}
+
+extension DomCanvasRenderingContextWebGlExtension on DomCanvasRenderingContextWebGl {
+  external bool isContextLost();
 }
 
 @JS()
@@ -762,7 +780,7 @@ Future<DomXMLHttpRequest> domHttpRequest(String url,
     }
   }));
 
-  xhr.addEventListener('error', allowInterop(completer.completeError));
+  xhr.addEventListener('error', allowInterop((DomEvent event) => completer.completeError(event)));
   xhr.send(sendData);
   return completer.future;
 }
@@ -1142,6 +1160,10 @@ extension DomWheelEventExtension on DomWheelEvent {
 class DomTouchEvent extends DomUIEvent {}
 
 extension DomTouchEventExtension on DomTouchEvent {
+  external bool get altKey;
+  external bool get ctrlKey;
+  external bool get metaKey;
+  external bool get shiftKey;
   List<DomTouch>? get changedTouches => js_util
       .getProperty<List<Object?>?>(this, 'changedTouches')
       ?.cast<DomTouch>();
@@ -1437,6 +1459,127 @@ class DomCSSRuleList {}
 extension DomCSSRuleListExtension on DomCSSRuleList {
   int get length =>
       js_util.getProperty<double>(this, 'length').toInt();
+}
+
+/// A factory to create `TrustedTypePolicy` objects.
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory
+@JS()
+@staticInterop
+abstract class DomTrustedTypePolicyFactory {}
+
+/// A subset of TrustedTypePolicyFactory methods.
+extension DomTrustedTypePolicyFactoryExtension on DomTrustedTypePolicyFactory {
+  /// Creates a TrustedTypePolicy object named `policyName` that implements the
+  /// rules passed as `policyOptions`.
+  external DomTrustedTypePolicy createPolicy(
+    String policyName,
+    DomTrustedTypePolicyOptions? policyOptions,
+  );
+}
+
+/// Options to create a trusted type policy.
+///
+/// The options are user-defined functions for converting strings into trusted
+/// values.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory/createPolicy#policyoptions
+@JS()
+@staticInterop
+@anonymous
+abstract class DomTrustedTypePolicyOptions {
+  /// Constructs a TrustedTypePolicyOptions object in JavaScript.
+  ///
+  /// `createScriptURL` is a callback function that contains code to run when
+  /// creating a TrustedScriptURL object.
+  ///
+  /// The following properties need to be manually wrapped in [allowInterop]
+  /// before being passed to this constructor: [createScriptURL].
+  external factory DomTrustedTypePolicyOptions({
+    DomCreateScriptUrlOptionFn? createScriptURL,
+  });
+}
+
+/// Type of the function used to configure createScriptURL.
+typedef DomCreateScriptUrlOptionFn = String? Function(String input);
+
+/// A TrustedTypePolicy defines a group of functions which create TrustedType
+/// objects.
+///
+/// TrustedTypePolicy objects are created by `TrustedTypePolicyFactory.createPolicy`,
+/// therefore this class has no constructor.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicy
+@JS()
+@staticInterop
+abstract class DomTrustedTypePolicy {}
+
+/// A subset of TrustedTypePolicy methods.
+extension DomTrustedTypePolicyExtension on DomTrustedTypePolicy {
+  /// Creates a `TrustedScriptURL` for the given [input].
+  ///
+  /// `input` is a string containing the data to be _sanitized_ by the policy.
+  external DomTrustedScriptURL createScriptURL(String input);
+}
+
+/// Represents a string that a developer can insert into an _injection sink_
+/// that will parse it as an external script.
+///
+/// These objects are created via `createScriptURL` and therefore have no
+/// constructor.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedScriptURL
+@JS()
+@staticInterop
+abstract class DomTrustedScriptURL {}
+
+/// A subset of TrustedScriptURL methods.
+extension DomTrustedScriptUrlExtension on DomTrustedScriptURL {
+  /// Exposes the `toString` JS method of TrustedScriptURL.
+  String get url => js_util.callMethod<String>(this, 'toString', <String>[]);
+}
+
+// The expected set of files that the flutter-engine TrustedType policy is going
+// to accept as valid.
+const Set<String> _expectedFilesForTT = <String>{
+  'canvaskit.js',
+};
+
+// The definition of the `flutter-engine` TrustedType policy.
+// Only accessible if the Trusted Types API is available.
+final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
+  'flutter-engine',
+  DomTrustedTypePolicyOptions(
+    // Validates the given [url].
+    createScriptURL: allowInterop(
+      (String url) {
+        final Uri uri = Uri.parse(url);
+        if (_expectedFilesForTT.contains(uri.pathSegments.last)) {
+          return uri.toString();
+        }
+        domWindow.console
+            .error('URL rejected by TrustedTypes policy flutter-engine: $url'
+                '(download prevented)');
+
+        return null;
+      },
+    ),
+  ),
+);
+
+/// Converts a String `url` into a [DomTrustedScriptURL] object when the
+/// Trusted Types API is available, else returns the unmodified `url`.
+Object createTrustedScriptUrl(String url) {
+  if (domWindow.trustedTypes != null) {
+    // Pass `url` through Flutter Engine's TrustedType policy.
+    final DomTrustedScriptURL trustedCanvasKitUrl =
+        _ttPolicy.createScriptURL(url);
+
+    assert(trustedCanvasKitUrl.url != '',
+        'URL: $url rejected by TrustedTypePolicy');
+
+    return trustedCanvasKitUrl;
+  }
+  return url;
 }
 
 DomMessageChannel createDomMessageChannel() =>
