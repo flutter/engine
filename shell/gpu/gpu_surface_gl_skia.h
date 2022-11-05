@@ -62,9 +62,10 @@ class GPUSurfaceGLSkia : public Surface {
       const SkISize& untransformed_size,
       const SkMatrix& root_surface_transformation);
 
-  bool PresentSurface(const SurfaceFrame& frame,
-                      SkCanvas* canvas,
-                      Surface::BeforePresentCallback before_present_callback);
+  bool PresentSurface(
+      const SurfaceFrame& frame,
+      SkCanvas* canvas,
+      const Surface::BeforePresentCallback& before_present_callback);
 
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;

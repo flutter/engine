@@ -264,7 +264,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
 bool GPUSurfaceGLSkia::PresentSurface(
     const SurfaceFrame& frame,
     SkCanvas* canvas,
-    Surface::BeforePresentCallback before_present_callback) {
+    const Surface::BeforePresentCallback& before_present_callback) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }
