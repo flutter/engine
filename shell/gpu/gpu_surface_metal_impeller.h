@@ -30,7 +30,9 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   std::shared_ptr<impeller::AiksContext> aiks_context_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(
+      const SkISize& size,
+      BeforePresentCallback before_present_callback) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

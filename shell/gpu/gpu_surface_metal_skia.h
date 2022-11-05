@@ -45,7 +45,9 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(
+      const SkISize& size,
+      BeforePresentCallback before_present_callback) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

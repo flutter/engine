@@ -43,7 +43,9 @@ class MockSurface : public Surface {
  public:
   MOCK_METHOD0(IsValid, bool());
   MOCK_METHOD1(AcquireFrame,
-               std::unique_ptr<SurfaceFrame>(const SkISize& size));
+               std::unique_ptr<SurfaceFrame>(
+                   const SkISize& size,
+                   BeforePresentCallback before_present_callback));
   MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
   MOCK_METHOD0(GetContext, GrDirectContext*());
   MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
@@ -161,7 +163,7 @@ TEST(RasterizerTest,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -230,7 +232,7 @@ TEST(
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -300,7 +302,7 @@ TEST(
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -373,7 +375,7 @@ TEST(RasterizerTest,
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
   // Prepare two frames for Draw() and DrawLastLayerTree().
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame1))))
       .WillOnce(Return(ByMove(std::move(surface_frame2))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
@@ -591,7 +593,7 @@ TEST(RasterizerTest,
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -648,7 +650,7 @@ TEST(
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -705,7 +707,7 @@ TEST(
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -762,7 +764,7 @@ TEST(
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize())).Times(0);
+  EXPECT_CALL(*surface, AcquireFrame(SkISize(), _)).Times(0);
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
@@ -812,7 +814,7 @@ TEST(RasterizerTest,
   auto surface = std::make_unique<NiceMock<MockSurface>>();
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillByDefault(::testing::Invoke([] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
@@ -992,7 +994,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   fml::CountDownLatch submit_latch(2);
   auto surface = std::make_unique<MockSurface>();
   ON_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillByDefault(::testing::Invoke([&] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
@@ -1075,7 +1077,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   fml::CountDownLatch submit_latch(1);
   auto surface = std::make_unique<MockSurface>();
   ON_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(SkISize(), _))
       .WillByDefault(::testing::Invoke([&] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;

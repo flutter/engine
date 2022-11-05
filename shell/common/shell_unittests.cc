@@ -116,7 +116,9 @@ class MockSurface : public Surface {
   MOCK_METHOD0(IsValid, bool());
 
   MOCK_METHOD1(AcquireFrame,
-               std::unique_ptr<SurfaceFrame>(const SkISize& size));
+               std::unique_ptr<SurfaceFrame>(
+                   const SkISize& size,
+                   BeforePresentCallback before_present_callback));
 
   MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
 

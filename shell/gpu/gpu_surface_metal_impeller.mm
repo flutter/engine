@@ -41,7 +41,9 @@ bool GPUSurfaceMetalImpeller::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_info) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(
+    const SkISize& frame_info,
+    BeforePresentCallback before_present_callback) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;

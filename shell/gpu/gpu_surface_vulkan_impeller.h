@@ -33,7 +33,9 @@ class GPUSurfaceVulkanImpeller final : public Surface {
   fml::WeakPtrFactory<GPUSurfaceVulkanImpeller> weak_factory_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(
+      const SkISize& size,
+      BeforePresentCallback before_present_callback) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

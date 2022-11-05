@@ -83,7 +83,9 @@ void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(
+    const SkISize& frame_size,
+    BeforePresentCallback before_present_callback) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;

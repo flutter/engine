@@ -191,7 +191,8 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
 
 std::unique_ptr<SurfaceFrame>
 ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
-    const SkISize& size) {
+    const SkISize& size,
+    BeforePresentCallback before_present_callback) {
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);
   auto surface = SkSurface::MakeRenderTarget(context_.get(), SkBudgeted::kNo,

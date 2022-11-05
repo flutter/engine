@@ -29,7 +29,8 @@ bool Surface::IsValid() {
 
 // |flutter::Surface|
 std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
-    const SkISize& size) {
+    const SkISize& size,
+    BeforePresentCallback before_present_callback) {
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   return std::make_unique<flutter::SurfaceFrame>(
