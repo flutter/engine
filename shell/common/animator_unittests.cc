@@ -38,6 +38,8 @@ class FakeAnimatorDelegate : public Animator::Delegate {
   MOCK_METHOD1(OnAnimatorDraw,
                void(std::shared_ptr<LayerTreePipeline> pipeline));
 
+  MOCK_METHOD0(GetFrameBudget, fml::Milliseconds());
+
   void OnAnimatorDrawLastLayerTree(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
 
