@@ -167,6 +167,8 @@ class Pipeline {
       items_count = queue_.size();
     }
 
+    last_consume_time_ = fml::TimePoint::Now();
+
     consumer(std::move(resource));
 
     empty_.Signal();
@@ -179,12 +181,17 @@ class Pipeline {
                            : PipelineConsumeResult::Done;
   }
 
+  fml::TimePoint LastConsumeTime() {
+    return last_consume_time_;
+  }
+
  private:
   fml::Semaphore empty_;
   fml::Semaphore available_;
   std::atomic<int> inflight_;
   std::mutex queue_mutex_;
   std::deque<std::pair<ResourcePtr, size_t>> queue_;
+  std::atomic<fml::TimePoint> last_consume_time_;
 
   PipelineProduceResult ProducerCommit(ResourcePtr resource, size_t trace_id) {
     bool is_first_item = false;
