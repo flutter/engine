@@ -847,8 +847,6 @@ void Rasterizer::MaybeSleepBeforeSubmit(
   fml::TimePoint wakeup_time =
       vsync_target_time + frame_budget * (expect_latency - 2) + SAFE_MARGIN;
 
-  fml::TimeDelta sleep_duration = wakeup_time - now;
-
   {
     history_latencies_.push_back(curr_latency);
     while (history_latencies_.size() > MAX_HISTORY) {
@@ -857,8 +855,16 @@ void Rasterizer::MaybeSleepBeforeSubmit(
   }
 
   if (should_sleep) {
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(sleep_duration.ToMicroseconds()));
+    // Use busy wait instead of thread sleep, because otherwise we cannot
+    // guarantee we are scheduled at the desired time by OS.
+    // It may be seemingly wasting to busy wait, but indeed it is not. The
+    // sleep only happens under the scenario discussed in #36837, i.e. current
+    // rasterization is significantly shorter than other rasterizations.
+    // Then, we are just using the CPU cycles that should have been used in
+    // normal cases.
+    while (fml::TimePoint::Now() < wakeup_time) {
+      // nothing here
+    }
   }
 }
 
