@@ -48,7 +48,8 @@ static ImGui_ImplImpeller_Data* ImGui_ImplImpeller_GetBackendData() {
              : nullptr;
 }
 
-bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
+bool ImGui_ImplImpeller_Init(
+    const std::shared_ptr<impeller::Context>& context) {
   ImGuiIO& io = ImGui::GetIO();
   IM_ASSERT(io.BackendRendererUserData == nullptr &&
             "Already initialized a renderer backend!");
@@ -263,7 +264,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;
-        cmd.primitive_type = impeller::PrimitiveType::kTriangle;
 
         render_pass.AddCommand(std::move(cmd));
       }

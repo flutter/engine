@@ -12,9 +12,9 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
 
 namespace impeller {
@@ -41,7 +41,7 @@ struct Paint {
     Sigma sigma;
 
     std::shared_ptr<FilterContents> CreateMaskBlur(
-        FilterInput::Ref input,
+        const FilterInput::Ref& input,
         bool is_solid_color,
         const Matrix& effect_matrix) const;
   };
@@ -50,8 +50,8 @@ struct Paint {
   std::optional<ColorSourceProc> color_source;
 
   Scalar stroke_width = 0.0;
-  SolidStrokeContents::Cap stroke_cap = SolidStrokeContents::Cap::kButt;
-  SolidStrokeContents::Join stroke_join = SolidStrokeContents::Join::kMiter;
+  Cap stroke_cap = Cap::kButt;
+  Join stroke_join = Join::kMiter;
   Scalar stroke_miter = 4.0;
   Style style = Style::kFill;
   BlendMode blend_mode = BlendMode::kSourceOver;
@@ -88,8 +88,11 @@ struct Paint {
       std::shared_ptr<Contents> input,
       const Matrix& effect_transform = Matrix()) const;
 
-  std::shared_ptr<Contents> CreateContentsForEntity(Path path = {},
+  std::shared_ptr<Contents> CreateContentsForEntity(const Path& path = {},
                                                     bool cover = false) const;
+
+  std::shared_ptr<Contents> CreateContentsForGeometry(
+      std::unique_ptr<Geometry> geometry) const;
 
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,

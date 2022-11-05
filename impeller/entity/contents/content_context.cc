@@ -118,7 +118,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     default:
       FML_UNREACHABLE();
   }
-  desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+  desc.SetColorAttachmentDescriptor(0u, color0);
 
   if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
     StencilAttachmentDescriptor stencil =
@@ -127,6 +127,8 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
   }
+
+  desc.SetPrimitiveType(primitive_type);
 }
 
 template <typename PipelineT>
@@ -143,7 +145,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
-      tessellator_(std::make_shared<Tessellator>()) {
+      tessellator_(std::make_shared<Tessellator>()),
+      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -213,6 +216,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   geometry_position_pipelines_[{}] =
       CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
+  yuv_to_rgb_filter_pipelines_[{}] =
+      CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.
   // TODO(98684): Rework this API to allow fetching the descriptor without
@@ -246,7 +251,7 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
-    SubpassCallback subpass_callback) const {
+    const SubpassCallback& subpass_callback) const {
   auto context = GetContext();
 
   RenderTarget subpass_target;
@@ -289,6 +294,11 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
 
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;
+}
+
+std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
+    const {
+  return glyph_atlas_context_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {

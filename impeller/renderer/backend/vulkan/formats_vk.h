@@ -150,7 +150,13 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
       return vk::Format::eB8G8R8A8Srgb;
     case PixelFormat::kS8UInt:
       return vk::Format::eS8Uint;
+    case PixelFormat::kR8UNormInt:
+      return vk::Format::eR8Unorm;
+    case PixelFormat::kR8G8UNormInt:
+      return vk::Format::eR8G8Unorm;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr PixelFormat ToPixelFormat(vk::Format format) {
@@ -175,6 +181,12 @@ constexpr PixelFormat ToPixelFormat(vk::Format format) {
 
     case vk::Format::eS8Uint:
       return PixelFormat::kS8UInt;
+
+    case vk::Format::eR8Unorm:
+      return PixelFormat::kR8UNormInt;
+
+    case vk::Format::eR8G8Unorm:
+      return PixelFormat::kR8G8UNormInt;
 
     default:
       return PixelFormat::kUnknown;
@@ -244,6 +256,8 @@ constexpr vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
     case ShaderStage::kVertex:
       return vk::ShaderStageFlagBits::eVertex;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
@@ -274,6 +288,8 @@ constexpr vk::AttachmentLoadOp ToVKAttachmentLoadOp(LoadAction load_action) {
     case LoadAction::kDontCare:
       return vk::AttachmentLoadOp::eDontCare;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(
@@ -288,6 +304,8 @@ constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(
       // TODO (kaushikiska): vulkan doesn't support multisample resolve.
       return vk::AttachmentStoreOp::eDontCare;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::IndexType ToVKIndexType(IndexType index_type) {
@@ -299,6 +317,25 @@ constexpr vk::IndexType ToVKIndexType(IndexType index_type) {
     case IndexType::kUnknown:
       return vk::IndexType::eUint32;
   }
+
+  FML_UNREACHABLE();
+}
+
+constexpr vk::PrimitiveTopology ToVKPrimitiveTopology(PrimitiveType primitive) {
+  switch (primitive) {
+    case PrimitiveType::kTriangle:
+      return vk::PrimitiveTopology::eTriangleList;
+    case PrimitiveType::kTriangleStrip:
+      return vk::PrimitiveTopology::eTriangleStrip;
+    case PrimitiveType::kLine:
+      return vk::PrimitiveTopology::eLineList;
+    case PrimitiveType::kLineStrip:
+      return vk::PrimitiveTopology::eLineStrip;
+    case PrimitiveType::kPoint:
+      return vk::PrimitiveTopology::ePointList;
+  }
+
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller
