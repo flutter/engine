@@ -194,6 +194,17 @@ targets:
       lint_android: "false"
       lint_host: "true"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
 
   - name: Linux Android clang-tidy
     recipe: engine/engine_lint
@@ -203,6 +214,18 @@ targets:
       lint_android: "true"
       lint_host: "false"
     timeout: 60
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.py" # Run pylint on the fastest clang-tidy builder.
 
   - name: Linux Arm Host Engine
     recipe: engine/engine_arm
@@ -215,30 +238,29 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_arm_host_engine
-      environment: Production
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_host_engine
-      environment: Production
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_android_aot_engine
-      environment: Production
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
+      release_build: "true"
       config_name: linux_android_debug_engine
-      environment: Staging
 
   - name: Linux Web Engine
     recipe: engine/web_engine
@@ -304,19 +326,15 @@ targets:
 
   - name: Mac mac_android_aot_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_android_aot_engine
-      environment: Staging
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_host_engine
-      environment: Staging
 
   - name: Mac Unopt
     recipe: engine/engine_unopt
@@ -338,6 +356,19 @@ targets:
       lint_host: "true"
       lint_ios: "false"
     timeout: 75
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac iOS clang-tidy
     recipe: engine/engine_lint
@@ -347,6 +378,19 @@ targets:
       lint_host: "false"
       lint_ios: "true"
     timeout: 75
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/**
+      - ci/**
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   - name: Mac iOS Engine
     recipe: engine/engine
@@ -378,11 +422,9 @@ targets:
 
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_ios_engine
-      environment: Staging
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
@@ -390,19 +432,15 @@ targets:
 
   - name:  Mac mac_ios_engine_profile
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_ios_engine_profile
-      environment: Staging
 
   - name:  Mac mac_ios_engine_release
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_ios_engine_release
-      environment: Staging
 
   - name: Windows Android AOT Engine
     recipe: engine/engine
@@ -425,7 +463,6 @@ targets:
     timeout: 60
     properties:
       config_name: windows_android_aot_engine
-      environment: Staging
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
@@ -433,7 +470,6 @@ targets:
     timeout: 60
     properties:
       config_name: windows_host_engine
-      environment: Staging
 
   - name: Windows Unopt
     recipe: engine/engine_unopt

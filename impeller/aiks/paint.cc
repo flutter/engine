@@ -4,43 +4,40 @@
 
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/geometry.h"
 
 namespace impeller {
 
-std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
+std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
                                                          bool cover) const {
+  std::unique_ptr<Geometry> geometry;
+  switch (style) {
+    case Style::kFill:
+      geometry = cover ? Geometry::MakeCover() : Geometry::MakeFillPath(path);
+      break;
+    case Style::kStroke:
+      geometry =
+          cover ? Geometry::MakeCover()
+                : Geometry::MakeStrokePath(path, stroke_width, stroke_miter,
+                                           stroke_cap, stroke_join);
+      break;
+  }
+  return CreateContentsForGeometry(std::move(geometry));
+}
+
+std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
+    std::unique_ptr<Geometry> geometry) const {
   if (color_source.has_value()) {
     auto& source = color_source.value();
     auto contents = source();
-    contents->SetGeometry(cover ? Geometry::MakeCover()
-                                : Geometry::MakePath(std::move(path)));
+    contents->SetGeometry(std::move(geometry));
     contents->SetAlpha(color.alpha);
     return contents;
   }
-
-  switch (style) {
-    case Style::kFill: {
-      auto solid_color = std::make_shared<SolidColorContents>();
-      solid_color->SetGeometry(cover ? Geometry::MakeCover()
-                                     : Geometry::MakePath(std::move(path)));
-      solid_color->SetColor(color);
-      return solid_color;
-    }
-    case Style::kStroke: {
-      auto solid_stroke = std::make_shared<SolidStrokeContents>();
-      solid_stroke->SetPath(std::move(path));
-      solid_stroke->SetColor(color);
-      solid_stroke->SetStrokeSize(stroke_width);
-      solid_stroke->SetStrokeMiter(stroke_miter);
-      solid_stroke->SetStrokeCap(stroke_cap);
-      solid_stroke->SetStrokeJoin(stroke_join);
-      return solid_stroke;
-    }
-  }
-
-  return nullptr;
+  auto solid_color = std::make_shared<SolidColorContents>();
+  solid_color->SetGeometry(std::move(geometry));
+  solid_color->SetColor(color);
+  return solid_color;
 }
 
 std::shared_ptr<Contents> Paint::WithFilters(
@@ -48,9 +45,9 @@ std::shared_ptr<Contents> Paint::WithFilters(
     std::optional<bool> is_solid_color,
     const Matrix& effect_transform) const {
   bool is_solid_color_val = is_solid_color.value_or(!color_source);
+  input = WithColorFilter(input);
   input = WithMaskBlur(input, is_solid_color_val, effect_transform);
   input = WithImageFilter(input, effect_transform);
-  input = WithColorFilter(input);
   return input;
 }
 
@@ -99,7 +96,7 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
-    FilterInput::Ref input,
+    const FilterInput::Ref& input,
     bool is_solid_color,
     const Matrix& effect_transform) const {
   if (is_solid_color) {

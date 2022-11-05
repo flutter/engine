@@ -126,6 +126,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
@@ -471,6 +472,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterMethodChannel*)undoManagerChannel {
   return _undoManagerChannel.get();
 }
+- (FlutterMethodChannel*)scribbleChannel {
+  return _scribbleChannel.get();
+}
 - (FlutterMethodChannel*)spellCheckChannel {
   return _spellCheckChannel.get();
 }
@@ -499,6 +503,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformViewsChannel.reset();
   _textInputChannel.reset();
   _undoManagerChannel.reset();
+  _scribbleChannel.reset();
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
@@ -569,6 +574,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _undoManagerChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/undomanager"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
+  _scribbleChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/scribble"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
@@ -965,15 +975,15 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - FlutterViewEngineDelegate
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[ @(client) ]];
+  [_scribbleChannel.get() invokeMethod:@"Scribble.showToolbar" arguments:@[ @(client) ]];
 }
 
 - (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
                   focusElement:(UIScribbleElementIdentifier)elementIdentifier
                        atPoint:(CGPoint)referencePoint
                         result:(FlutterResult)callback {
-  [_textInputChannel.get()
-      invokeMethod:@"TextInputClient.focusElement"
+  [_scribbleChannel.get()
+      invokeMethod:@"Scribble.focusElement"
          arguments:@[ elementIdentifier, @(referencePoint.x), @(referencePoint.y) ]
             result:callback];
 }
@@ -981,32 +991,30 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
          requestElementsInRect:(CGRect)rect
                         result:(FlutterResult)callback {
-  [_textInputChannel.get()
-      invokeMethod:@"TextInputClient.requestElementsInRect"
+  [_scribbleChannel.get()
+      invokeMethod:@"Scribble.requestElementsInRect"
          arguments:@[ @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height) ]
             result:callback];
 }
 
 - (void)flutterTextInputViewScribbleInteractionBegan:(FlutterTextInputView*)textInputView {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionBegan" arguments:nil];
+  [_scribbleChannel.get() invokeMethod:@"Scribble.scribbleInteractionBegan" arguments:nil];
 }
 
 - (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionFinished"
-                              arguments:nil];
+  [_scribbleChannel.get() invokeMethod:@"Scribble.scribbleInteractionFinished" arguments:nil];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
     insertTextPlaceholderWithSize:(CGSize)size
                        withClient:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.insertTextPlaceholder"
-                              arguments:@[ @(client), @(size.width), @(size.height) ]];
+  [_scribbleChannel.get() invokeMethod:@"Scribble.insertTextPlaceholder"
+                             arguments:@[ @(client), @(size.width), @(size.height) ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
        removeTextPlaceholder:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.removeTextPlaceholder"
-                              arguments:@[ @(client) ]];
+  [_scribbleChannel.get() invokeMethod:@"Scribble.removeTextPlaceholder" arguments:@[ @(client) ]];
 }
 
 - (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {

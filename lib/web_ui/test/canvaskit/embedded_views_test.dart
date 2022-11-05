@@ -4,12 +4,14 @@
 
 import 'dart:async';
 
+import 'package:js/js_util.dart' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
+import 'test_data.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -336,8 +338,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Frame 2:
@@ -388,16 +390,16 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
         _overlay,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
       ]);
 
       // Frame 5:
@@ -490,10 +492,10 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
         _overlay,
+        _platformView,
+        _platformView,
+        _platformView,
       ]);
 
       // Frame 2:
@@ -517,10 +519,10 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
         _overlay,
+        _platformView,
+        _platformView,
+        _platformView,
       ]);
 
       // Frame 3:
@@ -543,10 +545,10 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
         _overlay,
+        _platformView,
+        _platformView,
+        _platformView,
       ]);
 
       // Frame 4:
@@ -569,10 +571,10 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
         _overlay,
+        _platformView,
+        _platformView,
+        _platformView,
       ]);
 
       // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
@@ -617,6 +619,52 @@ void testMain() {
         isNull,
       );
     });
+
+    test('does not crash when resizing the window after textures have been registered', () async {
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
+      );
+      await createPlatformView(0, 'test-platform-view');
+
+      final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+        data: kAnimatedGif,
+        debugSource: 'test',
+      );
+      final ui.FrameInfo frame = await image.getNextFrame();
+      final CkImage ckImage = frame.image as CkImage;
+
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+      canvas.drawImage(ckImage, ui.Offset.zero, CkPaint());
+      final CkPicture picture = recorder.endRecording();
+      sb.addPicture(ui.Offset.zero, picture);
+      sb.addPlatformView(0, width: 10, height: 10);
+
+      window.webOnlyDebugPhysicalSizeOverride = const ui.Size(100, 100);
+      window.debugForceResize();
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      _expectSceneMatches(<_EmbeddedViewMarker>[
+        _overlay,
+        _platformView,
+        _overlay,
+      ]);
+
+      window.webOnlyDebugPhysicalSizeOverride = const ui.Size(200, 200);
+      window.debugForceResize();
+      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      _expectSceneMatches(<_EmbeddedViewMarker>[
+        _overlay,
+        _platformView,
+        _overlay,
+      ]);
+
+      window.webOnlyDebugPhysicalSizeOverride = null;
+      window.debugForceResize();
+    // ImageDecoder is not supported in Safari or Firefox.
+    }, skip: isSafari || isFirefox);
 
     test('removed the DOM node of an unrendered platform view', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
@@ -757,8 +805,13 @@ void testMain() {
 
     test('works correctly with max overlays == 2', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      debugSetConfiguration(FlutterConfiguration(
-          JsFlutterConfiguration()..canvasKitMaximumSurfaces = 2));
+      final FlutterConfiguration config = FlutterConfiguration()
+        ..setUserConfiguration(
+          js_util.jsify(<String, Object?>{
+            'canvasKitMaximumSurfaces': 2,
+          }) as JsFlutterConfiguration);
+      debugSetConfiguration(config);
+
       SurfaceFactory.instance.debugClear();
 
       expect(SurfaceFactory.instance.maximumSurfaces, 2);
@@ -795,12 +848,12 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Reset configuration
-      debugSetConfiguration(FlutterConfiguration(null));
+      debugSetConfiguration(FlutterConfiguration());
     });
 
     test(

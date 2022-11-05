@@ -8,6 +8,7 @@
 #include <map>
 
 #include "flutter/fml/file.h"
+#include "impeller/compiler/utilities.h"
 
 namespace impeller {
 namespace compiler {
@@ -60,6 +61,7 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional,multiple] --include=<include_directory>" << std::endl;
   stream << "[optional,multiple] --define=<define>" << std::endl;
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
+  stream << "[optional] --json" << std::endl;
 }
 
 Switches::Switches() = default;
@@ -112,7 +114,8 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("reflection-header", "")),
       reflection_cc_name(
           command_line.GetOptionValueWithDefault("reflection-cc", "")),
-      depfile_path(command_line.GetOptionValueWithDefault("depfile", "")) {
+      depfile_path(command_line.GetOptionValueWithDefault("depfile", "")),
+      json_format(command_line.HasOption("json")) {
   if (!working_directory || !working_directory->is_valid()) {
     return;
   }
@@ -124,12 +127,11 @@ Switches::Switches(const fml::CommandLine& command_line)
 
     // fml::OpenDirectoryReadOnly for Windows doesn't handle relative paths
     // beginning with `../` well, so we build an absolute path.
-    auto include_dir_absolute =
-        ToUtf8(std::filesystem::absolute(std::filesystem::current_path() /
-                                         include_dir_path)
-                   .native());
+    auto include_dir_absolute = std::filesystem::absolute(
+        std::filesystem::current_path() / include_dir_path);
+
     auto dir = std::make_shared<fml::UniqueFD>(fml::OpenDirectoryReadOnly(
-        *working_directory, include_dir_absolute.c_str()));
+        *working_directory, Utf8FromPath(include_dir_absolute).c_str()));
     if (!dir || !dir->is_valid()) {
       continue;
     }

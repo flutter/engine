@@ -92,6 +92,10 @@ if (build_engine_artifacts && !is_android) {
           destination = "impellerc$exe"
         },
         {
+          source = "//flutter/impeller/compiler/shader_lib"
+          destination = "shader_lib"
+        },
+        {
           source = "$root_out_dir/${lib_prefix}path_ops$dll"
           destination = "${lib_prefix}path_ops$dll"
         },
@@ -217,13 +221,6 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
         },
       ]
     }
-  }
-}
-
-# Archives Flutter Web SDK
-if (!is_fuchsia) {
-  group("flutter_web_sdk") {
-    deps = [ "//flutter/web_sdk:flutter_web_sdk_archive" ]
   }
 }
 

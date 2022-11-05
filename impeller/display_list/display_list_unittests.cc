@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cmath>
+#include <vector>
+
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color.h"
 #include "display_list/display_list_color_filter.h"
@@ -14,6 +17,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_playground.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
 #include "include/core/SkRRect.h"
@@ -97,14 +101,7 @@ TEST_P(DisplayListTest, CanDrawCapsAndJoins) {
 }
 
 TEST_P(DisplayListTest, CanDrawArc) {
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 100});
-      ImGui::SetNextWindowPos({300, 550});
-    }
-
     static float start_angle = 45;
     static float sweep_angle = 270;
     static bool use_center = true;
@@ -283,17 +280,10 @@ TEST_P(DisplayListTest, CanDrawWithColorFilterImageFilter) {
 TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
 
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 100});
-      ImGui::SetNextWindowPos({300, 550});
-    }
-
     static float sigma[] = {10, 10};
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat2("Sigma", sigma, 0, 100);
     ImGui::End();
 
@@ -361,14 +351,8 @@ TEST_P(DisplayListTest, CanClampTheResultingColorOfColorMatrixFilter) {
 
 TEST_P(DisplayListTest, SaveLayerWithColorMatrixFiltersAndAlphaDrawCorrectly) {
   auto texture = CreateTextureForFixture("boston.jpg");
-  bool first_frame = true;
   enum class Type { kUseAsImageFilter, kUseAsColorFilter, kDisableFilter };
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static float alpha = 0.5;
     static int selected_type = 0;
     const char* names[] = {"Use as image filter", "Use as color filter",
@@ -426,14 +410,8 @@ TEST_P(DisplayListTest, SaveLayerWithColorMatrixFiltersAndAlphaDrawCorrectly) {
 
 TEST_P(DisplayListTest, SaveLayerWithBlendFiltersAndAlphaDrawCorrectly) {
   auto texture = CreateTextureForFixture("boston.jpg");
-  bool first_frame = true;
   enum class Type { kUseAsImageFilter, kUseAsColorFilter, kDisableFilter };
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static float alpha = 0.5;
     static int selected_type = 0;
     const char* names[] = {"Use as image filter", "Use as color filter",
@@ -479,13 +457,7 @@ TEST_P(DisplayListTest, SaveLayerWithBlendFiltersAndAlphaDrawCorrectly) {
 TEST_P(DisplayListTest, CanDrawBackdropFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
 
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static float sigma[] = {10, 10};
     static float ctm_scale = 1;
     static bool use_bounds = true;
@@ -685,11 +657,29 @@ TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
 
 TEST_P(DisplayListTest, CanDrawShadow) {
   flutter::DisplayListBuilder builder;
-  std::array<SkPath, 3> paths = {
+
+  constexpr size_t star_spikes = 5;
+  constexpr SkScalar half_spike_rotation = kPi / star_spikes;
+  constexpr SkScalar radius = 40;
+  constexpr SkScalar spike_size = 10;
+  constexpr SkScalar outer_radius = radius + spike_size;
+  constexpr SkScalar inner_radius = radius - spike_size;
+  std::array<SkPoint, star_spikes * 2> star;
+  for (size_t i = 0; i < star_spikes; i++) {
+    const SkScalar rotation = half_spike_rotation * i * 2;
+    star[i * 2] = SkPoint::Make(50 + std::sin(rotation) * outer_radius,
+                                50 - std::cos(rotation) * outer_radius);
+    star[i * 2 + 1] = SkPoint::Make(
+        50 + std::sin(rotation + half_spike_rotation) * inner_radius,
+        50 - std::cos(rotation + half_spike_rotation) * inner_radius);
+  }
+
+  std::array<SkPath, 4> paths = {
       SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
       SkPath{}.addRRect(
           SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
       SkPath{}.addCircle(100, 50, 50),
+      SkPath{}.addPoly(star.data(), star.size(), true),
   };
   builder.setColor(flutter::DlColor::kWhite());
   builder.drawPaint();
@@ -775,13 +765,7 @@ TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
 TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
   auto boston = CreateTextureForFixture("boston.jpg");
 
-  bool first_frame = true;
   auto callback = [&]() {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     static int selected_matrix_type = 0;
     const char* matrix_type_names[] = {"Matrix", "Local Matrix"};
 
@@ -994,6 +978,35 @@ TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
     builder.restore();
   }
 
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawCorrectlyWithColorFilterAndImageFilter) {
+  flutter::DisplayListBuilder builder;
+  const float green_color_matrix[20] = {
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 0, 1,  //
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 1, 0,  //
+  };
+  const float blue_color_matrix[20] = {
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 0, 1,  //
+      0, 0, 0, 1, 0,  //
+  };
+  auto green_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(green_color_matrix);
+  auto blue_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(blue_color_matrix);
+  auto blue_image_filter =
+      std::make_shared<flutter::DlColorFilterImageFilter>(blue_color_filter);
+
+  flutter::DlPaint paint;
+  paint.setColor(flutter::DlColor::kRed());
+  paint.setColorFilter(green_color_filter);
+  paint.setImageFilter(blue_image_filter);
+  builder.drawRect(SkRect::MakeLTRB(100, 100, 500, 500), paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

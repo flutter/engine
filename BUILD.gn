@@ -12,6 +12,8 @@ import("//third_party/dart/build/dart/copy_tree.gni")
 
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
+# TODO(jacksongardner): remove this poorly named argument once the recipes stop
+# using it. https://github.com/flutter/flutter/issues/113303
 declare_args() {
   full_dart_sdk = false
 }
@@ -44,30 +46,6 @@ config("export_dynamic_symbols") {
   }
 }
 
-if (flutter_prebuilt_dart_sdk) {
-  copy_trees("_copy_trees") {
-    sources = [
-      {
-        target = "copy_dart_sdk"
-        visibility = [ ":dart_sdk" ]
-        source = prebuilt_dart_sdk
-        dest = "$root_out_dir/dart-sdk"
-        ignore_patterns = "{}"
-      },
-    ]
-  }
-}
-
-group("dart_sdk") {
-  if (build_engine_artifacts) {
-    if (flutter_prebuilt_dart_sdk) {
-      public_deps = [ ":copy_dart_sdk" ]
-    } else {
-      public_deps = [ "//third_party/dart:create_sdk" ]
-    }
-  }
-}
-
 group("flutter") {
   testonly = true
 
@@ -96,7 +74,7 @@ group("flutter") {
 
     if (build_engine_artifacts) {
       public_deps += [
-        ":dart_sdk",
+        "//flutter/build/dart:dart_sdk",
         "//flutter/flutter_frontend_server:frontend_server",
 
         # This must be listed explicitly for desktop cross-builds since
@@ -271,5 +249,21 @@ if (is_fuchsia && enable_unittests) {
     testonly = true
 
     deps = [ "//flutter/shell/platform/fuchsia:tests" ]
+  }
+}
+
+# On Windows, when targeting Android, we only build gen_snapshot. This
+# top-level target provides a convenient shorthand for the full path into the
+# Dart tree, and is less ambiguous than specifying the binary to build since
+# we can specify the toolchain to use, too.
+if (host_os == "win") {
+  _gen_snapshot_target =
+      "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)"
+  copy("gen_snapshot") {
+    deps = [ _gen_snapshot_target ]
+
+    gen_snapshot_out_dir = get_label_info(_gen_snapshot_target, "root_out_dir")
+    sources = [ "$gen_snapshot_out_dir/gen_snapshot.exe" ]
+    outputs = [ "$root_build_dir/gen_snapshot/gen_snapshot.exe" ]
   }
 }
