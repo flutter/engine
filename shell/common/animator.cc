@@ -93,10 +93,21 @@ void Animator::BeginFrame(
 
     if (!producer_continuation_) {
       // If we still don't have valid continuation, the pipeline is currently
-      // full because the consumer is being too slow. However, it will probably
-      // not be full at the end of current UI frame computation, so we continue
-      // and merely create an event.
+      // full because the consumer is being too slow.
       TRACE_EVENT0("flutter", "PipelineFull");
+
+      // However, we are now in a dilemma.
+      // On one hand, it will probably not be full at the end of current UI
+      // frame computation. If that is the case, we will have one janky frame.
+      // On the other hand, if that does not happen and we forcefully schedule
+      // current frame, we will waste the CPU and battery to run the UI thread
+      // for current frame.
+      // Therefore, we use heuristics to solve this. We will skip this frame if
+      // the ongoing rasterization has been running for more than normal time.
+      if (TODO) {
+        RequestFrame();
+        return;
+      }
     }
   }
 
