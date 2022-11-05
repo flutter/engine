@@ -821,16 +821,16 @@ void Rasterizer::MaybeSleepBeforeSubmit(
   static const fml::TimeDelta SAFE_MARGIN =
       fml::TimeDelta::FromMicroseconds(500);
 
-  // TODO should not assume 60FPS - fix it before PR merged
-  fml::TimeDelta FRAME_DURATION = fml::TimeDelta::FromMicroseconds(16777);
+  const fml::TimeDelta frame_budget =
+      fml::TimeDelta::FromMillisecondsF(delegate_.GetFrameBudget().count());
 
   fml::TimePoint vsync_target_time =
       frame_timings_recorder.GetVsyncTargetTime();
   fml::TimePoint now = fml::TimePoint::Now();
 
   int curr_latency = static_cast<int>(
-      (now - vsync_target_time + FRAME_DURATION * 2).ToMicroseconds() /
-      FRAME_DURATION.ToMicroseconds());
+      (now - vsync_target_time + frame_budget * 2).ToMicroseconds() /
+      frame_budget.ToMicroseconds());
 
   // naive heuristics currently
   int history_larger_latency_count = 0;
@@ -845,7 +845,7 @@ void Rasterizer::MaybeSleepBeforeSubmit(
   int expect_latency = curr_latency + 1;
   // we want to wake up at the *beginning* of that vsync interval
   fml::TimePoint wakeup_time =
-      vsync_target_time + FRAME_DURATION * (expect_latency - 2) + SAFE_MARGIN;
+      vsync_target_time + frame_budget * (expect_latency - 2) + SAFE_MARGIN;
 
   fml::TimeDelta sleep_duration = wakeup_time - now;
 
