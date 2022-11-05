@@ -16,10 +16,14 @@ namespace scene {
 class Scene;
 
 class SceneEncoder {
+
+
  private:
   SceneEncoder();
 
-  std::shared_ptr<CommandBuffer> BuildSceneCommandBuffer() const;
+  std::shared_ptr<CommandBuffer> BuildSceneCommandBuffer(
+      Context& context,
+      const RenderTarget& render_target) const;
 
   friend Scene;
 

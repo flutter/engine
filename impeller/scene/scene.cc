@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "flutter/fml/logging.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/scene/scene_encoder.h"
 
@@ -21,10 +22,25 @@ void Scene::Add(std::shared_ptr<SceneEntity> child) {
 
 bool Scene::Render(const RenderTarget& render_target,
                    const Camera& camera) const {
+  // Collect the render commands from the scene.
   SceneEncoder encoder;
-  return root_.Render(encoder, camera);
-  std::shared_ptr<CommandBuffer> geometry =
-      encoder.BuildGeometryCommandBuffer(render_target);
+  if (!root_.Render(encoder, camera)) {
+    FML_LOG(ERROR) << "Failed to render frame.";
+    return false;
+  }
+
+  // Encode the commands.
+  std::shared_ptr<CommandBuffer> command_buffer =
+      encoder.BuildSceneCommandBuffer(*context_, render_target);
+
+  // TODO(bdero): Do post processing.
+
+  if (!command_buffer->SubmitCommands()) {
+    FML_LOG(ERROR) << "Failed to submit command buffer.";
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace scene

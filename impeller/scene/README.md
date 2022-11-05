@@ -1,5 +1,3 @@
-
-
 ## ⚠️ **Experimental:** Do not use in production! ⚠️
 
 # Impeller Scene
@@ -9,7 +7,7 @@ render layer with the following design priorities:
 
 * Ease of use.
 * Suitability for mobile.
-* Scalability in the common case.
+* Common case scalability.
 
 The aim is to create a familiar and flexible scene graph capable of building
 complex dynamic scenes for games and beyond.
@@ -68,8 +66,8 @@ material.SetBlendConfig({
   impeller::BlendFactor::kOne,                  // source_color_factor
   impeller::BlendFactor::kOneMinusSourceAlpha,  // destination_color_factor
   impeller::BlendOperation::kAdd,               // alpha_op
-  impeller::BlendFactor::kOne,                  // source_color_factor
-  impeller::BlendFactor::kOneMinusSourceAlpha,  // destination_color_factor
+  impeller::BlendFactor::kOne,                  // source_alpha_factor
+  impeller::BlendFactor::kOneMinusSourceAlpha,  // destination_alpha_factor
 });
 material.SetStencilConfig({
   impeller::StencilOperation::kIncrementClamp,  // operation

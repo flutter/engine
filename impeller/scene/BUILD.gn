@@ -8,6 +8,8 @@ impeller_component("scene") {
   sources = [
     "camera.cc",
     "camera.h",
+    "material.cc",
+    "material.h",
     "scene.cc",
     "scene.h",
     "scene_encoder.cc",
