@@ -13,6 +13,7 @@
 namespace impeller {
 namespace scene {
 
+class UnlitMaterial;
 class StandardMaterial;
 
 class Material {
@@ -31,7 +32,8 @@ class Material {
     CompareFunction compare = CompareFunction::kAlways;
   };
 
-  std::unique_ptr<StandardMaterial> MakeStandard();
+  static std::unique_ptr<UnlitMaterial> MakeUnlit();
+  static std::unique_ptr<StandardMaterial> MakeStandard();
 
   void SetBlendConfig(BlendConfig blend_config);
   void SetStencilConfig(StencilConfig stencil_config);
@@ -42,6 +44,14 @@ class Material {
   BlendConfig blend_config_;
   StencilConfig stencil_config_;
   bool is_translucent_ = false;
+};
+
+class UnlitMaterial final : public Material {
+ public:
+  void SetColor(Color color);
+
+ private:
+  Color color_;
 };
 
 class StandardMaterial final : public Material {

@@ -19,9 +19,9 @@ namespace scene {
 class Scene {
  public:
   Scene() = delete;
-  explicit Scene(std::shared_ptr<Context> context);
+  explicit Scene(const std::shared_ptr<Context>& context);
 
-  void Add(std::shared_ptr<SceneEntity> child);
+  void Add(const std::shared_ptr<SceneEntity>& child);
   bool Render(const RenderTarget& render_target, const Camera& camera) const;
 
  private:

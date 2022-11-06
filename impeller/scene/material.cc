@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/scene/material.h"
+
 #include <memory>
 
 namespace impeller {
@@ -11,6 +12,10 @@ namespace scene {
 //------------------------------------------------------------------------------
 /// Material
 ///
+
+std::unique_ptr<UnlitMaterial> Material::MakeUnlit() {
+  return std::make_unique<UnlitMaterial>();
+}
 
 std::unique_ptr<StandardMaterial> Material::MakeStandard() {
   return std::make_unique<StandardMaterial>();
@@ -26,6 +31,14 @@ void Material::SetStencilConfig(StencilConfig stencil_config) {
 
 void Material::SetTranslucent(bool is_translucent) {
   is_translucent_ = is_translucent;
+}
+
+//------------------------------------------------------------------------------
+/// UnlitMaterial
+///
+
+void UnlitMaterial::SetColor(Color color) {
+  color_ = color;
 }
 
 //------------------------------------------------------------------------------

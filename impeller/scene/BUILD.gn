@@ -8,6 +8,8 @@ impeller_component("scene") {
   sources = [
     "camera.cc",
     "camera.h",
+    "geometry.cc",
+    "geometry.h",
     "material.cc",
     "material.h",
     "scene.cc",
@@ -16,6 +18,8 @@ impeller_component("scene") {
     "scene_encoder.h",
     "scene_entity.cc",
     "scene_entity.h",
+    "static_mesh_entity.cc",
+    "static_mesh_entity.h",
   ]
 
   public_deps = [ "../renderer" ]

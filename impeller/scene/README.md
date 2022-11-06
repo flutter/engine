@@ -49,10 +49,15 @@ scene.Add(
         /* intensity */ 5,
         /* direction */ {2, 3, 4}));
 
-std::unique_ptr<impeller::scene::MeshEntity> sphere =
-    impeller::scene::MeshEntity::MakeSphere(allocator, /* radius */ 2);
-sphere->SetTransform(Matrix::MakeRotationEuler({kPiOver4, kPiOver4, 0}));
-sphere->SetCullingMode(impeller::scene::CullingMode::kFrustum);
+impeller::scene::StaticMeshEntity sphere_entity;
+sphere_entity.SetGlobalTransform(
+    Matrix::MakeRotationEuler({kPiOver4, kPiOver4, 0}));
+sphere_entity.SetCullingMode(impeller::scene::CullingMode::kFrustum);
+
+std::unique_ptr<impeller::scene::SphereGeometry> sphere =
+    impeller::scene::Geometry::MakeSphere(allocator, /* radius */ 2);
+
+sphere_entity.SetGeometry(sphere);
 
 auto material = impeller::scene::Material::MakeStandard();
 material.SetAlbedo(impeller::Color::Red());
@@ -74,13 +79,18 @@ material.SetStencilConfig({
   impeller::CompareFunction::kAlways,           // compare
 });
 
-sphere->SetMaterial(material);
+sphere_entity->SetMaterials({material});
 
-auto cube = impeller::scene::StaticMesh::Cube({4, 4, 4});
-cube.SetTransform(Matrix::MakeTranslation({4, 0, 0}));
 
-sphere->Add(cube);
-scene.Add(sphere);
+impeller::scene::StaticMeshEntity cube_entity;
+cube_entity.GetGeometry(
+    impeller::scene::Geometry::MakeCube(allocator, {4, 4, 4}));
+cube_entity.SetMaterials({material});
+
+cube_entity.SetLocalTransform(Matrix::MakeTranslation({4, 0, 0}));
+
+sphere_entity->Add(sube_entity);
+scene.Add(sphere_entity);
 
 /// Post processing.
 

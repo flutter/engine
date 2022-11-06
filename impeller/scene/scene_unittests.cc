@@ -2,87 +2,63 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
-#include "impeller/fixtures/impeller.frag.h"
-#include "impeller/fixtures/impeller.vert.h"
+#include "impeller/geometry/color.h"
+#include "impeller/geometry/constants.h"
+#include "impeller/geometry/matrix.h"
+#include "impeller/geometry/vector.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_test.h"
-#include "impeller/renderer/pipeline_library.h"
-#include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
+
+#include "impeller/scene/camera.h"
+#include "impeller/scene/geometry.h"
+#include "impeller/scene/material.h"
+#include "impeller/scene/scene.h"
+#include "impeller/scene/static_mesh_entity.h"
 
 #include "third_party/tinygltf/tiny_gltf.h"
 
-
 namespace impeller {
+namespace scene {
 namespace testing {
 
 using SceneTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(SceneTest);
 
-TEST_P(SceneTest, TheImpeller) {
+TEST_P(SceneTest, UnlitScene) {
+  auto allocator = GetContext()->GetResourceAllocator();
+  auto scene = Scene(GetContext());
 
-  tinygltf::TinyGLTF ctx;
+  {
+    auto mesh = SceneEntity::MakeStaticMesh();
 
-  using VS = ImpellerVertexShader;
-  using FS = ImpellerFragmentShader;
+    auto material = Material::MakeUnlit();
+    material->SetColor(Color::Red());
+    mesh->SetMaterial(std::move(material));
 
-  auto context = GetContext();
-  auto pipeline_descriptor =
-      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
-  ASSERT_TRUE(pipeline_descriptor.has_value());
-  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
-  ASSERT_TRUE(pipeline && pipeline->IsValid());
+    Vector3 size(1, 2, 3);
+    mesh->SetGeometry(Geometry::MakeCuboid(size));
 
-  auto blue_noise = CreateTextureForFixture("blue_noise.png");
-  SamplerDescriptor noise_sampler_desc;
-  noise_sampler_desc.width_address_mode = SamplerAddressMode::kRepeat;
-  noise_sampler_desc.height_address_mode = SamplerAddressMode::kRepeat;
-  auto noise_sampler =
-      context->GetSamplerLibrary()->GetSampler(noise_sampler_desc);
+    mesh->SetLocalTransform(Matrix::MakeTranslation(size / 2));
 
-  auto cube_map = CreateTextureCubeForFixture(
-      {"table_mountain_px.png", "table_mountain_nx.png",
-       "table_mountain_py.png", "table_mountain_ny.png",
-       "table_mountain_pz.png", "table_mountain_nz.png"});
-  auto cube_map_sampler = context->GetSamplerLibrary()->GetSampler({});
+    scene.Add(mesh);
+  }
 
-  SinglePassCallback callback = [&](RenderPass& pass) {
-    auto size = pass.GetRenderTargetSize();
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    auto camera = Camera::MakePerspective(
+                      /* fov */ kPiOver4,
+                      /* position */ {50, -30, 50})
+                      .LookAt(
+                          /* target */ Vector3(),
+                          /* up */ {0, -1, 0});
 
-    Command cmd;
-    cmd.pipeline = pipeline;
-    cmd.label = "Impeller SDF scene";
-    VertexBufferBuilder<VS::PerVertexData> builder;
-    builder.AddVertices({{Point()},
-                         {Point(0, size.height)},
-                         {Point(size.width, 0)},
-                         {Point(size.width, 0)},
-                         {Point(0, size.height)},
-                         {Point(size.width, size.height)}});
-    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
-
-    VS::FrameInfo vs_uniform;
-    vs_uniform.mvp = Matrix::MakeOrthographic(size);
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
-
-    FS::FragInfo fs_uniform;
-    fs_uniform.texture_size = Point(size);
-    fs_uniform.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
-    FS::BindFragInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
-    FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
-    FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
-
-    pass.AddCommand(cmd);
+    scene.Render(render_target, camera);
     return true;
   };
+
   OpenPlaygroundHere(callback);
 }
 
 }  // namespace testing
+}  // namespace scene
 }  // namespace impeller

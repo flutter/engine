@@ -17,9 +17,14 @@
 namespace impeller {
 namespace scene {
 
+class StaticMeshEntity;
+
 class SceneEntity {
  public:
   SceneEntity();
+  virtual ~SceneEntity();
+
+  static std::shared_ptr<StaticMeshEntity> MakeStaticMesh();
 
   void SetLocalTransform(Matrix transform);
   Matrix GetLocalTransform() const;
@@ -27,7 +32,7 @@ class SceneEntity {
   void SetGlobalTransform(Matrix transform);
   Matrix GetGlobalTransform() const;
 
-  bool Add(std::shared_ptr<SceneEntity> child);
+  bool Add(const std::shared_ptr<SceneEntity>& child);
 
   bool Render(SceneEncoder& encoder, const Camera& camera) const;
 

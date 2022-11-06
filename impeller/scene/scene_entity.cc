@@ -9,11 +9,18 @@
 #include "impeller/base/validation.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/scene/scene_encoder.h"
+#include "impeller/scene/static_mesh_entity.h"
 
 namespace impeller {
 namespace scene {
 
 SceneEntity::SceneEntity() = default;
+
+SceneEntity::~SceneEntity() = default;
+
+std::shared_ptr<StaticMeshEntity> SceneEntity::MakeStaticMesh() {
+  return std::make_shared<StaticMeshEntity>();
+}
 
 void SceneEntity::SetLocalTransform(Matrix transform) {
   local_transform_ = transform;
@@ -37,7 +44,7 @@ Matrix SceneEntity::GetGlobalTransform() const {
   return local_transform_;
 }
 
-bool SceneEntity::Add(std::shared_ptr<SceneEntity> child) {
+bool SceneEntity::Add(const std::shared_ptr<SceneEntity>& child) {
   if (child->parent_ != nullptr) {
     VALIDATION_LOG << "Cannot add SceneEntity as a child because it already "
                       "has a parent assigned.";

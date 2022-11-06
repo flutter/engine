@@ -14,10 +14,10 @@
 namespace impeller {
 namespace scene {
 
-Scene::Scene(std::shared_ptr<Context> context) : context_(std::move(context)){};
+Scene::Scene(const std::shared_ptr<Context>& context) : context_(context){};
 
-void Scene::Add(std::shared_ptr<SceneEntity> child) {
-  root_.Add(std::move(child));
+void Scene::Add(const std::shared_ptr<SceneEntity>& child) {
+  root_.Add(child);
 }
 
 bool Scene::Render(const RenderTarget& render_target,
