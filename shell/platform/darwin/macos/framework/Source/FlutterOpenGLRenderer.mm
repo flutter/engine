@@ -38,8 +38,8 @@ static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
     FML_LOG(WARNING) << "Can't create frame buffers on a null view controller.";
-    // The FBO has ID 0, therefore is discarded.
-    return 0;
+    // The FBO has ID -1, therefore is discarded.
+    return -1;
   }
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer fboForView:viewController.flutterView frameInfo:info];

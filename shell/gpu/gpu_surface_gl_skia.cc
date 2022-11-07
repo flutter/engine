@@ -182,7 +182,7 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
   const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
-  if (fbo_info.fbo_id == 0) {
+  if (fbo_info.fbo_id == -1) {
     FML_LOG(ERROR) << "Invalid FBO returned.";
     return false;
   }
@@ -295,6 +295,10 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     // The FBO has changed, ask the delegate for the new FBO and do a surface
     // re-wrap.
     const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
+    if (fbo_info.fbo_id == -1) {
+      FML_LOG(ERROR) << "Invalid FBO returned.";
+      return false;
+    }
     auto new_onscreen_surface =
         WrapOnscreenSurface(context_.get(),  // GL context
                             current_size,    // root surface size
