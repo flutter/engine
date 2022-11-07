@@ -7,7 +7,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #pragma mark - Static callbacks that require the engine.
@@ -49,7 +49,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterMetalRenderer implementation
 
 @implementation FlutterMetalRenderer {
-  FlutterDarwinContextMetal* _darwinMetalContext;
+  FlutterDarwinContextMetalSkia* _darwinMetalContext;
 }
 
 - (instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine {

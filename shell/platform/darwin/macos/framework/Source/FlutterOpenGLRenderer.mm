@@ -6,6 +6,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
 #pragma mark - Static methods for openGL callbacks that require the engine.
 
