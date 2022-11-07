@@ -41,10 +41,6 @@ if [ ! -f "$COMPILE_COMMANDS" ]; then
   (cd "$SRC_DIR"; ./flutter/tools/gn)
 fi
 
-
-cd $SRC_DIR
-flutter/tools/gn --ios
-
 echo "$(date +%T) Running clang_tidy"
 
 cd "$SCRIPT_DIR"
@@ -53,8 +49,6 @@ cd "$SCRIPT_DIR"
   "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
   --src-dir="$SRC_DIR" \
   --mac-host-warnings-as-errors="$MAC_HOST_WARNINGS_AS_ERRORS" \
-  --shard-variants="ios_debug" \
-  --shard-id=0 \
   "$@"
 
 echo "$(date +%T) Running pylint"
