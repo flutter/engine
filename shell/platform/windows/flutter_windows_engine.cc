@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
-#include "flutter/shell/platform/windows/accessibility_bridge_delegate_windows.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
@@ -318,25 +318,23 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     host->view()->OnPreEngineRestart();
   };
-  args.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
-                                           void* user_data) {
+  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
+                                      void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!node || node->id == kFlutterSemanticsNodeIdBatchEnd) {
-      host->accessibility_bridge_->CommitUpdates();
-      return;
+
+    for (size_t i = 0; i < update->nodes_count; i++) {
+      const FlutterSemanticsNode* node = &update->nodes[i];
+      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
     }
-    host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+
+    for (size_t i = 0; i < update->custom_actions_count; i++) {
+      const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
+      host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
+          action);
+    }
+
+    host->accessibility_bridge_->CommitUpdates();
   };
-  args.update_semantics_custom_action_callback =
-      [](const FlutterSemanticsCustomAction* action, void* user_data) {
-        auto host = static_cast<FlutterWindowsEngine*>(user_data);
-        if (!action || action->id == kFlutterSemanticsNodeIdBatchEnd) {
-          host->accessibility_bridge_->CommitUpdates();
-          return;
-        }
-        host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-            action);
-      };
   args.root_isolate_create_callback = [](void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     if (host->root_isolate_create_callback_) {
@@ -610,10 +608,15 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
     if (!semantics_enabled_ && accessibility_bridge_) {
       accessibility_bridge_.reset();
     } else if (semantics_enabled_ && !accessibility_bridge_) {
-      accessibility_bridge_ = std::make_shared<AccessibilityBridge>(
-          std::make_unique<AccessibilityBridgeDelegateWindows>(this));
+      accessibility_bridge_ = CreateAccessibilityBridge(this, view());
     }
   }
+}
+
+std::shared_ptr<AccessibilityBridge>
+FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine,
+                                                FlutterWindowsView* view) {
+  return std::make_shared<AccessibilityBridgeWindows>(engine, view);
 }
 
 gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
