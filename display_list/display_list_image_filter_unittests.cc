@@ -810,8 +810,10 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
         auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
         auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
         if (!sk_local_filter || !dl_local_filter) {
-          // Allow the SkImageFilter to support at least, but possibly more,
-          // matrices than DlImageFilter.
+          // Temporarily relax the equivalence testing to allow Skia to expand
+          // their behavior. Once the Skia fixes are rolled in, the
+          // DlImageFilter should adapt  to the new rules.
+          // See https://github.com/flutter/flutter/issues/114723
           ASSERT_TRUE(sk_local_filter || !dl_local_filter);
           continue;
         }
