@@ -236,31 +236,39 @@ class ClangTidy {
   ) {
     final List<Command> totalCommands = <Command>[];
     if (sharedBuildCommandsData.isNotEmpty) {
-      final Iterable<Command> buildCommands = buildCommandsData
-          .map((dynamic data) => Command.fromMap(data as Map<String, Object?>));
-      final Iterable<Set<String>> shardFilePaths =
-          sharedBuildCommandsData.map((List<Object?> list) => list
-              .map((Object? data) =>
-                  Command.fromMap((data as Map<String, Object?>?)!).filePath)
-              .toSet());
+      final List<Command> buildCommands = <Command>[
+        for (Object? data in buildCommandsData)
+          Command.fromMap((data as Map<String, Object?>?)!)
+      ];
+      final List<Set<String>> shardFilePaths = <Set<String>>[
+        for (List<Object?> list in sharedBuildCommandsData)
+          <String>{
+            for (Object? data in list)
+              Command.fromMap((data as Map<String, Object?>?)!).filePath
+          }
+      ];
       final Iterable<_SetStatusCommand> intersectionResults =
           _calcIntersection(buildCommands, shardFilePaths);
-      totalCommands.addAll(intersectionResults
-          .where((_SetStatusCommand element) =>
-              element.setStatus == _SetStatus.Difference)
-          .map((_SetStatusCommand e) => e.command));
-      final List<Command> intersection = intersectionResults
-          .where((_SetStatusCommand element) =>
-              element.setStatus == _SetStatus.Intersection)
-          .map((_SetStatusCommand e) => e.command)
-          .toList();
-      // Make sure to sort results, not sure if there is a defined order in the json file.
+      for (final _SetStatusCommand result in intersectionResults) {
+        if (result.setStatus == _SetStatus.Difference) {
+          totalCommands.add(result.command);
+        }
+      }
+      final List<Command> intersection = <Command>[
+        for (_SetStatusCommand result in intersectionResults)
+          if (result.setStatus == _SetStatus.Intersection) result.command
+      ];
+      // Make sure to sort results so the sharding scheme is guaranteed to work
+      // since we are not sure if there is a defined order in the json file.
       intersection
           .sort((Command x, Command y) => x.filePath.compareTo(y.filePath));
       totalCommands.addAll(
           _takeShard(intersection, shardId!, 1 + sharedBuildCommandsData.length));
     } else {
-      totalCommands.addAll(buildCommandsData.map((Object? data) => Command.fromMap((data as Map<String, Object?>?)!)));
+      totalCommands.addAll(<Command>[
+        for (Object? data in buildCommandsData)
+          Command.fromMap((data as Map<String, Object?>?)!)
+      ]);
     }
     return () async {
       final List<Command> result = <Command>[];
