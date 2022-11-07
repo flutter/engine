@@ -77,6 +77,7 @@ class DomConsole {}
 extension DomConsoleExtension on DomConsole {
   external void warn(Object? arg);
   external void error(Object? arg);
+  external void debug(Object? arg);
 }
 
 @JS('window')
@@ -702,6 +703,14 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
 
 @JS()
 @staticInterop
+class DomCanvasRenderingContextWebGl {}
+
+extension DomCanvasRenderingContextWebGlExtension on DomCanvasRenderingContextWebGl {
+  external bool isContextLost();
+}
+
+@JS()
+@staticInterop
 class DomImageData {}
 
 DomImageData createDomImageData(Object? data, int sw, int sh) => js_util
@@ -771,7 +780,7 @@ Future<DomXMLHttpRequest> domHttpRequest(String url,
     }
   }));
 
-  xhr.addEventListener('error', allowInterop(completer.completeError));
+  xhr.addEventListener('error', allowInterop((DomEvent event) => completer.completeError(event)));
   xhr.send(sendData);
   return completer.future;
 }

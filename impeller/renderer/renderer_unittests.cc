@@ -26,6 +26,7 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/device_buffer_descriptor.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -100,8 +101,6 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -191,8 +190,6 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
         Matrix::MakeRotationZ(Radians(euler_angles.z));
     VS::BindUniformBuffer(cmd,
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -252,8 +249,6 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
 
     for (size_t i = 0; i < 1; i++) {
       for (size_t j = 0; j < 1; j++) {
@@ -367,8 +362,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
                     r2t_pass->GetTransientsBuffer().EmplaceUniform(frame_info));
   FS::BindContents1(cmd, boston, sampler);
   FS::BindContents2(cmd, bridge, sampler);
-
-  cmd.primitive_type = PrimitiveType::kTriangle;
 
   VS::UniformBuffer uniforms;
   uniforms.mvp = Matrix::MakeOrthographic(ISize{1024, 768}) *
@@ -550,6 +543,137 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
 
     if (!buffer->SubmitCommands()) {
       return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanBlitTextureToBuffer) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  using VS = MipmapsVertexShader;
+  using FS = MipmapsFragmentShader;
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto mipmaps_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+  ASSERT_TRUE(mipmaps_pipeline);
+
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(bridge && boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  TextureDescriptor texture_desc;
+  texture_desc.storage_mode = StorageMode::kHostVisible;
+  texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_desc.size = bridge->GetTextureDescriptor().size;
+  texture_desc.mip_count = 1u;
+  texture_desc.usage =
+      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
+      static_cast<TextureUsageMask>(TextureUsage::kShaderWrite) |
+      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  DeviceBufferDescriptor device_buffer_desc;
+  device_buffer_desc.storage_mode = StorageMode::kHostVisible;
+  device_buffer_desc.size =
+      bridge->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+  auto device_buffer =
+      context->GetResourceAllocator()->CreateBuffer(device_buffer_desc);
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  auto size = Point(boston->GetSize());
+  vertex_builder.AddVertices({
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, 0}, {1.0, 0.0}},       // 2
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, size.y}, {0.0, 1.0}},       // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    {
+      auto buffer = context->CreateCommandBuffer();
+      if (!buffer) {
+        return false;
+      }
+      buffer->SetLabel("Playground Command Buffer");
+      auto pass = buffer->CreateBlitPass();
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+
+      if (render_target.GetColorAttachments().empty()) {
+        return false;
+      }
+
+      // Blit `bridge` to the top left corner of the texture.
+      pass->AddCopy(bridge, device_buffer);
+
+      pass->EncodeCommands(context->GetResourceAllocator());
+
+      if (!buffer->SubmitCommands()) {
+        return false;
+      }
+    }
+
+    {
+      auto buffer = context->CreateCommandBuffer();
+      if (!buffer) {
+        return false;
+      }
+      buffer->SetLabel("Playground Command Buffer");
+
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Render Pass");
+      {
+        Command cmd;
+        cmd.label = "Image";
+        cmd.pipeline = mipmaps_pipeline;
+
+        cmd.BindVertices(vertex_buffer);
+
+        VS::VertInfo vert_info;
+        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                        Matrix::MakeScale(GetContentScale());
+        VS::BindVertInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+
+        FS::FragInfo frag_info;
+        frag_info.lod = 0;
+        FS::BindFragInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+
+        auto sampler = context->GetSamplerLibrary()->GetSampler({});
+        auto buffer_view = device_buffer->AsBufferView();
+        auto texture =
+            context->GetResourceAllocator()->CreateTexture(texture_desc);
+        if (!texture->SetContents(buffer_view.contents,
+                                  buffer_view.range.length)) {
+          VALIDATION_LOG << "Could not upload texture to device memory";
+          return false;
+        }
+        FS::BindTex(cmd, texture, sampler);
+
+        pass->AddCommand(std::move(cmd));
+      }
+      pass->EncodeCommands();
+      if (!buffer->SubmitCommands()) {
+        return false;
+      }
     }
     return true;
   };
