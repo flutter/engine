@@ -118,7 +118,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4099e11fffa406aaa13be8bd512fe5b0ad6262f6',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'd13d64086f5e301bd0415eede895b34af220ef42',
 
    # Fuchsia compatibility
    #
@@ -686,7 +686,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': '5XOj9l5e2wkSpMKT1pLJGtq9_UAQkHV13y-kg9rVNiUC'
+        'version': 'sa5bVGimNo3JwLV27Wpu8RLzitWUvIeqJtAqcrtplosC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
