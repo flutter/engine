@@ -27,7 +27,7 @@ struct GLFrameInfo {
 struct GLFBOInfo {
   // The frame buffer's ID.
   //
-  // This ID must not be 0, or this frame buffer is considered invalid.
+  // This ID must not be -1, or this frame buffer is considered invalid.
   uint32_t fbo_id;
   // This boolean flags whether the returned FBO supports partial repaint.
   const bool partial_repaint_enabled;
