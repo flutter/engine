@@ -41,10 +41,12 @@ class FlutterGLCompositor : public FlutterCompositor {
   // Releases the memory for any state used by the backing store.
   bool CollectBackingStore(const FlutterBackingStore* backing_store) override;
 
-  // Presents the FlutterLayers by updating FlutterView(s) using the
-  // layer content.
+  // Presents the FlutterLayers by updating the FlutterView specified by
+  // `view_id` using the layer content.
   // Present sets frame_started_ to false.
-  bool Present(const FlutterLayer** layers, size_t layers_count) override;
+  bool Present(uint64_t view_id,
+               const FlutterLayer** layers,
+               size_t layers_count) override;
 
  private:
   const NSOpenGLContext* open_gl_context_;
