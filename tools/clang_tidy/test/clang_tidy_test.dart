@@ -223,11 +223,9 @@ Future<int> main(List<String> args) async {
           'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
           'file': filePath,
         };
-    final List<String> filePaths = () sync* {
-      for (int i = 0; i < 10; ++i) {
-        yield '/path/to/a/source_file_$i.cc';
-      }
-    }().toList();
+    final List<String> filePaths = <String>[
+      for (int i = 0; i < 10; ++i) '/path/to/a/source_file_$i.cc'
+    ];
     final List<dynamic> buildCommandsData =
         filePaths.map((String e) => makeBuildCommandEntry(e)).toList();
     final List<dynamic> shardBuildCommandsData =
