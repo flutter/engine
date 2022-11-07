@@ -19,7 +19,9 @@ static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
   // from somewhere, and accordingly pick the correct view from the engine.
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
-    return FlutterMetalTexture{};  // TODO
+    FML_LOG(WARNING) << "Can't create drawables on a null view controller.";
+    // FlutterMetalTexture has texture `null`, therefore is discarded.
+    return FlutterMetalTexture{};
   }
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);

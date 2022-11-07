@@ -37,7 +37,9 @@ static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
   // from somewhere, and accordingly pick the correct view from the engine.
   FlutterViewController* viewController = engine.viewController;
   if (viewController == nil) {
-    return -1;  // TODO
+    FML_LOG(WARNING) << "Can't create frame buffers on a null view controller.";
+    // The FBO has ID 0, therefore is discarded.
+    return 0;
   }
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer fboForView:viewController.flutterView frameInfo:info];
