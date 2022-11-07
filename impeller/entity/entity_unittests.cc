@@ -757,6 +757,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
       cmd.label = "Blended Rectangle";
       auto options = OptionsFromPass(pass);
       options.blend_mode = blend_mode;
+      options.primitive_type = PrimitiveType::kTriangle;
       cmd.pipeline = context.GetSolidFillPipeline(options);
       cmd.BindVertices(
           vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
@@ -771,8 +772,6 @@ TEST_P(EntityTest, BlendingModeOptions) {
       frag_info.color = color.Premultiply();
       FS::BindFragInfo(cmd,
                        pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-
-      cmd.primitive_type = PrimitiveType::kTriangle;
 
       return pass.AddCommand(std::move(cmd));
     };
@@ -2142,12 +2141,21 @@ TEST_P(EntityTest, RuntimeEffect) {
     GTEST_SKIP_("This test only has a Metal fixture at the moment.");
   }
 
+  auto runtime_stage =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  bool first_frame = true;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    if (first_frame) {
+      first_frame = false;
+    } else {
+      assert(runtime_stage->IsDirty() == false);
+    }
+
     auto contents = std::make_shared<RuntimeEffectContents>();
     contents->SetGeometry(Geometry::MakeCover());
 
-    auto runtime_stage =
-        OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
     contents->SetRuntimeStage(runtime_stage);
 
     struct FragUniforms {
