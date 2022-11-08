@@ -1,4 +1,4 @@
-Signature: d4ed3577346269af3d6654919a92a479
+Signature: 7140d8ef2695ea07f4bc05d55aab7947
 
 UNUSED LICENSES:
 
@@ -611,6 +611,7 @@ FILE: ../../../third_party/skia/experimental/wasm-hello-world/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/wasm-hello-world/hello_world.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD.bazel
+FILE: ../../../third_party/skia/gn/BUILD.bazel
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
 FILE: ../../../third_party/skia/go_repositories.bzl
@@ -653,6 +654,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/armhf_sysroot/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel_build_task_driver/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_linux_arm64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_mac_arm64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazelisk_win_amd64/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/binutils_linux_x64/VERSION
@@ -3129,7 +3131,6 @@ FILE: ../../../third_party/skia/gm/imagefilters.cpp
 FILE: ../../../third_party/skia/gm/imagefiltersstroked.cpp
 FILE: ../../../third_party/skia/gm/imagefilterstransformed.cpp
 FILE: ../../../third_party/skia/gm/imagefromyuvtextures.cpp
-FILE: ../../../third_party/skia/gm/imagescalealigned.cpp
 FILE: ../../../third_party/skia/gm/imagesource2.cpp
 FILE: ../../../third_party/skia/gm/largeglyphblur.cpp
 FILE: ../../../third_party/skia/gm/lcdblendmodes.cpp
@@ -3142,7 +3143,6 @@ FILE: ../../../third_party/skia/gm/pathcontourstart.cpp
 FILE: ../../../third_party/skia/gm/pdf_never_embed.cpp
 FILE: ../../../third_party/skia/gm/perspshaders.cpp
 FILE: ../../../third_party/skia/gm/pictureimagegenerator.cpp
-FILE: ../../../third_party/skia/gm/pixelsnap.cpp
 FILE: ../../../third_party/skia/gm/plus.cpp
 FILE: ../../../third_party/skia/gm/repeated_bitmap.cpp
 FILE: ../../../third_party/skia/gm/scaledstrokes.cpp
@@ -7678,6 +7678,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/gm/nearesthalfpixelimage.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/include/gpu/mtl/MtlMemoryAllocator.h
