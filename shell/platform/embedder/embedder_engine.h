@@ -12,10 +12,8 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/embedder_engine.h"
-#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
-
 namespace flutter {
 
 struct ShellArgs;
@@ -30,8 +28,8 @@ class EmbedderEngine {
                  RunConfiguration run_configuration,
                  Shell::CreateCallback<PlatformView> on_create_platform_view,
                  Shell::CreateCallback<Rasterizer> on_create_rasterizer,
-                 EmbedderExternalTextureGL::ExternalTextureCallback
-                     external_texture_callback);
+                 std::unique_ptr<EmbedderExternalTextureResolver>
+                     external_texture_resolver);
 
   ~EmbedderEngine();
 
@@ -54,7 +52,7 @@ class EmbedderEngine {
   bool DispatchPointerDataPacket(
       std::unique_ptr<flutter::PointerDataPacket> packet);
 
-  bool SendPlatformMessage(fml::RefPtr<flutter::PlatformMessage> message);
+  bool SendPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool RegisterTexture(int64_t texture);
 
@@ -68,7 +66,7 @@ class EmbedderEngine {
 
   bool DispatchSemanticsAction(int id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   bool OnVsyncEvent(intptr_t baton,
                     fml::TimePoint frame_start_time,
@@ -91,8 +89,7 @@ class EmbedderEngine {
   RunConfiguration run_configuration_;
   std::unique_ptr<ShellArgs> shell_args_;
   std::unique_ptr<Shell> shell_;
-  const EmbedderExternalTextureGL::ExternalTextureCallback
-      external_texture_callback_;
+  std::unique_ptr<EmbedderExternalTextureResolver> external_texture_resolver_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
 };

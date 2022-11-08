@@ -2,15 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
-#include "flutter/fml/logging.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
 
-static NSString* kUIBackgroundMode = @"UIBackgroundModes";
-static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
-static NSString* kBackgroundFetchCapatibility = @"fetch";
+#import "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Test.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
+
+static NSString* const kUIBackgroundMode = @"UIBackgroundModes";
+static NSString* const kRemoteNotificationCapabitiliy = @"remote-notification";
+static NSString* const kBackgroundFetchCapatibility = @"fetch";
+static NSString* const kRestorationStateAppModificationKey = @"mod-date";
+
+@interface FlutterAppDelegate ()
+@property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
+@end
 
 @implementation FlutterAppDelegate {
   FlutterPluginAppLifeCycleDelegate* _lifeCycleDelegate;
@@ -25,6 +33,8 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (void)dealloc {
   [_lifeCycleDelegate release];
+  [_rootFlutterViewControllerGetter release];
+  [_window release];
   [super dealloc];
 }
 
@@ -40,10 +50,13 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
-+ (FlutterViewController*)rootFlutterViewController {
-  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-  if ([viewController isKindOfClass:[FlutterViewController class]]) {
-    return (FlutterViewController*)viewController;
+- (FlutterViewController*)rootFlutterViewController {
+  if (_rootFlutterViewControllerGetter != nil) {
+    return _rootFlutterViewControllerGetter();
+  }
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
+    return (FlutterViewController*)rootViewController;
   }
   return nil;
 }
@@ -83,6 +96,12 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
       didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
 
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  [_lifeCycleDelegate application:application
+      didFailToRegisterForRemoteNotificationsWithError:error];
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
@@ -120,10 +139,48 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   }
 }
 
+- (BOOL)openURL:(NSURL*)url {
+  NSNumber* isDeepLinkingEnabled =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"];
+  if (!isDeepLinkingEnabled.boolValue) {
+    // Not set or NO.
+    return NO;
+  } else {
+    FlutterViewController* flutterViewController = [self rootFlutterViewController];
+    if (flutterViewController) {
+      [flutterViewController.engine
+          waitForFirstFrame:3.0
+                   callback:^(BOOL didTimeout) {
+                     if (didTimeout) {
+                       FML_LOG(ERROR)
+                           << "Timeout waiting for the first frame when launching an URL.";
+                     } else {
+                       NSString* fullRoute = url.path;
+                       if ([url.query length] != 0) {
+                         fullRoute = [NSString stringWithFormat:@"%@?%@", fullRoute, url.query];
+                       }
+                       if ([url.fragment length] != 0) {
+                         fullRoute = [NSString stringWithFormat:@"%@#%@", fullRoute, url.fragment];
+                       }
+                       [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
+                                                                          arguments:fullRoute];
+                     }
+                   }];
+      return YES;
+    } else {
+      FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
+      return NO;
+    }
+  }
+}
+
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [_lifeCycleDelegate application:application openURL:url options:options];
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  }
+  return [self openURL:url];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -166,35 +223,36 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray* __nullable restorableObjects))restorationHandler {
 #endif
-  return [_lifeCycleDelegate application:application
-                    continueUserActivity:userActivity
-                      restorationHandler:restorationHandler];
+  if ([_lifeCycleDelegate application:application
+                 continueUserActivity:userActivity
+                   restorationHandler:restorationHandler]) {
+    return YES;
+  }
+  return [self openURL:userActivity.webpageURL];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return
-        [[(FlutterViewController*)rootViewController pluginRegistry] registrarForPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] registrarForPlugin:pluginKey];
   }
   return nil;
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry] hasPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] hasPlugin:pluginKey];
   }
   return false;
 }
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry]
-        valuePublishedByPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] valuePublishedByPlugin:pluginKey];
   }
   return nil;
 }
@@ -253,6 +311,39 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
             @"to the list of your supported UIBackgroundModes in your Info.plist.");
     }
   }
+}
+
+#pragma mark - State Restoration
+
+- (BOOL)application:(UIApplication*)application shouldSaveApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application shouldRestoreApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
+  return self.lastAppModificationTime == stateDate;
+}
+
+- (BOOL)application:(UIApplication*)application shouldSaveSecureApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application
+    shouldRestoreSecureApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
+  return self.lastAppModificationTime == stateDate;
+}
+
+- (int64_t)lastAppModificationTime {
+  NSDate* fileDate;
+  NSError* error = nil;
+  [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate
+                                                   forKey:NSURLContentModificationDateKey
+                                                    error:&error];
+  NSAssert(error == nil, @"Cannot obtain modification date of main bundle: %@", error);
+  return [fileDate timeIntervalSince1970];
 }
 
 @end

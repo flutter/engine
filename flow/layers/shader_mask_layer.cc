@@ -9,13 +9,27 @@ namespace flutter {
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
+    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
+  set_layer_can_inherit_opacity(true);
+}
+
+void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const ShaderMaskLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (shader_ != prev->shader_ || mask_rect_ != prev->mask_rect_ ||
+        blend_mode_ != prev->blend_mode_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+
+  DiffChildren(context, prev);
+
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
 
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-#if defined(OS_FUCHSIA)
-  CheckForChildLayerBelow(context);
-#endif
-
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
@@ -23,10 +37,11 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
-  Layer::AutoSaveLayer save =
-      Layer::AutoSaveLayer::Create(context, paint_bounds(), nullptr);
+  AutoCachePaint cache_paint(context);
+  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+      context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);
 
   SkPaint paint;

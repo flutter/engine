@@ -1,7 +1,11 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package test.io.flutter.embedding.engine;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,8 +16,6 @@ import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -21,44 +23,18 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class PluginComponentTest {
+  boolean jniAttached;
+
   @Test
   public void pluginsCanAccessFlutterAssetPaths() {
     // Setup test.
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterJNI flutterJNI = mock(FlutterJNI.class);
-    when(flutterJNI.isAttached()).thenReturn(true);
+    jniAttached = false;
+    when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(flutterJNI).attachToNative();
 
-    // FlutterLoader is the object to which the PluginRegistry defers for obtaining
-    // the path to a Flutter asset. Ideally in this component test we would use a
-    // real FlutterLoader and directly verify the relationship between FlutterAssets
-    // and FlutterLoader. However, a real FlutterLoader cannot be used in a JVM test
-    // because it would attempt to load native libraries. Therefore, we create a fake
-    // FlutterLoader, but then we defer the corresponding asset lookup methods to the
-    // real FlutterLoader singleton. This test ends up verifying that when FlutterAssets
-    // is queried for an asset path, it returns the real expected path based on real
-    // FlutterLoader behavior.
-    FlutterLoader flutterLoader = mock(FlutterLoader.class);
-    when(flutterLoader.getLookupKeyForAsset(any(String.class)))
-        .thenAnswer(
-            new Answer<String>() {
-              @Override
-              public String answer(InvocationOnMock invocation) throws Throwable {
-                // Defer to a real FlutterLoader to return the asset path.
-                String fileNameOrSubpath = (String) invocation.getArguments()[0];
-                return FlutterLoader.getInstance().getLookupKeyForAsset(fileNameOrSubpath);
-              }
-            });
-    when(flutterLoader.getLookupKeyForAsset(any(String.class), any(String.class)))
-        .thenAnswer(
-            new Answer<String>() {
-              @Override
-              public String answer(InvocationOnMock invocation) throws Throwable {
-                // Defer to a real FlutterLoader to return the asset path.
-                String fileNameOrSubpath = (String) invocation.getArguments()[0];
-                String packageName = (String) invocation.getArguments()[1];
-                return FlutterLoader.getInstance()
-                    .getLookupKeyForAsset(fileNameOrSubpath, packageName);
-              }
-            });
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     // Execute behavior under test.
     FlutterEngine flutterEngine =

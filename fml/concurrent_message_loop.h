@@ -12,6 +12,7 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/task_runner.h"
 
 namespace fml {
 
@@ -45,7 +46,7 @@ class ConcurrentMessageLoop
   std::map<std::thread::id, std::vector<fml::closure>> thread_tasks_;
   bool shutdown_ = false;
 
-  ConcurrentMessageLoop(size_t worker_count);
+  explicit ConcurrentMessageLoop(size_t worker_count);
 
   void WorkerMain();
 
@@ -58,13 +59,13 @@ class ConcurrentMessageLoop
   FML_DISALLOW_COPY_AND_ASSIGN(ConcurrentMessageLoop);
 };
 
-class ConcurrentTaskRunner {
+class ConcurrentTaskRunner : public BasicTaskRunner {
  public:
-  ConcurrentTaskRunner(std::weak_ptr<ConcurrentMessageLoop> weak_loop);
+  explicit ConcurrentTaskRunner(std::weak_ptr<ConcurrentMessageLoop> weak_loop);
 
-  ~ConcurrentTaskRunner();
+  virtual ~ConcurrentTaskRunner();
 
-  void PostTask(const fml::closure& task);
+  void PostTask(const fml::closure& task) override;
 
  private:
   friend ConcurrentMessageLoop;

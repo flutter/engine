@@ -5,14 +5,14 @@
 #ifndef FLUTTER_SHELL_COMMON_PIPELINE_H_
 #define FLUTTER_SHELL_COMMON_PIPELINE_H_
 
+#include <deque>
+#include <memory>
+#include <mutex>
+
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/semaphore.h"
 #include "flutter/fml/trace_event.h"
-
-#include <deque>
-#include <memory>
-#include <mutex>
 
 namespace flutter {
 
@@ -27,7 +27,7 @@ size_t GetNextPipelineTraceID();
 /// A thread-safe queue of resources for a single consumer and a single
 /// producer.
 template <class R>
-class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
+class Pipeline {
  public:
   using Resource = R;
   using ResourcePtr = std::unique_ptr<Resource>;
@@ -71,7 +71,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       return result;
     }
 
-    operator bool() const { return continuation_ != nullptr; }
+    explicit operator bool() const { return continuation_ != nullptr; }
 
    private:
     friend class Pipeline;

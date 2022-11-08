@@ -5,9 +5,9 @@
 #ifndef FLUTTER_FML_EINTR_WRAPPER_H_
 #define FLUTTER_FML_EINTR_WRAPPER_H_
 
-#include "flutter/fml/build_config.h"
-
 #include <errno.h>
+
+#include "flutter/fml/build_config.h"
 
 #if defined(OS_WIN)
 
@@ -17,8 +17,6 @@
 
 #else
 
-#if defined(NDEBUG)
-
 #define FML_HANDLE_EINTR(x)                                 \
   ({                                                        \
     decltype(x) eintr_wrapper_result;                       \
@@ -27,21 +25,6 @@
     } while (eintr_wrapper_result == -1 && errno == EINTR); \
     eintr_wrapper_result;                                   \
   })
-
-#else
-
-#define FML_HANDLE_EINTR(x)                                  \
-  ({                                                         \
-    int eintr_wrapper_counter = 0;                           \
-    decltype(x) eintr_wrapper_result;                        \
-    do {                                                     \
-      eintr_wrapper_result = (x);                            \
-    } while (eintr_wrapper_result == -1 && errno == EINTR && \
-             eintr_wrapper_counter++ < 100);                 \
-    eintr_wrapper_result;                                    \
-  })
-
-#endif  // NDEBUG
 
 #define FML_IGNORE_EINTR(x)                               \
   ({                                                      \

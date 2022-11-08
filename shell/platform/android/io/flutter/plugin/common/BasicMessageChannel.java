@@ -4,11 +4,11 @@
 
 package io.flutter.plugin.common;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import java.nio.ByteBuffer;
@@ -22,7 +22,7 @@ import java.util.Locale;
  * <p>Messages are encoded into binary before being sent, and binary messages received are decoded
  * into Java objects. The {@link MessageCodec} used must be compatible with the one used by the
  * Flutter application. This can be achieved by creating a <a
- * href="https://docs.flutter.io/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
+ * href="https://api.flutter.dev/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
  * counterpart of this channel on the Dart side. The static Java type of messages sent and received
  * is {@code Object}, but only values supported by the specified {@link MessageCodec} can be used.
  *
@@ -36,6 +36,7 @@ public final class BasicMessageChannel<T> {
   @NonNull private final BinaryMessenger messenger;
   @NonNull private final String name;
   @NonNull private final MessageCodec<T> codec;
+  @Nullable private final BinaryMessenger.TaskQueue taskQueue;
 
   /**
    * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
@@ -47,6 +48,25 @@ public final class BasicMessageChannel<T> {
    */
   public BasicMessageChannel(
       @NonNull BinaryMessenger messenger, @NonNull String name, @NonNull MessageCodec<T> codec) {
+    this(messenger, name, codec, null);
+  }
+
+  /**
+   * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
+   * specified name and {@link MessageCodec}.
+   *
+   * @param messenger a {@link BinaryMessenger}.
+   * @param name a channel name String.
+   * @param codec a {@link MessageCodec}.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null means execute on the platform thread. See also {@link
+   *     BinaryMessenger#makeBackgroundTaskQueue()}.
+   */
+  public BasicMessageChannel(
+      @NonNull BinaryMessenger messenger,
+      @NonNull String name,
+      @NonNull MessageCodec<T> codec,
+      BinaryMessenger.TaskQueue taskQueue) {
     if (BuildConfig.DEBUG) {
       if (messenger == null) {
         Log.e(TAG, "Parameter messenger must not be null.");
@@ -61,6 +81,7 @@ public final class BasicMessageChannel<T> {
     this.messenger = messenger;
     this.name = name;
     this.codec = codec;
+    this.taskQueue = taskQueue;
   }
 
   /**
@@ -101,13 +122,22 @@ public final class BasicMessageChannel<T> {
    */
   @UiThread
   public void setMessageHandler(@Nullable final MessageHandler<T> handler) {
-    messenger.setMessageHandler(name, handler == null ? null : new IncomingMessageHandler(handler));
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler));
+    }
   }
 
   /**
    * Adjusts the number of messages that will get buffered when sending messages to channels that
-   * aren't fully setup yet. For example, the engine isn't running yet or the channel's message
-   * handler isn't setup on the Dart side yet.
+   * aren't fully set up yet. For example, the engine isn't running yet or the channel's message
+   * handler isn't set up on the Dart side yet.
    */
   public void resizeChannelBuffer(int newSize) {
     resizeChannelBuffer(messenger, name, newSize);
@@ -129,7 +159,7 @@ public final class BasicMessageChannel<T> {
      *
      * <p>Handler implementations must reply to all incoming messages, by submitting a single reply
      * message to the given {@link Reply}. Failure to do so will result in lingering Flutter reply
-     * handlers. The reply may be submitted asynchronously.
+     * handlers. The reply may be submitted asynchronously and invoked on any thread.
      *
      * <p>Any uncaught exception thrown by this method, or the preceding message decoding, will be
      * caught by the channel implementation and logged, and a null reply message will be sent back

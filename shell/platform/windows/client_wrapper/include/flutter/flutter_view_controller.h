@@ -6,15 +6,21 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 
 #include <flutter_windows.h>
+#include <windows.h>
 
-#include <chrono>
-#include <string>
-#include <vector>
+#include <memory>
+#include <optional>
 
 #include "dart_project.h"
+#include "flutter_engine.h"
 #include "flutter_view.h"
 #include "plugin_registrar.h"
 #include "plugin_registry.h"
+
+#ifdef WINUWP
+#include <windows.applicationmodel.activation.h>
+#include <windows.ui.core.h>
+#endif
 
 namespace flutter {
 
@@ -23,22 +29,29 @@ namespace flutter {
 // This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
-class FlutterViewController : public PluginRegistry {
+class FlutterViewController {
  public:
+#ifndef WINUWP
   // Creates a FlutterView that can be parented into a Windows View hierarchy
-  // either using HWNDs or in the future into a CoreWindow, or using compositor.
+  // either using HWNDs.
   //
   // |dart_project| will be used to configure the engine backing this view.
   explicit FlutterViewController(int width,
                                  int height,
                                  const DartProject& project);
-
-  // DEPRECATED. Will be removed soon; use the version above.
-  explicit FlutterViewController(const std::string& icu_data_path,
-                                 int width,
-                                 int height,
-                                 const std::string& assets_path,
-                                 const std::vector<std::string>& arguments);
+#else
+  // Creates a FlutterView that can be parented into a Windows View hierarchy
+  // either using CoreWindow.
+  //
+  // |dart_project| will be used to configure the engine backing this view.
+  // |IActivatedEventArgs| will be used to configure the engine switches.  Can
+  // be set to nullptr.
+  explicit FlutterViewController(
+      ABI::Windows::ApplicationModel::Core::CoreApplicationView*
+          applicationview,
+      ABI::Windows::ApplicationModel::Activation::IActivatedEventArgs* args,
+      const DartProject& project);
+#endif
 
   virtual ~FlutterViewController();
 
@@ -46,23 +59,30 @@ class FlutterViewController : public PluginRegistry {
   FlutterViewController(FlutterViewController const&) = delete;
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
+  // Returns the engine running Flutter content in this view.
+  FlutterEngine* engine() { return engine_.get(); }
+
+  // Returns the view managed by this controller.
   FlutterView* view() { return view_.get(); }
 
-  // Processes any pending events in the Flutter engine, and returns the
-  // nanosecond delay until the next scheduled event (or  max, if none).
+#ifndef WINUWP
+  // Allows the Flutter engine and any interested plugins an opportunity to
+  // handle the given message.
   //
-  // This should be called on every run of the application-level runloop, and
-  // a wait for native events in the runloop should never be longer than the
-  // last return value from this function.
-  std::chrono::nanoseconds ProcessMessages();
-
-  // flutter::PluginRegistry:
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name) override;
+  // If a result is returned, then the message was handled in such a way that
+  // further handling should not be done.
+  std::optional<LRESULT> HandleTopLevelWindowProc(HWND hwnd,
+                                                  UINT message,
+                                                  WPARAM wparam,
+                                                  LPARAM lparam);
+#endif
 
  private:
   // Handle for interacting with the C API's view controller, if any.
   FlutterDesktopViewControllerRef controller_ = nullptr;
+
+  // The backing engine
+  std::unique_ptr<FlutterEngine> engine_;
 
   // The owned FlutterView.
   std::unique_ptr<FlutterView> view_;

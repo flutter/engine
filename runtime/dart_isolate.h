@@ -6,8 +6,10 @@
 #define FLUTTER_RUNTIME_DART_ISOLATE_H_
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/compiler_specific.h"
@@ -16,7 +18,7 @@
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/dart_snapshot.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
@@ -25,6 +27,7 @@ namespace flutter {
 
 class DartVM;
 class DartIsolateGroupData;
+class IsolateConfiguration;
 
 //------------------------------------------------------------------------------
 /// @brief      Represents an instance of a live isolate. An isolate is a
@@ -58,6 +61,23 @@ class DartIsolateGroupData;
 ///
 class DartIsolate : public UIDartState {
  public:
+  class Flags {
+   public:
+    Flags();
+
+    explicit Flags(const Dart_IsolateFlags* flags);
+
+    ~Flags();
+
+    void SetNullSafetyEnabled(bool enabled);
+    void SetIsDontNeedSafe(bool value);
+
+    Dart_IsolateFlags Get() const;
+
+   private:
+    Dart_IsolateFlags flags_;
+  };
+
   //----------------------------------------------------------------------------
   /// @brief      The engine represents all dart isolates as being in one of the
   ///             known phases. By invoking various methods on the Dart isolate,
@@ -141,32 +161,27 @@ class DartIsolate : public UIDartState {
   ///
   /// @param[in]  settings                    The settings used to create the
   ///                                         isolate.
-  /// @param[in]  isolate_snapshot            The isolate snapshot. This is
-  ///                                         usually obtained from the
-  ///                                         DartVMData associated with the
-  ///                                         running Dart VM instance.
-  /// @param[in]  task_runners                The task runners used by the
-  ///                                         isolate. Via UI bindings, the
-  ///                                         isolate will use the IO task
-  ///                                         runner to scheduled texture
-  ///                                         decompression jobs and post tasks
-  ///                                         back to the UI task runner.
-  /// @param[in]  window                      The weak pointer to the window
-  ///                                         associated with this root isolate.
-  /// @param[in]  io_manager                  The i/o manager.
-  /// @param[in]  unref_queue                 The Skia unref queue.
-  /// @param[in]  image_decoder               The image decoder.
-  /// @param[in]  advisory_script_uri         The advisory script uri. This is
-  ///                                         only used in instrumentation.
-  /// @param[in]  advisory_script_entrypoint  The advisory script entrypoint.
-  ///                                         This is only used in
-  ///                                         instrumentation. Notably, this is
-  ///                                         NOT the main entrypoint of Dart
-  ///                                         code in the isolate. That is
-  ///                                         specified when making one of the
-  ///                                         `Run` calls.
+  /// @param[in]  platform_configuration      The platform configuration for
+  ///                                         handling communication with the
+  ///                                         framework.
   /// @param[in]  flags                       The Dart isolate flags for this
   ///                                         isolate instance.
+  /// @param[in]  dart_entrypoint             The name of the dart entrypoint
+  ///                                         function to invoke.
+  /// @param[in]  dart_entrypoint_library     The name of the dart library
+  ///                                         containing the entrypoint.
+  /// @param[in]  dart_entrypoint_args        Arguments passed as a List<String>
+  ///                                         to Dart's entrypoint function.
+  /// @param[in]  isolate_configuration       The isolate configuration used to
+  ///                                         configure the isolate before
+  ///                                         invoking the entrypoint.
+  /// @param[in]  root_isolate_create_callback  A callback called after the root
+  ///                                         isolate is created, _without_
+  ///                                         isolate scope. This gives the
+  ///                                         caller a chance to finish any
+  ///                                         setup before running the Dart
+  ///                                         program, and after any embedder
+  ///                                         callbacks in the settings object.
   /// @param[in]  isolate_create_callback     The isolate create callback. This
   ///                                         will be called when the before the
   ///                                         main Dart entrypoint is invoked in
@@ -181,27 +196,30 @@ class DartIsolate : public UIDartState {
   ///                                         isolate is still running at this
   ///                                         point and an isolate scope is
   ///                                         current.
-  ///
+  /// @param[in]  context                     Engine-owned state which is
+  ///                                         accessed by the root dart isolate.
+  /// @param[in]  spawning_isolate            The isolate that is spawning the
+  ///                                         new isolate.
   /// @return     A weak pointer to the root Dart isolate. The caller must
   ///             ensure that the isolate is not referenced for long periods of
   ///             time as it prevents isolate collection when the isolate
   ///             terminates itself. The caller may also only use the isolate on
   ///             the thread on which the isolate was created.
   ///
-  static std::weak_ptr<DartIsolate> CreateRootIsolate(
+  static std::weak_ptr<DartIsolate> CreateRunningRootIsolate(
       const Settings& settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      TaskRunners task_runners,
-      std::unique_ptr<Window> window,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-      fml::WeakPtr<IOManager> io_manager,
-      fml::RefPtr<SkiaUnrefQueue> skia_unref_queue,
-      fml::WeakPtr<ImageDecoder> image_decoder,
-      std::string advisory_script_uri,
-      std::string advisory_script_entrypoint,
-      Dart_IsolateFlags* flags,
+      std::unique_ptr<PlatformConfiguration> platform_configuration,
+      Flags flags,
+      fml::closure root_isolate_create_callback,
       const fml::closure& isolate_create_callback,
-      const fml::closure& isolate_shutdown_callback);
+      const fml::closure& isolate_shutdown_callback,
+      std::optional<std::string> dart_entrypoint,
+      std::optional<std::string> dart_entrypoint_library,
+      const std::vector<std::string>& dart_entrypoint_args,
+      std::unique_ptr<IsolateConfiguration> isolate_configuration,
+      const UIDartState::Context& context,
+      const DartIsolate* spawning_isolate = nullptr);
 
   // |UIDartState|
   ~DartIsolate() override;
@@ -266,7 +284,8 @@ class DartIsolate : public UIDartState {
   ///
   [[nodiscard]] bool PrepareForRunningFromKernel(
       std::shared_ptr<const fml::Mapping> kernel,
-      bool last_piece = true);
+      bool child_isolate,
+      bool last_piece);
 
   //----------------------------------------------------------------------------
   /// @brief      Prepare the isolate for running for a a list of kernel files.
@@ -306,26 +325,6 @@ class DartIsolate : public UIDartState {
 
   //----------------------------------------------------------------------------
   /// @brief      Transition the root isolate to the `Phase::Running` phase and
-  ///             invoke the main entrypoint (the "main" method) in the root
-  ///             library. The isolate must already be in the `Phase::Ready`
-  ///             phase.
-  ///
-  /// @param[in]  entrypoint  The entrypoint in the root library.
-  /// @param[in]  args        A list of string arguments to the entrypoint.
-  /// @param[in]  on_run      A callback to run in isolate scope after the main
-  ///                         entrypoint has been invoked. There is no isolate
-  ///                         scope current on the thread once this method
-  ///                         returns.
-  ///
-  /// @return     If the isolate successfully transitioned to the running phase
-  ///             and the main entrypoint was invoked.
-  ///
-  [[nodiscard]] bool Run(const std::string& entrypoint,
-                         const std::vector<std::string>& args,
-                         const fml::closure& on_run = nullptr);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Transition the root isolate to the `Phase::Running` phase and
   ///             invoke the main entrypoint (the "main" method) in the
   ///             specified library. The isolate must already be in the
   ///             `Phase::Ready` phase.
@@ -334,24 +333,20 @@ class DartIsolate : public UIDartState {
   ///                           supplied entrypoint.
   /// @param[in]  entrypoint    The entrypoint in `library_name`
   /// @param[in]  args          A list of string arguments to the entrypoint.
-  /// @param[in]  on_run        A callback to run in isolate scope after the
-  ///                           main entrypoint has been invoked. There is no
-  ///                           isolate scope current on the thread once this
-  ///                           method returns.
   ///
   /// @return     If the isolate successfully transitioned to the running phase
   ///             and the main entrypoint was invoked.
   ///
-  [[nodiscard]] bool RunFromLibrary(const std::string& library_name,
-                                    const std::string& entrypoint,
-                                    const std::vector<std::string>& args,
-                                    const fml::closure& on_run = nullptr);
+  [[nodiscard]] bool RunFromLibrary(std::optional<std::string> library_name,
+                                    std::optional<std::string> entrypoint,
+                                    const std::vector<std::string>& args);
 
   //----------------------------------------------------------------------------
   /// @brief      Transition the isolate to the `Phase::Shutdown` phase. The
   ///             only thing left to do is to collect the isolate.
   ///
-  /// @return     If the isolate succesfully transitioned to the shutdown phase.
+  /// @return     If the isolate successfully transitioned to the shutdown
+  ///             phase.
   ///
   [[nodiscard]] bool Shutdown();
 
@@ -381,10 +376,20 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  bool LoadLoadingUnit(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  void LoadLoadingUnitError(intptr_t loading_unit_id,
+                            const std::string error_message,
+                            bool transient);
+
  private:
+  friend class IsolateConfiguration;
   class AutoFireClosure {
    public:
-    AutoFireClosure(const fml::closure& closure);
+    explicit AutoFireClosure(const fml::closure& closure);
 
     ~AutoFireClosure();
 
@@ -397,18 +402,25 @@ class DartIsolate : public UIDartState {
   Phase phase_ = Phase::Unknown;
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
+  std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
-  const bool disable_http_;
+  const bool may_insecurely_connect_to_all_domains_;
+  std::string domain_network_policy_;
+
+  static std::weak_ptr<DartIsolate> CreateRootIsolate(
+      const Settings& settings,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      std::unique_ptr<PlatformConfiguration> platform_configuration,
+      Flags flags,
+      const fml::closure& isolate_create_callback,
+      const fml::closure& isolate_shutdown_callback,
+      const UIDartState::Context& context,
+      const DartIsolate* spawning_isolate = nullptr);
 
   DartIsolate(const Settings& settings,
-              TaskRunners task_runners,
-              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-              fml::WeakPtr<IOManager> io_manager,
-              fml::RefPtr<SkiaUnrefQueue> unref_queue,
-              fml::WeakPtr<ImageDecoder> image_decoder,
-              std::string advisory_script_uri,
-              std::string advisory_script_entrypoint,
-              bool is_root_isolate);
+              bool is_root_isolate,
+              const UIDartState::Context& context);
+
   [[nodiscard]] bool Initialize(Dart_Isolate isolate);
 
   void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner);
@@ -424,6 +436,8 @@ class DartIsolate : public UIDartState {
   void OnShutdownCallback();
 
   DartIsolateGroupData& GetIsolateGroupData();
+
+  const DartIsolateGroupData& GetIsolateGroupData() const;
 
   // |Dart_IsolateGroupCreateCallback|
   static Dart_Isolate DartIsolateGroupCreateCallback(
@@ -445,11 +459,18 @@ class DartIsolate : public UIDartState {
       Dart_IsolateFlags* flags,
       char** error);
 
+  typedef std::function<Dart_Isolate(std::shared_ptr<DartIsolateGroupData>*,
+                                     std::shared_ptr<DartIsolate>*,
+                                     Dart_IsolateFlags*,
+                                     char**)>
+      IsolateMaker;
+
   static Dart_Isolate CreateDartIsolateGroup(
       std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
       std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
       Dart_IsolateFlags* flags,
-      char** error);
+      char** error,
+      const IsolateMaker& make_isolate);
 
   static bool InitializeIsolate(std::shared_ptr<DartIsolate> embedder_isolate,
                                 Dart_Isolate isolate,
@@ -468,6 +489,13 @@ class DartIsolate : public UIDartState {
   // |Dart_IsolateGroupCleanupCallback|
   static void DartIsolateGroupCleanupCallback(
       std::shared_ptr<DartIsolateGroupData>* isolate_group_data);
+
+  // |Dart_DeferredLoadHandler|
+  static Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+
+  static void SpawnIsolateShutdownCallback(
+      std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
+      std::shared_ptr<DartIsolate>* isolate_data);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };

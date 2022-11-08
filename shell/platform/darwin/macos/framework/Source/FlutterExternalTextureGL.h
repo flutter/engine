@@ -4,17 +4,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#import "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h"
 
 /**
  * Used to bridge FlutterTexture object and handle the texture copy request the
  * Flutter engine.
  */
-@interface FlutterExternalTextureGL : NSObject
+@interface FlutterExternalTextureGL : NSObject <FlutterMacOSExternalTexture>
 
 /**
- * Initializes a texture adapter with |texture| return a instance.
+ * Initializes a texture adapter with |texture|.
  */
 - (nonnull instancetype)initWithFlutterTexture:(nonnull id<FlutterTexture>)texture;
 
@@ -25,10 +24,5 @@
  * such as the texture type and the format of the pixel buffer and the texture object.
  */
 - (BOOL)populateTexture:(nonnull FlutterOpenGLTexture*)openGLTexture;
-
-/**
- * Returns the ID for the FlutterTexture instance.
- */
-- (int64_t)textureID;
 
 @end

@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/common/shell.h"
+
 #include "flutter/benchmarking/benchmarking.h"
 #include "flutter/fml/logging.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/testing.h"
@@ -28,10 +29,11 @@ static void StartupAndShutdownShell(benchmark::State& state,
     settings.task_observer_remove = [](intptr_t) {};
 
     if (DartVM::IsRunningPrecompiledCode()) {
-      aot_symbols = testing::LoadELFSymbolFromFixturesIfNeccessary();
+      aot_symbols = testing::LoadELFSymbolFromFixturesIfNeccessary(
+          testing::kDefaultAOTAppELFFileName);
       FML_CHECK(
           testing::PrepareSettingsForAOTWithSymbols(settings, aot_symbols))
-          << "Could not setup settings with AOT symbols.";
+          << "Could not set up settings with AOT symbols.";
     } else {
       settings.application_kernels = [&]() {
         std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -43,8 +45,8 @@ static void StartupAndShutdownShell(benchmark::State& state,
 
     thread_host = std::make_unique<ThreadHost>(
         "io.flutter.bench.", ThreadHost::Type::Platform |
-                                 ThreadHost::Type::GPU | ThreadHost::Type::IO |
-                                 ThreadHost::Type::UI);
+                                 ThreadHost::Type::RASTER |
+                                 ThreadHost::Type::IO | ThreadHost::Type::UI);
 
     TaskRunners task_runners("test",
                              thread_host->platform_thread->GetTaskRunner(),
@@ -53,15 +55,11 @@ static void StartupAndShutdownShell(benchmark::State& state,
                              thread_host->io_thread->GetTaskRunner());
 
     shell = Shell::Create(
-        std::move(task_runners), settings,
+        flutter::PlatformData(), std::move(task_runners), settings,
         [](Shell& shell) {
           return std::make_unique<PlatformView>(shell, shell.GetTaskRunners());
         },
-        [](Shell& shell) {
-          return std::make_unique<Rasterizer>(
-              shell, shell.GetTaskRunners(),
-              shell.GetIsGpuDisabledSyncSwitch());
-        });
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   }
 
   FML_CHECK(shell);
@@ -70,7 +68,11 @@ static void StartupAndShutdownShell(benchmark::State& state,
     // The ui thread could be busy processing tasks after shell created, e.g.,
     // default font manager setup. The measurement of shell shutdown should be
     // considered after those ui tasks have been done.
-    benchmarking::ScopedPauseTiming pause(state, true);
+    //
+    // However, if we're measuring the complete time from startup to shutdown,
+    // this time should still be included.
+    benchmarking::ScopedPauseTiming pause(
+        state, !measure_shutdown || !measure_startup);
     fml::AutoResetWaitableEvent latch;
     fml::TaskRunner::RunNowOrPostTask(thread_host->ui_thread->GetTaskRunner(),
                                       [&latch]() { latch.Signal(); });

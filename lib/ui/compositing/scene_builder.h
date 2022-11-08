@@ -5,8 +5,7 @@
 #ifndef FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_
 #define FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -22,10 +21,6 @@
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-#if defined(OS_FUCHSIA)
-#include "flutter/lib/ui/compositing/scene_host.h"
-#endif
-
 namespace flutter {
 
 class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
@@ -38,42 +33,59 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   }
   ~SceneBuilder() override;
 
-  void pushTransform(Dart_Handle layer_handle, tonic::Float64List& matrix4);
-  void pushOffset(Dart_Handle layer_handle, double dx, double dy);
+  void pushTransform(Dart_Handle layer_handle,
+                     tonic::Float64List& matrix4,
+                     fml::RefPtr<EngineLayer> oldLayer);
+  void pushOffset(Dart_Handle layer_handle,
+                  double dx,
+                  double dy,
+                  fml::RefPtr<EngineLayer> oldLayer);
   void pushClipRect(Dart_Handle layer_handle,
                     double left,
                     double right,
                     double top,
                     double bottom,
-                    int clipBehavior);
+                    int clipBehavior,
+                    fml::RefPtr<EngineLayer> oldLayer);
   void pushClipRRect(Dart_Handle layer_handle,
                      const RRect& rrect,
-                     int clipBehavior);
+                     int clipBehavior,
+                     fml::RefPtr<EngineLayer> oldLayer);
   void pushClipPath(Dart_Handle layer_handle,
                     const CanvasPath* path,
-                    int clipBehavior);
+                    int clipBehavior,
+                    fml::RefPtr<EngineLayer> oldLayer);
   void pushOpacity(Dart_Handle layer_handle,
                    int alpha,
-                   double dx = 0,
-                   double dy = 0);
+                   double dx,
+                   double dy,
+                   fml::RefPtr<EngineLayer> oldLayer);
   void pushColorFilter(Dart_Handle layer_handle,
-                       const ColorFilter* color_filter);
+                       const ColorFilter* color_filter,
+                       fml::RefPtr<EngineLayer> oldLayer);
   void pushImageFilter(Dart_Handle layer_handle,
-                       const ImageFilter* image_filter);
-  void pushBackdropFilter(Dart_Handle layer_handle, ImageFilter* filter);
+                       const ImageFilter* image_filter,
+                       fml::RefPtr<EngineLayer> oldLayer);
+  void pushBackdropFilter(Dart_Handle layer_handle,
+                          ImageFilter* filter,
+                          int blendMode,
+                          fml::RefPtr<EngineLayer> oldLayer);
   void pushShaderMask(Dart_Handle layer_handle,
                       Shader* shader,
                       double maskRectLeft,
                       double maskRectRight,
                       double maskRectTop,
                       double maskRectBottom,
-                      int blendMode);
+                      int blendMode,
+                      int filterQualityIndex,
+                      fml::RefPtr<EngineLayer> oldLayer);
   void pushPhysicalShape(Dart_Handle layer_handle,
                          const CanvasPath* path,
                          double elevation,
                          int color,
                          int shadowColor,
-                         int clipBehavior);
+                         int clipBehavior,
+                         fml::RefPtr<EngineLayer> oldLayer);
 
   void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 
@@ -92,7 +104,8 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                   double width,
                   double height,
                   int64_t textureId,
-                  bool freeze);
+                  bool freeze,
+                  int filterQuality);
 
   void addPlatformView(double dx,
                        double dy,
@@ -100,20 +113,15 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                        double height,
                        int64_t viewId);
 
-#if defined(OS_FUCHSIA)
-  void addChildScene(double dx,
-                     double dy,
-                     double width,
-                     double height,
-                     SceneHost* sceneHost,
-                     bool hitTestable);
-#endif
-
   void setRasterizerTracingThreshold(uint32_t frameInterval);
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
   void build(Dart_Handle scene_handle);
+
+  const std::vector<std::shared_ptr<ContainerLayer>>& layer_stack() {
+    return layer_stack_;
+  }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

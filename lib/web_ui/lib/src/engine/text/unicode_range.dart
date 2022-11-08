@@ -2,16 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
-
-const int _kChar_0 = 48;
-const int _kChar_9 = 57;
-const int _kChar_A = 65;
-const int _kChar_Z = 90;
-const int _kChar_a = 97;
-const int _kChar_z = 122;
-const int _kCharBang = 33;
+const int kChar_0 = 48;
+const int kChar_9 = 57;
+const int kChar_A = 65;
+const int kChar_Z = 90;
+const int kChar_a = 97;
+const int kChar_z = 122;
+const int kCharBang = 33;
 
 enum _ComparisonResult {
   inside,
@@ -57,6 +54,44 @@ class UnicodeRange<P> {
   }
 }
 
+/// Checks whether the given char code is a UTF-16 surrogate.
+///
+/// See:
+/// - http://www.unicode.org/faq//utf_bom.html#utf16-2
+bool isUtf16Surrogate(int char) {
+  return char & 0xF800 == 0xD800;
+}
+
+/// Combines a pair of UTF-16 surrogate into a single character code point.
+///
+/// The surrogate pair is expected to start at [index] in the [text].
+///
+/// See:
+/// - http://www.unicode.org/faq//utf_bom.html#utf16-3
+int combineSurrogatePair(String text, int index) {
+  final int hi = text.codeUnitAt(index);
+  final int lo = text.codeUnitAt(index + 1);
+
+  final int x = (hi & ((1 << 6) - 1)) << 10 | lo & ((1 << 10) - 1);
+  final int w = (hi >> 6) & ((1 << 5) - 1);
+  final int u = w + 1;
+  return u << 16 | x;
+}
+
+/// Returns the code point from [text] at [index] and handles surrogate pairs
+/// for cases that involve two UTF-16 codes.
+int? getCodePoint(String text, int index) {
+  if (index < 0 || index >= text.length) {
+    return null;
+  }
+
+  final int char = text.codeUnitAt(index);
+  if (isUtf16Surrogate(char) && index < text.length - 1) {
+    return combineSurrogatePair(text, index);
+  }
+  return char;
+}
+
 /// Given a list of [UnicodeRange]s, this class performs efficient lookup
 /// to find which range a value falls into.
 ///
@@ -69,31 +104,59 @@ class UnicodeRange<P> {
 /// has. The properties are then used to decide word boundaries, line break
 /// opportunities, etc.
 class UnicodePropertyLookup<P> {
-  const UnicodePropertyLookup(this.ranges);
+  UnicodePropertyLookup(this.ranges, this.defaultProperty);
 
   /// Creates a [UnicodePropertyLookup] from packed line break data.
   factory UnicodePropertyLookup.fromPackedData(
     String packedData,
     int singleRangesCount,
     List<P> propertyEnumValues,
+    P defaultProperty,
   ) {
     return UnicodePropertyLookup<P>(
       _unpackProperties<P>(packedData, singleRangesCount, propertyEnumValues),
+      defaultProperty,
     );
   }
 
+  /// The list of unicode ranges and their associated properties.
   final List<UnicodeRange<P>> ranges;
+
+  /// The default property to use when a character doesn't belong in any
+  /// known range.
+  final P defaultProperty;
+
+  /// Cache for lookup results.
+  final Map<int, P> _cache = <int, P>{};
 
   /// Take a [text] and an [index], and returns the property of the character
   /// located at that [index].
   ///
   /// If the [index] is out of range, null will be returned.
   P find(String text, int index) {
-    if (index < 0 || index >= text.length) {
-      return null;
+    final int? codePoint = getCodePoint(text, index);
+    return codePoint == null ? defaultProperty : findForChar(codePoint);
+  }
+
+  /// Takes one character as an integer code unit and returns its property.
+  ///
+  /// If a property can't be found for the given character, then the default
+  /// property will be returned.
+  P findForChar(int? char) {
+    if (char == null) {
+      return defaultProperty;
     }
-    final int rangeIndex = _binarySearch(text.codeUnitAt(index));
-    return rangeIndex == -1 ? null : ranges[rangeIndex].property;
+
+    final P? cacheHit = _cache[char];
+    if (cacheHit != null) {
+      return cacheHit;
+    }
+
+    final int rangeIndex = _binarySearch(char);
+    final P result = rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
+    // Cache the result.
+    _cache[char] = result;
+    return result;
   }
 
   int _binarySearch(int value) {
@@ -147,7 +210,7 @@ List<UnicodeRange<P>> _unpackProperties<P>(
     i += 4;
 
     int rangeEnd;
-    if (packedData.codeUnitAt(i) == _kCharBang) {
+    if (packedData.codeUnitAt(i) == kCharBang) {
       rangeEnd = rangeStart;
       i++;
     } else {
@@ -168,15 +231,15 @@ int _getEnumIndexFromPackedValue(int charCode) {
   // This has to stay in sync with [EnumValue.serialized] in
   // `tool/unicode_sync_script.dart`.
 
-  assert((charCode >= _kChar_A && charCode <= _kChar_Z) ||
-      (charCode >= _kChar_a && charCode <= _kChar_z));
+  assert((charCode >= kChar_A && charCode <= kChar_Z) ||
+      (charCode >= kChar_a && charCode <= kChar_z));
 
   // Uppercase letters were assigned to the first 26 enum values.
-  if (charCode <= _kChar_Z) {
-    return charCode - _kChar_A;
+  if (charCode <= kChar_Z) {
+    return charCode - kChar_A;
   }
   // Lowercase letters were assigned to enum values above 26.
-  return 26 + charCode - _kChar_a;
+  return 26 + charCode - kChar_a;
 }
 
 int _consumeInt(String packedData, int index) {
@@ -198,12 +261,12 @@ int _consumeInt(String packedData, int index) {
 /// Does the same thing as [int.parse(str, 36)] but takes only a single
 /// character as a [charCode] integer.
 int _getIntFromCharCode(int charCode) {
-  assert((charCode >= _kChar_0 && charCode <= _kChar_9) ||
-      (charCode >= _kChar_a && charCode <= _kChar_z));
+  assert((charCode >= kChar_0 && charCode <= kChar_9) ||
+      (charCode >= kChar_a && charCode <= kChar_z));
 
-  if (charCode <= _kChar_9) {
-    return charCode - _kChar_0;
+  if (charCode <= kChar_9) {
+    return charCode - kChar_0;
   }
   // "a" starts from 10 and remaining letters go up from there.
-  return charCode - _kChar_a + 10;
+  return charCode - kChar_a + 10;
 }

@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
-#include "flutter/fml/logging.h"
 
-#include <string.h>
+#include <cstring>
+
+#include "flutter/fml/logging.h"
 
 namespace flutter {
 
@@ -53,7 +54,7 @@ void PointerDataPacketConverter::ConvertPointerData(
         auto iter = states_.find(pointer_data.device);
         if (iter != states_.end()) {
           PointerState state = iter->second;
-          FML_DCHECK(state.isDown);
+          FML_DCHECK(state.is_down);
           UpdatePointerIdentifier(pointer_data, state, false);
 
           if (LocationNeedsUpdate(pointer_data, state)) {
@@ -66,7 +67,7 @@ void PointerDataPacketConverter::ConvertPointerData(
             converted_pointers.push_back(synthesized_move_event);
           }
 
-          state.isDown = false;
+          state.is_down = false;
           states_[pointer_data.device] = state;
           converted_pointers.push_back(pointer_data);
         }
@@ -84,14 +85,14 @@ void PointerDataPacketConverter::ConvertPointerData(
         FML_DCHECK(iter != states_.end());
         PointerState state = iter->second;
 
-        if (state.isDown) {
+        if (state.is_down) {
           // Synthesizes cancel event if the pointer is down.
           PointerData synthesized_cancel_event = pointer_data;
           synthesized_cancel_event.change = PointerData::Change::kCancel;
           synthesized_cancel_event.synthesized = 1;
           UpdatePointerIdentifier(synthesized_cancel_event, state, false);
 
-          state.isDown = false;
+          state.is_down = false;
           states_[synthesized_cancel_event.device] = state;
           converted_pointers.push_back(synthesized_cancel_event);
         }
@@ -118,13 +119,15 @@ void PointerDataPacketConverter::ConvertPointerData(
           PointerData synthesized_add_event = pointer_data;
           synthesized_add_event.change = PointerData::Change::kAdd;
           synthesized_add_event.synthesized = 1;
+          synthesized_add_event.buttons = 0;
           state = EnsurePointerState(synthesized_add_event);
           converted_pointers.push_back(synthesized_add_event);
         } else {
           state = iter->second;
         }
 
-        FML_DCHECK(!state.isDown);
+        FML_DCHECK(!state.is_down);
+        state.buttons = pointer_data.buttons;
         if (LocationNeedsUpdate(pointer_data, state)) {
           UpdateDeltaAndState(pointer_data, state);
           converted_pointers.push_back(pointer_data);
@@ -139,25 +142,28 @@ void PointerDataPacketConverter::ConvertPointerData(
           PointerData synthesized_add_event = pointer_data;
           synthesized_add_event.change = PointerData::Change::kAdd;
           synthesized_add_event.synthesized = 1;
+          synthesized_add_event.buttons = 0;
           state = EnsurePointerState(synthesized_add_event);
           converted_pointers.push_back(synthesized_add_event);
         } else {
           state = iter->second;
         }
 
-        FML_DCHECK(!state.isDown);
+        FML_DCHECK(!state.is_down);
         if (LocationNeedsUpdate(pointer_data, state)) {
           // Synthesizes a hover event if the location does not match.
           PointerData synthesized_hover_event = pointer_data;
           synthesized_hover_event.change = PointerData::Change::kHover;
           synthesized_hover_event.synthesized = 1;
+          synthesized_hover_event.buttons = 0;
 
           UpdateDeltaAndState(synthesized_hover_event, state);
           converted_pointers.push_back(synthesized_hover_event);
         }
 
         UpdatePointerIdentifier(pointer_data, state, true);
-        state.isDown = true;
+        state.is_down = true;
+        state.buttons = pointer_data.buttons;
         states_[pointer_data.device] = state;
         converted_pointers.push_back(pointer_data);
         break;
@@ -167,10 +173,11 @@ void PointerDataPacketConverter::ConvertPointerData(
         auto iter = states_.find(pointer_data.device);
         FML_DCHECK(iter != states_.end());
         PointerState state = iter->second;
-        FML_DCHECK(state.isDown);
+        FML_DCHECK(state.is_down);
 
         UpdatePointerIdentifier(pointer_data, state, false);
         UpdateDeltaAndState(pointer_data, state);
+        state.buttons = pointer_data.buttons;
         converted_pointers.push_back(pointer_data);
         break;
       }
@@ -179,7 +186,7 @@ void PointerDataPacketConverter::ConvertPointerData(
         auto iter = states_.find(pointer_data.device);
         FML_DCHECK(iter != states_.end());
         PointerState state = iter->second;
-        FML_DCHECK(state.isDown);
+        FML_DCHECK(state.is_down);
 
         UpdatePointerIdentifier(pointer_data, state, false);
 
@@ -187,13 +194,15 @@ void PointerDataPacketConverter::ConvertPointerData(
           // Synthesizes a move event if the location does not match.
           PointerData synthesized_move_event = pointer_data;
           synthesized_move_event.change = PointerData::Change::kMove;
+          synthesized_move_event.buttons = state.buttons;
           synthesized_move_event.synthesized = 1;
 
           UpdateDeltaAndState(synthesized_move_event, state);
           converted_pointers.push_back(synthesized_move_event);
         }
 
-        state.isDown = false;
+        state.is_down = false;
+        state.buttons = pointer_data.buttons;
         states_[pointer_data.device] = state;
         converted_pointers.push_back(pointer_data);
         break;
@@ -212,11 +221,12 @@ void PointerDataPacketConverter::ConvertPointerData(
 
         PointerState state = iter->second;
         if (LocationNeedsUpdate(pointer_data, state)) {
-          if (state.isDown) {
+          if (state.is_down) {
             // Synthesizes a move event if the pointer is down.
             PointerData synthesized_move_event = pointer_data;
             synthesized_move_event.signal_kind = PointerData::SignalKind::kNone;
             synthesized_move_event.change = PointerData::Change::kMove;
+            synthesized_move_event.buttons = state.buttons;
             synthesized_move_event.synthesized = 1;
 
             UpdateDeltaAndState(synthesized_move_event, state);
@@ -227,6 +237,7 @@ void PointerDataPacketConverter::ConvertPointerData(
             synthesized_hover_event.signal_kind =
                 PointerData::SignalKind::kNone;
             synthesized_hover_event.change = PointerData::Change::kHover;
+            synthesized_hover_event.buttons = 0;
             synthesized_hover_event.synthesized = 1;
 
             UpdateDeltaAndState(synthesized_hover_event, state);
@@ -249,7 +260,7 @@ PointerState PointerDataPacketConverter::EnsurePointerState(
     PointerData pointer_data) {
   PointerState state;
   state.pointer_identifier = 0;
-  state.isDown = false;
+  state.is_down = false;
   state.physical_x = pointer_data.physical_x;
   state.physical_y = pointer_data.physical_y;
   states_[pointer_data.device] = state;

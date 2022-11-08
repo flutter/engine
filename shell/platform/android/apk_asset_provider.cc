@@ -1,9 +1,15 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "flutter/shell/platform/android/apk_asset_provider.h"
+
 #include <unistd.h>
+
 #include <algorithm>
 #include <sstream>
 
 #include "flutter/fml/logging.h"
-#include "flutter/shell/platform/android/apk_asset_provider.h"
 
 namespace flutter {
 
@@ -21,9 +27,18 @@ bool APKAssetProvider::IsValid() const {
   return true;
 }
 
+bool APKAssetProvider::IsValidAfterAssetManagerChange() const {
+  return true;
+}
+
+// |AssetResolver|
+AssetResolver::AssetResolverType APKAssetProvider::GetType() const {
+  return AssetResolver::AssetResolverType::kApkAssetProvider;
+}
+
 class APKAssetMapping : public fml::Mapping {
  public:
-  APKAssetMapping(AAsset* asset) : asset_(asset) {}
+  explicit APKAssetMapping(AAsset* asset) : asset_(asset) {}
 
   ~APKAssetMapping() override { AAsset_close(asset_); }
 
@@ -32,6 +47,8 @@ class APKAssetMapping : public fml::Mapping {
   const uint8_t* GetMapping() const override {
     return reinterpret_cast<const uint8_t*>(AAsset_getBuffer(asset_));
   }
+
+  bool IsDontNeedSafe() const override { return !AAsset_isAllocated(asset_); }
 
  private:
   AAsset* const asset_;

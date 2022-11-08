@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:collection';
+import 'dart:typed_data';
 
 abstract class _TypedDataBuffer<E> extends ListBase<E> {
   static const int _initialLength = 8;
@@ -88,7 +88,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// least [start] elements, and if [end] is specified, it must be greater than
   /// or equal to [start] and [values] must have at least [end] elements.
   @override
-  void addAll(Iterable<E> values, [int start = 0, int end]) {
+  void addAll(Iterable<E> values, [int start = 0, int? end]) {
     RangeError.checkNotNegative(start, 'start');
     if (end != null && start > end) {
       throw RangeError.range(end, start, null, 'end');
@@ -107,7 +107,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// least [start] elements, and if [end] is specified, it must be greater than
   /// or equal to [start] and [values] must have at least [end] elements.
   @override
-  void insertAll(int index, Iterable<E> values, [int start = 0, int end]) {
+  void insertAll(int index, Iterable<E> values, [int start = 0, int? end]) {
     RangeError.checkValidIndex(index, this, 'index', _length + 1);
     RangeError.checkNotNegative(start, 'start');
     if (end != null) {
@@ -140,7 +140,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
     // position [index] using flip-by-double-reverse.
     int writeIndex = _length;
     int skipCount = start;
-    for (E value in values) {
+    for (final E value in values) {
       if (skipCount > 0) {
         skipCount--;
         continue;
@@ -167,11 +167,11 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   }
 
   // Reverses the range [start..end) of buffer.
-  static void _reverse(List<Object> buffer, int start, int end) {
+  static void _reverse(List<Object?> buffer, int start, int end) {
     end--; // Point to last element, not after last element.
     while (start < end) {
-      final Object first = buffer[start];
-      final Object last = buffer[end];
+      final Object? first = buffer[start];
+      final Object? last = buffer[end];
       buffer[end] = first;
       buffer[start] = last;
       start++;
@@ -184,8 +184,8 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// This allows [addAll] and [insertAll] to share implementation without a
   /// subclass unexpectedly overriding both when it intended to only override
   /// [addAll].
-  void _addAll(Iterable<E> values, [int start = 0, int end]) {
-    if (values is List) {
+  void _addAll(Iterable<E> values, [int start = 0, int? end]) {
+    if (values is List<E>) {
       end ??= values.length;
     }
 
@@ -199,7 +199,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
     // Otherwise, just add values one at a time.
     int i = 0;
-    for (E value in values) {
+    for (final E value in values) {
       if (i >= start) {
         add(value);
       }
@@ -212,13 +212,10 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
   /// Like [insertAll], but with a guaranteed non-`null` [start] and [end].
   void _insertKnownLength(int index, Iterable<E> values, int start, int end) {
-    if (values is List) {
-      end ??= values.length;
-      if (start > values.length || end > values.length) {
-        throw StateError('Too few elements');
-      }
-    } else {
-      assert(end != null);
+    assert(values != null); // ignore: unnecessary_null_comparison
+    assert(end != null); // ignore: unnecessary_null_comparison
+    if (start > values.length || end > values.length) {
+      throw StateError('Too few elements');
     }
 
     final int valuesLength = end - start;
@@ -268,7 +265,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// be. If [requiredCapacity] is not null, it will be at least that
   /// size. It will always have at least have double the capacity of
   /// the current buffer.
-  List<E> _createBiggerBuffer(int requiredCapacity) {
+  List<E> _createBiggerBuffer(int? requiredCapacity) {
     int newLength = _buffer.length * 2;
     if (requiredCapacity != null && newLength < requiredCapacity) {
       newLength = requiredCapacity;

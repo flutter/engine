@@ -15,7 +15,7 @@ import java.nio.ByteOrder;
  * A {@link MethodCodec} using the Flutter standard binary encoding.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/StandardMethodCodec-class.html">StandardMethodCodec</a>
+ * href="https://api.flutter.dev/flutter/services/StandardMethodCodec-class.html">StandardMethodCodec</a>
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Values supported as method arguments and result payloads are those supported by {@link
@@ -74,6 +74,24 @@ public final class StandardMethodCodec implements MethodCodec {
     } else {
       messageCodec.writeValue(stream, errorDetails);
     }
+    final ByteBuffer buffer = ByteBuffer.allocateDirect(stream.size());
+    buffer.put(stream.buffer(), 0, stream.size());
+    return buffer;
+  }
+
+  @Override
+  public ByteBuffer encodeErrorEnvelopeWithStacktrace(
+      String errorCode, String errorMessage, Object errorDetails, String errorStacktrace) {
+    final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
+    stream.write(1);
+    messageCodec.writeValue(stream, errorCode);
+    messageCodec.writeValue(stream, errorMessage);
+    if (errorDetails instanceof Throwable) {
+      messageCodec.writeValue(stream, getStackTrace((Throwable) errorDetails));
+    } else {
+      messageCodec.writeValue(stream, errorDetails);
+    }
+    messageCodec.writeValue(stream, errorStacktrace);
     final ByteBuffer buffer = ByteBuffer.allocateDirect(stream.size());
     buffer.put(stream.buffer(), 0, stream.size());
     return buffer;

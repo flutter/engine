@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 const Color red = Color(0xFFAA0000);
 const Color green = Color(0xFF00AA00);
@@ -36,19 +35,11 @@ void main() {
     recorderCanvas.drawPaint(paint);
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(width, height);
-    final ByteData bytes = await image.toByteData();
+    final ByteData bytes = (await image.toByteData())!;
 
     expect(bytes.lengthInBytes, width * height * 4);
     return bytes.buffer.asUint32List();
   }
-
-  test('ColorFilter - nulls', () async {
-    final Paint paint = Paint()..colorFilter = const ColorFilter.mode(null, null);
-    expect(paint.colorFilter, null);
-
-    paint.colorFilter = const ColorFilter.matrix(null);
-    expect(paint.colorFilter, null);
-  });
 
   test('ColorFilter - mode', () async {
     final Paint paint = Paint()

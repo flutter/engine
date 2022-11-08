@@ -16,7 +16,7 @@ namespace flutter {
 
 class Stopwatch {
  public:
-  Stopwatch(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
+  explicit Stopwatch(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
 
   ~Stopwatch();
 
@@ -30,7 +30,7 @@ class Stopwatch {
 
   void InitVisualizeSurface(const SkRect& rect) const;
 
-  void Visualize(SkCanvas& canvas, const SkRect& rect) const;
+  void Visualize(SkCanvas* canvas, const SkRect& rect) const;
 
   void Start();
 
@@ -81,7 +81,7 @@ class CounterValues {
 
   void Add(int64_t value);
 
-  void Visualize(SkCanvas& canvas, const SkRect& rect) const;
+  void Visualize(SkCanvas* canvas, const SkRect& rect) const;
 
   int64_t GetCurrentValue() const;
 

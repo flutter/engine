@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/common/graphics/persistent_cache.h"
+
 #include <memory>
 
 #include "flutter/assets/directory_asset_bundle.h"
@@ -13,7 +15,6 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/log_settings.h"
 #include "flutter/fml/unique_fd.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/version/version.h"
@@ -23,6 +24,8 @@
 namespace flutter {
 namespace testing {
 
+using PersistentCacheTest = ShellTest;
+
 static void WaitForIO(Shell* shell) {
   std::promise<bool> io_task_finished;
   shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
@@ -30,7 +33,22 @@ static void WaitForIO(Shell* shell) {
   io_task_finished.get_future().wait();
 }
 
-TEST_F(ShellTest, CacheSkSLWorks) {
+static void WaitForRaster(Shell* shell) {
+  std::promise<bool> raster_task_finished;
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [&raster_task_finished]() { raster_task_finished.set_value(true); });
+  raster_task_finished.get_future().wait();
+}
+
+TEST_F(PersistentCacheTest,
+#if defined(WINUWP)
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_CacheSkSLWorks
+#else
+       CacheSkSLWorks
+#endif  // defined(WINUWP)
+) {
+
   // Create a temp dir to store the persistent cache
   fml::ScopedTemporaryDirectory dir;
   PersistentCache::SetCacheDirectoryPath(dir.path());
@@ -40,9 +58,11 @@ TEST_F(ShellTest, CacheSkSLWorks) {
   settings.cache_sksl = true;
   settings.dump_skp_on_shader_compilation = true;
 
-  fml::AutoResetWaitableEvent firstFrameLatch;
+  fml::AutoResetWaitableEvent first_frame_latch;
   settings.frame_rasterized_callback =
-      [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
+      [&first_frame_latch](const FrameTiming& t) {
+        first_frame_latch.Signal();
+      };
 
   auto sksl_config = RunConfiguration::InferFromSettings(settings);
   sksl_config.SetEntrypoint("emptyMain");
@@ -63,7 +83,7 @@ TEST_F(ShellTest, CacheSkSLWorks) {
     root->Add(physical_shape_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
-  firstFrameLatch.Wait();
+  first_frame_latch.Wait();
   WaitForIO(shell.get());
 
   // Some skp should be dumped due to shader compilations.
@@ -94,35 +114,84 @@ TEST_F(ShellTest, CacheSkSLWorks) {
   shell = CreateShell(settings);
   PlatformViewNotifyCreated(shell.get());
   RunEngine(shell.get(), std::move(normal_config));
-  firstFrameLatch.Reset();
+  first_frame_latch.Reset();
   PumpOneFrame(shell.get(), 100, 100, builder);
-  firstFrameLatch.Wait();
+  first_frame_latch.Wait();
   WaitForIO(shell.get());
 
+// Shader precompilation from SkSL is not implemented on the Skia Vulkan
+// backend so don't run the second half of this test on Vulkan. This can get
+// removed if SkSL precompilation is implemented in the Skia Vulkan backend.
+#if !defined(SHELL_ENABLE_VULKAN)
   // To check that all shaders are precompiled, verify that no new skp is dumped
   // due to shader compilations.
   int old_skp_count = skp_count;
   skp_count = 0;
   fml::VisitFilesRecursively(dir.fd(), skp_visitor);
   ASSERT_EQ(skp_count, old_skp_count);
+#endif  // !defined(SHELL_ENABLE_VULKAN)
 
   // Remove all files generated
-  fml::FileVisitor remove_visitor = [&remove_visitor](
-                                        const fml::UniqueFD& directory,
-                                        const std::string& filename) {
-    if (fml::IsDirectory(directory, filename.c_str())) {
-      {  // To trigger fml::~UniqueFD before fml::UnlinkDirectory
-        fml::UniqueFD sub_dir =
-            fml::OpenDirectoryReadOnly(directory, filename.c_str());
-        fml::VisitFiles(sub_dir, remove_visitor);
-      }
-      fml::UnlinkDirectory(directory, filename.c_str());
-    } else {
-      fml::UnlinkFile(directory, filename.c_str());
-    }
-    return true;
+  fml::RemoveFilesInDirectory(dir.fd());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(PersistentCacheTest, CanPrecompileMetalShaders) {
+#if !SHELL_ENABLE_METAL
+  GTEST_SKIP();
+#endif  //  !SHELL_ENABLE_METAL
+  fml::ScopedTemporaryDirectory dir;
+  PersistentCache::SetCacheDirectoryPath(dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  auto settings = CreateSettingsForFixture();
+  settings.cache_sksl = true;
+  settings.dump_skp_on_shader_compilation = true;
+
+  fml::AutoResetWaitableEvent first_frame_latch;
+  settings.frame_rasterized_callback =
+      [&first_frame_latch](const FrameTiming& t) {
+        first_frame_latch.Signal();
+      };
+
+  auto sksl_config = RunConfiguration::InferFromSettings(settings);
+  sksl_config.SetEntrypoint("emptyMain");
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                          //
+                  GetTaskRunnersForFixture(),                        //
+                  false,                                             //
+                  nullptr,                                           //
+                  false,                                             //
+                  ShellTestPlatformView::BackendType::kMetalBackend  //
+      );
+  PlatformViewNotifyCreated(shell.get());
+  RunEngine(shell.get(), std::move(sksl_config));
+
+  // Initially, we should have no SkSL cache
+  {
+    auto empty_cache = PersistentCache::GetCacheForProcess()->LoadSkSLs();
+    ASSERT_EQ(empty_cache.size(), 0u);
+  }
+
+  // Draw something to trigger shader compilations.
+  LayerTreeBuilder builder = [](std::shared_ptr<ContainerLayer> root) {
+    SkPath path;
+    path.addCircle(50, 50, 20);
+    auto physical_shape_layer = std::make_shared<PhysicalShapeLayer>(
+        SK_ColorRED, SK_ColorBLUE, 1.0f, path, Clip::antiAlias);
+    root->Add(physical_shape_layer);
   };
-  fml::VisitFiles(dir.fd(), remove_visitor);
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  first_frame_latch.Wait();
+  WaitForRaster(shell.get());
+  WaitForIO(shell.get());
+
+  // Assert that SkSLs have been generated.
+  auto filled_cache = PersistentCache::GetCacheForProcess()->LoadSkSLs();
+  ASSERT_GT(filled_cache.size(), 0u);
+
+  // Remove all files generated.
+  fml::RemoveFilesInDirectory(dir.fd());
   DestroyShell(std::move(shell));
 }
 
@@ -142,7 +211,15 @@ static void CheckTwoSkSLsAreLoaded() {
   ASSERT_EQ(shaders.size(), 2u);
 }
 
-TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
+TEST_F(PersistentCacheTest,
+#if defined(WINUWP)
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_CanLoadSkSLsFromAsset
+#else
+       CanLoadSkSLsFromAsset
+#endif  // defined(WINUWP)
+) {
+
   // Avoid polluting unit tests output by hiding INFO level logging.
   fml::LogSettings warning_only = {fml::LOG_WARNING};
   fml::ScopedSetLogSettings scoped_set_log_settings(warning_only);
@@ -179,9 +256,10 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
   ResetAssetManager();
   auto asset_manager = std::make_shared<AssetManager>();
   RunConfiguration config(nullptr, asset_manager);
-  asset_manager->PushBack(
-      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-          asset_dir.path().c_str(), false, fml::FilePermission::kRead)));
+  asset_manager->PushBack(std::make_unique<DirectoryAssetBundle>(
+      fml::OpenDirectory(asset_dir.path().c_str(), false,
+                         fml::FilePermission::kRead),
+      false));
   CheckTwoSkSLsAreLoaded();
 
   // 3rd, test the content of the SkSLs in the asset.
@@ -191,21 +269,29 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
 
     // Make sure that the 2 shaders are sorted by their keys. Their keys should
     // be "A" and "B" (decoded from "II" and "IE").
-    if (shaders[0].first->bytes()[0] == 'B') {
+    if (shaders[0].key->bytes()[0] == 'B') {
       std::swap(shaders[0], shaders[1]);
     }
 
-    CheckTextSkData(shaders[0].first, "A");
-    CheckTextSkData(shaders[1].first, "B");
-    CheckTextSkData(shaders[0].second, "x");
-    CheckTextSkData(shaders[1].second, "y");
+    CheckTextSkData(shaders[0].key, "A");
+    CheckTextSkData(shaders[1].key, "B");
+    CheckTextSkData(shaders[0].value, "x");
+    CheckTextSkData(shaders[1].value, "y");
   }
 
   // Cleanup.
   fml::UnlinkFile(asset_dir.fd(), PersistentCache::kAssetFileName);
 }
 
-TEST_F(ShellTest, CanRemoveOldPersistentCache) {
+TEST_F(PersistentCacheTest,
+#if defined(WINUWP)
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_CanRemoveOldPersistentCache
+#else
+       CanRemoveOldPersistentCache
+#endif  // defined(WINUWP)
+) {
+
   fml::ScopedTemporaryDirectory base_dir;
   ASSERT_TRUE(base_dir.fd().is_valid());
 
@@ -233,6 +319,87 @@ TEST_F(ShellTest, CanRemoveOldPersistentCache) {
 
   // Cleanup
   fml::RemoveFilesInDirectory(base_dir.fd());
+}
+
+TEST_F(PersistentCacheTest,
+#if defined(WINUWP)
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_CanPurgePersistentCache
+#else
+       CanPurgePersistentCache
+#endif  // defined(WINUWP)
+) {
+
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+  auto cache_dir = fml::CreateDirectory(
+      base_dir.fd(),
+      {"flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()},
+      fml::FilePermission::kReadWrite);
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  // Generate a dummy persistent cache.
+  fml::DataMapping test_data(std::string("test"));
+  ASSERT_TRUE(fml::WriteAtomically(cache_dir, "test", test_data));
+  auto file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_TRUE(file.is_valid());
+
+  // Run engine with purge_persistent_cache to remove the dummy cache.
+  auto settings = CreateSettingsForFixture();
+  settings.purge_persistent_cache = true;
+  auto config = RunConfiguration::InferFromSettings(settings);
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  RunEngine(shell.get(), std::move(config));
+
+  // Verify that the dummy is purged.
+  file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_FALSE(file.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(PersistentCacheTest,
+#if defined(WINUWP)
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_PurgeAllowsFutureSkSLCache
+#else
+       PurgeAllowsFutureSkSLCache
+#endif  // defined(WINUWP)
+) {
+
+  sk_sp<SkData> shader_key = SkData::MakeWithCString("key");
+  sk_sp<SkData> shader_value = SkData::MakeWithCString("value");
+  std::string shader_filename = PersistentCache::SkKeyToFilePath(*shader_key);
+
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  // Run engine with purge_persistent_cache and cache_sksl.
+  auto settings = CreateSettingsForFixture();
+  settings.purge_persistent_cache = true;
+  settings.cache_sksl = true;
+  auto config = RunConfiguration::InferFromSettings(settings);
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  RunEngine(shell.get(), std::move(config));
+  auto persistent_cache = PersistentCache::GetCacheForProcess();
+  ASSERT_EQ(persistent_cache->LoadSkSLs().size(), 0u);
+
+  // Store the cache and verify it's valid.
+  StorePersistentCache(persistent_cache, *shader_key, *shader_value);
+  std::promise<bool> io_flushed;
+  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      [&io_flushed]() { io_flushed.set_value(true); });
+  io_flushed.get_future().get();  // Wait for the IO thread to flush the file.
+  ASSERT_GT(persistent_cache->LoadSkSLs().size(), 0u);
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

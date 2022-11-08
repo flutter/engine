@@ -23,7 +23,7 @@ class DartLibraryNatives;
 namespace flutter {
 class CanvasImage;
 
-class Canvas : public RefCountedDartWrappable<Canvas> {
+class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(Canvas);
 
@@ -110,7 +110,8 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                  double x,
                  double y,
                  const Paint& paint,
-                 const PaintData& paint_data);
+                 const PaintData& paint_data,
+                 int filterQualityIndex);
   void drawImageRect(const CanvasImage* image,
                      double src_left,
                      double src_top,
@@ -121,7 +122,8 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                      double dst_right,
                      double dst_bottom,
                      const Paint& paint,
-                     const PaintData& paint_data);
+                     const PaintData& paint_data,
+                     int filterQualityIndex);
   void drawImageNine(const CanvasImage* image,
                      double center_left,
                      double center_top,
@@ -132,7 +134,8 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                      double dst_right,
                      double dst_bottom,
                      const Paint& paint,
-                     const PaintData& paint_data);
+                     const PaintData& paint_data,
+                     int bitmapSamplingIndex);
   void drawPicture(Picture* picture);
 
   // The paint argument is first for the following functions because Paint
@@ -152,6 +155,7 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
 
   void drawAtlas(const Paint& paint,
                  const PaintData& paint_data,
+                 int filterQualityIndex,
                  CanvasImage* atlas,
                  const tonic::Float32List& transforms,
                  const tonic::Float32List& rects,
@@ -165,12 +169,9 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                   bool transparentOccluder);
 
   SkCanvas* canvas() const { return canvas_; }
-  void Clear();
-  bool IsRecording() const;
+  void Invalidate();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-  size_t external_allocation_size() const { return external_allocation_size_; }
 
  private:
   explicit Canvas(SkCanvas* canvas);
@@ -179,7 +180,17 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   // which does not transfer ownership.  For this reason, we hold a raw
   // pointer and manually set to null in Clear.
   SkCanvas* canvas_;
-  size_t external_allocation_size_ = 0;
+
+  // A copy of the recorder used by the SkCanvas->DisplayList adapter for cases
+  // where we cannot record the SkCanvas method call through the various OnOp()
+  // virtual methods or where we can be more efficient by talking directly in
+  // the DisplayList operation lexicon. The recorder has a method for recording
+  // paint attributes from an SkPaint and an operation type as well as access
+  // to the raw DisplayListBuilder for emitting custom rendering operations.
+  sk_sp<DisplayListCanvasRecorder> display_list_recorder_;
+  DisplayListBuilder* builder() {
+    return display_list_recorder_->builder().get();
+  }
 };
 
 }  // namespace flutter

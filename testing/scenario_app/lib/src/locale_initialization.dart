@@ -1,4 +1,4 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,12 +9,12 @@ import 'package:vector_math/vector_math_64.dart';
 
 import 'scenario.dart';
 
-/// Sends the recieved locale data back as semantics information.
+/// Sends the received locale data back as semantics information.
 class LocaleInitialization extends Scenario {
   /// Constructor
-  LocaleInitialization(Window window)
-      : assert(window != null),
-        super(window);
+  LocaleInitialization(PlatformDispatcher dispatcher)
+      : assert(dispatcher != null),
+        super(dispatcher);
 
   int _tapCount = 0;
 
@@ -52,6 +52,7 @@ class LocaleInitialization extends Scenario {
         actions: 1,
         rect: const Rect.fromLTRB(0.0, 0.0, 414.0, 48.0),
         label: window.locales.toString(),
+        labelAttributes: <StringAttribute>[],
         textDirection: TextDirection.ltr,
         textSelectionBase: -1,
         textSelectionExtent: -1,
@@ -60,9 +61,21 @@ class LocaleInitialization extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        scrollPosition: 0.0,
+        scrollExtentMax: 0.0,
+        scrollExtentMin: 0.0,
         transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
+        hint: '',
+        hintAttributes: <StringAttribute>[],
+        value: '',
+        valueAttributes: <StringAttribute>[],
+        increasedValue: '',
+        increasedValueAttributes: <StringAttribute>[],
+        decreasedValue: '',
+        decreasedValueAttributes: <StringAttribute>[],
+        tooltip: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),
@@ -75,10 +88,11 @@ class LocaleInitialization extends Scenario {
   /// Send changing information via semantics on each successive tap.
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
-    String label;
+    String label = '';
     switch(_tapCount) {
       case 1: {
-        label = window.platformResolvedLocale.toString();
+        // Set label to string data we wish to pass on first frame.
+        label = '1';
         break;
       }
       // Expand for other test cases.
@@ -93,6 +107,7 @@ class LocaleInitialization extends Scenario {
         actions: 1,
         rect: const Rect.fromLTRB(0.0, 0.0, 414.0, 48.0),
         label: label,
+        labelAttributes: <StringAttribute>[],
         textDirection: TextDirection.ltr,
         textSelectionBase: 0,
         textSelectionExtent: 0,
@@ -101,9 +116,21 @@ class LocaleInitialization extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        scrollPosition: 0.0,
+        scrollExtentMax: 0.0,
+        scrollExtentMin: 0.0,
         transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
+        hint: '',
+        hintAttributes: <StringAttribute>[],
+        value: '',
+        valueAttributes: <StringAttribute>[],
+        increasedValue: '',
+        increasedValueAttributes: <StringAttribute>[],
+        decreasedValue: '',
+        decreasedValueAttributes: <StringAttribute>[],
+        tooltip: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),

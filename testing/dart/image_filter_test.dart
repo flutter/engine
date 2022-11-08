@@ -1,13 +1,13 @@
-// Copyright 2019 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
+const Color red = Color(0xFFAA0000);
 const Color green = Color(0xFF00AA00);
 
 const int greenCenterBlurred = 0x1C001300;
@@ -18,6 +18,34 @@ const int greenCenterScaled = 0xFF00AA00;
 const int greenSideScaled = 0x80005500;
 const int greenCornerScaled = 0x40002B00;
 
+const List<double> grayscaleColorMatrix = <double>[
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0,      0,      0,      1, 0,
+];
+
+const List<double> identityColorMatrix = <double>[
+  1, 0, 0, 0, 0,
+  0, 1, 0, 0, 0,
+  0, 0, 1, 0, 0,
+  0, 0, 0, 1, 0,
+];
+
+const List<double> constValueColorMatrix = <double>[
+  0, 0, 0, 0, 2,
+  0, 0, 0, 0, 2,
+  0, 0, 0, 0, 2,
+  0, 0, 0, 0, 255,
+];
+
+const List<double> halvesBrightnessColorMatrix = <double>[
+  0.5, 0,   0,   0, 0,
+  0,   0.5, 0,   0, 0,
+  0,   0,   0.5, 0, 0,
+  0,   0,   0,   1, 0,
+];
+
 void main() {
   Future<Uint32List> getBytesForPaint(Paint paint, {int width = 3, int height = 3}) async {
     final PictureRecorder recorder = PictureRecorder();
@@ -25,14 +53,26 @@ void main() {
     recorderCanvas.drawRect(const Rect.fromLTRB(1.0, 1.0, 2.0, 2.0), paint);
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(width, height);
-    final ByteData bytes = await image.toByteData();
+    final ByteData bytes = (await image.toByteData())!;
 
     expect(bytes.lengthInBytes, equals(width * height * 4));
     return bytes.buffer.asUint32List();
   }
 
-  ImageFilter makeBlur(double sigmaX, double sigmaY) =>
-    ImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+  Future<Uint32List> getBytesForColorPaint(Paint paint, {int width = 1, int height = 1}) async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas recorderCanvas = Canvas(recorder);
+    recorderCanvas.drawPaint(paint);
+    final Picture picture = recorder.endRecording();
+    final Image image = await picture.toImage(width, height);
+    final ByteData bytes = (await image.toByteData())!;
+
+    expect(bytes.lengthInBytes, width * height * 4);
+    return bytes.buffer.asUint32List();
+  }
+
+  ImageFilter makeBlur(double sigmaX, double sigmaY, [TileMode tileMode = TileMode.clamp]) =>
+    ImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
 
   ImageFilter makeScale(double scX, double scY,
                         [double trX = 0.0, double trY = 0.0,
@@ -47,9 +87,22 @@ void main() {
     ]), filterQuality: quality);
   }
 
+  List<ColorFilter> colorFilters() {
+    // Create new color filter instances on each invocation.
+    return <ColorFilter> [                        // ignore: prefer_const_constructors
+      ColorFilter.mode(green, BlendMode.color),   // ignore: prefer_const_constructors
+      ColorFilter.mode(red, BlendMode.color),     // ignore: prefer_const_constructors
+      ColorFilter.mode(red, BlendMode.screen),    // ignore: prefer_const_constructors
+      ColorFilter.matrix(grayscaleColorMatrix),   // ignore: prefer_const_constructors
+      ColorFilter.linearToSrgbGamma(),            // ignore: prefer_const_constructors
+      ColorFilter.srgbToLinearGamma(),            // ignore: prefer_const_constructors
+    ];
+  }
+
   List<ImageFilter> makeList() {
     return <ImageFilter>[
       makeBlur(10.0, 10.0),
+      makeBlur(10.0, 10.0, TileMode.decal),
       makeBlur(10.0, 20.0),
       makeBlur(20.0, 20.0),
       makeScale(10.0, 10.0),
@@ -59,6 +112,7 @@ void main() {
       makeScale(10.0, 10.0, 0.0, 0.0, FilterQuality.medium),
       makeScale(10.0, 10.0, 0.0, 0.0, FilterQuality.high),
       makeScale(10.0, 10.0, 0.0, 0.0, FilterQuality.none),
+      ...colorFilters(),
     ];
   }
 
@@ -70,12 +124,16 @@ void main() {
           expect(a[i].hashCode, equals(b[j].hashCode));
           expect(a[i].toString(), equals(b[j].toString()));
         } else {
-          expect(a[i], isNot(b[j]));
+          expect(a[i], notEquals(b[j]));
           // No expectations on hashCode if objects are not equal
-          expect(a[i].toString(), isNot(b[j].toString()));
+          expect(a[i].toString(), notEquals(b[j].toString()));
         }
       }
     }
+  }
+
+  List<ImageFilter> composed(List<ImageFilter> a, List<ImageFilter> b) {
+    return <ImageFilter>[for (final ImageFilter x in a) for (final ImageFilter y in b) ImageFilter.compose(outer: x, inner: y)];
   }
 
   test('ImageFilter - equals', () async {
@@ -84,13 +142,9 @@ void main() {
     checkEquality(A, A);
     checkEquality(A, B);
     checkEquality(B, B);
-  });
-
-  test('ImageFilter - nulls', () async {
-    final Paint paint = Paint()..imageFilter = ImageFilter.blur(sigmaX: null, sigmaY: null);
-    expect(paint.imageFilter, equals(ImageFilter.blur()));
-
-    expect(() => ImageFilter.matrix(null), throwsNoSuchMethodError);
+    checkEquality(composed(A, A), composed(A, A));
+    checkEquality(composed(A, B), composed(B, A));
+    checkEquality(composed(B, B), composed(B, B));
   });
 
   void checkBytes(Uint32List bytes, int center, int side, int corner) {
@@ -123,5 +177,80 @@ void main() {
 
     final Uint32List bytes = await getBytesForPaint(paint);
     checkBytes(bytes, greenCenterScaled, greenSideScaled, greenCornerScaled);
+  });
+
+  test('ImageFilter - matrix: copies the list', () async {
+    final Float64List matrix = Float64List.fromList(<double>[
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0,
+    ]);
+
+    final ImageFilter filter = ImageFilter.matrix(matrix);
+    final String originalDescription = filter.toString();
+
+    // Modify the matrix.
+    matrix[0] = 12345;
+    expect(filter.toString(), contains('[1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]'));
+    expect(filter.toString(), originalDescription);
+  });
+
+  test('ImageFilter - from color filters', () async {
+    final Paint paint = Paint()
+      ..color = green
+      ..imageFilter = const ColorFilter.matrix(constValueColorMatrix);
+
+    final Uint32List bytes = await getBytesForColorPaint(paint);
+    expect(bytes[0], 0xFF020202);
+  });
+
+  test('ImageFilter - color filter composition', () async {
+    final ImageFilter compOrder1 = ImageFilter.compose(
+      outer: const ColorFilter.matrix(halvesBrightnessColorMatrix),
+      inner: const ColorFilter.matrix(constValueColorMatrix),
+    );
+
+    final ImageFilter compOrder2 = ImageFilter.compose(
+      outer: const ColorFilter.matrix(constValueColorMatrix),
+      inner: const ColorFilter.matrix(halvesBrightnessColorMatrix),
+    );
+
+    final Paint paint = Paint()
+      ..color = green
+      ..imageFilter = compOrder1;
+
+    Uint32List bytes = await getBytesForColorPaint(paint);
+    expect(bytes[0], 0xFF010101);
+
+    paint
+      ..color = green
+      ..imageFilter = compOrder2;
+    bytes = await getBytesForColorPaint(paint);
+    expect(bytes[0], 0xFF020202);
+  });
+
+  test('Composite ImageFilter toString', () {
+    expect(
+      ImageFilter.compose(outer: makeBlur(20.0, 20.0, TileMode.decal), inner: makeBlur(10.0, 10.0)).toString(),
+      contains('blur(10.0, 10.0, clamp) -> blur(20.0, 20.0, decal)'),
+    );
+
+    // Produces a flat list of filters
+    expect(
+      ImageFilter.compose(
+        outer: ImageFilter.compose(outer: makeBlur(30.0, 30.0, TileMode.mirror), inner: makeBlur(20.0, 20.0, TileMode.repeated)),
+        inner: ImageFilter.compose(
+          outer: const ColorFilter.mode(Color(0xFFABCDEF), BlendMode.color),
+          inner: makeScale(10.0, 10.0),
+        ),
+      ).toString(),
+      contains(
+        'matrix([10.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.0, -0.0, 0.0, 1.0], FilterQuality.low) -> '
+        'ColorFilter.mode(Color(0xffabcdef), BlendMode.color) -> '
+        'blur(20.0, 20.0, repeated) -> '
+        'blur(30.0, 30.0, mirror)'
+      ),
+    );
   });
 }

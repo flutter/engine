@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
-#define TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
+#ifndef SHELL_PLATFORM_FUCHSIA_FLUTTER_FLUTTER_RUNNER_FAKES_H_
+#define SHELL_PLATFORM_FUCHSIA_FLUTTER_FLUTTER_RUNNER_FAKES_H_
 
 #include <fuchsia/accessibility/semantics/cpp/fidl.h>
 
@@ -19,8 +19,7 @@ class MockSemanticsManager
   // |fuchsia::accessibility::semantics::SemanticsManager|:
   void RegisterViewForSemantics(
       fuchsia::ui::views::ViewRef view_ref,
-      fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticListener>
-          handle,
+      fuchsia::accessibility::semantics::SemanticListenerHandle handle,
       fidl::InterfaceRequest<fuchsia::accessibility::semantics::SemanticTree>
           semantic_tree) override {
     tree_binding_.Bind(std::move(semantic_tree));
@@ -90,6 +89,18 @@ class MockSemanticsManager
     commit_count_++;
   }
 
+  void SendSemanticEvent(
+      fuchsia::accessibility::semantics::SemanticEvent semantic_event,
+      SendSemanticEventCallback callback) override {
+    last_events_.emplace_back(std::move(semantic_event));
+    callback();
+  }
+
+  std::vector<fuchsia::accessibility::semantics::SemanticEvent>&
+  GetLastEvents() {
+    return last_events_;
+  }
+
  private:
   bool has_view_ref_ = false;
   fidl::BindingSet<SemanticsManager> bindings_;
@@ -102,8 +113,9 @@ class MockSemanticsManager
   bool delete_overflowed_;
   std::vector<uint32_t> last_deleted_node_ids_;
   int commit_count_;
+  std::vector<fuchsia::accessibility::semantics::SemanticEvent> last_events_;
 };
 
 }  // namespace flutter_runner_test
 
-#endif  // TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
+#endif  // SHELL_PLATFORM_FUCHSIA_FLUTTER_FLUTTER_RUNNER_FAKES_H_

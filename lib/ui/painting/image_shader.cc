@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/image_shader.h"
+#include "flutter/lib/ui/painting/image_filter.h"
 
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -37,14 +38,44 @@ fml::RefPtr<ImageShader> ImageShader::Create() {
 void ImageShader::initWithImage(CanvasImage* image,
                                 SkTileMode tmx,
                                 SkTileMode tmy,
+                                int filter_quality_index,
                                 const tonic::Float64List& matrix4) {
   if (!image) {
     Dart_ThrowException(
         ToDart("ImageShader constructor called with non-genuine Image."));
+    return;
   }
-  SkMatrix sk_matrix = ToSkMatrix(matrix4);
-  set_shader(UIDartState::CreateGPUObject(
-      image->image()->makeShader(tmx, tmy, &sk_matrix)));
+  sk_image_ = UIDartState::CreateGPUObject(image->image());
+  tmx_ = tmx;
+  tmy_ = tmy;
+  local_matrix_ = ToSkMatrix(matrix4);
+  if (filter_quality_index >= 0) {
+    cached_sampling_ = ImageFilter::SamplingFromIndex(filter_quality_index);
+    sampling_is_locked_ = true;
+  } else {
+    sampling_is_locked_ = false;
+  }
+}
+
+sk_sp<SkShader> ImageShader::shader(SkSamplingOptions sampling) {
+  if (sampling_is_locked_) {
+    sampling = cached_sampling_;
+  }
+  if (!cached_shader_.skia_object() || cached_sampling_ != sampling) {
+    cached_sampling_ = sampling;
+    cached_shader_ =
+        UIDartState::CreateGPUObject(sk_image_.skia_object()->makeShader(
+            tmx_, tmy_, sampling, &local_matrix_));
+  }
+  return cached_shader_.skia_object();
+}
+
+int ImageShader::width() {
+  return sk_image_.skia_object()->width();
+}
+
+int ImageShader::height() {
+  return sk_image_.skia_object()->height();
 }
 
 ImageShader::ImageShader() = default;

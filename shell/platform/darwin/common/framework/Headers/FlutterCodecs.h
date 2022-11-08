@@ -6,14 +6,15 @@
 #define FLUTTER_FLUTTERCODECS_H_
 
 #import <Foundation/Foundation.h>
-#include "FlutterMacros.h"
+
+#import "FlutterMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  * A message encoding/decoding mechanism.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @protocol FlutterMessageCodec
 /**
  * Returns a shared instance of this `FlutterMessageCodec`.
@@ -42,12 +43,12 @@ FLUTTER_EXPORT
  * `NSData` instances.
  *
  * This codec is guaranteed to be compatible with the corresponding
- * [BinaryCodec](https://docs.flutter.io/flutter/services/BinaryCodec-class.html)
+ * [BinaryCodec](https://api.flutter.dev/flutter/services/BinaryCodec-class.html)
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * On the Dart side, messages are represented using `ByteData`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterBinaryCodec : NSObject <FlutterMessageCodec>
 @end
 
@@ -55,10 +56,10 @@ FLUTTER_EXPORT
  * A `FlutterMessageCodec` using UTF-8 encoded `NSString` messages.
  *
  * This codec is guaranteed to be compatible with the corresponding
- * [StringCodec](https://docs.flutter.io/flutter/services/StringCodec-class.html)
+ * [StringCodec](https://api.flutter.dev/flutter/services/StringCodec-class.html)
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStringCodec : NSObject <FlutterMessageCodec>
 @end
 
@@ -66,7 +67,7 @@ FLUTTER_EXPORT
  * A `FlutterMessageCodec` using UTF-8 encoded JSON messages.
  *
  * This codec is guaranteed to be compatible with the corresponding
- * [JSONMessageCodec](https://docs.flutter.io/flutter/services/JSONMessageCodec-class.html)
+ * [JSONMessageCodec](https://api.flutter.dev/flutter/services/JSONMessageCodec-class.html)
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * Supports values accepted by `NSJSONSerialization` plus top-level
@@ -76,7 +77,7 @@ FLUTTER_EXPORT
  * [`dart:convert`](https://api.dartlang.org/stable/dart-convert/JSON-constant.html)
  * package.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterJSONMessageCodec : NSObject <FlutterMessageCodec>
 @end
 
@@ -87,7 +88,7 @@ FLUTTER_EXPORT
  *
  * The encoding is extensible via subclasses overriding `writeValue`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStandardWriter : NSObject
 /**
  * Create a `FlutterStandardWriter` who will write to \p data.
@@ -127,7 +128,7 @@ FLUTTER_EXPORT
  *
  * The encoding is extensible via subclasses overriding `readValueOfType`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStandardReader : NSObject
 /**
  * Create a new `FlutterStandardReader` who reads from \p data.
@@ -167,7 +168,7 @@ FLUTTER_EXPORT
  * A factory of compatible reader/writer instances using the Flutter standard
  * binary encoding or extensions thereof.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStandardReaderWriter : NSObject
 /**
  * Create a new `FlutterStandardWriter` for writing to \p data.
@@ -183,7 +184,7 @@ FLUTTER_EXPORT
  * A `FlutterMessageCodec` using the Flutter standard binary encoding.
  *
  * This codec is guaranteed to be compatible with the corresponding
- * [StandardMessageCodec](https://docs.flutter.io/flutter/services/StandardMessageCodec-class.html)
+ * [StandardMessageCodec](https://api.flutter.dev/flutter/services/StandardMessageCodec-class.html)
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * Supported messages are acyclic values of these forms:
@@ -204,7 +205,7 @@ FLUTTER_EXPORT
  * - `NSArray`: `List`
  * - `NSDictionary`: `Map`
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStandardMessageCodec : NSObject <FlutterMessageCodec>
 /**
  * Create a `FlutterStandardMessageCodec` who will read and write to \p readerWriter.
@@ -215,7 +216,7 @@ FLUTTER_EXPORT
 /**
  * Command object representing a method call on a `FlutterMethodChannel`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterMethodCall : NSObject
 /**
  * Creates a method call for invoking the specified named method with the
@@ -241,7 +242,7 @@ FLUTTER_EXPORT
  * Error object representing an unsuccessful outcome of invoking a method
  * on a `FlutterMethodChannel`, or an error event on a `FlutterEventChannel`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterError : NSObject
 /**
  * Creates a `FlutterError` with the specified error code, message, and details.
@@ -281,6 +282,7 @@ typedef NS_ENUM(NSInteger, FlutterStandardDataType) {
   FlutterStandardDataTypeUInt8,
   FlutterStandardDataTypeInt32,
   FlutterStandardDataTypeInt64,
+  FlutterStandardDataTypeFloat32,
   FlutterStandardDataTypeFloat64,
 };
 
@@ -292,7 +294,7 @@ typedef NS_ENUM(NSInteger, FlutterStandardDataType) {
  * double-precision representation is used for floats. The platform's native
  * endianness is assumed.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStandardTypedData : NSObject
 /**
  * Creates a `FlutterStandardTypedData` which interprets the specified data
@@ -317,6 +319,14 @@ FLUTTER_EXPORT
  * @param data the byte data. The length must be divisible by 8.
  */
 + (instancetype)typedDataWithInt64:(NSData*)data;
+
+/**
+ * Creates a `FlutterStandardTypedData` which interprets the specified data
+ * as 32-bit floats.
+ *
+ * @param data the byte data. The length must be divisible by 8.
+ */
++ (instancetype)typedDataWithFloat32:(NSData*)data;
 
 /**
  * Creates a `FlutterStandardTypedData` which interprets the specified data
@@ -351,7 +361,7 @@ FLUTTER_EXPORT
  * An arbitrarily large integer value, used with `FlutterStandardMessageCodec`
  * and `FlutterStandardMethodCodec`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 FLUTTER_UNAVAILABLE("Unavailable on 2018-08-31. Deprecated on 2018-01-09. "
                     "FlutterStandardBigInteger was needed because the Dart 1.0 int type had no "
                     "size limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed "
@@ -375,7 +385,7 @@ FLUTTER_UNAVAILABLE("Unavailable on 2018-08-31. Deprecated on 2018-01-09. "
  * error details `NSObject`, possibly `nil`. These data items are used to
  * populate a `FlutterError`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @protocol FlutterMethodCodec
 /**
  * Provides access to a shared instance this codec.
@@ -433,13 +443,13 @@ FLUTTER_EXPORT
  * envelopes.
  *
  * This codec is guaranteed to be compatible with the corresponding
- * [JSONMethodCodec](https://docs.flutter.io/flutter/services/JSONMethodCodec-class.html)
+ * [JSONMethodCodec](https://api.flutter.dev/flutter/services/JSONMethodCodec-class.html)
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * Values supported as methods arguments and result payloads are
  * those supported as top-level or leaf values by `FlutterJSONMessageCodec`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterJSONMethodCodec : NSObject <FlutterMethodCodec>
 @end
 
@@ -447,13 +457,13 @@ FLUTTER_EXPORT
  * A `FlutterMethodCodec` using the Flutter standard binary encoding.
  *
  * This codec is guaranteed to be compatible with the corresponding
- * [StandardMethodCodec](https://docs.flutter.io/flutter/services/StandardMethodCodec-class.html)
+ * [StandardMethodCodec](https://api.flutter.dev/flutter/services/StandardMethodCodec-class.html)
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * Values supported as method arguments and result payloads are those supported by
  * `FlutterStandardMessageCodec`.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterStandardMethodCodec : NSObject <FlutterMethodCodec>
 /**
  * Create a `FlutterStandardMethodCodec` who will read and write to \p readerWriter.

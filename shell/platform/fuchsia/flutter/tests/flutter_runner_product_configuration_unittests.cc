@@ -68,4 +68,46 @@ TEST_F(FlutterRunnerProductConfigurationTest, NonIntegerVsyncOffset) {
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
+TEST_F(FlutterRunnerProductConfigurationTest, ValidMaxFramesInFlight) {
+  const std::string json_string = "{ \"max_frames_in_flight\" : 5 } ";
+  const uint64_t expected_max_frames_in_flight = 5;
+
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
+  EXPECT_EQ(product_config.get_max_frames_in_flight(),
+            expected_max_frames_in_flight);
+}
+
+TEST_F(FlutterRunnerProductConfigurationTest, MissingMaxFramesInFlight) {
+  const std::string json_string = "{ \"max_frames_in_flight\" :  } ";
+  const uint64_t minimum_reasonable_max_frames_in_flight = 1;
+
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
+  EXPECT_GE(product_config.get_max_frames_in_flight(),
+            minimum_reasonable_max_frames_in_flight);
+}
+
+TEST_F(FlutterRunnerProductConfigurationTest, ValidInterceptAllInput) {
+  const std::string json_string = "{ \"intercept_all_input\" : true } ";
+  const uint64_t expected_intercept_all_input = true;
+
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
+
+  EXPECT_EQ(expected_intercept_all_input,
+            product_config.get_intercept_all_input());
+}
+
+TEST_F(FlutterRunnerProductConfigurationTest, MissingInterceptAllInput) {
+  const std::string json_string = "{ \"intercept_all_input\" : } ";
+  const uint64_t expected_intercept_all_input = false;
+
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
+
+  EXPECT_EQ(expected_intercept_all_input,
+            product_config.get_intercept_all_input());
+}
+
 }  // namespace flutter_runner_test

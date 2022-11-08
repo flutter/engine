@@ -1,12 +1,49 @@
+# Please refer to the "Upgrade Browser Version" section in the README.md for
+# more details on how to update browser version numbers.
 chrome:
   # It seems Chrome can't always release from the same build for all operating
   # systems, so we specify per-OS build number.
-  # Note: 741412 binary is for Chrome Version 82. Driver for Chrome version 83
-  # is not working with chrome.binary option.
-  Linux: 741412
-  Mac: 735194
-  Win: 735105
+  #
+  # The OS names here must match what recipe Python expression
+  # `self.m.platform.name.capitalize()` evaluates to. See:
+  #
+  # recipe_modules/web_util/api.py
+  Linux: 927388 # Major version 96
+  Mac: 927385 # Major version 96
+  Win: 927369 # Major version 96
+
+## Firefox does not use CIPD. To update the version, simply update it in this
+## file.
 firefox:
-  version: '72.0'
+  version: '83.0'
+
 edge:
   launcher_version: '1.2.0.0'
+
+safari_ios:
+  # Make sure this version is the same version supported by LUCI macOS bots.
+  # XCode on these bots will be updated once a year, do not forget to update
+  # `heightOfHeader` during this time.
+  major_version: 13
+  minor_version: 0
+  device: 'iPhone 11'
+  # `xcrun simctl` command is used to take screenshots. It takes the screenshot
+  # of the entire simulator. Therefore we need to crop all the parts other than
+  # the browsers' content. This file must be in sync with the local and LUCI
+  # versions of macOS, iOS Simulator, and Xcode.
+  # `heightOfHeader` is the number of pixels taken by the phone's header menu
+  # and the browsers address bar.
+  # TODO: https://github.com/flutter/flutter/issues/65672
+  height_of_header: 189
+  # `heightOfFooter` is the number of pixels taken by the phone's navigation
+  # menu.
+  height_of_footer: 250
+  # Most of the time tests use a portion of the screen to compare goldens
+  # instead of the entire screen. This area is reprented by a rectangle
+  # when taking screenshots. However the rectangle dimensions are in logical
+  # coordinates. In order to convert these coordinates to coordinates on the
+  # phone screeen we enlarge or shrink the area by applying a linear
+  # transformation by a scale_factor (a.k.a. we perform isotropic scaling).
+  # This value will be differ depending on the phone.
+  # For iOS 13.0 iPhone 11 Pro, this number is 1.15.
+  scale_factor: 1.00

@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
-
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 #pragma GCC diagnostic error "-Wundeclared-selector"
@@ -16,27 +16,14 @@ FLUTTER_ASSERT_NOT_ARC
 namespace flutter {
 namespace {
 
-FlutterViewController* _Nullable GetFlutterViewControllerForView(UIView* view) {
-  // There is no way to get a view's view controller in UIKit directly, this is
-  // somewhat of a hacky solution to get that.  This could be eliminated if the
-  // bridge actually kept a reference to a FlutterViewController instead of a
-  // UIView.
-  id nextResponder = [view nextResponder];
-  if ([nextResponder isKindOfClass:[FlutterViewController class]]) {
-    return nextResponder;
-  } else if ([nextResponder isKindOfClass:[UIView class]]) {
-    return GetFlutterViewControllerForView(nextResponder);
-  } else {
-    return nil;
-  }
-}
+constexpr int32_t kSemanticObjectIdInvalid = -1;
 
 class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
  public:
-  bool IsFlutterViewControllerPresentingModalViewController(UIView* view) override {
-    FlutterViewController* viewController = GetFlutterViewControllerForView(view);
-    if (viewController) {
-      return viewController.isPresentingViewController;
+  bool IsFlutterViewControllerPresentingModalViewController(
+      FlutterViewController* view_controller) override {
+    if (view_controller) {
+      return view_controller.isPresentingViewController;
     } else {
       return false;
     }
@@ -49,19 +36,21 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 };
 }  // namespace
 
-AccessibilityBridge::AccessibilityBridge(UIView* view,
-                                         PlatformViewIOS* platform_view,
-                                         FlutterPlatformViewsController* platform_views_controller,
-                                         std::unique_ptr<IosDelegate> ios_delegate)
-    : view_(view),
+AccessibilityBridge::AccessibilityBridge(
+    FlutterViewController* view_controller,
+    PlatformViewIOS* platform_view,
+    std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
+    std::unique_ptr<IosDelegate> ios_delegate)
+    : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
+      last_focused_semantics_object_id_(kSemanticObjectIdInvalid),
       objects_([[NSMutableDictionary alloc] init]),
-      weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}),
       ios_delegate_(ios_delegate ? std::move(ios_delegate)
-                                 : std::make_unique<DefaultIosDelegate>()) {
+                                 : std::make_unique<DefaultIosDelegate>()),
+      weak_factory_(this) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
@@ -72,12 +61,23 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
+  [accessibility_channel_.get() setMessageHandler:nil];
   clearState();
-  view_.accessibilityElements = nil;
+  view_controller_.view.accessibilityElements = nil;
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
   return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
+}
+
+void AccessibilityBridge::AccessibilityObjectDidBecomeFocused(int32_t id) {
+  last_focused_semantics_object_id_ = id;
+}
+
+void AccessibilityBridge::AccessibilityObjectDidLoseFocus(int32_t id) {
+  if (last_focused_semantics_object_id_ == id) {
+    last_focused_semantics_object_id_ = kSemanticObjectIdInvalid;
+  }
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
@@ -126,15 +126,6 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       object.accessibilityCustomActions = accessibilityCustomActions;
     }
 
-    if (object.node.IsPlatformViewNode()) {
-      FlutterPlatformViewsController* controller = GetPlatformViewsController();
-      if (controller) {
-        object.platformViewSemanticsContainer = [[[FlutterPlatformViewSemanticsContainer alloc]
-            initWithSemanticsObject:object] autorelease];
-      }
-    } else if (object.platformViewSemanticsContainer) {
-      object.platformViewSemanticsContainer = nil;
-    }
     if (needsAnnouncement) {
       // Try to be more polite - iOS 11+ supports
       // UIAccessibilitySpeechAttributeQueueAnnouncement which should avoid
@@ -163,22 +154,32 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   SemanticsObject* lastAdded = nil;
 
   if (root) {
-    if (!view_.accessibilityElements) {
-      view_.accessibilityElements = @[ [root accessibilityContainer] ];
+    if (!view_controller_.view.accessibilityElements) {
+      view_controller_.view.accessibilityElements = @[ [root accessibilityContainer] ];
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
+    // Finds the last route that is not in the previous routes.
     for (SemanticsObject* route in newRoutes) {
-      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) !=
+      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) ==
           previous_routes_.end()) {
         lastAdded = route;
       }
     }
+    // If all the routes are in the previous route, get the last route.
     if (lastAdded == nil && [newRoutes count] > 0) {
       int index = [newRoutes count] - 1;
       lastAdded = [newRoutes objectAtIndex:index];
     }
-    if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
+    // There are two cases if lastAdded != nil
+    // 1. lastAdded is not in previous routes. In this case,
+    //    [lastAdded uid] != previous_route_id_
+    // 2. All new routes are in previous routes and
+    //    lastAdded = newRoutes.last.
+    // In the first case, we need to announce new route. In the second case,
+    // we need to announce if one list is shorter than the other.
+    if (lastAdded != nil &&
+        ([lastAdded uid] != previous_route_id_ || [newRoutes count] != previous_routes_.size())) {
       previous_route_id_ = [lastAdded uid];
       routeChanged = true;
     }
@@ -187,28 +188,40 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       previous_routes_.push_back([route uid]);
     }
   } else {
-    view_.accessibilityElements = nil;
+    view_controller_.view.accessibilityElements = nil;
   }
 
-  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
-  if (root)
+  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_ allKeys]];
+  if (root) {
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
+  }
   [objects_ removeObjectsForKeys:doomed_uids];
 
-  layoutChanged = layoutChanged || [doomed_uids count] > 0;
-  if (routeChanged) {
-    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_)) {
+  for (SemanticsObject* object in [objects_ allValues]) {
+    [object accessibilityBridgeDidFinishUpdate];
+  }
+
+  if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
+    layoutChanged = layoutChanged || [doomed_uids count] > 0;
+
+    if (routeChanged) {
       NSString* routeName = [lastAdded routeName];
       ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
                                                    routeName);
     }
-  } else if (layoutChanged) {
-    // TODO(goderbauer): figure out which node to focus next.
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification, nil);
-  }
-  if (scrollOccured) {
-    // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification, @"");
+
+    if (layoutChanged) {
+      ios_delegate_->PostAccessibilityNotification(
+          UIAccessibilityLayoutChangedNotification,
+          FindNextFocusableIfNecessary().nativeAccessibility);
+    } else if (scrollOccured) {
+      // TODO(chunhtai): figure out what string to use for notification. At this
+      // point, it is guarantee the previous focused object is still in the tree
+      // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
+      ios_delegate_->PostAccessibilityNotification(
+          UIAccessibilityPageScrolledNotification,
+          FindNextFocusableIfNecessary().nativeAccessibility);
+    }
   }
 }
 
@@ -218,7 +231,7 @@ void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, flutter::Semantic
 
 void AccessibilityBridge::DispatchSemanticsAction(int32_t uid,
                                                   flutter::SemanticsAction action,
-                                                  std::vector<uint8_t> args) {
+                                                  fml::MallocMapping args) {
   platform_view_->DispatchSemanticsAction(uid, action, std::move(args));
 }
 
@@ -226,7 +239,7 @@ static void ReplaceSemanticsObject(SemanticsObject* oldObject,
                                    SemanticsObject* newObject,
                                    NSMutableDictionary<NSNumber*, SemanticsObject*>* objects) {
   // `newObject` should represent the same id as `oldObject`.
-  assert(oldObject.node.id == newObject.node.id);
+  assert(oldObject.node.id == newObject.uid);
   NSNumber* nodeId = @(oldObject.node.id);
   NSUInteger positionInChildlist = [oldObject.parent.children indexOfObject:oldObject];
   [objects removeObjectForKey:nodeId];
@@ -242,10 +255,16 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
-    SemanticsObject* delegateObject =
-        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
-    return (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
-        initWithSemanticsObject:delegateObject] autorelease];
+    return [[[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+  } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
+    return [[[FlutterScrollableSemanticsObject alloc] initWithBridge:weak_ptr
+                                                                 uid:node.id] autorelease];
+  } else if (node.IsPlatformViewNode()) {
+    return [[[FlutterPlatformViewSemanticsContainer alloc]
+        initWithBridge:weak_ptr
+                   uid:node.id
+          platformView:weak_ptr->GetPlatformViewsController()->GetPlatformViewByID(
+                           node.platformViewId)] autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }
@@ -272,7 +291,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
       if (DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsTextField) ||
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsReadOnly) ||
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasCheckedState) ||
-          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasToggledState)) {
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasToggledState) ||
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasImplicitScrolling)) {
         // The node changed its type. In this case, we cannot reuse the existing
         // SemanticsObject implementation. Instead, we replace it with a new
         // instance.
@@ -290,6 +310,37 @@ void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* obje
   [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
+}
+
+SemanticsObject* AccessibilityBridge::FindNextFocusableIfNecessary() {
+  // This property will be -1 if the focus is outside of the flutter
+  // application. In this case, we should not refocus anything.
+  if (last_focused_semantics_object_id_ == kSemanticObjectIdInvalid) {
+    return nil;
+  }
+
+  // Tries to refocus the previous focused semantics object to avoid random jumps.
+  return FindFirstFocusable([objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
+}
+
+SemanticsObject* AccessibilityBridge::FindFirstFocusable(SemanticsObject* parent) {
+  SemanticsObject* currentObject = parent ?: objects_.get()[@(kRootNodeId)];
+  ;
+  if (!currentObject) {
+    return nil;
+  }
+
+  if (currentObject.isAccessibilityElement) {
+    return currentObject;
+  }
+
+  for (SemanticsObject* child in [currentObject children]) {
+    SemanticsObject* candidate = FindFirstFocusable(child);
+    if (candidate) {
+      return candidate;
+    }
+  }
+  return nil;
 }
 
 void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEvent) {

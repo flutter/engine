@@ -2,32 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-import 'package:ui/src/engine.dart';
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('CrossFrameCache', () {
     test('Reuse returns no object when cache empty', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache();
+      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
       cache.commitFrame();
-      TestItem requestedItem = cache.reuse('item1');
+      final TestItem? requestedItem = cache.reuse('item1');
       expect(requestedItem, null);
     });
 
     test('Reuses object across frames', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache();
+      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
       final TestItem testItem1 = TestItem('item1');
       cache.cache(testItem1.label, testItem1);
       cache.commitFrame();
-      TestItem requestedItem = cache.reuse('item1');
+      TestItem? requestedItem = cache.reuse('item1');
       expect(requestedItem, testItem1);
       requestedItem = cache.reuse('item1');
       expect(requestedItem, null);
     });
 
     test('Reuses objects that have same key across frames', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache();
+      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
       final TestItem testItem1 = TestItem('sameLabel');
       final TestItem testItem2 = TestItem('sameLabel');
       final TestItem testItemX = TestItem('X');
@@ -35,7 +39,7 @@ void main() {
       cache.cache(testItemX.label, testItemX);
       cache.cache(testItem2.label, testItem2);
       cache.commitFrame();
-      TestItem requestedItem = cache.reuse('sameLabel');
+      TestItem? requestedItem = cache.reuse('sameLabel');
       expect(requestedItem, testItem1);
       requestedItem = cache.reuse('sameLabel');
       expect(requestedItem, testItem2);
@@ -44,18 +48,18 @@ void main() {
     });
 
     test('Values don\'t survive beyond next frame', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache();
+      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
       final TestItem testItem1 = TestItem('item1');
       cache.cache(testItem1.label, testItem1);
       cache.commitFrame();
       cache.commitFrame();
-      TestItem requestedItem = cache.reuse('item1');
+      final TestItem? requestedItem = cache.reuse('item1');
       expect(requestedItem, null);
     });
 
     test('Values are evicted when not reused', () {
-      final Set<TestItem> _evictedItems = {};
-      final CrossFrameCache<TestItem> cache = CrossFrameCache();
+      final Set<TestItem> _evictedItems = <TestItem>{};
+      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
       final TestItem testItem1 = TestItem('item1');
       final TestItem testItem2 = TestItem('item2');
       cache.cache(testItem1.label, testItem1, (TestItem item) {_evictedItems.add(item);});
@@ -64,8 +68,8 @@ void main() {
       expect(_evictedItems.length, 0);
       cache.reuse('item2');
       cache.commitFrame();
-      expect(_evictedItems.contains(testItem1), true);
-      expect(_evictedItems.contains(testItem2), false);
+      expect(_evictedItems.contains(testItem1), isTrue);
+      expect(_evictedItems.contains(testItem2), isFalse);
     });
   });
 }

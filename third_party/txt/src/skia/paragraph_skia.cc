@@ -17,6 +17,7 @@
 #include "paragraph_skia.h"
 
 #include <algorithm>
+#include <numeric>
 
 namespace txt {
 
@@ -75,7 +76,7 @@ TextStyle SkiaToTxt(const skt::TextStyle& skia) {
   for (const skt::TextShadow& skia_shadow : skia.getShadows()) {
     txt::TextShadow shadow;
     shadow.offset = skia_shadow.fOffset;
-    shadow.blur_radius = skia_shadow.fBlurRadius;
+    shadow.blur_sigma = skia_shadow.fBlurSigma;
     shadow.color = skia_shadow.fColor;
     txt.text_shadows.emplace_back(shadow);
   }
@@ -106,6 +107,12 @@ std::vector<LineMetrics>& ParagraphSkia::GetLineMetrics() {
     paragraph_->getLineMetrics(metrics);
 
     line_metrics_.emplace();
+    line_metrics_styles_.reserve(
+        std::accumulate(metrics.begin(), metrics.end(), 0,
+                        [](const int a, const skt::LineMetrics& b) {
+                          return a + b.fLineMetrics.size();
+                        }));
+
     for (const skt::LineMetrics& skm : metrics) {
       LineMetrics& txtm = line_metrics_->emplace_back(
           skm.fStartIndex, skm.fEndIndex, skm.fEndExcludingWhitespaces,
@@ -171,7 +178,7 @@ std::vector<Paragraph::TextBox> ParagraphSkia::GetRectsForRange(
       static_cast<skt::RectWidthStyle>(rect_width_style));
 
   std::vector<Paragraph::TextBox> boxes;
-  for (const skt::TextBox skia_box : skia_boxes) {
+  for (const skt::TextBox& skia_box : skia_boxes) {
     boxes.emplace_back(skia_box.rect,
                        static_cast<TextDirection>(skia_box.direction));
   }
@@ -183,7 +190,7 @@ std::vector<Paragraph::TextBox> ParagraphSkia::GetRectsForPlaceholders() {
   std::vector<skt::TextBox> skia_boxes = paragraph_->getRectsForPlaceholders();
 
   std::vector<Paragraph::TextBox> boxes;
-  for (const skt::TextBox skia_box : skia_boxes) {
+  for (const skt::TextBox& skia_box : skia_boxes) {
     boxes.emplace_back(skia_box.rect,
                        static_cast<TextDirection>(skia_box.direction));
   }

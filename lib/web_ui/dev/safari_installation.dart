@@ -2,51 +2,64 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
+import 'package:simulators/simulator_manager.dart';
 
+import 'browser_lock.dart';
 import 'common.dart';
+import 'utils.dart';
 
-class SafariArgParser extends BrowserArgParser {
-  static final SafariArgParser _singletonInstance = SafariArgParser._();
+/// Returns [IosSimulator] if the [Platform] is `macOS` and simulator
+/// is started.
+///
+/// Throws an [StateError] if these two conditions are not met.
+IosSimulator get iosSimulator {
+  if (!io.Platform.isMacOS) {
+    throw StateError('iOS Simulator is only available on macOS machines.');
+  }
+  if (_iosSimulator == null) {
+    throw StateError(
+      'iOS Simulator not started. Please first call initIOSSimulator method',
+    );
+  }
+  return _iosSimulator!;
+}
+IosSimulator? _iosSimulator;
 
-  /// The [SafariArgParser] singleton.
-  static SafariArgParser get instance => _singletonInstance;
-
-  String _version;
-
-  SafariArgParser._();
-
-  @override
-  void populateOptions(ArgParser argParser) {
-    argParser
-      ..addOption(
-        'safari-version',
-        defaultsTo: 'system',
-        help: 'The Safari version to use while running tests. The Safari '
-            'browser installed on the system is used as the only option now.'
-            'Soon we will add support for using different versions using the '
-            'tech previews.',
-      );
+/// Inializes and boots an [IosSimulator] using the [iosMajorVersion],
+/// [iosMinorVersion] and [iosDevice] arguments.
+Future<void> initIosSimulator() async {
+  if (_iosSimulator != null) {
+    throw StateError('_iosSimulator can only be initialized once');
+  }
+  final IosSimulatorManager iosSimulatorManager = IosSimulatorManager();
+  final IosSimulator simulator;
+  final SafariIosLock lock = browserLock.safariIosLock;
+  try {
+    simulator = await iosSimulatorManager.getSimulator(
+      lock.majorVersion,
+      lock.minorVersion,
+      lock.device,
+    );
+    _iosSimulator = simulator;
+  } catch (e) {
+    io.stderr.writeln(
+      'Error getting iOS Simulator for ${lock.simulatorDescription}.\n'
+      'Try running `felt create` command before running tests.',
+    );
+    rethrow;
   }
 
-  @override
-  void parseOptions(ArgResults argResults) {
-    _version = argResults['safari-version'] as String;
-    assert(_version == 'system');
-    final String browser = argResults['browser'] as String;
-    _isMobileBrowser = browser == 'ios-safari' ? true : false;
+  if (!simulator.booted) {
+    await simulator.boot();
+    print('INFO: Simulator ${simulator.id} booted.');
+    cleanupCallbacks.add(() async {
+      await simulator.shutdown();
+      print('INFO: Simulator ${simulator.id} shutdown.');
+    });
   }
-
-  @override
-  String get version => _version;
-
-  bool _isMobileBrowser;
-
-  bool get isMobileBrowser => _isMobileBrowser;
 }
 
 /// Returns the installation of Safari.
@@ -56,13 +69,9 @@ class SafariArgParser extends BrowserArgParser {
 /// Latest Safari version for Catalina, Mojave, High Siera is 13.
 ///
 /// Latest Safari version for Sierra is 12.
-// TODO(nurhan): user latest version to download and install the latest
-// technology preview.
-Future<BrowserInstallation> getOrInstallSafari(
-  String requestedVersion, {
-  StringSink infoLog,
+Future<BrowserInstallation> getOrInstallSafari({
+  StringSink? infoLog,
 }) async {
-
   // These tests are aimed to run only on macOS machines local or on LUCI.
   if (!io.Platform.isMacOS) {
     throw UnimplementedError('Safari on ${io.Platform.operatingSystem} is'
@@ -71,16 +80,11 @@ Future<BrowserInstallation> getOrInstallSafari(
 
   infoLog ??= io.stdout;
 
-  if (requestedVersion == 'system') {
-    // Since Safari is included in macOS, always assume there will be one on the
-    // system.
-    infoLog.writeln('Using the system version that is already installed.');
-    return BrowserInstallation(
-      version: 'system',
-      executable: PlatformBinding.instance.getMacApplicationLauncher(),
-    );
-  } else {
-    infoLog.writeln('Unsupported version $requestedVersion.');
-    throw UnimplementedError();
-  }
+  // Since Safari is included in macOS, always assume there will be one on the
+  // system.
+  infoLog.writeln('Using the system version that is already installed.');
+  return BrowserInstallation(
+    version: 'system',
+    executable: PlatformBinding.instance.getMacApplicationLauncher(),
+  );
 }

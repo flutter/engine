@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_context_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_software.h"
 
 namespace flutter {
 
@@ -12,13 +12,19 @@ IOSContextSoftware::IOSContextSoftware() = default;
 IOSContextSoftware::~IOSContextSoftware() = default;
 
 // |IOSContext|
-sk_sp<GrContext> IOSContextSoftware::CreateResourceContext() {
+sk_sp<GrDirectContext> IOSContextSoftware::CreateResourceContext() {
   return nullptr;
 }
 
 // |IOSContext|
-bool IOSContextSoftware::MakeCurrent() {
-  return false;
+sk_sp<GrDirectContext> IOSContextSoftware::GetMainContext() const {
+  return nullptr;
+}
+
+// |IOSContext|
+std::unique_ptr<GLContextResult> IOSContextSoftware::MakeCurrent() {
+  // This only makes sense for context that need to be bound to a specific thread.
+  return std::make_unique<GLContextDefaultResult>(false);
 }
 
 // |IOSContext|

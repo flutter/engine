@@ -7,14 +7,14 @@
 
 #import <Foundation/Foundation.h>
 
-#include "FlutterMacros.h"
+#import "FlutterMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  * A set of Flutter and Dart assets used by a `FlutterEngine` to initialize execution.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterDartProject : NSObject
 
 /**

@@ -8,7 +8,7 @@
 
 #include "flutter/lib/ui/text/asset_manager_font_provider.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/test_font_data.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
@@ -27,11 +27,13 @@ namespace flutter {
 
 namespace {
 
-void LoadFontFromList(tonic::Uint8List& font_data,
+void LoadFontFromList(tonic::Uint8List& font_data,  // NOLINT
                       Dart_Handle callback,
                       std::string family_name) {
-  FontCollection& font_collection =
-      UIDartState::Current()->window()->client()->GetFontCollection();
+  FontCollection& font_collection = UIDartState::Current()
+                                        ->platform_configuration()
+                                        ->client()
+                                        ->GetFontCollection();
   font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
                                    family_name);
   font_data.Release();
@@ -66,8 +68,9 @@ std::shared_ptr<txt::FontCollection> FontCollection::GetFontCollection() const {
   return collection_;
 }
 
-void FontCollection::SetupDefaultFontManager() {
-  collection_->SetupDefaultFontManager();
+void FontCollection::SetupDefaultFontManager(
+    uint32_t font_initialization_data) {
+  collection_->SetupDefaultFontManager(font_initialization_data);
 }
 
 void FontCollection::RegisterFonts(
@@ -121,7 +124,7 @@ void FontCollection::RegisterFonts(
         continue;
       }
 
-      // TODO: Handle weights and styles.
+      // TODO(chinmaygarde): Handle weights and styles.
       font_provider->RegisterAsset(family_name->value.GetString(),
                                    font_asset->value.GetString());
     }

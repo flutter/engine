@@ -11,6 +11,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
@@ -35,6 +36,7 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
 
   private boolean isSurfaceAvailableForRendering = false;
   private boolean isAttachedToFlutterRenderer = false;
+  private boolean isPaused = false;
   @Nullable private FlutterRenderer flutterRenderer;
   @Nullable private Surface renderSurface;
 
@@ -82,6 +84,12 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
           // has been destroyed.
           if (isAttachedToFlutterRenderer) {
             disconnectSurfaceFromRenderer();
+          }
+
+          // Definitively release the surface to avoid leaked closeables, just in case
+          if (renderSurface != null) {
+            renderSurface.release();
+            renderSurface = null;
           }
 
           // Return true to indicate that no further painting will take place
@@ -173,6 +181,30 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
     }
   }
 
+  /**
+   * Invoked by the owner of this {@code FlutterTextureView} when it should pause rendering Flutter
+   * UI to this {@code FlutterTextureView}.
+   */
+  public void pause() {
+    if (flutterRenderer != null) {
+      flutterRenderer = null;
+      isPaused = true;
+      isAttachedToFlutterRenderer = false;
+    } else {
+      Log.w(TAG, "pause() invoked when no FlutterRenderer was attached.");
+    }
+  }
+
+  /**
+   * Manually set the render surface for this view.
+   *
+   * <p>This should only be used for testing purposes.
+   */
+  @VisibleForTesting
+  public void setRenderSurface(Surface renderSurface) {
+    this.renderSurface = renderSurface;
+  }
+
   // FlutterRenderer and getSurfaceTexture() must both be non-null.
   private void connectSurfaceToRenderer() {
     if (flutterRenderer == null || getSurfaceTexture() == null) {
@@ -180,8 +212,15 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
           "connectSurfaceToRenderer() should only be called when flutterRenderer and getSurfaceTexture() are non-null.");
     }
 
+    // Definitively release the surface to avoid leaked closeables, just in case
+    if (renderSurface != null) {
+      renderSurface.release();
+      renderSurface = null;
+    }
+
     renderSurface = new Surface(getSurfaceTexture());
-    flutterRenderer.startRenderingToSurface(renderSurface);
+    flutterRenderer.startRenderingToSurface(renderSurface, isPaused);
+    isPaused = false;
   }
 
   // FlutterRenderer must be non-null.
@@ -208,7 +247,9 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
     }
 
     flutterRenderer.stopRenderingToSurface();
-    renderSurface.release();
-    renderSurface = null;
+    if (renderSurface != null) {
+      renderSurface.release();
+      renderSurface = null;
+    }
   }
 }

@@ -4,114 +4,14 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/shell/platform/config.gni")
-
-if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
-}
+import("//flutter/shell/platform/glfw/config.gni")
+import("//flutter/testing/testing.gni")
+import("//third_party/dart/build/dart/copy_tree.gni")
 
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
 declare_args() {
   full_dart_sdk = false
-}
-
-group("flutter") {
-  testonly = true
-
-  public_deps = []
-
-  if (!is_fuchsia) {
-    public_deps += [
-      "//flutter/lib/snapshot:generate_snapshot_bin",
-      "//flutter/lib/snapshot:kernel_platform_files",
-    ]
-  }
-
-  public_deps += [
-    "//flutter/shell/platform/embedder:flutter_engine",
-    "//flutter/sky",
-  ]
-
-  if (current_toolchain == host_toolchain) {
-    public_deps += [ "//flutter/tools/font-subset" ]
-  }
-
-  if (current_toolchain == host_toolchain) {
-    public_deps += [ "//flutter/shell/testing" ]
-    public_deps += [ "//flutter/tools/const_finder" ]
-  }
-
-  if (is_fuchsia) {
-    public_deps += [
-      "//flutter/shell/platform/fuchsia",
-      "//flutter/shell/testing($host_toolchain)",
-    ]
-  }
-
-  if (!is_fuchsia) {
-    if (current_toolchain == host_toolchain) {
-      public_deps += [
-        "//flutter/flutter_frontend_server:frontend_server",
-        "//third_party/dart:create_sdk",
-      ]
-
-      if (full_dart_sdk) {
-        public_deps += [ "//flutter/web_sdk" ]
-      }
-    }
-  }
-
-  # If on the host, compile all unittests targets.
-  if (current_toolchain == host_toolchain) {
-    if (is_mac) {
-      public_deps +=
-          [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
-    }
-
-    public_deps += [
-      "//flutter/flow:flow_unittests",
-      "//flutter/fml:fml_unittests",
-      "//flutter/lib/ui:ui_unittests",
-      "//flutter/runtime:runtime_unittests",
-      "//flutter/shell/common:shell_unittests",
-      "//flutter/shell/platform/android/external_view_embedder:android_external_view_embedder_unittests",
-      "//flutter/shell/platform/embedder:embedder_unittests",
-      "//flutter/testing:testing_unittests",
-      "//flutter/third_party/txt:txt_unittests",
-    ]
-
-    if (!is_win) {
-      public_deps += [
-        "//flutter/fml:fml_benchmarks",
-        "//flutter/shell/common:shell_benchmarks",
-        "//flutter/third_party/txt:txt_benchmarks",
-      ]
-    }
-
-    # Unit tests for desktop embeddings should only be built if the desktop
-    # embeddings are being built.
-    if (enable_desktop_embeddings) {
-      public_deps += [
-        "//flutter/shell/platform/common/cpp:common_cpp_core_unittests",
-        "//flutter/shell/platform/common/cpp:common_cpp_unittests",
-        "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
-        "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
-      ]
-      if (is_mac) {
-        public_deps += [ "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests" ]
-      }
-      if (is_win) {
-        public_deps += [
-          "//flutter/shell/platform/windows:flutter_windows_unittests",
-          "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
-        ]
-      }
-      if (is_linux) {
-        public_deps +=
-            [ "//flutter/shell/platform/linux:flutter_linux_unittests" ]
-      }
-    }
-  }
 }
 
 config("config") {
@@ -125,35 +25,223 @@ config("config") {
 
 config("export_dynamic_symbols") {
   if (is_linux || is_fuchsia) {
-    inputs = [
-      "//flutter/common/exported_symbols.sym",
-    ]
+    inputs = [ "//flutter/common/exported_symbols.sym" ]
     ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  }
+}
+
+if (flutter_prebuilt_dart_sdk) {
+  copy_trees("_copy_trees") {
+    # There is no prebuilt Dart SDK targeting Fuchsia, but we also don't need
+    # one, so even when the build is targeting Fuchsia, use the prebuilt
+    # Dart SDK for the host.
+    if (current_toolchain == host_toolchain || is_fuchsia) {
+      prebuilt_dart_sdk = host_prebuilt_dart_sdk
+    } else {
+      prebuilt_dart_sdk = target_prebuilt_dart_sdk
+    }
+    sources = [
+      {
+        target = "copy_dart_sdk"
+        visibility = [ ":dart_sdk" ]
+        source = prebuilt_dart_sdk
+        dest = "$root_out_dir/dart-sdk"
+        ignore_patterns = "{}"
+      },
+    ]
+  }
+}
+
+# Flutter SDK artifacts should only be built when either doing host builds, or
+# for cross-compiled desktop targets.
+# TODO: We can't build the engine artifacts for arm (32-bit) right now;
+# see https://github.com/flutter/flutter/issues/74322
+_build_engine_artifacts =
+    current_toolchain == host_toolchain ||
+    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
+
+group("dart_sdk") {
+  if (_build_engine_artifacts) {
+    if (flutter_prebuilt_dart_sdk) {
+      public_deps = [ ":copy_dart_sdk" ]
+    } else {
+      public_deps = [ "//third_party/dart:create_sdk" ]
+    }
+  }
+}
+
+group("flutter") {
+  testonly = true
+
+  # Compile the engine.
+  public_deps = [
+    "//flutter/shell/platform/embedder:flutter_engine",
+    "//flutter/sky",
+  ]
+
+  # Ensure the example for a sample embedder compiles.
+  if (is_mac || is_linux) {
+    public_deps += [ "//flutter/examples/glfw" ]
+  }
+
+  # If enbaled, compile the SDK / snapshot.
+  if (!is_fuchsia) {
+    public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
+
+    if (_build_engine_artifacts) {
+      public_deps += [
+        ":dart_sdk",
+        "//flutter/flutter_frontend_server:frontend_server",
+
+        # This must be listed explicitly for desktop cross-builds since
+        # //flutter/lib/snapshot:generate_snapshot_bin will only build
+        # gen_snapshot for the host and not the target.
+        "//third_party/dart/runtime/bin:gen_snapshot",
+      ]
+
+      if (full_dart_sdk) {
+        public_deps += [ "//flutter/web_sdk" ]
+      }
+    }
+  }
+
+  if (_build_engine_artifacts) {
+    public_deps += [
+      "//flutter/shell/testing",
+      "//flutter/tools/const_finder",
+      "//flutter/tools/font-subset",
+    ]
+  }
+
+  # Compile all benchmark targets if enabled.
+  if (enable_unittests && !is_win) {
+    public_deps += [
+      "//flutter/display_list:display_list_benchmarks",
+      "//flutter/fml:fml_benchmarks",
+      "//flutter/lib/ui:ui_benchmarks",
+      "//flutter/shell/common:shell_benchmarks",
+      "//flutter/third_party/txt:txt_benchmarks",
+    ]
+  }
+
+  if ((flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile") &&
+      (is_ios || is_android)) {
+    public_deps += [ "//flutter/testing/scenario_app" ]
+  }
+
+  if (is_android && flutter_runtime_mode == "profile" &&
+      current_cpu == "arm64") {
+    public_deps += [ "//flutter/testing/android_background_image" ]
+  }
+
+  if (is_android) {
+    public_deps +=
+        [ "//flutter/shell/platform/android:flutter_shell_native_unittests" ]
+  }
+
+  # Compile all unittests targets if enabled.
+  if (enable_unittests) {
+    public_deps += [
+      "//flutter/flow:flow_unittests",
+      "//flutter/fml:fml_unittests",
+      "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
+      "//flutter/lib/spirv/test/general_shaders:spirv_compile_general_shaders",
+      "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
+      "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
+      "//flutter/lib/ui:ui_unittests",
+      "//flutter/runtime:no_dart_plugin_registrant_unittests",
+      "//flutter/runtime:runtime_unittests",
+      "//flutter/shell/common:shell_unittests",
+      "//flutter/shell/platform/embedder:embedder_proctable_unittests",
+      "//flutter/shell/platform/embedder:embedder_unittests",
+      "//flutter/testing:testing_unittests",
+      "//flutter/testing/dart",
+      "//flutter/testing/smoke_test_failure",
+      "//flutter/third_party/tonic/tests:tonic_unittests",
+      "//flutter/third_party/txt:txt_unittests",
+    ]
+
+    # The accessibility library only supports Mac and Windows at the moment.
+    if (is_mac || is_win) {
+      public_deps +=
+          [ "//flutter/third_party/accessibility:accessibility_unittests" ]
+    }
+
+    if (is_fuchsia) {
+      public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
+    }
+
+    if (is_mac) {
+      public_deps +=
+          [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
+    }
+
+    if (!is_win && !is_fuchsia) {
+      public_deps += [
+        "//flutter/shell/platform/android/external_view_embedder:android_external_view_embedder_unittests",
+        "//flutter/shell/platform/android/jni:jni_unittests",
+        "//flutter/shell/platform/android/platform_view_android_delegate:platform_view_android_delegate_unittests",
+      ]
+    }
+
+    # Unit tests for desktop embeddings should only be built if the desktop
+    # embeddings are being built.
+    if (enable_desktop_embeddings) {
+      public_deps += [
+        "//flutter/shell/platform/common:common_cpp_core_unittests",
+        "//flutter/shell/platform/common/client_wrapper:client_wrapper_unittests",
+      ]
+
+      if (!is_fuchsia) {
+        # These tests require the embedder and thus cannot run on fuchsia.
+        # TODO(): Enable when embedder works on fuchsia.
+        public_deps +=
+            [ "//flutter/shell/platform/common:common_cpp_unittests" ]
+
+        # These tests require GLFW and thus cannot run on fuchsia.
+        public_deps += [ "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests" ]
+      }
+
+      if (is_linux) {
+        public_deps +=
+            [ "//flutter/shell/platform/linux:flutter_linux_unittests" ]
+        if (build_glfw_shell) {
+          public_deps +=
+              [ "//flutter/shell/platform/glfw:flutter_glfw_unittests" ]
+        }
+      }
+
+      if (is_mac) {
+        public_deps += [ "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests" ]
+      }
+
+      if (is_win) {
+        if (target_os == "winuwp") {
+          # TODO: Add winnup variant of client_wrapper_windows_unittests here; see
+          # https://github.com/flutter/flutter/issues/70197
+          public_deps +=
+              [ "//flutter/shell/platform/windows:flutter_windows_unittests" ]
+        } else {
+          public_deps += [
+            "//flutter/shell/platform/windows:flutter_windows_unittests",
+            "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
+          ]
+        }
+      }
+    }
   }
 }
 
 group("dist") {
   testonly = true
 
-  deps = [
-    "//flutter/sky/dist",
-  ]
+  deps = [ "//flutter/sky/dist" ]
 }
 
-# Fuchsia currently only supports a subset of our unit tests
-# When adding a new dep here, please also ensure the dep is added to
-# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
-if (is_fuchsia) {
+if (is_fuchsia && enable_unittests) {
   group("fuchsia_tests") {
     testonly = true
 
-    deps = [
-      "//flutter/flow:flow_tests",
-      "//flutter/fml:fml_tests",
-      "//flutter/runtime:runtime_tests",
-      "//flutter/shell/common:shell_tests",
-      "//flutter/shell/platform/fuchsia/flutter:flutter_runner_scenic_tests",
-      "//flutter/shell/platform/fuchsia/flutter:flutter_runner_tests",
-    ]
+    deps = [ "//flutter/shell/platform/fuchsia:tests" ]
   }
 }

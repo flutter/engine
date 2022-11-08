@@ -1,8 +1,7 @@
-// Copyright 2019 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:ui';
 
 import 'package:scenario_app/src/channel_util.dart';
@@ -14,13 +13,13 @@ import 'scenario.dart';
 class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
   /// Creates the PoppableScreenScenario.
   ///
-  /// The [window] parameter must not be null.
-  PoppableScreenScenario(Window window)
-      : assert(window != null),
-        super(window);
+  /// The [dispatcher] parameter must not be null.
+  PoppableScreenScenario(PlatformDispatcher dispatcher)
+      : assert(dispatcher != null),
+        super(dispatcher);
 
   // Rect for the pop button. Only defined once onMetricsChanged is called.
-  Rect _buttonRect;
+  Rect? _buttonRect;
 
   @override
   void onBeginFrame(Duration duration) {
@@ -32,7 +31,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
     if (_buttonRect != null) {
       canvas.drawRect(
-        _buttonRect,
+        _buttonRect!,
         Paint()..color = const Color.fromARGB(255, 255, 0, 0),
       );
     }
@@ -63,7 +62,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
-    for (PointerData data in packet.data) {
+    for (final PointerData data in packet.data) {
       if (data.change == PointerChange.up &&
           _buttonRect?.contains(Offset(data.physicalX, data.physicalY)) == true
       ) {
@@ -74,7 +73,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
   void _pop() {
     sendJsonMethodCall(
-      window: window,
+      dispatcher: dispatcher,
       // 'flutter/platform' is the hardcoded name of the 'platform'
       // `SystemChannel` from the `SystemNavigator` API.
       // https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/system_navigator.dart.

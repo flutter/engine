@@ -12,23 +12,27 @@ executable("testing") {
     "//flutter:export_dynamic_symbols",
   ]
 
-  sources = [
-    "tester_main.cc",
-  ]
+  sources = [ "tester_main.cc" ]
+  if (is_win) {
+    libs = [
+      "psapi.lib",
+      "user32.lib",
+      "FontSub.lib",
+      "shlwapi.lib",
+    ]
+  }
 
   deps = [
     "//flutter/assets",
     "//flutter/common",
+    "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/snapshot",
     "//flutter/shell/common",
+    "//flutter/shell/gpu:gpu_surface_software",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
   ]
-
-  if (is_fuchsia) {
-    deps += [ "$fuchsia_sdk_root/pkg:scenic_cpp" ]
-  }
 }

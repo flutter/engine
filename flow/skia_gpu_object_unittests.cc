@@ -4,14 +4,14 @@
 
 #include "flutter/flow/skia_gpu_object.h"
 
+#include <future>
+
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/testing/thread_test.h"
 #include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-
-#include <future>
 
 namespace flutter {
 namespace testing {
@@ -106,7 +106,7 @@ TEST_F(SkiaGpuObjectTest, ObjectReset) {
       sk_make_sp<TestSkObject>(latch, &dtor_task_queue_id), unref_queue());
   // Verify that explicitly resetting the GPU object queues and unref.
   sk_object.reset();
-  ASSERT_EQ(sk_object.get(), nullptr);
+  ASSERT_EQ(sk_object.skia_object(), nullptr);
   latch->Wait();
   ASSERT_EQ(dtor_task_queue_id, unref_task_runner()->GetTaskQueueId());
 }
@@ -119,9 +119,9 @@ TEST_F(SkiaGpuObjectTest, ObjectResetTwice) {
       sk_make_sp<TestSkObject>(latch, &dtor_task_queue_id), unref_queue());
 
   sk_object.reset();
-  ASSERT_EQ(sk_object.get(), nullptr);
+  ASSERT_EQ(sk_object.skia_object(), nullptr);
   sk_object.reset();
-  ASSERT_EQ(sk_object.get(), nullptr);
+  ASSERT_EQ(sk_object.skia_object(), nullptr);
 
   latch->Wait();
   ASSERT_EQ(dtor_task_queue_id, unref_task_runner()->GetTaskQueueId());

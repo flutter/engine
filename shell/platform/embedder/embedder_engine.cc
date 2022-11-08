@@ -28,15 +28,14 @@ EmbedderEngine::EmbedderEngine(
     RunConfiguration run_configuration,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer,
-    EmbedderExternalTextureGL::ExternalTextureCallback
-        external_texture_callback)
+    std::unique_ptr<EmbedderExternalTextureResolver> external_texture_resolver)
     : thread_host_(std::move(thread_host)),
       task_runners_(task_runners),
       run_configuration_(std::move(run_configuration)),
       shell_args_(std::make_unique<ShellArgs>(std::move(settings),
                                               on_create_platform_view,
                                               on_create_rasterizer)),
-      external_texture_callback_(external_texture_callback) {}
+      external_texture_resolver_(std::move(external_texture_resolver)) {}
 
 EmbedderEngine::~EmbedderEngine() = default;
 
@@ -50,9 +49,9 @@ bool EmbedderEngine::LaunchShell() {
     FML_DLOG(ERROR) << "Shell already initialized";
   }
 
-  shell_ = Shell::Create(task_runners_, shell_args_->settings,
-                         shell_args_->on_create_platform_view,
-                         shell_args_->on_create_rasterizer);
+  shell_ = Shell::Create(
+      flutter::PlatformData(), task_runners_, shell_args_->settings,
+      shell_args_->on_create_platform_view, shell_args_->on_create_rasterizer);
 
   // Reset the args no matter what. They will never be used to initialize a
   // shell again.
@@ -129,7 +128,7 @@ bool EmbedderEngine::DispatchPointerDataPacket(
 }
 
 bool EmbedderEngine::SendPlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   if (!IsValid() || !message) {
     return false;
   }
@@ -139,22 +138,21 @@ bool EmbedderEngine::SendPlatformMessage(
     return false;
   }
 
-  platform_view->DispatchPlatformMessage(message);
+  platform_view->DispatchPlatformMessage(std::move(message));
   return true;
 }
 
 bool EmbedderEngine::RegisterTexture(int64_t texture) {
-  if (!IsValid() || !external_texture_callback_) {
+  if (!IsValid()) {
     return false;
   }
   shell_->GetPlatformView()->RegisterTexture(
-      std::make_unique<EmbedderExternalTextureGL>(texture,
-                                                  external_texture_callback_));
+      external_texture_resolver_->ResolveExternalTexture(texture));
   return true;
 }
 
 bool EmbedderEngine::UnregisterTexture(int64_t texture) {
-  if (!IsValid() || !external_texture_callback_) {
+  if (!IsValid()) {
     return false;
   }
   shell_->GetPlatformView()->UnregisterTexture(texture);
@@ -162,7 +160,7 @@ bool EmbedderEngine::UnregisterTexture(int64_t texture) {
 }
 
 bool EmbedderEngine::MarkTextureFrameAvailable(int64_t texture) {
-  if (!IsValid() || !external_texture_callback_) {
+  if (!IsValid()) {
     return false;
   }
   shell_->GetPlatformView()->MarkTextureFrameAvailable(texture);
@@ -196,7 +194,7 @@ bool EmbedderEngine::SetAccessibilityFeatures(int32_t flags) {
 
 bool EmbedderEngine::DispatchSemanticsAction(int id,
                                              flutter::SemanticsAction action,
-                                             std::vector<uint8_t> args) {
+                                             fml::MallocMapping args) {
   if (!IsValid()) {
     return false;
   }
@@ -215,8 +213,8 @@ bool EmbedderEngine::OnVsyncEvent(intptr_t baton,
     return false;
   }
 
-  return VsyncWaiterEmbedder::OnEmbedderVsync(baton, frame_start_time,
-                                              frame_target_time);
+  return VsyncWaiterEmbedder::OnEmbedderVsync(
+      task_runners_, baton, frame_start_time, frame_target_time);
 }
 
 bool EmbedderEngine::ReloadSystemFonts() {

@@ -22,7 +22,7 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
 
   EmbedderSurfaceSoftware(
       SoftwareDispatchTable software_dispatch_table,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~EmbedderSurfaceSoftware() override;
 
@@ -30,7 +30,7 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   bool valid_ = false;
   SoftwareDispatchTable software_dispatch_table_;
   sk_sp<SkSurface> sk_surface_;
-  std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
+  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
 
   // |EmbedderSurface|
   bool IsValid() const override;
@@ -39,16 +39,13 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
   // |EmbedderSurface|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
   // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
-
-  // |GPUSurfaceSoftwareDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceSoftware);
 };

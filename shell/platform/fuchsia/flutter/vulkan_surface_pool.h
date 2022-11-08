@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <fuchsia/ui/composition/cpp/fidl.h>
+
 #include <unordered_map>
 #include <vector>
 
@@ -21,16 +23,15 @@ class VulkanSurfacePool final {
   static constexpr int kMaxSurfaceAge = 3;
 
   VulkanSurfacePool(vulkan::VulkanProvider& vulkan_provider,
-                    sk_sp<GrContext> context,
+                    sk_sp<GrDirectContext> context,
                     scenic::Session* scenic_session);
 
   ~VulkanSurfacePool();
 
+  std::unique_ptr<VulkanSurface> CreateSurface(const SkISize& size);
   std::unique_ptr<VulkanSurface> AcquireSurface(const SkISize& size);
 
-  void SubmitSurface(
-      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-          surface);
+  void SubmitSurface(std::unique_ptr<SurfaceProducerSurface> surface);
 
   void AgeAndCollectOldBuffers();
 
@@ -38,53 +39,25 @@ class VulkanSurfacePool final {
   // small as they can be.
   void ShrinkToFit();
 
-  // For |VulkanSurfaceProducer::HasRetainedNode|.
-  bool HasRetainedNode(const flutter::LayerRasterCacheKey& key) const {
-    return retained_surfaces_.find(key) != retained_surfaces_.end();
-  }
-  // For |VulkanSurfaceProducer::GetRetainedNode|.
-  scenic::EntityNode* GetRetainedNode(const flutter::LayerRasterCacheKey& key) {
-    FML_DCHECK(HasRetainedNode(key));
-    return retained_surfaces_[key].vk_surface->GetRetainedNode();
-  }
-
  private:
-  // Struct for retained_surfaces_ map.
-  struct RetainedSurface {
-    // If |is_pending| is true, the |vk_surface| is still under painting
-    // (similar to those in |pending_surfaces_|) so we can't recycle the
-    // |vk_surface| yet.
-    bool is_pending;
-    std::unique_ptr<VulkanSurface> vk_surface;
-  };
-
   vulkan::VulkanProvider& vulkan_provider_;
-  sk_sp<GrContext> context_;
+  sk_sp<GrDirectContext> context_;
   scenic::Session* scenic_session_;
+  fuchsia::sysmem::AllocatorSyncPtr sysmem_allocator_;
+  fuchsia::ui::composition::AllocatorPtr flatland_allocator_;
   std::vector<std::unique_ptr<VulkanSurface>> available_surfaces_;
   std::unordered_map<uintptr_t, std::unique_ptr<VulkanSurface>>
       pending_surfaces_;
-
-  // Retained surfaces keyed by the layer that created and used the surface.
-  flutter::LayerRasterCacheKey::Map<RetainedSurface> retained_surfaces_;
+  uint32_t buffer_id_ = 1;
 
   size_t trace_surfaces_created_ = 0;
   size_t trace_surfaces_reused_ = 0;
 
   std::unique_ptr<VulkanSurface> GetCachedOrCreateSurface(const SkISize& size);
 
-  std::unique_ptr<VulkanSurface> CreateSurface(const SkISize& size);
-
   void RecycleSurface(std::unique_ptr<VulkanSurface> surface);
 
   void RecyclePendingSurface(uintptr_t surface_key);
-
-  // Clear the |is_pending| flag of the retained surface.
-  void SignalRetainedReady(flutter::LayerRasterCacheKey key);
-
-  // Remove the corresponding surface from |retained_surfaces| and recycle it.
-  // The surface must not be pending.
-  void RecycleRetainedSurface(const flutter::LayerRasterCacheKey& key);
 
   void TraceStats();
 

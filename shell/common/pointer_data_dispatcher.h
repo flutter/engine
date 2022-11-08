@@ -23,7 +23,7 @@ class PointerDataDispatcher;
 /// delivered packets, and dispatches them in sync with the VSYNC signal.
 ///
 /// This object will be owned by the engine because it relies on the engine's
-/// `Animator` (which owns `VsyncWaiter`) and `RuntomeController` to do the
+/// `Animator` (which owns `VsyncWaiter`) and `RuntimeController` to do the
 /// filtering. This object is currently designed to be only called from the UI
 /// thread (no thread safety is guaranteed).
 ///
@@ -53,14 +53,16 @@ class PointerDataDispatcher {
     ///           by `Animator::RequestFrame`).
     ///
     ///           Like the callback in `AsyncWaitForVsync`, this callback is
-    ///           only scheduled to be called once, and it will be called in the
-    ///           UI thread. If there is no AsyncWaitForVsync callback
-    ///           (`Animator::RequestFrame` is not called), this secondary
-    ///           callback will still be executed at vsync.
+    ///           only scheduled to be called once per |id|, and it will be
+    ///           called in the UI thread. If there is no AsyncWaitForVsync
+    ///           callback (`Animator::RequestFrame` is not called), this
+    ///           secondary callback will still be executed at vsync.
     ///
     ///           This callback is used to provide the vsync signal needed by
-    ///           `SmoothPointerDataDispatcher`.
+    ///           `SmoothPointerDataDispatcher`, and for `Animator` input flow
+    ///           events.
     virtual void ScheduleSecondaryVsyncCallback(
+        uintptr_t id,
         const fml::closure& callback) = 0;
   };
 
@@ -82,7 +84,8 @@ class PointerDataDispatcher {
 ///
 class DefaultPointerDataDispatcher : public PointerDataDispatcher {
  public:
-  DefaultPointerDataDispatcher(Delegate& delegate) : delegate_(delegate) {}
+  explicit DefaultPointerDataDispatcher(Delegate& delegate)
+      : delegate_(delegate) {}
 
   // |PointerDataDispatcer|
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
@@ -136,7 +139,7 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
 /// See also input_events_unittests.cc where we test all our claims above.
 class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
  public:
-  SmoothPointerDataDispatcher(Delegate& delegate);
+  explicit SmoothPointerDataDispatcher(Delegate& delegate);
 
   // |PointerDataDispatcer|
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
@@ -145,20 +148,18 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
   virtual ~SmoothPointerDataDispatcher();
 
  private:
+  void DispatchPendingPacket();
+  void ScheduleSecondaryVsyncCallback();
+
   // If non-null, this will be a pending pointer data packet for the next frame
   // to consume. This is used to smooth out the irregular drag events delivery.
   // See also `DispatchPointerDataPacket` and input_events_unittests.cc.
   std::unique_ptr<PointerDataPacket> pending_packet_;
   int pending_trace_flow_id_ = -1;
-
   bool is_pointer_data_in_progress_ = false;
 
+  // WeakPtrFactory must be the last member.
   fml::WeakPtrFactory<SmoothPointerDataDispatcher> weak_factory_;
-
-  void DispatchPendingPacket();
-
-  void ScheduleSecondaryVsyncCallback();
-
   FML_DISALLOW_COPY_AND_ASSIGN(SmoothPointerDataDispatcher);
 };
 

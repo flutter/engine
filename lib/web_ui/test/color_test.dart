@@ -2,16 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 
-import 'package:test/test.dart';
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
 
 class NotAColor extends Color {
   const NotAColor(int value) : super(value);
 }
 
-void main() {
+void testMain() {
   test('color accessors should work', () {
     const Color foo = Color(0x12345678);
     expect(foo.alpha, equals(0x12));
@@ -28,29 +31,21 @@ void main() {
   });
 
   test('color created with out of bounds value', () {
-    try {
-      const Color c = Color(0x100 << 24);
-      final Paint p = Paint();
-      p.color = c;
-    } catch (e) {
-      expect(e != null, equals(true));
-    }
+    const Color c = Color(0x100 << 24);
+    final Paint p = Paint();
+    p.color = c;
   });
 
   test('color created with wildly out of bounds value', () {
-    try {
-      const Color c = Color(1 << 1000000);
-      final Paint p = Paint();
-      p.color = c;
-    } catch (e) {
-      expect(e != null, equals(true));
-    }
+    const Color c = Color(1 << 1000000);
+    final Paint p = Paint();
+    p.color = c;
   });
 
   test('two colors are only == if they have the same runtime type', () {
     expect(const Color(123), equals(const Color(123)));
     expect(const Color(123),
-        equals(Color(123))); // ignore: prefer_const_constructors
+        equals(const Color(123)));
     expect(const Color(123), isNot(equals(const Color(321))));
     expect(const Color(123), isNot(equals(const NotAColor(123))));
     expect(const NotAColor(123), isNot(equals(const Color(123))));
@@ -142,14 +137,14 @@ void main() {
   // Regression test for https://github.com/flutter/flutter/issues/41257
   // CupertinoDynamicColor was overriding base class and calling super(0).
   test('subclass of Color can override value', () {
-    final DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
+    const DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
     expect(color.value, 0xF0E0D0C0);
     // Call base class member, make sure it uses overridden value.
     expect(color.red, 0xE0);
   });
 
   test('Paint converts Color subclasses to plain Color', () {
-    final DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
+    const DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
     final Paint paint = Paint()..color = color;
     expect(paint.color.runtimeType, Color);
   });
@@ -160,5 +155,6 @@ class DynamicColorClass extends Color {
 
   final int _newValue;
 
+  @override
   int get value => _newValue;
 }

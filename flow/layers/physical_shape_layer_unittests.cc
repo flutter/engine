@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/physical_shape_layer.h"
 
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
+#include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -23,14 +25,13 @@ TEST_F(PhysicalShapeLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
-  EXPECT_FALSE(layer->needs_painting());
-  EXPECT_FALSE(layer->needs_system_composite());
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 
-TEST_F(PhysicalShapeLayerTest, PaintBeforePreollDies) {
+TEST_F(PhysicalShapeLayerTest, PaintBeforePrerollDies) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_layer = std::make_shared<MockLayer>(child_path, SkPaint());
@@ -41,7 +42,7 @@ TEST_F(PhysicalShapeLayerTest, PaintBeforePreollDies) {
   layer->Add(mock_layer);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 #endif
 
@@ -54,8 +55,7 @@ TEST_F(PhysicalShapeLayerTest, NonEmptyLayer) {
                                            layer_path, Clip::none);
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
-  EXPECT_TRUE(layer->needs_painting());
-  EXPECT_FALSE(layer->needs_system_composite());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
@@ -93,8 +93,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPath) {
   child_paint_bounds.join(child2->paint_bounds());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
   EXPECT_NE(layer->paint_bounds(), child_paint_bounds);
-  EXPECT_TRUE(layer->needs_painting());
-  EXPECT_FALSE(layer->needs_system_composite());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
@@ -127,15 +126,11 @@ TEST_F(PhysicalShapeLayerTest, ElevationSimple) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
-  EXPECT_TRUE(layer->needs_painting());
-  EXPECT_FALSE(layer->needs_system_composite());
-  EXPECT_EQ(layer->total_elevation(), initial_elevation);
+            DisplayListCanvasDispatcher::ComputeShadowBounds(
+                layer_path, initial_elevation, 1.0f, SkMatrix()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
+  EXPECT_EQ(layer->elevation(), initial_elevation);
 
-  // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
-  // their shadows , so we do not use the direct |Paint()| path there.
-#if !defined(OS_FUCHSIA)
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
   layer_paint.setAntiAlias(true);
@@ -146,7 +141,6 @@ TEST_F(PhysicalShapeLayerTest, ElevationSimple) {
           {MockCanvas::DrawCall{0, MockCanvas::DrawShadowData{layer_path}},
            MockCanvas::DrawCall{
                0, MockCanvas::DrawPathData{layer_path, layer_paint}}}));
-#endif
 }
 
 TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
@@ -162,7 +156,6 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
   // |
   // layers[1] + 2.0f = 3.0f
   constexpr float initial_elevations[4] = {1.0f, 2.0f, 3.0f, 4.0f};
-  constexpr float total_elevations[4] = {1.0f, 3.0f, 4.0f, 8.0f};
   SkPath layer_path;
   layer_path.addRect(0, 0, 80, 80).close();
 
@@ -182,17 +175,12 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
     // PhysicalShapeLayers and their shadows , so we do not do any painting
     // there.
     EXPECT_EQ(layers[i]->paint_bounds(),
-              (PhysicalShapeLayer::ComputeShadowBounds(
-                  layer_path.getBounds(), initial_elevations[i],
-                  1.0f /* pixel_ratio */)));
-    EXPECT_TRUE(layers[i]->needs_painting());
-    EXPECT_FALSE(layers[i]->needs_system_composite());
-    EXPECT_EQ(layers[i]->total_elevation(), total_elevations[i]);
+              (DisplayListCanvasDispatcher::ComputeShadowBounds(
+                  layer_path, initial_elevations[i], 1.0f /* pixel_ratio */,
+                  SkMatrix())));
+    EXPECT_TRUE(layers[i]->needs_painting(paint_context()));
   }
 
-  // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
-  // their shadows , so we do not use the direct |Paint()| path there.
-#if !defined(OS_FUCHSIA)
   SkPaint layer_paint;
   layer_paint.setColor(SK_ColorBLACK);
   layer_paint.setAntiAlias(true);
@@ -212,7 +200,93 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
            MockCanvas::DrawCall{0, MockCanvas::DrawShadowData{layer_path}},
            MockCanvas::DrawCall{
                0, MockCanvas::DrawPathData{layer_path, layer_paint}}}));
-#endif
+}
+
+TEST_F(PhysicalShapeLayerTest, ShadowNotDependsCtm) {
+  constexpr SkScalar elevations[] = {1, 2, 3, 4, 5, 10};
+  constexpr SkScalar scales[] = {0.5, 1, 1.5, 2, 3, 5};
+  constexpr SkScalar translates[] = {0, 1, -1, 0.5, 2, 10};
+
+  SkPath path;
+  path.addRect(0, 0, 8, 8).close();
+
+  for (SkScalar elevation : elevations) {
+    SkRect baseline_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+        path, elevation, 1.0f, SkMatrix());
+    for (SkScalar scale : scales) {
+      for (SkScalar translateX : translates) {
+        for (SkScalar translateY : translates) {
+          SkMatrix ctm;
+          ctm.setScaleTranslate(scale, scale, translateX, translateY);
+          SkRect bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+              path, elevation, scale, ctm);
+          EXPECT_FLOAT_EQ(bounds.fLeft, baseline_bounds.fLeft);
+          EXPECT_FLOAT_EQ(bounds.fTop, baseline_bounds.fTop);
+          EXPECT_FLOAT_EQ(bounds.fRight, baseline_bounds.fRight);
+          EXPECT_FLOAT_EQ(bounds.fBottom, baseline_bounds.fBottom);
+        }
+      }
+    }
+  }
+}
+
+static int RasterizedDifferenceInPixels(
+    const std::function<void(SkCanvas*)>& actual_draw_function,
+    const std::function<void(SkCanvas*)>& expected_draw_function,
+    const SkSize& canvas_size) {
+  sk_sp<SkSurface> actual_surface =
+      SkSurface::MakeRasterN32Premul(canvas_size.width(), canvas_size.height());
+  sk_sp<SkSurface> expected_surface =
+      SkSurface::MakeRasterN32Premul(canvas_size.width(), canvas_size.height());
+
+  actual_surface->getCanvas()->drawColor(SK_ColorWHITE);
+  expected_surface->getCanvas()->drawColor(SK_ColorWHITE);
+
+  actual_draw_function(actual_surface->getCanvas());
+  expected_draw_function(expected_surface->getCanvas());
+
+  SkPixmap actual_pixels;
+  EXPECT_TRUE(actual_surface->peekPixels(&actual_pixels));
+
+  SkPixmap expected_pixels;
+  EXPECT_TRUE(expected_surface->peekPixels(&expected_pixels));
+
+  int different_pixels = 0;
+  for (int y = 0; y < canvas_size.height(); y++) {
+    const uint32_t* actual_row = actual_pixels.addr32(0, y);
+    const uint32_t* expected_row = expected_pixels.addr32(0, y);
+    for (int x = 0; x < canvas_size.width(); x++) {
+      if (actual_row[x] != expected_row[x]) {
+        different_pixels++;
+      }
+    }
+  }
+  return different_pixels;
+}
+
+TEST_F(PhysicalShapeLayerTest, ShadowNotDependsPathSize) {
+  constexpr SkRect test_cases[][2] = {
+      {{20, -100, 80, 80}, {20, -1000, 80, 80}},
+      {{20, 20, 80, 200}, {20, 20, 80, 2000}},
+  };
+
+  for (const SkRect* test_case : test_cases) {
+    EXPECT_EQ(RasterizedDifferenceInPixels(
+                  [=](SkCanvas* canvas) {
+                    SkPath path;
+                    path.addRect(test_case[0]).close();
+                    DisplayListCanvasDispatcher::DrawShadow(
+                        canvas, path, SK_ColorBLACK, 1.0f, false, 1.0f);
+                  },
+                  [=](SkCanvas* canvas) {
+                    SkPath path;
+                    path.addRect(test_case[1]).close();
+                    DisplayListCanvasDispatcher::DrawShadow(
+                        canvas, path, SK_ColorBLACK, 1.0f, false, 1.0f);
+                  },
+                  SkSize::Make(100, 100)),
+              0);
+  }
 }
 
 static bool ReadbackResult(PrerollContext* context,
@@ -244,7 +318,7 @@ TEST_F(PhysicalShapeLayerTest, Readback) {
   const Clip save_layer = Clip::antiAliasWithSaveLayer;
 
   std::shared_ptr<MockLayer> nochild;
-  auto reader = std::make_shared<MockLayer>(path, paint, false, false, true);
+  auto reader = std::make_shared<MockLayer>(path, paint, false, true);
   auto nonreader = std::make_shared<MockLayer>(path, paint);
 
   // No children, no prior readback -> no readback after
@@ -276,6 +350,44 @@ TEST_F(PhysicalShapeLayerTest, Readback) {
   EXPECT_TRUE(ReadbackResult(context, hard, reader, true));
   EXPECT_TRUE(ReadbackResult(context, soft, reader, true));
   EXPECT_TRUE(ReadbackResult(context, save_layer, reader, true));
+}
+
+using PhysicalShapeLayerDiffTest = DiffContextTest;
+
+TEST_F(PhysicalShapeLayerDiffTest, NoClipPaintRegion) {
+  MockLayerTree tree1;
+  const SkPath layer_path = SkPath().addRect(SkRect::MakeXYWH(0, 0, 100, 100));
+  auto layer =
+      std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
+                                           0.0f,  // elevation
+                                           layer_path, Clip::none);
+
+  const SkPath layer_path2 =
+      SkPath().addRect(SkRect::MakeXYWH(200, 200, 200, 200));
+  auto layer2 = std::make_shared<MockLayer>(layer_path2);
+  layer->Add(layer2);
+  tree1.root()->Add(layer);
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 400, 400));
+}
+
+TEST_F(PhysicalShapeLayerDiffTest, ClipPaintRegion) {
+  MockLayerTree tree1;
+  const SkPath layer_path = SkPath().addRect(SkRect::MakeXYWH(0, 0, 100, 100));
+  auto layer =
+      std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
+                                           0.0f,  // elevation
+                                           layer_path, Clip::hardEdge);
+
+  const SkPath layer_path2 =
+      SkPath().addRect(SkRect::MakeXYWH(200, 200, 200, 200));
+  auto layer2 = std::make_shared<MockLayer>(layer_path2);
+  layer->Add(layer2);
+  tree1.root()->Add(layer);
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 100, 100));
 }
 
 }  // namespace testing

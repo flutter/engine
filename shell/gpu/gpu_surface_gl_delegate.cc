@@ -4,6 +4,8 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 
+#include <cstring>
+
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 
 namespace flutter {
@@ -14,8 +16,11 @@ bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
   return false;
 }
 
-bool GPUSurfaceGLDelegate::SurfaceSupportsReadback() const {
-  return true;
+SurfaceFrame::FramebufferInfo GPUSurfaceGLDelegate::GLContextFramebufferInfo()
+    const {
+  SurfaceFrame::FramebufferInfo res;
+  res.supports_readback = true;
+  return res;
 }
 
 SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
@@ -97,8 +102,8 @@ GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);
 }
 
-ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
-  return nullptr;
+bool GPUSurfaceGLDelegate::AllowsDrawingWhenGpuDisabled() const {
+  return true;
 }
 
 }  // namespace flutter

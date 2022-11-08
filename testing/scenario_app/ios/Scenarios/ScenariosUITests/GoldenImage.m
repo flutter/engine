@@ -3,8 +3,12 @@
 // found in the LICENSE file.
 
 #import "GoldenImage.h"
+
 #import <XCTest/XCTest.h>
+#import <os/log.h>
 #include <sys/sysctl.h>
+
+static const double kRmseThreshold = 0.5;
 
 @interface GoldenImage ()
 
@@ -26,6 +30,7 @@
 
 - (BOOL)compareGoldenToImage:(UIImage*)image {
   if (!self.image || !image) {
+    os_log_error(OS_LOG_DEFAULT, "GOLDEN DIFF FAILED: image does not exists.");
     return NO;
   }
   CGImageRef imageRefA = [self.image CGImage];
@@ -37,6 +42,7 @@
   NSUInteger heightB = CGImageGetHeight(imageRefB);
 
   if (widthA != widthB || heightA != heightB) {
+    os_log_error(OS_LOG_DEFAULT, "GOLDEN DIFF FAILED: images sizes do not match.");
     return NO;
   }
   NSUInteger bytesPerPixel = 4;
@@ -45,6 +51,7 @@
   NSMutableData* rawB = [NSMutableData dataWithLength:size];
 
   if (!rawA || !rawB) {
+    os_log_error(OS_LOG_DEFAULT, "GOLDEN DIFF FAILED: image data length do not match.");
     return NO;
   }
 
@@ -67,15 +74,39 @@
   CGContextDrawImage(contextB, CGRectMake(0, 0, widthA, heightA), imageRefB);
   CGContextRelease(contextB);
 
-  BOOL isSame = memcmp(rawA.mutableBytes, rawB.mutableBytes, size) == 0;
-  return isSame;
+  const char* apos = rawA.mutableBytes;
+  const char* bpos = rawB.mutableBytes;
+  double sum = 0.0;
+  for (size_t i = 0; i < size; ++i, ++apos, ++bpos) {
+    // Skip transparent pixels.
+    if (*apos == 0 && *bpos == 0 && i % 4 == 0) {
+      i += 3;
+      apos += 3;
+      bpos += 3;
+    } else {
+      double aval = *apos;
+      double bval = *bpos;
+      double diff = aval - bval;
+      sum += diff * diff;
+    }
+  }
+  double rmse = sqrt(sum / size);
+  if (rmse > kRmseThreshold) {
+    os_log_error(
+        OS_LOG_DEFAULT,
+        "GOLDEN DIFF FAILED: image diff greater than threshold. Current diff: %@, threshold: %@",
+        @(rmse), @(kRmseThreshold));
+    return NO;
+  }
+  return YES;
 }
 
 NS_INLINE NSString* _platformName() {
+  NSString* systemVersion = UIDevice.currentDevice.systemVersion;
   NSString* simulatorName =
       [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
   if (simulatorName) {
-    return [NSString stringWithFormat:@"%@_simulator", simulatorName];
+    return [NSString stringWithFormat:@"%@_%@_simulator", simulatorName, systemVersion];
   }
 
   size_t size;

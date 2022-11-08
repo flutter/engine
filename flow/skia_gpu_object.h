@@ -12,7 +12,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -35,14 +35,14 @@ class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
   bool drain_pending_;
-  fml::WeakPtr<GrContext> context_;
+  fml::WeakPtr<GrDirectContext> context_;
 
-  // The `GrContext* context` is only used for signaling Skia to
+  // The `GrDirectContext* context` is only used for signaling Skia to
   // performDeferredCleanup. It can be nullptr when such signaling is not needed
   // (e.g., in unit tests).
   SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
                  fml::TimeDelta delay,
-                 fml::WeakPtr<GrContext> context = {});
+                 fml::WeakPtr<GrDirectContext> context = {});
 
   ~SkiaUnrefQueue();
 
@@ -69,7 +69,7 @@ class SkiaGPUObject {
 
   SkiaGPUObject& operator=(SkiaGPUObject&&) = default;
 
-  sk_sp<SkiaObjectType> get() const { return object_; }
+  sk_sp<SkiaObjectType> skia_object() const { return object_; }
 
   void reset() {
     if (object_ && queue_) {

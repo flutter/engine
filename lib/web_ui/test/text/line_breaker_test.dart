@@ -2,13 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import 'line_breaker_test_helper.dart';
+import 'line_breaker_test_raw_data.dart';
+
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('nextLineBreak', () {
     test('Does not go beyond the ends of a string', () {
       expect(split('foo'), <Line>[
@@ -159,6 +166,139 @@ void main() {
         Line('foo', LineBreakType.endOfText),
       ]);
     });
+
+    test('trailing spaces and new lines', () {
+      expect(
+        findBreaks('foo bar  '),
+        const <LineBreakResult>[
+          LineBreakResult(4, 4, 3, LineBreakType.opportunity),
+          LineBreakResult(9, 9, 7, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('foo  \nbar\nbaz   \n'),
+        const <LineBreakResult>[
+          LineBreakResult(6, 5, 3, LineBreakType.mandatory),
+          LineBreakResult(10, 9, 9, LineBreakType.mandatory),
+          LineBreakResult(17, 16, 13, LineBreakType.mandatory),
+          LineBreakResult(17, 17, 17, LineBreakType.endOfText),
+        ],
+      );
+    });
+
+    test('leading spaces', () {
+      expect(
+        findBreaks(' foo'),
+        const <LineBreakResult>[
+          LineBreakResult(1, 1, 0, LineBreakType.opportunity),
+          LineBreakResult(4, 4, 4, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('   foo'),
+        const <LineBreakResult>[
+          LineBreakResult(3, 3, 0, LineBreakType.opportunity),
+          LineBreakResult(6, 6, 6, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('  foo   bar'),
+        const <LineBreakResult>[
+          LineBreakResult(2, 2, 0, LineBreakType.opportunity),
+          LineBreakResult(8, 8, 5, LineBreakType.opportunity),
+          LineBreakResult(11, 11, 11, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('  \n   foo'),
+        const <LineBreakResult>[
+          LineBreakResult(3, 2, 0, LineBreakType.mandatory),
+          LineBreakResult(6, 6, 3, LineBreakType.opportunity),
+          LineBreakResult(9, 9, 9, LineBreakType.endOfText),
+        ],
+      );
+    });
+
+    test('whitespace before the last character', () {
+      const String text = 'Lorem sit .';
+      const LineBreakResult expectedResult =
+          LineBreakResult(10, 10, 9, LineBreakType.opportunity);
+
+      LineBreakResult result;
+
+      result = nextLineBreak(text, 6);
+      expect(result, expectedResult);
+
+      result = nextLineBreak(text, 9);
+      expect(result, expectedResult);
+
+      result = nextLineBreak(text, 9, maxEnd: 10);
+      expect(result, expectedResult);
+    });
+
+    test('comprehensive test', () {
+      final List<TestCase> testCollection = parseRawTestData(rawLineBreakTestData);
+      for (int t = 0; t < testCollection.length; t++) {
+        final TestCase testCase = testCollection[t];
+        final String text = testCase.toText();
+
+        int lastLineBreak = 0;
+        int surrogateCount = 0;
+        // `s` is the index in the `testCase.signs` list.
+        for (int s = 0; s < testCase.signs.length; s++) {
+          // `i` is the index in the `text`.
+          final int i = s + surrogateCount;
+          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
+            surrogateCount++;
+          }
+
+          final Sign sign = testCase.signs[s];
+          final LineBreakResult result = nextLineBreak(text, lastLineBreak);
+          if (sign.isBreakOpportunity) {
+            // The line break should've been found at index `i`.
+            expect(
+              result.index,
+              i,
+              reason: 'Failed at test case number $t:\n'
+                  '${testCase.toString()}\n'
+                  '"$text"\n'
+                  '\nExpected line break at {$lastLineBreak - $i} but found line break at {$lastLineBreak - ${result.index}}.',
+            );
+
+            // Since this is a line break, passing a `maxEnd` that's greater
+            // should return the same line break.
+            final LineBreakResult maxEndResult =
+                nextLineBreak(text, lastLineBreak, maxEnd: i + 1);
+            expect(maxEndResult.index, i);
+            expect(maxEndResult.type, isNot(LineBreakType.prohibited));
+
+            lastLineBreak = i;
+          } else {
+            // This isn't a line break opportunity so the line break should be
+            // somewhere after index `i`.
+            expect(
+              result.index,
+              greaterThan(i),
+              reason: 'Failed at test case number $t:\n'
+                  '${testCase.toString()}\n'
+                  '"$text"\n'
+                  '\nUnexpected line break found at {$lastLineBreak - ${result.index}}.',
+            );
+
+            // Since this isn't a line break, passing it as a `maxEnd` should
+            // return `maxEnd` as a prohibited line break type.
+            final LineBreakResult maxEndResult =
+                nextLineBreak(text, lastLineBreak, maxEnd: i);
+            expect(maxEndResult.index, i);
+            expect(maxEndResult.type, LineBreakType.prohibited);
+          }
+        }
+      }
+    });
   });
 }
 
@@ -173,17 +313,17 @@ class Line {
   int get hashCode => hashValues(text, breakType);
 
   @override
-  bool operator ==(dynamic other) {
-    return other is Line && text == other.text && breakType == other.breakType;
+  bool operator ==(Object other) {
+    return other is Line && other.text == text && other.breakType == breakType;
   }
 
   String get escapedText {
     final String bk = String.fromCharCode(0x000B);
     final String nl = String.fromCharCode(0x0085);
     return text
-        .replaceAll('"', '\\"')
-        .replaceAll('\n', '\\n')
-        .replaceAll('\r', '\\r')
+        .replaceAll('"', r'\"')
+        .replaceAll('\n', r'\n')
+        .replaceAll('\r', r'\r')
         .replaceAll(bk, '{BK}')
         .replaceAll(nl, '{NL}');
   }
@@ -197,14 +337,22 @@ class Line {
 List<Line> split(String text) {
   final List<Line> lines = <Line>[];
 
-  int i = 0;
-  LineBreakType breakType;
-  while (breakType != LineBreakType.endOfText) {
-    final LineBreakResult result = nextLineBreak(text, i);
-    lines.add(Line(text.substring(i, result.index), result.type));
-
-    i = result.index;
-    breakType = result.type;
+  int lastIndex = 0;
+  for (final LineBreakResult brk in findBreaks(text)) {
+    lines.add(Line(text.substring(lastIndex, brk.index), brk.type));
+    lastIndex = brk.index;
   }
   return lines;
+}
+
+List<LineBreakResult> findBreaks(String text) {
+  final List<LineBreakResult> breaks = <LineBreakResult>[];
+
+  LineBreakResult brk = nextLineBreak(text, 0);
+  breaks.add(brk);
+  while (brk.type != LineBreakType.endOfText) {
+    brk = nextLineBreak(text, brk.index);
+    breaks.add(brk);
+  }
+  return breaks;
 }

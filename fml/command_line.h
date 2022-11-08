@@ -36,8 +36,7 @@
 #ifndef LIB_FML_COMMAND_LINE_H_
 #define LIB_FML_COMMAND_LINE_H_
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <initializer_list>
 #include <string>
 #include <string_view>
@@ -183,13 +182,15 @@ inline CommandLine CommandLineFromIteratorsFindFirstPositionalArg(
     InputIterator first,
     InputIterator last,
     InputIterator* first_positional_arg) {
-  if (first_positional_arg)
+  if (first_positional_arg) {
     *first_positional_arg = last;
+  }
   internal::CommandLineBuilder builder;
   for (auto it = first; it < last; ++it) {
     if (builder.ProcessArg(*it)) {
-      if (first_positional_arg)
+      if (first_positional_arg) {
         *first_positional_arg = it;
+      }
     }
   }
   return builder.Build();
@@ -214,8 +215,9 @@ inline CommandLine CommandLineFromIteratorsWithArgv0(const std::string& argv0,
                                                      InputIterator last) {
   internal::CommandLineBuilder builder;
   builder.ProcessArg(argv0);
-  for (auto it = first; it < last; ++it)
+  for (auto it = first; it < last; ++it) {
     builder.ProcessArg(*it);
+  }
   return builder.Build();
 }
 

@@ -5,14 +5,14 @@
 #ifndef FLUTTER_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
 #define FLUTTER_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
 
-#include "FlutterPlugin.h"
+#import "FlutterPlugin.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Propagates `UIAppDelegate` callbacks to registered plugins.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterPluginAppLifeCycleDelegate : NSObject
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
                                                <UNUserNotificationCenterDelegate>
@@ -56,6 +56,12 @@ FLUTTER_EXPORT
  */
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+
+/**
+ * Calls all plugins registered for `UIApplicationDelegate` callbacks.
+ */
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.

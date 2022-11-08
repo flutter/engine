@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_device.h"
+#include "vulkan_device.h"
 
 #include <limits>
 #include <map>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "flutter/vulkan/vulkan_surface.h"
-#include "flutter/vulkan/vulkan_utilities.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
+#include "vulkan_proc_table.h"
+#include "vulkan_surface.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
@@ -65,9 +65,11 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
 #endif
 #if OS_FUCHSIA
     VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-    VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME,
     VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+    VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+    VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME,
     VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+    VK_FUCHSIA_BUFFER_COLLECTION_X_EXTENSION_NAME,
 #endif
   };
 
@@ -101,11 +103,11 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
     return;
   }
 
-  device_ = {device,
-             [this](VkDevice device) { vk.DestroyDevice(device, nullptr); }};
+  device_ = VulkanHandle<VkDevice>{
+      device, [this](VkDevice device) { vk.DestroyDevice(device, nullptr); }};
 
   if (!vk.SetupDeviceProcAddresses(device_)) {
-    FML_DLOG(INFO) << "Could not setup device proc addresses.";
+    FML_DLOG(INFO) << "Could not set up device proc addresses.";
     return;
   }
 
@@ -118,7 +120,7 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
     return;
   }
 
-  queue_ = queue;
+  queue_ = VulkanHandle<VkQueue>(queue);
 
   const VkCommandPoolCreateInfo command_pool_create_info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -135,9 +137,10 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
     return;
   }
 
-  command_pool_ = {command_pool, [this](VkCommandPool pool) {
-                     vk.DestroyCommandPool(device_, pool, nullptr);
-                   }};
+  command_pool_ = VulkanHandle<VkCommandPool>{
+      command_pool, [this](VkCommandPool pool) {
+        vk.DestroyCommandPool(device_, pool, nullptr);
+      }};
 
   valid_ = true;
 }
@@ -287,9 +290,11 @@ int VulkanDevice::ChooseSurfaceFormat(const VulkanSurface& surface,
     return -1;
   }
 
-  VkSurfaceFormatKHR formats[format_count];
+  std::vector<VkSurfaceFormatKHR> formats;
+  formats.resize(format_count);
+
   if (VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceFormatsKHR(
-          physical_device_, surface.Handle(), &format_count, formats)) !=
+          physical_device_, surface.Handle(), &format_count, formats.data())) !=
       VK_SUCCESS) {
     return -1;
   }
@@ -322,7 +327,7 @@ bool VulkanDevice::ChoosePresentMode(const VulkanSurface& surface,
   // mentioned in the ticket w.r.t the application being faster that the refresh
   // rate of the screen should not be faced by any Flutter platforms as they are
   // powered by Vsync pulses instead of depending the submit to block.
-  // However, for platforms that don't have VSync providers setup, it is better
+  // However, for platforms that don't have VSync providers set up, it is better
   // to fall back to FIFO. For platforms that do have VSync providers, there
   // should be little difference. In case there is a need for a mode other than
   // FIFO, availability checks must be performed here before returning the

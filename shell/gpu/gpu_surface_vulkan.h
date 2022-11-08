@@ -7,18 +7,32 @@
 
 #include <memory>
 
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
 #include "flutter/vulkan/vulkan_native_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
+#include "include/core/SkRefCnt.h"
 
 namespace flutter {
 
 class GPUSurfaceVulkan : public Surface {
  public:
+  //------------------------------------------------------------------------------
+  /// @brief      Create a GPUSurfaceVulkan which implicitly creates its own
+  ///             GrDirectContext for Skia.
+  ///
   GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
+                   std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
+                   bool render_to_surface);
+
+  //------------------------------------------------------------------------------
+  /// @brief      Create a GPUSurfaceVulkan while letting it reuse an existing
+  ///             GrDirectContext.
+  ///
+  GPUSurfaceVulkan(const sk_sp<GrDirectContext>& context,
+                   GPUSurfaceVulkanDelegate* delegate,
                    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
                    bool render_to_surface);
 
@@ -34,18 +48,13 @@ class GPUSurfaceVulkan : public Surface {
   SkMatrix GetRootTransformation() const override;
 
   // |Surface|
-  GrContext* GetContext() override;
-
-  // |Surface|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  GrDirectContext* GetContext() override;
 
  private:
   vulkan::VulkanWindow window_;
-  GPUSurfaceVulkanDelegate* delegate_;
   const bool render_to_surface_;
 
   fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
 };
 

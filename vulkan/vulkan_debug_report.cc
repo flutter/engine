@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_debug_report.h"
+#include "vulkan_debug_report.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <vector>
 
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/vulkan/vulkan_utilities.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
@@ -191,8 +192,9 @@ VulkanDebugReport::VulkanDebugReport(
   }
 
   VkDebugReportFlagsEXT flags = kVulkanErrorFlags;
-  if (ValidationLayerInfoMessagesEnabled())
+  if (ValidationLayerInfoMessagesEnabled()) {
     flags |= kVulkanInfoFlags;
+  }
   const VkDebugReportCallbackCreateInfoEXT create_info = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
       .pNext = nullptr,
@@ -207,9 +209,10 @@ VulkanDebugReport::VulkanDebugReport(
     return;
   }
 
-  handle_ = {handle, [this](VkDebugReportCallbackEXT handle) {
-               vk.DestroyDebugReportCallbackEXT(application_, handle, nullptr);
-             }};
+  handle_ = VulkanHandle<VkDebugReportCallbackEXT>{
+      handle, [this](VkDebugReportCallbackEXT handle) {
+        vk.DestroyDebugReportCallbackEXT(application_, handle, nullptr);
+      }};
 
   valid_ = true;
 }

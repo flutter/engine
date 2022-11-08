@@ -4,7 +4,6 @@
 
 package io.flutter.plugin.platform;
 
-import static android.content.Context.INPUT_METHOD_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.view.View.OnFocusChangeListener;
 
@@ -17,7 +16,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
@@ -29,6 +27,7 @@ import android.widget.FrameLayout;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.Log;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -99,7 +98,7 @@ class SingleViewPresentation extends Presentation {
   // presentation.
   private FrameLayout container;
 
-  private PresentationState state;
+  private final PresentationState state;
 
   private boolean startFocused = false;
 

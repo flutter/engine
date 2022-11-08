@@ -8,11 +8,11 @@
 #import <UIKit/UIKit.h>
 #import <UserNotifications/UNUserNotificationCenter.h>
 
-#include "FlutterBinaryMessenger.h"
-#include "FlutterChannels.h"
-#include "FlutterCodecs.h"
-#include "FlutterPlatformViews.h"
-#include "FlutterTexture.h"
+#import "FlutterBinaryMessenger.h"
+#import "FlutterChannels.h"
+#import "FlutterCodecs.h"
+#import "FlutterPlatformViews.h"
+#import "FlutterTexture.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterPluginRegistrar;
@@ -82,6 +82,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+
+/**
+ * Called if this has been registered for `UIApplicationDelegate` callbacks.
+ */
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
@@ -415,7 +421,7 @@ typedef enum {
  *   nothing has been published. Will be `nil` if the plugin has not been
  *   registered.
  */
-- (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey;
+- (nullable NSObject*)valuePublishedByPlugin:(NSString*)pluginKey;
 @end
 
 #pragma mark -
@@ -439,6 +445,6 @@ typedef enum {
 - (void)addApplicationLifeCycleDelegate:(NSObject<FlutterApplicationLifeCycleDelegate>*)delegate;
 @end
 
-NS_ASSUME_NONNULL_END;
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERPLUGIN_H_

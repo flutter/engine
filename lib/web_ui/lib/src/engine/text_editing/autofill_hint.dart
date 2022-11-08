@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
-
 /// Maps AutofillHints from the framework to the autofill hints that is used for
 /// browsers.
 /// See: https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/autofill.dart
@@ -19,7 +16,7 @@ class BrowserAutofillHints {
   final Map<String, String> _flutterToEngineMap;
 
   BrowserAutofillHints._()
-      : _flutterToEngineMap = {
+      : _flutterToEngineMap = <String, String>{
           'birthday': 'bday',
           'birthdayDay': 'bday-day',
           'birthdayMonth': 'bday-month',

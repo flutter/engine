@@ -13,7 +13,7 @@ namespace {
 
 class Box {
  public:
-  Box(int value, std::atomic_int* destroys = nullptr)
+  explicit Box(int value, std::atomic_int* destroys = nullptr)
       : value_(value), destroys_(destroys) {}
   ~Box() {
     if (destroys_) {

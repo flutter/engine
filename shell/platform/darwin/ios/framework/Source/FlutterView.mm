@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -12,9 +12,9 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 @implementation FlutterView {
@@ -22,25 +22,27 @@
 }
 
 - (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
-                                 reason:nil
-                               userInfo:nil]);
+  NSAssert(NO, @"FlutterView must initWithDelegate");
+  return nil;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
-                                 reason:nil
-                               userInfo:nil]);
+  NSAssert(NO, @"FlutterView must initWithDelegate");
+  return nil;
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
-                                 reason:nil
-                               userInfo:nil]);
+  NSAssert(NO, @"FlutterView must initWithDelegate");
+  return nil;
 }
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
-  FML_DCHECK(delegate) << "Delegate must not be nil.";
+  if (delegate == nil) {
+    NSLog(@"FlutterView delegate was nil.");
+    [self release];
+    return nil;
+  }
+
   self = [super initWithFrame:CGRectNull];
 
   if (self) {
@@ -63,17 +65,19 @@
   [super layoutSubviews];
 }
 
-+ (Class)layerClass {
-  return flutter::GetCoreAnimationLayerClassForRenderingAPI();
+static BOOL _forceSoftwareRendering;
+
++ (BOOL)forceSoftwareRendering {
+  return _forceSoftwareRendering;
 }
 
-- (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSContext>)ios_context {
-  return flutter::IOSSurface::Create(
-      std::move(ios_context),                              // context
-      fml::scoped_nsobject<CALayer>{[self.layer retain]},  // layer
-      [_delegate platformViewsController]                  // platform views controller
-  );
++ (void)setForceSoftwareRendering:(BOOL)forceSoftwareRendering {
+  _forceSoftwareRendering = forceSoftwareRendering;
+}
+
++ (Class)layerClass {
+  return flutter::GetCoreAnimationLayerClassForRenderingAPI(
+      flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering));
 }
 
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {
@@ -121,6 +125,19 @@
   CGContextScaleCTM(context, 1.0, -1.0);
   CGContextDrawImage(context, frame_rect, image);
   CGContextRestoreGState(context);
+}
+
+- (BOOL)isAccessibilityElement {
+  // iOS does not provide an API to query whether the voice control
+  // is turned on or off. It is likely at least one of the assitive
+  // technologies is turned on if this method is called. If we do
+  // not catch it in notification center, we will catch it here.
+  //
+  // TODO(chunhtai): Remove this workaround once iOS provides an
+  // API to query whether voice control is enabled.
+  // https://github.com/flutter/flutter/issues/76808.
+  [_delegate flutterViewAccessibilityDidCall];
+  return NO;
 }
 
 @end

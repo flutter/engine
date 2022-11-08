@@ -7,6 +7,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
 
+#include <string>
 #include <vector>
 
 /**
@@ -26,12 +27,13 @@
 
 /**
  * The command line arguments array for the engine.
- *
- * WARNING: The pointers in this array are valid only until the next call to set `engineSwitches`.
- * The returned vector should be used immediately, then discarded. It is returned this way for
- * ease of use with FlutterProjectArgs.
  */
-@property(nonatomic, readonly) std::vector<const char*> argv;
+@property(nonatomic, readonly) std::vector<std::string> switches;
+
+/**
+ * The callback invoked by the engine in root isolate scope.
+ */
+@property(nonatomic, nullable) void (*rootIsolateCreateCallback)(void* _Nullable);
 
 /**
  * Instead of looking up the assets and ICU data path in the application bundle, this initializer

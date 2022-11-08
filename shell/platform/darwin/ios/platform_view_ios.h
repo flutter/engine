@@ -12,14 +12,15 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
+#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 @class FlutterViewController;
 
@@ -31,7 +32,7 @@ namespace flutter {
  * The shell provides and requests for UI related data and this PlatformView subclass fulfills
  * it with iOS specific capabilities. As an example, the iOS embedding (the `FlutterEngine` and the
  * `FlutterViewController`) sends pointer data to the shell and receives the shell's request for a
- * Skia GrContext and supplies it.
+ * Skia GrDirectContext and supplies it.
  *
  * Despite the name "view", this class is unrelated to UIViews on iOS and doesn't have the same
  * lifecycle. It's a long lived bridge owned by the `FlutterEngine` and can be attached and
@@ -39,17 +40,18 @@ namespace flutter {
  */
 class PlatformViewIOS final : public PlatformView {
  public:
-  explicit PlatformViewIOS(PlatformView::Delegate& delegate,
-                           IOSRenderingAPI rendering_api,
-                           flutter::TaskRunners task_runners);
+  PlatformViewIOS(PlatformView::Delegate& delegate,
+                  const std::shared_ptr<IOSContext>& context,
+                  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+                  flutter::TaskRunners task_runners);
+
+  explicit PlatformViewIOS(
+      PlatformView::Delegate& delegate,
+      IOSRenderingAPI rendering_api,
+      const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+      flutter::TaskRunners task_runners);
 
   ~PlatformViewIOS() override;
-
-  /**
-   * The `PlatformMessageRouter` is the iOS bridge connecting the shell's
-   * platform agnostic `PlatformMessage` to iOS's channel message handler.
-   */
-  PlatformMessageRouter& GetPlatformMessageRouter();
 
   /**
    * Returns the `FlutterViewController` currently attached to the `FlutterEngine` owning
@@ -85,9 +87,20 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
+  /** Accessor for the `IOSContext` associated with the platform view. */
+  const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }
+
+  std::shared_ptr<PlatformMessageHandlerIos> GetPlatformMessageHandlerIos() const {
+    return platform_message_handler_;
+  }
+
+  std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler() const override {
+    return platform_message_handler_;
+  }
+
  private:
   /// Smart pointer for use with objective-c observers.
-  /// This guarentees we remove the observer.
+  /// This guarantees we remove the observer.
   class ScopedObserver {
    public:
     ScopedObserver();
@@ -100,11 +113,11 @@ class PlatformViewIOS final : public PlatformView {
     id<NSObject> observer_;
   };
 
-  /// Smart pointer that guarentees we communicate clearing Accessibility
+  /// Smart pointer that guarantees we communicate clearing Accessibility
   /// information to Dart.
   class AccessibilityBridgePtr {
    public:
-    AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled);
+    explicit AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled);
     AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled,
                            AccessibilityBridge* bridge);
     ~AccessibilityBridgePtr();
@@ -124,20 +137,25 @@ class PlatformViewIOS final : public PlatformView {
   std::mutex ios_surface_mutex_;
   std::unique_ptr<IOSSurface> ios_surface_;
   std::shared_ptr<IOSContext> ios_context_;
-  PlatformMessageRouter platform_message_router_;
+  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
   AccessibilityBridgePtr accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
   ScopedObserver dealloc_view_controller_observer_;
+  std::vector<std::string> platform_resolved_locale_;
+  std::shared_ptr<PlatformMessageHandlerIos> platform_message_handler_;
 
   // |PlatformView|
-  void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) override;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
+
+  // |PlatformView|
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |PlatformView|
   void SetAccessibilityFeatures(int32_t flags) override;
@@ -151,6 +169,10 @@ class PlatformViewIOS final : public PlatformView {
 
   // |PlatformView|
   void OnPreEngineRestart() const override;
+
+  // |PlatformView|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
+      const std::vector<std::string>& supported_locale_data) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };

@@ -2,22 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:html' as html;
+
+import '../browser_detection.dart';
 
 /// Various types of inputs used in text fields.
 ///
 /// These types are coming from Flutter's [TextInputType]. Currently, we don't
 /// support all the types. We fallback to [EngineInputType.text] when Flutter
 /// sends a type that isn't supported.
-// TODO(flutter_web): Support more types.
+// TODO(mdebbar): Support more types.
 abstract class EngineInputType {
   const EngineInputType();
 
-  static EngineInputType fromName(String name) {
+  static EngineInputType fromName(String name, {bool isDecimal = false}) {
     switch (name) {
       case 'TextInputType.number':
-        return number;
+        return isDecimal ? decimal : number;
       case 'TextInputType.phone':
         return phone;
       case 'TextInputType.emailAddress':
@@ -26,17 +27,25 @@ abstract class EngineInputType {
         return url;
       case 'TextInputType.multiline':
         return multiline;
+      case 'TextInputType.none':
+        return none;
       case 'TextInputType.text':
       default:
         return text;
     }
   }
 
+  /// No text input.
+  static const NoTextInputType none = NoTextInputType();
+
   /// Single-line text input type.
   static const TextInputType text = TextInputType();
 
   /// Numeric input type.
   static const NumberInputType number = NumberInputType();
+
+  /// Decimal input type.
+  static const DecimalInputType decimal = DecimalInputType();
 
   /// Phone number input type.
   static const PhoneInputType phone = PhoneInputType();
@@ -57,7 +66,7 @@ abstract class EngineInputType {
   ///
   /// For various `inputmode` values supported by browsers, see:
   /// <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode>.
-  String get inputmodeAttribute;
+  String? get inputmodeAttribute;
 
   /// Whether this input type allows the "Enter" key to submit the input action.
   bool get submitActionOnEnter => true;
@@ -74,10 +83,19 @@ abstract class EngineInputType {
     // Only apply `inputmode` in mobile browsers so that the right virtual
     // keyboard shows up.
     if (operatingSystem == OperatingSystem.iOs ||
-        operatingSystem == OperatingSystem.android) {
-      domElement.setAttribute('inputmode', inputmodeAttribute);
+        operatingSystem == OperatingSystem.android ||
+        inputmodeAttribute == EngineInputType.none.inputmodeAttribute) {
+      domElement.setAttribute('inputmode', inputmodeAttribute!);
     }
   }
+}
+
+/// No text input.
+class NoTextInputType extends EngineInputType {
+  const NoTextInputType();
+
+  @override
+  String get inputmodeAttribute => 'none';
 }
 
 /// Single-line text input type.
@@ -85,15 +103,28 @@ class TextInputType extends EngineInputType {
   const TextInputType();
 
   @override
-  final String inputmodeAttribute = 'text';
+  String get inputmodeAttribute => 'text';
 }
 
 /// Numeric input type.
+///
+/// Input keyboard with only the digits 0–9.
 class NumberInputType extends EngineInputType {
   const NumberInputType();
 
   @override
-  final String inputmodeAttribute = 'numeric';
+  String get inputmodeAttribute => 'numeric';
+}
+
+/// Decimal input type.
+///
+/// Input keyboard with containing the digits 0–9 and a decimal separator.
+/// Separator can be `.`, `,` depending on the locale.
+class DecimalInputType extends EngineInputType {
+  const DecimalInputType();
+
+  @override
+  String get inputmodeAttribute => 'decimal';
 }
 
 /// Phone number input type.
@@ -101,7 +132,7 @@ class PhoneInputType extends EngineInputType {
   const PhoneInputType();
 
   @override
-  final String inputmodeAttribute = 'tel';
+  String get inputmodeAttribute => 'tel';
 }
 
 /// Email address input type.
@@ -109,7 +140,7 @@ class EmailInputType extends EngineInputType {
   const EmailInputType();
 
   @override
-  final String inputmodeAttribute = 'email';
+  String get inputmodeAttribute => 'email';
 }
 
 /// URL input type.
@@ -117,7 +148,7 @@ class UrlInputType extends EngineInputType {
   const UrlInputType();
 
   @override
-  final String inputmodeAttribute = 'url';
+  String get inputmodeAttribute => 'url';
 }
 
 /// Multi-line text input type.
@@ -125,7 +156,7 @@ class MultilineInputType extends EngineInputType {
   const MultilineInputType();
 
   @override
-  final String inputmodeAttribute = null;
+  String? get inputmodeAttribute => null;
 
   @override
   bool get submitActionOnEnter => false;

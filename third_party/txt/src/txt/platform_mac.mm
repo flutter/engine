@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <TargetConditionals.h>
+
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "txt/platform.h"
 
@@ -24,7 +25,7 @@ std::vector<std::string> GetDefaultFontFamilies() {
   }
 }
 
-sk_sp<SkFontMgr> GetDefaultFontManager() {
+sk_sp<SkFontMgr> GetDefaultFontManager(uint32_t font_initialization_data) {
   return SkFontMgr::RefDefault();
 }
 

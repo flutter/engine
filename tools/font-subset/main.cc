@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <hb-subset.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -13,7 +14,7 @@
 #include "hb_wrappers.h"
 
 hb_codepoint_t ParseCodepoint(const std::string& arg) {
-  unsigned long value = 0;
+  uint64_t value = 0;
   // Check for \u123, u123, otherwise let strtoul work it out.
   if (arg[0] == 'u') {
     value = strtoul(arg.c_str() + 1, nullptr, 16);
@@ -39,8 +40,8 @@ void Usage() {
                "and the subsetting operation succeeds."
             << std::endl;
   std::cout << "Codepoints should be specified on stdin, separated by spaces, "
-               "and must be input as decimal numbers (123), hexidecimal "
-               "numbers (0x7B), or unicode hexidecimal characters (\\u7B)."
+               "and must be input as decimal numbers (123), hexadecimal "
+               "numbers (0x7B), or unicode hexadecimal characters (\\u7B)."
             << std::endl;
   std::cout << "Input terminates with a newline." << std::endl;
   std::cout
@@ -48,6 +49,27 @@ void Usage() {
          "specified multiple times, e.g. '123 123' will be treated as '123'."
       << std::endl;
 }
+
+template <typename...>
+using void_t = void;
+template <typename T, typename = void>
+struct HarfBuzzSubset {
+  // This is the HarfBuzz 3.0 interface.
+  static HarfbuzzWrappers::HbFacePtr Make(hb_face_t* face, T input) {
+    // The prior version of harfbuzz automatically dropped layout tables,
+    // but in the new version they are kept by default. So re-add them to the
+    // drop list to retain the same behaviour.
+
+    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+               HB_TAG('G', 'S', 'U', 'B'));
+    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+               HB_TAG('G', 'P', 'O', 'S'));
+    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+               HB_TAG('G', 'D', 'E', 'F'));
+
+    return HarfbuzzWrappers::HbFacePtr(hb_subset_or_fail(face, input));
+  }
+};
 
 int main(int argc, char** argv) {
   if (argc != 3) {
@@ -63,14 +85,18 @@ int main(int argc, char** argv) {
       hb_blob_create_from_file(input_file_path.c_str()));
   if (!hb_blob_get_length(font_blob.get())) {
     std::cerr << "Failed to load input font " << input_file_path
-              << "; aborting." << std::endl;
+              << "; aborting. This error indicates that the font is invalid or "
+                 "the current version of Harfbuzz is unable to process it."
+              << std::endl;
     return -1;
   }
 
   HarfbuzzWrappers::HbFacePtr font_face(hb_face_create(font_blob.get(), 0));
   if (font_face.get() == hb_face_get_empty()) {
     std::cerr << "Failed to load input font face " << input_file_path
-              << "; aborting." << std::endl;
+              << "; aborting. This error indicates that the font is invalid or "
+                 "the current version of Harfbuzz is unable to process it."
+              << std::endl;
     return -1;
   }
 
@@ -100,16 +126,22 @@ int main(int argc, char** argv) {
     }
   }
 
-  HarfbuzzWrappers::HbFacePtr new_face(hb_subset(font_face.get(), input.get()));
+  HarfbuzzWrappers::HbFacePtr new_face =
+      HarfBuzzSubset<hb_subset_input_t*>::Make(font_face.get(), input.get());
 
-  if (new_face.get() == hb_face_get_empty()) {
-    std::cerr << "Failed to subset font; aborting." << std::endl;
+  if (!new_face || new_face.get() == hb_face_get_empty()) {
+    std::cerr
+        << "Failed to subset font; aborting. This error normally indicates "
+           "the current version of Harfbuzz is unable to process it."
+        << std::endl;
     return -1;
   }
 
   HarfbuzzWrappers::HbBlobPtr result(hb_face_reference_blob(new_face.get()));
   if (!hb_blob_get_length(result.get())) {
-    std::cerr << "Failed get new font bytes; aborting" << std::endl;
+    std::cerr << "Failed get new font bytes; aborting. This error may indicate "
+                 "low availability of memory or a bug in Harfbuzz."
+              << std::endl;
     return -1;
   }
 

@@ -21,6 +21,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+
 #include "flutter/fml/macros.h"
 #include "minikin/FontCollection.h"
 #include "minikin/FontFamily.h"
@@ -44,7 +45,7 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
   size_t GetFontManagersCount() const;
 
-  void SetupDefaultFontManager();
+  void SetupDefaultFontManager(uint32_t font_initialization_data);
   void SetDefaultFontManager(sk_sp<SkFontMgr> font_manager);
   void SetAssetFontManager(sk_sp<SkFontMgr> font_manager);
   void SetDynamicFontManager(sk_sp<SkFontMgr> font_manager);
@@ -126,6 +127,11 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   std::shared_ptr<minikin::FontFamily> CreateMinikinFontFamily(
       const sk_sp<SkFontMgr>& manager,
       const std::string& family_name);
+
+  // Sorts in-place a group of SkTypeface from an SkTypefaceSet into a
+  // reasonable order for future queries.
+  FRIEND_TEST(FontCollectionTest, CheckSkTypefacesSorting);
+  static void SortSkTypefaces(std::vector<sk_sp<SkTypeface>>& sk_typefaces);
 
   const std::shared_ptr<minikin::FontFamily>& GetFallbackFontFamily(
       const sk_sp<SkFontMgr>& manager,

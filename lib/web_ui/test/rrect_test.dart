@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
 import 'package:ui/ui.dart';
 
-import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
-
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   test('RRect.contains()', () {
     final RRect rrect = RRect.fromRectAndCorners(
         const Rect.fromLTRB(1.0, 1.0, 2.0, 2.0),

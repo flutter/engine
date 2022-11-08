@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/painting/picture_recorder.h"
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -20,9 +21,7 @@ static void PictureRecorder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, PictureRecorder);
 
-#define FOR_EACH_BINDING(V)       \
-  V(PictureRecorder, isRecording) \
-  V(PictureRecorder, endRecording)
+#define FOR_EACH_BINDING(V) V(PictureRecorder, endRecording)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -40,26 +39,35 @@ PictureRecorder::PictureRecorder() {}
 
 PictureRecorder::~PictureRecorder() {}
 
-bool PictureRecorder::isRecording() {
-  return canvas_ && canvas_->IsRecording();
-}
-
 SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
-  return picture_recorder_.beginRecording(bounds, &rtree_factory_);
+  bool enable_display_list = UIDartState::Current()->enable_display_list();
+  if (enable_display_list) {
+    display_list_recorder_ = sk_make_sp<DisplayListCanvasRecorder>(bounds);
+    return display_list_recorder_.get();
+  } else {
+    return picture_recorder_.beginRecording(bounds, &rtree_factory_);
+  }
 }
 
 fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
-  if (!isRecording())
+  if (!canvas_) {
     return nullptr;
+  }
 
-  fml::RefPtr<Picture> picture =
-      Picture::Create(dart_picture,
-                      UIDartState::CreateGPUObject(
-                          picture_recorder_.finishRecordingAsPicture()),
-                      canvas_->external_allocation_size());
+  fml::RefPtr<Picture> picture;
 
-  canvas_->Clear();
-  canvas_->ClearDartWrapper();
+  if (display_list_recorder_) {
+    picture = Picture::Create(
+        dart_picture,
+        UIDartState::CreateGPUObject(display_list_recorder_->Build()));
+    display_list_recorder_ = nullptr;
+  } else {
+    picture = Picture::Create(
+        dart_picture, UIDartState::CreateGPUObject(
+                          picture_recorder_.finishRecordingAsPicture()));
+  }
+
+  canvas_->Invalidate();
   canvas_ = nullptr;
   ClearDartWrapper();
   return picture;

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -28,6 +27,25 @@ final ArgParser argParser = ArgParser()
     help: 'Dry mode does not write anything to disk. '
         'The output is printed to the console.',
   );
+
+/// A map of properties that could safely be normalized into other properties.
+///
+/// For example, a NL behaves exactly the same as BK so it gets normalized to BK
+/// in the generated code.
+const Map<String, String> normalizationTable = <String, String>{
+  // NL behaves exactly the same as BK.
+  // See: https://www.unicode.org/reports/tr14/tr14-45.html#NL
+  'NL': 'BK',
+  // In the absence of extra data (ICU data and language dictionaries), the
+  // following properties will be treated as AL (alphabetic): AI, SA, SG and XX.
+  // See LB1: https://www.unicode.org/reports/tr14/tr14-45.html#LB1
+  'AI': 'AL',
+  'SA': 'AL',
+  'SG': 'AL',
+  'XX': 'AL',
+  // https://unicode.org/reports/tr14/tr14-45.html#CJ
+  'CJ': 'NS',
+};
 
 /// A tuple that holds a [start] and [end] of a unicode range and a [property].
 class UnicodeRange {
@@ -98,20 +116,20 @@ final String lineBreakCodegen =
 /// (2) The codegen'd Dart files is located at:
 ///     lib/src/engine/text/word_break_properties.dart
 ///     lib/src/engine/text/line_break_properties.dart
-void main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
   final ArgResults result = argParser.parse(arguments);
   final PropertiesSyncer syncer = getSyncer(
-    result['words'],
-    result['lines'],
-    result['dry'],
+    result['words'] as String?,
+    result['lines'] as String?,
+    result['dry'] as bool,
   );
 
   syncer.perform();
 }
 
 PropertiesSyncer getSyncer(
-  String wordBreakProperties,
-  String lineBreakProperties,
+  String? wordBreakProperties,
+  String? lineBreakProperties,
   bool dry,
 ) {
   if (wordBreakProperties == null && lineBreakProperties == null) {
@@ -129,11 +147,11 @@ PropertiesSyncer getSyncer(
   if (wordBreakProperties != null) {
     return dry
         ? WordBreakPropertiesSyncer.dry(wordBreakProperties)
-        : WordBreakPropertiesSyncer(wordBreakProperties, '$wordBreakCodegen');
+        : WordBreakPropertiesSyncer(wordBreakProperties, wordBreakCodegen);
   } else {
     return dry
-        ? LineBreakPropertiesSyncer.dry(lineBreakProperties)
-        : LineBreakPropertiesSyncer(lineBreakProperties, '$lineBreakCodegen');
+        ? LineBreakPropertiesSyncer.dry(lineBreakProperties!)
+        : LineBreakPropertiesSyncer(lineBreakProperties!, lineBreakCodegen);
   }
 }
 
@@ -149,23 +167,28 @@ abstract class PropertiesSyncer {
         _dryRun = true;
 
   final String _src;
-  final String _dest;
+  final String? _dest;
   final bool _dryRun;
 
   String get prefix;
   String get enumDocLink;
 
-  void perform() async {
+  /// The default property to be used when a certain code point doesn't belong
+  /// to any known range.
+  String get defaultProperty;
+
+  Future<void> perform() async {
     final List<String> lines = await File(_src).readAsLines();
     final List<String> header = extractHeader(lines);
-    final PropertyCollection data = PropertyCollection.fromLines(lines);
+    final PropertyCollection data =
+        PropertyCollection.fromLines(lines, defaultProperty);
 
     final String output = template(header, data);
 
     if (_dryRun) {
       print(output);
     } else {
-      final IOSink sink = File(_dest).openWrite();
+      final IOSink sink = File(_dest!).openWrite();
       sink.write(output);
     }
   }
@@ -182,12 +205,11 @@ abstract class PropertiesSyncer {
 // Source:
 // ${header.join('\n// ')}
 
-// @dart = 2.6
-part of engine;
+import 'unicode_range.dart';
 
 /// For an explanation of these enum values, see:
 ///
-/// * ${enumDocLink}
+/// * $enumDocLink
 enum ${prefix}CharProperty {
   ${_getEnumValues(data.enumCollection).join('\n  ')}
 }
@@ -201,14 +223,18 @@ UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
   _packed${prefix}BreakProperties,
   ${_getSingleRangesCount(data)},
   ${prefix}CharProperty.values,
+  ${prefix}CharProperty.$defaultProperty,
 );
 ''';
   }
 
   Iterable<String> _getEnumValues(EnumCollection enumCollection) {
-    return enumCollection.values.map(
-      (EnumValue value) =>
-          '${value.enumName}, // serialized as "${value.serialized}"',
+    return enumCollection.values.expand(
+      (EnumValue value) => <String>[
+        if (value.normalizedFrom.isNotEmpty)
+          '// Normalized from: ${value.normalizedFrom.join(', ')}',
+        '${value.enumName}, // serialized as "${value.serialized}"',
+      ],
     );
   }
 
@@ -242,9 +268,15 @@ class WordBreakPropertiesSyncer extends PropertiesSyncer {
   WordBreakPropertiesSyncer(String src, String dest) : super(src, dest);
   WordBreakPropertiesSyncer.dry(String src) : super.dry(src);
 
+  @override
   final String prefix = 'Word';
+
+  @override
   final String enumDocLink =
       'http://unicode.org/reports/tr29/#Table_Word_Break_Property_Values';
+
+  @override
+  final String defaultProperty = 'Unknown';
 }
 
 /// Syncs Unicode's line break properties.
@@ -252,23 +284,37 @@ class LineBreakPropertiesSyncer extends PropertiesSyncer {
   LineBreakPropertiesSyncer(String src, String dest) : super(src, dest);
   LineBreakPropertiesSyncer.dry(String src) : super.dry(src);
 
+  @override
   final String prefix = 'Line';
+
+  @override
   final String enumDocLink =
-      'https://unicode.org/reports/tr14/#DescriptionOfProperties';
+      'https://www.unicode.org/reports/tr14/tr14-45.html#DescriptionOfProperties';
+
+  @override
+  final String defaultProperty = 'AL';
 }
 
 /// Holds the collection of properties parsed from the unicode spec file.
 class PropertyCollection {
-  PropertyCollection.fromLines(List<String> lines) {
+  PropertyCollection.fromLines(List<String> lines, String defaultProperty) {
     final List<UnicodeRange> unprocessedRanges = lines
         .map(removeCommentFromLine)
         .where((String line) => line.isNotEmpty)
         .map(parseLineIntoUnicodeRange)
         .toList();
-    ranges = processRanges(unprocessedRanges);
+    // Insert the default property if it doesn't exist.
+    final EnumValue? found = enumCollection.values.cast<EnumValue?>().firstWhere(
+      (EnumValue? property) => property!.name == defaultProperty,
+      orElse: () => null,
+    );
+    if (found == null) {
+      enumCollection.add(defaultProperty);
+    }
+    ranges = processRanges(unprocessedRanges, defaultProperty).toList();
   }
 
-  List<UnicodeRange> ranges;
+  late List<UnicodeRange> ranges;
 
   final EnumCollection enumCollection = EnumCollection();
 
@@ -288,10 +334,14 @@ class PropertyCollection {
     final String rangeStr = split[0].trim();
     final String propertyStr = split[1].trim();
 
+    final EnumValue property = normalizationTable.containsKey(propertyStr)
+        ? enumCollection.add(normalizationTable[propertyStr]!, propertyStr)
+        : enumCollection.add(propertyStr);
+
     return UnicodeRange(
       getRangeStart(rangeStr),
       getRangeEnd(rangeStr),
-      enumCollection.add(propertyStr),
+      property,
     );
   }
 }
@@ -300,7 +350,7 @@ class PropertyCollection {
 class EnumCollection {
   final List<EnumValue> values = <EnumValue>[];
 
-  EnumValue add(String name) {
+  EnumValue add(String name, [String? normalizedFrom]) {
     final int index =
         values.indexWhere((EnumValue value) => value.name == name);
     EnumValue value;
@@ -309,6 +359,10 @@ class EnumCollection {
       values.add(value);
     } else {
       value = values[index];
+    }
+
+    if (normalizedFrom != null) {
+      value.normalizedFrom.add(normalizedFrom);
     }
     return value;
   }
@@ -320,6 +374,9 @@ class EnumValue {
 
   final int index;
   final String name;
+
+  /// The properties that were normalized to this value.
+  final Set<String> normalizedFrom = <String>{};
 
   /// Returns a serialized, compact format of the enum value.
   ///
@@ -351,7 +408,10 @@ class EnumValue {
 
 /// Sorts ranges and combines adjacent ranges that have the same property and
 /// can be merged.
-Iterable<UnicodeRange> processRanges(List<UnicodeRange> data) {
+Iterable<UnicodeRange> processRanges(
+  List<UnicodeRange> data,
+  String defaultProperty,
+) {
   data.sort(
     // Ranges don't overlap so it's safe to sort based on the start of each
     // range.
@@ -359,7 +419,7 @@ Iterable<UnicodeRange> processRanges(List<UnicodeRange> data) {
         range1.start.compareTo(range2.start),
   );
   verifyNoOverlappingRanges(data);
-  return combineAdjacentRanges(data);
+  return combineAdjacentRanges(data, defaultProperty);
 }
 
 /// Example:
@@ -375,13 +435,24 @@ Iterable<UnicodeRange> processRanges(List<UnicodeRange> data) {
 /// ```
 /// 0x01C4..0x02AF; ALetter
 /// ```
-List<UnicodeRange> combineAdjacentRanges(List<UnicodeRange> data) {
+List<UnicodeRange> combineAdjacentRanges(
+  List<UnicodeRange> data,
+  String defaultProperty,
+) {
   final List<UnicodeRange> result = <UnicodeRange>[data.first];
   for (int i = 1; i < data.length; i++) {
-    if (result.last.isAdjacent(data[i])) {
-      result.last = result.last.extendRange(data[i]);
+    final UnicodeRange prev = result.last;
+    final UnicodeRange next = data[i];
+    if (prev.isAdjacent(next)) {
+      result.last = prev.extendRange(next);
+    } else if (prev.property == next.property &&
+        prev.property.name == defaultProperty) {
+      // When there's a gap between two ranges, but they both have the default
+      // property, it's safe to combine them.
+      result.last = prev.extendRange(next);
     } else {
-      result.add(data[i]);
+      // Check if there's a gap between the previous range and this range.
+      result.add(next);
     }
   }
   return result;
@@ -408,7 +479,7 @@ void verifyNoOverlappingRanges(List<UnicodeRange> data) {
 
 List<String> extractHeader(List<String> lines) {
   final List<String> headerLines = <String>[];
-  for (String line in lines) {
+  for (final String line in lines) {
     if (line.trim() == '#' || line.trim().isEmpty) {
       break;
     }

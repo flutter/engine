@@ -1,18 +1,23 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.editing.TextEditingDelta;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,7 +44,8 @@ public class TextInputChannel {
   @NonNull public final MethodChannel channel;
   @Nullable private TextInputMethodHandler textInputMethodHandler;
 
-  private final MethodChannel.MethodCallHandler parsingMethodHandler =
+  @NonNull @VisibleForTesting
+  final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
@@ -80,8 +86,16 @@ public class TextInputChannel {
               result.success(null);
               break;
             case "TextInput.setPlatformViewClient":
-              final int id = (int) args;
-              textInputMethodHandler.setPlatformViewClient(id);
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int platformViewId = arguments.getInt("platformViewId");
+                final boolean usesVirtualDisplay =
+                    arguments.optBoolean("usesVirtualDisplay", false);
+                textInputMethodHandler.setPlatformViewClient(platformViewId, usesVirtualDisplay);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               break;
             case "TextInput.setEditingState":
               try {
@@ -104,12 +118,33 @@ public class TextInputChannel {
                 }
 
                 textInputMethodHandler.setEditableSizeAndTransform(width, height, matrix);
+                result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }
               break;
             case "TextInput.clearClient":
               textInputMethodHandler.clearClient();
+              result.success(null);
+              break;
+            case "TextInput.sendAppPrivateCommand":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final String action = arguments.getString("action");
+                final String data = arguments.getString("data");
+                Bundle bundle = null;
+                if (data != null && !data.isEmpty()) {
+                  bundle = new Bundle();
+                  bundle.putString("data", data);
+                }
+                textInputMethodHandler.sendAppPrivateCommand(action, bundle);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              break;
+            case "TextInput.finishAutofillContext":
+              textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
               break;
             default:
@@ -135,8 +170,9 @@ public class TextInputChannel {
   /**
    * Instructs Flutter to reattach the last active text input client, if any.
    *
-   * <p>This is necessary when the view heirarchy has been detached and reattached to a {@link
-   * FlutterEngine}, as the engine may have kept alive a text editing client on the Dart side.
+   * <p>This is necessary when the view hierarchy has been detached and reattached to a {@link
+   * io.flutter.embedding.engine.FlutterEngine}, as the engine may have kept alive a text editing
+   * client on the Dart side.
    */
   public void requestExistingInputState() {
     channel.invokeMethod("TextInputClient.requestExistingInputState", null);
@@ -150,6 +186,18 @@ public class TextInputChannel {
     state.put("selectionExtent", selectionEnd);
     state.put("composingBase", composingStart);
     state.put("composingExtent", composingEnd);
+    return state;
+  }
+
+  private static HashMap<Object, Object> createEditingDeltaJSON(
+      ArrayList<TextEditingDelta> batchDeltas) {
+    HashMap<Object, Object> state = new HashMap<>();
+
+    JSONArray deltas = new JSONArray();
+    for (TextEditingDelta delta : batchDeltas) {
+      deltas.put(delta.toJSON());
+    }
+    state.put("deltas", deltas);
     return state;
   }
   /**
@@ -184,6 +232,21 @@ public class TextInputChannel {
         createEditingStateJSON(text, selectionStart, selectionEnd, composingStart, composingEnd);
 
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
+  }
+
+  public void updateEditingStateWithDeltas(
+      int inputClientId, ArrayList<TextEditingDelta> batchDeltas) {
+
+    Log.v(
+        TAG,
+        "Sending message to update editing state with deltas: \n"
+            + "Number of deltas: "
+            + batchDeltas.size());
+
+    final HashMap<Object, Object> state = createEditingDeltaJSON(batchDeltas);
+
+    channel.invokeMethod(
+        "TextInputClient.updateEditingStateWithDeltas", Arrays.asList(inputClientId, state));
   }
 
   public void updateEditingStateWithTag(
@@ -262,6 +325,38 @@ public class TextInputChannel {
         Arrays.asList(inputClientId, "TextInputAction.unspecified"));
   }
 
+  public void performPrivateCommand(int inputClientId, String action, Bundle data) {
+    HashMap<Object, Object> json = new HashMap<>();
+    json.put("action", action);
+    if (data != null) {
+      HashMap<String, Object> dataMap = new HashMap<>();
+      Set<String> keySet = data.keySet();
+      for (String key : keySet) {
+        Object value = data.get(key);
+        if (value instanceof byte[]) {
+          dataMap.put(key, data.getByteArray(key));
+        } else if (value instanceof Byte) {
+          dataMap.put(key, data.getByte(key));
+        } else if (value instanceof char[]) {
+          dataMap.put(key, data.getCharArray(key));
+        } else if (value instanceof Character) {
+          dataMap.put(key, data.getChar(key));
+        } else if (value instanceof CharSequence[]) {
+          dataMap.put(key, data.getCharSequenceArray(key));
+        } else if (value instanceof CharSequence) {
+          dataMap.put(key, data.getCharSequence(key));
+        } else if (value instanceof float[]) {
+          dataMap.put(key, data.getFloatArray(key));
+        } else if (value instanceof Float) {
+          dataMap.put(key, data.getFloat(key));
+        }
+      }
+      json.put("data", dataMap);
+    }
+    channel.invokeMethod(
+        "TextInputClient.performPrivateCommand", Arrays.asList(inputClientId, json));
+  }
+
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests that are parsed
    * from the underlying platform channel.
@@ -284,6 +379,19 @@ public class TextInputChannel {
      */
     void requestAutofill();
 
+    /**
+     * Requests that the {@link android.view.autofill.AutofillManager} cancel or commit the current
+     * autofill context.
+     *
+     * <p>The method calls {@link android.view.autofill.AutofillManager#commit()} when {@code
+     * shouldSave} is true, and calls {@link android.view.autofill.AutofillManager#cancel()}
+     * otherwise.
+     *
+     * @param shouldSave whether the active autofill service should save the current user input for
+     *     future use.
+     */
+    void finishAutofillContext(boolean shouldSave);
+
     // TODO(mattcarroll): javadoc
     void setClient(int textInputClientId, @NonNull Configuration configuration);
 
@@ -294,8 +402,10 @@ public class TextInputChannel {
      * different client is set.
      *
      * @param id the ID of the platform view to be set as a text input client.
+     * @param usesVirtualDisplay True if the platform view uses a virtual display, false if it uses
+     *     hybrid composition.
      */
-    void setPlatformViewClient(int id);
+    void setPlatformViewClient(int id, boolean usesVirtualDisplay);
 
     /**
      * Sets the size and the transform matrix of the current text input client.
@@ -312,6 +422,17 @@ public class TextInputChannel {
 
     // TODO(mattcarroll): javadoc
     void clearClient();
+
+    /**
+     * Sends client app private command to the current text input client(input method). The app
+     * private command result will be informed through {@code performPrivateCommand}.
+     *
+     * @param action Name of the command to be performed. This must be a scoped name. i.e. prefixed
+     *     with a package name you own, so that different developers will not create conflicting
+     *     commands.
+     * @param data Any data to include with the command.
+     */
+    void sendAppPrivateCommand(String action, Bundle data);
   }
 
   /** A text editing configuration. */
@@ -335,6 +456,8 @@ public class TextInputChannel {
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
           json.optBoolean("enableSuggestions"),
+          json.optBoolean("enableIMEPersonalizedLearning"),
+          json.optBoolean("enableDeltaModel"),
           TextCapitalization.fromValue(json.getString("textCapitalization")),
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
@@ -375,18 +498,21 @@ public class TextInputChannel {
           throws JSONException, NoSuchFieldException {
         final String uniqueIdentifier = json.getString("uniqueIdentifier");
         final JSONArray hints = json.getJSONArray("hints");
+        final String hintText = json.isNull("hintText") ? null : json.getString("hintText");
         final JSONObject editingState = json.getJSONObject("editingValue");
-        final String[] hintList = new String[hints.length()];
+        final String[] autofillHints = new String[hints.length()];
 
-        for (int i = 0; i < hintList.length; i++) {
-          hintList[i] = translateAutofillHint(hints.getString(i));
+        for (int i = 0; i < hints.length(); i++) {
+          autofillHints[i] = translateAutofillHint(hints.getString(i));
         }
-        return new Autofill(uniqueIdentifier, hintList, TextEditState.fromJson(editingState));
+        return new Autofill(
+            uniqueIdentifier, autofillHints, hintText, TextEditState.fromJson(editingState));
       }
 
       public final String uniqueIdentifier;
       public final String[] hints;
       public final TextEditState editState;
+      public final String hintText;
 
       @NonNull
       private static String translateAutofillHint(@NonNull String hint) {
@@ -474,9 +600,11 @@ public class TextInputChannel {
       public Autofill(
           @NonNull String uniqueIdentifier,
           @NonNull String[] hints,
+          @Nullable String hintText,
           @NonNull TextEditState editingState) {
         this.uniqueIdentifier = uniqueIdentifier;
         this.hints = hints;
+        this.hintText = hintText;
         this.editState = editingState;
       }
     }
@@ -484,6 +612,8 @@ public class TextInputChannel {
     public final boolean obscureText;
     public final boolean autocorrect;
     public final boolean enableSuggestions;
+    public final boolean enableIMEPersonalizedLearning;
+    public final boolean enableDeltaModel;
     @NonNull public final TextCapitalization textCapitalization;
     @NonNull public final InputType inputType;
     @Nullable public final Integer inputAction;
@@ -495,6 +625,8 @@ public class TextInputChannel {
         boolean obscureText,
         boolean autocorrect,
         boolean enableSuggestions,
+        boolean enableIMEPersonalizedLearning,
+        boolean enableDeltaModel,
         @NonNull TextCapitalization textCapitalization,
         @NonNull InputType inputType,
         @Nullable Integer inputAction,
@@ -504,6 +636,8 @@ public class TextInputChannel {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
       this.enableSuggestions = enableSuggestions;
+      this.enableIMEPersonalizedLearning = enableIMEPersonalizedLearning;
+      this.enableDeltaModel = enableDeltaModel;
       this.textCapitalization = textCapitalization;
       this.inputType = inputType;
       this.inputAction = inputAction;
@@ -551,7 +685,8 @@ public class TextInputChannel {
     MULTILINE("TextInputType.multiline"),
     EMAIL_ADDRESS("TextInputType.emailAddress"),
     URL("TextInputType.url"),
-    VISIBLE_PASSWORD("TextInputType.visiblePassword");
+    VISIBLE_PASSWORD("TextInputType.visiblePassword"),
+    NONE("TextInputType.none");
 
     static TextInputType fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (TextInputType textInputType : TextInputType.values()) {
@@ -598,17 +733,75 @@ public class TextInputChannel {
       return new TextEditState(
           textEditState.getString("text"),
           textEditState.getInt("selectionBase"),
-          textEditState.getInt("selectionExtent"));
+          textEditState.getInt("selectionExtent"),
+          textEditState.getInt("composingBase"),
+          textEditState.getInt("composingExtent"));
     }
 
     @NonNull public final String text;
     public final int selectionStart;
     public final int selectionEnd;
+    public final int composingStart;
+    public final int composingEnd;
 
-    public TextEditState(@NonNull String text, int selectionStart, int selectionEnd) {
+    public TextEditState(
+        @NonNull String text,
+        int selectionStart,
+        int selectionEnd,
+        int composingStart,
+        int composingEnd)
+        throws IndexOutOfBoundsException {
+
+      if ((selectionStart != -1 || selectionEnd != -1)
+          && (selectionStart < 0 || selectionEnd < 0)) {
+        throw new IndexOutOfBoundsException(
+            "invalid selection: ("
+                + String.valueOf(selectionStart)
+                + ", "
+                + String.valueOf(selectionEnd)
+                + ")");
+      }
+
+      if ((composingStart != -1 || composingEnd != -1)
+          && (composingStart < 0 || composingStart > composingEnd)) {
+        throw new IndexOutOfBoundsException(
+            "invalid composing range: ("
+                + String.valueOf(composingStart)
+                + ", "
+                + String.valueOf(composingEnd)
+                + ")");
+      }
+
+      if (composingEnd > text.length()) {
+        throw new IndexOutOfBoundsException(
+            "invalid composing start: " + String.valueOf(composingStart));
+      }
+
+      if (selectionStart > text.length()) {
+        throw new IndexOutOfBoundsException(
+            "invalid selection start: " + String.valueOf(selectionStart));
+      }
+
+      if (selectionEnd > text.length()) {
+        throw new IndexOutOfBoundsException(
+            "invalid selection end: " + String.valueOf(selectionEnd));
+      }
+
       this.text = text;
       this.selectionStart = selectionStart;
       this.selectionEnd = selectionEnd;
+      this.composingStart = composingStart;
+      this.composingEnd = composingEnd;
+    }
+
+    public boolean hasSelection() {
+      // When selectionStart == -1, it's guaranteed that selectionEnd will also
+      // be -1.
+      return selectionStart >= 0;
+    }
+
+    public boolean hasComposing() {
+      return composingStart >= 0 && composingEnd > composingStart;
     }
   }
 }

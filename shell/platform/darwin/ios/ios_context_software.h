@@ -6,7 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_SOFTWARE_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
 
 namespace flutter {
 
@@ -18,10 +18,13 @@ class IOSContextSoftware final : public IOSContext {
   ~IOSContextSoftware();
 
   // |IOSContext|
-  sk_sp<GrContext> CreateResourceContext() override;
+  sk_sp<GrDirectContext> CreateResourceContext() override;
 
   // |IOSContext|
-  bool MakeCurrent() override;
+  sk_sp<GrDirectContext> GetMainContext() const override;
+
+  // |IOSContext|
+  std::unique_ptr<GLContextResult> MakeCurrent() override;
 
   // |IOSContext|
   std::unique_ptr<Texture> CreateExternalTexture(

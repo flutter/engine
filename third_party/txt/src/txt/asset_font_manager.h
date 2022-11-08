@@ -18,6 +18,7 @@
 #define TXT_ASSET_FONT_MANAGER_H_
 
 #include <memory>
+
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkStream.h"
@@ -28,7 +29,7 @@ namespace txt {
 
 class AssetFontManager : public SkFontMgr {
  public:
-  AssetFontManager(std::unique_ptr<FontAssetProvider> font_provider);
+  explicit AssetFontManager(std::unique_ptr<FontAssetProvider> font_provider);
 
   ~AssetFontManager() override;
 
@@ -58,10 +59,6 @@ class AssetFontManager : public SkFontMgr {
                                           const char* bcp47[],
                                           int bcp47Count,
                                           SkUnichar character) const override;
-
-  // |SkFontMgr|
-  SkTypeface* onMatchFaceStyle(const SkTypeface*,
-                               const SkFontStyle&) const override;
 
   // |SkFontMgr|
   sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int ttcIndex) const override;

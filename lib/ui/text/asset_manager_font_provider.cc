@@ -96,8 +96,9 @@ void AssetManagerFontStyleSet::getStyle(int index,
 
 SkTypeface* AssetManagerFontStyleSet::createTypeface(int i) {
   size_t index = i;
-  if (index >= assets_.size())
+  if (index >= assets_.size()) {
     return nullptr;
+  }
 
   TypefaceAsset& asset = assets_[index];
   if (!asset.typeface) {
@@ -115,8 +116,11 @@ SkTypeface* AssetManagerFontStyleSet::createTypeface(int i) {
 
     // Ownership of the stream is transferred.
     asset.typeface = SkTypeface::MakeFromStream(std::move(stream));
-    if (!asset.typeface)
+    if (!asset.typeface) {
+      FML_DLOG(ERROR) << "Unable to load font asset for family: "
+                      << family_name_;
       return nullptr;
+    }
   }
 
   return SkRef(asset.typeface.get());

@@ -48,9 +48,13 @@ bool TextStyle::equals(const TextStyle& other) const {
     return false;
   if (has_height_override != other.has_height_override)
     return false;
+  if (half_leading != other.half_leading)
+    return false;
   if (locale != other.locale)
     return false;
   if (foreground != other.foreground)
+    return false;
+  if (font_families.size() != other.font_families.size())
     return false;
   if (text_shadows.size() != other.text_shadows.size())
     return false;

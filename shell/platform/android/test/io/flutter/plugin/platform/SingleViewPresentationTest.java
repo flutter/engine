@@ -1,5 +1,8 @@
 package io.flutter.plugin.platform;
 
+import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+import static android.os.Build.VERSION_CODES.P;
+import static android.os.Build.VERSION_CODES.R;
 import static junit.framework.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -15,17 +18,13 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowDisplay;
-import org.robolectric.shadows.ShadowDisplayManager;
-import org.robolectric.shadows.ShadowInputMethodManager;
 
-@Config(
-    manifest = Config.NONE,
-    shadows = {ShadowInputMethodManager.class, ShadowDisplayManager.class, ShadowDisplay.class})
+@Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
-@TargetApi(28)
+@TargetApi(P)
 public class SingleViewPresentationTest {
   @Test
+  @Config(minSdk = JELLY_BEAN_MR1, maxSdk = R)
   public void returnsOuterContextInputMethodManager() {
     // There's a bug in Android Q caused by the IMM being instanced per display.
     // https://github.com/flutter/flutter/issues/38375. We need the context returned by
@@ -56,6 +55,7 @@ public class SingleViewPresentationTest {
   }
 
   @Test
+  @Config(minSdk = JELLY_BEAN_MR1, maxSdk = R)
   public void returnsOuterContextInputMethodManager_createDisplayContext() {
     // The IMM should also persist across display contexts created from the base context.
 

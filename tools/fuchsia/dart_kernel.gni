@@ -14,14 +14,13 @@ template("dart_kernel") {
 
     main_dart = rebase_path(invoker.main_dart)
 
-    deps = [
-      invoker.kernel_platform_files,
-    ]
+    deps = [ invoker.kernel_platform_files ]
 
     gen_kernel_script = "//third_party/dart/pkg/vm/bin/gen_kernel.dart"
     platform_dill = "$root_out_dir/dart_runner_patched_sdk/platform_strong.dill"
 
-    dot_packages = rebase_path("//third_party/dart/.packages")
+    dot_packages =
+        rebase_path("//third_party/dart/.dart_tool/package_config.json")
 
     inputs = [
       platform_dill,
@@ -31,9 +30,7 @@ template("dart_kernel") {
     ]
 
     output = "$target_gen_dir/$target_name.dill"
-    outputs = [
-      output,
-    ]
+    outputs = [ output ]
 
     depfile = "$output.d"
     abs_depfile = rebase_path(depfile)
@@ -52,7 +49,7 @@ template("dart_kernel") {
       "--output=" + rebase_path(output),
     ]
 
-    if (is_debug) {
+    if (flutter_runtime_mode == "debug") {
       args += [ "--embed-sources" ]
     } else {
       args += [ "--no-embed-sources" ]
@@ -73,12 +70,12 @@ template("dart_kernel") {
       # build) causes the vm service isolate code to be tree-shaken from an app.
       # See the pragma on the entrypoint here:
       #
-      # https://github.com/dart-lang/sdk/blob/master/sdk/lib/_internal/vm/bin/vmservice_io.dart#L240
+      # https://github.com/dart-lang/sdk/blob/main/sdk/lib/_internal/vm/bin/vmservice_io.dart#L240
       #
       # Also, this define excludes debugging and profiling code from Flutter.
       args += [ "-Ddart.vm.product=true" ]
     } else {
-      if (!is_debug) {
+      if (flutter_runtime_mode == "profile") {
         # The following define excludes debugging code from Flutter.
         args += [ "-Ddart.vm.profile=true" ]
       }

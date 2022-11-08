@@ -10,10 +10,6 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if !defined(FUCHSIA_SDK)
-#define VULKAN_LINK_STATICALLY OS_FUCHSIA
-#endif  //  !defined(FUCHSIA_SDK)
-
 #if OS_ANDROID
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
 #define VK_USE_PLATFORM_ANDROID_KHR 1
@@ -35,24 +31,16 @@
 
 #include <vulkan/vulkan.h>
 
-#ifndef NDEBUG
-
-#define VK_CALL_LOG_ERROR(expression)                      \
-  ({                                                       \
-    __typeof__(expression) _rc = (expression);             \
-    if (_rc != VK_SUCCESS) {                               \
-      FML_DLOG(INFO) << "Vulkan call '" << #expression     \
-                     << "' failed with error "             \
-                     << vulkan::VulkanResultToString(_rc); \
-    }                                                      \
-    _rc;                                                   \
+#define VK_CALL_LOG_ERROR(expression)                     \
+  ({                                                      \
+    __typeof__(expression) _rc = (expression);            \
+    if (_rc != VK_SUCCESS) {                              \
+      FML_LOG(INFO) << "Vulkan call '" << #expression     \
+                    << "' failed with error "             \
+                    << vulkan::VulkanResultToString(_rc); \
+    }                                                     \
+    _rc;                                                  \
   })
-
-#else  // NDEBUG
-
-#define VK_CALL_LOG_ERROR(expression) (expression)
-
-#endif  // NDEBUG
 
 namespace vulkan {
 

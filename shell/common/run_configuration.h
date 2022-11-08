@@ -14,7 +14,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
-#include "flutter/shell/common/isolate_configuration.h"
+#include "flutter/runtime/isolate_configuration.h"
 
 namespace flutter {
 
@@ -66,7 +66,8 @@ class RunConfiguration {
   ///
   /// @param[in]  configuration  The configuration
   ///
-  RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration);
+  explicit RunConfiguration(
+      std::unique_ptr<IsolateConfiguration> configuration);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a run configuration with the specified isolate
@@ -151,6 +152,12 @@ class RunConfiguration {
   void SetEntrypointAndLibrary(std::string entrypoint, std::string library);
 
   //----------------------------------------------------------------------------
+  /// @brief      Updates the main application entrypoint arguments.
+  ///
+  /// @param[in]  entrypoint_args  The entrypoint arguments to use.
+  void SetEntrypointArgs(std::vector<std::string> entrypoint_args);
+
+  //----------------------------------------------------------------------------
   /// @return     The asset manager referencing all previously registered asset
   ///             resolvers.
   ///
@@ -168,6 +175,12 @@ class RunConfiguration {
   const std::string& GetEntrypointLibrary() const;
 
   //----------------------------------------------------------------------------
+  /// @return     Arguments passed as a List<String> to Dart's entrypoint
+  ///             function.
+  ///
+  const std::vector<std::string>& GetEntrypointArgs() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      The engine uses this to take the isolate configuration from
   ///             the run configuration. The run configuration is no longer
   ///             valid after this call is made. The non-copyable nature of some
@@ -183,6 +196,7 @@ class RunConfiguration {
   std::shared_ptr<AssetManager> asset_manager_;
   std::string entrypoint_ = "main";
   std::string entrypoint_library_ = "";
+  std::vector<std::string> entrypoint_args_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RunConfiguration);
 };

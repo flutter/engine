@@ -38,7 +38,9 @@ TEST(WeakPtrTest, MoveConstruction) {
   WeakPtrFactory<int> factory(&data);
   WeakPtr<int> ptr = factory.GetWeakPtr();
   WeakPtr<int> ptr2(std::move(ptr));
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -60,7 +62,9 @@ TEST(WeakPtrTest, MoveAssignment) {
   WeakPtr<int> ptr2;
   EXPECT_EQ(nullptr, ptr2.get());
   ptr2 = std::move(ptr);
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -208,14 +212,14 @@ TEST(TaskRunnerAffineWeakPtrTest, ShouldNotCrashIfRunningOnTheSameTaskRunner) {
   fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
   const auto raster_thread_merger_ =
       fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
-  const int kNumFramesMerged = 5;
+  const size_t kNumFramesMerged = 5;
 
   raster_thread_merger_->MergeWithLease(kNumFramesMerged);
 
   loop2_task_start_latch.Signal();
   loop2_task_finish_latch.Wait();
 
-  for (int i = 0; i < kNumFramesMerged; i++) {
+  for (size_t i = 0; i < kNumFramesMerged; i++) {
     ASSERT_TRUE(raster_thread_merger_->IsMerged());
     raster_thread_merger_->DecrementLease();
   }

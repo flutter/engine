@@ -56,29 +56,20 @@ void MockCanvas::willRestore() {
   current_layer_--;  // Must go here; func params order of eval is undefined
 }
 
-void MockCanvas::didConcat(const SkMatrix& matrix) {
+void MockCanvas::didConcat44(const SkM44& matrix) {
   draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{matrix}});
 }
 
-void MockCanvas::didConcat44(const SkM44& matrix) {
-  draw_calls_.emplace_back(
-      DrawCall{current_layer_, ConcatMatrix44Data{matrix}});
+void MockCanvas::didSetM44(const SkM44& matrix) {
+  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{matrix}});
 }
 
 void MockCanvas::didScale(SkScalar x, SkScalar y) {
-  SkMatrix m;
-  m.setScale(x, y);
-  this->didConcat(m);
+  this->didConcat44(SkM44::Scale(x, y));
 }
 
 void MockCanvas::didTranslate(SkScalar x, SkScalar y) {
-  SkMatrix m;
-  m.setTranslate(x, y);
-  this->didConcat(m);
-}
-
-void MockCanvas::didSetMatrix(const SkMatrix& matrix) {
-  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{matrix}});
+  this->didConcat44(SkM44::Translate(x, y));
 }
 
 void MockCanvas::onDrawTextBlob(const SkTextBlob* text,
@@ -114,6 +105,7 @@ void MockCanvas::onDrawPath(const SkPath& path, const SkPaint& paint) {
 
 void MockCanvas::onDrawShadowRec(const SkPath& path,
                                  const SkDrawShadowRec& rec) {
+  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   (void)rec;  // Can't use b/c Skia keeps this type anonymous.
   draw_calls_.emplace_back(DrawCall{current_layer_, DrawShadowData{path}});
 }
@@ -148,6 +140,8 @@ void MockCanvas::onClipRect(const SkRect& rect,
                             ClipEdgeStyle style) {
   draw_calls_.emplace_back(
       DrawCall{current_layer_, ClipRectData{rect, op, style}});
+  // quickReject() is handled by base class and needs accurate clip information
+  SkCanvas::onClipRect(rect, op, style);
 }
 
 void MockCanvas::onClipRRect(const SkRRect& rrect,
@@ -155,6 +149,8 @@ void MockCanvas::onClipRRect(const SkRRect& rrect,
                              ClipEdgeStyle style) {
   draw_calls_.emplace_back(
       DrawCall{current_layer_, ClipRRectData{rrect, op, style}});
+  // quickReject() is handled by base class and needs accurate clip information
+  SkCanvas::onClipRRect(rrect, op, style);
 }
 
 void MockCanvas::onClipPath(const SkPath& path,
@@ -162,6 +158,8 @@ void MockCanvas::onClipPath(const SkPath& path,
                             ClipEdgeStyle style) {
   draw_calls_.emplace_back(
       DrawCall{current_layer_, ClipPathData{path, op, style}});
+  // quickReject() is handled by base class and needs accurate clip information
+  SkCanvas::onClipPath(path, op, style);
 }
 
 bool MockCanvas::onDoSaveBehind(const SkRect*) {
@@ -189,8 +187,8 @@ void MockCanvas::onDrawPatch(const SkPoint[12],
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawPaint(const SkPaint&) {
-  FML_DCHECK(false);
+void MockCanvas::onDrawPaint(const SkPaint& skPaint) {
+  draw_calls_.emplace_back(DrawCall{current_layer_, DrawPaint{skPaint}});
 }
 
 void MockCanvas::onDrawBehind(const SkPaint&) {
@@ -224,32 +222,28 @@ void MockCanvas::onDrawRRect(const SkRRect&, const SkPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawImage(const SkImage*,
-                             SkScalar,
-                             SkScalar,
-                             const SkPaint*) {
+void MockCanvas::onDrawImage2(const SkImage*,
+                              SkScalar,
+                              SkScalar,
+                              const SkSamplingOptions&,
+                              const SkPaint*) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawImageRect(const SkImage*,
-                                 const SkRect*,
-                                 const SkRect&,
-                                 const SkPaint*,
-                                 SrcRectConstraint) {
+void MockCanvas::onDrawImageRect2(const SkImage*,
+                                  const SkRect&,
+                                  const SkRect&,
+                                  const SkSamplingOptions&,
+                                  const SkPaint*,
+                                  SrcRectConstraint) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawImageNine(const SkImage*,
-                                 const SkIRect&,
-                                 const SkRect&,
-                                 const SkPaint*) {
-  FML_DCHECK(false);
-}
-
-void MockCanvas::onDrawImageLattice(const SkImage*,
-                                    const Lattice&,
-                                    const SkRect&,
-                                    const SkPaint*) {
+void MockCanvas::onDrawImageLattice2(const SkImage*,
+                                     const Lattice&,
+                                     const SkRect&,
+                                     SkFilterMode,
+                                     const SkPaint*) {
   FML_DCHECK(false);
 }
 
@@ -259,14 +253,15 @@ void MockCanvas::onDrawVerticesObject(const SkVertices*,
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawAtlas(const SkImage*,
-                             const SkRSXform[],
-                             const SkRect[],
-                             const SkColor[],
-                             int,
-                             SkBlendMode,
-                             const SkRect*,
-                             const SkPaint*) {
+void MockCanvas::onDrawAtlas2(const SkImage*,
+                              const SkRSXform[],
+                              const SkRect[],
+                              const SkColor[],
+                              int,
+                              SkBlendMode,
+                              const SkSamplingOptions&,
+                              const SkRect*,
+                              const SkPaint*) {
   FML_DCHECK(false);
 }
 
@@ -275,15 +270,6 @@ void MockCanvas::onDrawEdgeAAQuad(const SkRect&,
                                   QuadAAFlags,
                                   const SkColor4f&,
                                   SkBlendMode) {
-  FML_DCHECK(false);
-}
-
-void MockCanvas::onDrawEdgeAAImageSet(const ImageSetEntry[],
-                                      int,
-                                      const SkPoint[],
-                                      const SkMatrix[],
-                                      const SkPaint*,
-                                      SrcRectConstraint) {
   FML_DCHECK(false);
 }
 
@@ -329,16 +315,6 @@ bool operator==(const MockCanvas::ConcatMatrixData& a,
 
 std::ostream& operator<<(std::ostream& os,
                          const MockCanvas::ConcatMatrixData& data) {
-  return os << data.matrix;
-}
-
-bool operator==(const MockCanvas::ConcatMatrix44Data& a,
-                const MockCanvas::ConcatMatrix44Data& b) {
-  return a.matrix == b.matrix;
-}
-
-std::ostream& operator<<(std::ostream& os,
-                         const MockCanvas::ConcatMatrix44Data& data) {
   return os << data.matrix;
 }
 
@@ -447,6 +423,15 @@ bool operator==(const MockCanvas::DrawCall& a, const MockCanvas::DrawCall& b) {
 
 std::ostream& operator<<(std::ostream& os, const MockCanvas::DrawCall& draw) {
   return os << "[Layer: " << draw.layer << ", Data: " << draw.data << "]";
+}
+
+bool operator==(const MockCanvas::DrawPaint& a,
+                const MockCanvas::DrawPaint& b) {
+  return a.paint == b.paint;
+}
+
+std::ostream& operator<<(std::ostream& os, const MockCanvas::DrawPaint& data) {
+  return os << data.paint;
 }
 
 }  // namespace testing

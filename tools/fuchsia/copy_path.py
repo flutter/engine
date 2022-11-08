@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -56,7 +56,7 @@ def main():
 
   files = open(args.file_list, 'r')
   files_to_copy = files.read().split()
-  num_files = len(files_to_copy) / 2
+  num_files = len(files_to_copy) // 2
 
   for i in range(num_files):
     CopyPath(files_to_copy[i], files_to_copy[num_files + i])

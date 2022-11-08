@@ -5,6 +5,8 @@
 #ifndef FLUTTER_FML_TRACE_EVENT_H_
 #define FLUTTER_FML_TRACE_EVENT_H_
 
+#include <functional>
+
 #include "flutter/fml/build_config.h"
 
 #if defined(OS_FUCHSIA)
@@ -45,6 +47,12 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
+#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA) && !defined(OS_ANDROID))
+#define FLUTTER_TIMELINE_ENABLED 0
+#else
+#define FLUTTER_TIMELINE_ENABLED 1
+#endif
+
 #if !defined(OS_FUCHSIA)
 #ifndef TRACE_EVENT_HIDE_MACROS
 
@@ -62,6 +70,19 @@
   ::fml::tracing::TraceCounter((category_group), (name), (counter_id), (arg1), \
                                __VA_ARGS__);
 
+// Avoid using the same `name` and `argX_name` for nested traces, which can
+// lead to double free errors. E.g. the following code should be avoided:
+//
+// ```cpp
+// {
+//    TRACE_EVENT1("flutter", "Foo::Bar", "count", "initial_count_value");
+//    ...
+//    TRACE_EVENT_INSTANT1("flutter", "Foo::Bar",
+//                         "count", "updated_count_value");
+// }
+// ```
+//
+// Instead, either use different `name` or `arg1` parameter names.
 #define FML_TRACE_EVENT(category_group, name, ...)                   \
   ::fml::tracing::TraceEvent((category_group), (name), __VA_ARGS__); \
   __FML__AUTO_TRACE_END(name)
@@ -124,7 +145,17 @@ namespace tracing {
 using TraceArg = const char*;
 using TraceIDArg = int64_t;
 
-void TraceSetWhitelist(const std::vector<std::string>& whitelist);
+void TraceSetAllowlist(const std::vector<std::string>& allowlist);
+
+using TimelineEventHandler = std::function<void(const char*,
+                                                int64_t,
+                                                int64_t,
+                                                Dart_Timeline_Event_Type,
+                                                intptr_t,
+                                                const char**,
+                                                const char**)>;
+
+void TraceSetTimelineEventHandler(TimelineEventHandler handler);
 
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,
@@ -193,9 +224,11 @@ void TraceCounter(TraceArg category,
                   TraceArg name,
                   TraceIDArg identifier,
                   Args... args) {
+#if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
   TraceTimelineEvent(category, name, identifier, Dart_Timeline_Event_Counter,
                      split.first, split.second);
+#endif  // FLUTTER_TIMELINE_ENABLED
 }
 
 // HACK: Used to NOP FML_TRACE_COUNTER macro without triggering unused var
@@ -208,9 +241,11 @@ void TraceCounterNopHACK(TraceArg category,
 
 template <typename... Args>
 void TraceEvent(TraceArg category, TraceArg name, Args... args) {
+#if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
   TraceTimelineEvent(category, name, 0, Dart_Timeline_Event_Begin, split.first,
                      split.second);
+#endif  // FLUTTER_TIMELINE_ENABLED
 }
 
 void TraceEvent0(TraceArg category_group, TraceArg name);
@@ -235,6 +270,7 @@ void TraceEventAsyncComplete(TraceArg category_group,
                              TimePoint begin,
                              TimePoint end,
                              Args... args) {
+#if FLUTTER_TIMELINE_ENABLED
   auto identifier = TraceNonce();
   const auto split = SplitArguments(args...);
 
@@ -262,6 +298,7 @@ void TraceEventAsyncComplete(TraceArg category_group,
                      split.first,                    // names
                      split.second                    // values
   );
+#endif  // FLUTTER_TIMELINE_ENABLED
 }
 
 void TraceEventAsyncBegin0(TraceArg category_group,
@@ -306,7 +343,7 @@ void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id);
 
 class ScopedInstantEnd {
  public:
-  ScopedInstantEnd(const char* str) : label_(str) {}
+  explicit ScopedInstantEnd(const char* str) : label_(str) {}
 
   ~ScopedInstantEnd() { TraceEventEnd(label_); }
 
@@ -323,7 +360,7 @@ class ScopedInstantEnd {
 // leads to corrupted or missing traces in the UI.
 class TraceFlow {
  public:
-  TraceFlow(const char* label) : label_(label), nonce_(TraceNonce()) {
+  explicit TraceFlow(const char* label) : label_(label), nonce_(TraceNonce()) {
     TraceEventFlowBegin0("flutter", label_, nonce_);
   }
 
@@ -333,13 +370,13 @@ class TraceFlow {
     other.nonce_ = 0;
   }
 
-  void Step(const char* label) const {
-    TraceEventFlowStep0("flutter", label, nonce_);
+  void Step(const char* label = nullptr) const {
+    TraceEventFlowStep0("flutter", label ? label : label_, nonce_);
   }
 
   void End(const char* label = nullptr) {
     if (nonce_ != 0) {
-      TraceEventFlowEnd0("flutter", label == nullptr ? label_ : label, nonce_);
+      TraceEventFlowEnd0("flutter", label ? label : label_, nonce_);
       nonce_ = 0;
     }
   }

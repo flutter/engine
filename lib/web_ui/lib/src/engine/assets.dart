@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'text/font_collection.dart';
+import 'util.dart';
 
 /// This class downloads assets over the network.
 ///
@@ -15,12 +19,13 @@ class AssetManager {
   /// The directory containing the assets.
   final String assetsDir;
 
+  /// Initializes [AssetManager] with path to assets relative to baseUrl.
   const AssetManager({this.assetsDir = _defaultAssetsDir});
 
-  String get _baseUrl {
+  String? get _baseUrl {
     return html.window.document
         .querySelectorAll('meta')
-        .whereType<html.MetaElement>()
+        .whereType<html.MetaElement?>()
         .firstWhere((dynamic e) => e.name == 'assetBase', orElse: () => null)
         ?.content;
   }
@@ -49,34 +54,39 @@ class AssetManager {
     return Uri.encodeFull((_baseUrl ?? '') + '$assetsDir/$asset');
   }
 
+  /// Loads an asset using an [html.HttpRequest] and returns data as [ByteData].
   Future<ByteData> load(String asset) async {
     final String url = getAssetUrl(asset);
     try {
       final html.HttpRequest request =
           await html.HttpRequest.request(url, responseType: 'arraybuffer');
 
-      final ByteBuffer response = request.response;
+      final ByteBuffer response = request.response as ByteBuffer;
       return response.asByteData();
     } on html.ProgressEvent catch (e) {
-      final html.EventTarget target = e.target;
+      final html.EventTarget? target = e.target;
       if (target is html.HttpRequest) {
         if (target.status == 404 && asset == 'AssetManifest.json') {
-          html.window.console
-              .warn('Asset manifest does not exist at `$url` – ignoring.');
+          printWarning('Asset manifest does not exist at `$url` – ignoring.');
           return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
         }
-        throw AssetManagerException(url, target.status);
+        throw AssetManagerException(url, target.status!);
       }
 
+      printWarning('Caught ProgressEvent with target: $target');
       rethrow;
     }
   }
 }
 
+/// Thrown to indicate http failure during asset loading.
 class AssetManagerException implements Exception {
+  /// Http request url for asset.
   final String url;
+  /// Http status of response.
   final int httpStatus;
 
+  /// Initializes exception with request url and http status.
   AssetManagerException(this.url, this.httpStatus);
 
   @override
@@ -85,9 +95,22 @@ class AssetManagerException implements Exception {
 
 /// An asset manager that gives fake empty responses for assets.
 class WebOnlyMockAssetManager implements AssetManager {
+  /// Mock asset directory relative to base url.
   String defaultAssetsDir = '';
+  /// Mock empty asset manifest.
   String defaultAssetManifest = '{}';
-  String defaultFontManifest = '[]';
+  /// Mock font manifest overridable for unit testing.
+  String defaultFontManifest = '''
+  [
+   {
+      "family":"$robotoFontFamily",
+      "fonts":[{"asset":"$robotoTestFontUrl"}]
+   },
+   {
+      "family":"$ahemFontFamily",
+      "fonts":[{"asset":"$ahemFontUrl"}]
+   }
+  ]''';
 
   @override
   String get assetsDir => defaultAssetsDir;
@@ -96,7 +119,7 @@ class WebOnlyMockAssetManager implements AssetManager {
   String get _baseUrl => '';
 
   @override
-  String getAssetUrl(String asset) => '$asset';
+  String getAssetUrl(String asset) => asset;
 
   @override
   Future<ByteData> load(String asset) {

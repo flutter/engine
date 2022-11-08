@@ -4,8 +4,8 @@
 
 package io.flutter.plugin.common;
 
-import android.util.Log;
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -21,7 +21,7 @@ import java.util.Map.Entry;
  * MessageCodec using the Flutter standard binary encoding.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/StandardMessageCodec-class.html">StandardMessageCodec</a>
+ * href="https://api.flutter.dev/flutter/services/StandardMessageCodec-class.html">StandardMessageCodec</a>
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Supported messages are acyclic values of these forms:
@@ -33,7 +33,7 @@ import java.util.Map.Entry;
  *   <li>BigIntegers (see below)
  *   <li>Floats, Doubles
  *   <li>Strings
- *   <li>byte[], int[], long[], double[]
+ *   <li>byte[], int[], long[], float[], double[]
  *   <li>Lists of supported values
  *   <li>Maps with supported keys and values
  * </ul>
@@ -49,6 +49,7 @@ import java.util.Map.Entry;
  *   <li>byte[]: Uint8List
  *   <li>int[]: Int32List
  *   <li>long[]: Int64List
+ *   <li>float[]: Float32List
  *   <li>double[]: Float64List
  *   <li>List: List
  *   <li>Map: Map
@@ -104,6 +105,7 @@ public class StandardMessageCodec implements MessageCodec<Object> {
   private static final byte DOUBLE_ARRAY = 11;
   private static final byte LIST = 12;
   private static final byte MAP = 13;
+  private static final byte FLOAT_ARRAY = 14;
 
   /**
    * Writes an int representing a size to the specified stream. Uses an expanding code of 1 to 5
@@ -173,6 +175,11 @@ public class StandardMessageCodec implements MessageCodec<Object> {
     }
   }
 
+  /** Writes the specified double as 4 bytes to the specified stream */
+  protected static final void writeFloat(ByteArrayOutputStream stream, float value) {
+    writeInt(stream, Float.floatToIntBits(value));
+  }
+
   /** Writes the specified double as 8 bytes to the specified stream. */
   protected static final void writeDouble(ByteArrayOutputStream stream, double value) {
     writeLong(stream, Double.doubleToLongBits(value));
@@ -208,10 +215,8 @@ public class StandardMessageCodec implements MessageCodec<Object> {
   protected void writeValue(ByteArrayOutputStream stream, Object value) {
     if (value == null || value.equals(null)) {
       stream.write(NULL);
-    } else if (value == Boolean.TRUE) {
-      stream.write(TRUE);
-    } else if (value == Boolean.FALSE) {
-      stream.write(FALSE);
+    } else if (value instanceof Boolean) {
+      stream.write(((Boolean) value).booleanValue() ? TRUE : FALSE);
     } else if (value instanceof Number) {
       if (value instanceof Integer || value instanceof Short || value instanceof Byte) {
         stream.write(INT);
@@ -229,9 +234,9 @@ public class StandardMessageCodec implements MessageCodec<Object> {
       } else {
         throw new IllegalArgumentException("Unsupported Number type: " + value.getClass());
       }
-    } else if (value instanceof String) {
+    } else if (value instanceof CharSequence) {
       stream.write(STRING);
-      writeBytes(stream, ((String) value).getBytes(UTF8));
+      writeBytes(stream, value.toString().getBytes(UTF8));
     } else if (value instanceof byte[]) {
       stream.write(BYTE_ARRAY);
       writeBytes(stream, (byte[]) value);
@@ -274,8 +279,17 @@ public class StandardMessageCodec implements MessageCodec<Object> {
         writeValue(stream, entry.getKey());
         writeValue(stream, entry.getValue());
       }
+    } else if (value instanceof float[]) {
+      stream.write(FLOAT_ARRAY);
+      final float[] array = (float[]) value;
+      writeSize(stream, array.length);
+      writeAlignment(stream, 4);
+      for (final float f : array) {
+        writeFloat(stream, f);
+      }
     } else {
-      throw new IllegalArgumentException("Unsupported value: " + value);
+      throw new IllegalArgumentException(
+          "Unsupported value: '" + value + "' of type '" + value.getClass() + "'");
     }
   }
 
@@ -412,6 +426,16 @@ public class StandardMessageCodec implements MessageCodec<Object> {
             map.put(readValue(buffer), readValue(buffer));
           }
           result = map;
+          break;
+        }
+      case FLOAT_ARRAY:
+        {
+          final int length = readSize(buffer);
+          final float[] array = new float[length];
+          readAlignment(buffer, 4);
+          buffer.asFloatBuffer().get(array);
+          result = array;
+          buffer.position(buffer.position() + 4 * length);
           break;
         }
       default:

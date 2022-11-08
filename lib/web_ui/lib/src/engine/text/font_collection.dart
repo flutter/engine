@@ -2,13 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:typed_data';
 
-const String _ahemFontFamily = 'Ahem';
-const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
-const String _robotoFontFamily = 'Roboto';
-const String _robotoFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+import '../assets.dart';
+import '../browser_detection.dart';
+import '../safe_browser_api.dart';
+import '../util.dart';
+import 'layout_service.dart';
+
+const String ahemFontFamily = 'Ahem';
+const String ahemFontUrl = '/assets/fonts/ahem.ttf';
+const String robotoFontFamily = 'Roboto';
+const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -17,8 +25,8 @@ const String _robotoFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
 /// font manifest. If test fonts are enabled, then call
 /// [registerTestFonts] as well.
 class FontCollection {
-  FontManager _assetFontManager;
-  FontManager _testFontManager;
+  FontManager? _assetFontManager;
+  FontManager? _testFontManager;
 
   /// Reads the font manifest using the [assetManager] and registers all of the
   /// fonts declared within.
@@ -29,21 +37,15 @@ class FontCollection {
       byteData = await assetManager.load('FontManifest.json');
     } on AssetManagerException catch (e) {
       if (e.httpStatus == 404) {
-        html.window.console
-            .warn('Font manifest does not exist at `${e.url}` – ignoring.');
+        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
         return;
       } else {
         rethrow;
       }
     }
 
-    if (byteData == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
-    final List<dynamic> fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+    final List<dynamic>? fontManifest =
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -55,36 +57,36 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    for (Map<String, dynamic> fontFamily in fontManifest) {
-      final String family = fontFamily['family'];
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+    for (final Map<String, dynamic> fontFamily
+        in fontManifest.cast<Map<String, dynamic>>()) {
+      final String? family = fontFamily.tryString('family');
+      final List<Map<String, dynamic>> fontAssets = fontFamily.castList<Map<String, dynamic>>('fonts');
 
-      for (dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+      for (final Map<String, dynamic> fontAsset in fontAssets) {
+        final String asset = fontAsset.readString('asset');
         final Map<String, String> descriptors = <String, String>{};
-        for (String descriptor in fontAsset.keys) {
+        for (final String descriptor in fontAsset.keys) {
           if (descriptor != 'asset') {
             descriptors[descriptor] = '${fontAsset[descriptor]}';
           }
         }
-        _assetFontManager.registerAsset(
-            family, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
+        _assetFontManager!.registerAsset(
+            family!, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
       }
     }
   }
 
-  Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
-    return _assetFontManager._loadFontFaceBytes(fontFamily, list);
+  Future<void> loadFontFromList(Uint8List list, {required String fontFamily}) {
+    return _assetFontManager!._loadFontFaceBytes(fontFamily, list);
   }
 
   /// Registers fonts that are used by tests.
   void debugRegisterTestFonts() {
     _testFontManager = FontManager();
-    _testFontManager.registerAsset(
-        _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
-    _testFontManager.registerAsset(
-        _robotoFontFamily, 'url($_robotoFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(
+        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(robotoFontFamily,
+        'url($robotoTestFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -98,8 +100,8 @@ class FontCollection {
   void clear() {
     _assetFontManager = null;
     _testFontManager = null;
-    if (supportsFontLoadingApi) {
-      html.document.fonts.clear();
+    if (supportsFontsClearApi) {
+      html.document.fonts!.clear();
     }
   }
 }
@@ -112,11 +114,11 @@ class FontManager {
   // For example font family 'Ahem!' does not fall into this category
   // so the family name will be wrapped in quotes.
   static final RegExp notPunctuation =
-      RegExp(r"[a-z0-9\s]+", caseSensitive: false);
+      RegExp(r'[a-z0-9\s]+', caseSensitive: false);
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
-  static final RegExp startWithDigit = RegExp(r"\b\d");
+  static final RegExp startWithDigit = RegExp(r'\b\d');
 
   factory FontManager() {
     if (supportsFontLoadingApi) {
@@ -183,14 +185,12 @@ class FontManager {
     try {
       final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
       _fontLoadingFutures.add(fontFace.load().then((_) {
-        html.document.fonts.add(fontFace);
+        html.document.fonts!.add(fontFace);
       }, onError: (dynamic e) {
-        html.window.console
-            .warn('Error while trying to load font family "$family":\n$e');
+        printWarning('Error while trying to load font family "$family":\n$e');
       }));
     } catch (e) {
-      html.window.console
-          .warn('Error while loading font family "$family":\n$e');
+      printWarning('Error while loading font family "$family":\n$e');
     }
   }
 
@@ -200,11 +200,11 @@ class FontManager {
     // through the returned future.
     final html.FontFace fontFace = html.FontFace(family, list);
     return fontFace.load().then((_) {
-      html.document.fonts.add(fontFace);
+      html.document.fonts!.add(fontFace);
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
-      TextMeasurementService.clearCache();
+      Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
       // Failures here will throw an html.DomException which confusingly
       // does not implement Exception or Error. Rethrow an Exception so it can
@@ -245,8 +245,8 @@ class _PolyfillFontManager extends FontManager {
     paragraph.style.position = 'absolute';
     paragraph.style.visibility = 'hidden';
     paragraph.style.fontSize = '72px';
-    final String fallbackFontName = browserEngine == BrowserEngine.ie11 ?
-      'Times New Roman' : 'sans-serif';
+    final String fallbackFontName =
+        browserEngine == BrowserEngine.ie11 ? 'Times New Roman' : 'sans-serif';
     paragraph.style.fontFamily = fallbackFontName;
     if (descriptors['style'] != null) {
       paragraph.style.fontStyle = descriptors['style'];
@@ -256,14 +256,14 @@ class _PolyfillFontManager extends FontManager {
     }
     paragraph.text = _testString;
 
-    html.document.body.append(paragraph);
+    html.document.body!.append(paragraph);
     final int sansSerifWidth = paragraph.offsetWidth;
 
     paragraph.style.fontFamily = "'$family', $fallbackFontName";
 
     final Completer<void> completer = Completer<void>();
 
-    DateTime _fontLoadStart;
+    late DateTime _fontLoadStart;
 
     void _watchWidth() {
       if (paragraph.offsetWidth != sansSerifWidth) {
@@ -281,7 +281,7 @@ class _PolyfillFontManager extends FontManager {
       }
     }
 
-    final Map<String, String> fontStyleMap = <String, String>{};
+    final Map<String, String?> fontStyleMap = <String, String?>{};
     fontStyleMap['font-family'] = "'$family'";
     fontStyleMap['src'] = asset;
     if (descriptors['style'] != null) {
@@ -296,7 +296,7 @@ class _PolyfillFontManager extends FontManager {
     final html.StyleElement fontLoadStyle = html.StyleElement();
     fontLoadStyle.type = 'text/css';
     fontLoadStyle.innerHtml = '@font-face { $fontFaceDeclaration }';
-    html.document.head.append(fontLoadStyle);
+    html.document.head!.append(fontLoadStyle);
 
     // HACK: If this is an icon font, then when it loads it won't change the
     // width of our test string. So we just have to hope it loads before the
@@ -312,5 +312,3 @@ class _PolyfillFontManager extends FontManager {
     _fontLoadingFutures.add(completer.future);
   }
 }
-
-final bool supportsFontLoadingApi = html.document.fonts != null;

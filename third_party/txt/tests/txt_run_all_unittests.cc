@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#include <cassert>
+
+#include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/logging.h"
@@ -21,9 +24,8 @@
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "txt_test_utils.h"
 
-#include <cassert>
-
 int main(int argc, char** argv) {
+  fml::InstallCrashHandler();
   fml::CommandLine cmd = fml::CommandLineFromArgcArgv(argc, argv);
   txt::SetCommandLine(cmd);
   txt::SetFontDir(flutter::testing::GetFixturesPath());
@@ -32,7 +34,13 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
   FML_DCHECK(txt::GetFontDir().length() > 0);
-  fml::icu::InitializeICU("icudtl.dat");
+#if defined(OS_FUCHSIA)
+  fml::icu::InitializeICU("/pkg/data/icudtl.dat");
+#else
+  std::string icudtl_path =
+      cmd.GetOptionValueWithDefault("icu-data-file-path", "icudtl.dat");
+  fml::icu::InitializeICU(icudtl_path);
+#endif
   SkGraphics::Init();
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

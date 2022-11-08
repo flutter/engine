@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #include <fuchsia/intl/cpp/fidl.h>
-#include <gtest/gtest.h>
 
 #include "flutter/fml/icu_util.h"
+#include "gtest/gtest.h"
 
 #include "fuchsia_intl.h"
 
@@ -34,7 +34,8 @@ TEST_F(FuchsiaIntlTest, MakeLocalizationPlatformMessageData_SimpleLocale) {
   const std::string expected =
       R"({"method":"setLocale","args":["en","US","",""]})";
   const auto actual = MakeLocalizationPlatformMessageData(profile);
-  ASSERT_EQ(expected, std::string(actual.begin(), actual.end()));
+  ASSERT_EQ(expected, std::string(actual.GetMapping(),
+                                  actual.GetMapping() + actual.GetSize()));
 }
 
 TEST_F(FuchsiaIntlTest, MakeLocalizationPlatformMessageData_OneLocale) {
@@ -48,7 +49,8 @@ TEST_F(FuchsiaIntlTest, MakeLocalizationPlatformMessageData_OneLocale) {
   const std::string expected =
       R"({"method":"setLocale","args":["en","US","",""]})";
   const auto actual = MakeLocalizationPlatformMessageData(profile);
-  ASSERT_EQ(expected, std::string(actual.begin(), actual.end()));
+  ASSERT_EQ(expected, std::string(actual.GetMapping(),
+                                  actual.GetMapping() + actual.GetSize()));
 }
 
 TEST_F(FuchsiaIntlTest, MakeLocalizationPlatformMessageData_MultipleLocales) {
@@ -65,7 +67,8 @@ TEST_F(FuchsiaIntlTest, MakeLocalizationPlatformMessageData_MultipleLocales) {
       R"({"method":"setLocale","args":["en","US","","","sl","IT","Latn","nedis",)"
       R"("zh","","Hans","","sr","CS","Cyrl",""]})";
   const auto actual = MakeLocalizationPlatformMessageData(profile);
-  ASSERT_EQ(expected, std::string(actual.begin(), actual.end()));
+  ASSERT_EQ(expected, std::string(actual.GetMapping(),
+                                  actual.GetMapping() + actual.GetSize()));
 }
 
 }  // namespace

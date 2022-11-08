@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
+
 #include "flutter/fml/logging.h"
 
 namespace flutter {
@@ -11,8 +12,20 @@ GPUSurfaceVulkan::GPUSurfaceVulkan(
     GPUSurfaceVulkanDelegate* delegate,
     std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
     bool render_to_surface)
-    : window_(delegate->vk(), std::move(native_surface), render_to_surface),
-      delegate_(delegate),
+    : GPUSurfaceVulkan(/*context=*/nullptr,
+                       delegate,
+                       std::move(native_surface),
+                       render_to_surface) {}
+
+GPUSurfaceVulkan::GPUSurfaceVulkan(
+    const sk_sp<GrDirectContext>& context,
+    GPUSurfaceVulkanDelegate* delegate,
+    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
+    bool render_to_surface)
+    : window_(context,
+              delegate->vk(),
+              std::move(native_surface),
+              render_to_surface),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {}
 
@@ -24,11 +37,15 @@ bool GPUSurfaceVulkan::IsValid() {
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     const SkISize& size) {
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, true, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        nullptr, std::move(framebuffer_info),
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
         });
   }
@@ -50,8 +67,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     }
     return weak_this->window_.SwapBuffers();
   };
-  return std::make_unique<SurfaceFrame>(std::move(surface), true,
-                                        std::move(callback));
+  return std::make_unique<SurfaceFrame>(
+      std::move(surface), std::move(framebuffer_info), std::move(callback));
 }
 
 SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
@@ -62,12 +79,8 @@ SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
   return matrix;
 }
 
-GrContext* GPUSurfaceVulkan::GetContext() {
+GrDirectContext* GPUSurfaceVulkan::GetContext() {
   return window_.GetSkiaGrContext();
-}
-
-flutter::ExternalViewEmbedder* GPUSurfaceVulkan::GetExternalViewEmbedder() {
-  return delegate_->GetExternalViewEmbedder();
 }
 
 }  // namespace flutter

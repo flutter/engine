@@ -4,6 +4,7 @@
 .*.sw?
 .DS_Store
 .ccls-cache
+.cache
 .classpath
 .clangd/
 .cproject
@@ -64,7 +65,7 @@ third_party/gn/
 .packages
 .pub-cache/
 .pub/
-build/
+*/**/build/
 flutter_*.png
 linked_*.ds
 unlinked.ds
@@ -100,6 +101,7 @@ unlinked_spec.ds
 **/ios/.generated/
 **/ios/Flutter/App.framework
 **/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.xcframework
 **/ios/Flutter/Flutter.podspec
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/app.flx
@@ -128,3 +130,6 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# Prebuilt binaries.
+/prebuilts/

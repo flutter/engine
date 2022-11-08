@@ -5,8 +5,8 @@
 Map<Key, dynamic> _cache = <Key, dynamic>{};
 const int _maxSize = 10;
 
-T cache<T>(Key key, T getter()) {
-  T result = _cache[key];
+T cache<T>(Key key, T Function() getter) {
+  T result = _cache[key] as T;
   if (result != null) {
     _cache.remove(key);
   } else {
@@ -25,13 +25,13 @@ abstract class Key {
   final dynamic _value;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (runtimeType != other.runtimeType)
       return false;
-    final Key typedOther = other;
-    return _value == typedOther._value;
+    return other is Key
+        && other._value == _value;
   }
 
   @override

@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:html' as html;
 
-html.Element _logElement;
-html.Element _logContainer;
+html.Element? _logElement;
+late html.Element _logContainer;
 List<_LogMessage> _logBuffer = <_LogMessage>[];
 
 class _LogMessage {
@@ -53,8 +52,8 @@ void printOnScreen(Object object) {
 
 void _initialize() {
   _logElement = html.Element.tag('flt-onscreen-log');
-  _logElement.setAttribute('aria-hidden', 'true');
-  _logElement.style
+  _logElement!.setAttribute('aria-hidden', 'true');
+  _logElement!.style
     ..position = 'fixed'
     ..left = '0'
     ..right = '0'
@@ -72,9 +71,9 @@ void _initialize() {
   _logContainer.style
     ..position = 'absolute'
     ..bottom = '0';
-  _logElement.append(_logContainer);
+  _logElement!.append(_logContainer);
 
-  html.document.body.append(_logElement);
+  html.document.body!.append(_logElement!);
 }
 
 /// Dump the current stack to the console using [print] and
@@ -86,7 +85,7 @@ void _initialize() {
 /// of lines. By default, all non-filtered stack lines are shown.
 ///
 /// The `label` argument, if present, will be printed before the stack.
-void debugPrintStack({String label, int maxFrames}) {
+void debugPrintStack({String? label, int? maxFrames}) {
   if (label != null) {
     print(label);
   }
@@ -116,12 +115,12 @@ Iterable<String> defaultStackFilter(Iterable<String> frames) {
   final RegExp packageParser = RegExp(r'^([^:]+):(.+)$');
   final List<String> result = <String>[];
   final List<String> skipped = <String>[];
-  for (String line in frames) {
-    final Match match = stackParser.firstMatch(line);
+  for (final String line in frames) {
+    final Match? match = stackParser.firstMatch(line);
     if (match != null) {
       assert(match.groupCount == 2);
       if (filteredPackages.contains(match.group(2))) {
-        final Match packageMatch = packageParser.firstMatch(match.group(2));
+        final Match? packageMatch = packageParser.firstMatch(match.group(2)!);
         if (packageMatch != null && packageMatch.group(1) == 'package') {
           skipped.add(
               'package ${packageMatch.group(2)}'); // avoid "package package:foo"
@@ -149,6 +148,6 @@ Iterable<String> defaultStackFilter(Iterable<String> frames) {
   return result;
 }
 
-String debugIdentify(Object object) {
-  return '${object.runtimeType}(@${object.hashCode})';
+String debugIdentify(Object? object) {
+  return '${object!.runtimeType}(@${object.hashCode})';
 }

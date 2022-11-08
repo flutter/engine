@@ -6,8 +6,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:path/path.dart' as path;
 import 'package:archive/archive.dart' as a;
+import 'package:path/path.dart' as path;
 
 import 'cache.dart';
 import 'limits.dart';
@@ -177,6 +177,9 @@ FileType identifyFile(String name, Reader reader) {
     // Machine code
     case '.so': return FileType.binary; // ELF shared object
     case '.xpt': return FileType.binary; // XPCOM Type Library
+    // Graphics code
+    case '.glsl': return FileType.text;
+    case '.spvasm': return FileType.text;
     // Documentation
     case '.md': return FileType.text;
     case '.txt': return FileType.text;
@@ -451,14 +454,14 @@ class FileSystemDirectory extends IoNode implements Directory {
   Iterable<IoNode> get walk sync* {
     final List<io.FileSystemEntity> list = _directory.listSync().toList();
     list.sort((io.FileSystemEntity a, io.FileSystemEntity b) => a.path.compareTo(b.path));
-    for (io.FileSystemEntity entity in list) {
+    for (final io.FileSystemEntity entity in list) {
       if (entity is io.Directory) {
         yield FileSystemDirectory(entity);
       } else if (entity is io.Link) {
         yield FileSystemLink(entity);
       } else {
         assert(entity is io.File);
-        final io.File fileEntity = entity;
+        final io.File fileEntity = entity as io.File;
         if (fileEntity.lengthSync() > 0) {
           switch (identifyFile(fileEntity.path, () => _readBytes(fileEntity))) {
             case FileType.binary: yield FileSystemFile(fileEntity); break;
@@ -554,7 +557,7 @@ class ArchiveDirectory extends IoNode implements Directory {
     } else {
       if (entry.size > 0) {
         final String entryFullName = fullName + '/' + path.basename(entry.name);
-        switch (identifyFile(entry.name, () => entry.content)) {
+        switch (identifyFile(entry.name, () => entry.content as List<int>)) {
           case FileType.binary: _files.add(ArchiveFile(entryFullName, entry)); break;
           case FileType.zip: _files.add(ArchiveZipFile(entryFullName, entry)); break;
           case FileType.tar: _files.add(ArchiveTarFile(entryFullName, entry)); break;
@@ -570,7 +573,7 @@ class ArchiveDirectory extends IoNode implements Directory {
 
   static ArchiveDirectory parseArchive(a.Archive archive, String ownerPath) {
     final ArchiveDirectory root = ArchiveDirectory('$ownerPath!', '');
-    for (a.ArchiveFile file in archive.files) {
+    for (final a.ArchiveFile file in archive.files) {
       if (file.size > 0)
         root._add(file, file.name.split('/'));
     }
@@ -597,7 +600,7 @@ class ArchiveFile extends IoNode implements File {
 
   @override
   List<int> readBytes() {
-    return _file.content;
+    return _file.content as List<int>;
   }
 }
 

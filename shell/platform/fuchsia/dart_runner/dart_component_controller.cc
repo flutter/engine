@@ -11,7 +11,6 @@
 #include <lib/fdio/directory.h>
 #include <lib/fdio/fd.h>
 #include <lib/fdio/namespace.h>
-#include <lib/fidl/cpp/optional.h>
 #include <lib/fidl/cpp/string.h>
 #include <lib/sys/cpp/service_directory.h>
 #include <lib/syslog/global.h>
@@ -21,6 +20,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <zircon/status.h>
+
 #include <regex>
 #include <utility>
 
@@ -205,14 +205,10 @@ bool DartComponentController::SetupFromKernel() {
           isolate_snapshot_data_)) {
     return false;
   }
-  if (!dart_utils::MappedResource::LoadFromNamespace(
-          nullptr, "/pkg/data/isolate_core_snapshot_instructions.bin",
-          isolate_snapshot_instructions_, true /* executable */)) {
-    return false;
-  }
 
+  // The core snapshot does not separate instructions from data.
   if (!CreateIsolate(isolate_snapshot_data_.address(),
-                     isolate_snapshot_instructions_.address())) {
+                     nullptr /* isolate_snapshot_instructions */)) {
     return false;
   }
 
@@ -276,16 +272,16 @@ bool DartComponentController::SetupFromAppSnapshot() {
       return false;
     }
   } else {
+    // TODO(fxb/91200): This code path was broken for over a year and is
+    // probably not used.
     if (!dart_utils::MappedResource::LoadFromNamespace(
             namespace_, data_path_ + "/isolate_snapshot_data.bin",
             isolate_snapshot_data_)) {
       return false;
     }
-    if (!dart_utils::MappedResource::LoadFromNamespace(
-            namespace_, data_path_ + "/isolate_snapshot_instructions.bin",
-            isolate_snapshot_instructions_, true /* executable */)) {
-      return false;
-    }
+    isolate_data = isolate_snapshot_data_.address();
+    // We don't separate instructions from data in 'core' snapshots.
+    isolate_instructions = nullptr;
   }
   return CreateIsolate(isolate_data, isolate_instructions);
 #endif  // defined(AOT_RUNTIME)
@@ -400,8 +396,13 @@ bool DartComponentController::Main() {
   Dart_EnterIsolate(isolate_);
   Dart_EnterScope();
 
-  Dart_Handle dart_arguments =
-      Dart_NewListOf(Dart_CoreType_String, arguments.size());
+  Dart_Handle corelib = Dart_LookupLibrary(ToDart("dart:core"));
+  Dart_Handle string_type =
+      Dart_GetNonNullableType(corelib, ToDart("String"), 0, NULL);
+
+  Dart_Handle dart_arguments = Dart_NewListOfTypeFilled(
+      string_type, Dart_EmptyString(), arguments.size());
+
   if (Dart_IsError(dart_arguments)) {
     FX_LOGF(ERROR, LOG_TAG, "Failed to allocate Dart arguments list: %s",
             Dart_GetError(dart_arguments));
@@ -439,7 +440,11 @@ bool DartComponentController::Main() {
 
 void DartComponentController::Kill() {
   if (Dart_CurrentIsolate()) {
-    tonic::DartMicrotaskQueue::GetForCurrentThread()->Destroy();
+    tonic::DartMicrotaskQueue* queue =
+        tonic::DartMicrotaskQueue::GetForCurrentThread();
+    if (queue) {
+      queue->Destroy();
+    }
 
     loop_->Quit();
 

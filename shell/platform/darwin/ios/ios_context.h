@@ -7,12 +7,13 @@
 
 #include <memory>
 
-#include "flutter/flow/texture.h"
+#include "flutter/common/graphics/gl_context_switch.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -21,7 +22,7 @@ namespace flutter {
 ///             contexts on iOS. On-screen contexts are used by Flutter for
 ///             rendering into the surface. The lifecycle of this context may be
 ///             tied to the lifecycle of the surface. On the other hand, the
-///             lifecycle of the the off-screen context it tied to that of the
+///             lifecycle of the off-screen context it tied to that of the
 ///             platform view. This one object used to manage both context
 ///             because GPU handles may need to be shared between the two
 ///             context. To achieve this, context may need references to one
@@ -57,12 +58,12 @@ class IOSContext {
   ///             asynchronously and collect resources that are no longer needed
   ///             on the render task runner.
   ///
-  /// @attention  Client rendering APIs for which a GrContext cannot be realized
+  /// @attention  Client rendering APIs for which a GrDirectContext cannot be realized
   ///             (software rendering), this method will always return null.
   ///
   /// @return     A non-null Skia context on success. `nullptr` on failure.
   ///
-  virtual sk_sp<GrContext> CreateResourceContext() = 0;
+  virtual sk_sp<GrDirectContext> CreateResourceContext() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      When using client rendering APIs whose contexts need to be
@@ -74,7 +75,7 @@ class IOSContext {
   ///             bindings (anything that is not OpenGL) will always return
   ///             `true`.
   ///
-  /// @attention  Client rendering APIs for which a GrContext cannot be created
+  /// @attention  Client rendering APIs for which a GrDirectContext cannot be created
   ///             (software rendering) will always return `false`.
   ///
   /// @attention  This binds the on-screen context to the current thread. To
@@ -84,9 +85,12 @@ class IOSContext {
   /// @attention  Only one context may be bound to a thread at any given time.
   ///             Making a binding on a thread, clears the old binding.
   ///
-  /// @return     If the on-screen context could be bound to the current thread.
+  /// @return     A GLContextResult that represents the result of the method.
+  ///             The GetResult() returns a bool that indicates If the on-screen context could be
+  ///             bound to the current
+  /// thread.
   ///
-  virtual bool MakeCurrent() = 0;
+  virtual std::unique_ptr<GLContextResult> MakeCurrent() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an external texture proxy of the appropriate client
@@ -101,6 +105,20 @@ class IOSContext {
   virtual std::unique_ptr<Texture> CreateExternalTexture(
       int64_t texture_id,
       fml::scoped_nsobject<NSObject<FlutterTexture>> texture) = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Accessor for the Skia context associated with IOSSurfaces and
+  ///             the raster thread.
+  /// @details    There can be any number of resource contexts but this is the
+  ///             one context that will be used by surfaces to draw to the
+  ///             screen from the raster thread.
+  /// @returns    `nullptr` on failure.
+  /// @attention  The software context doesn't have a Skia context, so this
+  ///             value will be nullptr.
+  /// @see        For contexts which are used for offscreen work like loading
+  ///             textures see IOSContext::CreateResourceContext.
+  ///
+  virtual sk_sp<GrDirectContext> GetMainContext() const = 0;
 
  protected:
   IOSContext();

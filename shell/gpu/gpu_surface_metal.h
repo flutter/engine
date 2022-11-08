@@ -5,37 +5,40 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_H_
 
-#include <Metal/Metal.h>
-
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/surface.h"
-#include "flutter/shell/gpu/gpu_surface_delegate.h"
-#include "third_party/skia/include/gpu/GrContext.h"
-
-@class CAMetalLayer;
+#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
-class GPUSurfaceMetal : public Surface {
+class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
  public:
-  GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
-                  fml::scoped_nsobject<CAMetalLayer> layer,
-                  sk_sp<GrContext> context,
-                  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue);
+  GPUSurfaceMetal(GPUSurfaceMetalDelegate* delegate,
+                  sk_sp<GrDirectContext> context,
+                  bool render_to_surface = true);
 
   // |Surface|
-  ~GPUSurfaceMetal() override;
-
- private:
-  GPUSurfaceDelegate* delegate_;
-  fml::scoped_nsobject<CAMetalLayer> layer_;
-  sk_sp<GrContext> context_;
-  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue_;
-  GrMTLHandle next_drawable_ = nullptr;
+  ~GPUSurfaceMetal();
 
   // |Surface|
   bool IsValid() override;
+
+ private:
+  const GPUSurfaceMetalDelegate* delegate_;
+  const MTLRenderTargetType render_target_type_;
+  sk_sp<GrDirectContext> context_;
+  GrDirectContext* precompiled_sksl_context_ = nullptr;
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
+  bool render_to_surface_;
+
+  // Accumulated damage for each framebuffer; Key is address of underlying
+  // MTLTexture for each drawable
+  std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
@@ -44,15 +47,21 @@ class GPUSurfaceMetal : public Surface {
   SkMatrix GetRootTransformation() const override;
 
   // |Surface|
-  GrContext* GetContext() override;
+  GrDirectContext* GetContext() override;
 
   // |Surface|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
 
   // |Surface|
-  bool MakeRenderContextCurrent() override;
+  bool AllowsDrawingWhenGpuDisabled() const override;
 
-  void ReleaseUnusedDrawableIfNecessary();
+  std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
+      const SkISize& frame_info);
+
+  std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
+      const SkISize& frame_info);
+
+  void PrecompileKnownSkSLsIfNecessary();
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetal);
 };

@@ -1,24 +1,23 @@
 {
-  "program": {
-    "data": "data"
-  },
-  "sandbox": {
-    "features": [
-      "config-data",
-      "deprecated-ambient-replace-as-executable",
-      "root-ssl-certificates"
-    ],
-    "services": [
-      "fuchsia.deprecatedtimezone.Timezone",
-      "fuchsia.feedback.CrashReporter",
-      "fuchsia.intl.PropertyProvider",
-      "fuchsia.logger.LogSink",
-      "fuchsia.net.NameLookup",
-      "fuchsia.netstack.Netstack",
-      "fuchsia.posix.socket.Provider",
-      "fuchsia.process.Launcher",
-      "fuchsia.process.Resolver",
-      "fuchsia.tracing.provider.Registry"
-    ]
-  }
+    "program": {
+        "data": "data"
+    },
+    "sandbox": {
+        "features": [
+            "config-data",
+            "deprecated-ambient-replace-as-executable",
+            "root-ssl-certificates"
+        ],
+        "services": [
+            "fuchsia.device.NameProvider",
+            "fuchsia.feedback.CrashReporter",
+            "fuchsia.intl.PropertyProvider",
+            "fuchsia.logger.LogSink",
+            "fuchsia.net.name.Lookup",
+            "fuchsia.posix.socket.Provider",
+            "fuchsia.process.Launcher",
+            "fuchsia.process.Resolver",
+            "fuchsia.tracing.provider.Registry"
+        ]
+    }
 }

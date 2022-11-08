@@ -5,8 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_EXTERNAL_TEXTURE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_EXTERNAL_TEXTURE_GL_H_
 
-#include "flutter/flow/texture.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/macros.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
@@ -15,7 +16,7 @@ namespace flutter {
 class EmbedderExternalTextureGL : public flutter::Texture {
  public:
   using ExternalTextureCallback = std::function<
-      sk_sp<SkImage>(int64_t texture_identifier, GrContext*, const SkISize&)>;
+      std::unique_ptr<FlutterOpenGLTexture>(int64_t, size_t, size_t)>;
 
   EmbedderExternalTextureGL(int64_t texture_identifier,
                             const ExternalTextureCallback& callback);
@@ -23,14 +24,20 @@ class EmbedderExternalTextureGL : public flutter::Texture {
   ~EmbedderExternalTextureGL();
 
  private:
-  ExternalTextureCallback external_texture_callback_;
+  const ExternalTextureCallback& external_texture_callback_;
   sk_sp<SkImage> last_image_;
+
+  sk_sp<SkImage> ResolveTexture(int64_t texture_id,
+                                GrDirectContext* context,
+                                const SkISize& size);
 
   // |flutter::Texture|
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context) override;
+             GrDirectContext* context,
+             const SkSamplingOptions& sampling,
+             const SkPaint* paint) override;
 
   // |flutter::Texture|
   void OnGrContextCreated() override;

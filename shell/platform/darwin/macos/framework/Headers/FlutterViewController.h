@@ -25,7 +25,7 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
 /**
  * Controls a view that displays Flutter content and manages input.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterViewController : NSViewController <FlutterPluginRegistry>
 
 /**
@@ -52,5 +52,13 @@ FLUTTER_EXPORT
                                  bundle:(nullable NSBundle*)nibBundleOrNil
     NS_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Invoked by the engine right before the engine is restarted.
+ *
+ * This should reset states to as if the application has just started.  It
+ * usually indicates a hot restart (Shift-R in Flutter CLI.)
+ */
+- (void)onPreEngineRestart;
 
 @end

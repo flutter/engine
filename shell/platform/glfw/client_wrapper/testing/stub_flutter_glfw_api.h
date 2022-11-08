@@ -88,6 +88,9 @@ class StubFlutterGlfwApi {
 
   // Called for FlutterDesktopShutDownEngine.
   virtual bool ShutDownEngine() { return true; }
+
+  // Called for FlutterDesktopPluginRegistrarEnableInputBlocking.
+  virtual void PluginRegistrarEnableInputBlocking(const char* channel) {}
 };
 
 // A test helper that owns a stub implementation, making it the test stub for
@@ -95,7 +98,7 @@ class StubFlutterGlfwApi {
 class ScopedStubFlutterGlfwApi {
  public:
   // Calls SetTestFlutterStub with |stub|.
-  ScopedStubFlutterGlfwApi(std::unique_ptr<StubFlutterGlfwApi> stub);
+  explicit ScopedStubFlutterGlfwApi(std::unique_ptr<StubFlutterGlfwApi> stub);
 
   // Restores the previous test stub.
   ~ScopedStubFlutterGlfwApi();

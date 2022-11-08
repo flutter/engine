@@ -8,14 +8,16 @@
 
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
 EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
+    bool avoid_backing_store_cache,
     const CreateRenderTargetCallback& create_render_target_callback,
     const PresentCallback& present_callback)
-    : create_render_target_callback_(create_render_target_callback),
+    : avoid_backing_store_cache_(avoid_backing_store_cache),
+      create_render_target_callback_(create_render_target_callback),
       present_callback_(present_callback) {
   FML_DCHECK(create_render_target_callback_);
   FML_DCHECK(present_callback_);
@@ -47,9 +49,11 @@ void EmbedderExternalViewEmbedder::CancelFrame() {
 }
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
-                                              GrContext* context,
-                                              double device_pixel_ratio) {
+void EmbedderExternalViewEmbedder::BeginFrame(
+    SkISize frame_size,
+    GrDirectContext* context,
+    double device_pixel_ratio,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
 
   pending_frame_size_ = frame_size;
@@ -68,15 +72,16 @@ void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
 void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
-  FML_DCHECK(pending_views_.count(view_id) == 0);
+  auto vid = EmbedderExternalView::ViewIdentifier(view_id);
+  FML_DCHECK(pending_views_.count(vid) == 0);
 
-  pending_views_[view_id] = std::make_unique<EmbedderExternalView>(
+  pending_views_[vid] = std::make_unique<EmbedderExternalView>(
       pending_frame_size_,              // frame size
       pending_surface_transformation_,  // surface xformation
-      view_id,                          // view identifier
+      vid,                              // view identifier
       std::move(params)                 // embedded view params
   );
-  composition_order_.push_back(view_id);
+  composition_order_.push_back(vid);
 }
 
 // |ExternalViewEmbedder|
@@ -107,7 +112,8 @@ std::vector<SkCanvas*> EmbedderExternalViewEmbedder::GetCurrentCanvases() {
 
 // |ExternalViewEmbedder|
 SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  auto found = pending_views_.find(view_id);
+  auto vid = EmbedderExternalView::ViewIdentifier(view_id);
+  auto found = pending_views_.find(vid);
   if (found == pending_views_.end()) {
     FML_DCHECK(false) << "Attempted to composite a view that was not "
                          "pre-rolled.";
@@ -129,8 +135,8 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-bool EmbedderExternalViewEmbedder::SubmitFrame(
-    GrContext* context,
+void EmbedderExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
@@ -183,7 +189,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";
-      return false;
+      return;
     }
     matched_render_targets[pending_key] = std::move(render_target);
   }
@@ -202,7 +208,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
              ->Render(*render_target.second)) {
       FML_LOG(ERROR)
           << "Could not render into the embedder supplied render target.";
-      return false;
+      return;
     }
   }
 
@@ -260,11 +266,13 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
   // Hold all rendered layers in the render target cache for one frame to
   // see if they may be reused next frame.
   for (auto& render_target : matched_render_targets) {
-    render_target_cache_.CacheRenderTarget(render_target.first,
-                                           std::move(render_target.second));
+    if (!avoid_backing_store_cache_) {
+      render_target_cache_.CacheRenderTarget(render_target.first,
+                                             std::move(render_target.second));
+    }
   }
 
-  return frame->Submit();
+  frame->Submit();
 }
 
 }  // namespace flutter

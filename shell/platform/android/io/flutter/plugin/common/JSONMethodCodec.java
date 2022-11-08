@@ -13,7 +13,7 @@ import org.json.JSONObject;
  * A {@link MethodCodec} using UTF-8 encoded JSON method calls and result envelopes.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/JSONMethodCodec-class.html">JSONMethodCodec</a> on
+ * href="https://api.flutter.dev/flutter/services/JSONMethodCodec-class.html">JSONMethodCodec</a> on
  * the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Values supported as methods arguments and result payloads are those supported by {@link
@@ -68,6 +68,17 @@ public final class JSONMethodCodec implements MethodCodec {
             .put(errorCode)
             .put(JSONUtil.wrap(errorMessage))
             .put(JSONUtil.wrap(errorDetails)));
+  }
+
+  @Override
+  public ByteBuffer encodeErrorEnvelopeWithStacktrace(
+      String errorCode, String errorMessage, Object errorDetails, String errorStacktrace) {
+    return JSONMessageCodec.INSTANCE.encodeMessage(
+        new JSONArray()
+            .put(errorCode)
+            .put(JSONUtil.wrap(errorMessage))
+            .put(JSONUtil.wrap(errorDetails))
+            .put(JSONUtil.wrap(errorStacktrace)));
   }
 
   @Override

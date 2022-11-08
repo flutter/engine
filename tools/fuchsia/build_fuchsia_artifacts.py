@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -10,6 +10,7 @@ import argparse
 import errno
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -34,7 +35,7 @@ def IsMac():
 
 def GetFuchsiaSDKPath():
   # host_os references the gn host_os
-  # https://gn.googlesource.com/gn/+/master/docs/reference.md#var_host_os
+  # https://gn.googlesource.com/gn/+/main/docs/reference.md#var_host_os
   host_os = ''
   if IsLinux():
     host_os = 'linux'
@@ -115,6 +116,8 @@ def CopyGenSnapshotIfExists(source, destination):
                     destination_base, 'kernel_compiler.snapshot')
   FindFileAndCopyTo('frontend_server.dart.snapshot', source_root,
                     destination_base, 'flutter_frontend_server.snapshot')
+  FindFileAndCopyTo('list_libraries.dart.snapshot', source_root,
+                    destination_base, 'list_libraries.snapshot')
 
 
 def CopyFlutterTesterBinIfExists(source, destination):
@@ -122,6 +125,10 @@ def CopyFlutterTesterBinIfExists(source, destination):
   destination_base = os.path.join(destination, 'flutter_binaries')
   FindFileAndCopyTo('flutter_tester', source_root, destination_base)
 
+def CopyZirconFFILibIfExists(source, destination):
+  source_root = os.path.join(_out_dir, source)
+  destination_base = os.path.join(destination, 'flutter_binaries')
+  FindFileAndCopyTo('libzircon_ffi.so', source_root, destination_base)
 
 def CopyToBucketWithMode(source, destination, aot, product, runner_type):
   mode = 'aot' if aot else 'jit'
@@ -143,6 +150,7 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type):
     CopyPath(patched_sdk_dir, dest_sdk_path)
   CopyGenSnapshotIfExists(source_root, destination)
   CopyFlutterTesterBinIfExists(source_root, destination)
+  CopyZirconFFILibIfExists(source_root, destination)
 
 
 def CopyToBucket(src, dst, product=False):
@@ -159,33 +167,58 @@ def CopyVulkanDepsToBucket(src, dst, arch):
     FindFileAndCopyTo('VkLayer_khronos_validation.json', '%s/pkg' % (sdk_path), deps_bucket_path)
     FindFileAndCopyTo('VkLayer_khronos_validation.so', '%s/arch/%s' % (sdk_path, arch), deps_bucket_path)
 
+def CopyIcuDepsToBucket(src, dst):
+  source_root = os.path.join(_out_dir, src)
+  deps_bucket_path = os.path.join(_bucket_directory, dst)
+  FindFileAndCopyTo('icudtl.dat', source_root, deps_bucket_path)
 
-def BuildBucket(runtime_mode, arch, product):
-  out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
-  bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
+def BuildBucket(runtime_mode, arch, optimized, product):
+  unopt = "_unopt" if not optimized else ""
+  out_dir = 'fuchsia_%s%s_%s/' % (runtime_mode, unopt, arch)
+  bucket_dir = 'flutter/%s/%s%s/' % (arch, runtime_mode, unopt)
   deps_dir = 'flutter/%s/deps/' % (arch)
   CopyToBucket(out_dir, bucket_dir, product)
   CopyVulkanDepsToBucket(out_dir, deps_dir, arch)
+  CopyIcuDepsToBucket(out_dir, deps_dir)
 
-
-def ProcessCIPDPackage(upload, engine_version):
   # Copy the CIPD YAML template from the source directory to be next to the bucket
   # we are about to package.
   cipd_yaml = os.path.join(_script_dir, 'fuchsia.cipd.yaml')
   CopyFiles(cipd_yaml, os.path.join(_bucket_directory, 'fuchsia.cipd.yaml'))
 
-  if upload and IsLinux():
-    command = [
-        'cipd', 'create', '-pkg-def', 'fuchsia.cipd.yaml', '-ref', 'latest',
-        '-tag',
-        'git_revision:%s' % engine_version
-    ]
-  else:
-    command = [
-        'cipd', 'pkg-build', '-pkg-def', 'fuchsia.cipd.yaml', '-out',
-        os.path.join(_bucket_directory, 'fuchsia.cipd')
-    ]
+  # Copy the license files from the source directory to be next to the bucket we
+  # are about to package.
+  bucket_root = os.path.join(_bucket_directory, 'flutter')
+  licenses_root = os.path.join(_src_root_dir, 'flutter/ci/licenses_golden')
+  license_files = [
+    'licenses_flutter',
+    'licenses_fuchsia',
+    'licenses_gpu',
+    'licenses_skia',
+    'licenses_third_party'
+  ]
+  for license in license_files:
+    src_path = os.path.join(licenses_root, license)
+    dst_path = os.path.join(bucket_root, license)
+    CopyPath(src_path, dst_path)
 
+def CheckCIPDPackageExists(package_name, tag):
+  '''Check to see if the current package/tag combo has been published'''
+  command = [
+    'cipd',
+    'search',
+    package_name,
+    '-tag',
+    tag,
+  ]
+  stdout = subprocess.check_output(command)
+  match = re.search(r'No matching instances\.', stdout)
+  if match:
+    return False
+  else:
+    return True
+
+def RunCIPDCommandWithRetries(command):
   # Retry up to three times.  We've seen CIPD fail on verification in some
   # instances. Normally verification takes slightly more than 1 minute when
   # it succeeds.
@@ -199,31 +232,38 @@ def ProcessCIPDPackage(upload, engine_version):
       if tries == num_tries - 1:
         raise
 
-def GetRunnerTarget(runner_type, product, aot):
-  base = '%s/%s:' % (_fuchsia_base, runner_type)
-  if 'dart' in runner_type:
-    target = 'dart_'
-  else:
-    target = 'flutter_'
-  if aot:
-    target += 'aot_'
-  else:
-    target += 'jit_'
-  if product:
-    target += 'product_'
-  target += 'runner'
-  return base + target
+def ProcessCIPDPackage(upload, engine_version):
+  if not upload or not IsLinux():
+    RunCIPDCommandWithRetries([
+        'cipd', 'pkg-build', '-pkg-def', 'fuchsia.cipd.yaml', '-out',
+        os.path.join(_bucket_directory, 'fuchsia.cipd')
+    ])
+    return
 
+  # Everything after this point will only run iff `upload==true` and
+  # `IsLinux() == true`
+  assert(upload)
+  assert(IsLinux())
+  if engine_version is None:
+      print('--upload requires --engine-version to be specified.')
+      return
 
-def GetTargetsToBuild(product=False):
-  targets_to_build = [
-      'flutter/shell/platform/fuchsia:fuchsia',
-  ]
-  return targets_to_build
+  tag = 'git_revision:%s' % engine_version
+  already_exists = CheckCIPDPackageExists('flutter/fuchsia', tag)
+  if already_exists:
+    print('CIPD package flutter/fuchsia tag %s already exists!' % tag)
+    return
 
+  RunCIPDCommandWithRetries([
+      'cipd', 'create', '-pkg-def', 'fuchsia.cipd.yaml', '-ref', 'latest',
+      '-tag',
+      tag,
+  ])
 
-def BuildTarget(runtime_mode, arch, product, enable_lto):
-  out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
+def BuildTarget(runtime_mode, arch, optimized, enable_lto, enable_legacy,
+                asan, dart_version_git_info, additional_targets=[]):
+  unopt = "_unopt" if not optimized else ""
+  out_dir = 'fuchsia_%s%s_%s' % (runtime_mode, unopt, arch)
   flags = [
       '--fuchsia',
       '--fuchsia-cpu',
@@ -232,17 +272,32 @@ def BuildTarget(runtime_mode, arch, product, enable_lto):
       runtime_mode,
   ]
 
+  if not optimized:
+    flags.append('--unoptimized')
+
   if not enable_lto:
     flags.append('--no-lto')
+  if not enable_legacy:
+    flags.append('--no-fuchsia-legacy')
+  if asan:
+    flags.append('--asan')
+  if not dart_version_git_info:
+    flags.append('--no-dart-version-git-info')
 
   RunGN(out_dir, flags)
-  BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
+  BuildNinjaTargets(out_dir, [ 'flutter' ] + additional_targets)
 
   return
 
 
 def main():
   parser = argparse.ArgumentParser()
+
+  parser.add_argument(
+      '--cipd-dry-run',
+      default=False,
+      action='store_true',
+      help='If set, creates the CIPD package but does not upload it.')
 
   parser.add_argument(
       '--upload',
@@ -256,6 +311,12 @@ def main():
       help='Specifies the flutter engine SHA.')
 
   parser.add_argument(
+      '--unoptimized',
+      action='store_true',
+      default=False,
+      help='If set, disables compiler optimization for the build.')
+
+  parser.add_argument(
       '--runtime-mode',
       type=str,
       choices=['debug', 'profile', 'release', 'all'],
@@ -265,13 +326,37 @@ def main():
       '--archs', type=str, choices=['x64', 'arm64', 'all'], default='all')
 
   parser.add_argument(
+      '--asan',
+      action='store_true',
+      default=False,
+      help='If set, enables address sanitization (including leak sanitization) for the build.')
+
+  parser.add_argument(
       '--no-lto',
       action='store_true',
       default=False,
       help='If set, disables LTO for the build.')
 
   parser.add_argument(
+      '--no-legacy',
+      action='store_true',
+      default=False,
+      help='If set, disables legacy code for the build.')
+
+  parser.add_argument(
       '--skip-build',
+      action='store_true',
+      default=False,
+      help='If set, skips building and just creates packages.')
+
+  parser.add_argument(
+      '--targets',
+      default='',
+      help=('Comma-separated list; adds additional targets to build for '
+           'Fuchsia.'))
+
+  parser.add_argument(
+      '--no-dart-version-git-info',
       action='store_true',
       default=False,
       help='If set, skips building and just creates packages.')
@@ -284,22 +369,26 @@ def main():
   runtime_modes = ['debug', 'profile', 'release']
   product_modes = [False, False, True]
 
+  optimized = not args.unoptimized
   enable_lto = not args.no_lto
+  enable_legacy = not args.no_legacy
 
+  # Build buckets
   for arch in archs:
     for i in range(3):
       runtime_mode = runtime_modes[i]
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
         if not args.skip_build:
-          BuildTarget(runtime_mode, arch, product, enable_lto)
-        BuildBucket(runtime_mode, arch, product)
+          BuildTarget(runtime_mode, arch, optimized, enable_lto, enable_legacy,
+                      args.asan, not args.no_dart_version_git_info,
+                      args.targets.split(",") if args.targets else [])
+        BuildBucket(runtime_mode, arch, optimized, product)
 
-  if args.upload:
-    if args.engine_version is None:
-      print('--upload requires --engine-version to be specified.')
-      return 1
+  # Create and optionally upload CIPD package
+  if args.cipd_dry_run or args.upload:
     ProcessCIPDPackage(args.upload, args.engine_version)
+
   return 0
 
 

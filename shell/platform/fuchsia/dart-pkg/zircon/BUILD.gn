@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
+import("//flutter/testing/testing.gni")
 
 config("zircon_config") {
   include_dirs = [ "." ]
@@ -14,6 +15,8 @@ source_set("zircon") {
   sources = [
     "sdk_ext/handle.cc",
     "sdk_ext/handle.h",
+    "sdk_ext/handle_disposition.cc",
+    "sdk_ext/handle_disposition.h",
     "sdk_ext/handle_waiter.cc",
     "sdk_ext/handle_waiter.h",
     "sdk_ext/natives.cc",
@@ -31,4 +34,11 @@ source_set("zircon") {
     "//flutter/fml",
     "//flutter/third_party/tonic",
   ]
+}
+
+if (enable_unittests) {
+  source_set("test") {
+    testonly = true
+    deps = [ "test" ]
+  }
 }

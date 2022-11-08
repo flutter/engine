@@ -2,17 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+
+#import "flutter/common/settings.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
 
 FLUTTER_ASSERT_ARC
 
-@interface FlutteEngineTest : XCTestCase
+@interface FlutterEngineTest : XCTestCase
 @end
 
-@implementation FlutteEngineTest
+@implementation FlutterEngineTest
 
 - (void)setUp {
 }
@@ -24,6 +29,73 @@ FLUTTER_ASSERT_ARC
   id project = OCMClassMock([FlutterDartProject class]);
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
+}
+
+- (void)testInfoPlist {
+  // Check the embedded Flutter.framework Info.plist, not the linked dylib.
+  NSURL* flutterFrameworkURL =
+      [NSBundle.mainBundle.privateFrameworksURL URLByAppendingPathComponent:@"Flutter.framework"];
+  NSBundle* flutterBundle = [NSBundle bundleWithURL:flutterFrameworkURL];
+  XCTAssertEqualObjects(flutterBundle.bundleIdentifier, @"io.flutter.flutter");
+
+  NSDictionary<NSString*, id>* infoDictionary = flutterBundle.infoDictionary;
+
+  // OS version can have one, two, or three digits: "8", "8.0", "8.0.0"
+  NSError* regexError = NULL;
+  NSRegularExpression* osVersionRegex =
+      [NSRegularExpression regularExpressionWithPattern:@"((0|[1-9]\\d*)\\.)*(0|[1-9]\\d*)"
+                                                options:NSRegularExpressionCaseInsensitive
+                                                  error:&regexError];
+  XCTAssertNil(regexError);
+
+  // Smoke test the test regex.
+  NSString* testString = @"9";
+  NSUInteger versionMatches =
+      [osVersionRegex numberOfMatchesInString:testString
+                                      options:NSMatchingAnchored
+                                        range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+  testString = @"9.1";
+  versionMatches = [osVersionRegex numberOfMatchesInString:testString
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+  testString = @"9.0.1";
+  versionMatches = [osVersionRegex numberOfMatchesInString:testString
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+  testString = @".0.1";
+  versionMatches = [osVersionRegex numberOfMatchesInString:testString
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 0UL);
+
+  // Test Info.plist values.
+  NSString* minimumOSVersion = infoDictionary[@"MinimumOSVersion"];
+  versionMatches = [osVersionRegex numberOfMatchesInString:minimumOSVersion
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, minimumOSVersion.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+
+  // SHA length is 40.
+  XCTAssertEqual(((NSString*)infoDictionary[@"FlutterEngine"]).length, 40UL);
+
+  // {clang_version} placeholder is 15 characters. The clang string version
+  // is longer than that, so check if the placeholder has been replaced, without
+  // actually checking a literal string, which could be different on various machines.
+  XCTAssertTrue(((NSString*)infoDictionary[@"ClangVersion"]).length > 15UL);
+}
+
+- (void)testDeallocated {
+  __weak FlutterEngine* weakEngine = nil;
+  {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+    weakEngine = engine;
+    [engine run];
+    XCTAssertNotNil(weakEngine);
+  }
+  XCTAssertNil(weakEngine);
 }
 
 - (void)testSendMessageBeforeRun {
@@ -66,6 +138,107 @@ FLUTTER_ASSERT_ARC
     engine = nil;
   }
   OCMVerify([plugin detachFromEngineForRegistrar:[OCMArg any]]);
+}
+
+- (void)testRunningInitialRouteSendsNavigationMessage {
+  id mockBinaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
+
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine setBinaryMessenger:mockBinaryMessenger];
+
+  // Run with an initial route.
+  [engine runWithEntrypoint:FlutterDefaultDartEntrypoint initialRoute:@"test"];
+
+  // Now check that an encoded method call has been made on the binary messenger to set the
+  // initial route to "test".
+  FlutterMethodCall* setInitialRouteMethodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"setInitialRoute" arguments:@"test"];
+  NSData* encodedSetInitialRouteMethod =
+      [[FlutterJSONMethodCodec sharedInstance] encodeMethodCall:setInitialRouteMethodCall];
+  OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/navigation"
+                                       message:encodedSetInitialRouteMethod]);
+}
+
+- (void)testPlatformViewsControllerRenderingMetalBackend {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine run];
+  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
+
+  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kMetal);
+}
+
+- (void)testPlatformViewsControllerRenderingSoftware {
+  auto settings = FLTDefaultSettingsForBundle();
+  settings.enable_software_rendering = true;
+  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine run];
+  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
+
+  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kSoftware);
+}
+
+- (void)testWaitForFirstFrameTimeout {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+  [engine run];
+  XCTestExpectation* timeoutFirstFrame = [self expectationWithDescription:@"timeoutFirstFrame"];
+  [engine waitForFirstFrame:0.1
+                   callback:^(BOOL didTimeout) {
+                     if (timeoutFirstFrame) {
+                       [timeoutFirstFrame fulfill];
+                     }
+                   }];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+}
+
+- (void)testSpawn {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+  [engine run];
+  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil
+                                          libraryURI:nil
+                                        initialRoute:nil
+                                      entrypointArgs:nil];
+  XCTAssertNotNil(spawn);
+}
+
+- (void)testDeallocNotification {
+  XCTestExpectation* deallocNotification = [self expectationWithDescription:@"deallocNotification"];
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  id<NSObject> observer;
+  @autoreleasepool {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+    observer = [center addObserverForName:FlutterEngineWillDealloc
+                                   object:engine
+                                    queue:[NSOperationQueue mainQueue]
+                               usingBlock:^(NSNotification* note) {
+                                 [deallocNotification fulfill];
+                               }];
+  }
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [center removeObserver:observer];
+}
+
+- (void)testSetHandlerAfterRun {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+  XCTestExpectation* gotMessage = [self expectationWithDescription:@"gotMessage"];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSObject<FlutterPluginRegistrar>* registrar = [engine registrarForPlugin:@"foo"];
+    fml::AutoResetWaitableEvent latch;
+    [engine run];
+    flutter::Shell& shell = engine.shell;
+    engine.shell.GetTaskRunners().GetUITaskRunner()->PostTask([&latch, &shell] {
+      flutter::Engine::Delegate& delegate = shell;
+      auto message = std::make_unique<flutter::PlatformMessage>("foo", nullptr);
+      delegate.OnEngineHandlePlatformMessage(std::move(message));
+      latch.Signal();
+    });
+    latch.Wait();
+    [registrar.messenger setMessageHandlerOnChannel:@"foo"
+                               binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                                 [gotMessage fulfill];
+                               }];
+  });
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 @end

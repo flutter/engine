@@ -1,0 +1,127 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/testing/testing.gni")
+
+source_set("display_list") {
+  sources = [
+    "display_list.cc",
+    "display_list.h",
+    "display_list_builder.cc",
+    "display_list_builder.h",
+    "display_list_canvas_dispatcher.cc",
+    "display_list_canvas_dispatcher.h",
+    "display_list_canvas_recorder.cc",
+    "display_list_canvas_recorder.h",
+    "display_list_dispatcher.cc",
+    "display_list_dispatcher.h",
+    "display_list_flags.cc",
+    "display_list_flags.h",
+    "display_list_ops.cc",
+    "display_list_ops.h",
+    "display_list_utils.cc",
+    "display_list_utils.h",
+    "types.h",
+  ]
+
+  public_deps = [
+    "//flutter/fml",
+    "//third_party/skia",
+  ]
+}
+
+# Instead of creating a new test harness for display lists, the flow_unittests
+# harness includes these in its own.
+source_set("unittests") {
+  testonly = true
+
+  sources = [
+    "display_list_canvas_unittests.cc",
+    "display_list_unittests.cc",
+  ]
+
+  deps = [
+    "//flutter/testing:testing_lib",
+    "//third_party/skia",
+  ]
+
+  public_deps = [ ":display_list" ]
+}
+
+fixtures_location("display_list_benchmarks_fixtures") {
+  assets_dir = "$target_gen_dir/"
+}
+
+if (enable_unittests) {
+  executable("display_list_benchmarks") {
+    testonly = true
+
+    sources = [
+      "display_list_benchmarks.cc",
+      "display_list_benchmarks.h",
+      "display_list_benchmarks_software.cc",
+    ]
+
+    deps = [
+      ":display_list",
+      ":display_list_benchmarks_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/common/graphics",
+      "//flutter/fml",
+      "//flutter/testing:skia",
+      "//flutter/testing:testing_lib",
+      "//third_party/dart/runtime:libdart_jit",  # for tracing
+      "//third_party/skia",
+    ]
+
+    if (!is_fuchsia) {
+      sources += [ "display_list_benchmarks_gl.cc" ]
+      deps += [ "//flutter/testing:opengl" ]
+    }
+
+    if (is_mac) {
+      sources += [ "display_list_benchmarks_metal.cc" ]
+      deps += [ "//flutter/testing:metal" ]
+    }
+  }
+}
+
+if (is_ios) {
+  shared_library("ios_display_list_benchmarks") {
+    testonly = true
+    visibility = [ ":*" ]
+
+    configs -= [
+      "//build/config/gcc:symbol_visibility_hidden",
+      "//build/config:symbol_visibility_hidden",
+    ]
+    configs += [ "//flutter/benchmarking:benchmark_library_config" ]
+    cflags = [
+      "-fobjc-arc",
+      "-mios-simulator-version-min=$ios_testing_deployment_target",
+    ]
+    ldflags =
+        [ "-Wl,-install_name,@rpath/libios_display_list_benchmarks.dylib" ]
+
+    sources = [
+      "display_list_benchmarks.cc",
+      "display_list_benchmarks.h",
+      "display_list_benchmarks_metal.cc",
+    ]
+
+    deps = [
+      ":display_list",
+      ":display_list_benchmarks_fixtures",
+      "//flutter/benchmarking:benchmarking_library",
+      "//flutter/common/graphics",
+      "//flutter/fml",
+      "//flutter/testing:metal",
+      "//flutter/testing:skia",
+      "//flutter/testing:testing_lib",
+      "//third_party/benchmark",
+      "//third_party/dart/runtime:libdart_jit",  # for tracing
+      "//third_party/skia",
+    ]
+  }
+}

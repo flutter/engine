@@ -41,10 +41,13 @@ std::string Settings::ToString() const {
   stream << "dump_skp_on_shader_compilation: " << dump_skp_on_shader_compilation
          << std::endl;
   stream << "cache_sksl: " << cache_sksl << std::endl;
+  stream << "purge_persistent_cache: " << purge_persistent_cache << std::endl;
   stream << "endless_trace_buffer: " << endless_trace_buffer << std::endl;
   stream << "enable_dart_profiling: " << enable_dart_profiling << std::endl;
   stream << "disable_dart_asserts: " << disable_dart_asserts << std::endl;
   stream << "enable_observatory: " << enable_observatory << std::endl;
+  stream << "enable_observatory_publication: " << enable_observatory_publication
+         << std::endl;
   stream << "observatory_host: " << observatory_host << std::endl;
   stream << "observatory_port: " << observatory_port << std::endl;
   stream << "use_test_fonts: " << use_test_fonts << std::endl;

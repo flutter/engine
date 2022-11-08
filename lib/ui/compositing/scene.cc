@@ -8,6 +8,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -41,12 +42,15 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  auto viewport_metrics = UIDartState::Current()->window()->viewport_metrics();
+  // Currently only supports a single window.
+  auto viewport_metrics = UIDartState::Current()
+                              ->platform_configuration()
+                              ->get_window(0)
+                              ->viewport_metrics();
 
   layer_tree_ = std::make_unique<LayerTree>(
       SkISize::Make(viewport_metrics.physical_width,
                     viewport_metrics.physical_height),
-      static_cast<float>(viewport_metrics.physical_depth),
       static_cast<float>(viewport_metrics.device_pixel_ratio));
   layer_tree_->set_root_layer(std::move(rootLayer));
   layer_tree_->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);
@@ -58,6 +62,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
 Scene::~Scene() {}
 
 void Scene::dispose() {
+  layer_tree_.reset();
   ClearDartWrapper();
 }
 

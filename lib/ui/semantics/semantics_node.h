@@ -5,14 +5,15 @@
 #ifndef FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkRect.h"
+
+#include "flutter/lib/ui/semantics/string_attribute.h"
 
 namespace flutter {
 
@@ -40,15 +41,26 @@ enum class SemanticsAction : int32_t {
   kDismiss = 1 << 18,
   kMoveCursorForwardByWordIndex = 1 << 19,
   kMoveCursorBackwardByWordIndex = 1 << 20,
+  kSetText = 1 << 21,
 };
 
-const int kScrollableSemanticsActions =
-    static_cast<int32_t>(SemanticsAction::kScrollLeft) |
-    static_cast<int32_t>(SemanticsAction::kScrollRight) |
+const int kVerticalScrollSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
-// Must match the SemanticsFlags enum in semantics.dart.
+const int kHorizontalScrollSemanticsActions =
+    static_cast<int32_t>(SemanticsAction::kScrollLeft) |
+    static_cast<int32_t>(SemanticsAction::kScrollRight);
+
+const int kScrollableSemanticsActions =
+    kVerticalScrollSemanticsActions | kHorizontalScrollSemanticsActions;
+
+/// C/C++ representation of `SemanticsFlags` defined in
+/// `lib/ui/semantics.dart`.
+///\warning This must match the `SemanticsFlags` enum in
+///         `lib/ui/semantics.dart`.
+/// See also:
+///   - file://./../../../lib/ui/semantics.dart
 enum class SemanticsFlags : int32_t {
   kHasCheckedState = 1 << 0,
   kIsChecked = 1 << 1,
@@ -74,6 +86,8 @@ enum class SemanticsFlags : int32_t {
   kIsReadOnly = 1 << 20,
   kIsFocusable = 1 << 21,
   kIsLink = 1 << 22,
+  kIsSlider = 1 << 23,
+  kIsKeyboardKey = 1 << 24,
 };
 
 const int kScrollableSemanticsFlags =
@@ -108,14 +122,20 @@ struct SemanticsNode {
   double elevation = 0.0;
   double thickness = 0.0;
   std::string label;
+  StringAttributes labelAttributes;
   std::string hint;
+  StringAttributes hintAttributes;
   std::string value;
+  StringAttributes valueAttributes;
   std::string increasedValue;
+  StringAttributes increasedValueAttributes;
   std::string decreasedValue;
+  StringAttributes decreasedValueAttributes;
+  std::string tooltip;
   int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
 
-  SkRect rect = SkRect::MakeEmpty();
-  SkM44 transform = SkM44{};  // Identity
+  SkRect rect = SkRect::MakeEmpty();  // Local space, relative to parent.
+  SkM44 transform = SkM44{};          // Identity
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
   std::vector<int32_t> customAccessibilityActions;

@@ -28,6 +28,10 @@ DEF_SWITCHES_START
 DEF_SWITCH(AotSharedLibraryName,
            "aot-shared-library-name",
            "Name of the *.so containing AOT compiled Dart assets.")
+DEF_SWITCH(AotVMServiceSharedLibraryName,
+           "aot-vmservice-shared-library-name",
+           "Name of the *.so containing AOT compiled Dart assets for "
+           "launching the service isolate.")
 DEF_SWITCH(SnapshotAssetPath,
            "snapshot-asset-path",
            "Path to the directory containing the four files specified by "
@@ -79,6 +83,9 @@ DEF_SWITCH(DisableObservatory,
            "disable-observatory",
            "Disable the Dart Observatory. The observatory is never available "
            "in release mode.")
+DEF_SWITCH(DisableObservatoryPublication,
+           "disable-observatory-publication",
+           "Disable mDNS Dart Observatory publication.")
 DEF_SWITCH(IPv6,
            "ipv6",
            "Bind to the IPv6 localhost address for the Dart Observatory. "
@@ -97,7 +104,7 @@ DEF_SWITCH(EnableSoftwareRendering,
            "enable-software-rendering",
            "Enable rendering using the Skia software backend. This is useful "
            "when testing Flutter on emulators. By default, Flutter will "
-           "attempt to either use OpenGL or Vulkan.")
+           "attempt to either use OpenGL, Metal, or Vulkan.")
 DEF_SWITCH(SkiaDeterministicRendering,
            "skia-deterministic-rendering",
            "Skips the call to SkGraphics::Init(), thus avoiding swapping out "
@@ -129,11 +136,15 @@ DEF_SWITCH(TraceSkia,
            "Trace Skia calls. This is useful when debugging the GPU threed."
            "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
+DEF_SWITCH(TraceSkiaAllowlist,
+           "trace-skia-allowlist",
+           "Filters out all Skia trace event categories except those that are "
+           "specified in this comma separated list.")
 DEF_SWITCH(
-    TraceWhitelist,
-    "trace-whitelist",
+    TraceAllowlist,
+    "trace-allowlist",
     "Filters out all trace events except those that are specified in this "
-    "comma separated list of whitelisted prefixes.")
+    "comma separated list of allowed prefixes.")
 DEF_SWITCH(DumpSkpOnShaderCompilation,
            "dump-skp-on-shader-compilation",
            "Automatically dump the skp that triggers new shader compilations. "
@@ -145,6 +156,10 @@ DEF_SWITCH(CacheSkSL,
            "should only be used during development phases. The generated SkSLs "
            "can later be used in the release build for shader precompilation "
            "at launch in order to eliminate the shader-compile jank.")
+DEF_SWITCH(PurgePersistentCache,
+           "purge-persistent-cache",
+           "Remove all existing persistent cache. This is mainly for debugging "
+           "purposes such as reproducing the shader compilation jank.")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",
@@ -158,6 +173,10 @@ DEF_SWITCH(UseTestFonts,
            "will make font resolution default to the Ahem test font on all "
            "platforms (See https://www.w3.org/Style/CSS/Test/Fonts/Ahem/). "
            "This option is only available on the desktop test shells.")
+DEF_SWITCH(PrefetchedDefaultFontManager,
+           "prefetched-default-font-manager",
+           "Indicates whether the embedding started a prefetch of the "
+           "default font manager before creating the engine.")
 DEF_SWITCH(VerboseLogging,
            "verbose-logging",
            "By default, only errors are logged. This flag enabled logging at "
@@ -174,18 +193,28 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
-DEF_SWITCH(DisableHttp,
-           "disable-http",
-           "Dart VM has a master switch that can be set to disable insecure "
-           "HTTP and WebSocket protocols. Localhost or loopback addresses are "
-           "exempted. This flag can be specified if the embedder wants this "
-           "for a particular platform.")
+DEF_SWITCH(DisallowInsecureConnections,
+           "disallow-insecure-connections",
+           "By default, dart:io allows all socket connections. If this switch "
+           "is set, all insecure connections are rejected.")
+DEF_SWITCH(DomainNetworkPolicy,
+           "domain-network-policy",
+           "JSON encoded network policy per domain. This overrides the "
+           "DisallowInsecureConnections switch. Embedder can specify whether "
+           "to allow or disallow insecure connections at a domain level.")
 DEF_SWITCH(
     ForceMultithreading,
     "force-multithreading",
     "Uses separate threads for the platform, UI, GPU and IO task runners. "
     "By default, a single thread is used for all task runners. Only available "
     "in the flutter_tester.")
+DEF_SWITCH(OldGenHeapSize,
+           "old-gen-heap-size",
+           "The size limit in megabytes for the Dart VM old gen heap space.")
+DEF_SWITCH(EnableSkParagraph,
+           "enable-skparagraph",
+           "Selects the SkParagraph implementation of the text layout engine.")
+
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

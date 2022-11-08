@@ -4,8 +4,13 @@
 
 #include "flutter/shell/common/vsync_waiter.h"
 
+#include "flow/frame_timings.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
+#include "fml/logging.h"
+#include "fml/message_loop_task_queues.h"
+#include "fml/task_queue_id.h"
+#include "fml/time/time_point.h"
 
 namespace flutter {
 
@@ -52,7 +57,7 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
       return;
     }
     callback_ = std::move(callback);
-    if (secondary_callback_) {
+    if (!secondary_callbacks_.empty()) {
       // Return directly as `AwaitVSync` is already called by
       // `ScheduleSecondaryCallback`.
       return;
@@ -61,7 +66,8 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
   AwaitVSync();
 }
 
-void VsyncWaiter::ScheduleSecondaryCallback(const fml::closure& callback) {
+void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
+                                            const fml::closure& callback) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (!callback) {
@@ -72,34 +78,40 @@ void VsyncWaiter::ScheduleSecondaryCallback(const fml::closure& callback) {
 
   {
     std::scoped_lock lock(callback_mutex_);
-    if (secondary_callback_) {
+    auto [_, inserted] = secondary_callbacks_.emplace(id, std::move(callback));
+    if (!inserted) {
       // Multiple schedules must result in a single callback per frame interval.
       TRACE_EVENT_INSTANT0("flutter",
                            "MultipleCallsToSecondaryVsyncInFrameInterval");
       return;
     }
-    secondary_callback_ = std::move(callback);
     if (callback_) {
       // Return directly as `AwaitVSync` is already called by
       // `AsyncWaitForVsync`.
       return;
     }
   }
-  AwaitVSync();
+  AwaitVSyncForSecondaryCallback();
 }
 
 void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
-                               fml::TimePoint frame_target_time) {
+                               fml::TimePoint frame_target_time,
+                               bool pause_secondary_tasks) {
+  FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
+
   Callback callback;
-  fml::closure secondary_callback;
+  std::vector<fml::closure> secondary_callbacks;
 
   {
     std::scoped_lock lock(callback_mutex_);
     callback = std::move(callback_);
-    secondary_callback = std::move(secondary_callback_);
+    for (auto& pair : secondary_callbacks_) {
+      secondary_callbacks.push_back(std::move(pair.second));
+    }
+    secondary_callbacks_.clear();
   }
 
-  if (!callback && !secondary_callback) {
+  if (!callback && secondary_callbacks.empty()) {
     // This means that the vsync waiter implementation fired a callback for a
     // request we did not make. This is a paranoid check but we still want to
     // make sure we catch misbehaving vsync implementations.
@@ -109,6 +121,9 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
   if (callback) {
     auto flow_identifier = fml::tracing::TraceNonce();
+    if (pause_secondary_tasks) {
+      PauseDartMicroTasks();
+    }
 
     // The base trace ensures that flows have a root to begin from if one does
     // not exist. The trace viewer will ignore traces that have no base event
@@ -118,27 +133,41 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
     TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
 
-    task_runners_.GetUITaskRunner()->PostTaskForTime(
-        [callback, flow_identifier, frame_start_time, frame_target_time]() {
+    fml::TaskQueueId ui_task_queue_id =
+        task_runners_.GetUITaskRunner()->GetTaskQueueId();
+
+    task_runners_.GetUITaskRunner()->PostTask(
+        [ui_task_queue_id, callback, flow_identifier, frame_start_time,
+         frame_target_time, pause_secondary_tasks]() {
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
                           frame_start_time, "TargetTime", frame_target_time);
-          fml::tracing::TraceEventAsyncComplete(
-              "flutter", "VsyncSchedulingOverhead", fml::TimePoint::Now(),
-              frame_start_time);
-          callback(frame_start_time, frame_target_time);
+          std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+              std::make_unique<FrameTimingsRecorder>();
+          frame_timings_recorder->RecordVsync(frame_start_time,
+                                              frame_target_time);
+          callback(std::move(frame_timings_recorder));
           TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
-        },
-        frame_start_time);
+          if (pause_secondary_tasks) {
+            ResumeDartMicroTasks(ui_task_queue_id);
+          }
+        });
   }
 
-  if (secondary_callback) {
+  for (auto& secondary_callback : secondary_callbacks) {
     task_runners_.GetUITaskRunner()->PostTaskForTime(
         std::move(secondary_callback), frame_start_time);
   }
 }
 
-float VsyncWaiter::GetDisplayRefreshRate() const {
-  return kUnknownRefreshRateFPS;
+void VsyncWaiter::PauseDartMicroTasks() {
+  auto ui_task_queue_id = task_runners_.GetUITaskRunner()->GetTaskQueueId();
+  auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+  task_queues->PauseSecondarySource(ui_task_queue_id);
+}
+
+void VsyncWaiter::ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id) {
+  auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+  task_queues->ResumeSecondarySource(ui_task_queue_id);
 }
 
 }  // namespace flutter

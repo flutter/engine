@@ -4,7 +4,8 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-// @dart = 2.6
+
+// @dart = 2.12
 part of dart.ui;
 
 // Corelib 'print' implementation.
@@ -17,8 +18,8 @@ void _printDebug(dynamic arg) {
 }
 
 class _Logger {
-  static void _printString(String/*?*/ s) native 'Logger_PrintString';
-  static void _printDebugString(String/*?*/ s) native 'Logger_PrintDebugString';
+  static void _printString(String? s) native 'Logger_PrintString';
+  static void _printDebugString(String? s) native 'Logger_PrintDebugString';
 }
 
 // If we actually run on big endian machines, we'll need to do something smarter
@@ -33,7 +34,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
     Map<String, String> parameters
     ) async {
   // Schedule the frame.
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
   // Always succeed.
   return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
     'type': 'Success',
@@ -68,24 +69,19 @@ void _setupHooks() {  // ignore: unused_element
 /// ```
 ///
 /// This function is only effective in debug and dynamic modes, and will throw in AOT mode.
-List<int/*!*/>/*!*/ saveCompilationTrace() {
-  final dynamic result = _saveCompilationTrace();
-  if (result is Error)
-    throw result;
-  return result as List<int>;
+List<int> saveCompilationTrace() {
+  throw UnimplementedError();
 }
 
-dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
+void _scheduleMicrotask(void Function() callback) native 'ScheduleMicrotask';
 
-void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
-
-int/*?*/ _getCallbackHandle(Function closure) native 'GetCallbackHandle';
-Function/*?*/ _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';
+int? _getCallbackHandle(Function closure) native 'GetCallbackHandle';
+Function? _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';
 
 // Required for gen_snapshot to work correctly.
-int/*?*/ _isolateId; // ignore: unused_element
+int? _isolateId; // ignore: unused_element
 
 @pragma('vm:entry-point')
-Function _getPrintClosure() => _print;  // ignore: unused_element
+Function _getPrintClosure() => _print;
 @pragma('vm:entry-point')
-Function _getScheduleMicrotaskClosure() => _scheduleMicrotask; // ignore: unused_element
+Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;

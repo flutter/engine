@@ -2,21 +2,31 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
 
-final bool _supportsDecode = js_util.getProperty(
-        js_util.getProperty(
-            js_util.getProperty(html.window, 'Image'), 'prototype'),
-        'decode') !=
-    null;
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'safe_browser_api.dart';
+import 'util.dart';
+
+Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
+  getJsProperty<Object>(
+    getJsProperty<Object>(html.window, 'Image'),
+    'prototype',
+  ),
+  'decode',
+);
+final bool _supportsDecode = _jsImageDecodeFunction != null;
 
 typedef WebOnlyImageCodecChunkCallback = void Function(
     int cumulativeBytesLoaded, int expectedTotalBytes);
 
 class HtmlCodec implements ui.Codec {
   final String src;
-  final WebOnlyImageCodecChunkCallback chunkCallback;
+  final WebOnlyImageCodecChunkCallback? chunkCallback;
 
   HtmlCodec(this.src, {this.chunkCallback});
 
@@ -32,21 +42,27 @@ class HtmlCodec implements ui.Codec {
     // Currently there is no way to watch decode progress, so
     // we add 0/100 , 100/100 progress callbacks to enable loading progress
     // builders to create UI.
-    if (chunkCallback != null) {
-      chunkCallback(0, 100);
-    }
+      chunkCallback?.call(0, 100);
     if (_supportsDecode) {
       final html.ImageElement imgElement = html.ImageElement();
       imgElement.src = src;
-      js_util.setProperty(imgElement, 'decoding', 'async');
+      setJsProperty<String>(imgElement, 'decoding', 'async');
       imgElement.decode().then((dynamic _) {
-        if (chunkCallback != null) {
-          chunkCallback(100, 100);
+        chunkCallback?.call(100, 100);
+        int naturalWidth = imgElement.naturalWidth;
+        int naturalHeight = imgElement.naturalHeight;
+        // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
+        if (naturalWidth == 0 && naturalHeight == 0 && (
+            browserEngine == BrowserEngine.firefox ||
+                browserEngine == BrowserEngine.ie11)) {
+          const int kDefaultImageSizeFallback = 300;
+          naturalWidth = kDefaultImageSizeFallback;
+          naturalHeight = kDefaultImageSizeFallback;
         }
         final HtmlImage image = HtmlImage(
           imgElement,
-          imgElement.naturalWidth,
-          imgElement.naturalHeight,
+          naturalWidth,
+          naturalHeight,
         );
         completer.complete(SingleFrameInfo(image));
       }).catchError((dynamic e) {
@@ -61,9 +77,9 @@ class HtmlCodec implements ui.Codec {
     return completer.future;
   }
 
-  void _decodeUsingOnLoad(Completer completer) {
-    StreamSubscription<html.Event> loadSubscription;
-    StreamSubscription<html.Event> errorSubscription;
+  void _decodeUsingOnLoad(Completer<ui.FrameInfo> completer) {
+    StreamSubscription<html.Event>? loadSubscription;
+    late StreamSubscription<html.Event> errorSubscription;
     final html.ImageElement imgElement = html.ImageElement();
     // If the browser doesn't support asynchronous decoding of an image,
     // then use the `onload` event to decide when it's ready to paint to the
@@ -76,9 +92,9 @@ class HtmlCodec implements ui.Codec {
     });
     loadSubscription = imgElement.onLoad.listen((html.Event event) {
       if (chunkCallback != null) {
-        chunkCallback(100, 100);
+        chunkCallback!(100, 100);
       }
-      loadSubscription.cancel();
+      loadSubscription!.cancel();
       errorSubscription.cancel();
       final HtmlImage image = HtmlImage(
         imgElement,
@@ -120,11 +136,33 @@ class HtmlImage implements ui.Image {
   bool _requiresClone = false;
   HtmlImage(this.imgElement, this.width, this.height);
 
+  bool _disposed = false;
   @override
   void dispose() {
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
+    if (assertionsEnabled) {
+      _disposed = true;
+    }
   }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
+  }
+
+
+  @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
   @override
   final int width;
@@ -133,20 +171,34 @@ class HtmlImage implements ui.Image {
   final int height;
 
   @override
-  Future<ByteData> toByteData(
-      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    return futurize((Callback<ByteData> callback) {
-      return _toByteData(format.index, (Uint8List encoded) {
-        callback(encoded?.buffer?.asByteData());
-      });
-    });
+  Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+    switch (format) {
+      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
+      // The format rawRgba always returns straight rather than premul currently.
+      case ui.ImageByteFormat.rawRgba:
+      case ui.ImageByteFormat.rawStraightRgba:
+        final html.CanvasElement canvas = html.CanvasElement()
+          ..width = width
+          ..height = height;
+        final html.CanvasRenderingContext2D ctx = canvas.context2D;
+        ctx.drawImage(imgElement, 0, 0);
+        final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
+        return Future<ByteData?>.value(imageData.data.buffer.asByteData());
+      default:
+        if (imgElement.src?.startsWith('data:') == true) {
+          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
+          return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+        } else {
+          return Future<ByteData?>.value(null);
+        }
+    }
   }
 
   // Returns absolutely positioned actual image element on first call and
   // clones on subsequent calls.
   html.ImageElement cloneImageElement() {
     if (_requiresClone) {
-      return imgElement.clone(true);
+      return imgElement.clone(true) as html.ImageElement;
     } else {
       _requiresClone = true;
       imgElement.style.position = 'absolute';
@@ -154,11 +206,6 @@ class HtmlImage implements ui.Image {
     }
   }
 
-  // TODO(het): Support this for asset images and images generated from
-  // `Picture`s.
-  /// Returns an error message on failure, null on success.
-  String _toByteData(int format, Callback<Uint8List> callback) {
-    callback(null);
-    return 'Image.toByteData is not supported in Flutter for Web';
-  }
+  @override
+  String toString() => '[$width\u00D7$height]';
 }

@@ -4,10 +4,13 @@
 
 #include "flutter/fml/platform/android/jni_util.h"
 
+#include <sys/prctl.h>
+
 #include <codecvt>
 #include <string>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/thread_local.h"
 
 namespace fml {
 namespace jni {
@@ -15,6 +18,13 @@ namespace jni {
 static JavaVM* g_jvm = nullptr;
 
 #define ASSERT_NO_EXCEPTION() FML_CHECK(env->ExceptionCheck() == JNI_FALSE);
+
+struct JNIDetach {
+  ~JNIDetach() { DetachFromVM(); }
+};
+
+// Thread-local object that will detach from JNI during thread shutdown;
+FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<JNIDetach> tls_jni_detach;
 
 void InitJavaVM(JavaVM* vm) {
   FML_DCHECK(g_jvm == nullptr);
@@ -24,9 +34,30 @@ void InitJavaVM(JavaVM* vm) {
 JNIEnv* AttachCurrentThread() {
   FML_DCHECK(g_jvm != nullptr)
       << "Trying to attach to current thread without calling InitJavaVM first.";
+
   JNIEnv* env = nullptr;
-  jint ret = g_jvm->AttachCurrentThread(&env, nullptr);
+  if (g_jvm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_4) ==
+      JNI_OK) {
+    return env;
+  }
+
+  JavaVMAttachArgs args;
+  args.version = JNI_VERSION_1_4;
+  args.group = nullptr;
+  // 16 is the maximum size for thread names on Android.
+  char thread_name[16];
+  int err = prctl(PR_GET_NAME, thread_name);
+  if (err < 0) {
+    args.name = nullptr;
+  } else {
+    args.name = thread_name;
+  }
+  jint ret = g_jvm->AttachCurrentThread(&env, &args);
   FML_DCHECK(JNI_OK == ret);
+
+  FML_DCHECK(tls_jni_detach.get() == nullptr);
+  tls_jni_detach.reset(new JNIDetach());
+
   return env;
 }
 
@@ -94,6 +125,35 @@ std::vector<std::string> StringArrayToVector(JNIEnv* env, jobjectArray array) {
   return out;
 }
 
+std::vector<std::string> StringListToVector(JNIEnv* env, jobject list) {
+  std::vector<std::string> out;
+  if (env == nullptr || list == nullptr) {
+    return out;
+  }
+
+  ScopedJavaLocalRef<jclass> list_clazz(env, env->FindClass("java/util/List"));
+  FML_DCHECK(!list_clazz.is_null());
+
+  jmethodID list_get =
+      env->GetMethodID(list_clazz.obj(), "get", "(I)Ljava/lang/Object;");
+  jmethodID list_size = env->GetMethodID(list_clazz.obj(), "size", "()I");
+
+  jint size = env->CallIntMethod(list, list_size);
+
+  if (size == 0) {
+    return out;
+  }
+
+  out.resize(size);
+  for (jint i = 0; i < size; ++i) {
+    ScopedJavaLocalRef<jstring> java_string(
+        env, static_cast<jstring>(env->CallObjectMethod(list, list_get, i)));
+    out[i] = JavaStringToString(env, java_string.obj());
+  }
+
+  return out;
+}
+
 ScopedJavaLocalRef<jobjectArray> VectorToStringArray(
     JNIEnv* env,
     const std::vector<std::string>& vector) {
@@ -101,14 +161,33 @@ ScopedJavaLocalRef<jobjectArray> VectorToStringArray(
   ScopedJavaLocalRef<jclass> string_clazz(env,
                                           env->FindClass("java/lang/String"));
   FML_DCHECK(!string_clazz.is_null());
-  jobjectArray joa =
+  jobjectArray java_array =
       env->NewObjectArray(vector.size(), string_clazz.obj(), NULL);
   ASSERT_NO_EXCEPTION();
   for (size_t i = 0; i < vector.size(); ++i) {
     ScopedJavaLocalRef<jstring> item = StringToJavaString(env, vector[i]);
-    env->SetObjectArrayElement(joa, i, item.obj());
+    env->SetObjectArrayElement(java_array, i, item.obj());
   }
-  return ScopedJavaLocalRef<jobjectArray>(env, joa);
+  return ScopedJavaLocalRef<jobjectArray>(env, java_array);
+}
+
+ScopedJavaLocalRef<jobjectArray> VectorToBufferArray(
+    JNIEnv* env,
+    const std::vector<std::vector<uint8_t>>& vector) {
+  FML_DCHECK(env);
+  ScopedJavaLocalRef<jclass> byte_buffer_clazz(
+      env, env->FindClass("java/nio/ByteBuffer"));
+  FML_DCHECK(!byte_buffer_clazz.is_null());
+  jobjectArray java_array =
+      env->NewObjectArray(vector.size(), byte_buffer_clazz.obj(), NULL);
+  ASSERT_NO_EXCEPTION();
+  for (size_t i = 0; i < vector.size(); ++i) {
+    ScopedJavaLocalRef<jobject> item(
+        env,
+        env->NewDirectByteBuffer((void*)(vector[i].data()), vector[i].size()));
+    env->SetObjectArrayElement(java_array, i, item.obj());
+  }
+  return ScopedJavaLocalRef<jobjectArray>(env, java_array);
 }
 
 bool HasException(JNIEnv* env) {
@@ -121,6 +200,17 @@ bool ClearException(JNIEnv* env) {
   env->ExceptionDescribe();
   env->ExceptionClear();
   return true;
+}
+
+bool CheckException(JNIEnv* env) {
+  if (!HasException(env))
+    return true;
+
+  jthrowable exception = env->ExceptionOccurred();
+  env->ExceptionClear();
+  FML_LOG(ERROR) << fml::jni::GetJavaExceptionInfo(env, exception);
+  env->DeleteLocalRef(exception);
+  return false;
 }
 
 std::string GetJavaExceptionInfo(JNIEnv* env, jthrowable java_throwable) {

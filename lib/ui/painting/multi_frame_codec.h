@@ -7,12 +7,13 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/painting/codec.h"
+#include "flutter/lib/ui/painting/image_generator.h"
 
 namespace flutter {
 
 class MultiFrameCodec : public Codec {
  public:
-  MultiFrameCodec(std::unique_ptr<SkCodec> codec);
+  explicit MultiFrameCodec(std::shared_ptr<ImageGenerator> generator);
 
   ~MultiFrameCodec() override;
 
@@ -36,9 +37,9 @@ class MultiFrameCodec : public Codec {
   // shares it with the IO task runner's decoding work, and sets the live_
   // member to false when it is destructed.
   struct State {
-    State(std::unique_ptr<SkCodec> codec);
+    explicit State(std::shared_ptr<ImageGenerator> generator);
 
-    const std::unique_ptr<SkCodec> codec_;
+    const std::shared_ptr<ImageGenerator> generator_;
     const int frameCount_;
     const int repetitionCount_;
 
@@ -52,13 +53,16 @@ class MultiFrameCodec : public Codec {
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
-    sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrContext> resourceContext);
+    sk_sp<SkImage> GetNextFrameImage(
+        fml::WeakPtr<GrDirectContext> resourceContext,
+        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch);
 
     void GetNextFrameAndInvokeCallback(
         std::unique_ptr<DartPersistentValue> callback,
         fml::RefPtr<fml::TaskRunner> ui_task_runner,
-        fml::WeakPtr<GrContext> resourceContext,
+        fml::WeakPtr<GrDirectContext> resourceContext,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
+        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
         size_t trace_id);
   };
 

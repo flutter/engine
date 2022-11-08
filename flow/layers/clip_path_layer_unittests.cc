@@ -28,10 +28,10 @@ TEST_F(ClipPathLayerTest, PaintingEmptyLayerDies) {
   EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);        // Untouched
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 
 TEST_F(ClipPathLayerTest, PaintBeforePrerollDies) {
@@ -39,42 +39,46 @@ TEST_F(ClipPathLayerTest, PaintBeforePrerollDies) {
   const SkPath layer_path = SkPath().addRect(layer_bounds);
   auto layer = std::make_shared<ClipPathLayer>(layer_path, Clip::hardEdge);
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 
 TEST_F(ClipPathLayerTest, PaintingCulledLayerDies) {
-  const SkMatrix initial_matrix = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
+  const SkRect distant_bounds = SkRect::MakeXYWH(100.0, 100.0, 10.0, 10.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPath layer_path = SkPath().addRect(layer_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
   auto layer = std::make_shared<ClipPathLayer>(layer_path, Clip::hardEdge);
   layer->Add(mock_layer);
 
-  preroll_context()->cull_rect = kEmptyRect;  // Cull everything
+  preroll_context()->cull_rect = distant_bounds;  // Cull these children
 
   layer->Preroll(preroll_context(), initial_matrix);
-  EXPECT_EQ(preroll_context()->cull_rect, kEmptyRect);        // Untouched
+  EXPECT_EQ(preroll_context()->cull_rect, distant_bounds);    // Untouched
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
-  EXPECT_EQ(mock_layer->paint_bounds(), kEmptyRect);
-  EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
-  EXPECT_FALSE(mock_layer->needs_painting());
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), kEmptyRect);
-  EXPECT_EQ(mock_layer->parent_matrix(), SkMatrix());
-  EXPECT_EQ(mock_layer->parent_mutators(), std::vector<Mutator>());
+  EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
+  EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_path)}));
 
+  paint_context().internal_nodes_canvas->clipRect(distant_bounds, false);
+  EXPECT_FALSE(mock_layer->needs_painting(paint_context()));
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 #endif
 
 TEST_F(ClipPathLayerTest, ChildOutsideBounds) {
-  const SkMatrix initial_matrix = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect cull_bounds = SkRect::MakeXYWH(0.0, 0.0, 2.0, 4.0);
   const SkRect child_bounds = SkRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
@@ -96,8 +100,8 @@ TEST_F(ClipPathLayerTest, ChildOutsideBounds) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_intersect_bounds);
-  EXPECT_TRUE(mock_layer->needs_painting());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), intersect_bounds);
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_path)}));
@@ -116,7 +120,7 @@ TEST_F(ClipPathLayerTest, ChildOutsideBounds) {
 }
 
 TEST_F(ClipPathLayerTest, FullyContainedChild) {
-  const SkMatrix initial_matrix = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
@@ -131,8 +135,8 @@ TEST_F(ClipPathLayerTest, FullyContainedChild) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
-  EXPECT_TRUE(mock_layer->needs_painting());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), layer_bounds);
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_path)}));
@@ -151,7 +155,7 @@ TEST_F(ClipPathLayerTest, FullyContainedChild) {
 }
 
 TEST_F(ClipPathLayerTest, PartiallyContainedChild) {
-  const SkMatrix initial_matrix = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect cull_bounds = SkRect::MakeXYWH(0.0, 0.0, 4.0, 5.5);
   const SkRect child_bounds = SkRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
@@ -173,8 +177,8 @@ TEST_F(ClipPathLayerTest, PartiallyContainedChild) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_intersect_bounds);
-  EXPECT_TRUE(mock_layer->needs_painting());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), intersect_bounds);
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_path)}));
@@ -218,7 +222,7 @@ TEST_F(ClipPathLayerTest, Readback) {
   const Clip save_layer = Clip::antiAliasWithSaveLayer;
 
   std::shared_ptr<MockLayer> nochild;
-  auto reader = std::make_shared<MockLayer>(path, paint, false, false, true);
+  auto reader = std::make_shared<MockLayer>(path, paint, false, true);
   auto nonreader = std::make_shared<MockLayer>(path, paint);
 
   // No children, no prior readback -> no readback after

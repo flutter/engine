@@ -2,14 +2,54 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../engine.dart';
+
+Future<void>? _testPlatformInitializedFuture;
+
+Future<dynamic> ensureTestPlatformInitializedThenRunTest(dynamic Function() body) {
+  if (_testPlatformInitializedFuture == null) {
+    ui.debugEmulateFlutterTesterEnvironment = true;
+
+    // Initializing the platform will ensure that the test font is loaded.
+    _testPlatformInitializedFuture =
+        ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
+  }
+  return _testPlatformInitializedFuture!.then<dynamic>((_) => body());
+}
+
+Future<void>? _platformInitializedFuture;
+
+Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) {
+  // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
+  ensureFlutterViewEmbedderInitialized();
+
+  // The following parameters are hard-coded in Flutter's test embedder. Since
+  // we don't have an embedder yet this is the lowest-most layer we can put
+  // this stuff in.
+  window.debugOverrideDevicePixelRatio(devicePixelRatio);
+  window.webOnlyDebugPhysicalSizeOverride =
+      ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
+  scheduleFrameCallback = () {};
+  ui.debugEmulateFlutterTesterEnvironment = true;
+
+  // Initialize platform once and reuse across all tests.
+  if (_platformInitializedFuture != null) {
+    return _platformInitializedFuture!;
+  }
+  return _platformInitializedFuture =
+      ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
+}
 
 const bool _debugLogHistoryActions = false;
 
 class TestHistoryEntry {
   final dynamic state;
-  final String title;
+  final String? title;
   final String url;
 
   const TestHistoryEntry(this.state, this.title, this.url);
@@ -20,24 +60,27 @@ class TestHistoryEntry {
   }
 }
 
-/// This location strategy mimics the browser's history as closely as possible
+/// This URL strategy mimics the browser's history as closely as possible
 /// while doing it all in memory with no interaction with the browser.
 ///
 /// It keeps a list of history entries and event listeners in memory and
 /// manipulates them in order to achieve the desired functionality.
-class TestLocationStrategy extends LocationStrategy {
-  /// Creates a instance of [TestLocationStrategy] with an empty string as the
+class TestUrlStrategy extends UrlStrategy {
+  /// Creates a instance of [TestUrlStrategy] with an empty string as the
   /// path.
-  factory TestLocationStrategy() => TestLocationStrategy.fromEntry(TestHistoryEntry(null, null, ''));
+  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(const TestHistoryEntry(null, null, ''));
 
-  /// Creates an instance of [TestLocationStrategy] and populates it with a list
+  /// Creates an instance of [TestUrlStrategy] and populates it with a list
   /// that has [initialEntry] as the only item.
-  TestLocationStrategy.fromEntry(TestHistoryEntry initialEntry)
+  TestUrlStrategy.fromEntry(TestHistoryEntry initialEntry)
       : _currentEntryIndex = 0,
         history = <TestHistoryEntry>[initialEntry];
 
   @override
-  String get path => currentEntry.url;
+  String getPath() => currentEntry.url;
+
+  @override
+  dynamic getState() => currentEntry.state;
 
   int _currentEntryIndex;
   int get currentEntryIndex => _currentEntryIndex;
@@ -77,7 +120,7 @@ class TestLocationStrategy extends LocationStrategy {
   }
 
   @override
-  void replaceState(dynamic state, String title, String url) {
+  void replaceState(dynamic state, String title, String? url) {
     assert(withinAppHistory);
     if (url == null || url == '') {
       url = currentEntry.url;
@@ -100,12 +143,12 @@ class TestLocationStrategy extends LocationStrategy {
   }
 
   @override
-  Future<void> back() {
+  Future<void> go(int count) {
     assert(withinAppHistory);
-    // Browsers don't move back in history immediately. They do it at the next
+    // Browsers don't move in history immediately. They do it at the next
     // event loop. So let's simulate that.
     return _nextEventLoop(() {
-      _currentEntryIndex--;
+      _currentEntryIndex = _currentEntryIndex + count;
       if (withinAppHistory) {
         _firePopStateEvent();
       }
@@ -119,7 +162,7 @@ class TestLocationStrategy extends LocationStrategy {
   final List<html.EventListener> listeners = <html.EventListener>[];
 
   @override
-  ui.VoidCallback onPopState(html.EventListener fn) {
+  ui.VoidCallback addPopStateListener(html.EventListener fn) {
     listeners.add(fn);
     return () {
       // Schedule a micro task here to avoid removing the listener during
@@ -157,10 +200,10 @@ class TestLocationStrategy extends LocationStrategy {
 
   @override
   String toString() {
-    final List<String> lines = List<String>(history.length);
+    final List<String> lines = <String>[];
     for (int i = 0; i < history.length; i++) {
       final TestHistoryEntry entry = history[i];
-      lines[i] = _currentEntryIndex == i ? '* $entry' : '  $entry';
+      lines.add(_currentEntryIndex == i ? '* $entry' : '  $entry');
     }
     return '$runtimeType: [\n${lines.join('\n')}\n]';
   }

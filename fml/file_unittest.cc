@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstring>
 #include <memory>
 #include <vector>
-
-#include "gtest/gtest.h"
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/unique_fd.h"
+#include "gtest/gtest.h"
 
 static bool WriteStringToFile(const fml::UniqueFD& fd,
                               const std::string& contents) {
@@ -266,6 +266,36 @@ TEST(FileTest, EmptyMappingTest) {
     ASSERT_EQ(mapping.GetMapping(), nullptr);
   }
 
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "my_contents"));
+}
+
+TEST(FileTest, MappingDontNeedSafeTest) {
+  fml::ScopedTemporaryDirectory dir;
+
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", true,
+                              fml::FilePermission::kReadWrite);
+    WriteStringToFile(file, "some content");
+  }
+
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", false,
+                              fml::FilePermission::kRead);
+    fml::FileMapping mapping(file);
+    ASSERT_TRUE(mapping.IsValid());
+    ASSERT_EQ(mapping.GetMutableMapping(), nullptr);
+    ASSERT_TRUE(mapping.IsDontNeedSafe());
+  }
+
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", false,
+                              fml::FilePermission::kReadWrite);
+    fml::FileMapping mapping(file, {fml::FileMapping::Protection::kRead,
+                                    fml::FileMapping::Protection::kWrite});
+    ASSERT_TRUE(mapping.IsValid());
+    ASSERT_NE(mapping.GetMutableMapping(), nullptr);
+    ASSERT_FALSE(mapping.IsDontNeedSafe());
+  }
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "my_contents"));
 }
 

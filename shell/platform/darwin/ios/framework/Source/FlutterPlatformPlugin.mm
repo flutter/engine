@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
-#include "flutter/fml/logging.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 
-#include <AudioToolbox/AudioToolbox.h>
-#include <Foundation/Foundation.h>
-#include <UIKit/UIApplication.h>
-#include <UIKit/UIKit.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import <Foundation/Foundation.h>
+#import <UIKit/UIApplication.h>
+#import <UIKit/UIKit.h>
+
+#include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 namespace {
 
@@ -36,12 +37,6 @@ using namespace flutter;
 
 @implementation FlutterPlatformPlugin {
   fml::WeakPtr<FlutterEngine> _engine;
-}
-
-- (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterPlatformPlugin must initWithEngine"
-                                 reason:nil
-                               userInfo:nil]);
 }
 
 - (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
@@ -73,6 +68,9 @@ using namespace flutter;
   } else if ([method isEqualToString:@"SystemChrome.setEnabledSystemUIOverlays"]) {
     [self setSystemChromeEnabledSystemUIOverlays:args];
     result(nil);
+  } else if ([method isEqualToString:@"SystemChrome.setEnabledSystemUIMode"]) {
+    [self setSystemChromeEnabledSystemUIMode:args];
+    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.restoreSystemUIOverlays"]) {
     [self restoreSystemChromeSystemUIOverlays];
     result(nil);
@@ -88,6 +86,8 @@ using namespace flutter;
   } else if ([method isEqualToString:@"Clipboard.setData"]) {
     [self setClipboardData:args];
     result(nil);
+  } else if ([method isEqualToString:@"Clipboard.hasStrings"]) {
+    result([self clipboardHasStrings]);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -130,19 +130,21 @@ using namespace flutter;
     mask |= UIInterfaceOrientationMaskAll;
   } else {
     for (NSString* orientation in orientations) {
-      if ([orientation isEqualToString:@"DeviceOrientation.portraitUp"])
+      if ([orientation isEqualToString:@"DeviceOrientation.portraitUp"]) {
         mask |= UIInterfaceOrientationMaskPortrait;
-      else if ([orientation isEqualToString:@"DeviceOrientation.portraitDown"])
+      } else if ([orientation isEqualToString:@"DeviceOrientation.portraitDown"]) {
         mask |= UIInterfaceOrientationMaskPortraitUpsideDown;
-      else if ([orientation isEqualToString:@"DeviceOrientation.landscapeLeft"])
+      } else if ([orientation isEqualToString:@"DeviceOrientation.landscapeLeft"]) {
         mask |= UIInterfaceOrientationMaskLandscapeLeft;
-      else if ([orientation isEqualToString:@"DeviceOrientation.landscapeRight"])
+      } else if ([orientation isEqualToString:@"DeviceOrientation.landscapeRight"]) {
         mask |= UIInterfaceOrientationMaskLandscapeRight;
+      }
     }
   }
 
-  if (!mask)
+  if (!mask) {
     return;
+  }
   [[NSNotificationCenter defaultCenter]
       postNotificationName:@(kOrientationUpdateNotificationName)
                     object:nil
@@ -173,14 +175,35 @@ using namespace flutter;
   }
 }
 
+- (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
+  // Checks if the top status bar should be visible, reflected by edge to edge setting. This
+  // platform ignores all other system ui modes.
+
+  // We opt out of view controller based status bar visibility since we want
+  // to be able to modify this on the fly. The key used is
+  // UIViewControllerBasedStatusBarAppearance
+  [UIApplication sharedApplication].statusBarHidden =
+      ![mode isEqualToString:@"SystemUiMode.edgeToEdge"];
+  if ([mode isEqualToString:@"SystemUiMode.edgeToEdge"]) {
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerShowHomeIndicator
+                      object:nil];
+  } else {
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerHideHomeIndicator
+                      object:nil];
+  }
+}
+
 - (void)restoreSystemChromeSystemUIOverlays {
   // Nothing to do on iOS.
 }
 
 - (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
   NSString* brightness = message[@"statusBarBrightness"];
-  if (brightness == (id)[NSNull null])
+  if (brightness == (id)[NSNull null]) {
     return;
+  }
 
   UIStatusBarStyle statusBarStyle;
   if ([brightness isEqualToString:@"Brightness.dark"]) {
@@ -246,6 +269,18 @@ using namespace flutter;
   } else {
     pasteboard.string = @"null";
   }
+}
+
+- (NSDictionary*)clipboardHasStrings {
+  bool hasStrings = false;
+  UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
+  if (@available(iOS 10, *)) {
+    hasStrings = pasteboard.hasStrings;
+  } else {
+    NSString* stringInPasteboard = pasteboard.string;
+    hasStrings = stringInPasteboard != nil;
+  }
+  return @{@"value" : @(hasStrings)};
 }
 
 @end

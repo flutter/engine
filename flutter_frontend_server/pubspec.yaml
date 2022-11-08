@@ -1,11 +1,23 @@
-name: frontend_server
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+name: flutter_frontend_server
+publish_to: none
 version: 0.1.1-dev
 description: Communication pipe to Dart Frontend
-homepage: http://flutter.io
-author: Flutter Authors <flutter-dev@googlegroups.com>
+homepage: https://flutter.dev
+
+# Do not add any dependencies that require more than what is provided in
+# //third_party/pkg, //third_party/dart/pkg or
+# //third_party/dart/third_party/pkg. In particular, package:test is not usable
+# here.
+
+# If you do add packages here, make sure you can run `pub get --offline`, and
+# check the .packages and .package_config to make sure all the paths are
+# relative to this directory into //third_party/dart
 
 environment:
-  # The pub client defaults to an <2.0.0 sdk constraint which we need to explicitly overwrite.
   sdk: ">=2.2.2 <3.0.0"
 
 dependencies:
@@ -16,13 +28,102 @@ dependencies:
   convert: any
   crypto: any
   front_end: any
+  frontend_server: any
   kernel: any
   logging: any
   meta: any
-  quiver: any
   package_config: any
   path: any
   source_span: any
   typed_data: any
   usage: any
   vm: any
+
+dev_dependencies:
+  litetest: any
+
+dependency_overrides:
+  _fe_analyzer_shared:
+    path: ../../third_party/dart/pkg/_fe_analyzer_shared
+  _js_interop_checks:
+    path: ../../third_party/dart/pkg/_js_interop_checks
+  args:
+    path: ../../third_party/dart/third_party/pkg/args
+  async:
+    path: ../../third_party/dart/third_party/pkg/async
+  async_helper:
+    path: ../../third_party/dart/pkg/async_helper
+  bazel_worker:
+    path: ../../third_party/dart/third_party/pkg/bazel_worker
+  build_integration:
+    path: ../../third_party/dart/pkg/build_integration
+  charcode:
+    path: ../../third_party/dart/third_party/pkg/charcode
+  cli_util:
+    path: ../../third_party/dart/third_party/pkg/cli_util
+  collection:
+    path: ../../third_party/dart/third_party/pkg/collection
+  compiler:
+    path: ../../third_party/dart/pkg/compiler
+  convert:
+    path: ../../third_party/dart/third_party/pkg/convert
+  crypto:
+    path: ../../third_party/dart/third_party/pkg/crypto
+  dart2js_info:
+    path: ../../third_party/dart/pkg/dart2js_info
+  dev_compiler:
+    path: ../../third_party/dart/pkg/dev_compiler
+  expect:
+    path: ../../third_party/dart/pkg/expect
+  fixnum:
+    path: ../../third_party/dart/third_party/pkg/fixnum
+  front_end:
+    path: ../../third_party/dart/pkg/front_end
+  frontend_server:
+    path: ../../third_party/dart/pkg/frontend_server
+  http_parser:
+    path: ../../third_party/dart/third_party/pkg/http_parser
+  kernel:
+    path: ../../third_party/dart/pkg/kernel
+  litetest:
+    path: ../testing/litetest
+  logging:
+    path: ../../third_party/dart/third_party/pkg/logging
+  matcher:
+    path: ../../third_party/dart/third_party/pkg/matcher
+  meta:
+    path: ../../third_party/dart/pkg/meta
+  mime:
+    path: ../../third_party/dart/third_party/pkg/mime
+  package_config:
+    path: ../../third_party/dart/third_party/pkg_tested/package_config
+  path:
+    path: ../../third_party/dart/third_party/pkg/path
+  pedantic:
+    path: ../../third_party/dart/third_party/pkg/pedantic
+  protobuf:
+    path: ../../third_party/dart/third_party/pkg/protobuf/protobuf
+  shelf:
+    path: ../../third_party/dart/third_party/pkg/shelf
+  shelf_static:
+    path: ../../third_party/dart/third_party/pkg/shelf_static
+  source_maps:
+    path: ../../third_party/dart/third_party/pkg/source_maps
+  source_span:
+    path: ../../third_party/dart/third_party/pkg/source_span
+  stack_trace:
+    path: ../../third_party/dart/third_party/pkg/stack_trace
+  stream_channel:
+    path: ../../third_party/dart/third_party/pkg/stream_channel
+  string_scanner:
+    path: ../../third_party/dart/third_party/pkg/string_scanner
+  term_glyph:
+    path: ../../third_party/dart/third_party/pkg/term_glyph
+  typed_data:
+    path: ../../third_party/dart/third_party/pkg/typed_data
+  usage:
+    path: ../../third_party/dart/third_party/pkg/usage
+  vm:
+    path: ../../third_party/dart/pkg/vm
+  yaml:
+    path: ../../third_party/dart/third_party/pkg/yaml

@@ -6,6 +6,7 @@
 
 #include <lib/fdio/namespace.h>
 #include <lib/zx/channel.h>
+
 #include <optional>
 
 #include "dart-pkg/fuchsia/sdk_ext/fuchsia.h"
@@ -150,7 +151,7 @@ void InitBuiltinLibrariesForIsolate(
   // AOT: These steps already happened at compile time in gen_snapshot.
 
   // We need to ensure that all the scripts loaded so far are finalized
-  // as we are about to invoke some Dart code below to setup closures.
+  // as we are about to invoke some Dart code below to set up closures.
   result = Dart_FinalizeLoading(false);
   FML_CHECK(!tonic::LogIfError(result));
 #endif
@@ -184,7 +185,7 @@ void InitBuiltinLibrariesForIsolate(
 
   // Set up the namespace in dart:io.
   Dart_Handle namespace_type =
-      Dart_GetType(io_lib, ToDart("_Namespace"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, ToDart("_Namespace"), 0, nullptr);
   FML_CHECK(!tonic::LogIfError(namespace_type));
 
   Dart_Handle namespace_args[1];
@@ -194,7 +195,8 @@ void InitBuiltinLibrariesForIsolate(
   FML_CHECK(!tonic::LogIfError(result));
 
   // Set up the namespace in dart:zircon.
-  namespace_type = Dart_GetType(zircon_lib, ToDart("_Namespace"), 0, nullptr);
+  namespace_type =
+      Dart_GetNonNullableType(zircon_lib, ToDart("_Namespace"), 0, nullptr);
   FML_CHECK(!tonic::LogIfError(namespace_type));
 
   result = Dart_SetField(namespace_type, ToDart("_namespace"),
@@ -211,7 +213,7 @@ void InitBuiltinLibrariesForIsolate(
 
   // Disable some dart:io operations.
   Dart_Handle embedder_config_type =
-      Dart_GetType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
   FML_CHECK(!tonic::LogIfError(embedder_config_type));
 
   result =

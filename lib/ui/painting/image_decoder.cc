@@ -8,14 +8,8 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "third_party/skia/include/codec/SkCodec.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 
 namespace flutter {
-namespace {
-
-constexpr double kAspectRatioChangedThreshold = 0.01;
-
-}  // namespace
 
 ImageDecoder::ImageDecoder(
     TaskRunners runners,
@@ -31,40 +25,6 @@ ImageDecoder::ImageDecoder(
 }
 
 ImageDecoder::~ImageDecoder() = default;
-
-static double AspectRatio(const SkISize& size) {
-  return static_cast<double>(size.width()) / size.height();
-}
-
-// Get the updated dimensions of the image. If both dimensions are specified,
-// use them. If one of them is specified, respect the one that is and use the
-// aspect ratio to calculate the other. If neither dimension is specified, use
-// intrinsic dimensions of the image.
-static SkISize GetResizedDimensions(SkISize current_size,
-                                    std::optional<uint32_t> target_width,
-                                    std::optional<uint32_t> target_height) {
-  if (current_size.isEmpty()) {
-    return SkISize::MakeEmpty();
-  }
-
-  if (target_width && target_height) {
-    return SkISize::Make(target_width.value(), target_height.value());
-  }
-
-  const auto aspect_ratio = AspectRatio(current_size);
-
-  if (target_width) {
-    return SkISize::Make(target_width.value(),
-                         target_width.value() / aspect_ratio);
-  }
-
-  if (target_height) {
-    return SkISize::Make(target_height.value() * aspect_ratio,
-                         target_height.value());
-  }
-
-  return current_size;
-}
 
 static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
                                         const SkISize& resized_dimensions,
@@ -83,29 +43,6 @@ static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
     return image->makeRasterImage();
   }
 
-  if (resized_dimensions.width() > image->dimensions().width() ||
-      resized_dimensions.height() > image->dimensions().height()) {
-    FML_LOG(WARNING) << "Image is being upsized from "
-                     << image->dimensions().width() << "x"
-                     << image->dimensions().height() << " to "
-                     << resized_dimensions.width() << "x"
-                     << resized_dimensions.height()
-                     << ". Are cache(Height|Width) used correctly?";
-    // TOOD(48885): consider exiting here, there's no good reason to support
-    // upsampling in a "caching"-optimization context..
-  }
-
-  const bool aspect_ratio_changed =
-      std::abs(AspectRatio(resized_dimensions) -
-               AspectRatio(image->dimensions())) > kAspectRatioChangedThreshold;
-  if (aspect_ratio_changed) {
-    // This is probably a bug. If a user passes dimensions that change the
-    // aspect ratio in a "caching" context that's probably not working as
-    // intended and rather a signal that the API is hard to use.
-    FML_LOG(WARNING)
-        << "Aspect ratio changes. Are cache(Height|Width) used correctly?";
-  }
-
   const auto scaled_image_info =
       image->imageInfo().makeDimensions(resized_dimensions);
 
@@ -116,8 +53,10 @@ static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
     return nullptr;
   }
 
-  if (!image->scalePixels(scaled_bitmap.pixmap(), kLow_SkFilterQuality,
-                          SkImage::kDisallow_CachingHint)) {
+  if (!image->scalePixels(
+          scaled_bitmap.pixmap(),
+          SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone),
+          SkImage::kDisallow_CachingHint)) {
     FML_LOG(ERROR) << "Could not scale pixels";
     return nullptr;
   }
@@ -136,14 +75,14 @@ static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
 }
 
 static sk_sp<SkImage> ImageFromDecompressedData(
-    sk_sp<SkData> data,
-    ImageDecoder::ImageInfo info,
-    std::optional<uint32_t> target_width,
-    std::optional<uint32_t> target_height,
+    ImageDescriptor* descriptor,
+    uint32_t target_width,
+    uint32_t target_height,
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
-  auto image = SkImage::MakeRasterData(info.sk_info, data, info.row_bytes);
+  auto image = SkImage::MakeRasterData(
+      descriptor->image_info(), descriptor->data(), descriptor->row_bytes());
 
   if (!image) {
     FML_LOG(ERROR) << "Could not create image from decompressed bytes.";
@@ -155,45 +94,28 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     return image->makeRasterImage();
   }
 
-  auto resized_dimensions =
-      GetResizedDimensions(image->dimensions(), target_width, target_height);
-
-  return ResizeRasterImage(std::move(image), resized_dimensions, flow);
+  return ResizeRasterImage(std::move(image),
+                           SkISize::Make(target_width, target_height), flow);
 }
 
-sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
-                                       std::optional<uint32_t> target_width,
-                                       std::optional<uint32_t> target_height,
+sk_sp<SkImage> ImageFromCompressedData(ImageDescriptor* descriptor,
+                                       uint32_t target_width,
+                                       uint32_t target_height,
                                        const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
 
-  if (!target_width && !target_height) {
+  if (!descriptor->should_resize(target_width, target_height)) {
     // No resizing requested. Just decode & rasterize the image.
-    return SkImage::MakeFromEncoded(data)->makeRasterImage();
+    sk_sp<SkImage> image = descriptor->image();
+    return image ? image->makeRasterImage() : nullptr;
   }
 
-  auto codec = SkCodec::MakeFromData(data);
-  if (codec == nullptr) {
-    return nullptr;
-  }
+  const SkISize source_dimensions = descriptor->image_info().dimensions();
+  const SkISize resized_dimensions = {static_cast<int32_t>(target_width),
+                                      static_cast<int32_t>(target_height)};
 
-  const auto* codec_ptr = codec.get();
-
-  // Note that we cannot read the dimensions from the codec since they don't
-  // respect image orientation provided e.g. in EXIF data.
-  auto image_generator = SkCodecImageGenerator::MakeFromCodec(std::move(codec));
-  const auto& source_dimensions = image_generator->getInfo().dimensions();
-
-  auto resized_dimensions =
-      GetResizedDimensions(source_dimensions, target_width, target_height);
-
-  // No resize needed.
-  if (resized_dimensions == source_dimensions) {
-    return SkImage::MakeFromEncoded(data)->makeRasterImage();
-  }
-
-  auto decode_dimensions = codec_ptr->getScaledDimensions(
+  auto decode_dimensions = descriptor->get_scaled_dimensions(
       std::max(static_cast<double>(resized_dimensions.width()) /
                    source_dimensions.width(),
                static_cast<double>(resized_dimensions.height()) /
@@ -201,14 +123,9 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
 
   // If the codec supports efficient sub-pixel decoding, decoded at a resolution
   // close to the target resolution before resizing.
-  if (decode_dimensions != codec_ptr->dimensions()) {
-    if (source_dimensions != codec_ptr->dimensions()) {
-      decode_dimensions =
-          SkISize::Make(decode_dimensions.height(), decode_dimensions.width());
-    }
-
+  if (decode_dimensions != source_dimensions) {
     auto scaled_image_info =
-        image_generator->getInfo().makeDimensions(decode_dimensions);
+        descriptor->image_info().makeDimensions(decode_dimensions);
 
     SkBitmap scaled_bitmap;
     if (!scaled_bitmap.tryAllocPixels(scaled_image_info)) {
@@ -218,8 +135,7 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
     }
 
     const auto& pixmap = scaled_bitmap.pixmap();
-    if (image_generator->getPixels(pixmap.info(), pixmap.writable_addr(),
-                                   pixmap.rowBytes())) {
+    if (descriptor->get_pixels(pixmap)) {
       // Marking this as immutable makes the MakeFromBitmap call share
       // the pixels instead of copying.
       scaled_bitmap.setImmutable();
@@ -236,7 +152,7 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
     }
   }
 
-  auto image = SkImage::MakeFromEncoded(data);
+  auto image = descriptor->image();
   if (!image) {
     return nullptr;
   }
@@ -300,59 +216,77 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
   return result;
 }
 
-void ImageDecoder::Decode(ImageDescriptor descriptor,
+void ImageDecoder::Decode(fml::RefPtr<ImageDescriptor> descriptor_ref_ptr,
+                          uint32_t target_width,
+                          uint32_t target_height,
                           const ImageResult& callback) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   fml::tracing::TraceFlow flow(__FUNCTION__);
 
+  // ImageDescriptors have Dart peers that must be collected on the UI thread.
+  // However, closures in MakeCopyable below capture the descriptor. The
+  // captures of copyable closures may be collected on any of the thread
+  // participating in task execution.
+  //
+  // To avoid this issue, we resort to manually reference counting the
+  // descriptor. Since all task flows invoke the `result` callback, the raw
+  // descriptor is retained in the beginning and released in the `result`
+  // callback.
+  //
+  // `ImageDecoder::Decode` itself is invoked on the UI thread, so the
+  // collection of the smart pointer from which we obtained the raw descriptor
+  // is fine in this scope.
+  auto raw_descriptor = descriptor_ref_ptr.get();
+  raw_descriptor->AddRef();
+
   FML_DCHECK(callback);
   FML_DCHECK(runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
-  // Always service the callback on the UI thread.
-  auto result = [callback, ui_runner = runners_.GetUITaskRunner()](
-                    SkiaGPUObject<SkImage> image,
-                    fml::tracing::TraceFlow flow) {
-    ui_runner->PostTask(fml::MakeCopyable(
-        [callback, image = std::move(image), flow = std::move(flow)]() mutable {
-          // We are going to terminate the trace flow here. Flows cannot
-          // terminate without a base trace. Add one explicitly.
-          TRACE_EVENT0("flutter", "ImageDecodeCallback");
-          flow.End();
-          callback(std::move(image));
-        }));
-  };
+  // Always service the callback (and cleanup the descriptor) on the UI thread.
+  auto result =
+      [callback, raw_descriptor, ui_runner = runners_.GetUITaskRunner()](
+          SkiaGPUObject<SkImage> image, fml::tracing::TraceFlow flow) {
+        ui_runner->PostTask(fml::MakeCopyable(
+            [callback, raw_descriptor, image = std::move(image),
+             flow = std::move(flow)]() mutable {
+              // We are going to terminate the trace flow here. Flows cannot
+              // terminate without a base trace. Add one explicitly.
+              TRACE_EVENT0("flutter", "ImageDecodeCallback");
+              flow.End();
+              callback(std::move(image));
+              raw_descriptor->Release();
+            }));
+      };
 
-  if (!descriptor.data || descriptor.data->size() == 0) {
+  if (!raw_descriptor->data() || raw_descriptor->data()->size() == 0) {
     result({}, std::move(flow));
     return;
   }
 
   concurrent_task_runner_->PostTask(
-      fml::MakeCopyable([descriptor,                              //
+      fml::MakeCopyable([raw_descriptor,                          //
                          io_manager = io_manager_,                //
                          io_runner = runners_.GetIOTaskRunner(),  //
                          result,                                  //
+                         target_width = target_width,             //
+                         target_height = target_height,           //
                          flow = std::move(flow)                   //
   ]() mutable {
         // Step 1: Decompress the image.
         // On Worker.
 
-        auto decompressed =
-            descriptor.decompressed_image_info
-                ? ImageFromDecompressedData(
-                      std::move(descriptor.data),                  //
-                      descriptor.decompressed_image_info.value(),  //
-                      descriptor.target_width,                     //
-                      descriptor.target_height,                    //
-                      flow                                         //
-                      )
-                : ImageFromCompressedData(std::move(descriptor.data),  //
-                                          descriptor.target_width,     //
-                                          descriptor.target_height,    //
-                                          flow);
+        auto decompressed = raw_descriptor->is_compressed()
+                                ? ImageFromCompressedData(raw_descriptor,  //
+                                                          target_width,    //
+                                                          target_height,   //
+                                                          flow)
+                                : ImageFromDecompressedData(raw_descriptor,  //
+                                                            target_width,    //
+                                                            target_height,   //
+                                                            flow);
 
         if (!decompressed) {
-          FML_LOG(ERROR) << "Could not decompress image.";
+          FML_DLOG(ERROR) << "Could not decompress image.";
           result({}, std::move(flow));
           return;
         }
@@ -364,8 +298,9 @@ void ImageDecoder::Decode(ImageDescriptor descriptor,
                                                flow =
                                                    std::move(flow)]() mutable {
           if (!io_manager) {
-            FML_LOG(ERROR) << "Could not acquire IO manager.";
-            return result({}, std::move(flow));
+            FML_DLOG(ERROR) << "Could not acquire IO manager.";
+            result({}, std::move(flow));
+            return;
           }
 
           // If the IO manager does not have a resource context, the caller
@@ -380,8 +315,8 @@ void ImageDecoder::Decode(ImageDescriptor descriptor,
           auto uploaded =
               UploadRasterImage(std::move(decompressed), io_manager, flow);
 
-          if (!uploaded.get()) {
-            FML_LOG(ERROR) << "Could not upload image to the GPU.";
+          if (!uploaded.skia_object()) {
+            FML_DLOG(ERROR) << "Could not upload image to the GPU.";
             result({}, std::move(flow));
             return;
           }

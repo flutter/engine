@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_swapchain.h"
+#include "vulkan_swapchain.h"
 
 namespace vulkan {
 
 VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
                                  const VulkanDevice& device,
                                  const VulkanSurface& surface,
-                                 GrContext* skia_context,
+                                 GrDirectContext* skia_context,
                                  std::unique_ptr<VulkanSwapchain> old_swapchain,
                                  uint32_t queue_family_index) {}
 

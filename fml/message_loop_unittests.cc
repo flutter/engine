@@ -4,18 +4,20 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include "flutter/fml/message_loop.h"
+
 #include <iostream>
 #include <thread>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
+#include "flutter/fml/time/chrono_timestamp_provider.h"
 #include "gtest/gtest.h"
 
-#define TIME_SENSITIVE(x) TimeSensitiveTest_##x
+#define TIMESENSITIVE(x) TimeSensitiveTest_##x
 #if OS_WIN
 #define PLATFORM_SPECIFIC_CAPTURE(...) [ __VA_ARGS__, count ]
 #else
@@ -115,7 +117,7 @@ TEST(MessageLoop, DelayedTasksAtSameTimeAreRunInOrder) {
     auto& loop = fml::MessageLoop::GetCurrent();
     size_t current = 0;
     const auto now_plus_some =
-        fml::TimePoint::Now() + fml::TimeDelta::FromMilliseconds(2);
+        fml::ChronoTicksSinceEpoch() + fml::TimeDelta::FromMilliseconds(2);
     for (size_t i = 0; i < count; i++) {
       loop.GetTaskRunner()->PostTaskForTime(
           PLATFORM_SPECIFIC_CAPTURE(&terminated, i, &current)() {
@@ -153,15 +155,15 @@ TEST(MessageLoop, CheckRunsTaskOnCurrentThread) {
   thread.join();
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskByDelta)) {
+TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskByDelta)) {
   bool checked = false;
   std::thread thread([&checked]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     auto& loop = fml::MessageLoop::GetCurrent();
-    auto begin = fml::TimePoint::Now();
+    auto begin = fml::ChronoTicksSinceEpoch();
     loop.GetTaskRunner()->PostDelayedTask(
         [begin, &checked]() {
-          auto delta = fml::TimePoint::Now() - begin;
+          auto delta = fml::ChronoTicksSinceEpoch() - begin;
           auto ms = delta.ToMillisecondsF();
           ASSERT_GE(ms, 3);
           ASSERT_LE(ms, 7);
@@ -175,39 +177,39 @@ TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskByDelta)) {
   ASSERT_TRUE(checked);
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskForTime)) {
+TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskForTime)) {
   bool checked = false;
   std::thread thread([&checked]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     auto& loop = fml::MessageLoop::GetCurrent();
-    auto begin = fml::TimePoint::Now();
+    auto begin = fml::ChronoTicksSinceEpoch();
     loop.GetTaskRunner()->PostTaskForTime(
         [begin, &checked]() {
-          auto delta = fml::TimePoint::Now() - begin;
+          auto delta = fml::ChronoTicksSinceEpoch() - begin;
           auto ms = delta.ToMillisecondsF();
           ASSERT_GE(ms, 3);
           ASSERT_LE(ms, 7);
           checked = true;
           fml::MessageLoop::GetCurrent().Terminate();
         },
-        fml::TimePoint::Now() + fml::TimeDelta::FromMilliseconds(5));
+        fml::ChronoTicksSinceEpoch() + fml::TimeDelta::FromMilliseconds(5));
     loop.Run();
   });
   thread.join();
   ASSERT_TRUE(checked);
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
+TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
   const auto count = 10;
   int checked = false;
   std::thread thread(PLATFORM_SPECIFIC_CAPTURE(&checked)() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     auto& loop = fml::MessageLoop::GetCurrent();
     for (int target_ms = 0 + 2; target_ms < count + 2; target_ms++) {
-      auto begin = fml::TimePoint::Now();
+      auto begin = fml::ChronoTicksSinceEpoch();
       loop.GetTaskRunner()->PostDelayedTask(
           PLATFORM_SPECIFIC_CAPTURE(begin, target_ms, &checked)() {
-            auto delta = fml::TimePoint::Now() - begin;
+            auto delta = fml::ChronoTicksSinceEpoch() - begin;
             auto ms = delta.ToMillisecondsF();
             ASSERT_GE(ms, target_ms - 2);
             ASSERT_LE(ms, target_ms + 2);
@@ -224,17 +226,17 @@ TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
   ASSERT_EQ(checked, count);
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
+TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
   const auto count = 10;
   int checked = false;
   std::thread thread(PLATFORM_SPECIFIC_CAPTURE(&checked)() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     auto& loop = fml::MessageLoop::GetCurrent();
     for (int target_ms = count + 2; target_ms > 0 + 2; target_ms--) {
-      auto begin = fml::TimePoint::Now();
+      auto begin = fml::ChronoTicksSinceEpoch();
       loop.GetTaskRunner()->PostDelayedTask(
           PLATFORM_SPECIFIC_CAPTURE(begin, target_ms, &checked)() {
-            auto delta = fml::TimePoint::Now() - begin;
+            auto delta = fml::ChronoTicksSinceEpoch() - begin;
             auto ms = delta.ToMillisecondsF();
             ASSERT_GE(ms, target_ms - 2);
             ASSERT_LE(ms, target_ms + 2);

@@ -6,7 +6,8 @@
 #define FLUTTER_FML_PLATFORM_ANDROID_SCOPED_JAVA_REF_H_
 
 #include <jni.h>
-#include <stddef.h>
+
+#include <cstddef>
 
 #include "flutter/fml/macros.h"
 
@@ -163,6 +164,7 @@ class ScopedJavaGlobalRef : public JavaRef<T> {
  public:
   ScopedJavaGlobalRef() {}
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   explicit ScopedJavaGlobalRef(const ScopedJavaGlobalRef<T>& other) {
     this->Reset(other);
   }

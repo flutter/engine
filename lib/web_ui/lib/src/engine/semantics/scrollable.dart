@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../platform_dispatcher.dart';
+import 'semantics.dart';
 
 /// Implements vertical and horizontal scrolling functionality for semantics
 /// objects.
@@ -27,13 +31,13 @@ class Scrollable extends RoleManager {
       : super(Role.scrollable, semanticsObject);
 
   /// Disables browser-driven scrolling in the presence of pointer events.
-  GestureModeCallback _gestureModeListener;
+  GestureModeCallback? _gestureModeListener;
 
   /// Listens to HTML "scroll" gestures detected by the browser.
   ///
   /// This gesture is converted to [ui.SemanticsAction.scrollUp] or
   /// [ui.SemanticsAction.scrollDown], depending on the direction.
-  html.EventListener _scrollListener;
+  html.EventListener? _scrollListener;
 
   /// The value of the "scrollTop" or "scrollLeft" property of this object's
   /// [element] that has zero offset relative to the [scrollPosition].
@@ -53,20 +57,20 @@ class Scrollable extends RoleManager {
       final int semanticsId = semanticsObject.id;
       if (doScrollForward) {
         if (semanticsObject.isVerticalScrollContainer) {
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollUp, null);
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollLeft, null);
         }
       } else {
         if (semanticsObject.isVerticalScrollContainer) {
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollDown, null);
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollRight, null);
         }
       }

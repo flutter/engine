@@ -6,13 +6,12 @@
 
 #include <zircon/syscalls.h>
 
-#include <stdio.h>
-#include <string.h>
-
+#include <cstring>
 #include <memory>
 #include <vector>
 
 #include "handle.h"
+#include "handle_disposition.h"
 #include "handle_waiter.h"
 #include "system.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -34,6 +33,7 @@ static tonic::DartLibraryNatives* g_natives;
 
 tonic::DartLibraryNatives* InitNatives() {
   tonic::DartLibraryNatives* natives = new tonic::DartLibraryNatives();
+  HandleDisposition::RegisterNatives(natives);
   HandleWaiter::RegisterNatives(natives);
   Handle::RegisterNatives(natives);
   System::RegisterNatives(natives);

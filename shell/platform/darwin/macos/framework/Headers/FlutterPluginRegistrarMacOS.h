@@ -4,11 +4,10 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "FlutterPluginMacOS.h"
-
 #import "FlutterBinaryMessenger.h"
 #import "FlutterChannels.h"
 #import "FlutterMacros.h"
+#import "FlutterPluginMacOS.h"
 #import "FlutterTexture.h"
 
 // TODO: Merge this file and FlutterPluginMacOS.h with the iOS FlutterPlugin.h, sharing all but
@@ -21,7 +20,7 @@
  * Currently the macOS PluginRegistrar has very limited functionality, but is expected to expand
  * over time to more closely match the functionality of FlutterPluginRegistrar.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @protocol FlutterPluginRegistrar <NSObject>
 
 /**

@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-import 'package:ui/src/engine.dart';
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 
-import 'package:test/test.dart';
-
 void main() {
-  setUpAll(() {
-    WebExperiments.ensureInitialized();
-  });
+  internalBootstrapBrowserTest(() => testMain);
+}
 
+void testMain() {
   test('Should be able to build and layout a paragraph', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
     builder.addText('Hello');
@@ -24,10 +22,20 @@ void main() {
     expect(paragraph.height, isNonZero);
   });
 
-  test('PushStyle should not segfault after build()', () {
+  test('pushStyle should not segfault after build()', () {
     final ParagraphBuilder paragraphBuilder =
         ParagraphBuilder(ParagraphStyle());
     paragraphBuilder.build();
     paragraphBuilder.pushStyle(TextStyle());
+  });
+
+  test('the presence of foreground style should not throw', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+    builder.pushStyle(TextStyle(
+      foreground: Paint()..color = const Color(0xFFABCDEF),
+    ));
+    builder.addText('hi');
+
+    expect(() => builder.build(), returnsNormally);
   });
 }

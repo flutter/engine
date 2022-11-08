@@ -42,19 +42,13 @@ template("aot_snapshot") {
     shim_kernel = get_label_info(shim_target, "target_gen_dir") +
                   "/vmservice${product_suffix}_aot_kernel.dill"
 
-    deps = [
-      shim_target,
-    ]
+    deps = [ shim_target ]
 
     snapshot_path = "$target_gen_dir/${kernel_name}_snapshot.so"
 
-    inputs = [
-      shim_kernel,
-    ]
+    inputs = [ shim_kernel ]
 
-    outputs = [
-      snapshot_path,
-    ]
+    outputs = [ snapshot_path ]
 
     if (product) {
       tool = gen_snapshot_product
@@ -63,7 +57,7 @@ template("aot_snapshot") {
     }
 
     args = [
-      "--no_causal_async_stacks",
+      "--lazy_async_stacks",
       "--deterministic",
       "--snapshot_kind=app-aot-elf",
       "--elf=" + rebase_path(snapshot_path),

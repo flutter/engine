@@ -18,6 +18,9 @@ template("runner") {
   invoker_output_name = invoker.output_name
   extra_defines = invoker.extra_defines
   extra_deps = invoker.extra_deps
+  if (is_debug) {
+    extra_defines += [ "DEBUG" ]  # Needed due to direct dart dependencies.
+  }
 
   executable(target_name) {
     output_name = invoker_output_name
@@ -27,6 +30,8 @@ template("runner") {
       "builtin_libraries.h",
       "dart_component_controller.cc",
       "dart_component_controller.h",
+      "dart_component_controller_v2.cc",
+      "dart_component_controller_v2.h",
       "dart_runner.cc",
       "dart_runner.h",
       "logging.h",
@@ -40,13 +45,13 @@ template("runner") {
     dart_deps = []
     if (!invoker.product) {
       dart_deps += [
-        "//third_party/dart/runtime/bin:dart_io_api",
         "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils",
+        "//third_party/dart/runtime/bin:dart_io_api",
       ]
     } else {
       dart_deps += [
-        "//third_party/dart/runtime/bin:dart_io_api_product",
         "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils_product",
+        "//third_party/dart/runtime/bin:dart_io_api_product",
       ]
     }
 
@@ -55,6 +60,7 @@ template("runner") {
              "//flutter/fml",
              "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
              "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+             "$fuchsia_sdk_root/fidl:fuchsia.component.runner",
              "$fuchsia_sdk_root/pkg:async",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
@@ -62,6 +68,7 @@ template("runner") {
              "$fuchsia_sdk_root/pkg:async-loop-cpp",
              "$fuchsia_sdk_root/pkg:async-loop-default",
              "$fuchsia_sdk_root/pkg:fidl_cpp",
+             "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
              "$fuchsia_sdk_root/pkg:sys_cpp",
              "$fuchsia_sdk_root/pkg:syslog",
              "$fuchsia_sdk_root/pkg:trace",
@@ -90,8 +97,8 @@ runner("dart_jit_product_runner_bin") {
   product = true
   extra_defines = [ "DART_PRODUCT" ]
   extra_deps = [
-    "//third_party/dart/runtime:libdart_jit_product",
-    "//third_party/dart/runtime/platform:libdart_platform_jit_product",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
   ]
 }
 
@@ -118,8 +125,8 @@ runner("dart_aot_product_runner_bin") {
   ]
   extra_deps = [
     "embedder:dart_aot_product_snapshot_cc",
-    "//third_party/dart/runtime:libdart_precompiled_runtime_product",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime_product",
+    "//third_party/dart/runtime:libdart_precompiled_runtime",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
   ]
 }
 
@@ -130,30 +137,22 @@ template("aot_runner_package") {
     product_suffix = "_product"
   }
   fuchsia_archive(target_name) {
-    deps = [
-      ":dart_aot${product_suffix}_runner_bin",
-    ]
+    deps = [ ":dart_aot${product_suffix}_runner_bin" ]
     if (!invoker.product) {
       deps += [
         "vmservice:vmservice_snapshot",
         "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
 
         # TODO(kaushikiska): Figure out how to get the profiler symbols for `libdart_precompiled_runtime`
-        # "//topaz/runtime/dart/profiler_symbols:libdart_precompiled_runtime",
+        # "//third_party/dart/runtime:libdart_precompiled_runtime",
         observatory_target,
       ]
     }
 
     binary = "dart_aot${product_suffix}_runner"
 
-    meta_dir = "//flutter/shell/platform/fuchsia/dart_runner/meta"
-
-    meta = [
-      {
-        path = rebase_path("meta/dart_aot${product_suffix}_runner.cmx")
-        dest = "dart_aot${product_suffix}_runner.cmx"
-      },
-    ]
+    cmx_file = rebase_path("meta/dart_aot${product_suffix}_runner.cmx")
+    cml_file = rebase_path("meta/dart_aot${product_suffix}_runner.cml")
 
     libraries = common_libs
 
@@ -213,7 +212,8 @@ template("jit_runner_package") {
 
     binary = "dart_jit${product_suffix}_runner"
 
-    meta_dir = "//flutter/shell/platform/fuchsia/dart_runner/meta"
+    cmx_file = rebase_path("meta/dart_jit${product_suffix}_runner.cmx")
+    cml_file = rebase_path("meta/dart_jit${product_suffix}_runner.cml")
 
     libraries = common_libs
 
@@ -225,18 +225,8 @@ template("jit_runner_package") {
       },
       {
         path = rebase_path(
-                "$target_gen_dir/kernel/vm_instructions${product_suffix}.bin")
-        dest = "vm_snapshot_instructions.bin"
-      },
-      {
-        path = rebase_path(
                 "$target_gen_dir/kernel/isolate_data${product_suffix}.bin")
         dest = "isolate_core_snapshot_data.bin"
-      },
-      {
-        path = rebase_path(
-                "$target_gen_dir/kernel/isolate_instructions${product_suffix}.bin")
-        dest = "isolate_core_snapshot_instructions.bin"
       },
     ]
 
@@ -255,13 +245,6 @@ template("jit_runner_package") {
         },
       ]
     }
-
-    meta = [
-      {
-        path = rebase_path("meta/dart_jit${product_suffix}_runner.cmx")
-        dest = "dart_jit${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 

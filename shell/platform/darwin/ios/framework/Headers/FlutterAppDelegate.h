@@ -7,8 +7,8 @@
 
 #import <UIKit/UIKit.h>
 
-#include "FlutterMacros.h"
-#include "FlutterPlugin.h"
+#import "FlutterMacros.h"
+#import "FlutterPlugin.h"
 
 /**
  * `UIApplicationDelegate` subclass for simple apps that want default behavior.
@@ -23,7 +23,7 @@
  * this class. Developers of custom app delegate classes should copy and paste
  * code as necessary from FlutterAppDelegate.mm.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterAppDelegate
     : UIResponder <UIApplicationDelegate, FlutterPluginRegistry, FlutterAppLifeCycleProvider>
 

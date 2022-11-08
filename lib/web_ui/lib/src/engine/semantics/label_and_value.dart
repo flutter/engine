@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../configuration.dart';
+import 'semantics.dart';
 
 /// Renders [_label] and [_value] to the semantics DOM.
 ///
@@ -43,26 +47,30 @@ class LabelAndValue extends RoleManager {
   ///   its label is not reachable via accessibility focus. This happens, for
   ///   example in popup dialogs, such as the alert dialog. The text of the
   ///   alert is supplied as a label on the parent node.
-  html.Element _auxiliaryValueElement;
+  html.Element? _auxiliaryValueElement;
 
   @override
   void update() {
     final bool hasValue = semanticsObject.hasValue;
     final bool hasLabel = semanticsObject.hasLabel;
+    final bool hasTooltip = semanticsObject.hasTooltip;
 
-    // If the node is incrementable or a text field the value is reported to the
-    // browser via the respective role managers. We do not need to also render
-    // it again here.
-    final bool shouldDisplayValue = hasValue &&
-        !semanticsObject.isIncrementable &&
-        !semanticsObject.isTextField;
+    // If the node is incrementable the value is reported to the browser via
+    // the respective role manager. We do not need to also render it again here.
+    final bool shouldDisplayValue = hasValue && !semanticsObject.isIncrementable;
 
-    if (!hasLabel && !shouldDisplayValue) {
+    if (!hasLabel && !shouldDisplayValue && !hasTooltip) {
       _cleanUpDom();
       return;
     }
 
     final StringBuffer combinedValue = StringBuffer();
+    if (hasTooltip) {
+      combinedValue.write(semanticsObject.tooltip);
+      if (hasLabel || shouldDisplayValue) {
+        combinedValue.write('\n');
+      }
+    }
     if (hasLabel) {
       combinedValue.write(semanticsObject.label);
       if (shouldDisplayValue) {
@@ -89,22 +97,26 @@ class LabelAndValue extends RoleManager {
       // nodes, then VoiceOver behaves as expected with absolute positioning and
       // sizing.
       if (semanticsObject.hasChildren) {
-        _auxiliaryValueElement.style
+        _auxiliaryValueElement!.style
           ..position = 'absolute'
           ..top = '0'
           ..left = '0'
-          ..width = '${semanticsObject.rect.width}px'
-          ..height = '${semanticsObject.rect.height}px';
+          ..width = '${semanticsObject.rect!.width}px'
+          ..height = '${semanticsObject.rect!.height}px';
       }
-      _auxiliaryValueElement.style.fontSize = '6px';
-      semanticsObject.element.append(_auxiliaryValueElement);
+
+      // Normally use a small font size so that text doesn't leave the scope
+      // of the semantics node. When debugging semantics, use a font size
+      // that's reasonably visible.
+      _auxiliaryValueElement!.style.fontSize = configuration.debugShowSemanticsNodes ? '12px' : '6px';
+      semanticsObject.element.append(_auxiliaryValueElement!);
     }
-    _auxiliaryValueElement.text = combinedValue.toString();
+    _auxiliaryValueElement!.text = combinedValue.toString();
   }
 
   void _cleanUpDom() {
     if (_auxiliaryValueElement != null) {
-      _auxiliaryValueElement.remove();
+      _auxiliaryValueElement!.remove();
       _auxiliaryValueElement = null;
     }
     semanticsObject.element.attributes.remove('aria-label');

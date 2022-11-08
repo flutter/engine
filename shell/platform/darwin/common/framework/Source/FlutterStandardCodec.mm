@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "FlutterStandardCodec_Internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h"
 
 #pragma mark - Codec for basic message channel
 
@@ -36,8 +36,9 @@
 }
 
 - (NSData*)encode:(id)message {
-  if (message == nil)
+  if (message == nil) {
     return nil;
+  }
   NSMutableData* data = [NSMutableData dataWithCapacity:32];
   FlutterStandardWriter* writer = [_readerWriter writerWithData:data];
   [writer writeValue:message];
@@ -45,8 +46,9 @@
 }
 
 - (id)decode:(NSData*)message {
-  if (message == nil)
+  if ([message length] == 0) {
     return nil;
+  }
   FlutterStandardReader* reader = [_readerWriter readerWithData:message];
   id value = [reader readValue];
   NSAssert(![reader hasMore], @"Corrupted standard message");
@@ -162,6 +164,10 @@ using namespace flutter;
   return [FlutterStandardTypedData typedDataWithData:data type:FlutterStandardDataTypeInt64];
 }
 
++ (instancetype)typedDataWithFloat32:(NSData*)data {
+  return [FlutterStandardTypedData typedDataWithData:data type:FlutterStandardDataTypeFloat32];
+}
+
 + (instancetype)typedDataWithFloat64:(NSData*)data {
   return [FlutterStandardTypedData typedDataWithData:data type:FlutterStandardDataTypeFloat64];
 }
@@ -189,10 +195,12 @@ using namespace flutter;
 }
 
 - (BOOL)isEqual:(id)object {
-  if (self == object)
+  if (self == object) {
     return YES;
-  if (![object isKindOfClass:[FlutterStandardTypedData class]])
+  }
+  if (![object isKindOfClass:[FlutterStandardTypedData class]]) {
     return NO;
+  }
   FlutterStandardTypedData* other = (FlutterStandardTypedData*)object;
   return self.type == other.type && self.elementCount == other.elementCount &&
          [self.data isEqual:other.data];
@@ -443,6 +451,7 @@ using namespace flutter;
     case FlutterStandardFieldUInt8Data:
     case FlutterStandardFieldInt32Data:
     case FlutterStandardFieldInt64Data:
+    case FlutterStandardFieldFloat32Data:
     case FlutterStandardFieldFloat64Data:
       return [self readTypedDataOfType:FlutterStandardDataTypeForField(field)];
     case FlutterStandardFieldList: {

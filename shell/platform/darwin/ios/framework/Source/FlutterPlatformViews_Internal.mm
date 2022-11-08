@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 static int kMaxPointsInVerb = 4;
 
@@ -24,9 +24,14 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
 FlutterPlatformViewsController::FlutterPlatformViewsController()
-    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()){};
+    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
+      weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)){};
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
+
+fml::WeakPtr<flutter::FlutterPlatformViewsController> FlutterPlatformViewsController::GetWeakPtr() {
+  return weak_factory_->GetWeakPtr();
+}
 
 CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
   // Skia only supports 2D transform so we don't map z.
@@ -53,32 +58,81 @@ void ResetAnchor(CALayer* layer) {
 
 @implementation ChildClippingView
 
-+ (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect {
-  return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
-                    clipSkRect.fBottom - clipSkRect.fTop);
+// The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
+// be hit tested and consumed by this view if they are inside the embedded platform view which could
+// be smaller the embedded platform view is rotated.
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
+  for (UIView* view in self.subviews) {
+    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event]) {
+      return YES;
+    }
+  }
+  return NO;
 }
 
-- (void)clipRect:(const SkRect&)clipSkRect {
-  CGRect clipRect = [ChildClippingView getCGRectFromSkRect:clipSkRect];
-  fml::CFRef<CGPathRef> pathRef(CGPathCreateWithRect(clipRect, nil));
-  CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
-  clip.path = pathRef;
-  self.layer.mask = clip;
+@end
+
+@interface FlutterClippingMaskView ()
+
+- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
+- (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect;
+
+@end
+
+@implementation FlutterClippingMaskView {
+  std::vector<fml::CFRef<CGPathRef>> paths_;
 }
 
-- (void)clipRRect:(const SkRRect&)clipSkRRect {
+- (instancetype)initWithFrame:(CGRect)frame {
+  if (self = [super initWithFrame:frame]) {
+    self.backgroundColor = UIColor.clearColor;
+  }
+  return self;
+}
+
+// In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added
+// this view as a subview of the ChildClippingView.
+// This results this view blocking touch events on the ChildClippingView.
+// So we should always ignore any touch events sent to this view.
+// See https://github.com/flutter/flutter/issues/66044
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
+  return NO;
+}
+
+- (void)drawRect:(CGRect)rect {
+  CGContextRef context = UIGraphicsGetCurrentContext();
+  CGContextSaveGState(context);
+
+  // For mask view, only the alpha channel is used.
+  CGContextSetAlpha(context, 1);
+
+  for (size_t i = 0; i < paths_.size(); i++) {
+    CGContextAddPath(context, paths_.at(i));
+    CGContextClip(context);
+  }
+  CGContextFillRect(context, rect);
+  CGContextRestoreGState(context);
+}
+
+- (void)clipRect:(const SkRect&)clipSkRect matrix:(const CATransform3D&)matrix {
+  CGRect clipRect = [self getCGRectFromSkRect:clipSkRect];
+  CGPathRef path = CGPathCreateWithRect(clipRect, nil);
+  paths_.push_back([self getTransformedPath:path matrix:matrix]);
+}
+
+- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const CATransform3D&)matrix {
   CGPathRef pathRef = nullptr;
   switch (clipSkRRect.getType()) {
     case SkRRect::kEmpty_Type: {
       break;
     }
     case SkRRect::kRect_Type: {
-      [self clipRect:clipSkRRect.rect()];
+      [self clipRect:clipSkRRect.rect() matrix:matrix];
       return;
     }
     case SkRRect::kOval_Type:
     case SkRRect::kSimple_Type: {
-      CGRect clipRect = [ChildClippingView getCGRectFromSkRect:clipSkRRect.rect()];
+      CGRect clipRect = [self getCGRectFromSkRect:clipSkRRect.rect()];
       pathRef = CGPathCreateWithRoundedRect(clipRect, clipSkRRect.getSimpleRadii().x(),
                                             clipSkRRect.getSimpleRadii().y(), nil);
       break;
@@ -129,23 +183,17 @@ void ResetAnchor(CALayer* layer) {
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
-  clip.path = pathRef;
-  self.layer.mask = clip;
-  CGPathRelease(pathRef);
+  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
 }
 
-- (void)clipPath:(const SkPath&)path {
+- (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix {
   if (!path.isValid()) {
     return;
   }
-  fml::CFRef<CGMutablePathRef> pathRef(CGPathCreateMutable());
   if (path.isEmpty()) {
-    CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
-    clip.path = pathRef;
-    self.layer.mask = clip;
     return;
   }
+  CGMutablePathRef pathRef = CGPathCreateMutable();
 
   // Loop through all verbs and translate them into CGPath
   SkPath::Iter iter(path, true);
@@ -197,42 +245,20 @@ void ResetAnchor(CALayer* layer) {
     }
     verb = iter.next(pts);
   }
-
-  CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
-  clip.path = pathRef;
-  self.layer.mask = clip;
+  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
 }
 
-- (void)setClip:(flutter::MutatorType)type
-           rect:(const SkRect&)rect
-          rrect:(const SkRRect&)rrect
-           path:(const SkPath&)path {
-  FML_CHECK(type == flutter::clip_rect || type == flutter::clip_rrect ||
-            type == flutter::clip_path);
-  switch (type) {
-    case flutter::clip_rect:
-      [self clipRect:rect];
-      break;
-    case flutter::clip_rrect:
-      [self clipRRect:rrect];
-      break;
-    case flutter::clip_path:
-      [self clipPath:path];
-      break;
-    default:
-      break;
-  }
+- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
+  CGAffineTransform affine =
+      CGAffineTransformMake(matrix.m11, matrix.m12, matrix.m21, matrix.m22, matrix.m41, matrix.m42);
+  CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &affine);
+  CGPathRelease(path);
+  return fml::CFRef<CGPathRef>(transformedPath);
 }
 
-// The ChildClippingView is as big as the FlutterView, we only want touches to be hit tested and
-// consumed by this view if they are inside the smaller child view.
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
-  for (UIView* view in self.subviews) {
-    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event]) {
-      return YES;
-    }
-  }
-  return NO;
+- (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect {
+  return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
+                    clipSkRect.fBottom - clipSkRect.fTop);
 }
 
 @end

@@ -1,7 +1,9 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 #include "flutter/fml/ascii_trie.h"
+
 #include "flutter/fml/logging.h"
 
 namespace fml {
@@ -37,7 +39,7 @@ bool AsciiTrie::Query(TrieNode* trie, const char* query) {
   FML_DCHECK(trie);
   const char* char_position = query;
   TrieNode* trie_position = trie;
-  TrieNode* child;
+  TrieNode* child = nullptr;
   int ch;
   while ((ch = *char_position) && (child = trie_position->children[ch].get())) {
     char_position++;

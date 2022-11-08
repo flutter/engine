@@ -6,9 +6,9 @@ package io.flutter.view;
 
 import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
+import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -17,6 +17,11 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
 
+/**
+ * @deprecated {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
+ */
+@Deprecated
 public class FlutterNativeView implements BinaryMessenger {
   private static final String TAG = "FlutterNativeView";
 
@@ -48,13 +53,16 @@ public class FlutterNativeView implements BinaryMessenger {
   }
 
   public FlutterNativeView(@NonNull Context context, boolean isBackgroundView) {
+    if (isBackgroundView) {
+      Log.w(TAG, "'isBackgroundView' is no longer supported and will be ignored");
+    }
     mContext = context;
     mPluginRegistry = new FlutterPluginRegistry(this, context);
     mFlutterJNI = new FlutterJNI();
     mFlutterJNI.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
     this.dartExecutor = new DartExecutor(mFlutterJNI, context.getAssets());
     mFlutterJNI.addEngineLifecycleListener(new EngineLifecycleListenerImpl());
-    attach(this, isBackgroundView);
+    attach(this);
     assertAttached();
   }
 
@@ -103,7 +111,11 @@ public class FlutterNativeView implements BinaryMessenger {
     if (applicationIsRunning)
       throw new AssertionError("This Flutter engine instance is already running an application");
     mFlutterJNI.runBundleAndSnapshotFromLibrary(
-        args.bundlePath, args.entrypoint, args.libraryPath, mContext.getResources().getAssets());
+        args.bundlePath,
+        args.entrypoint,
+        args.libraryPath,
+        mContext.getResources().getAssets(),
+        null);
 
     applicationIsRunning = true;
   }
@@ -114,6 +126,12 @@ public class FlutterNativeView implements BinaryMessenger {
 
   public static String getObservatoryUri() {
     return FlutterJNI.getObservatoryUri();
+  }
+
+  @Override
+  @UiThread
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return dartExecutor.getBinaryMessenger().makeBackgroundTaskQueue(options);
   }
 
   @Override
@@ -139,17 +157,29 @@ public class FlutterNativeView implements BinaryMessenger {
     dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler);
   }
 
+  @Override
+  @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
+    dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler, taskQueue);
+  }
+
+  @Override
+  public void enableBufferingIncomingMessages() {}
+
+  @Override
+  public void disableBufferingIncomingMessages() {}
+
   /*package*/ FlutterJNI getFlutterJNI() {
     return mFlutterJNI;
   }
 
-  private void attach(FlutterNativeView view, boolean isBackgroundView) {
-    mFlutterJNI.attachToNative(isBackgroundView);
+  private void attach(FlutterNativeView view) {
+    mFlutterJNI.attachToNative();
     dartExecutor.onAttachedToJNI();
   }
 
   private final class EngineLifecycleListenerImpl implements EngineLifecycleListener {
-    // Called by native to notify when the engine is restarted (cold reload).
+    // Called by native to notify right before the engine is restarted (cold reload).
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
       if (mFlutterView != null) {
@@ -159,6 +189,11 @@ public class FlutterNativeView implements BinaryMessenger {
         return;
       }
       mPluginRegistry.onPreEngineRestart();
+    }
+
+    public void onEngineWillDestroy() {
+      // The old embedding doesn't actually have a FlutterEngine. It interacts with the JNI
+      // directly.
     }
   }
 }

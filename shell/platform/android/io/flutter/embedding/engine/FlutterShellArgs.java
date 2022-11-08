@@ -15,8 +15,8 @@ import java.util.*;
  * <p>The term "shell" refers to the native code that adapts Flutter to different platforms.
  * Flutter's Android Java code initializes a native "shell" and passes these arguments to that
  * native shell when it is initialized. See {@link
- * io.flutter.view.FlutterMain#ensureInitializationComplete(Context, String[])} for more
- * information.
+ * io.flutter.embedding.engine.loader.FlutterLoader#ensureInitializationComplete(Context, String[])}
+ * for more information.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class FlutterShellArgs {
@@ -38,6 +38,8 @@ public class FlutterShellArgs {
   public static final String ARG_SKIA_DETERMINISTIC_RENDERING = "--skia-deterministic-rendering";
   public static final String ARG_KEY_TRACE_SKIA = "trace-skia";
   public static final String ARG_TRACE_SKIA = "--trace-skia";
+  public static final String ARG_KEY_TRACE_SKIA_ALLOWLIST = "trace-skia-allowlist";
+  public static final String ARG_TRACE_SKIA_ALLOWLIST = "--trace-skia-allowlist=";
   public static final String ARG_KEY_TRACE_SYSTRACE = "trace-systrace";
   public static final String ARG_TRACE_SYSTRACE = "--trace-systrace";
   public static final String ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION =
@@ -46,6 +48,8 @@ public class FlutterShellArgs {
       "--dump-skp-on-shader-compilation";
   public static final String ARG_KEY_CACHE_SKSL = "cache-sksl";
   public static final String ARG_CACHE_SKSL = "--cache-sksl";
+  public static final String ARG_KEY_PURGE_PERSISTENT_CACHE = "purge-persistent-cache";
+  public static final String ARG_PURGE_PERSISTENT_CACHE = "--purge-persistent-cache";
   public static final String ARG_KEY_VERBOSE_LOGGING = "verbose-logging";
   public static final String ARG_VERBOSE_LOGGING = "--verbose-logging";
   public static final String ARG_KEY_OBSERVATORY_PORT = "observatory-port";
@@ -93,6 +97,10 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_TRACE_SKIA, false)) {
       args.add(ARG_TRACE_SKIA);
     }
+    String traceSkiaAllowlist = intent.getStringExtra(ARG_KEY_TRACE_SKIA_ALLOWLIST);
+    if (traceSkiaAllowlist != null) {
+      args.add(ARG_TRACE_SKIA_ALLOWLIST + traceSkiaAllowlist);
+    }
     if (intent.getBooleanExtra(ARG_KEY_TRACE_SYSTRACE, false)) {
       args.add(ARG_TRACE_SYSTRACE);
     }
@@ -102,14 +110,16 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_CACHE_SKSL, false)) {
       args.add(ARG_CACHE_SKSL);
     }
+    if (intent.getBooleanExtra(ARG_KEY_PURGE_PERSISTENT_CACHE, false)) {
+      args.add(ARG_PURGE_PERSISTENT_CACHE);
+    }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);
     }
 
     // NOTE: all flags provided with this argument are subject to filtering
-    // based on a whitelist in shell/common/switches.cc. If any flag provided
-    // is not present in the whitelist, the process will immediately
-    // terminate.
+    // based on a a list of allowed flags in shell/common/switches.cc. If any
+    // flag provided is not allowed, the process will immediately terminate.
     if (intent.hasExtra(ARG_KEY_DART_FLAGS)) {
       args.add(ARG_DART_FLAGS + "=" + intent.getStringExtra(ARG_KEY_DART_FLAGS));
     }

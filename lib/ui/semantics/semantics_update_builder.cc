@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
-#include "flutter/lib/ui/ui_dart_state.h"
 
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -12,6 +12,14 @@
 #include "third_party/tonic/dart_library_natives.h"
 
 namespace flutter {
+
+void pushStringAttributes(
+    StringAttributes& destination,
+    const std::vector<NativeStringAttribute*>& native_attributes) {
+  for (const auto& native_attribute : native_attributes) {
+    destination.push_back(native_attribute->GetAttribute());
+  }
+}
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
@@ -59,10 +67,16 @@ void SemanticsUpdateBuilder::updateNode(
     double elevation,
     double thickness,
     std::string label,
-    std::string hint,
+    std::vector<NativeStringAttribute*> labelAttributes,
     std::string value,
+    std::vector<NativeStringAttribute*> valueAttributes,
     std::string increasedValue,
+    std::vector<NativeStringAttribute*> increasedValueAttributes,
     std::string decreasedValue,
+    std::vector<NativeStringAttribute*> decreasedValueAttributes,
+    std::string hint,
+    std::vector<NativeStringAttribute*> hintAttributes,
+    std::string tooltip,
     int textDirection,
     const tonic::Float64List& transform,
     const tonic::Int32List& childrenInTraversalOrder,
@@ -92,10 +106,16 @@ void SemanticsUpdateBuilder::updateNode(
   node.elevation = elevation;
   node.thickness = thickness;
   node.label = label;
-  node.hint = hint;
+  pushStringAttributes(node.labelAttributes, labelAttributes);
   node.value = value;
+  pushStringAttributes(node.valueAttributes, valueAttributes);
   node.increasedValue = increasedValue;
+  pushStringAttributes(node.increasedValueAttributes, increasedValueAttributes);
   node.decreasedValue = decreasedValue;
+  pushStringAttributes(node.decreasedValueAttributes, decreasedValueAttributes);
+  node.hint = hint;
+  pushStringAttributes(node.hintAttributes, hintAttributes);
+  node.tooltip = tooltip;
   node.textDirection = textDirection;
   SkScalar scalarTransform[16];
   for (int i = 0; i < 16; ++i) {

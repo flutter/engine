@@ -19,14 +19,14 @@ import android.content.res.Resources.NotFoundException;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
+import androidx.core.view.WindowCompat;
+import io.flutter.Log;
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.Preconditions;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterNativeView;
@@ -35,20 +35,26 @@ import io.flutter.view.FlutterView;
 import java.util.ArrayList;
 
 /**
- * Class that performs the actual work of tying Android {@link Activity} instances to Flutter.
+ * Deprecated class that performs the actual work of tying Android {@link android.app.Activity}
+ * instances to Flutter.
  *
  * <p>This exists as a dedicated class (as opposed to being integrated directly into {@link
  * FlutterActivity}) to facilitate applications that don't wish to subclass {@code FlutterActivity}.
  * The most obvious example of when this may come in handy is if an application wishes to subclass
  * the Android v4 support library's {@code FragmentActivity}.
  *
- * <h3>Usage:</h3>
+ * <p><b>Usage:</b>
  *
  * <p>To wire this class up to your activity, simply forward the events defined in {@link
  * FlutterActivityEvents} from your activity to an instance of this class. Optionally, you can make
  * your activity implement {@link PluginRegistry} and/or {@link
  * io.flutter.view.FlutterView.Provider} and forward those methods to this class as well.
+ *
+ * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now replaces
+ *     this class and {@link io.flutter.app.FlutterActivity}. See
+ *     https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public final class FlutterActivityDelegate
     implements FlutterActivityEvents, FlutterView.Provider, PluginRegistry {
   private static final String SPLASH_SCREEN_META_DATA_KEY =
@@ -78,6 +84,8 @@ public final class FlutterActivityDelegate
     /**
      * Hook for subclasses to indicate that the {@code FlutterNativeView} returned by {@link
      * #createFlutterNativeView()} should not be destroyed when this activity is destroyed.
+     *
+     * @return Whether the FlutterNativeView is retained.
      */
     boolean retainFlutterNativeView();
   }
@@ -133,7 +141,7 @@ public final class FlutterActivityDelegate
       Window window = activity.getWindow();
       window.addFlags(LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
-      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
+      WindowCompat.setDecorFitsSystemWindows(window, false);
     }
 
     String[] args = getArgsFromIntent(activity.getIntent());
@@ -307,6 +315,9 @@ public final class FlutterActivityDelegate
     if (intent.getBooleanExtra("cache-sksl", false)) {
       args.add("--cache-sksl");
     }
+    if (intent.getBooleanExtra("purge-persistent-cache", false)) {
+      args.add("--purge-persistent-cache");
+    }
     if (intent.getBooleanExtra("verbose-logging", false)) {
       args.add("--verbose-logging");
     }
@@ -314,16 +325,12 @@ public final class FlutterActivityDelegate
     if (observatoryPort > 0) {
       args.add("--observatory-port=" + Integer.toString(observatoryPort));
     }
-    if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
-      args.add("--disable-service-auth-codes");
-    }
     if (intent.getBooleanExtra("endless-trace-buffer", false)) {
       args.add("--endless-trace-buffer");
     }
     // NOTE: all flags provided with this argument are subject to filtering
-    // based on a whitelist in shell/common/switches.cc. If any flag provided
-    // is not present in the whitelist, the process will immediately
-    // terminate.
+    // based on a a list of allowed flags in shell/common/switches.cc. If any
+    // flag provided is not allowed, the process will immediately terminate.
     if (intent.hasExtra("dart-flags")) {
       args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
     }
@@ -418,9 +425,7 @@ public final class FlutterActivityDelegate
       ActivityInfo activityInfo =
           activity
               .getPackageManager()
-              .getActivityInfo(
-                  activity.getComponentName(),
-                  PackageManager.GET_META_DATA | PackageManager.GET_ACTIVITIES);
+              .getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA);
       Bundle metadata = activityInfo.metaData;
       return metadata != null && metadata.getBoolean(SPLASH_SCREEN_META_DATA_KEY);
     } catch (NameNotFoundException e) {

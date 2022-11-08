@@ -12,15 +12,19 @@ G_BEGIN_DECLS
 
 /**
  * fl_plugin_registrar_new:
- * @view: the #FlView that is being plugged into.
+ * @view: (allow-none): the #FlView that is being plugged into or %NULL for
+ * headless mode.
  * @messenger: the #FlBinaryMessenger to communicate with.
+ * @texture_registrar: the #FlTextureRegistrar to communicate with.
  *
  * Creates a new #FlPluginRegistrar.
  *
  * Returns: a new #FlPluginRegistrar.
  */
-FlPluginRegistrar* fl_plugin_registrar_new(FlView* view,
-                                           FlBinaryMessenger* messenger);
+FlPluginRegistrar* fl_plugin_registrar_new(
+    FlView* view,
+    FlBinaryMessenger* messenger,
+    FlTextureRegistrar* texture_registrar);
 
 G_END_DECLS
 

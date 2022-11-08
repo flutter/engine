@@ -42,8 +42,8 @@ DartVMRef::~DartVMRef() {
 }
 
 DartVMRef DartVMRef::Create(Settings settings,
-                            fml::RefPtr<DartSnapshot> vm_snapshot,
-                            fml::RefPtr<DartSnapshot> isolate_snapshot) {
+                            fml::RefPtr<const DartSnapshot> vm_snapshot,
+                            fml::RefPtr<const DartSnapshot> isolate_snapshot) {
   std::scoped_lock lifecycle_lock(gVMMutex);
 
   if (!settings.leak_vm) {
@@ -82,7 +82,7 @@ DartVMRef DartVMRef::Create(Settings settings,
 
   if (!vm) {
     FML_LOG(ERROR) << "Could not create Dart VM instance.";
-    return {nullptr};
+    return DartVMRef{nullptr};
   }
 
   gVMData = vm->GetVMData();

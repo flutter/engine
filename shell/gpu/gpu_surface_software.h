@@ -5,9 +5,9 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
 
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
 #include "flutter/shell/gpu/gpu_surface_software_delegate.h"
 
 namespace flutter {
@@ -29,10 +29,7 @@ class GPUSurfaceSoftware : public Surface {
   SkMatrix GetRootTransformation() const override;
 
   // |Surface|
-  GrContext* GetContext() override;
-
-  // |Surface|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  GrDirectContext* GetContext() override;
 
  private:
   GPUSurfaceSoftwareDelegate* delegate_;
@@ -42,7 +39,6 @@ class GPUSurfaceSoftware : public Surface {
   // external view embedder is present.
   const bool render_to_surface_;
   fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceSoftware> weak_factory_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceSoftware);
 };
 

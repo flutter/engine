@@ -10,6 +10,7 @@
 #endif
 
 #include <glib-object.h>
+
 #include "fl_plugin_registrar.h"
 
 G_BEGIN_DECLS
@@ -34,7 +35,7 @@ struct _FlPluginRegistryInterface {
    * @registry: an #FlPluginRegistry.
    * @name: plugin name.
    *
-   * Gets the plugin registrar for the the plugin with @name.
+   * Gets the plugin registrar for the plugin with @name.
    *
    * Returns: (transfer full): an #FlPluginRegistrar.
    */
@@ -47,7 +48,7 @@ struct _FlPluginRegistryInterface {
  * @registry: an #FlPluginRegistry.
  * @name: plugin name.
  *
- * Gets the plugin registrar for the the plugin with @name.
+ * Gets the plugin registrar for the plugin with @name.
  *
  * Returns: (transfer full): an #FlPluginRegistrar.
  */

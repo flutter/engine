@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:quiver/testing/async.dart';
 import 'package:ui/src/engine.dart' hide window;
 import 'package:ui/ui.dart';
 
@@ -31,8 +32,8 @@ class PlatformMessage {
 /// It holds all intercepted platform messages in a [messages] list that can
 /// be inspected in tests.
 class PlatformMessagesSpy {
-  PlatformMessageCallback _callback;
-  PlatformMessageCallback _backup;
+  PlatformMessageCallback? _callback;
+  PlatformMessageCallback? _backup;
 
   bool get _isActive => _callback != null;
 
@@ -44,8 +45,8 @@ class PlatformMessagesSpy {
   /// This is typically called inside a test's `setUp` callback.
   void setUp() {
     assert(!_isActive);
-    _callback = (String channel, ByteData data,
-        PlatformMessageResponseCallback callback) {
+    _callback = (String channel, ByteData? data,
+        PlatformMessageResponseCallback? callback) {
       messages.add(PlatformMessage(
         channel,
         const JSONMethodCodec().decodeMethodCall(data),
@@ -66,5 +67,24 @@ class PlatformMessagesSpy {
     _callback = null;
     messages.clear();
     window.onPlatformMessage = _backup;
+  }
+}
+
+/// Runs code in a [FakeAsync] zone and spies on what's going on in it.
+class ZoneSpy {
+  final FakeAsync fakeAsync = FakeAsync();
+  final List<String> printLog = <String>[];
+
+  dynamic run(dynamic Function() function) {
+    final ZoneSpecification printInterceptor = ZoneSpecification(
+      print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+        printLog.add(line);
+      },
+    );
+    return Zone.current.fork(specification: printInterceptor).run<dynamic>(() {
+      return fakeAsync.run((FakeAsync self) {
+        return function();
+      });
+    });
   }
 }

@@ -4,10 +4,12 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
 
+#include <gmodule.h>
+
+#include <cstring>
+
 #include "rapidjson/reader.h"
 #include "rapidjson/writer.h"
-
-#include <gmodule.h>
 
 G_DEFINE_QUARK(fl_json_message_codec_error_quark, fl_json_message_codec_error)
 
@@ -47,40 +49,46 @@ static gboolean write_value(rapidjson::Writer<rapidjson::StringBuffer>& writer,
     case FL_VALUE_TYPE_UINT8_LIST: {
       writer.StartArray();
       const uint8_t* data = fl_value_get_uint8_list(value);
-      for (size_t i = 0; i < fl_value_get_length(value); i++)
+      for (size_t i = 0; i < fl_value_get_length(value); i++) {
         writer.Int(data[i]);
+      }
       writer.EndArray();
       break;
     }
     case FL_VALUE_TYPE_INT32_LIST: {
       writer.StartArray();
       const int32_t* data = fl_value_get_int32_list(value);
-      for (size_t i = 0; i < fl_value_get_length(value); i++)
+      for (size_t i = 0; i < fl_value_get_length(value); i++) {
         writer.Int(data[i]);
+      }
       writer.EndArray();
       break;
     }
     case FL_VALUE_TYPE_INT64_LIST: {
       writer.StartArray();
       const int64_t* data = fl_value_get_int64_list(value);
-      for (size_t i = 0; i < fl_value_get_length(value); i++)
+      for (size_t i = 0; i < fl_value_get_length(value); i++) {
         writer.Int64(data[i]);
+      }
       writer.EndArray();
       break;
     }
     case FL_VALUE_TYPE_FLOAT_LIST: {
       writer.StartArray();
       const double* data = fl_value_get_float_list(value);
-      for (size_t i = 0; i < fl_value_get_length(value); i++)
+      for (size_t i = 0; i < fl_value_get_length(value); i++) {
         writer.Double(data[i]);
+      }
       writer.EndArray();
       break;
     }
     case FL_VALUE_TYPE_LIST: {
       writer.StartArray();
-      for (size_t i = 0; i < fl_value_get_length(value); i++)
-        if (!write_value(writer, fl_value_get_list_value(value, i), error))
+      for (size_t i = 0; i < fl_value_get_length(value); i++) {
+        if (!write_value(writer, fl_value_get_list_value(value, i), error)) {
           return FALSE;
+        }
+      }
       writer.EndArray();
       break;
     }
@@ -95,8 +103,9 @@ static gboolean write_value(rapidjson::Writer<rapidjson::StringBuffer>& writer,
           return FALSE;
         }
         writer.Key(fl_value_get_string(key));
-        if (!write_value(writer, fl_value_get_map_value(value, i), error))
+        if (!write_value(writer, fl_value_get_map_value(value, i), error)) {
           return FALSE;
+        }
       }
       writer.EndObject();
       break;
@@ -126,16 +135,19 @@ struct FlValueHandler {
 
   ~FlValueHandler() {
     g_ptr_array_unref(stack);
-    if (key != nullptr)
+    if (key != nullptr) {
       fl_value_unref(key);
-    if (error != nullptr)
+    }
+    if (error != nullptr) {
       g_error_free(error);
+    }
   }
 
   // Gets the current head of the stack.
   FlValue* get_head() {
-    if (stack->len == 0)
+    if (stack->len == 0) {
       return nullptr;
+    }
     return static_cast<FlValue*>(g_ptr_array_index(stack, stack->len - 1));
   }
 
@@ -149,11 +161,11 @@ struct FlValueHandler {
   bool add(FlValue* value) {
     g_autoptr(FlValue) owned_value = value;
     FlValue* head = get_head();
-    if (head == nullptr)
+    if (head == nullptr) {
       push(owned_value);
-    else if (fl_value_get_type(head) == FL_VALUE_TYPE_LIST)
+    } else if (fl_value_get_type(head) == FL_VALUE_TYPE_LIST) {
       fl_value_append(head, owned_value);
-    else if (fl_value_get_type(head) == FL_VALUE_TYPE_MAP) {
+    } else if (fl_value_get_type(head) == FL_VALUE_TYPE_MAP) {
       fl_value_set_take(head, key, fl_value_ref(owned_value));
       key = nullptr;
     } else {
@@ -163,8 +175,9 @@ struct FlValueHandler {
     }
 
     if (fl_value_get_type(owned_value) == FL_VALUE_TYPE_LIST ||
-        fl_value_get_type(owned_value) == FL_VALUE_TYPE_MAP)
+        fl_value_get_type(owned_value) == FL_VALUE_TYPE_MAP) {
       push(value);
+    }
 
     return true;
   }
@@ -183,10 +196,11 @@ struct FlValueHandler {
 
   bool Uint64(uint64_t i) {
     // For some reason (bug in rapidjson?) this is not returned in Int64.
-    if (i == G_MAXINT64)
+    if (i == G_MAXINT64) {
       return add(fl_value_new_int(i));
-    else
+    } else {
       return add(fl_value_new_float(i));
+    }
   }
 
   bool Double(double d) { return add(fl_value_new_float(d)); }
@@ -205,8 +219,9 @@ struct FlValueHandler {
   bool StartObject() { return add(fl_value_new_map()); }
 
   bool Key(const char* str, rapidjson::SizeType length, bool copy) {
-    if (key != nullptr)
+    if (key != nullptr) {
       fl_value_unref(key);
+    }
     key = fl_value_new_string_sized(str, length);
     return true;
   }
@@ -231,8 +246,9 @@ static GBytes* fl_json_message_codec_encode_message(FlMessageCodec* codec,
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-  if (!write_value(writer, message, error))
+  if (!write_value(writer, message, error)) {
     return nullptr;
+  }
 
   const gchar* text = buffer.GetString();
   return g_bytes_new(text, strlen(text));
@@ -300,8 +316,9 @@ G_MODULE_EXPORT gchar* fl_json_message_codec_encode(FlJsonMessageCodec* codec,
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-  if (!write_value(writer, value, error))
+  if (!write_value(writer, value, error)) {
     return nullptr;
+  }
 
   return g_strdup(buffer.GetString());
 }
@@ -314,8 +331,9 @@ G_MODULE_EXPORT FlValue* fl_json_message_codec_decode(FlJsonMessageCodec* codec,
   g_autoptr(GBytes) data = g_bytes_new_static(text, strlen(text));
   g_autoptr(FlValue) value = fl_json_message_codec_decode_message(
       FL_MESSAGE_CODEC(codec), data, error);
-  if (value == nullptr)
+  if (value == nullptr) {
     return nullptr;
+  }
 
   return fl_value_ref(value);
 }

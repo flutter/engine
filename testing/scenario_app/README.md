@@ -11,7 +11,7 @@ Flutter tooling.
 ## Adding a New Scenario
 
 Create a new subclass of [Scenario](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/lib/src/scenario.dart#L9)
-and add it to the map in [main.dart](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/lib/main.dart#L17).
+and add it to the map in [scenarios.dart](https://github.com/flutter/engine/blob/db4d423ad9c6dad373618712690acd06b0a385fd/testing/scenario_app/lib/src/scenarios.dart#L22).
 For an example, see [animated_color_square.dart](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/lib/src/animated_color_square.dart#L15),
 which draws a continuously animating colored square that bounces off the sides
 of the viewport.
@@ -21,14 +21,28 @@ platform channel.
 
 ## Running for iOS
 
+Build the `ios_debug_sim_unopt` engine variant, and run
+
 ```sh
-./build_and_run_ios_tests.sh
+./run_ios_tests.sh
 ```
+
+in your shell.
+
+To run or debug in Xcode, open the xcodeproj file located in
+`<engine_out_dir>/scenario_app/Scenarios/Scenaios.xoceproj`.
 
 ### iOS Platform View Tests
 
 For PlatformView tests on iOS, you'll also have to edit the dictionaries in
-[AppDelegate.m](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/Scenarios/AppDelegate.m#L29) and [PlatformViewGoldenTestManager.m](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/ScenariosUITests/PlatformViewGoldenTestManager.m#L24) so that the correct golden image can be found.  Also, you'll have to add a [GoldenPlatformViewTests](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/ScenariosUITests/GoldenPlatformViewTests.h#L18) in [PlatformViewUITests.m](https://github.com/flutter/engine/blob/af2ffc02b72af2a89242ca3c89e18269b1584ce5/testing/scenario_app/ios/Scenarios/ScenariosUITests/PlatformViewUITests.m).
+[AppDelegate.m](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/Scenarios/AppDelegate.m#L29) and [GoldenTestManager.m](https://github.com/flutter/engine/blob/db4d423ad9c6dad373618712690acd06b0a385fd/testing/scenario_app/ios/Scenarios/ScenariosUITests/GoldenTestManager.m#L25) so that the correct golden image can be found.  Also, you'll have to add a [GoldenPlatformViewTests](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/ScenariosUITests/GoldenPlatformViewTests.h#L18) in [PlatformViewUITests.m](https://github.com/flutter/engine/blob/af2ffc02b72af2a89242ca3c89e18269b1584ce5/testing/scenario_app/ios/Scenarios/ScenariosUITests/PlatformViewUITests.m).
+
+If `PlatformViewRotation` is failing, make sure Simulator app Device > Rotate Device Automatically
+is selected, or run:
+
+```bash
+defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
+```
 
 ### Generating Golden Images on iOS
 
@@ -42,29 +56,21 @@ compared against golden reside.
 
 ## Running for Android
 
-```bash
-./build_and_run_android_tests.sh
-```
+The only test that is currently run is the Firebase TestLab test, which is a
+smoke test to make sure an application can be built and run on a real Android
+device.
 
-### Generating Golden Images on Android
+To run it, build the `android_profile_arm64` variant of the engine, and run
+`./flutter/ci/firebase_testlab.py`. If you wish to test a different variant, e.g.
+debug arm64, pass `--variant android_debug_arm64`.
 
-In the `android` directory, run:
+### Updating Gradle dependencies
 
-```bash
-./gradlew app:recordDebugAndroidTestScreenshotTest
-```
+If a Gradle dependency is updated, lockfiles must be regenerated.
 
-The screenshots are recorded into `android/reports/screenshots`.
-
-### Verifying Golden Images on Android
-
-In the `android` directory, run:
+To generate new lockfiles, run:
 
 ```bash
-./gradlew app:verifyDebugAndroidTestScreenshotTest
+cd android
+../../../../gradle/bin/gradle generateLockfiles
 ```
-
-## Changing dart:ui code
-
-If you change the dart:ui interface, remember to point the sky_engine and
-sky_services clauses to your local engine's output path before compiling.

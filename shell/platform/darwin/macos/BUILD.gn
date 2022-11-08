@@ -5,15 +5,20 @@
 assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
-import("//flutter/common/config.gni")
+import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
 
+shell_gpu_configuration("macos_gpu_configuration") {
+  enable_software = true
+  enable_gl = true
+  enable_vulkan = false
+  enable_metal = shell_enable_metal
+}
+
 group("macos") {
-  deps = [
-    ":flutter_framework",
-  ]
+  deps = [ ":flutter_framework" ]
   if (build_glfw_shell) {
     deps += [
       ":flutter_macos_glfw",
@@ -47,41 +52,103 @@ source_set("flutter_framework_source") {
   visibility = [ ":*" ]
 
   sources = [
+    "framework/Source/AccessibilityBridgeMacDelegate.h",
+    "framework/Source/AccessibilityBridgeMacDelegate.mm",
     "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterBackingStore.h",
+    "framework/Source/FlutterBackingStore.mm",
+    "framework/Source/FlutterBackingStoreData.h",
+    "framework/Source/FlutterBackingStoreData.mm",
+    "framework/Source/FlutterChannelKeyResponder.h",
+    "framework/Source/FlutterChannelKeyResponder.mm",
+    "framework/Source/FlutterCompositor.h",
+    "framework/Source/FlutterCompositor.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
+    "framework/Source/FlutterEmbedderKeyResponder.h",
+    "framework/Source/FlutterEmbedderKeyResponder.mm",
     "framework/Source/FlutterEngine.mm",
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterExternalTextureMetal.h",
+    "framework/Source/FlutterExternalTextureMetal.mm",
+    "framework/Source/FlutterFrameBufferProvider.h",
+    "framework/Source/FlutterFrameBufferProvider.mm",
+    "framework/Source/FlutterGLCompositor.h",
+    "framework/Source/FlutterGLCompositor.mm",
+    "framework/Source/FlutterIOSurfaceHolder.h",
+    "framework/Source/FlutterIOSurfaceHolder.mm",
+    "framework/Source/FlutterKeyPrimaryResponder.h",
+    "framework/Source/FlutterKeySecondaryResponder.h",
+    "framework/Source/FlutterKeyboardManager.h",
+    "framework/Source/FlutterKeyboardManager.mm",
+    "framework/Source/FlutterMacOSExternalTexture.h",
+    "framework/Source/FlutterMacOSExternalTexture.h",
+    "framework/Source/FlutterMetalCompositor.h",
+    "framework/Source/FlutterMetalCompositor.mm",
+    "framework/Source/FlutterMetalRenderer.h",
+    "framework/Source/FlutterMetalRenderer.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
-    "framework/Source/FlutterTextInputModel.h",
-    "framework/Source/FlutterTextInputModel.mm",
+    "framework/Source/FlutterOpenGLRenderer.h",
+    "framework/Source/FlutterOpenGLRenderer.mm",
+    "framework/Source/FlutterPlatformNodeDelegateMac.h",
+    "framework/Source/FlutterPlatformNodeDelegateMac.mm",
+    "framework/Source/FlutterRenderer.h",
+    "framework/Source/FlutterRenderingBackend.h",
+    "framework/Source/FlutterRenderingBackend.mm",
+    "framework/Source/FlutterResizableBackingStoreProvider.h",
+    "framework/Source/FlutterResizableBackingStoreProvider.mm",
+    "framework/Source/FlutterResizeSynchronizer.h",
+    "framework/Source/FlutterResizeSynchronizer.mm",
+    "framework/Source/FlutterSurfaceManager.h",
+    "framework/Source/FlutterSurfaceManager.mm",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
+    "framework/Source/FlutterTextInputSemanticsObject.h",
+    "framework/Source/FlutterTextInputSemanticsObject.mm",
+    "framework/Source/FlutterTextureRegistrar.h",
+    "framework/Source/FlutterTextureRegistrar.mm",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/KeyCodeMap.mm",
+    "framework/Source/MacOSGLContextSwitch.h",
+    "framework/Source/MacOSGLContextSwitch.mm",
   ]
 
   sources += _flutter_framework_headers
 
   deps = [
+    ":macos_gpu_configuration",
+    "//flutter/flow:flow",
+    "//flutter/fml",
+    "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common:common_cpp_input",
+    "//flutter/shell/platform/common:common_cpp_switches",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/darwin/graphics:graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//third_party/skia",
   ]
 
   public_configs = [ "//flutter:config" ]
 
-  defines = [ "FLUTTER_FRAMEWORK" ]
+  defines = [
+    "FLUTTER_FRAMEWORK",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
 
-  cflags_objcc = [ "-fobjc-arc" ]
+  cflags_objcc = flutter_cflags_objcc_arc
 
-  libs = [
+  frameworks = [
     "Cocoa.framework",
     "CoreVideo.framework",
+    "IOSurface.framework",
+    "Metal.framework",
+    "QuartzCore.framework",
   ]
 }
 
@@ -91,9 +158,7 @@ shared_library("flutter_framework_dylib") {
 
   ldflags = [ "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath" ]
 
-  deps = [
-    ":flutter_framework_source",
-  ]
+  deps = [ ":flutter_framework_source" ]
 }
 
 test_fixtures("flutter_desktop_darwin_fixtures") {
@@ -106,56 +171,67 @@ executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
   sources = [
-    "framework/Source/FlutterEngineUnittests.mm",
+    "framework/Source/AccessibilityBridgeMacDelegateTest.mm",
+    "framework/Source/FlutterChannelKeyResponderUnittests.mm",
+    "framework/Source/FlutterEmbedderExternalTextureUnittests.mm",
+    "framework/Source/FlutterEmbedderKeyResponderUnittests.mm",
+    "framework/Source/FlutterEngineTest.mm",
+    "framework/Source/FlutterEngineTestUtils.h",
+    "framework/Source/FlutterEngineTestUtils.mm",
+    "framework/Source/FlutterFrameBufferProviderUnittests.mm",
+    "framework/Source/FlutterGLCompositorUnittests.mm",
+    "framework/Source/FlutterKeyboardManagerUnittests.mm",
+    "framework/Source/FlutterMetalCompositorUnittests.mm",
+    "framework/Source/FlutterMetalRendererTest.mm",
+    "framework/Source/FlutterMetalSurfaceManagerTest.mm",
+    "framework/Source/FlutterOpenGLRendererTest.mm",
+    "framework/Source/FlutterPlatformNodeDelegateMacTest.mm",
+    "framework/Source/FlutterTextInputPluginTest.mm",
+    "framework/Source/FlutterTextInputSemanticsObjectTest.mm",
+    "framework/Source/FlutterViewControllerTest.mm",
+    "framework/Source/FlutterViewControllerTestUtils.h",
+    "framework/Source/FlutterViewControllerTestUtils.mm",
   ]
 
-  cflags_objcc = [ "-fobjc-arc" ]
+  cflags_objcc = flutter_cflags_objcc_arc
+
+  ldflags = [ "-ObjC" ]
 
   deps = [
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
+    "//flutter/shell/platform/common:common_cpp_accessibility",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
     "//flutter/testing:dart",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
+    "//third_party/ocmock:ocmock",
   ]
 }
 
 copy("copy_dylib") {
   visibility = [ ":*" ]
 
-  sources = [
-    "$root_out_dir/lib$_flutter_framework_name.dylib",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/$_framework_binary_subpath",
-  ]
+  sources = [ "$root_out_dir/lib$_flutter_framework_name.dylib" ]
+  outputs = [ "$_flutter_framework_dir/$_framework_binary_subpath" ]
 
-  deps = [
-    ":flutter_framework_dylib",
-  ]
+  deps = [ ":flutter_framework_dylib" ]
 }
 
 copy("copy_framework_info_plist") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/Info.plist",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Versions/A/Resources/Info.plist",
-  ]
+  sources = [ "framework/Info.plist" ]
+  outputs = [ "$_flutter_framework_dir/Versions/A/Resources/Info.plist" ]
 }
 
 copy("copy_framework_module_map") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/module.modulemap",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Versions/A/Modules/module.modulemap",
-  ]
+  sources = [ "framework/module.modulemap" ]
+  outputs = [ "$_flutter_framework_dir/Versions/A/Modules/module.modulemap" ]
 }
 
 action("copy_framework_headers") {
@@ -177,30 +253,21 @@ action("copy_framework_headers") {
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  sources = [
-    "//third_party/icu/flutter/icudtl.dat",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}",
-  ]
+  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  outputs =
+      [ "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}" ]
 }
 
 copy("copy_license") {
   visibility = [ ":*" ]
-  sources = [
-    "//LICENSE",
-  ]
-  outputs = [
-    "$root_out_dir/LICENSE",
-  ]
+  sources = [ "//LICENSE" ]
+  outputs = [ "$root_out_dir/LICENSE" ]
 }
 
 action("_generate_symlinks") {
   visibility = [ ":*" ]
   script = "//build/config/mac/package_framework.py"
-  outputs = [
-    "$root_build_dir/$_flutter_framework_name.stamp",
-  ]
+  outputs = [ "$root_build_dir/$_flutter_framework_name.stamp" ]
   args = [
     "--framework",
     "$_flutter_framework_filename",
@@ -226,12 +293,8 @@ action("_generate_symlinks") {
 
 copy("copy_framework_podspec") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/FlutterMacOS.podspec",
-  ]
-  outputs = [
-    "$root_out_dir/FlutterMacOS.podspec",
-  ]
+  sources = [ "framework/FlutterMacOS.podspec" ]
+  outputs = [ "$root_out_dir/FlutterMacOS.podspec" ]
 }
 
 group("flutter_framework") {
@@ -243,9 +306,7 @@ group("flutter_framework") {
 
 if (build_glfw_shell) {
   shared_library("flutter_macos_glfw") {
-    deps = [
-      "//flutter/shell/platform/glfw:flutter_glfw",
-    ]
+    deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
 
     public_configs = [ "//flutter:config" ]
   }

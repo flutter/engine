@@ -17,7 +17,8 @@ namespace testing {
 
 EmbedderTestContext::EmbedderTestContext(std::string assets_path)
     : assets_path_(std::move(assets_path)),
-      aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()),
+      aot_symbols_(
+          LoadELFSymbolFromFixturesIfNeccessary(kDefaultAOTAppELFFileName)),
       native_resolver_(std::make_shared<TestDartNativeResolver>()) {
   SetupAOTMappingsIfNecessary();
   SetupAOTDataIfNecessary();
@@ -53,8 +54,8 @@ void EmbedderTestContext::SetupAOTDataIfNecessary() {
   FlutterEngineAOTDataSource data_in = {};
   FlutterEngineAOTData data_out = nullptr;
 
-  const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+  const auto elf_path = fml::paths::JoinPaths(
+      {GetFixturesPath(), testing::kDefaultAOTAppELFFileName});
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
   data_in.elf_path = elf_path.c_str();
@@ -140,6 +141,11 @@ void EmbedderTestContext::PlatformMessageCallback(
   }
 }
 
+void EmbedderTestContext::SetLogMessageCallback(
+    const LogMessageCallback& callback) {
+  log_message_callback_ = callback;
+}
+
 FlutterUpdateSemanticsNodeCallback
 EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook() {
   return [](const FlutterSemanticsNode* semantics_node, void* user_data) {
@@ -160,66 +166,31 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
-void EmbedderTestContext::SetupOpenGLSurface(SkISize surface_size) {
-  FML_CHECK(!gl_surface_);
-  gl_surface_ = std::make_unique<TestGLSurface>(surface_size);
+FlutterLogMessageCallback EmbedderTestContext::GetLogMessageCallbackHook() {
+  return [](const char* tag, const char* message, void* user_data) {
+    auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
+    if (auto callback = context->log_message_callback_) {
+      callback(tag, message);
+    }
+  };
 }
 
-bool EmbedderTestContext::GLMakeCurrent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->MakeCurrent();
-}
-
-bool EmbedderTestContext::GLClearCurrent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->ClearCurrent();
-}
-
-bool EmbedderTestContext::GLPresent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  gl_surface_present_count_++;
-
-  FireRootSurfacePresentCallbackIfPresent(
-      [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
-
-  if (!gl_surface_->Present()) {
-    return false;
-  }
-
-  return true;
-}
-
-uint32_t EmbedderTestContext::GLGetFramebuffer() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->GetFramebuffer();
-}
-
-bool EmbedderTestContext::GLMakeResourceCurrent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->MakeResourceCurrent();
-}
-
-void* EmbedderTestContext::GLGetProcAddress(const char* name) {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->GetProcAddress(name);
+FlutterComputePlatformResolvedLocaleCallback
+EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook() {
+  return [](const FlutterLocale** supported_locales,
+            size_t length) -> const FlutterLocale* {
+    return supported_locales[0];
+  };
 }
 
 FlutterTransformation EmbedderTestContext::GetRootSurfaceTransformation() {
   return FlutterTransformationMake(root_surface_transformation_);
 }
 
-void EmbedderTestContext::SetupCompositor() {
-  FML_CHECK(!compositor_) << "Already ssetup a compositor in this context.";
-  FML_CHECK(gl_surface_)
-      << "Setup the GL surface before setting up a compositor.";
-  compositor_ = std::make_unique<EmbedderTestCompositor>(
-      gl_surface_->GetSurfaceSize(), gl_surface_->GetGrContext());
-}
-
 EmbedderTestCompositor& EmbedderTestContext::GetCompositor() {
   FML_CHECK(compositor_)
-      << "Accessed the compositor on a context where one was not setup. Use "
-         "the config builder to setup a context with a custom compositor.";
+      << "Accessed the compositor on a context where one was not set up. Use "
+         "the config builder to set up a context with a custom compositor.";
   return *compositor_;
 }
 
@@ -242,22 +213,6 @@ std::future<sk_sp<SkImage>> EmbedderTestContext::GetNextSceneImage() {
   return future;
 }
 
-bool EmbedderTestContext::SofwarePresent(sk_sp<SkImage> image) {
-  software_surface_present_count_++;
-
-  FireRootSurfacePresentCallbackIfPresent([image] { return image; });
-
-  return true;
-}
-
-size_t EmbedderTestContext::GetGLSurfacePresentCount() const {
-  return gl_surface_present_count_;
-}
-
-size_t EmbedderTestContext::GetSoftwareSurfacePresentCount() const {
-  return software_surface_present_count_;
-}
-
 /// @note Procedure doesn't copy all closures.
 void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
     const std::function<sk_sp<SkImage>(void)>& image_callback) {
@@ -267,6 +222,15 @@ void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
   auto callback = next_scene_callback_;
   next_scene_callback_ = nullptr;
   callback(image_callback());
+}
+
+void EmbedderTestContext::SetVsyncCallback(
+    std::function<void(intptr_t)> callback) {
+  vsync_callback_ = callback;
+}
+
+void EmbedderTestContext::RunVsyncCallback(intptr_t baton) {
+  vsync_callback_(baton);
 }
 
 }  // namespace testing

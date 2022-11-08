@@ -26,16 +26,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "248D76C622E388370012F0C1"
-            BuildableName = "Scenarios.app"
-            BlueprintName = "Scenarios"
-            ReferencedContainer = "container:Scenarios.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      systemAttachmentLifetime = "keepNever">
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -84,6 +76,10 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "--screen-before-flutter"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--bogus-font-text"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

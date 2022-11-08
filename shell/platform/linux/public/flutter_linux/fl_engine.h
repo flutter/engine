@@ -13,6 +13,7 @@
 
 #include "fl_binary_messenger.h"
 #include "fl_dart_project.h"
+#include "fl_texture_registrar.h"
 
 G_BEGIN_DECLS
 
@@ -25,6 +26,16 @@ G_DECLARE_FINAL_TYPE(FlEngine, fl_engine, FL, ENGINE, GObject)
  */
 
 /**
+ * fl_engine_new_headless:
+ * @project: an #FlDartProject.
+ *
+ * Creates new Flutter engine running in headless mode.
+ *
+ * Returns: a new #FlEngine.
+ */
+FlEngine* fl_engine_new_headless(FlDartProject* project);
+
+/**
  * fl_engine_get_binary_messenger:
  * @engine: an #FlEngine.
  *
@@ -33,6 +44,16 @@ G_DECLARE_FINAL_TYPE(FlEngine, fl_engine, FL, ENGINE, GObject)
  * Returns: an #FlBinaryMessenger.
  */
 FlBinaryMessenger* fl_engine_get_binary_messenger(FlEngine* engine);
+
+/**
+ * fl_engine_get_texture_registrar:
+ * @engine: an #FlEngine.
+ *
+ * Gets the texture registrar for registering textures.
+ *
+ * Returns: an #FlTextureRegistrar.
+ */
+FlTextureRegistrar* fl_engine_get_texture_registrar(FlEngine* engine);
 
 G_END_DECLS
 

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 
@@ -10,11 +9,10 @@ import 'exceptions.dart';
 
 /// Contains various environment variables, such as common file paths and command-line options.
 Environment get environment {
-  _environment ??= Environment();
-  return _environment;
+  return _environment ??= Environment();
 }
 
-Environment _environment;
+Environment? _environment;
 
 /// Contains various environment variables, such as common file paths and command-line options.
 class Environment {
@@ -31,10 +29,8 @@ class Environment {
         io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
-    final io.Directory integrationTestsDir = io.Directory(
-        pathlib.join(engineSrcDir.path, 'flutter', 'e2etests', 'web'));
 
-    for (io.Directory expectedDirectory in <io.Directory>[
+    for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
       outDir,
       hostDebugUnoptDir,
@@ -42,7 +38,7 @@ class Environment {
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
-        throw ToolException('$expectedDirectory does not exist.');
+        throw ToolExit('$expectedDirectory does not exist.');
       }
     }
 
@@ -51,7 +47,6 @@ class Environment {
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
-      integrationTestsDir: integrationTestsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
       dartSdkDir: dartSdkDir,
@@ -59,14 +54,13 @@ class Environment {
   }
 
   Environment._({
-    this.self,
-    this.webUiRootDir,
-    this.engineSrcDir,
-    this.engineToolsDir,
-    this.integrationTestsDir,
-    this.outDir,
-    this.hostDebugUnoptDir,
-    this.dartSdkDir,
+    required this.self,
+    required this.webUiRootDir,
+    required this.engineSrcDir,
+    required this.engineToolsDir,
+    required this.outDir,
+    required this.hostDebugUnoptDir,
+    required this.dartSdkDir,
   });
 
   /// The Dart script that's currently running.
@@ -80,9 +74,6 @@ class Environment {
 
   /// Path to the engine's "tools" directory.
   final io.Directory engineToolsDir;
-
-  /// Path to the web integration tests.
-  final io.Directory integrationTestsDir;
 
   /// Path to the engine's "out" directory.
   ///
@@ -100,10 +91,6 @@ class Environment {
 
   /// The "pub" executable file.
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
-
-  /// The "dart2js" executable file.
-  String get dart2jsExecutable =>
-      pathlib.join(dartSdkDir.path, 'bin', 'dart2js');
 
   /// Path to where github.com/flutter/engine is checked out inside the engine workspace.
   io.Directory get flutterDirectory =>
@@ -156,10 +143,36 @@ class Environment {
         'test',
       ));
 
+  /// Path to the "lib" directory containing web engine code.
+  io.Directory get webUiLibDir => io.Directory(pathlib.join(
+        webUiRootDir.path,
+        'lib',
+      ));
+
   /// Path to the clone of the flutter/goldens repository.
   io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
-        webUiDartToolDir.path,
+        webUiBuildDir.path,
         'goldens',
+      ));
+
+  /// Path to the base directory to be used by Skia Gold.
+  io.Directory get webUiSkiaGoldDirectory => io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'skia_gold',
+      ));
+
+  /// Directory to add test results which would later be uploaded to a gcs
+  /// bucket by LUCI.
+  io.Directory get webUiTestResultsDirectory => io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'test_results',
+      ));
+
+  /// Path to the screenshots taken by iOS simulator.
+  io.Directory get webUiSimulatorScreenshotsDirectory =>
+      io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'ios_screenshots',
       ));
 
   /// Path to the script that clones the Flutter repo.

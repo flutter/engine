@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_image.h"
+#include "vulkan_image.h"
 
-#include "flutter/vulkan/vulkan_command_buffer.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
+#include "vulkan_command_buffer.h"
+#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -31,7 +31,7 @@ bool VulkanImage::InsertImageMemoryBarrier(
     const VulkanCommandBuffer& command_buffer,
     VkPipelineStageFlagBits src_pipline_bits,
     VkPipelineStageFlagBits dest_pipline_bits,
-    VkAccessFlagBits dest_access_flags,
+    VkAccessFlags dest_access_flags,
     VkImageLayout dest_layout) {
   const VkImageMemoryBarrier image_memory_barrier = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,

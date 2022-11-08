@@ -4,11 +4,10 @@
 
 #include "flutter/fml/synchronization/waitable_event.h"
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
-
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -74,10 +73,11 @@ TEST(AutoResetWaitableEventTest, MultipleWaiters) {
     std::vector<std::thread> threads;
     for (size_t j = 0u; j < 4u; j++) {
       threads.push_back(std::thread([&ev, &wake_count]() {
-        if (rand() % 2 == 0)
+        if (rand() % 2 == 0) {
           ev.Wait();
-        else
+        } else {
           EXPECT_FALSE(ev.WaitWithTimeout(kActionTimeout));
+        }
         wake_count.fetch_add(1u);
         // Note: We can't say anything about the signaled state of |ev| here,
         // since the main thread may have already signaled it again.
@@ -97,8 +97,9 @@ TEST(AutoResetWaitableEventTest, MultipleWaiters) {
       ev.Signal();
 
       // Poll for |wake_count| to change.
-      while (wake_count.load() == old_wake_count)
+      while (wake_count.load() == old_wake_count) {
         SleepFor(kEpsilonTimeout);
+      }
 
       EXPECT_FALSE(ev.IsSignaledForTest());
 
@@ -116,8 +117,9 @@ TEST(AutoResetWaitableEventTest, MultipleWaiters) {
     SleepFor(kEpsilonTimeout);
     EXPECT_TRUE(ev.IsSignaledForTest());
 
-    for (auto& thread : threads)
+    for (auto& thread : threads) {
       thread.join();
+    }
 
     ev.Reset();
   }
@@ -156,10 +158,11 @@ TEST(ManualResetWaitableEventTest, SignalMultiple) {
         threads.push_back(std::thread([&ev]() {
           EpsilonRandomSleep();
 
-          if (rand() % 2 == 0)
+          if (rand() % 2 == 0) {
             ev.Wait();
-          else
+          } else {
             EXPECT_FALSE(ev.WaitWithTimeout(kActionTimeout));
+          }
         }));
       }
 
@@ -169,8 +172,9 @@ TEST(ManualResetWaitableEventTest, SignalMultiple) {
 
       // The threads will only terminate once they've successfully waited (or
       // timed out).
-      for (auto& thread : threads)
+      for (auto& thread : threads) {
         thread.join();
+      }
 
       ev.Reset();
     }

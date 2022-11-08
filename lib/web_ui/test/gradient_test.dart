@@ -2,17 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-import 'package:ui/ui.dart';
-
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
+import 'package:ui/ui.dart';
+
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   test('Gradient.radial with no focal point', () {
     expect(
       Gradient.radial(
           Offset.zero,
-          null,
+          5.0,
           <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
           <double>[0.0, 1.0],
           TileMode.mirror),

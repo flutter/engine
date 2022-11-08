@@ -5,24 +5,32 @@
 #ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
 
-#include <UIKit/UIKit.h>
+#import <UIKit/UIKit.h>
 
 #include <memory>
 
-#import "FlutterPlatformViews_Internal.h"
-
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @protocol FlutterViewEngineDelegate <NSObject>
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode;
 
-- (flutter::FlutterPlatformViewsController*)platformViewsController;
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 
+/**
+ * A callback that is called when iOS queries accessibility information of the Flutter view.
+ *
+ * This is useful to predict the current iOS accessibility status. For example, there is
+ * no API to listen whether voice control is turned on or off. The Flutter engine uses
+ * this callback to enable semantics in order to catch the case that voice control is
+ * on.
+ */
+- (void)flutterViewAccessibilityDidCall;
 @end
 
 @interface FlutterView : UIView
@@ -34,8 +42,9 @@
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
-- (std::unique_ptr<flutter::IOSSurface>)createSurface:(std::shared_ptr<flutter::IOSContext>)context;
 
+// Set by FlutterEngine or FlutterViewController to override software rendering.
+@property(class, nonatomic) BOOL forceSoftwareRendering;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_

@@ -4,27 +4,36 @@
 
 package dev.flutter.scenarios;
 
-import android.os.Bundle;
+import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TestableFlutterActivity extends FlutterActivity {
-  private Object flutterUiRenderedLock;
+public abstract class TestableFlutterActivity extends FlutterActivity {
+  private Object flutterUiRenderedLock = new Object();
+  private AtomicBoolean isScenarioReady = new AtomicBoolean(false);
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    // Reset the lock.
-    flutterUiRenderedLock = new Object();
+  public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    // Do not call super. We have no plugins to register, and the automatic
+    // registration will fail and print a scary exception in the logs.
+    flutterEngine
+        .getDartExecutor()
+        .setMessageHandler("take_screenshot", (byteBuffer, binaryReply) -> notifyFlutterRendered());
   }
 
   protected void notifyFlutterRendered() {
     synchronized (flutterUiRenderedLock) {
+      isScenarioReady.set(true);
       flutterUiRenderedLock.notifyAll();
     }
   }
 
   public void waitUntilFlutterRendered() {
     try {
+      if (isScenarioReady.get()) {
+        return;
+      }
       synchronized (flutterUiRenderedLock) {
         flutterUiRenderedLock.wait();
       }

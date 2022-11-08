@@ -4,7 +4,10 @@
 
 #import <Flutter/Flutter.h>
 #import <XCTest/XCTest.h>
+
 #import "AppDelegate.h"
+
+FLUTTER_ASSERT_ARC
 
 @interface FlutterViewControllerTest : XCTestCase
 @property(nonatomic, strong) FlutterViewController* flutterViewController;
@@ -19,7 +22,12 @@
 
 - (void)tearDown {
   if (self.flutterViewController) {
-    [self.flutterViewController removeFromParentViewController];
+    XCTestExpectation* vcDismissed = [self expectationWithDescription:@"dismiss"];
+    [self.flutterViewController dismissViewControllerAnimated:NO
+                                                   completion:^{
+                                                     [vcDismissed fulfill];
+                                                   }];
+    [self waitForExpectationsWithTimeout:10.0 handler:nil];
   }
   [super tearDown];
 }

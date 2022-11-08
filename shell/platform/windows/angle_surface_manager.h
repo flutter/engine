@@ -14,37 +14,52 @@
 
 // Windows platform specific includes
 #include <windows.h>
+#include <memory>
+
+#include "window_binding_handler.h"
 
 namespace flutter {
 
-// An manager for inializing ANGLE correctly and using it to create and
+// A manager for inializing ANGLE correctly and using it to create and
 // destroy surfaces
 class AngleSurfaceManager {
  public:
-  AngleSurfaceManager();
+  static std::unique_ptr<AngleSurfaceManager> Create();
   ~AngleSurfaceManager();
 
   // Disallow copy/move.
   AngleSurfaceManager(const AngleSurfaceManager&) = delete;
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
-  // Creates and returns an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display in a
-  // HWND-backed window.
-  EGLSurface CreateSurface(HWND window);
+  // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
+  // associated with window, in the appropriate format for display.
+  // Target represents the visual entity to bind to.  Width and
+  // height represent dimensions surface is created at.
+  bool CreateSurface(WindowsRenderTarget* render_target,
+                     EGLint width,
+                     EGLint height);
+
+  // Resizes backing surface from current size to newly requested size
+  // based on width and height for the specific case when width and height do
+  // not match current surface dimensions.  Target represents the visual entity
+  // to bind to.
+  void ResizeSurface(WindowsRenderTarget* render_target,
+                     EGLint width,
+                     EGLint height);
 
   // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.
-  void GetSurfaceDimensions(const EGLSurface surface,
-                            EGLint* width,
-                            EGLint* height);
+  void GetSurfaceDimensions(EGLint* width, EGLint* height);
 
   // Releases the pass-in EGLSurface wrapping and backing resources if not null.
-  void DestroySurface(const EGLSurface surface);
+  void DestroySurface();
 
   // Binds egl_context_ to the current rendering thread and to the draw and read
   // surfaces returning a boolean result reflecting success.
-  bool MakeCurrent(const EGLSurface surface);
+  bool MakeCurrent();
+
+  // Clears current egl_context_
+  bool ClearContext();
 
   // Binds egl_resource_context_ to the current rendering thread and to the draw
   // and read surfaces returning a boolean result reflecting success.
@@ -52,13 +67,23 @@ class AngleSurfaceManager {
 
   // Swaps the front and back buffers of the DX11 swapchain backing surface if
   // not null.
-  EGLBoolean SwapBuffers(const EGLSurface surface);
+  EGLBoolean SwapBuffers();
 
  private:
   bool Initialize();
   void CleanUp();
 
  private:
+  // Creates a new surface manager retaining reference to the passed-in target
+  // for the lifetime of the manager.
+  AngleSurfaceManager();
+
+  // Attempts to initialize EGL using ANGLE.
+  bool InitializeEGL(
+      PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT,
+      const EGLint* config,
+      bool should_log);
+
   // EGL representation of native display.
   EGLDisplay egl_display_;
 
@@ -75,6 +100,16 @@ class AngleSurfaceManager {
   // State representing success or failure of display initialization used when
   // creating surfaces.
   bool initialize_succeeded_;
+
+  // Current render_surface that engine will draw into.
+  EGLSurface render_surface_ = EGL_NO_SURFACE;
+
+  // Requested dimensions for current surface
+  EGLint surface_width_ = 0;
+  EGLint surface_height_ = 0;
+
+  // Number of active instances of AngleSurfaceManager
+  static int instance_count_;
 };
 
 }  // namespace flutter

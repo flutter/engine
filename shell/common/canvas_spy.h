@@ -24,7 +24,7 @@ class DidDrawCanvas;
 /// are specific to empty canvases.
 class CanvasSpy {
  public:
-  CanvasSpy(SkCanvas* target_canvas);
+  explicit CanvasSpy(SkCanvas* target_canvas);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns true if any non transparent content has been drawn
@@ -70,13 +70,9 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
   void willRestore() override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void didConcat(const SkMatrix&) override;
   void didConcat44(const SkM44&) override;
   void didScale(SkScalar, SkScalar) override;
   void didTranslate(SkScalar, SkScalar) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void didSetMatrix(const SkMatrix&) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawDRRect(const SkRRect&, const SkRRect&, const SkPaint&) override;
@@ -127,6 +123,7 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawPath(const SkPath&, const SkPaint&) override;
 
+#ifdef SK_SUPPORT_LEGACY_ONDRAWIMAGERECT
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawImage(const SkImage*,
                    SkScalar left,
@@ -147,17 +144,6 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                           const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawImageNine(const SkImage*,
-                       const SkIRect& center,
-                       const SkRect& dst,
-                       const SkPaint*) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawVerticesObject(const SkVertices*,
-                            SkBlendMode,
-                            const SkPaint&) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawAtlas(const SkImage*,
                    const SkRSXform[],
                    const SkRect[],
@@ -166,6 +152,52 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                    SkBlendMode,
                    const SkRect*,
                    const SkPaint*) override;
+  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
+  void onDrawEdgeAAImageSet(const ImageSetEntry[],
+                            int count,
+                            const SkPoint[],
+                            const SkMatrix[],
+                            const SkPaint*,
+                            SrcRectConstraint) override;
+#endif
+
+  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
+  void onDrawImage2(const SkImage*,
+                    SkScalar left,
+                    SkScalar top,
+                    const SkSamplingOptions&,
+                    const SkPaint*) override;
+
+  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
+  void onDrawImageRect2(const SkImage*,
+                        const SkRect& src,
+                        const SkRect& dst,
+                        const SkSamplingOptions&,
+                        const SkPaint*,
+                        SrcRectConstraint) override;
+
+  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
+  void onDrawImageLattice2(const SkImage*,
+                           const Lattice&,
+                           const SkRect&,
+                           SkFilterMode,
+                           const SkPaint*) override;
+
+  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
+  void onDrawVerticesObject(const SkVertices*,
+                            SkBlendMode,
+                            const SkPaint&) override;
+
+  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
+  void onDrawAtlas2(const SkImage*,
+                    const SkRSXform[],
+                    const SkRect[],
+                    const SkColor[],
+                    int,
+                    SkBlendMode,
+                    const SkSamplingOptions&,
+                    const SkRect*,
+                    const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawShadowRec(const SkPath&, const SkDrawShadowRec&) override;
@@ -201,12 +233,13 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                         SkBlendMode) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawEdgeAAImageSet(const ImageSetEntry[],
-                            int count,
-                            const SkPoint[],
-                            const SkMatrix[],
-                            const SkPaint*,
-                            SrcRectConstraint) override;
+  void onDrawEdgeAAImageSet2(const ImageSetEntry[],
+                             int count,
+                             const SkPoint[],
+                             const SkMatrix[],
+                             const SkSamplingOptions&,
+                             const SkPaint*,
+                             SrcRectConstraint) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onFlush() override;

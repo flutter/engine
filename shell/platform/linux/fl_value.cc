@@ -6,6 +6,8 @@
 
 #include <gmodule.h>
 
+#include <cstring>
+
 struct _FlValue {
   FlValueType type;
   int ref_count;
@@ -51,6 +53,12 @@ typedef struct {
 
 typedef struct {
   FlValue parent;
+  float* values;
+  size_t values_length;
+} FlValueFloat32List;
+
+typedef struct {
+  FlValue parent;
   double* values;
   size_t values_length;
 } FlValueFloatList;
@@ -79,15 +87,16 @@ static void fl_value_destroy(gpointer value) {
 }
 
 // Finds the index of a key in a FlValueMap.
-// FIXME(robert-ancell) This is highly inefficient, and should be optimised if
+// FIXME(robert-ancell) This is highly inefficient, and should be optimized if
 // necessary.
 static ssize_t fl_value_lookup_index(FlValue* self, FlValue* key) {
   g_return_val_if_fail(self->type == FL_VALUE_TYPE_MAP, -1);
 
   for (size_t i = 0; i < fl_value_get_length(self); i++) {
     FlValue* k = fl_value_get_map_key(self, i);
-    if (fl_value_equal(k, key))
+    if (fl_value_equal(k, key)) {
       return i;
+    }
   }
   return -1;
 }
@@ -109,8 +118,9 @@ static void float_to_string(double value, GString* buffer) {
       zero_count = zero_count == 0 ? 0 : zero_count - 1;
       break;
     }
-    if (buffer->str[i] != '0')
+    if (buffer->str[i] != '0') {
       break;
+    }
     zero_count++;
   }
   g_string_truncate(buffer, buffer->len - zero_count);
@@ -122,10 +132,11 @@ static void value_to_string(FlValue* value, GString* buffer) {
       g_string_append(buffer, "null");
       return;
     case FL_VALUE_TYPE_BOOL:
-      if (fl_value_get_bool(value))
+      if (fl_value_get_bool(value)) {
         g_string_append(buffer, "true");
-      else
+      } else {
         g_string_append(buffer, "false");
+      }
       return;
     case FL_VALUE_TYPE_INT:
       int_to_string(fl_value_get_int(value), buffer);
@@ -141,8 +152,9 @@ static void value_to_string(FlValue* value, GString* buffer) {
       g_string_append(buffer, "[");
       const uint8_t* values = fl_value_get_uint8_list(value);
       for (size_t i = 0; i < fl_value_get_length(value); i++) {
-        if (i != 0)
+        if (i != 0) {
           g_string_append(buffer, ", ");
+        }
         int_to_string(values[i], buffer);
       }
       g_string_append(buffer, "]");
@@ -152,8 +164,9 @@ static void value_to_string(FlValue* value, GString* buffer) {
       g_string_append(buffer, "[");
       const int32_t* values = fl_value_get_int32_list(value);
       for (size_t i = 0; i < fl_value_get_length(value); i++) {
-        if (i != 0)
+        if (i != 0) {
           g_string_append(buffer, ", ");
+        }
         int_to_string(values[i], buffer);
       }
       g_string_append(buffer, "]");
@@ -163,9 +176,22 @@ static void value_to_string(FlValue* value, GString* buffer) {
       g_string_append(buffer, "[");
       const int64_t* values = fl_value_get_int64_list(value);
       for (size_t i = 0; i < fl_value_get_length(value); i++) {
-        if (i != 0)
+        if (i != 0) {
           g_string_append(buffer, ", ");
+        }
         int_to_string(values[i], buffer);
+      }
+      g_string_append(buffer, "]");
+      return;
+    }
+    case FL_VALUE_TYPE_FLOAT32_LIST: {
+      g_string_append(buffer, "[");
+      const float* values = fl_value_get_float32_list(value);
+      for (size_t i = 0; i < fl_value_get_length(value); i++) {
+        if (i != 0) {
+          g_string_append(buffer, ", ");
+        }
+        float_to_string(values[i], buffer);
       }
       g_string_append(buffer, "]");
       return;
@@ -174,8 +200,9 @@ static void value_to_string(FlValue* value, GString* buffer) {
       g_string_append(buffer, "[");
       const double* values = fl_value_get_float_list(value);
       for (size_t i = 0; i < fl_value_get_length(value); i++) {
-        if (i != 0)
+        if (i != 0) {
           g_string_append(buffer, ", ");
+        }
         float_to_string(values[i], buffer);
       }
       g_string_append(buffer, "]");
@@ -184,8 +211,9 @@ static void value_to_string(FlValue* value, GString* buffer) {
     case FL_VALUE_TYPE_LIST: {
       g_string_append(buffer, "[");
       for (size_t i = 0; i < fl_value_get_length(value); i++) {
-        if (i != 0)
+        if (i != 0) {
           g_string_append(buffer, ", ");
+        }
         value_to_string(fl_value_get_list_value(value, i), buffer);
       }
       g_string_append(buffer, "]");
@@ -194,8 +222,9 @@ static void value_to_string(FlValue* value, GString* buffer) {
     case FL_VALUE_TYPE_MAP: {
       g_string_append(buffer, "{");
       for (size_t i = 0; i < fl_value_get_length(value); i++) {
-        if (i != 0)
+        if (i != 0) {
           g_string_append(buffer, ", ");
+        }
         value_to_string(fl_value_get_map_key(value, i), buffer);
         g_string_append(buffer, ": ");
         value_to_string(fl_value_get_map_value(value, i), buffer);
@@ -286,6 +315,16 @@ G_MODULE_EXPORT FlValue* fl_value_new_int64_list(const int64_t* data,
   return reinterpret_cast<FlValue*>(self);
 }
 
+G_MODULE_EXPORT FlValue* fl_value_new_float32_list(const float* data,
+                                                   size_t data_length) {
+  FlValueFloat32List* self = reinterpret_cast<FlValueFloat32List*>(
+      fl_value_new(FL_VALUE_TYPE_FLOAT32_LIST, sizeof(FlValueFloat32List)));
+  self->values_length = data_length;
+  self->values = static_cast<float*>(g_malloc(sizeof(float) * data_length));
+  memcpy(self->values, data, sizeof(float) * data_length);
+  return reinterpret_cast<FlValue*>(self);
+}
+
 G_MODULE_EXPORT FlValue* fl_value_new_float_list(const double* data,
                                                  size_t data_length) {
   FlValueFloatList* self = reinterpret_cast<FlValueFloatList*>(
@@ -307,8 +346,9 @@ G_MODULE_EXPORT FlValue* fl_value_new_list_from_strv(
     const gchar* const* str_array) {
   g_return_val_if_fail(str_array != nullptr, nullptr);
   g_autoptr(FlValue) value = fl_value_new_list();
-  for (int i = 0; str_array[i] != nullptr; i++)
+  for (int i = 0; str_array[i] != nullptr; i++) {
     fl_value_append_take(value, fl_value_new_string(str_array[i]));
+  }
   return fl_value_ref(value);
 }
 
@@ -330,8 +370,9 @@ G_MODULE_EXPORT void fl_value_unref(FlValue* self) {
   g_return_if_fail(self != nullptr);
   g_return_if_fail(self->ref_count > 0);
   self->ref_count--;
-  if (self->ref_count != 0)
+  if (self->ref_count != 0) {
     return;
+  }
 
   switch (self->type) {
     case FL_VALUE_TYPE_STRING: {
@@ -351,6 +392,11 @@ G_MODULE_EXPORT void fl_value_unref(FlValue* self) {
     }
     case FL_VALUE_TYPE_INT64_LIST: {
       FlValueInt64List* v = reinterpret_cast<FlValueInt64List*>(self);
+      g_free(v->values);
+      break;
+    }
+    case FL_VALUE_TYPE_FLOAT32_LIST: {
+      FlValueFloat32List* v = reinterpret_cast<FlValueFloat32List*>(self);
       g_free(v->values);
       break;
     }
@@ -388,8 +434,9 @@ G_MODULE_EXPORT bool fl_value_equal(FlValue* a, FlValue* b) {
   g_return_val_if_fail(a != nullptr, false);
   g_return_val_if_fail(b != nullptr, false);
 
-  if (a->type != b->type)
+  if (a->type != b->type) {
     return false;
+  }
 
   switch (a->type) {
     case FL_VALUE_TYPE_NULL:
@@ -406,70 +453,96 @@ G_MODULE_EXPORT bool fl_value_equal(FlValue* a, FlValue* b) {
       return g_strcmp0(a_->value, b_->value) == 0;
     }
     case FL_VALUE_TYPE_UINT8_LIST: {
-      if (fl_value_get_length(a) != fl_value_get_length(b))
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
         return false;
+      }
       const uint8_t* values_a = fl_value_get_uint8_list(a);
       const uint8_t* values_b = fl_value_get_uint8_list(b);
       for (size_t i = 0; i < fl_value_get_length(a); i++) {
-        if (values_a[i] != values_b[i])
+        if (values_a[i] != values_b[i]) {
           return false;
+        }
       }
       return true;
     }
     case FL_VALUE_TYPE_INT32_LIST: {
-      if (fl_value_get_length(a) != fl_value_get_length(b))
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
         return false;
+      }
       const int32_t* values_a = fl_value_get_int32_list(a);
       const int32_t* values_b = fl_value_get_int32_list(b);
       for (size_t i = 0; i < fl_value_get_length(a); i++) {
-        if (values_a[i] != values_b[i])
+        if (values_a[i] != values_b[i]) {
           return false;
+        }
       }
       return true;
     }
     case FL_VALUE_TYPE_INT64_LIST: {
-      if (fl_value_get_length(a) != fl_value_get_length(b))
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
         return false;
+      }
       const int64_t* values_a = fl_value_get_int64_list(a);
       const int64_t* values_b = fl_value_get_int64_list(b);
       for (size_t i = 0; i < fl_value_get_length(a); i++) {
-        if (values_a[i] != values_b[i])
+        if (values_a[i] != values_b[i]) {
           return false;
+        }
+      }
+      return true;
+    }
+    case FL_VALUE_TYPE_FLOAT32_LIST: {
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
+        return false;
+      }
+      const float* values_a = fl_value_get_float32_list(a);
+      const float* values_b = fl_value_get_float32_list(b);
+      for (size_t i = 0; i < fl_value_get_length(a); i++) {
+        if (values_a[i] != values_b[i]) {
+          return false;
+        }
       }
       return true;
     }
     case FL_VALUE_TYPE_FLOAT_LIST: {
-      if (fl_value_get_length(a) != fl_value_get_length(b))
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
         return false;
+      }
       const double* values_a = fl_value_get_float_list(a);
       const double* values_b = fl_value_get_float_list(b);
       for (size_t i = 0; i < fl_value_get_length(a); i++) {
-        if (values_a[i] != values_b[i])
+        if (values_a[i] != values_b[i]) {
           return false;
+        }
       }
       return true;
     }
     case FL_VALUE_TYPE_LIST: {
-      if (fl_value_get_length(a) != fl_value_get_length(b))
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
         return false;
+      }
       for (size_t i = 0; i < fl_value_get_length(a); i++) {
         if (!fl_value_equal(fl_value_get_list_value(a, i),
-                            fl_value_get_list_value(b, i)))
+                            fl_value_get_list_value(b, i))) {
           return false;
+        }
       }
       return true;
     }
     case FL_VALUE_TYPE_MAP: {
-      if (fl_value_get_length(a) != fl_value_get_length(b))
+      if (fl_value_get_length(a) != fl_value_get_length(b)) {
         return false;
+      }
       for (size_t i = 0; i < fl_value_get_length(a); i++) {
         FlValue* key = fl_value_get_map_key(a, i);
         FlValue* value_b = fl_value_lookup(b, key);
-        if (value_b == nullptr)
+        if (value_b == nullptr) {
           return false;
+        }
         FlValue* value_a = fl_value_get_map_value(a, i);
-        if (!fl_value_equal(value_a, value_b))
+        if (!fl_value_equal(value_a, value_b)) {
           return false;
+        }
       }
       return true;
     }
@@ -594,6 +667,13 @@ G_MODULE_EXPORT const int64_t* fl_value_get_int64_list(FlValue* self) {
   return v->values;
 }
 
+G_MODULE_EXPORT const float* fl_value_get_float32_list(FlValue* self) {
+  g_return_val_if_fail(self != nullptr, nullptr);
+  g_return_val_if_fail(self->type == FL_VALUE_TYPE_FLOAT32_LIST, nullptr);
+  FlValueFloat32List* v = reinterpret_cast<FlValueFloat32List*>(self);
+  return v->values;
+}
+
 G_MODULE_EXPORT const double* fl_value_get_float_list(FlValue* self) {
   g_return_val_if_fail(self != nullptr, nullptr);
   g_return_val_if_fail(self->type == FL_VALUE_TYPE_FLOAT_LIST, nullptr);
@@ -606,6 +686,7 @@ G_MODULE_EXPORT size_t fl_value_get_length(FlValue* self) {
   g_return_val_if_fail(self->type == FL_VALUE_TYPE_UINT8_LIST ||
                            self->type == FL_VALUE_TYPE_INT32_LIST ||
                            self->type == FL_VALUE_TYPE_INT64_LIST ||
+                           self->type == FL_VALUE_TYPE_FLOAT32_LIST ||
                            self->type == FL_VALUE_TYPE_FLOAT_LIST ||
                            self->type == FL_VALUE_TYPE_LIST ||
                            self->type == FL_VALUE_TYPE_MAP,
@@ -622,6 +703,10 @@ G_MODULE_EXPORT size_t fl_value_get_length(FlValue* self) {
     }
     case FL_VALUE_TYPE_INT64_LIST: {
       FlValueInt64List* v = reinterpret_cast<FlValueInt64List*>(self);
+      return v->values_length;
+    }
+    case FL_VALUE_TYPE_FLOAT32_LIST: {
+      FlValueFloat32List* v = reinterpret_cast<FlValueFloat32List*>(self);
       return v->values_length;
     }
     case FL_VALUE_TYPE_FLOAT_LIST: {
@@ -676,16 +761,21 @@ G_MODULE_EXPORT FlValue* fl_value_lookup(FlValue* self, FlValue* key) {
   g_return_val_if_fail(self->type == FL_VALUE_TYPE_MAP, nullptr);
 
   ssize_t index = fl_value_lookup_index(self, key);
-  if (index < 0)
+  if (index < 0) {
     return nullptr;
+  }
   return fl_value_get_map_value(self, index);
 }
 
 G_MODULE_EXPORT FlValue* fl_value_lookup_string(FlValue* self,
                                                 const gchar* key) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_autoptr(FlValue) string_key = fl_value_new_string(key);
-  return fl_value_lookup(self, string_key);
+  FlValue* string_key = fl_value_new_string(key);
+  FlValue* value = fl_value_lookup(self, string_key);
+  // Explicit unref used because the g_autoptr is triggering a false positive
+  // with clang-tidy.
+  fl_value_unref(string_key);
+  return value;
 }
 
 G_MODULE_EXPORT gchar* fl_value_to_string(FlValue* value) {

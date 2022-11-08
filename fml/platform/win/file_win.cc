@@ -8,8 +8,13 @@
 #include <Shlwapi.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <string>
 
 #include <algorithm>
+#include <climits>
+#include <cstring>
+#include <optional>
 #include <sstream>
 
 #include "flutter/fml/build_config.h"
@@ -20,15 +25,42 @@
 namespace fml {
 
 static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
+  // Although the documentation claims that GetFinalPathNameByHandle is
+  // supported for UWP apps, turns out it returns ACCESS_DENIED in this case
+  // hence the need to workaround it by maintaining a map of file handles to
+  // absolute paths populated by fml::OpenDirectory.
+#ifdef WINUWP
+  std::optional<fml::internal::os_win::DirCacheEntry> found =
+      fml::internal::os_win::UniqueFDTraits::GetCacheEntry(handle.get());
+
+  if (found) {
+    FILE_ID_INFO info;
+
+    BOOL result = GetFileInformationByHandleEx(
+        handle.get(), FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
+        sizeof(FILE_ID_INFO));
+
+    // Assuming it was possible to retrieve fileinfo, compare the id field.  The
+    // handle hasn't been reused if the file identifier is the same as when it
+    // was cached
+    if (result && memcmp(found.value().id.Identifier, info.FileId.Identifier,
+                         sizeof(FILE_ID_INFO))) {
+      return WideStringToString(found.value().filename);
+    } else {
+      fml::internal::os_win::UniqueFDTraits::RemoveCacheEntry(handle.get());
+    }
+  }
+
+  return std::string();
+#else
   wchar_t buffer[MAX_PATH] = {0};
   const DWORD buffer_size = ::GetFinalPathNameByHandle(
       handle.get(), buffer, MAX_PATH, FILE_NAME_NORMALIZED);
   if (buffer_size == 0) {
-    FML_DLOG(ERROR) << "Could not get file handle path. "
-                    << GetLastErrorMessage();
     return {};
   }
   return WideStringToString({buffer, buffer_size});
+#endif
 }
 
 static std::string GetAbsolutePath(const fml::UniqueFD& base_directory,
@@ -46,8 +78,6 @@ static std::wstring GetTemporaryDirectoryPath() {
   if (result_size > 0) {
     return {wchar_path, result_size};
   }
-  FML_DLOG(ERROR) << "Could not get temporary directory path. "
-                  << GetLastErrorMessage();
   return {};
 }
 
@@ -97,14 +127,14 @@ std::string CreateTemporaryDirectory() {
   UUID uuid;
   RPC_STATUS status = UuidCreateSequential(&uuid);
   if (status != RPC_S_OK && status != RPC_S_UUID_LOCAL_ONLY) {
-    FML_DLOG(ERROR) << "Could not create UUID";
+    FML_DLOG(ERROR) << "Could not create UUID for temporary directory.";
     return {};
   }
 
   RPC_WSTR uuid_string;
   status = UuidToString(&uuid, &uuid_string);
   if (status != RPC_S_OK) {
-    FML_DLOG(ERROR) << "Could not create UUID to string.";
+    FML_DLOG(ERROR) << "Could not map UUID to string for temporary directory.";
     return {};
   }
 
@@ -120,7 +150,7 @@ std::string CreateTemporaryDirectory() {
   auto dir_fd = OpenDirectory(WideStringToString(temp_dir).c_str(), true,
                               FilePermission::kReadWrite);
   if (!dir_fd.is_valid()) {
-    FML_DLOG(ERROR) << "Could not get temporary directory FD. "
+    FML_DLOG(ERROR) << "Could not get temporary directory file descriptor. "
                     << GetLastErrorMessage();
     return {};
   }
@@ -165,7 +195,6 @@ fml::UniqueFD OpenFile(const char* path,
       );
 
   if (handle == INVALID_HANDLE_VALUE) {
-    FML_DLOG(ERROR) << "Could not open file. " << GetLastErrorMessage();
     return {};
   }
 
@@ -218,9 +247,24 @@ fml::UniqueFD OpenDirectory(const char* path,
       );
 
   if (handle == INVALID_HANDLE_VALUE) {
-    FML_DLOG(ERROR) << "Could not open file. " << GetLastErrorMessage();
     return {};
   }
+
+#ifdef WINUWP
+  FILE_ID_INFO info;
+
+  BOOL result = GetFileInformationByHandleEx(
+      handle, FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
+      sizeof(FILE_ID_INFO));
+
+  // Only cache if it is possible to get valid a fileinformation to extract the
+  // fileid to ensure correct handle versioning.
+  if (result) {
+    fml::internal::os_win::DirCacheEntry fc{file_name, info.FileId};
+
+    fml::internal::os_win::UniqueFDTraits::StoreCacheEntry(handle, fc);
+  }
+#endif
 
   return fml::UniqueFD{handle};
 }
@@ -250,8 +294,6 @@ fml::UniqueFD Duplicate(fml::UniqueFD::element_type descriptor) {
 bool IsDirectory(const fml::UniqueFD& directory) {
   BY_HANDLE_FILE_INFORMATION info;
   if (!::GetFileInformationByHandle(directory.get(), &info)) {
-    FML_DLOG(ERROR) << "Could not get file information. "
-                    << GetLastErrorMessage();
     return false;
   }
   return info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;

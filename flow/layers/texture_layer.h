@@ -16,7 +16,16 @@ class TextureLayer : public Layer {
   TextureLayer(const SkPoint& offset,
                const SkSize& size,
                int64_t texture_id,
-               bool freeze);
+               bool freeze,
+               const SkSamplingOptions& sampling);
+
+  bool IsReplacing(DiffContext* context, const Layer* layer) const override {
+    return layer->as_texture_layer() != nullptr;
+  }
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
+  const TextureLayer* as_texture_layer() const override { return this; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -26,6 +35,7 @@ class TextureLayer : public Layer {
   SkSize size_;
   int64_t texture_id_;
   bool freeze_;
+  SkSamplingOptions sampling_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureLayer);
 };

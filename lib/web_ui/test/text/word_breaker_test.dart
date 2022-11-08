@@ -2,16 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('$WordBreaker', () {
     test('Does not go beyond the ends of a string', () {
+      expect(WordBreaker.prevBreakIndex('foo', -1), 0);
       expect(WordBreaker.prevBreakIndex('foo', 0), 0);
+      expect(WordBreaker.prevBreakIndex('foo', 'foo'.length + 1), 'foo'.length);
+
+      expect(WordBreaker.nextBreakIndex('foo', -1), 0);
       expect(WordBreaker.nextBreakIndex('foo', 'foo'.length), 'foo'.length);
+      expect(WordBreaker.nextBreakIndex('foo', 'foo'.length + 1), 'foo'.length);
     });
 
     test('Words and spaces', () {
@@ -66,7 +75,7 @@ void main() {
       expectWords("Students' grades", <String>['Students', "'", ' ', 'grades']);
       expectWords(
         'Joe said: "I\'m here"',
-        <String>['Joe', ' ', 'said', ':', ' ', '"', "I\'m", ' ', 'here', '"'],
+        <String>['Joe', ' ', 'said', ':', ' ', '"', "I'm", ' ', 'here', '"'],
       );
     });
 
@@ -131,17 +140,23 @@ void expectWords(String text, List<String> expectedWords) {
   int strIndex = 0;
 
   // Forward word break lookup.
-  for (String word in expectedWords) {
+  for (final String word in expectedWords) {
     final int nextBreak = WordBreaker.nextBreakIndex(text, strIndex);
-    expect(nextBreak, strIndex + word.length);
+    expect(
+      nextBreak, strIndex + word.length,
+      reason: 'Forward word break lookup: expecting to move to the end of "$word" in "$text".'
+    );
     strIndex += word.length;
   }
 
   // Backward word break lookup.
   strIndex = text.length;
-  for (String word in expectedWords.reversed) {
+  for (final String word in expectedWords.reversed) {
     final int prevBreak = WordBreaker.prevBreakIndex(text, strIndex);
-    expect(prevBreak, strIndex - word.length);
+    expect(
+      prevBreak, strIndex - word.length,
+      reason: 'Backward word break lookup: expecting to move to the start of "$word" in "$text".'
+    );
     strIndex -= word.length;
   }
 }

@@ -4,16 +4,15 @@
 
 package dev.flutter.scenariosui;
 
-import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Xml;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnitRunner;
-import androidx.test.runner.screenshot.Screenshot;
 import com.facebook.testing.screenshot.ScreenshotRunner;
 import com.facebook.testing.screenshot.internal.AlbumImpl;
 import com.facebook.testing.screenshot.internal.Registry;
@@ -44,7 +43,8 @@ public class ScreenshotUtil {
   private static ScreenshotUtil instance;
   private static int BUFFER_SIZE = 1 << 16; // 64K
 
-  private static ScreenshotUtil getInstance() {
+  @NonNull
+  protected static ScreenshotUtil getInstance() {
     synchronized (ScreenshotUtil.class) {
       if (instance == null) {
         instance = new ScreenshotUtil();
@@ -130,42 +130,18 @@ public class ScreenshotUtil {
     album = null;
   }
 
-  private static int getStatusBarHeight() {
-    final Context context = InstrumentationRegistry.getTargetContext();
-    // Resource name defined in
-    // https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/values/dimens.xml#34
-    final int resourceId =
-        context.getResources().getIdentifier("status_bar_height", "dimen", "android");
-    int statusBarHeight = 0;
-    if (resourceId > 0) {
-      statusBarHeight = context.getResources().getDimensionPixelSize(resourceId);
-    }
-    return statusBarHeight;
-  }
-
-  private static int getActionBarHeight(Activity activity) {
-    int actionBarHeight = 0;
-    final android.content.res.TypedArray styledAttributes =
-        activity.getTheme().obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
-    actionBarHeight = (int) styledAttributes.getDimension(0, 0);
-    styledAttributes.recycle();
-    return actionBarHeight;
-  }
-
   /**
    * Captures a screenshot of {@code TestableFlutterActivity}.
    *
    * <p>The activity must be already launched.
    */
-  public static void capture(TestableFlutterActivity activity)
+  public static void capture(@NonNull TestableFlutterActivity activity)
       throws InterruptedException, ExecutionException, IOException {
     // Yield and wait for the engine to render the first Flutter frame.
     activity.waitUntilFlutterRendered();
 
     // This method is called from the runner thread,
     // so block the UI thread while taking the screenshot.
-    // UiThreadLocker locker = new UiThreadLocker();
-    // locker.lock();
 
     // Screenshot.capture(view or activity) does not capture the Flutter UI.
     // Unfortunately, it doesn't work with Android's `Surface` or `TextureSurface`.
@@ -182,15 +158,10 @@ public class ScreenshotUtil {
         new Callable<Void>() {
           @Override
           public Void call() {
-            Bitmap bitmap = Screenshot.capture().getBitmap();
+            Bitmap bitmap =
+                InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
             // Remove the status and action bars from the screenshot capture.
-            bitmap =
-                Bitmap.createBitmap(
-                    bitmap,
-                    0,
-                    getStatusBarHeight(),
-                    bitmap.getWidth(),
-                    bitmap.getHeight() - getStatusBarHeight() - getActionBarHeight(activity));
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
             final String screenshotName = String.format("%s__%s", testClass, testName);
             // Write bitmap to the album.
@@ -209,7 +180,7 @@ public class ScreenshotUtil {
    *
    * <p>Call this method from {@code AndroidJUnitRunner#onCreate}.
    */
-  public static void onCreate(AndroidJUnitRunner runner, Bundle arguments) {
+  public static void onCreate(@NonNull AndroidJUnitRunner runner, @Nullable Bundle arguments) {
     ScreenshotRunner.onCreate(runner, arguments);
     ScreenshotUtil.getInstance().init();
   }

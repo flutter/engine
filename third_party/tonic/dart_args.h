@@ -16,7 +16,7 @@ namespace tonic {
 
 class DartArgIterator {
  public:
-  DartArgIterator(Dart_NativeArguments args, int start_index = 1)
+  explicit DartArgIterator(Dart_NativeArguments args, int start_index = 1)
       : args_(args), index_(start_index), had_exception_(false) {}
 
   template <typename T>
@@ -234,7 +234,6 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
   TONIC_CHECK(!LogIfError(Dart_GetNativeFieldsOfArgument(
       args, 0, DartWrappable::kNumberOfNativeFields, native_fields)));
   TONIC_CHECK(!native_fields[DartWrappable::kPeerIndex]);
-  TONIC_CHECK(!native_fields[DartWrappable::kWrapperInfoIndex]);
 
   wrappable->AssociateWithDartWrapper(wrapper);
 }

@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 class NotAColor extends Color {
   const NotAColor(int value) : super(value);
@@ -48,12 +47,12 @@ void main() {
   });
 
   test('two colors are only == if they have the same runtime type', () {
-    expect(const Color(123), equals(const Color(123)));
-    expect(const Color(123), equals(Color(123))); // ignore: prefer_const_constructors
-    expect(const Color(123), isNot(equals(const Color(321))));
-    expect(const Color(123), isNot(equals(const NotAColor(123))));
-    expect(const NotAColor(123), isNot(equals(const Color(123))));
-    expect(const NotAColor(123), equals(const NotAColor(123)));
+    expect(const Color(0x12345678), equals(const Color(0x12345678)));
+    expect(const Color(0x12345678), equals(Color(0x12345678))); // ignore: prefer_const_constructors
+    expect(const Color(0x12345678), notEquals(const Color(0x87654321)));
+    expect(const Color(0x12345678), notEquals(const NotAColor(0x12345678)));
+    expect(const NotAColor(0x12345678), notEquals(const Color(0x12345678)));
+    expect(const NotAColor(0x12345678), equals(const NotAColor(0x12345678)));
   });
 
   test('Color.lerp', () {
@@ -75,6 +74,12 @@ void main() {
     );
     expect(
       Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 1.1),
+      const Color(0xFFFFFFFF),
+    );
+
+    // Prevent regression: https://github.com/flutter/flutter/issues/67423
+    expect(
+      Color.lerp(const Color(0xFFFFFFFF), const Color(0xFFFFFFFF), 0.04),
       const Color(0xFFFFFFFF),
     );
   });

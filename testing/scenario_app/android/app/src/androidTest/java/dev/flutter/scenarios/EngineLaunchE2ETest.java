@@ -10,11 +10,11 @@ import android.content.Context;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.internal.runner.junit4.statement.UiThreadStatement;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.common.util.concurrent.SettableFuture;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -34,15 +34,14 @@ public class EngineLaunchE2ETest {
     // as @UiThreadTest because having the message handler and the CompletableFuture both being
     // on the same thread will create deadlocks.
     UiThreadStatement.runOnUiThread(() -> engine.set(new FlutterEngine(applicationContext)));
-    CompletableFuture<Boolean> statusReceived = new CompletableFuture<>();
+    SettableFuture<Boolean> statusReceived = SettableFuture.create();
 
     // Resolve locale to `en_US`.
     // This is required, so `window.locale` in populated in dart.
     // TODO: Fix race condition between sending this over the channel and starting the entrypoint.
     // https://github.com/flutter/flutter/issues/55999
     UiThreadStatement.runOnUiThread(
-        () ->
-            engine.get().getLocalizationChannel().sendLocales(Arrays.asList(Locale.US), Locale.US));
+        () -> engine.get().getLocalizationChannel().sendLocales(Arrays.asList(Locale.US)));
 
     // The default Dart main entrypoint sends back a platform message on the "waiting_for_status"
     // channel. That will be our launch success assertion condition.
@@ -50,8 +49,7 @@ public class EngineLaunchE2ETest {
         .get()
         .getDartExecutor()
         .setMessageHandler(
-            "waiting_for_status",
-            (byteBuffer, binaryReply) -> statusReceived.complete(Boolean.TRUE));
+            "waiting_for_status", (byteBuffer, binaryReply) -> statusReceived.set(Boolean.TRUE));
 
     // Launching the entrypoint will run the Dart code that sends the "waiting_for_status" platform
     // message.

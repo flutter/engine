@@ -51,7 +51,7 @@ typedef struct {
   const char* aot_library_path;
   // The switches to pass to the Flutter engine.
   //
-  // See: https://github.com/flutter/engine/blob/master/shell/common/switches.h
+  // See: https://github.com/flutter/engine/blob/main/shell/common/switches.h
   // for details. Not all arguments will apply to desktop.
   const char** switches;
   // The number of elements in |switches|.
@@ -219,9 +219,25 @@ FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
     FlutterDesktopEngineRef engine);
 
 // Returns the window associated with this registrar's engine instance.
+//
 // This is a GLFW shell-specific extension to flutter_plugin_registrar.h
-FLUTTER_EXPORT FlutterDesktopWindowRef
-FlutterDesktopRegistrarGetWindow(FlutterDesktopPluginRegistrarRef registrar);
+FLUTTER_EXPORT FlutterDesktopWindowRef FlutterDesktopPluginRegistrarGetWindow(
+    FlutterDesktopPluginRegistrarRef registrar);
+
+// Enables input blocking on the given channel.
+//
+// If set, then the Flutter window will disable input callbacks
+// while waiting for the handler for messages on that channel to run. This is
+// useful if handling the message involves showing a modal window, for instance.
+//
+// This must be called after FlutterDesktopSetMessageHandler, as setting a
+// handler on a channel will reset the input blocking state back to the
+// default of disabled.
+//
+// This is a GLFW shell-specific extension to flutter_plugin_registrar.h
+FLUTTER_EXPORT void FlutterDesktopPluginRegistrarEnableInputBlocking(
+    FlutterDesktopPluginRegistrarRef registrar,
+    const char* channel);
 
 #if defined(__cplusplus)
 }  // extern "C"

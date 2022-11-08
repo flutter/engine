@@ -4,22 +4,25 @@
 
 #include "runner.h"
 
+#include <fcntl.h>
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
+#include <lib/inspect/cpp/inspect.h>
 #include <lib/trace-engine/instrumentation.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
 
-#include <fcntl.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sstream>
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/runtime/dart_vm.h"
+#include "lib/async/default.h"
 #include "lib/sys/cpp/component_context.h"
 #include "runtime/dart/utils/files.h"
+#include "runtime/dart/utils/root_inspect_node.h"
 #include "runtime/dart/utils/vmo.h"
 #include "runtime/dart/utils/vmservice_object.h"
 #include "third_party/icu/source/common/unicode/udata.h"
@@ -45,9 +48,9 @@ uintptr_t GetICUData(const fuchsia::mem::Buffer& icu_data) {
     return 0u;
 
   uintptr_t data = 0u;
-  zx_status_t status = zx::vmar::root_self()->map(
-      0, icu_data.vmo, 0, static_cast<size_t>(data_size), ZX_VM_PERM_READ,
-      &data);
+  zx_status_t status =
+      zx::vmar::root_self()->map(ZX_VM_PERM_READ, 0, icu_data.vmo, 0,
+                                 static_cast<size_t>(data_size), &data);
   if (status == ZX_OK) {
     return data;
   }
@@ -146,8 +149,9 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 }
 #endif  // !defined(DART_PRODUCT)
 
-Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
-    : loop_(loop), context_(context) {
+Runner::Runner(fml::RefPtr<fml::TaskRunner> task_runner,
+               sys::ComponentContext* context)
+    : task_runner_(task_runner), context_(context) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
@@ -155,6 +159,22 @@ Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
   context_->outgoing()->debug_dir()->AddEntry(
       dart_utils::VMServiceObject::kPortDirName,
       std::make_unique<dart_utils::VMServiceObject>());
+
+  inspect::Inspector* inspector = dart_utils::RootInspectNode::GetInspector();
+  inspector->GetRoot().CreateLazyValues(
+      "vmservice_port",
+      [&]() {
+        inspect::Inspector inspector;
+        dart_utils::VMServiceObject::LazyEntryVector out;
+        dart_utils::VMServiceObject().GetContents(&out);
+        std::string name = "";
+        if (out.size() > 0) {
+          name = out[0].name;
+        }
+        inspector.GetRoot().CreateString("vm_service_port", name, &inspector);
+        return fpromise::make_ok_promise(inspector);
+      },
+      inspector);
 
   SetupTraceObserver();
 #endif  // !defined(DART_PRODUCT)
@@ -168,7 +188,10 @@ Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
   SetThreadName("io.flutter.runner.main");
 
   context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
-      std::bind(&Runner::RegisterApplication, this, std::placeholders::_1));
+      std::bind(&Runner::RegisterComponentV1, this, std::placeholders::_1));
+  context_->outgoing()
+      ->AddPublicService<fuchsia::component::runner::ComponentRunner>(
+          std::bind(&Runner::RegisterComponentV2, this, std::placeholders::_1));
 
 #if !defined(DART_PRODUCT)
   if (Dart_IsPrecompiledRuntime()) {
@@ -183,15 +206,19 @@ Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
 
 Runner::~Runner() {
   context_->outgoing()->RemovePublicService<fuchsia::sys::Runner>();
+  context_->outgoing()
+      ->RemovePublicService<fuchsia::component::runner::ComponentRunner>();
 
 #if !defined(DART_PRODUCT)
   trace_observer_->Stop();
 #endif  // !defined(DART_PRODUCT)
 }
 
-void Runner::RegisterApplication(
+// CF v1 lifecycle methods.
+
+void Runner::RegisterComponentV1(
     fidl::InterfaceRequest<fuchsia::sys::Runner> request) {
-  active_applications_bindings_.AddBinding(this, std::move(request));
+  active_components_v1_bindings_.AddBinding(this, std::move(request));
 }
 
 void Runner::StartComponent(
@@ -199,71 +226,142 @@ void Runner::StartComponent(
     fuchsia::sys::StartupInfo startup_info,
     fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
   // TRACE_DURATION currently requires that the string data does not change
-  // in the traced scope. Since |package| gets moved in the Application::Create
+  // in the traced scope. Since |package| gets moved in the Component::Create
   // call below, we cannot ensure that |package.resolved_url| does not move or
   // change, so we make a copy to pass to TRACE_DURATION.
   // TODO(PT-169): Remove this copy when TRACE_DURATION reads string arguments
   // eagerly.
   std::string url_copy = package.resolved_url;
   TRACE_EVENT1("flutter", "StartComponent", "url", url_copy.c_str());
-  // Notes on application termination: Application typically terminate on the
+  // Notes on component termination: Components typically terminate on the
   // thread on which they were created. This usually means the thread was
-  // specifically created to host the application. But we want to ensure that
-  // access to the active applications collection is made on the same thread. So
+  // specifically created to host the component. But we want to ensure that
+  // access to the active components collection is made on the same thread. So
   // we capture the runner in the termination callback. There is no risk of
-  // there being multiple application runner instance in the process at the same
+  // there being multiple component runner instances in the process at the same
   // time. So it is safe to use the raw pointer.
-  Application::TerminationCallback termination_callback =
-      [task_runner = loop_->dispatcher(),  //
-       application_runner = this           //
-  ](const Application* application) {
-        async::PostTask(task_runner, [application_runner, application]() {
-          application_runner->OnApplicationTerminate(application);
-        });
+  ComponentV1::TerminationCallback termination_callback =
+      [component_runner = this](const ComponentV1* component) {
+        component_runner->task_runner_->PostTask(
+            [component_runner, component]() {
+              component_runner->OnComponentV1Terminate(component);
+            });
       };
 
-  auto active_application = Application::Create(
+  ActiveComponentV1 active_component = ComponentV1::Create(
       std::move(termination_callback),  // termination callback
-      std::move(package),               // application package
+      std::move(package),               // component package
       std::move(startup_info),          // startup info
       context_->svc(),                  // runner incoming services
       std::move(controller)             // controller request
   );
 
-  auto key = active_application.application.get();
-  active_applications_[key] = std::move(active_application);
+  auto key = active_component.component.get();
+  active_components_v1_[key] = std::move(active_component);
 }
 
-void Runner::OnApplicationTerminate(const Application* application) {
-  auto app = active_applications_.find(application);
-  if (app == active_applications_.end()) {
+void Runner::OnComponentV1Terminate(const ComponentV1* component) {
+  auto app = active_components_v1_.find(component);
+  if (app == active_components_v1_.end()) {
     FML_LOG(INFO)
-        << "The remote end of the application runner tried to terminate an "
-           "application that has already been terminated, possibly because we "
+        << "The remote end of the component runner tried to terminate an "
+           "component that has already been terminated, possibly because we "
            "initiated the termination";
     return;
   }
-  auto& active_application = app->second;
+  ActiveComponentV1& active_component = app->second;
 
   // Grab the items out of the entry because we will have to rethread the
   // destruction.
-  auto application_to_destroy = std::move(active_application.application);
-  auto application_thread = std::move(active_application.thread);
+  std::unique_ptr<ComponentV1> component_to_destroy =
+      std::move(active_component.component);
+  std::unique_ptr<fml::Thread> component_thread =
+      std::move(active_component.platform_thread);
 
-  // Delegate the entry.
-  active_applications_.erase(application);
+  // Delete the entry.
+  active_components_v1_.erase(component);
 
-  // Post the task to destroy the application and quit its message loop.
-  async::PostTask(
-      application_thread->dispatcher(),
-      fml::MakeCopyable([instance = std::move(application_to_destroy),
-                         thread = application_thread.get()]() mutable {
-        instance.reset();
-        thread->Quit();
-      }));
+  // Post the task to destroy the component and quit its message loop.
+  component_thread->GetTaskRunner()->PostTask(fml::MakeCopyable(
+      [instance = std::move(component_to_destroy),
+       thread = component_thread.get()]() mutable { instance.reset(); }));
 
-  // This works because just posted the quit task on the hosted thread.
-  application_thread->Join();
+  // Terminate and join the thread's message loop.
+  component_thread->Join();
+}
+
+// CF v2 lifecycle methods.
+
+void Runner::RegisterComponentV2(
+    fidl::InterfaceRequest<fuchsia::component::runner::ComponentRunner>
+        request) {
+  active_components_v2_bindings_.AddBinding(this, std::move(request));
+}
+
+void Runner::Start(
+    fuchsia::component::runner::ComponentStartInfo start_info,
+    fidl::InterfaceRequest<fuchsia::component::runner::ComponentController>
+        controller) {
+  // TRACE_DURATION currently requires that the string data does not change
+  // in the traced scope. Since |package| gets moved in the ComponentV2::Create
+  // call below, we cannot ensure that |package.resolved_url| does not move or
+  // change, so we make a copy to pass to TRACE_DURATION.
+  // TODO(PT-169): Remove this copy when TRACE_DURATION reads string arguments
+  // eagerly.
+  const std::string url_copy = start_info.resolved_url();
+  TRACE_EVENT1("flutter", "Start", "url", url_copy.c_str());
+
+  // Notes on component termination: Components typically terminate on the
+  // thread on which they were created. This usually means the thread was
+  // specifically created to host the component. But we want to ensure that
+  // access to the active components collection is made on the same thread. So
+  // we capture the runner in the termination callback. There is no risk of
+  // there being multiple component runner instances in the process at the same
+  // time. So it is safe to use the raw pointer.
+  ComponentV2::TerminationCallback termination_callback =
+      [component_runner = this](const ComponentV2* component) {
+        component_runner->task_runner_->PostTask(
+            [component_runner, component]() {
+              component_runner->OnComponentV2Terminate(component);
+            });
+      };
+
+  ActiveComponentV2 active_component = ComponentV2::Create(
+      std::move(termination_callback), std::move(start_info),
+      context_->svc() /* runner_incoming_services */, std::move(controller));
+
+  auto key = active_component.component.get();
+  active_components_v2_[key] = std::move(active_component);
+}
+
+void Runner::OnComponentV2Terminate(const ComponentV2* component) {
+  auto active_component_it = active_components_v2_.find(component);
+  if (active_component_it == active_components_v2_.end()) {
+    FML_LOG(INFO)
+        << "The remote end of the component runner tried to terminate an "
+           "component that has already been terminated, possibly because we "
+           "initiated the termination";
+    return;
+  }
+  ActiveComponentV2& active_component = active_component_it->second;
+
+  // Grab the items out of the entry because we will have to rethread the
+  // destruction.
+  std::unique_ptr<ComponentV2> component_to_destroy =
+      std::move(active_component.component);
+  std::unique_ptr<fml::Thread> component_thread =
+      std::move(active_component.platform_thread);
+
+  // Delete the entry.
+  active_components_v2_.erase(component);
+
+  // Post the task to destroy the component and quit its message loop.
+  component_thread->GetTaskRunner()->PostTask(fml::MakeCopyable(
+      [instance = std::move(component_to_destroy),
+       thread = component_thread.get()]() mutable { instance.reset(); }));
+
+  // Terminate and join the thread's message loop.
+  component_thread->Join();
 }
 
 void Runner::SetupICU() {
@@ -286,27 +384,38 @@ bool Runner::SetupTZDataInternal() {
 
 #if !defined(DART_PRODUCT)
 void Runner::SetupTraceObserver() {
-  trace_observer_ = std::make_unique<trace::TraceObserver>();
-  trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
-    if (!trace_is_category_enabled("dart:profiler")) {
-      return;
-    }
-    if (trace_state() == TRACE_STARTED) {
-      runner->prolonged_context_ = trace_acquire_prolonged_context();
-      Dart_StartProfiling();
-    } else if (trace_state() == TRACE_STOPPING) {
-      for (auto& it : runner->active_applications_) {
-        fml::AutoResetWaitableEvent latch;
-        async::PostTask(it.second.thread->dispatcher(), [&]() {
-          it.second.application->WriteProfileToTrace();
-          latch.Signal();
-        });
-        latch.Wait();
+  fml::AutoResetWaitableEvent latch;
+
+  fml::TaskRunner::RunNowOrPostTask(task_runner_, [&]() {
+    // Running this initialization code on task_runner_ ensures that the call to
+    // `async_get_default_dispatcher()` will capture the correct dispatcher.
+    trace_observer_ = std::make_unique<trace::TraceObserver>();
+    trace_observer_->Start(async_get_default_dispatcher(), [runner = this]() {
+      if (!trace_is_category_enabled("dart:profiler")) {
+        return;
       }
-      Dart_StopProfiling();
-      trace_release_prolonged_context(runner->prolonged_context_);
-    }
+      if (trace_state() == TRACE_STARTED) {
+        runner->prolonged_context_ = trace_acquire_prolonged_context();
+        Dart_StartProfiling();
+      } else if (trace_state() == TRACE_STOPPING) {
+        for (auto& it : runner->active_components_v1_) {
+          fml::AutoResetWaitableEvent latch;
+          fml::TaskRunner::RunNowOrPostTask(
+              it.second.platform_thread->GetTaskRunner(), [&]() {
+                it.second.component->WriteProfileToTrace();
+                latch.Signal();
+              });
+          latch.Wait();
+        }
+        // TODO(fxb/50694): Write v2 component profiles to trace once we're
+        // convinced they're stable.
+        Dart_StopProfiling();
+        trace_release_prolonged_context(runner->prolonged_context_);
+      }
+    });
+    latch.Signal();
   });
+  latch.Wait();
 }
 #endif  // !defined(DART_PRODUCT)
 

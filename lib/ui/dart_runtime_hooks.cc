@@ -4,10 +4,9 @@
 
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 
@@ -28,15 +27,6 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-#if defined(OS_ANDROID)
-#include <android/log.h>
-#elif defined(OS_IOS)
-extern "C" {
-// Cannot import the syslog.h header directly because of macro collision.
-extern void syslog(int, const char*, ...);
-}
-#endif
-
 using tonic::DartConverter;
 using tonic::LogIfError;
 using tonic::ToDart;
@@ -50,7 +40,6 @@ namespace flutter {
 #define BUILTIN_NATIVE_LIST(V)  \
   V(Logger_PrintString, 1)      \
   V(Logger_PrintDebugString, 1) \
-  V(SaveCompilationTrace, 0)    \
   V(ScheduleMicrotask, 1)       \
   V(GetCallbackHandle, 1)       \
   V(GetCallbackFromHandle, 1)
@@ -63,17 +52,19 @@ void DartRuntimeHooks::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 static void PropagateIfError(Dart_Handle result) {
   if (Dart_IsError(result)) {
+    FML_LOG(ERROR) << "Dart Error: " << ::Dart_GetError(result);
     Dart_PropagateError(result);
   }
 }
 
-static Dart_Handle GetFunction(Dart_Handle builtin_library, const char* name) {
+static Dart_Handle InvokeFunction(Dart_Handle builtin_library,
+                                  const char* name) {
   Dart_Handle getter_name = ToDart(name);
   return Dart_Invoke(builtin_library, getter_name, 0, nullptr);
 }
 
 static void InitDartInternal(Dart_Handle builtin_library, bool is_ui_isolate) {
-  Dart_Handle print = GetFunction(builtin_library, "_getPrintClosure");
+  Dart_Handle print = InvokeFunction(builtin_library, "_getPrintClosure");
 
   Dart_Handle internal_library = Dart_LookupLibrary(ToDart("dart:_internal"));
 
@@ -113,7 +104,7 @@ static void InitDartAsync(Dart_Handle builtin_library, bool is_ui_isolate) {
   Dart_Handle schedule_microtask;
   if (is_ui_isolate) {
     schedule_microtask =
-        GetFunction(builtin_library, "_getScheduleMicrotaskClosure");
+        InvokeFunction(builtin_library, "_getScheduleMicrotaskClosure");
   } else {
     Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
     Dart_Handle method_name =
@@ -131,21 +122,24 @@ static void InitDartIO(Dart_Handle builtin_library,
                        const std::string& script_uri) {
   Dart_Handle io_lib = Dart_LookupLibrary(ToDart("dart:io"));
   Dart_Handle platform_type =
-      Dart_GetType(io_lib, ToDart("_Platform"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, ToDart("_Platform"), 0, nullptr);
   if (!script_uri.empty()) {
     Dart_Handle result = Dart_SetField(platform_type, ToDart("_nativeScript"),
                                        ToDart(script_uri));
     PropagateIfError(result);
   }
-  Dart_Handle locale_closure =
-      GetFunction(builtin_library, "_getLocaleClosure");
+  // typedef _LocaleClosure = String Function();
+  Dart_Handle /* _LocaleClosure? */ locale_closure =
+      InvokeFunction(builtin_library, "_getLocaleClosure");
+  PropagateIfError(locale_closure);
+  //   static String Function()? _localeClosure;
   Dart_Handle result =
       Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure);
   PropagateIfError(result);
 
   // Register dart:io service extensions used for network profiling.
   Dart_Handle network_profiling_type =
-      Dart_GetType(io_lib, ToDart("_NetworkProfiling"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, ToDart("_NetworkProfiling"), 0, nullptr);
   PropagateIfError(network_profiling_type);
   result = Dart_Invoke(network_profiling_type,
                        ToDart("_registerServiceExtension"), 0, nullptr);
@@ -170,18 +164,8 @@ void Logger_PrintDebugString(Dart_NativeArguments args) {
 // Implementation of native functions which are used for some
 // test/debug functionality in standalone dart mode.
 void Logger_PrintString(Dart_NativeArguments args) {
-  std::stringstream stream;
-  const auto& logger_prefix = UIDartState::Current()->logger_prefix();
-
-#if !OS_ANDROID
-  // Prepend all logs with the isolate debug name except on Android where that
-  // prefix is specified in the log tag.
-  if (logger_prefix.size() > 0) {
-    stream << logger_prefix << ": ";
-  }
-#endif  // !OS_ANDROID
-
-  // Append the log buffer obtained from Dart code.
+  // Obtain the log buffer from Dart code.
+  std::string message;
   {
     Dart_Handle str = Dart_GetNativeArgument(args, 0);
     uint8_t* chars = nullptr;
@@ -192,68 +176,29 @@ void Logger_PrintString(Dart_NativeArguments args) {
       return;
     }
     if (length > 0) {
-      stream << std::string{reinterpret_cast<const char*>(chars),
+      message = std::string{reinterpret_cast<const char*>(chars),
                             static_cast<size_t>(length)};
     }
   }
 
-  const auto log_string = stream.str();
-  const char* chars = log_string.c_str();
-  const size_t length = log_string.size();
-
-  // Log using platform specific mechanisms
-  {
-#if defined(OS_ANDROID)
-    // Write to the logcat on Android.
-    __android_log_print(ANDROID_LOG_INFO, logger_prefix.c_str(), "%.*s",
-                        (int)length, chars);
-#elif defined(OS_IOS)
-    // Write to syslog on iOS.
-    //
-    // TODO(cbracken): replace with dedicated communication channel and bypass
-    // iOS logging APIs altogether.
-    syslog(1 /* LOG_ALERT */, "%.*s", (int)length, chars);
-#else
-    std::cout << log_string << std::endl;
-#endif
-  }
+  const auto& tag = UIDartState::Current()->logger_prefix();
+  UIDartState::Current()->LogMessage(tag, message);
 
   if (dart::bin::ShouldCaptureStdout()) {
+    std::stringstream stream;
+    if (tag.size() > 0) {
+      stream << tag << ": ";
+    }
+    stream << message;
+    std::string log = stream.str();
+
     // For now we report print output on the Stdout stream.
     uint8_t newline[] = {'\n'};
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent",
-                              reinterpret_cast<const uint8_t*>(chars), length);
+                              reinterpret_cast<const uint8_t*>(log.c_str()),
+                              log.size());
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent", newline, sizeof(newline));
   }
-}
-
-void SaveCompilationTrace(Dart_NativeArguments args) {
-  uint8_t* buffer = nullptr;
-  intptr_t length = 0;
-  Dart_Handle result = Dart_SaveCompilationTrace(&buffer, &length);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, result);
-    return;
-  }
-
-  result = Dart_NewTypedData(Dart_TypedData_kUint8, length);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, result);
-    return;
-  }
-
-  Dart_TypedData_Type type;
-  void* data = nullptr;
-  intptr_t size = 0;
-  Dart_Handle status = Dart_TypedDataAcquireData(result, &type, &data, &size);
-  if (Dart_IsError(status)) {
-    Dart_SetReturnValue(args, status);
-    return;
-  }
-
-  memcpy(data, buffer, length);
-  Dart_TypedDataReleaseData(result);
-  Dart_SetReturnValue(args, result);
 }
 
 void ScheduleMicrotask(Dart_NativeArguments args) {

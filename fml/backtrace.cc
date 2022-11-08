@@ -5,13 +5,20 @@
 #include "flutter/fml/backtrace.h"
 
 #include <cxxabi.h>
-#include <sstream>
-
 #include <dlfcn.h>
 #include <execinfo.h>
-#include <signal.h>
+
+#include <csignal>
+#include <sstream>
+
+#if OS_WIN
+#include <crtdbg.h>
+#include <debugapi.h>
+#endif
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/paths.h"
+#include "third_party/abseil-cpp/absl/debugging/symbolize.h"
 
 namespace fml {
 
@@ -40,13 +47,12 @@ static std::string DemangleSymbolName(const std::string& mangled) {
 }
 
 static std::string GetSymbolName(void* symbol) {
-  Dl_info info = {};
-
-  if (::dladdr(symbol, &info) == 0) {
+  char name[1024];
+  if (!absl::Symbolize(symbol, name, sizeof(name))) {
     return kKUnknownFrameName;
   }
 
-  return DemangleSymbolName({info.dli_sname});
+  return DemangleSymbolName({name});
 }
 
 std::string BacktraceHere(size_t offset) {
@@ -126,6 +132,16 @@ static void ToggleSignalHandlers(bool set) {
 }
 
 void InstallCrashHandler() {
+#if OS_WIN
+  if (!IsDebuggerPresent()) {
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+  }
+#endif
+  auto exe_path = fml::paths::GetExecutablePath();
+  if (exe_path.first) {
+    absl::InitializeSymbolizer(exe_path.second.c_str());
+  }
   ToggleSignalHandlers(true);
 }
 

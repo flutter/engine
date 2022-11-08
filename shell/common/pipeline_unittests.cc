@@ -4,11 +4,12 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include "flutter/shell/common/pipeline.h"
+
 #include <functional>
 #include <future>
 #include <memory>
 
-#include "flutter/shell/common/pipeline.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -18,7 +19,7 @@ using IntPipeline = Pipeline<int>;
 using Continuation = IntPipeline::ProducerContinuation;
 
 TEST(PipelineTest, ConsumeOneVal) {
-  fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(2);
+  std::shared_ptr<IntPipeline> pipeline = std::make_shared<IntPipeline>(2);
 
   Continuation continuation = pipeline->Produce();
 
@@ -33,7 +34,7 @@ TEST(PipelineTest, ConsumeOneVal) {
 }
 
 TEST(PipelineTest, ContinuationCanOnlyBeUsedOnce) {
-  fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(2);
+  std::shared_ptr<IntPipeline> pipeline = std::make_shared<IntPipeline>(2);
 
   Continuation continuation = pipeline->Produce();
 
@@ -58,7 +59,7 @@ TEST(PipelineTest, ContinuationCanOnlyBeUsedOnce) {
 
 TEST(PipelineTest, PushingMoreThanDepthCompletesFirstSubmission) {
   const int depth = 1;
-  fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(depth);
+  std::shared_ptr<IntPipeline> pipeline = std::make_shared<IntPipeline>(depth);
 
   Continuation continuation_1 = pipeline->Produce();
   Continuation continuation_2 = pipeline->Produce();
@@ -77,7 +78,7 @@ TEST(PipelineTest, PushingMoreThanDepthCompletesFirstSubmission) {
 
 TEST(PipelineTest, PushingMultiProcessesInOrder) {
   const int depth = 2;
-  fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(depth);
+  std::shared_ptr<IntPipeline> pipeline = std::make_shared<IntPipeline>(depth);
 
   Continuation continuation_1 = pipeline->Produce();
   Continuation continuation_2 = pipeline->Produce();
@@ -99,7 +100,7 @@ TEST(PipelineTest, PushingMultiProcessesInOrder) {
 
 TEST(PipelineTest, ProduceIfEmptyDoesNotConsumeWhenQueueIsNotEmpty) {
   const int depth = 2;
-  fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(depth);
+  std::shared_ptr<IntPipeline> pipeline = std::make_shared<IntPipeline>(depth);
 
   Continuation continuation_1 = pipeline->Produce();
   Continuation continuation_2 = pipeline->ProduceIfEmpty();
@@ -117,7 +118,7 @@ TEST(PipelineTest, ProduceIfEmptyDoesNotConsumeWhenQueueIsNotEmpty) {
 
 TEST(PipelineTest, ProduceIfEmptySuccessfulIfQueueIsEmpty) {
   const int depth = 1;
-  fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(depth);
+  std::shared_ptr<IntPipeline> pipeline = std::make_shared<IntPipeline>(depth);
 
   Continuation continuation_1 = pipeline->ProduceIfEmpty();
 

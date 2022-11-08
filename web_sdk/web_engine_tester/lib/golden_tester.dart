@@ -6,10 +6,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
-
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart' show operatingSystem, OperatingSystem, useCanvasKit;
+import 'package:ui/ui.dart';
 
 Future<dynamic> _callScreenshotServer(dynamic requestData) async {
   final html.HttpRequest request = await html.HttpRequest.request(
@@ -18,7 +17,7 @@ Future<dynamic> _callScreenshotServer(dynamic requestData) async {
     sendData: json.encode(requestData),
   );
 
-  return json.decode(request.responseText);
+  return json.decode(request.responseText!);
 }
 
 /// How to compare pixels within the image.
@@ -50,8 +49,8 @@ enum PixelComparison {
 /// [pixelComparison] determines the algorithm used to compare pixels. Uses
 /// fuzzy comparison by default.
 Future<void> matchGoldenFile(String filename,
-    {bool write = false, Rect region = null, double maxDiffRatePercent = null, PixelComparison pixelComparison = PixelComparison.fuzzy}) async {
-  Map<String, dynamic> serverParams = <String, dynamic>{
+    {bool write = false, Rect? region, double? maxDiffRatePercent, PixelComparison pixelComparison = PixelComparison.fuzzy}) async {
+  final Map<String, dynamic> serverParams = <String, dynamic>{
     'filename': filename,
     'write': write,
     'region': region == null
@@ -63,9 +62,10 @@ Future<void> matchGoldenFile(String filename,
             'height': region.height
           },
     'pixelComparison': pixelComparison.toString(),
+    'isCanvaskitTest': useCanvasKit,
   };
 
-  // Chrome on macOS renders slighly differently from Linux, so allow it an
+  // Chrome on macOS renders slightly differently from Linux, so allow it an
   // extra 1% to deviate from the golden files.
   if (maxDiffRatePercent != null) {
     if (operatingSystem == OperatingSystem.macOs) {

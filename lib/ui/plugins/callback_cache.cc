@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/lib/ui/plugins/callback_cache.h"
+
 #include <fstream>
 #include <iterator>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
-#include "flutter/lib/ui/plugins/callback_cache.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -129,7 +130,7 @@ void DartCallbackCache::LoadCacheFromDisk() {
   Document d;
   d.Parse(cache_contents.c_str());
   if (d.HasParseError() || !d.IsArray()) {
-    FML_LOG(WARNING) << "Could not parse callback cache, aborting restore";
+    FML_LOG(INFO) << "Could not parse callback cache, aborting restore";
     // TODO(bkonyi): log and bail (delete cache?)
     return;
   }

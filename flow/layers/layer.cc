@@ -12,7 +12,9 @@ namespace flutter {
 Layer::Layer()
     : paint_bounds_(SkRect::MakeEmpty()),
       unique_id_(NextUniqueID()),
-      needs_system_composite_(false) {}
+      original_layer_id_(unique_id_),
+      subtree_has_platform_view_(false),
+      layer_can_inherit_opacity_(false) {}
 
 Layer::~Layer() = default;
 
@@ -55,87 +57,51 @@ Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
   }
 }
 
-#if defined(OS_FUCHSIA)
-
-void Layer::CheckForChildLayerBelow(PrerollContext* context) {
-  child_layer_exists_below_ = context->child_scene_layer_exists_below;
-  if (child_layer_exists_below_) {
-    set_needs_system_composite(true);
-  }
-}
-
-void Layer::UpdateScene(SceneUpdateContext& context) {
-  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
-  // PhysicalShapeLayers that appear above the embedded content will be turned
-  // into their own Scenic layers.
-  if (child_layer_exists_below_) {
-    float global_scenic_elevation =
-        context.GetGlobalElevationForNextScenicLayer();
-    float local_scenic_elevation =
-        global_scenic_elevation - context.scenic_elevation();
-    float z_translation = -local_scenic_elevation;
-
-    // Retained rendering: speedup by reusing a retained entity node if
-    // possible. When an entity node is reused, no paint layer is added to the
-    // frame so we won't call PhysicalShapeLayer::Paint.
-    LayerRasterCacheKey key(unique_id(), context.Matrix());
-    if (context.HasRetainedNode(key)) {
-      TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-      scenic::EntityNode* retained_node = context.GetRetainedNode(key);
-      FML_DCHECK(context.top_entity());
-      FML_DCHECK(retained_node->session() == context.session());
-
-      // Re-adjust the elevation.
-      retained_node->SetTranslation(0.f, 0.f, z_translation);
-
-      context.top_entity()->entity_node().AddChild(*retained_node);
-      return;
-    }
-
-    TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
-    // If we can't find an existing retained surface, create one.
-    SceneUpdateContext::Frame frame(
-        context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
-        SkScalarRoundToInt(context.alphaf() * 255),
-        "flutter::PhysicalShapeLayer", z_translation, this);
-
-    frame.AddPaintLayer(this);
-  }
-}
-
-#endif  // defined(OS_FUCHSIA)
-
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     const SkRect& bounds,
-                                    const SkPaint* paint)
-    : paint_context_(paint_context), bounds_(bounds) {
-  paint_context_.internal_nodes_canvas->saveLayer(bounds_, paint);
+                                    const SkPaint* paint,
+                                    SaveMode save_mode)
+    : paint_context_(paint_context),
+      bounds_(bounds),
+      canvas_(save_mode == SaveMode::kInternalNodesCanvas
+                  ? *(paint_context.internal_nodes_canvas)
+                  : *(paint_context.leaf_nodes_canvas)) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  canvas_.saveLayer(bounds_, paint);
 }
 
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
-                                    const SkCanvas::SaveLayerRec& layer_rec)
-    : paint_context_(paint_context), bounds_(*layer_rec.fBounds) {
-  paint_context_.internal_nodes_canvas->saveLayer(layer_rec);
+                                    const SkCanvas::SaveLayerRec& layer_rec,
+                                    SaveMode save_mode)
+    : paint_context_(paint_context),
+      bounds_(*layer_rec.fBounds),
+      canvas_(save_mode == SaveMode::kInternalNodesCanvas
+                  ? *(paint_context.internal_nodes_canvas)
+                  : *(paint_context.leaf_nodes_canvas)) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  canvas_.saveLayer(layer_rec);
 }
 
 Layer::AutoSaveLayer Layer::AutoSaveLayer::Create(
     const PaintContext& paint_context,
     const SkRect& bounds,
-    const SkPaint* paint) {
-  return Layer::AutoSaveLayer(paint_context, bounds, paint);
+    const SkPaint* paint,
+    SaveMode save_mode) {
+  return Layer::AutoSaveLayer(paint_context, bounds, paint, save_mode);
 }
 
 Layer::AutoSaveLayer Layer::AutoSaveLayer::Create(
     const PaintContext& paint_context,
-    const SkCanvas::SaveLayerRec& layer_rec) {
-  return Layer::AutoSaveLayer(paint_context, layer_rec);
+    const SkCanvas::SaveLayerRec& layer_rec,
+    SaveMode save_mode) {
+  return Layer::AutoSaveLayer(paint_context, layer_rec, save_mode);
 }
 
 Layer::AutoSaveLayer::~AutoSaveLayer() {
   if (paint_context_.checkerboard_offscreen_layers) {
-    DrawCheckerboard(paint_context_.internal_nodes_canvas, bounds_);
+    DrawCheckerboard(&canvas_, bounds_);
   }
-  paint_context_.internal_nodes_canvas->restore();
+  canvas_.restore();
 }
 
 }  // namespace flutter

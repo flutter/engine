@@ -6,12 +6,16 @@
 
 #include "flutter/shell/platform/android/flutter_main.h"
 
+#include <android/log.h>
+
+#include <optional>
 #include <vector>
 
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/paths_android.h"
@@ -34,6 +38,21 @@ extern const intptr_t kPlatformStrongDillSize;
 }
 
 namespace {
+
+// This is only available on API 23+, so dynamically look it up.
+// This method is only called once at shell creation.
+// Do this in C++ because the API is available at level 23 here, but only 29+ in
+// Java.
+bool IsATraceEnabled() {
+  auto libandroid = fml::NativeLibrary::Create("libandroid.so");
+  FML_CHECK(libandroid);
+  auto atrace_fn =
+      libandroid->ResolveFunction<bool (*)(void)>("ATrace_isEnabled");
+  if (atrace_fn) {
+    return atrace_fn.value()();
+  }
+  return false;
+}
 
 fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
@@ -73,6 +92,19 @@ void FlutterMain::Init(JNIEnv* env,
 
   auto settings = SettingsFromCommandLine(command_line);
 
+  // Turn systracing on if ATrace_isEnabled is true and the user did not already
+  // request systracing
+  if (!settings.trace_systrace) {
+    settings.trace_systrace = IsATraceEnabled();
+    if (settings.trace_systrace) {
+      __android_log_print(
+          ANDROID_LOG_INFO, "Flutter",
+          "ATrace was enabled at startup. Flutter and Dart "
+          "tracing will be forwarded to systrace and will not show up in the "
+          "Observatory timeline or Dart DevTools.");
+    }
+  }
+
   int64_t init_time_micros = initTimeMillis * 1000;
   settings.engine_start_timestamp =
       std::chrono::microseconds(Dart_TimelineGetMicros() - init_time_micros);
@@ -105,6 +137,12 @@ void FlutterMain::Init(JNIEnv* env,
 
   settings.task_observer_remove = [](intptr_t key) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
+  };
+
+  settings.log_message_callback = [](const std::string& tag,
+                                     const std::string& message) {
+    __android_log_print(ANDROID_LOG_INFO, tag.c_str(), "%.*s",
+                        (int)message.size(), message.c_str());
   };
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG

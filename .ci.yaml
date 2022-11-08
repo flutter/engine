@@ -1,0 +1,410 @@
+# Describes the targets run in continuous integration environment.
+#
+# Flutter infra uses this file to generate a checklist of tasks to be performed
+# for every commit.
+#
+# More information at:
+#  * https://github.com/flutter/cocoon/blob/main/CI_YAML.md
+enabled_branches:
+  - main
+  - flutter-\d+\.\d+-candidate\.\d+
+
+platform_properties:
+  linux:
+    properties:
+      build_host: "false"
+      build_fuchsia: "false"
+      build_android_debug: "false"
+      build_android_aot: "false"
+      build_android_vulkan: "false"
+      build_ios: "false"
+      build_windows_uwp: "false"
+      build_android_jit_release: "false"
+      gcs_goldens_bucket: ""
+      ios_debug: "false"
+      ios_profile: "false"
+      ios_release: "false"
+      no_bitcode: "false"
+      caches: >-
+        [
+          {"name":"builder_linux_engine","path":"builder"},
+          {"name":"gradle","path":"gradle"},
+          {"name":"openjdk","path":"java"}
+        ]
+      # CIPD flutter_internal/java/openjdk/$platform
+      dependencies: >-
+        [
+          {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"},
+          {"dependency": "gradle_cache"}
+        ]
+      device_type: none
+      os: Linux
+  mac:
+    properties:
+      build_host: "false"
+      build_fuchsia: "false"
+      build_android_debug: "false"
+      build_android_aot: "false"
+      build_android_vulkan: "false"
+      build_ios: "false"
+      build_windows_uwp: "false"
+      build_android_jit_release: "false"
+      gcs_goldens_bucket: ""
+      ios_debug: "false"
+      ios_profile: "false"
+      ios_release: "false"
+      no_bitcode: "false"
+      caches: >-
+        [
+          {"name":"flutter_cocoapods","path":"cocoapods"},
+          {"name":"old_osx_sdk","path":"osx_sdk"},
+          {"name":"builder_mac_engine","path":"builder"},
+          {"name":"openjdk","path":"java"}
+        ]
+      # CIPD flutter_internal/java/openjdk/$platform
+      dependencies: >-
+        [
+          {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
+        ]
+      device_type: none
+      mac_model: "Macmini8,1"
+      os: Mac-10.15
+      xcode: 12c33 # xcode 12.3
+  windows:
+    properties:
+      build_host: "false"
+      build_fuchsia: "false"
+      build_android_debug: "false"
+      build_android_aot: "false"
+      build_android_vulkan: "false"
+      build_ios: "false"
+      build_windows_uwp: "false"
+      build_android_jit_release: "false"
+      gcs_goldens_bucket: ""
+      ios_debug: "false"
+      ios_profile: "false"
+      ios_release: "false"
+      no_bitcode: "false"
+      caches: >-
+        [
+          {"name":"builder_win_engine","path":"builder"},
+          {"name":"openjdk","path":"java"}
+        ]
+      # CIPD flutter_internal/java/openjdk/$platform
+      dependencies: >-
+        [
+          {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
+        ]
+      device_type: none
+      os: Windows-10
+
+targets:
+  - name: Linux Android AOT Engine
+    recipe: engine
+    properties:
+      add_recipes_cq: "true"
+      build_android_aot: "true"
+      android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
+      android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Android Debug Engine
+    recipe: engine
+    properties:
+      add_recipes_cq: "true"
+      build_android_debug: "true"
+      build_android_jit_release: "true"
+      build_android_vulkan: "true"
+      android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
+      android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Android Scenarios
+    bringup: true # Recipe issue https://github.com/flutter/flutter/issues/86427
+    recipe: engine/scenarios
+    properties:
+      dependencies: >-
+        [
+          {"dependency": "android_virtual_device", "version": "31"}
+        ]
+      upload_packages: "true"
+      clobber: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Benchmarks
+    enabled_branches:
+      - main
+      - master
+    recipe: engine/engine_metrics
+    presubmit: false
+    properties:
+      build_host: "true"
+      upload_metrics: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Benchmarks (no-upload)
+    recipe: engine/engine_metrics
+    properties:
+      build_host: "true"
+      upload_metrics: "false"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Fuchsia
+    recipe: engine
+    properties:
+      add_recipes_cq: "true"
+      build_fuchsia: "true"
+      fuchsia_ctl_version: version:0.0.27
+    timeout: 90
+    scheduler: luci
+
+  - name: Linux Fuchsia FEMU
+    recipe: femu_test
+    properties:
+      add_recipes_cq: "true"
+      build_fuchsia: "true"
+      fuchsia_ctl_version: version:0.0.27
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Framework Smoke Tests
+    recipe: engine/framework_smoke
+    enabled_branches:
+      - main
+      - master
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Host Engine
+    recipe: engine
+    properties:
+      add_recipes_cq: "true"
+      build_host: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Unopt
+    recipe: engine_unopt
+    properties:
+      add_recipes_cq: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Arm Host Engine
+    recipe: engine/engine_arm
+    properties:
+      add_recipes_cq: "true"
+      build_host: "true"
+    timeout: 90
+    scheduler: luci
+
+  - name: Linux Web Engine
+    recipe: web_engine
+    properties:
+      add_recipes_cq: "true"
+      gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
+    timeout: 60
+    scheduler: luci
+    runIf:
+      - DEPS
+      - lib/web_ui/**
+      - web_sdk/**
+      - tools/**
+      - ci/**
+      - flutter_frontend_server/**
+
+  - name: Linux Web Framework tests
+    recipe: engine/web_engine_framework
+    enabled_branches:
+      - main
+      - master
+    properties:
+      add_recipes_cq: "true"
+      framework: "true"
+      shard: web_tests
+      subshards: >-
+              ["0", "1", "2", "3", "4", "5", "6", "7_last"]
+    timeout: 60
+    scheduler: luci
+    runIf:
+      - DEPS
+      - lib/web_ui/**
+      - web_sdk/**
+      - tools/**
+      - ci/**
+      - flutter_frontend_server/**
+
+  - name: Mac Android AOT Engine
+    recipe: engine
+    properties:
+      android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
+      android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
+      build_android_aot: "true"
+      jazzy_version: 0.9.5
+    timeout: 60
+    scheduler: luci
+
+  - name: Mac Host Engine
+    recipe: engine
+    properties:
+      add_recipes_cq: "true"
+      build_host: "true"
+      jazzy_version: 0.9.5
+    timeout: 75
+    scheduler: luci
+
+  - name: Mac Unopt
+    recipe: engine_unopt
+    properties:
+      add_recipes_cq: "true"
+      jazzy_version: 0.9.5
+    timeout: 75
+    scheduler: luci
+
+  - name: Mac iOS Engine
+    recipe: engine
+    properties:
+      build_ios: "true"
+      ios_debug: "true"
+      jazzy_version: 0.9.5
+    timeout: 60
+    scheduler: luci
+
+  - name: Mac Web Engine
+    recipe: web_engine
+    properties:
+      gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
+    timeout: 60
+    scheduler: luci
+    runIf:
+      - DEPS
+      - lib/web_ui/**
+      - web_sdk/**
+      - tools/**
+      - ci/**
+      - flutter_frontend_server/**
+
+  - name: Mac mac_ios_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine
+      environment: Staging
+    scheduler: luci
+
+  - name:  Mac mac_ios_engine_profile
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine_profile
+      environment: Staging
+    scheduler: luci
+
+  - name:  Mac mac_ios_engine_release
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine_release
+      environment: Staging
+    scheduler: luci
+
+  - name: Windows Android AOT Engine
+    recipe: engine
+    properties:
+      build_android_aot: "true"
+      android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
+      android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
+    timeout: 60
+    scheduler: luci
+
+  - name: Windows Host Engine
+    recipe: engine
+    timeout: 60
+    properties:
+      add_recipes_cq: "true"
+      build_host: "true"
+    scheduler: luci
+
+  - name: Windows windows_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_android_aot_engine
+      environment: Staging
+    scheduler: luci
+
+  - name: Windows windows_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_host_engine
+      environment: Staging
+    scheduler: luci
+
+  - name: Windows Unopt
+    recipe: engine_unopt
+    properties:
+      add_recipes_cq: "true"
+    timeout: 75
+    scheduler: luci
+
+  - name: Windows UWP Engine
+    recipe: engine
+    properties:
+      build_windows_uwp: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Windows Web Engine
+    recipe: web_engine
+    properties:
+      gcs_goldens_bucket: flutter_logs
+    timeout: 60
+    scheduler: luci
+    runIf:
+      - DEPS
+      - lib/web_ui/**
+      - web_sdk/**
+
+  - name: Mac iOS Engine Profile
+    presubmit: false
+    recipe: engine
+    properties:
+      build_ios: "true"
+      ios_profile: "true"
+      jazzy_version: 0.9.5
+    timeout: 90
+    scheduler: luci
+
+  - name: Mac iOS Engine Release
+    presubmit: false
+    recipe: engine
+    properties:
+      build_ios: "true"
+      ios_release: "true"
+      jazzy_version: 0.9.5
+    timeout: 90
+    scheduler: luci
+
+  - name: Linux ci_yaml engine roller
+    bringup: true
+    recipe: infra/ci_yaml
+    scheduler: luci

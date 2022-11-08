@@ -16,11 +16,13 @@
 
 #include <minikin/Layout.h>
 
+#include <cstring>
+
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/logging.h"
 #include "flutter/third_party/txt/tests/txt_test_utils.h"
 #include "minikin/LayoutUtils.h"
-#include "third_party/benchmark/include/benchmark/benchmark_api.h"
+#include "third_party/benchmark/include/benchmark/benchmark.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -403,7 +405,7 @@ BENCHMARK_DEFINE_F(ParagraphFixture, AddStyleRun)(benchmark::State& state) {
   paint.wordSpacing = text_style.word_spacing;
 
   minikin::LineBreaker breaker;
-  breaker.setLocale(icu::Locale(), nullptr);
+  breaker.setLocale();
   breaker.resize(text.size());
   memcpy(breaker.buffer(), text.data(), text.size() * sizeof(text[0]));
   breaker.setText();

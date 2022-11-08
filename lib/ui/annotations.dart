@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-// @dart = 2.6
+// @dart = 2.12
 part of dart.ui;
 
 // TODO(dnfield): Update this if/when we default this to on in the tool,
@@ -39,8 +38,4 @@ part of dart.ui;
 ///   }
 /// }
 /// ```
-const _KeepToString/*!*/ keepToString = _KeepToString();
-
-class _KeepToString {
-  const _KeepToString();
-}
+const pragma keepToString = pragma('flutter:keep-to-string');

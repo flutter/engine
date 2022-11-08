@@ -89,8 +89,9 @@ void Paragraph::layout(double width) {
 
 void Paragraph::paint(Canvas* canvas, double x, double y) {
   SkCanvas* sk_canvas = canvas->canvas();
-  if (!sk_canvas)
+  if (!sk_canvas) {
     return;
+  }
   m_paragraph->Paint(sk_canvas, x, y);
 }
 
@@ -102,8 +103,8 @@ static tonic::Float32List EncodeTextBoxes(
   // text direction index.
   tonic::Float32List result(
       Dart_NewTypedData(Dart_TypedData_kFloat32, boxes.size() * 5));
-  unsigned long position = 0;
-  for (unsigned long i = 0; i < boxes.size(); i++) {
+  uint64_t position = 0;
+  for (uint64_t i = 0; i < boxes.size(); i++) {
     const txt::Paragraph::TextBox& box = boxes[i];
     result[position++] = box.rect.fLeft;
     result[position++] = box.rect.fTop;
@@ -131,20 +132,19 @@ tonic::Float32List Paragraph::getRectsForPlaceholders() {
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
-  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
   txt::Paragraph::PositionWithAffinity pos =
       m_paragraph->GetGlyphPositionAtCoordinate(dx, dy);
-  Dart_ListSetAt(result, 0, ToDart(pos.position));
-  Dart_ListSetAt(result, 1, ToDart(static_cast<int>(pos.affinity)));
-  return result;
+  std::vector<size_t> result = {
+      pos.position,                      // size_t already
+      static_cast<size_t>(pos.affinity)  // affinity (enum)
+  };
+  return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
 Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
   txt::Paragraph::Range<size_t> point = m_paragraph->GetWordBoundary(offset);
-  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
-  Dart_ListSetAt(result, 0, ToDart(point.start));
-  Dart_ListSetAt(result, 1, ToDart(point.end));
-  return result;
+  std::vector<size_t> result = {point.start, point.end};
+  return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
 Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
@@ -158,10 +158,8 @@ Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
       break;
     }
   }
-  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
-  Dart_ListSetAt(result, 0, ToDart(line_start));
-  Dart_ListSetAt(result, 1, ToDart(line_end));
-  return result;
+  std::vector<int> result = {line_start, line_end};
+  return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
 tonic::Float64List Paragraph::computeLineMetrics() {
@@ -172,8 +170,8 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   // properties
   tonic::Float64List result(
       Dart_NewTypedData(Dart_TypedData_kFloat64, metrics.size() * 9));
-  unsigned long position = 0;
-  for (unsigned long i = 0; i < metrics.size(); i++) {
+  uint64_t position = 0;
+  for (uint64_t i = 0; i < metrics.size(); i++) {
     const txt::LineMetrics& line = metrics[i];
     result[position++] = static_cast<double>(line.hard_break);
     result[position++] = line.ascent;
