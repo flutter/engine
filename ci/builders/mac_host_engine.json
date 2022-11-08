@@ -19,11 +19,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gclient_custom_vars": {
                 "download_android_deps": false
             },
@@ -65,11 +60,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gclient_custom_vars": {
                 "download_android_deps": false
             },
@@ -123,11 +113,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gclient_custom_vars": {
                 "download_android_deps": false
             },
@@ -167,11 +152,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gclient_custom_vars": {
                 "download_android_deps": false
             },
@@ -211,11 +191,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gclient_custom_vars": {
                 "download_android_deps": false
             },
@@ -254,11 +229,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gclient_custom_vars": {
                 "download_android_deps": false
             },

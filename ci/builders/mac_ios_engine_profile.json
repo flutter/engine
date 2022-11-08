@@ -7,11 +7,6 @@
                 "mac_model=Macmini8,1",
                 "os=Mac-12"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gn": [
                 "--ios",
                 "--runtime-mode",
@@ -33,11 +28,6 @@
                 "mac_model=Macmini8,1",
                 "os=Mac-12"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "generators": {},
             "gn": [
                 "--ios",
@@ -61,11 +51,6 @@
                 "mac_model=Macmini8,1",
                 "os=Mac-12"
             ],
-            "properties": {
-                "$flutter/osx_sdk": {
-                    "sdk_version": "14a5294e"
-                }
-            },
             "gn": [
                 "--ios",
                 "--runtime-mode",
