@@ -215,7 +215,7 @@ void UIDartState::LogMessage(const std::string& tag,
     // Fall back to previous behavior if unspecified.
 #if defined(FML_OS_ANDROID)
     __android_log_print(ANDROID_LOG_INFO, tag.c_str(), "%.*s",
-                        (int)message.size(), message.c_str());
+                        static_cast<int>(message.size()), message.c_str());
 #elif defined(FML_OS_IOS)
     std::stringstream stream;
     if (!tag.empty()) {
