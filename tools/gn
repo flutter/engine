@@ -228,7 +228,11 @@ def to_gn_args(args):
       ('cygwin', 'win')):
     goma_home_dir = os.path.join('c:\\', 'src', 'goma', 'goma-win64')
 
-  if args.goma and goma_dir:
+  if args.target_os == 'wasm' or args.web:
+    gn_args['use_goma'] = False
+    gn_args['goma_dir'] = None
+    print('Disabling GOMA for wasm builds, it is not supported yet.')
+  elif args.goma and goma_dir:
     gn_args['use_goma'] = True
     gn_args['goma_dir'] = goma_dir
   elif args.goma and os.path.exists(goma_home_dir):
@@ -325,21 +329,29 @@ def to_gn_args(args):
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
-  # No cross-compilation on Windows (for now). Use host toolchain that
-  # matches the bit-width of the target architecture.
-  if sys.platform.startswith(('cygwin', 'win')) and args.target_os != 'win':
-    cpu = cpu_for_target_arch(gn_args['target_cpu'])
-    # We explicitly allow arm64 native build. 'host_cpu' key may not exist.
-    if gn_args.get('host_cpu') == 'arm64' and gn_args['target_cpu'] == 'arm64':
-      cpu = 'arm64'
-    gn_args['host_cpu'] = cpu
-    gn_args['target_cpu'] = cpu
+  # We cannot cross-compile for 32 bit arm on a Windows host. We work around
+  # this by leaving 'target_cpu' and 'dart_target_arch' set to 'arm' so that
+  # Dart tools such as gen_snapshot that are built for the host will correctly
+  # target arm, but we hardcode the 'current_cpu' to always be the host arch
+  # so that the GN build doesn't go looking for a Windows arm toolchain, which
+  # does not exist. Further, we set the 'host_cpu' so that it shares the
+  # bitwidth of the 32-bit arm target.
+  if sys.platform.startswith(
+      ('cygwin', 'win')
+  ) and args.target_os == 'android' and gn_args['target_cpu'] == 'arm':
+    gn_args['host_cpu'] = 'x86'
+    gn_args['current_cpu'] = 'x86'
 
-  # macOS host builds (whether x64 or arm64) must currently be built under
-  # Rosetta on Apple Silicon Macs.
-  # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
   if is_host_build(args) and gn_args['host_os'] == 'mac':
+    # macOS host builds (whether x64 or arm64) must currently be built under
+    # Rosetta on Apple Silicon Macs.
+    # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
     gn_args['host_cpu'] = 'x64'
+
+    # macOS unit tests include Vulkan headers which reference Metal types
+    # introduced in macOS 10.14.
+    gn_args['mac_sdk_min'] = '10.14'
+    gn_args['mac_deployment_target'] = '10.14.0'
 
   # macOS target builds (whether x64 or arm64) must currently be built under
   # Rosetta on Apple Silicon Macs.
@@ -431,10 +443,10 @@ def to_gn_args(args):
     gn_args['skia_use_metal'] = True
     gn_args['shell_enable_metal'] = True
 
-  # Enable Vulkan on all platforms except for Android and iOS. This is just
+  # Enable Vulkan on all platforms except for iOS. This is just
   # to save on mobile binary size, as there's no reason the Vulkan embedder
   # features can't work on these platforms.
-  if args.target_os not in ['android', 'ios']:
+  if args.target_os not in ['ios']:
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
@@ -554,11 +566,13 @@ def to_gn_args(args):
                              get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
+    gn_args['angle_has_astc_encoder'] = False
     # Force ANGLE context checks on Windows to prevent crashes.
     # TODO(loic-sharma): Remove this once ANGLE crashes have been fixed.
     # https://github.com/flutter/flutter/issues/114107
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
+
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
     gn_args['angle_enable_vulkan_validation_layers'] = False
@@ -1004,7 +1018,7 @@ def main(argv):
       '--export-compile-commands',
   ]
 
-  if args.target_os != 'wasm':
+  if not args.web:
     if args.ide != '':
       command.append('--ide=%s' % args.ide)
     elif sys.platform == 'darwin':

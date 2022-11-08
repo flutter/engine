@@ -588,7 +588,6 @@ class KeyboardConverter {
       _kPhysicalAltLeft,
       _kPhysicalAltRight,
       _kLogicalAltLeft,
-      _kLogicalAltRight,
       altPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
       eventTimestamp,
     );
@@ -596,7 +595,6 @@ class KeyboardConverter {
       _kPhysicalControlLeft,
       _kPhysicalControlRight,
       _kLogicalControlLeft,
-      _kLogicalControlRight,
       controlPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
       eventTimestamp,
     );
@@ -604,7 +602,6 @@ class KeyboardConverter {
       _kPhysicalMetaLeft,
       _kPhysicalMetaRight,
       _kLogicalMetaLeft,
-      _kLogicalMetaRight,
       metaPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
       eventTimestamp,
     );
@@ -612,7 +609,6 @@ class KeyboardConverter {
       _kPhysicalShiftLeft,
       _kPhysicalShiftRight,
       _kLogicalShiftLeft,
-      _kLogicalShiftRight,
       shiftPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
       eventTimestamp,
     );
@@ -622,7 +618,6 @@ class KeyboardConverter {
     int physicalLeft,
     int physicalRight,
     int logicalLeft,
-    int logicalRight,
     ui.KeyEventType type,
     num domTimestamp,
   ) {
@@ -639,12 +634,14 @@ class KeyboardConverter {
 
     // Synthesize an up event for left key if pressed
     if (synthesizeUp && leftPressed) {
-      _synthesizeKeyUpEvent(domTimestamp, physicalLeft, logicalLeft);
+      final int knownLogicalKey = _pressingRecords[physicalLeft]!;
+      _synthesizeKeyUpEvent(domTimestamp, physicalLeft, knownLogicalKey);
     }
 
     // Synthesize an up event for right key if pressed
     if (synthesizeUp && rightPressed) {
-      _synthesizeKeyUpEvent(domTimestamp, physicalRight, logicalRight);
+      final int knownLogicalKey = _pressingRecords[physicalRight]!;
+      _synthesizeKeyUpEvent(domTimestamp, physicalRight, knownLogicalKey);
     }
   }
 

@@ -61,6 +61,8 @@
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
 #include "impeller/entity/vertices.frag.h"
+#include "impeller/entity/yuv_to_rgb_filter.frag.h"
+#include "impeller/entity/yuv_to_rgb_filter.vert.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline.h"
 
@@ -160,17 +162,20 @@ using GeometryPositionPipeline =
     RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
+using YUVToRGBFilterPipeline =
+    RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
 
 struct ContentContextOptions {
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
+  PrimitiveType primitive_type = PrimitiveType::kTriangle;
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
       return fml::HashCombine(o.sample_count, o.blend_mode, o.stencil_compare,
-                              o.stencil_operation);
+                              o.stencil_operation, o.primitive_type);
     }
   };
 
@@ -180,7 +185,8 @@ struct ContentContextOptions {
       return lhs.sample_count == rhs.sample_count &&
              lhs.blend_mode == rhs.blend_mode &&
              lhs.stencil_compare == rhs.stencil_compare &&
-             lhs.stencil_operation == rhs.stencil_operation;
+             lhs.stencil_operation == rhs.stencil_operation &&
+             lhs.primitive_type == rhs.primitive_type;
     }
   };
 
@@ -297,6 +303,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(atlas_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
   }
 
   // Advanced blends.
@@ -422,6 +433,7 @@ class ContentContext {
   mutable Variants<AtlasPipeline> atlas_pipelines_;
   mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
+  mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;

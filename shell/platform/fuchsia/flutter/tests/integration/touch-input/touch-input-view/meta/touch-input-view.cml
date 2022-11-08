@@ -24,11 +24,7 @@
     use: [
         {
             protocol: [
-                "fuchsia.sysmem.Allocator",
-                "fuchsia.tracing.provider.Registry",
-                "fuchsia.ui.scenic.Scenic",
                 "fuchsia.ui.test.input.TouchInputListener",
-                "fuchsia.vulkan.loader.Loader",
             ]
         }
     ]

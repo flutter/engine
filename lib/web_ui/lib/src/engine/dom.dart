@@ -66,6 +66,9 @@ extension DomWindowExtension on DomWindow {
   /// The Trusted Types API (when available).
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
   external DomTrustedTypePolicyFactory? get trustedTypes;
+
+  // ignore: non_constant_identifier_names
+  external DomIntl get Intl;
 }
 
 typedef DomRequestAnimationFrameCallback = void Function(num highResTime);
@@ -77,6 +80,7 @@ class DomConsole {}
 extension DomConsoleExtension on DomConsole {
   external void warn(Object? arg);
   external void error(Object? arg);
+  external void debug(Object? arg);
 }
 
 @JS('window')
@@ -332,6 +336,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set right(String value) => setProperty('right', value);
   set bottom(String value) => setProperty('bottom', value);
   set backgroundColor(String value) => setProperty('background-color', value);
+  set caretColor(String value) => setProperty('caret-color', value);
   set pointerEvents(String value) => setProperty('pointer-events', value);
   set filter(String value) => setProperty('filter', value);
   set zIndex(String value) => setProperty('z-index', value);
@@ -400,6 +405,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get right => getPropertyValue('right');
   String get bottom => getPropertyValue('bottom');
   String get backgroundColor => getPropertyValue('background-color');
+  String get caretColor => getPropertyValue('caret-color');
   String get pointerEvents => getPropertyValue('pointer-events');
   String get filter => getPropertyValue('filter');
   String get zIndex => getPropertyValue('z-index');
@@ -700,6 +706,14 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
 
 @JS()
 @staticInterop
+class DomCanvasRenderingContextWebGl {}
+
+extension DomCanvasRenderingContextWebGlExtension on DomCanvasRenderingContextWebGl {
+  external bool isContextLost();
+}
+
+@JS()
+@staticInterop
 class DomImageData {}
 
 DomImageData createDomImageData(Object? data, int sw, int sh) => js_util
@@ -769,7 +783,7 @@ Future<DomXMLHttpRequest> domHttpRequest(String url,
     }
   }));
 
-  xhr.addEventListener('error', allowInterop(completer.completeError));
+  xhr.addEventListener('error', allowInterop((DomEvent event) => completer.completeError(event)));
   xhr.send(sendData);
   return completer.future;
 }
@@ -1648,3 +1662,42 @@ class _DomListWrapper<T> extends Iterable<T> {
 /// `toList` on the `Iterable`.
 Iterable<T> createDomListWrapper<T>(_DomList list) =>
     _DomListWrapper<T>._(list).cast<T>();
+
+@JS()
+@staticInterop
+class DomIntl {}
+
+extension DomIntlExtension on DomIntl {
+  /// This is a V8-only API for segmenting text.
+  ///
+  /// See: https://code.google.com/archive/p/v8-i18n/wikis/BreakIterator.wiki
+  external Object? get v8BreakIterator;
+}
+
+
+@JS()
+@staticInterop
+class DomV8BreakIterator {}
+
+extension DomV8BreakIteratorExtension on DomV8BreakIterator {
+  external void adoptText(String text);
+  external int first();
+  external int next();
+  external int current();
+  external String breakType();
+}
+
+DomV8BreakIterator createV8BreakIterator() {
+  final Object? v8BreakIterator = domWindow.Intl.v8BreakIterator;
+  if (v8BreakIterator == null) {
+    throw UnimplementedError('v8BreakIterator is not supported.');
+  }
+
+  return js_util.callConstructor<DomV8BreakIterator>(
+    v8BreakIterator,
+    <Object?>[
+      js_util.getProperty(domWindow, 'undefined'),
+      js_util.jsify(const <String, String>{'type': 'line'}),
+    ],
+  );
+}

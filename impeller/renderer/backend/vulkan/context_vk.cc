@@ -20,6 +20,7 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -527,6 +528,28 @@ std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
   return surface_producer_->AcquireSurface(current_frame);
 }
 
+#ifdef FML_OS_ANDROID
+
+vk::UniqueSurfaceKHR ContextVK::CreateAndroidSurface(
+    ANativeWindow* window) const {
+  if (!instance_) {
+    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  }
+
+  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
+  auto surface_res = instance_->createAndroidSurfaceKHRUnique(create_info);
+
+  if (surface_res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create Android surface, error: "
+                   << vk::to_string(surface_res.result);
+    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  }
+
+  return std::move(surface_res.value);
+}
+
+#endif  // FML_OS_ANDROID
+
 void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
   surface_ = std::move(surface);
   auto present_queue_out = PickPresentQueue(physical_device_, *surface_);
@@ -541,6 +564,7 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
   if (!swapchain_details) {
     return;
   }
+  surface_format_ = swapchain_details->PickSurfaceFormat().format;
   swapchain_ = SwapchainVK::Create(*device_, *surface_, *swapchain_details);
   auto weak_this = weak_from_this();
   surface_producer_ = SurfaceProducerVK::Create(
@@ -558,6 +582,10 @@ bool ContextVK::SupportsOffscreenMSAA() const {
 
 std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
   return descriptor_pool_;
+}
+
+PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
+  return ToPixelFormat(surface_format_);
 }
 
 }  // namespace impeller
