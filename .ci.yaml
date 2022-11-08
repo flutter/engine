@@ -197,6 +197,8 @@ targets:
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      gclient_variables: >-
+        {"download_emsdk": true}
       dependencies: >-
         [
           {"dependency": "goldctl"}
@@ -294,6 +296,8 @@ targets:
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      gclient_variables: >-
+        {"download_emsdk": true}
       dependencies: >-
         [
           {"dependency": "goldctl"}
@@ -378,6 +382,8 @@ targets:
   - name: Windows Web Engine
     recipe: engine/web_engine
     properties:
+      gclient_variables: >-
+        {"download_emsdk": true}
       gcs_goldens_bucket: flutter_logs
     timeout: 60
     runIf:
