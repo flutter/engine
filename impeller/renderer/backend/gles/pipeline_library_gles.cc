@@ -176,7 +176,7 @@ bool PipelineLibraryGLES::IsValid() const {
 PipelineFuture<PipelineDescriptor> PipelineLibraryGLES::GetPipeline(
     PipelineDescriptor descriptor) {
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
-    return {descriptor, found->second};
+    return found->second;
   }
 
   if (!reactor_) {
@@ -200,7 +200,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryGLES::GetPipeline(
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
   auto pipeline_future =
       PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
-  pipelines_[descriptor] = pipeline_future.future;
+  pipelines_[descriptor] = pipeline_future;
   auto weak_this = weak_from_this();
 
   auto result = reactor_->AddOperation(

@@ -89,7 +89,7 @@ bool PipelineLibraryMTL::IsValid() const {
 PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
     PipelineDescriptor descriptor) {
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
-    return {descriptor, found->second};
+    return found->second;
   }
 
   if (!IsValid()) {
@@ -102,7 +102,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
   auto pipeline_future =
       PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
-  pipelines_[descriptor] = pipeline_future.future;
+  pipelines_[descriptor] = pipeline_future;
   auto weak_this = weak_from_this();
 
   auto completion_handler =
@@ -141,7 +141,7 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryMTL::GetPipeline(
     ComputePipelineDescriptor descriptor) {
   if (auto found = compute_pipelines_.find(descriptor);
       found != compute_pipelines_.end()) {
-    return {descriptor, found->second};
+    return found->second;
   }
 
   if (!IsValid()) {
@@ -155,7 +155,7 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryMTL::GetPipeline(
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
   auto pipeline_future = PipelineFuture<ComputePipelineDescriptor>{
       descriptor, promise->get_future()};
-  compute_pipelines_[descriptor] = pipeline_future.future;
+  compute_pipelines_[descriptor] = pipeline_future;
   auto weak_this = weak_from_this();
 
   auto completion_handler =
