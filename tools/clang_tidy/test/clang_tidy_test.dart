@@ -39,6 +39,18 @@ Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
 Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
 1 warning treated as error''';
 
+void _withTempFile(String prefix, void Function(String path) func) {
+  final String filePath =
+      path.join(io.Directory.systemTemp.path, '$prefix-temp-file');
+  final io.File file = io.File(filePath);
+  file.createSync();
+  try {
+    func(file.path);
+  } finally {
+    file.deleteSync();
+  }
+}
+
 Future<int> main(List<String> args) async {
   if (args.isEmpty) {
     io.stderr.writeln(
@@ -115,17 +127,6 @@ Future<int> main(List<String> args) async {
       'ERROR: --compile-commands option cannot be used with --src-dir.',
     ));
   });
-
-void _withTempFile(String prefix, void Function(String path) func) {
-    final String filePath = path.join(io.Directory.systemTemp.path, '$prefix-temp-file');
-    final io.File file = io.File(filePath);
-    file.createSync();
-    try {
-      func(file.path);
-    } finally {
-      file.deleteSync();
-    }
-  }
 
   test('shard-id valid', () async {
     _withTempFile('shard-id-valid', (String path) {
