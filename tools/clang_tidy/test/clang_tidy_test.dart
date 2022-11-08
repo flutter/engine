@@ -117,41 +117,23 @@ Future<int> main(List<String> args) async {
   });
 
   test('shard-id valid', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
     final String variant = path.basename(io.File(buildCommands).parent.path);
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
-      <String>[
+    final Options options = Options.fromCommandLine( <String>[
         '--shard-variants=$variant',
         '--shard-id=1',
-      ],
-      outSink: outBuffer,
-      errSink: errBuffer,
-    );
-
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
-    expect(result, equals(0));
+      ],);
+    expect(options.errorMessage, isNull);
+    expect(options.shardId, equals(1));
   });
 
   test('shard-id invalid', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
     final String variant = path.basename(io.File(buildCommands).parent.path);
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
-      <String>[
+    final Options options = Options.fromCommandLine( <String>[
         '--shard-variants=$variant',
         '--shard-id=2',
-      ],
-      outSink: outBuffer,
-      errSink: errBuffer,
-    );
-
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
-    expect(result, equals(1));
+      ],);
+    expect(options.errorMessage, isNotNull);
+    expect(options.shardId, isNull);
   });
 
   test('Error when --compile-commands path does not exist', () async {
