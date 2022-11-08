@@ -49,9 +49,7 @@ abstract class LineBreakFragmenter extends TextFragmenter {
   }
 
   @override
-  List<LineBreakFragment> fragment() {
-    return _computeLineBreakFragments(text);
-  }
+  List<LineBreakFragment> fragment();
 }
 
 /// Flutter web's custom implementation of [LineBreakFragmenter].
@@ -64,7 +62,7 @@ class FWLineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
   }
 }
 
-/// An implementation of [LineBreakFragmenter] that uses Chrome's
+/// An implementation of [LineBreakFragmenter] that uses V8's
 /// `v8BreakIterator` API to find line breaks in the given [text].
 class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmenter {
   V8LineBreakFragmenter(super.text)

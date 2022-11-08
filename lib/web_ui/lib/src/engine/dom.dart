@@ -1667,7 +1667,7 @@ Iterable<T> createDomListWrapper<T>(_DomList list) =>
 class DomIntl {}
 
 extension DomIntlExtension on DomIntl {
-  /// This is a Chrome-only API for segmenting text.
+  /// This is a V8-only API for segmenting text.
   ///
   /// See: https://code.google.com/archive/p/v8-i18n/wikis/BreakIterator.wiki
   external Object? get v8BreakIterator;
