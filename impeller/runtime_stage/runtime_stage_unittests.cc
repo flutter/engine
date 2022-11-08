@@ -248,7 +248,8 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   desc.SetColorAttachmentDescriptor(0u, color0);
   desc.SetStencilAttachmentDescriptors(stencil0);
   desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
-  auto pipeline = GetContext()->GetPipelineLibrary()->GetPipeline(desc).get();
+  auto pipeline =
+      GetContext()->GetPipelineLibrary()->GetPipeline(desc).future.get();
   ASSERT_NE(pipeline, nullptr);
 }
 

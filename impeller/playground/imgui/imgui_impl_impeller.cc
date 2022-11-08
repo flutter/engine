@@ -101,8 +101,9 @@ bool ImGui_ImplImpeller_Init(
       desc->SetStencilAttachmentDescriptors(stencil.value());
     }
 
-    bd->pipeline =
-        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+    bd->pipeline = context->GetPipelineLibrary()
+                       ->GetPipeline(std::move(desc))
+                       .future.get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
 
     bd->sampler = context->GetSamplerLibrary()->GetSampler({});

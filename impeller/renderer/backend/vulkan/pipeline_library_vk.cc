@@ -57,18 +57,20 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor) {
   Lock lock(pipelines_mutex_);
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
-    return found->second;
+    return {descriptor, found->second};
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
-        nullptr);
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
   }
 
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
-  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
-  pipelines_[descriptor] = future;
+  auto pipeline_future =
+      PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
+  pipelines_[descriptor] = pipeline_future.future;
 
   auto weak_this = weak_from_this();
 
@@ -86,7 +88,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
         weak_this, descriptor, std::move(pipeline_create_info)));
   });
 
-  return future;
+  return pipeline_future;
 }
 
 // |PipelineLibrary|
@@ -94,11 +96,9 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
     ComputePipelineDescriptor descriptor) {
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
-  auto future =
-      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
   // TODO(dnfield): implement compute for GLES.
   promise->set_value(nullptr);
-  return future;
+  return {descriptor, promise->get_future()};
 }
 
 static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(

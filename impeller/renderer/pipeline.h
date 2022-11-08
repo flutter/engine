@@ -20,14 +20,11 @@ class PipelineLibrary;
 template <typename PipelineDescriptor_>
 class Pipeline;
 
-// TODO(csg): Using a simple future is sub-optimal since callers that want to
-// eagerly create and cache pipeline variants will have to await on the future
-// to get its pipeline descriptor (unless they have explicitly cached it). This
-// would be a concurrency pessimization.
-//
-// Use a struct that stores the future and the descriptor separately.
-template <class T>
-using PipelineFuture = std::shared_future<std::shared_ptr<Pipeline<T>>>;
+template <typename T>
+struct PipelineFuture {
+  std::optional<T> descriptor;
+  std::shared_future<std::shared_ptr<Pipeline<T>>> future;
+};
 
 //------------------------------------------------------------------------------
 /// @brief      Describes the fixed function and programmable aspects of
@@ -107,10 +104,14 @@ class RenderPipelineT {
       return pipeline_;
     }
     did_wait_ = true;
-    if (pipeline_future_.valid()) {
-      pipeline_ = pipeline_future_.get();
+    if (pipeline_future_.future.valid()) {
+      pipeline_ = pipeline_future_.future.get();
     }
     return pipeline_;
+  }
+
+  std::optional<PipelineDescriptor> GetDescriptor() const {
+    return pipeline_future_.descriptor;
   }
 
  private:
@@ -145,8 +146,8 @@ class ComputePipelineT {
       return pipeline_;
     }
     did_wait_ = true;
-    if (pipeline_future_.valid()) {
-      pipeline_ = pipeline_future_.get();
+    if (pipeline_future_.future.valid()) {
+      pipeline_ = pipeline_future_.future.get();
     }
     return pipeline_;
   }
