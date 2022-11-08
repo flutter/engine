@@ -79,7 +79,8 @@ FLUTTER_DARWIN_EXPORT
  * @param package The name of the package from which the asset originates.
  * @return the file name to be used for lookup in the main bundle.
  */
-- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset fromPackage:(nonnull NSString*)package;
+- (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                           fromPackage:(nonnull NSString*)package;
 
 @end
 

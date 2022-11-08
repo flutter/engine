@@ -757,11 +757,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
-    return [FlutterDartProject lookupKeyForAsset:asset];
+  return [FlutterDartProject lookupKeyForAsset:asset];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-    return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 #pragma mark - FlutterBinaryMessenger
@@ -945,54 +945,54 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 @end
 
 @implementation FlutterEngineRegistrar {
-    NSString* _pluginKey;
-    FlutterEngine* _flutterEngine;
+  NSString* _pluginKey;
+  FlutterEngine* _flutterEngine;
 }
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
-    self = [super init];
-    if (self) {
-        _pluginKey = [pluginKey copy];
-        _flutterEngine = flutterEngine;
-    }
-    return self;
+  self = [super init];
+  if (self) {
+    _pluginKey = [pluginKey copy];
+    _flutterEngine = flutterEngine;
+  }
+  return self;
 }
 
 #pragma mark - FlutterPluginRegistrar
 
 - (id<FlutterBinaryMessenger>)messenger {
-    return _flutterEngine.binaryMessenger;
+  return _flutterEngine.binaryMessenger;
 }
 
 - (id<FlutterTextureRegistry>)textures {
-    return _flutterEngine.renderer;
+  return _flutterEngine.renderer;
 }
 
 - (NSView*)view {
-    if (!_flutterEngine.viewController.viewLoaded) {
-        [_flutterEngine.viewController loadView];
-    }
-    return _flutterEngine.viewController.flutterView;
+  if (!_flutterEngine.viewController.viewLoaded) {
+    [_flutterEngine.viewController loadView];
+  }
+  return _flutterEngine.viewController.flutterView;
 }
 
 - (void)addMethodCallDelegate:(nonnull id<FlutterPlugin>)delegate
                       channel:(nonnull FlutterMethodChannel*)channel {
-    [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-        [delegate handleMethodCall:call result:result];
-    }];
+  [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [delegate handleMethodCall:call result:result];
+  }];
 }
 
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId {
-    [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
+  [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
-    return [FlutterDartProject lookupKeyForAsset:asset];
+  return [FlutterDartProject lookupKeyForAsset:asset];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-    return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end
