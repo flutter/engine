@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
@@ -129,6 +130,17 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   }
 
   return desc;
+}
+
+// |PipelineLibrary|
+void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  Lock lock(pipelines_mutex_);
+
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
 }
 
 //----------------------------------------------------------------------------
@@ -281,11 +293,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   //----------------------------------------------------------------------------
   /// Primitive Input Assembly State
-  /// TODO(106379): Move primitive topology to the the pipeline instead of it
-  ///               being on the draw call. This is hard-coded right now.
-  ///
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+  const auto topology = ToVKPrimitiveTopology(desc.GetPrimitiveType());
+  input_assembly.setTopology(topology);
   pipeline_info.setPInputAssemblyState(&input_assembly);
 
   //----------------------------------------------------------------------------

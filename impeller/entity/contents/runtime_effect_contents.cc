@@ -53,6 +53,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
   if (function && runtime_stage_->IsDirty()) {
+    context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
 
@@ -122,6 +123,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
+  options.primitive_type = geometry_result.type;
   options.ApplyToPipelineDescriptor(desc);
 
   auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).get();
@@ -135,7 +137,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   cmd.pipeline = pipeline;
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
-  cmd.primitive_type = geometry_result.type;
 
   //--------------------------------------------------------------------------
   /// Vertex stage uniforms.

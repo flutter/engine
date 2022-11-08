@@ -1,4 +1,4 @@
-Signature: ce24d9ae2c3aa79589be0f3b2dcee836
+Signature: 78ca86992cb56b8a41e3f2fcd89eb957
 
 UNUSED LICENSES:
 
@@ -611,6 +611,7 @@ FILE: ../../../third_party/skia/experimental/wasm-hello-world/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/wasm-hello-world/hello_world.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD.bazel
+FILE: ../../../third_party/skia/gn/BUILD.bazel
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
 FILE: ../../../third_party/skia/go_repositories.bzl
