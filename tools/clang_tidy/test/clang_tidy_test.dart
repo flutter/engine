@@ -140,13 +140,22 @@ void _withTempFile(String prefix, void Function(String path) func) {
   });
 
   test('shard-id invalid', () async {
-    final String variant = path.basename(io.File(buildCommands).parent.path);
-    final Options options = Options.fromCommandLine( <String>[
-        '--shard-variants=$variant',
+    _withTempFile('shard-id-valid', (String path) {
+      final StringBuffer errBuffer = StringBuffer();
+      final Options options = Options.fromCommandLine(<String>[
+        '--compile-commands=$path',
+        '--shard-variants=variant',
         '--shard-id=2',
-      ],);
-    expect(options.errorMessage, isNotNull);
-    expect(options.shardId, isNull);
+      ], errSink: errBuffer);
+      expect(options.errorMessage, isNotNull);
+      expect(options.shardId, isNull);
+      print('foo ${options.errorMessage}');
+      expect(
+          options.errorMessage,
+          contains(
+            'Invalid shard-id value',
+          ));
+    });
   });
 
   test('Error when --compile-commands path does not exist', () async {
