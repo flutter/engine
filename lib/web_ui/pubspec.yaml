@@ -9,6 +9,9 @@ dependencies:
   js: 0.6.4
   meta: ^1.7.0
 
+  unicode:
+    path: ../../third_party/unicode
+
 dev_dependencies:
   archive: 3.1.2
   args: any

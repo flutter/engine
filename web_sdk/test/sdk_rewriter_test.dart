@@ -37,6 +37,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:extra';
 
+part 'unicode/codegen/line_break_properties.dart';
+part 'unicode/codegen/word_break_properties.dart';
 
 
 // Comment 2

@@ -50,6 +50,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 $extraImports
+part 'unicode/codegen/line_break_properties.dart';
+part 'unicode/codegen/word_break_properties.dart';
 '''
     ),
     // Replace exports of engine files with "part" directives.
@@ -94,9 +96,14 @@ void main(List<String> arguments) {
   String Function(String source)? preprocessor;
   List<Replacer> replacementPatterns;
   String? libraryName;
+
+  final Map<String, String> thirdPartyMapping;
   if (results['ui'] as bool) {
+    thirdPartyMapping = <String, String>{};
     replacementPatterns = uiPatterns;
   } else {
+    thirdPartyMapping = getThirdPartyMapping(directory.path);
+
     libraryName = results['library-name'] as String;
     if (libraryName == null) {
       throw Exception('library-name must be specified if not rewriting ui');
@@ -104,12 +111,18 @@ void main(List<String> arguments) {
     preprocessor = (String source) => preprocessPartFile(source, libraryName!);
     replacementPatterns = generatePartsPatterns(libraryName);
   }
+
   for (final String inputFilePath in results['source-file'] as Iterable<String>) {
     String pathSuffix = inputFilePath.substring(inputDirectoryPath.length);
     if (libraryName != null) {
       pathSuffix = path.join(libraryName, pathSuffix);
     }
     final String outputFilePath = path.join(directory.path, pathSuffix);
+    processFile(inputFilePath, outputFilePath, preprocessor, replacementPatterns);
+  }
+  for (final MapEntry<String, String> entry in thirdPartyMapping.entries) {
+    final String inputFilePath = entry.key;
+    final String outputFilePath = entry.value;
     processFile(inputFilePath, outputFilePath, preprocessor, replacementPatterns);
   }
 
@@ -141,6 +154,27 @@ void main(List<String> arguments) {
   if (results['stamp'] != null) {
     File(results['stamp'] as String).writeAsStringSync('stamp');
   }
+}
+
+Map<String, String> getThirdPartyMapping(String outputDirectoryPath) {
+  // Copy over third_party/unicode/lib/codegen
+
+  final String inputThirdPartyPath = getThirdPartyPath();
+
+  final Directory inputUnicodeCodegenDir = Directory(path.join(inputThirdPartyPath, 'unicode', 'lib', 'codegen'));
+  final Directory outputUnicodeCodegenDir = Directory(path.join(outputDirectoryPath, 'unicode', 'codegen'));
+
+  final Iterable<File> inputUnicodeCodegenFiles = inputUnicodeCodegenDir.listSync(recursive: true).whereType<File>();
+  return <String, String>{
+    for (final File inputCodegenFile in inputUnicodeCodegenFiles)
+      inputCodegenFile.path : path.join(outputUnicodeCodegenDir.path, path.basename(inputCodegenFile.path)),
+  };
+}
+
+String getThirdPartyPath() {
+  final String scriptPath = Platform.script.toFilePath();
+  final String engineSrcPath = path.dirname(path.dirname(scriptPath));
+  return path.join(engineSrcPath, 'third_party');
 }
 
 void processFile(String inputFilePath, String outputFilePath, String Function(String source)? preprocessor, List<Replacer> replacementPatterns) {
