@@ -15,6 +15,11 @@
 @protocol FlutterRenderer <FlutterTextureRegistry, FlutterTextureRegistrarDelegate>
 
 /**
+ * Intializes the renderer with the given FlutterEngine.
+ */
+- (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
+
+/**
  * Creates a FlutterRendererConfig that renders using the appropriate backend.
  */
 - (FlutterRendererConfig)createRendererConfig;

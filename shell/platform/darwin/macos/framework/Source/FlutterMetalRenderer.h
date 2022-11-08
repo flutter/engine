@@ -15,11 +15,6 @@
 @interface FlutterMetalRenderer : FlutterTextureRegistrar <FlutterRenderer>
 
 /**
- * Intializes the renderer with the given FlutterEngine.
- */
-- (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
-
-/**
  * Interface to the system GPU. Used to issue all the rendering commands.
  */
 @property(nonatomic, readonly, nonnull) id<MTLDevice> device;

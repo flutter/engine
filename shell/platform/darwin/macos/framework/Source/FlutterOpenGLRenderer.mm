@@ -37,8 +37,8 @@ static uint32_t OnFBOForDefaultView(FlutterEngine* engine, const FlutterFrameInf
   // that also receives a view ID, or pass the ID via FlutterFrameInfo.
   FlutterView* view = engine.viewController.flutterView;
   if (view == nil) {
-    // This callback does not have a proper way to report error, since we
-    // haven't defined an "invalid" FBO ID.
+    // This callback does not have a proper way to report error, since there's
+    // no way to label the returned integer as invalid.
     FML_LOG(WARNING) << "Can't create frame buffers on a non-existent view.";
   }
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);

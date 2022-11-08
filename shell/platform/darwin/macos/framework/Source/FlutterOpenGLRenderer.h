@@ -14,11 +14,6 @@
 @interface FlutterOpenGLRenderer : FlutterTextureRegistrar <FlutterRenderer>
 
 /**
- * Intializes the renderer with the given FlutterEngine.
- */
-- (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
-
-/**
  * The resource context used by the engine for texture uploads. FlutterViews associated with this
  * engine should be created to share with this context.
  */
