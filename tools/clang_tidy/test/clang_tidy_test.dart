@@ -8,6 +8,7 @@ import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
 import 'package:clang_tidy/src/options.dart';
 import 'package:litetest/litetest.dart';
+import 'package:path/path.dart' as path;
 import 'package:process_runner/process_runner.dart';
 
 // Recorded locally from clang-tidy.
@@ -113,6 +114,44 @@ Future<int> main(List<String> args) async {
     expect(errBuffer.toString(), contains(
       'ERROR: --compile-commands option cannot be used with --src-dir.',
     ));
+  });
+
+  test('shard-id valid', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final String variant = path.basename(io.File(buildCommands).parent.path);
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--shard-variants=$variant',
+        '--shard-id=1',
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(clangTidy.options.help, isFalse);
+    expect(result, equals(0));
+  });
+
+  test('shard-id invalid', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final String variant = path.basename(io.File(buildCommands).parent.path);
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--shard-variants=$variant',
+        '--shard-id=2',
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(clangTidy.options.help, isFalse);
+    expect(result, equals(1));
   });
 
   test('Error when --compile-commands path does not exist', () async {
