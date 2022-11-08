@@ -478,9 +478,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                            size_t layers_count,          //
                                            void* user_data               //
                                         ) {
-    // TODO(dkwingsmt): The engine only supports single-view for now. As more
-    // classes are gradually converted to multi-view, it should get the view ID
-    // from somewhere, and send the ID to `Present`.
+    // TODO(dkwingsmt): This callback only supports single-view, therefore it
+    // only operates on the default view. To support multi-view, we need a new
+    // callback that also receives a view ID.
     return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterDefaultViewId,
                                                                              layers, layers_count);
   };
