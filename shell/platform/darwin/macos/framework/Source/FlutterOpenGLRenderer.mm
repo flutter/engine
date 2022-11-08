@@ -20,29 +20,29 @@ static bool OnClearCurrent(FlutterEngine* engine) {
   return [openGLRenderer clearCurrent];
 }
 
-static bool OnPresent(FlutterEngine* engine) {
-  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
-  // classes are gradually converted to multi-view, it should get the view ID
-  // from somewhere, and accordingly pick the correct view from the engine.
-  FlutterViewController* viewController = engine.viewController;
-  if (viewController == nil) {
+static bool OnPresentToDefaultView(FlutterEngine* engine) {
+  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
+  // operates on the default view. To support multi-view, we need a new callback
+  // that also receives a view ID.
+  FlutterView* view = engine.viewController.flutterView;
+  if (view == nil) {
     return false;
   }
-  return [engine.renderer present:viewController.flutterView];
+  return [engine.renderer present:view];
 }
 
-static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
-  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
-  // classes are gradually converted to multi-view, it should get the view ID
-  // from somewhere, and accordingly pick the correct view from the engine.
-  FlutterViewController* viewController = engine.viewController;
-  if (viewController == nil) {
-    FML_LOG(WARNING) << "Can't create frame buffers on a null view controller.";
-    // The FBO has ID -1, therefore is discarded.
-    return -1;
+static uint32_t OnFBOForDefaultView(FlutterEngine* engine, const FlutterFrameInfo* info) {
+  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
+  // operates on the default view. To support multi-view, we need a new callback
+  // that also receives a view ID, or pass the ID via FlutterFrameInfo.
+  FlutterView* view = engine.viewController.flutterView;
+  if (view == nil) {
+    // This callback does not have a proper way to report error, since we
+    // haven't defined an "invalid" FBO ID.
+    FML_LOG(WARNING) << "Can't create frame buffers on a non-existent view.";
   }
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
-  return [openGLRenderer fboForView:viewController.flutterView frameInfo:info];
+  return [openGLRenderer fboForView:view frameInfo:info];
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
@@ -153,8 +153,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .open_gl.struct_size = sizeof(FlutterOpenGLRendererConfig),
       .open_gl.make_current = reinterpret_cast<BoolCallback>(OnMakeCurrent),
       .open_gl.clear_current = reinterpret_cast<BoolCallback>(OnClearCurrent),
-      .open_gl.present = reinterpret_cast<BoolCallback>(OnPresent),
-      .open_gl.fbo_with_frame_info_callback = reinterpret_cast<UIntFrameInfoCallback>(OnFBO),
+      .open_gl.present = reinterpret_cast<BoolCallback>(OnPresentToDefaultView),
+      .open_gl.fbo_with_frame_info_callback =
+          reinterpret_cast<UIntFrameInfoCallback>(OnFBOForDefaultView),
       .open_gl.fbo_reset_after_present = true,
       .open_gl.make_resource_current = reinterpret_cast<BoolCallback>(OnMakeResourceCurrent),
       .open_gl.gl_external_texture_frame_callback =

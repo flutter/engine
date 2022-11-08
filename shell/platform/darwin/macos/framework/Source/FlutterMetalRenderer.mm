@@ -12,31 +12,32 @@
 
 #pragma mark - Static callbacks that require the engine.
 
-static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
-                                             const FlutterFrameInfo* frameInfo) {
-  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
-  // classes are gradually converted to multi-view, it should get the view ID
-  // from somewhere, and accordingly pick the correct view from the engine.
-  FlutterViewController* viewController = engine.viewController;
-  if (viewController == nil) {
-    FML_LOG(WARNING) << "Can't create drawables on a null view controller.";
+static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine,
+                                                           const FlutterFrameInfo* frameInfo) {
+  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
+  // operates on the default view. To support multi-view, we need a new callback
+  // that also receives a view ID, or pass the ID via FlutterFrameInfo.
+  FlutterView* view = engine.viewController.flutterView;
+  if (view == nil) {
+    FML_LOG(WARNING) << "Can't create drawables on a non-existent view.";
     // FlutterMetalTexture has texture `null`, therefore is discarded.
     return FlutterMetalTexture{};
   }
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
-  return [metalRenderer createTextureForView:viewController.flutterView size:size];
+  return [metalRenderer createTextureForView:view size:size];
 }
 
-static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
-  // TODO(dkwingsmt): The renderer only supports single-view for now. As more
-  // classes are gradually converted to multi-view, it should get the view ID
-  // from somewhere, and accordingly pick the correct view from the engine.
-  FlutterViewController* viewController = engine.viewController;
-  if (viewController == nil) {
+static bool OnPresentDrawableToDefaultView(FlutterEngine* engine,
+                                           const FlutterMetalTexture* texture) {
+  // TODO(dkwingsmt): This callback only supports single-view, therefore it only
+  // operates on the default view. To support multi-view, we need a new callback
+  // that also receives a view ID.
+  FlutterView* view = engine.viewController.flutterView;
+  if (view == nil) {
     return false;
   }
-  return [engine.renderer present:viewController.flutterView];
+  return [engine.renderer present:view];
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -82,9 +83,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .metal.device = (__bridge FlutterMetalDeviceHandle)_device,
       .metal.present_command_queue = (__bridge FlutterMetalCommandQueueHandle)_commandQueue,
       .metal.get_next_drawable_callback =
-          reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawable),
+          reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawableForDefaultView),
       .metal.present_drawable_callback =
-          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawable),
+          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawableToDefaultView),
       .metal.external_texture_frame_callback =
           reinterpret_cast<FlutterMetalTextureFrameCallback>(OnAcquireExternalTexture),
   };
