@@ -31,7 +31,7 @@ FLUTTER_DARWIN_EXPORT
  * Returns the file name for the given asset. If the bundle with the identifier
  * "io.flutter.flutter.app" exists, it will try use that bundle; otherwise, it
  * will use the main bundle.  To specify a different bundle, use
- * `-lookupKeyForAsset:asset:fromBundle`.
+ * `+lookupKeyForAsset:fromBundle:`.
  *
  * @param asset The name of the asset. The name can be hierarchical.
  * @return the file name to be used for lookup in the main bundle.

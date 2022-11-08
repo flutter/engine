@@ -89,4 +89,38 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
   return arguments;
 }
 
++ (NSString*)flutterAssetsName:(NSBundle*)bundle {
+    if (bundle == nil) {
+        bundle = [NSBundle bundleWithIdentifier:kAppBundleIdentifier];
+    }
+    if (bundle == nil) {
+        bundle = [NSBundle mainBundle];
+    }
+    NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
+    if (flutterAssetsName == nil) {
+        flutterAssetsName = @"Contents/Frameworks/App.framework/Resources/flutter_assets";
+    }
+    return flutterAssetsName;
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset {
+    return [self lookupKeyForAsset:asset fromBundle:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(nullable NSBundle*)bundle {
+    NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:bundle];
+    return [NSString stringWithFormat:@"%@/%@", flutterAssetsName, asset];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+    return [self lookupKeyForAsset:asset fromPackage:package fromBundle:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset
+                   fromPackage:(NSString*)package
+                    fromBundle:(nullable NSBundle*)bundle {
+    return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]
+                        fromBundle:bundle];
+}
+
 @end
