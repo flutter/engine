@@ -684,7 +684,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update, ui.FlutterView view) {
+  void updateSemantics(ui.SemanticsUpdate update, [ui.FlutterView? view]) {
     EngineSemanticsOwner.instance.updateSemantics(update);
   }
 
