@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io show File, Platform, stderr;
+import 'dart:io' as io show Directory, File, Platform, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
@@ -116,14 +116,27 @@ Future<int> main(List<String> args) async {
     ));
   });
 
+void _withTempFile(String prefix, void Function(String path) func) {
+    final String filePath = path.join(io.Directory.systemTemp.path, '$prefix-temp-file');
+    final io.File file = io.File(filePath);
+    file.createSync();
+    try {
+      func(file.path);
+    } finally {
+      file.deleteSync();
+    }
+  }
+
   test('shard-id valid', () async {
-    final String variant = path.basename(io.File(buildCommands).parent.path);
-    final Options options = Options.fromCommandLine( <String>[
-        '--shard-variants=$variant',
-        '--shard-id=1',
-      ],);
-    expect(options.errorMessage, isNull);
-    expect(options.shardId, equals(1));
+    _withTempFile('shard-id-valid', (String path) {
+      final Options options = Options.fromCommandLine( <String>[
+          '--compile-commands=$path',
+          '--shard-variants=variant',
+          '--shard-id=1',
+        ],);
+      expect(options.errorMessage, isNull);
+      expect(options.shardId, equals(1));
+    });
   });
 
   test('shard-id invalid', () async {
