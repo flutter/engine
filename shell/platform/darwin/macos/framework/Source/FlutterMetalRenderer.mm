@@ -8,6 +8,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #pragma mark - Static callbacks that require the engine.
@@ -17,27 +18,19 @@ static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID, or pass the ID via FlutterFrameInfo.
-  FlutterView* view = engine.viewController.flutterView;
-  if (view == nil) {
-    FML_LOG(WARNING) << "Can't create drawables on a non-existent view.";
-    // FlutterMetalTexture has texture `null`, therefore is discarded.
-    return FlutterMetalTexture{};
-  }
+  uint64_t viewId = 0;
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
-  return [metalRenderer createTextureForView:view size:size];
+  return [metalRenderer createTextureForView:viewId size:size];
 }
 
-static bool OnPresentDrawableToDefaultView(FlutterEngine* engine,
+static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
                                            const FlutterMetalTexture* texture) {
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID.
-  FlutterView* view = engine.viewController.flutterView;
-  if (view == nil) {
-    return false;
-  }
-  return [engine.renderer present:view];
+  uint64_t viewId = 0;
+  return [engine.renderer present:viewId];
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -52,12 +45,14 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterMetalRenderer implementation
 
 @implementation FlutterMetalRenderer {
+  FlutterViewEngineProvider* _viewProvider;
   FlutterDarwinContextMetalSkia* _darwinMetalContext;
 }
 
 - (instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine {
   self = [super initWithDelegate:self engine:flutterEngine];
   if (self) {
+    _viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:flutterEngine];
     _device = MTLCreateSystemDefaultDevice();
     if (!_device) {
       NSLog(@"Could not acquire Metal device.");
@@ -85,7 +80,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .metal.get_next_drawable_callback =
           reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawableForDefaultView),
       .metal.present_drawable_callback =
-          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawableToDefaultView),
+          reinterpret_cast<FlutterMetalPresentCallback>(OnPresentDrawableOfDefaultView),
       .metal.external_texture_frame_callback =
           reinterpret_cast<FlutterMetalTextureFrameCallback>(OnAcquireExternalTexture),
   };
@@ -94,7 +89,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 #pragma mark - Embedder callback implementations.
 
-- (FlutterMetalTexture)createTextureForView:(FlutterView*)view size:(CGSize)size {
+- (FlutterMetalTexture)createTextureForView:(uint64_t)viewId size:(CGSize)size {
+  FlutterView* view = [_viewProvider getView:viewId];
+  if (view == nil) {
+    FML_LOG(WARNING) << "Can't create texture on a non-existent view.";
+    // FlutterMetalTexture has texture `null`, therefore is discarded.
+    return FlutterMetalTexture{};
+  }
   FlutterMetalRenderBackingStore* backingStore =
       (FlutterMetalRenderBackingStore*)[view backingStoreForSize:size];
   id<MTLTexture> texture = backingStore.texture;
@@ -105,12 +106,20 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return embedderTexture;
 }
 
-- (BOOL)present:(FlutterView*)view {
+- (BOOL)present:(uint64_t)viewId {
+  FlutterView* view = [_viewProvider getView:viewId];
+  if (view == nil) {
+    return NO;
+  }
   [view present];
   return YES;
 }
 
-- (void)presentWithoutContent:(FlutterView*)view {
+- (void)presentWithoutContent:(uint64_t)viewId {
+  FlutterView* view = [_viewProvider getView:viewId];
+  if (view == nil) {
+    return;
+  }
   [view presentWithoutContent];
 }
 

@@ -37,7 +37,7 @@
 /**
  * Called by the engine when framebuffer object ID is requested.
  */
-- (uint32_t)fboForView:(nonnull FlutterView*)view frameInfo:(nonnull const FlutterFrameInfo*)info;
+- (uint32_t)fboForView:(uint64_t)viewId frameInfo:(nonnull const FlutterFrameInfo*)info;
 
 /**
  * Makes the resource context the current context.

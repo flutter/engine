@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
@@ -24,20 +25,29 @@ FlutterEngine* CreateTestEngine() {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   return [[FlutterEngine alloc] initWithName:@"test" project:project allowHeadlessExecution:true];
 }
+
+void SetEngineDefaultView(FlutterEngine* engine, id flutterView) {
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController flutterView]).andReturn(flutterView);
+  [engine setViewController:mockFlutterViewController];
+}
+
 }  // namespace
 
 TEST(FlutterMetalRenderer, PresentDelegatesToFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  SetEngineDefaultView(engine, mockFlutterView);
   [(FlutterView*)[mockFlutterView expect] present];
-  [renderer present:mockFlutterView];
+  [renderer present:0];
 }
 
 TEST(FlutterMetalRenderer, TextureReturnedByFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  SetEngineDefaultView(engine, mockFlutterView);
   FlutterFrameInfo frameInfo;
   frameInfo.struct_size = sizeof(FlutterFrameInfo);
   FlutterUIntSize dimensions;
@@ -46,7 +56,7 @@ TEST(FlutterMetalRenderer, TextureReturnedByFlutterView) {
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
   [[mockFlutterView expect] backingStoreForSize:size];
-  [renderer createTextureForView:mockFlutterView size:size];
+  [renderer createTextureForView:0 size:size];
 }
 
 }  // namespace flutter::testing

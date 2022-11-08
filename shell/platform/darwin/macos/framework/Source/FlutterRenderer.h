@@ -27,11 +27,11 @@
 /**
  * Called by the engine when the given view's buffers should be swapped.
  */
-- (BOOL)present:(nonnull FlutterView*)view;
+- (BOOL)present:(uint64_t)viewId;
 
 /**
  * Tells the renderer that there is no Flutter content available for this frame.
  */
-- (void)presentWithoutContent:(nonnull FlutterView*)view;
+- (void)presentWithoutContent:(uint64_t)viewId;
 
 @end

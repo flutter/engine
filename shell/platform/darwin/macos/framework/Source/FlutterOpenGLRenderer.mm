@@ -7,6 +7,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 
 #pragma mark - Static methods for openGL callbacks that require the engine.
 
@@ -24,25 +25,17 @@ static bool OnPresentToDefaultView(FlutterEngine* engine) {
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID.
-  FlutterView* view = engine.viewController.flutterView;
-  if (view == nil) {
-    return false;
-  }
-  return [engine.renderer present:view];
+  uint64_t viewId = 0;
+  return [engine.renderer present:viewId];
 }
 
 static uint32_t OnFBOForDefaultView(FlutterEngine* engine, const FlutterFrameInfo* info) {
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID, or pass the ID via FlutterFrameInfo.
-  FlutterView* view = engine.viewController.flutterView;
-  if (view == nil) {
-    // This callback does not have a proper way to report error, since there's
-    // no way to label the returned integer as invalid.
-    FML_LOG(WARNING) << "Can't create frame buffers on a non-existent view.";
-  }
+  uint64_t viewId = 0;
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
-  return [openGLRenderer fboForView:view frameInfo:info];
+  return [openGLRenderer fboForView:viewId frameInfo:info];
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
@@ -63,6 +56,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterOpenGLRenderer implementation.
 
 @implementation FlutterOpenGLRenderer {
+  FlutterViewEngineProvider* _viewProvider;
+
   // The context provided to the Flutter engine for rendering to the FlutterView. This is lazily
   // created during initialization of the FlutterView. This is used to render content into the
   // FlutterView.
@@ -74,6 +69,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (instancetype)initWithFlutterEngine:(FlutterEngine*)flutterEngine {
   self = [super initWithDelegate:self engine:flutterEngine];
+  if (self) {
+    _viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:flutterEngine];
+  }
   return self;
 }
 
@@ -90,19 +88,30 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return true;
 }
 
-- (BOOL)present:(FlutterView*)view {
-  if (!_openGLContext) {
+- (BOOL)present:(uint64_t)viewId {
+  FlutterView* view = [_viewProvider getView:viewId];
+  if (!_openGLContext || view == nil) {
     return NO;
   }
   [view present];
   return YES;
 }
 
-- (void)presentWithoutContent:(FlutterView*)view {
+- (void)presentWithoutContent:(uint64_t)viewId {
+  FlutterView* view = [_viewProvider getView:viewId];
+  if (view == nil) {
+    return;
+  }
   [view presentWithoutContent];
 }
 
-- (uint32_t)fboForView:(FlutterView*)view frameInfo:(const FlutterFrameInfo*)info {
+- (uint32_t)fboForView:(uint64_t)viewId frameInfo:(const FlutterFrameInfo*)info {
+  FlutterView* view = [_viewProvider getView:viewId];
+  if (view == nil) {
+    // This method can't properly report errors, since there's no way to label
+    // the returned integer as invalid.
+    FML_LOG(ERROR) << "Can't create frame buffers on a non-existent view.";
+  }
   CGSize size = CGSizeMake(info->size.width, info->size.height);
   FlutterOpenGLRenderBackingStore* backingStore =
       reinterpret_cast<FlutterOpenGLRenderBackingStore*>([view backingStoreForSize:size]);

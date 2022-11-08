@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
@@ -43,6 +44,16 @@
 @end
 
 namespace flutter::testing {
+
+namespace {
+
+void SetEngineDefaultView(FlutterEngine* engine, id flutterView) {
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController flutterView]).andReturn(flutterView);
+  [engine setViewController:mockFlutterViewController];
+}
+
+}  // namespace
 
 TEST(FlutterOpenGLRenderer, RegisterExternalTexture) {
   FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
@@ -113,15 +124,17 @@ TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
   FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  SetEngineDefaultView(engine, mockFlutterView);
   [(FlutterView*)[mockFlutterView expect] present];
   [renderer openGLContext];
-  [renderer present:mockFlutterView];
+  [renderer present:0];
 }
 
 TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
   FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  SetEngineDefaultView(engine, mockFlutterView);
   FlutterFrameInfo frameInfo;
   frameInfo.struct_size = sizeof(FlutterFrameInfo);
   FlutterUIntSize dimensions;
@@ -131,7 +144,7 @@ TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
   [[mockFlutterView expect] backingStoreForSize:size];
   [renderer openGLContext];
-  [renderer fboForView:mockFlutterView frameInfo:&frameInfo];
+  [renderer fboForView:0 frameInfo:&frameInfo];
 }
 
 }  // namespace flutter::testing
