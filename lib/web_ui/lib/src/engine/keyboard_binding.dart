@@ -230,20 +230,18 @@ class KeyboardConverter {
   // Whether the current platform is macOS, which affects how certain key events
   // are comprehended.
   final bool onMacOs;
-  // A huge map that maps certain key event properties to logical keys.
-  //
-  // It is a map of KeyboardEvent.code -> KeyboardEvent.key -> logical_key.
-  final Map<String, Map<String, int>> _mapping;
+  // Maps logical keys from key event properties.
+  final keyboard_layouts.LayoutMapping _mapping;
 
-  static Map<String, Map<String, int>> _mappingFromPlatform(OperatingSystem platform) {
+  static keyboard_layouts.LayoutMapping _mappingFromPlatform(OperatingSystem platform) {
     switch (platform) {
       case OperatingSystem.iOs:
       case OperatingSystem.macOs:
-        return keyboard_layouts.kDarwinMapping;
+        return keyboard_layouts.LayoutMapping.darwin();
       case OperatingSystem.windows:
-        return keyboard_layouts.kWinMapping;
+        return keyboard_layouts.LayoutMapping.win();
       default:
-        return keyboard_layouts.kLinuxMapping;
+        return keyboard_layouts.LayoutMapping.linux();
     }
   }
 
@@ -407,6 +405,10 @@ class KeyboardConverter {
         final int? result = kWebLogicalLocationMap[event.key!]?[event.location!];
         assert(result != null, 'Invalid modifier location: ${event.key}, ${event.location}');
         return result!;
+      }
+      final int? logicalKeyFromMap = _mapping.getLogicalKey(event.code, event.key, event.keyCode);
+      if (logicalKeyFromMap != null) {
+        return logicalKeyFromMap;
       }
       if (character != null) {
         return _characterToLogicalKey(character);

@@ -114,7 +114,7 @@ sdk_rewriter("web_ui_library_sources") {
 sdk_rewriter("web_keyboard_layouts_library") {
   library_name = "web_keyboard_layouts"
   api_file = "//flutter/third_party/web_keyboard_layouts/lib/web_keyboard_layouts.dart"
-  input_dir = "//flutter/third_party/web_keyboard_layouts/lib/"
+  input_dir = "//flutter/third_party/web_keyboard_layouts/lib/web_keyboard_layouts/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/web_keyboard_layouts/"
 }
 

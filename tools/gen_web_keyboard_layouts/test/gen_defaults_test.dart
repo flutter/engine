@@ -4,7 +4,7 @@
 
 import 'dart:io';
 
-import 'package:gen_web_keyboard_layouts/template.dart';
+import 'package:gen_web_keyboard_layouts/main.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 

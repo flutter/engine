@@ -28,10 +28,10 @@ void verifyEntry(LayoutMapping mapping, String eventCode, List<String> eventKeys
   // "A", then KeyboardEvent.keyCode is the upper letter such as "A". Otherwise,
   // this field must not be used (in reality this field may or may not be
   // platform independent).
-  String? eventKeyCode;
+  int? eventKeyCode;
   {
     if (_isLetter(eventKeys[0]) && _isLetter(eventKeys[1])) {
-      eventKeyCode = eventKeys[0].toUpperCase();
+      eventKeyCode = eventKeys[0].toUpperCase().codeUnitAt(0);
     }
   }
 
@@ -42,7 +42,7 @@ void verifyEntry(LayoutMapping mapping, String eventCode, List<String> eventKeys
     }
     test('$eventCode $index', () {
       expect(
-        _fromCharCode(mapping.getLogicalKey(eventCode, eventKey, eventKeyCode ?? '')),
+        _fromCharCode(mapping.getLogicalKey(eventCode, eventKey, eventKeyCode ?? 0)),
         mappedResult,
       );
     });
