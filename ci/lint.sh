@@ -35,7 +35,6 @@ DART="${DART_BIN}/dart"
 # TODO(https://github.com/flutter/flutter/issues/113848): Migrate all platforms
 # to have this as an error.
 
-FLUTTER_LINT_PRINT_FIX=1
 # FLUTTER_LINT_PRINT_FIX will make it so that fix is executed and the generated
 # diff is printed to stdout if clang-tidy fails. This is helpful for enabling
 # new lints.
