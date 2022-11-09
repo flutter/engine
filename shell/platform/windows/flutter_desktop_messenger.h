@@ -14,6 +14,11 @@ namespace flutter {
 
 class FlutterWindowsEngine;
 
+/// A messenger object used to invoke platform messages.
+///
+/// On Windows, the message handler is essentially the |FlutterWindowsEngine|,
+/// this allows a handle to the |FlutterWindowsEngine| that will become
+/// invalidated if the |FlutterWindowsEngine| is destroyed.
 class FlutterDesktopMessenger {
  public:
   FlutterDesktopMessenger() = default;

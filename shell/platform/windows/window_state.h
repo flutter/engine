@@ -33,8 +33,4 @@ struct FlutterDesktopPluginRegistrar {
   flutter::FlutterWindowsEngine* engine = nullptr;
 };
 
-// Wrapper to distinguish the messenger ref from the engine ref given out
-// in the C API.
-struct FlutterDesktopMessenger {};
-
 #endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_STATE_H_
