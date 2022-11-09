@@ -286,7 +286,7 @@ class FlutterPlatformViewsController {
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
-                                                     std::shared_ptr<IOSContext> ios_context,
+                                                     const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
                                                      SkRect rect,
                                                      int64_t view_id,

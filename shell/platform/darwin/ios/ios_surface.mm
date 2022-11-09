@@ -42,7 +42,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
   }
 #endif  // SHELL_ENABLE_METAL
 
-  return std::make_unique<IOSSurfaceSoftware>(std::move(layer),   // layer
+  return std::make_unique<IOSSurfaceSoftware>(layer,              // layer
                                               std::move(context)  // context
   );
 }

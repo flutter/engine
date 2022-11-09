@@ -728,7 +728,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
     GrDirectContext* gr_context,
-    std::shared_ptr<IOSContext> ios_context,
+    const std::shared_ptr<IOSContext>& ios_context,
     EmbedderViewSlice* slice,
     SkRect rect,
     int64_t view_id,
