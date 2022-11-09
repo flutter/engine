@@ -99,7 +99,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   @override
   void visitInstanceConstantReference(InstanceConstant node) {
     super.visitInstanceConstantReference(node);
-    if (!_matches(node.classNode)) {
+    if (!_matches(node.classNode) || inIgnoredClass) {
       return;
     }
 
@@ -111,19 +111,11 @@ class _ConstVisitor extends RecursiveVisitor<void> {
       final PrimitiveConstant<dynamic> value = kvp.value as PrimitiveConstant<dynamic>;
       instance[kvp.key.asField.name.text] = value.value;
     }
-    if (!inIgnoredClass) {
-      if (_visitedInstances.add(instance.toString())) {
-        if (instance['stringValue'] == 'unused1') {
-          throw 'whoops';
-        }
-        constantInstances.add(instance);
-      }
+    if (_visitedInstances.add(instance.toString())) {
+      constantInstances.add(instance);
     }
   }
 }
-
-/// For debugging.
-Library? lastLibrary;
 
 /// A kernel AST visitor that finds const references.
 class ConstFinder {
@@ -149,7 +141,6 @@ class ConstFinder {
   Map<String, dynamic> findInstances() {
     _visitor._visitedInstances.clear();
     for (final Library library in loadComponentFromBinary(_visitor.kernelFilePath).libraries) {
-      lastLibrary = library;
       library.visitChildren(_visitor);
     }
     return <String, dynamic>{
