@@ -29,15 +29,12 @@ class AnalyzeCommand extends Command<bool> with ArgUtils<bool> {
 }
 
 /// Runs `dart pub get`.
-///
-/// Not safe to interrupt as it may leave the `out/` directory in a corrupted
-/// state. GN is pretty quick though, so it's OK to not support interruption.
 class PubGetStep extends ProcessStep {
   @override
   String get description => 'pub get';
 
   @override
-  bool get isSafeToInterrupt => false;
+  bool get isSafeToInterrupt => true;
 
   @override
   Future<ProcessManager> createProcess() {
@@ -50,16 +47,13 @@ class PubGetStep extends ProcessStep {
   }
 }
 
-/// Runs `gn`.
-///
-/// Not safe to interrupt as it may leave the `out/` directory in a corrupted
-/// state. GN is pretty quick though, so it's OK to not support interruption.
+/// Runs `dart analyze --fatal-infos`.
 class AnalyzeStep extends ProcessStep {
   @override
   String get description => 'analyze';
 
   @override
-  bool get isSafeToInterrupt => false;
+  bool get isSafeToInterrupt => true;
 
   @override
   Future<ProcessManager> createProcess() {
