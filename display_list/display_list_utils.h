@@ -337,11 +337,6 @@ class ClipBoundsDispatchHelper : public virtual Dispatcher,
   void intersect(const SkRect& clipBounds, bool is_aa);
 };
 
-enum class BoundsAccumulatorType {
-  kRect,
-  kRTree,
-};
-
 class BoundsAccumulator {
  public:
   /// function definition for modifying the bounds of a rectangle
@@ -398,8 +393,6 @@ class BoundsAccumulator {
   virtual bool restore(
       std::function<bool(const SkRect& original, SkRect& modified)> map,
       const SkRect* clip = nullptr) = 0;
-
-  virtual BoundsAccumulatorType type() const = 0;
 };
 
 class RectBoundsAccumulator final : public virtual BoundsAccumulator {
@@ -419,10 +412,6 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
   SkRect bounds() const {
     FML_DCHECK(saved_rects_.empty());
     return rect_.bounds();
-  }
-
-  BoundsAccumulatorType type() const override {
-    return BoundsAccumulatorType::kRect;
   }
 
  private:
@@ -465,10 +454,6 @@ class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
       const SkRect* clip = nullptr) override;
 
   sk_sp<DlRTree> rtree() const;
-
-  BoundsAccumulatorType type() const override {
-    return BoundsAccumulatorType::kRTree;
-  }
 
  private:
   std::vector<SkRect> rects_;
