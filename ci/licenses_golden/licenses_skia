@@ -1,4 +1,4 @@
-Signature: 7140d8ef2695ea07f4bc05d55aab7947
+Signature: f566cee8ad96d212c515f581a3244be9
 
 UNUSED LICENSES:
 
@@ -526,6 +526,7 @@ FILE: ../../../third_party/skia/OWNERS.android
 FILE: ../../../third_party/skia/WORKSPACE.bazel
 FILE: ../../../third_party/skia/bench/microbench.json
 FILE: ../../../third_party/skia/bench/skpbench.json
+FILE: ../../../third_party/skia/defines.bzl
 FILE: ../../../third_party/skia/demos.skia.org/demos/hello_world/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/main.js
@@ -2334,7 +2335,6 @@ FILE: ../../../third_party/skia/include/private/SkPathRef.h
 FILE: ../../../third_party/skia/include/private/SkWeakRefCnt.h
 FILE: ../../../third_party/skia/include/utils/SkNullCanvas.h
 FILE: ../../../third_party/skia/samplecode/SampleAnimBlur.cpp
-FILE: ../../../third_party/skia/samplecode/SampleFatBits.cpp
 FILE: ../../../third_party/skia/samplecode/SampleQuadStroker.cpp
 FILE: ../../../third_party/skia/src/codec/SkColorTable.h
 FILE: ../../../third_party/skia/src/core/SkAnnotation.cpp
@@ -2636,7 +2636,6 @@ FILE: ../../../third_party/skia/include/private/gpu/ganesh/GrTypesPriv.h
 FILE: ../../../third_party/skia/include/utils/SkCanvasStateUtils.h
 FILE: ../../../third_party/skia/samplecode/SampleChart.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClock.cpp
-FILE: ../../../third_party/skia/samplecode/SampleManyRects.cpp
 FILE: ../../../third_party/skia/samplecode/SampleStringArt.cpp
 FILE: ../../../third_party/skia/src/core/SkBitmapDevice.cpp
 FILE: ../../../third_party/skia/src/core/SkBitmapDevice.h
@@ -3333,8 +3332,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkGpu.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkImage.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkImage.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMemory.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkMemory.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkRenderPass.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkRenderPass.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkRenderTarget.cpp
@@ -3347,6 +3344,8 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkUtil.h
 FILE: ../../../third_party/skia/src/gpu/vk/VulkanInterface.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/VulkanInterface.h
+FILE: ../../../third_party/skia/src/gpu/vk/VulkanMemory.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/VulkanMemory.h
 FILE: ../../../third_party/skia/src/image/SkImage_Gpu.h
 FILE: ../../../third_party/skia/src/image/SkImage_Lazy.cpp
 FILE: ../../../third_party/skia/src/opts/SkBlitMask_opts.h
