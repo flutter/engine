@@ -31,6 +31,8 @@ void expectInstances(dynamic value, dynamic expected, Compiler compiler) {
 
   final Equality<Object?> equality;
   if (compiler == Compiler.dart2js) {
+    // Ignore comparing nonConstantLocations in web dills because it will have
+    // extra fields.
     (value as Map<String, Object?>).remove('nonConstantLocations');
     (expected as Map<String, Object?>).remove('nonConstantLocations');
     equality = const Dart2JSDeepCollectionEquality();
@@ -114,9 +116,8 @@ void _checkConsts(String dillPath, Compiler compiler) {
   );
 }
 
-// Verify constants declared in a class specified in ignoredClasses will be ignored.
 void _checkAnnotation(String dillPath, Compiler compiler) {
-  stdout.writeln('Checking constant instances in a class annotated @staticConstantProvider are ignored with $compiler');
+  stdout.writeln('Checking constant instances in a class annotated with instance of StaticIconProvider are ignored with $compiler');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
@@ -421,9 +422,6 @@ class _Test {
       '--cfe-only',
       dartSource,
     ]);
-    if ((result.stderr as String).trim().isNotEmpty) {
-      print(result.stderr);
-    }
     checkProcessResult(result);
 
     resourcesToDispose.add(dillPath);
