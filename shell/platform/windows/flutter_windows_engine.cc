@@ -179,14 +179,16 @@ FlutterWindowsEngine::FlutterWindowsEngine(
           });
 
   // Set up the legacy structs backing the API handles.
-  messenger_ = std::make_unique<FlutterDesktopMessenger>();
-  messenger_->engine = this;
+  messenger_ =
+      fml::RefPtr<FlutterDesktopMessenger>(new FlutterDesktopMessenger());
+  messenger_->SetEngine(this);
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
-  messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
+  messenger_wrapper_ =
+      std::make_unique<BinaryMessengerImpl>(messenger_->ToRef());
   message_dispatcher_ =
-      std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+      std::make_unique<IncomingMessageDispatcher>(messenger_->ToRef());
   message_dispatcher_->SetMessageCallback(
       kAccessibilityChannelName,
       [](FlutterDesktopMessengerRef messenger,
@@ -210,6 +212,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
+  messenger_->SetEngine(nullptr);
   Stop();
 }
 
@@ -318,25 +321,23 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     host->view()->OnPreEngineRestart();
   };
-  args.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
-                                           void* user_data) {
+  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
+                                      void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!node || node->id == kFlutterSemanticsNodeIdBatchEnd) {
-      host->accessibility_bridge_->CommitUpdates();
-      return;
+
+    for (size_t i = 0; i < update->nodes_count; i++) {
+      const FlutterSemanticsNode* node = &update->nodes[i];
+      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
     }
-    host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+
+    for (size_t i = 0; i < update->custom_actions_count; i++) {
+      const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
+      host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
+          action);
+    }
+
+    host->accessibility_bridge_->CommitUpdates();
   };
-  args.update_semantics_custom_action_callback =
-      [](const FlutterSemanticsCustomAction* action, void* user_data) {
-        auto host = static_cast<FlutterWindowsEngine*>(user_data);
-        if (!action || action->id == kFlutterSemanticsNodeIdBatchEnd) {
-          host->accessibility_bridge_->CommitUpdates();
-          return;
-        }
-        host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-            action);
-      };
   args.root_isolate_create_callback = [](void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     if (host->root_isolate_create_callback_) {
