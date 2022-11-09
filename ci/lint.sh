@@ -56,7 +56,6 @@ cd "$SCRIPT_DIR"
   --disable-dart-dev \
   "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
   --src-dir="$SRC_DIR" \
-  --mac-host-warnings-as-errors="$MAC_HOST_WARNINGS_AS_ERRORS" \
   $fix_flag \
   "$@" && true # errors ignored
 clang_tidy_return=$?
