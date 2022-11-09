@@ -35,27 +35,6 @@ IF NOT DEFINED DART_SDK_DIR (
 )
 SET DART_BIN=%DART_SDK_DIR%\bin\dart
 
-SET needsHostDebugUnoptRebuild=0
-for %%x in (%*) do (
-  if ["%%~x"]==["--clean"] (
-    ECHO Clean rebuild requested
-    SET needsHostDebugUnoptRebuild=1
-  )
-)
-
-IF NOT EXIST %OUT_DIR% (SET needsHostDebugUnoptRebuild=1)
-IF NOT EXIST %HOST_DEBUG_UNOPT_DIR% (SET needsHostDebugUnoptRebuild=1)
-
-IF %needsHostDebugUnoptRebuild%==1 (
-  ECHO Building host_debug_unopt
-  :: Delete old snapshot, if any, because the new Dart SDK may invalidate it.
-  IF EXIST "%SNAPSHOT_PATH%" (
-    del %SNAPSHOT_PATH%
-  )
-  CALL gclient sync -D
-  CALL python %GN% --unoptimized --full-dart-sdk
-  CALL ninja -C %HOST_DEBUG_UNOPT_DIR%)
-
 cd %WEB_UI_DIR%
 IF NOT EXIST "%SNAPSHOT_PATH%" (
   ECHO Precompiling felt snapshot
