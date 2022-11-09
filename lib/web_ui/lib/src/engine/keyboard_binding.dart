@@ -4,12 +4,12 @@
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:web_keyboard_layouts/web_keyboard_layouts.dart' as keyboard_layouts;
 
 import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'key_map.g.dart';
-import 'keyboard_layout_detector.dart';
 import 'platform_dispatcher.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
@@ -101,11 +101,17 @@ Duration _eventTimeStampToDuration(num milliseconds) {
 
 class KeyboardBinding {
   KeyboardBinding._() {
-    _setup();
+    _addEventListener('keydown', allowInterop((DomEvent domEvent) {
+      final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
+      return _converter.handleEvent(event);
+    }));
+    _addEventListener('keyup', allowInterop((DomEvent event) {
+      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
+    }));
   }
 
   /// The singleton instance of this object.
-  static KeyboardBinding? get instance => _instance;
+  static KeyboardBinding get instance => _instance!;
   static KeyboardBinding? _instance;
 
   static void initInstance() {
@@ -118,9 +124,23 @@ class KeyboardBinding {
     }
   }
 
-  final KeyboardLayoutDetector layoutDetector = KeyboardLayoutDetector();
+  static void debugClearInstance() {
+    _instance = null;
+  }
+
+  /// The platform as used in the initialization.
+  ///
+  /// By default it is derived from [operatingSystem].
+  @protected
+  OperatingSystem get localPlatform {
+    return operatingSystem;
+  }
+
   KeyboardConverter get converter => _converter;
-  late final KeyboardConverter _converter;
+  late final KeyboardConverter _converter = KeyboardConverter(
+    _onKeyData,
+    localPlatform,
+  );
   final Map<String, DomEventListener> _listeners = <String, DomEventListener>{};
 
   void _addEventListener(String eventName, DomEventListener handler) {
@@ -154,18 +174,6 @@ class KeyboardBinding {
     EnginePlatformDispatcher.instance.invokeOnKeyData(data,
       (bool handled) { result = handled; });
     return result!;
-  }
-
-  void _setup() {
-    _addEventListener('keydown', allowInterop((DomEvent event) {
-      layoutDetector.update(event as DomKeyboardEvent);
-      print('${event.code} 0x${layoutDetector.getKey(event.code ?? '')?.toRadixString(16)}');
-      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event));
-    }));
-    _addEventListener('keyup', allowInterop((DomEvent event) {
-      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
-    }));
-    _converter = KeyboardConverter(_onKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
   }
 
   void _reset() {
@@ -214,10 +222,30 @@ class FlutterHtmlKeyboardEvent {
 // [dispatchKeyData] as given in the constructor. Some key data might be
 // dispatched asynchronously.
 class KeyboardConverter {
-  KeyboardConverter(this.performDispatchKeyData, {this.onMacOs = false});
+  KeyboardConverter(this.performDispatchKeyData, OperatingSystem platform)
+    : onMacOs = platform == OperatingSystem.macOs,
+      _mapping = _mappingFromPlatform(platform);
 
   final DispatchKeyData performDispatchKeyData;
+  // Whether the current platform is macOS, which affects how certain key events
+  // are comprehended.
   final bool onMacOs;
+  // A huge map that maps certain key event properties to logical keys.
+  //
+  // It is a map of KeyboardEvent.code -> KeyboardEvent.key -> logical_key.
+  final Map<String, Map<String, int>> _mapping;
+
+  static Map<String, Map<String, int>> _mappingFromPlatform(OperatingSystem platform) {
+    switch (platform) {
+      case OperatingSystem.iOs:
+      case OperatingSystem.macOs:
+        return keyboard_layouts.kDarwinMapping;
+      case OperatingSystem.windows:
+        return keyboard_layouts.kWinMapping;
+      default:
+        return keyboard_layouts.kLinuxMapping;
+    }
+  }
 
   // The `performDispatchKeyData` wrapped with tracking logic.
   //

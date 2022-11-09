@@ -13,8 +13,6 @@
 //
 // See flutter/engine:flutter/tools/gen_web_keyboard_layouts/README.md for more information.
 
-part of web_keyboard_layouts;
-
 final Map<String, Map<String, int>> kWinMapping = <String, Map<String, int>>{
   'Backquote': <String, int>{
     '0': 0x30,

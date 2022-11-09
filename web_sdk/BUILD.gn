@@ -112,7 +112,8 @@ sdk_rewriter("web_ui_library_sources") {
 }
 
 sdk_rewriter("web_keyboard_layouts_library") {
-  ui = true
+  library_name = "web_keyboard_layouts"
+  api_file = "//flutter/third_party/web_keyboard_layouts/lib/web_keyboard_layouts.dart"
   input_dir = "//flutter/third_party/web_keyboard_layouts/lib/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/web_keyboard_layouts/"
 }
@@ -286,7 +287,7 @@ template("_compile_platform") {
   assert(defined(invoker.output_dill),
          "output_dill must be defined for $target_name")
   _kernel_worker(target_name) {
-    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources
+    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_keyboard_layouts_sources
 
     outputs = [ invoker.output_dill ]
 
@@ -324,6 +325,8 @@ template("_compile_platform") {
       "dart:_engine",
       "--source",
       "dart:_skwasm_stub",
+      "--source",
+      "dart:web_keyboard_layouts",
     ]
     if (flutter_prebuilt_dart_sdk) {
       args += [
@@ -454,7 +457,7 @@ template("_compile_ddc_modules") {
          "auto_detect must be defined for $target_name")
 
   _dartdevc(target_name) {
-    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources
+    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_keyboard_layouts_sources
 
     packages = dart_sdk_package_config
 
@@ -495,6 +498,7 @@ template("_compile_ddc_modules") {
       "dart:ui",
       "dart:_engine",
       "dart:_skwasm_stub",
+      "dart:web_keyboard_layouts",
       "--no-summarize",
       "--packages",
       "file:///" + rebase_path(dart_sdk_package_config),
