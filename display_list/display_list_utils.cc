@@ -682,7 +682,7 @@ void DisplayListBoundsCalculator::drawDisplayList(
           display_list->rtree()->searchNonOverlappingDrawnRects(bounds);
       for (const SkRect& rect : rects) {
         // TODO (https://github.com/flutter/flutter/issues/114919): Attributes
-        // are not neccessarily `kDrawDisplayListFlags`.
+        // are not necessarily `kDrawDisplayListFlags`.
         AccumulateOpBounds(rect, kDrawDisplayListFlags);
       }
       return;
