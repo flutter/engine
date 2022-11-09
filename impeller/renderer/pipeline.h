@@ -24,6 +24,10 @@ template <typename T>
 struct PipelineFuture {
   std::optional<T> descriptor;
   std::shared_future<std::shared_ptr<Pipeline<T>>> future;
+
+  const std::shared_ptr<Pipeline<T>> Get() const { return future.get(); }
+
+  bool IsValid() const { return future.valid(); }
 };
 
 //------------------------------------------------------------------------------
@@ -104,8 +108,8 @@ class RenderPipelineT {
       return pipeline_;
     }
     did_wait_ = true;
-    if (pipeline_future_.future.valid()) {
-      pipeline_ = pipeline_future_.future.get();
+    if (pipeline_future_.IsValid()) {
+      pipeline_ = pipeline_future_.Get();
     }
     return pipeline_;
   }
@@ -146,8 +150,8 @@ class ComputePipelineT {
       return pipeline_;
     }
     did_wait_ = true;
-    if (pipeline_future_.future.valid()) {
-      pipeline_ = pipeline_future_.future.get();
+    if (pipeline_future_.IsValid()) {
+      pipeline_ = pipeline_future_.Get();
     }
     return pipeline_;
   }

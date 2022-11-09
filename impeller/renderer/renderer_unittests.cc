@@ -55,7 +55,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).future.get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -119,7 +119,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).future.get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(pipeline);
 
   struct Cube {
@@ -208,7 +208,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).future.get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -279,7 +279,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).future.get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -409,7 +409,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
           ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
                             *GetContext())
                             ->SetSampleCount(SampleCount::kCount4))
-          .future.get();
+          .Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   Command cmd;
@@ -449,7 +449,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).future.get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   TextureDescriptor texture_desc;
@@ -559,7 +559,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).future.get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
@@ -690,7 +690,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).future.get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto boston = CreateTextureForFixture("boston.jpg", true);
@@ -806,9 +806,8 @@ TEST_P(RendererTest, TheImpeller) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  auto pipeline = context->GetPipelineLibrary()
-                      ->GetPipeline(pipeline_descriptor)
-                      .future.get();
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   auto blue_noise = CreateTextureForFixture("blue_noise.png");
@@ -867,9 +866,8 @@ TEST_P(RendererTest, ArrayUniforms) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  auto pipeline = context->GetPipelineLibrary()
-                      ->GetPipeline(pipeline_descriptor)
-                      .future.get();
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   SinglePassCallback callback = [&](RenderPass& pass) {
@@ -924,9 +922,8 @@ TEST_P(RendererTest, InactiveUniforms) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  auto pipeline = context->GetPipelineLibrary()
-                      ->GetPipeline(pipeline_descriptor)
-                      .future.get();
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   SinglePassCallback callback = [&](RenderPass& pass) {
