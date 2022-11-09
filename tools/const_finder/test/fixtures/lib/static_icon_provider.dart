@@ -9,8 +9,17 @@ void main() {
   Targets.used2.hit();
 }
 
+@staticIconProvider
 class Targets {
   static const Target used1 = Target('used1', 1, null);
   static const Target used2 = Target('used2', 2, null);
   static const Target unused1 = Target('unused1', 1, null);
 }
+
+// const_finder explicitly does not retain constants appearing within a class
+// with this annotation.
+class StaticIconProvider {
+  const StaticIconProvider();
+}
+
+const StaticIconProvider staticIconProvider = StaticIconProvider();

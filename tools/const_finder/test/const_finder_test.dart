@@ -115,16 +115,12 @@ void _checkConsts(String dillPath, Compiler compiler) {
 }
 
 // Verify constants declared in a class specified in ignoredClasses will be ignored.
-void _checkDenyList(String dillPath, Compiler compiler) {
-  stdout.writeln('Checking constant instances in a denylist are ignored with $compiler');
+void _checkAnnotation(String dillPath, Compiler compiler) {
+  stdout.writeln('Checking constant instances in a class annotated @staticConstantProvider are ignored with $compiler');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
-    ignoredClasses: <List<String>>[<String>[
-      'package:const_finder_fixtures/denylist.dart',
-      'Targets',
-    ]],
   );
   expectInstances(
     finder.findInstances(),
@@ -313,21 +309,21 @@ Future<void> main(List<String> args) async {
       compiler: Compiler.dart2js,
     ),
     _Test(
-      name: 'denylist_frontend',
-      dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
+      name: 'static_icon_provider_frontend',
+      dartSource: path.join(fixtures, 'lib', 'static_icon_provider.dart'),
       frontendServer: frontendServer,
       sdkRoot: sdkRoot,
       librariesSpec: librariesSpec,
-      verify: _checkDenyList,
+      verify: _checkAnnotation,
       compiler: Compiler.frontendServer,
     ),
     _Test(
-      name: 'denylist_web',
-      dartSource: path.join(fixtures, 'lib', 'denylist.dart'),
+      name: 'static_icon_provider_web',
+      dartSource: path.join(fixtures, 'lib', 'static_icon_provider.dart'),
       frontendServer: frontendServer,
       sdkRoot: sdkRoot,
       librariesSpec: librariesSpec,
-      verify: _checkDenyList,
+      verify: _checkAnnotation,
       compiler: Compiler.dart2js,
     ),
   ];

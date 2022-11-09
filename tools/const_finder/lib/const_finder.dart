@@ -11,7 +11,6 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     this.kernelFilePath,
     this.classLibraryUri,
     this.className,
-    this.ignoredClasses,
   )  : _visitedInstances = <String>{},
        constantInstances = <Map<String, dynamic>>[],
        nonConstantLocations = <Map<String, dynamic>>[];
@@ -24,10 +23,6 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   /// The name of the class to find.
   final String className;
-
-  /// A list of two-element tuples corresponding to library URI and class name
-  /// that should be ignored.
-  final List<List<String>> ignoredClasses;
 
   final Set<String> _visitedInstances;
   final List<Map<String, dynamic>> constantInstances;
@@ -82,18 +77,30 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   @override
   void visitClass(Class node) {
     // check if this is a class that we should ignore
-    for (final List<String> tuple in ignoredClasses) {
-      final String libraryUri = tuple[0];
-      final String className = tuple[1];
-      if (node.name == className && node.enclosingLibrary.importUri.toString() == libraryUri) {
-        inIgnoredClass = true;
-        super.visitClass(node);
-        inIgnoredClass = false;
-        return;
-      }
+    if (_isStaticIconProvider(node)) {
+      inIgnoredClass = true;
+      super.visitClass(node);
+      inIgnoredClass = false;
+      return;
     }
     // not an ignored class
     super.visitClass(node);
+  }
+
+  // Constants from classes annotated with an instance of StaticIconProvider
+  // should be ignored.
+  bool _isStaticIconProvider(Class node) {
+    return node.annotations.any((Expression expression) {
+      if (expression is! ConstantExpression) {
+        return false;
+      }
+
+      final DartType type = expression.type;
+      if (type is InterfaceType && type.classNode.name == 'StaticIconProvider') {
+        return true;
+      }
+      return false;
+    });
   }
 
   @override
@@ -127,12 +134,10 @@ class ConstFinder {
     required String kernelFilePath,
     required String classLibraryUri,
     required String className,
-    List<List<String>> ignoredClasses = const <List<String>>[],
   })  : _visitor = _ConstVisitor(
                     kernelFilePath,
                     classLibraryUri,
                     className,
-                    ignoredClasses,
                   );
 
   final _ConstVisitor _visitor;
@@ -146,7 +151,6 @@ class ConstFinder {
     return <String, dynamic>{
       'constantInstances': _visitor.constantInstances,
       'nonConstantLocations': _visitor.nonConstantLocations,
-      //'skippedConstantInstances': _visitor.skippedConstantInstances,
     };
   }
 }
