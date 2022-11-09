@@ -36,16 +36,20 @@ IF NOT DEFINED DART_SDK_DIR (
 SET DART_BIN=%DART_SDK_DIR%\bin\dart
 
 cd %WEB_UI_DIR%
-IF NOT EXIST "%SNAPSHOT_PATH%" (
-  ECHO Precompiling felt snapshot
-  CALL %DART_SDK_DIR%\bin\dart pub get
-  %DART_BIN% --snapshot="%SNAPSHOT_PATH%" --packages="%WEB_UI_DIR%\.dart_tool\package_config.json" %FELT_PATH%
+
+IF FELT_USE_SNAPSHOT=="0" (
+  ECHO Invoking felt.dart without snapshot
+  SET FELT_TARGET=%FELT_PATH%
+) ELSE (
+  IF NOT EXIST "%SNAPSHOT_PATH%" (
+    ECHO Precompiling felt snapshot
+    CALL %DART_BIN% pub get
+    %DART_BIN% --snapshot="%SNAPSHOT_PATH%" --packages="%WEB_UI_DIR%\.dart_tool\package_config.json" %FELT_PATH%
+  )
+  SET FELT_TARGET=%SNAPSHOT_PATH
+  ECHO Invoking felt snapshot
 )
 
-IF "%1"=="test" (
-  %DART_SDK_DIR%\bin\dart --packages="%WEB_UI_DIR%\.dart_tool\package_config.json" "%SNAPSHOT_PATH%" %* --browser=chrome
-) ELSE (
-  %DART_SDK_DIR%\bin\dart --packages="%WEB_UI_DIR%\.dart_tool\package_config.json" "%SNAPSHOT_PATH%" %*
-)
+%DART_BIN% --packages="%WEB_UI_DIR%\.dart_tool\package_config.json" "%FELT_TARGET%" %*
 
 EXIT /B %ERRORLEVEL%
