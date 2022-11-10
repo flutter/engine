@@ -46,7 +46,7 @@ IF FELT_USE_SNAPSHOT=="0" (
     CALL %DART_BIN% pub get
     %DART_BIN% --snapshot="%SNAPSHOT_PATH%" --packages="%WEB_UI_DIR%\.dart_tool\package_config.json" %FELT_PATH%
   )
-  SET FELT_TARGET=%SNAPSHOT_PATH
+  SET FELT_TARGET=%SNAPSHOT_PATH%
   ECHO Invoking felt snapshot
 )
 
