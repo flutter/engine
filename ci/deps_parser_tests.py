@@ -51,7 +51,7 @@ class TestDepsParserMethods(unittest.TestCase):
       self.deps = filtered_deps
 
   def test_each_dep_has_upstream_url(self):
-    # for each DEP in the deps file, check for an associated upstream URL in deps file
+    # For each DEP in the deps file, check for an associated upstream URL in deps file.
     for dep in self.deps:
       dep_repo = dep.split('@')[0]
       dep_name = dep_repo.split('/')[-1].split('.')[0]
