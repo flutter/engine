@@ -30,7 +30,9 @@ ReusableFragmentShader::ReusableFragmentShader(
       uniform_data_(SkData::MakeUninitialized(
           (float_count + 2 * sampler_count) * sizeof(float))),
       samplers_(sampler_count),
-      float_count_(float_count) {}
+      float_count_(float_count) {
+  std::cerr << "sampler_count: " << sampler_count << std::endl;
+}
 
 Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
                                            Dart_Handle program,
@@ -54,7 +56,6 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
 }
 
 bool ReusableFragmentShader::ValidateSamplers(Dart_Handle wrapper) {
-  std::cerr << "sampler_count: " << sampler_count << std::endl;
   for (auto i = 0u; i < samplers_.size(); i += 1) {
     if (samplers_[i] == nullptr) {
       std::cerr << "Missing Sampler!" << std::endl;
