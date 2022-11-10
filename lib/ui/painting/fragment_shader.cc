@@ -53,6 +53,15 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
                                    float_count);
 }
 
+bool ReusableFragmentShader::ValidateSamplers(Dart_Handle wrapper) {
+  for (auto i = 0u; i < samplers_.size(); i += 1) {
+    if (samplers_[i] == nullptr) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void ReusableFragmentShader::SetSampler(Dart_Handle index_handle,
                                         Dart_Handle sampler_handle) {
   uint64_t index = tonic::DartConverter<uint64_t>::FromDart(index_handle);

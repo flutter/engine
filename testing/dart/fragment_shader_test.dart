@@ -62,6 +62,17 @@ void main() async {
     }
   });
 
+  test('FragmentShader with sampler asserts if sampler is missing when assigned to paint', () async {
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+    final FragmentShader fragmentShader = program.fragmentShader();
+
+    expect(() => Paint()..shader = fragmentShader, throwsA(isInstanceOf<Exception>()));
+
+    fragmentShader.dispose();
+  });
+
   test('Disposed FragmentShader on Paint', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',

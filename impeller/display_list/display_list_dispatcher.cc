@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color_filter.h"
@@ -442,6 +443,9 @@ void DisplayListDispatcher::setColorSource(
       std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
 
       for (auto& sampler : samplers) {
+        if (sampler == nullptr) {
+          return;
+        }
         auto* image = sampler->asImage();
         if (!sampler->asImage()) {
           UNIMPLEMENTED;

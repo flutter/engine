@@ -1409,6 +1409,10 @@ class Paint {
       );
       return true;
     }());
+    assert(() {
+      value?._validate();
+      return true;
+    }());
     _ensureObjectsInitialized()[_kShaderIndex] = value;
   }
 
@@ -3732,6 +3736,9 @@ class Shader extends NativeFieldWrapperClass1 {
     return disposed;
   }
 
+  // Validate the shader correctness.
+  void _validate() { }
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   ///
@@ -4151,9 +4158,15 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     _constructor();
     final String result = _initFromAsset(assetKey);
     if (result.isNotEmpty) {
-      throw result; // ignore: only_throw_errors
+      throw Exception(result);
     }
+    assert(() {
+      _debugName = assetKey;
+      return true;
+    }());
   }
+
+  String? _debugName;
 
   // TODO(zra): Document custom shaders on the website and add a link to it
   // here. https://github.com/flutter/flutter/issues/107929.
@@ -4222,7 +4235,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   external String _initFromAsset(String assetKey);
 
   /// Returns a fresh instance of [FragmentShader].
-  FragmentShader fragmentShader() => FragmentShader._(this);
+  FragmentShader fragmentShader() => FragmentShader._(this, debugName: _debugName);
 }
 
 /// A [Shader] generated from a [FragmentProgram].
@@ -4239,13 +4252,15 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 /// are required to exist simultaneously, they must be obtained from two
 /// different calls to [FragmentProgram.fragmentShader].
 class FragmentShader extends Shader {
-  FragmentShader._(FragmentProgram program) : super._() {
+  FragmentShader._(FragmentProgram program, { String? debugName }) : _debugName = debugName, super._() {
     _floats = _constructor(
       program,
       program._uniformFloatCount,
       program._samplerCount,
     );
   }
+
+  String? _debugName;
 
   static final Float32List _kEmptyFloat32List = Float32List(0);
 
@@ -4278,11 +4293,21 @@ class FragmentShader extends Shader {
     _dispose();
   }
 
+  @override
+  void _validate() {
+    if (!_validateSamplers()) {
+      throw Exception('Invalid FragmentShader ${_debugName ?? ''}: missing sampler');
+    }
+  }
+
   @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
   external Float32List _constructor(FragmentProgram program, int floatUniforms, int samplerUniforms);
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetSampler')
   external void _setSampler(int index, ImageShader sampler);
+
+  @FfiNative<Bool Function(Handle)>('ReusableFragmentShader::ValidateSamplers')
+  external bool _validateSamplers();
 
   @FfiNative<Void Function(Pointer<Void>)>('ReusableFragmentShader::Dispose')
   external void _dispose();
