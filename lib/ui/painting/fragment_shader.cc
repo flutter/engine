@@ -24,7 +24,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ReusableFragmentShader);
 ReusableFragmentShader::ReusableFragmentShader(
     fml::RefPtr<FragmentProgram> program,
     uint64_t float_count,
-    uint64_t sampler_count
+    uint64_t sampler_count)
     : program_(std::move(program)),
       uniform_data_(SkData::MakeUninitialized(
           (float_count + 2 * sampler_count) * sizeof(float))),
