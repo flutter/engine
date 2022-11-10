@@ -175,7 +175,7 @@ Future<void> generate(Options options) async {
 
   // Generate the definition file.
   _writeFileTo(
-    path.join(options.outputRoot, 'lib'),
+    path.join(options.outputRoot, 'lib', 'web_keyboard_layouts'),
     'key_mappings.g.dart',
     _renderTemplate(
       File(path.join(options.dataRoot, 'key_mappings.dart.tmpl')).readAsStringSync(),
