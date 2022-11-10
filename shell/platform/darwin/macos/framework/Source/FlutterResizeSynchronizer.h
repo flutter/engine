@@ -76,6 +76,15 @@
 - (void)requestCommit;
 
 /**
+ * Called from rasterizer thread, will block until delegate resizeSynchronizerCommit:
+ * method is called (on platform thread).
+ *
+ * The onCommit block will be invoked on platform thread during the core
+ * animation transaction.
+ */
+- (void)requestCommitWithBlock:(nullable dispatch_block_t)onCommit;
+
+/**
  * Called from view to notify the synchronizer that there are no Flutter frames
  * coming. Synchronizer must unblock main thread and not block until another
  * frame is available.

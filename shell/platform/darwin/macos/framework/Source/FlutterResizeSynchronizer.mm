@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 
+#import <QuartzCore/QuartzCore.h>
 #include <mutex>
 
 @interface FlutterResizeSynchronizer () {
@@ -38,6 +39,8 @@
   BOOL _shuttingDown;
 
   __weak id<FlutterResizeSynchronizerDelegate> _delegate;
+
+  dispatch_block_t _onCommit;
 }
 @end
 
@@ -83,7 +86,16 @@
   _condBlockRequestCommit.wait(lock, [&] { return _pendingCommit || _shuttingDown; });
 
   [_delegate resizeSynchronizerFlush:self];
+
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
   [_delegate resizeSynchronizerCommit:self];
+  if (_onCommit) {
+    _onCommit();
+  }
+  _onCommit = nil;
+  [CATransaction commit];
+
   _pendingCommit = NO;
   _condBlockBeginResize.notify_all();
 
@@ -106,6 +118,10 @@
 }
 
 - (void)requestCommit {
+  [self requestCommitWithBlock:nil];
+}
+
+- (void)requestCommitWithBlock:(dispatch_block_t)onCommit {
   std::unique_lock<std::mutex> lock(_mutex);
 
   if (!_acceptingCommit || _shuttingDown) {
@@ -116,18 +132,25 @@
 
   _pendingCommit = YES;
   if (_waiting) {  // BeginResize is in progress, interrupt it and schedule commit call
+    _onCommit = onCommit;
     _condBlockRequestCommit.notify_all();
     _condBlockBeginResize.wait(lock, [&]() { return !_pendingCommit || _shuttingDown; });
   } else {
     // No resize, schedule commit on platform thread and wait until either done
     // or interrupted by incoming BeginResize
     [_delegate resizeSynchronizerFlush:self];
-    dispatch_async(dispatch_get_main_queue(), [self, cookie = _cookie] {
+    dispatch_async(dispatch_get_main_queue(), [self, cookie = _cookie, onCommit] {
       std::unique_lock<std::mutex> lock(_mutex);
       if (cookie == _cookie) {
+        [CATransaction begin];
+        [CATransaction setDisableActions:YES];
         if (_delegate) {
           [_delegate resizeSynchronizerCommit:self];
         }
+        if (onCommit) {
+          onCommit();
+        }
+        [CATransaction commit];
         _pendingCommit = NO;
         _condBlockBeginResize.notify_all();
       }

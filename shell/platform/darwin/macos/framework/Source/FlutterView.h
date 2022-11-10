@@ -49,9 +49,13 @@ constexpr uint64_t kFlutterDefaultViewId = 0;
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
 /**
- * Flushes the graphics context and flips the surfaces. Expected to be called on raster thread.
+ * Flushes the OpenGL context and flips the surfaces. Expected to be called
+ * on raster thread. Blocks until the operation is complete.
+ *
+ * The onCommit block will be invoked on platform thread during the core
+ * animation transaction;
  */
-- (void)present;
+- (void)presentWithBlock:(nullable dispatch_block_t)onCommit;
 
 /**
  * Called when there is no Flutter content available to render. This must be passed to resize

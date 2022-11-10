@@ -39,8 +39,8 @@ TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
   FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   SetEngineDefaultView(engine, mockFlutterView);
-  [(FlutterView*)[mockFlutterView expect] present];
-  [renderer present:kFlutterDefaultViewId];
+  [(FlutterView*)[mockFlutterView expect] presentWithBlock:nil];
+  [renderer present:kFlutterDefaultViewId withBlock:nil];
 }
 
 TEST(FlutterRenderer, TextureReturnedByFlutterView) {

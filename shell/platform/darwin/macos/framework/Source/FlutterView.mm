@@ -45,8 +45,8 @@
   return [_resizableBackingStoreProvider backingStore];
 }
 
-- (void)present {
-  [_resizeSynchronizer requestCommit];
+- (void)presentWithBlock:(dispatch_block_t)onCommit {
+  [_resizeSynchronizer requestCommitWithBlock:onCommit];
 }
 
 - (void)presentWithoutContent {

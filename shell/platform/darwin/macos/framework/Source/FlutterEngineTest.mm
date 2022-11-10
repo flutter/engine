@@ -465,7 +465,7 @@ TEST(FlutterEngine, DISABLED_Compositor) {
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;
   auto compositor = engine.macOSCompositor;
-  compositor->SetPresentCallback([&](bool has_flutter_content) {
+  compositor->SetPresentCallback([&](bool has_flutter_content, dispatch_block_t completion) {
     latch.Signal();
     return true;
   });

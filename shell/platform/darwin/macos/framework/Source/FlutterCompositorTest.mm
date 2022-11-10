@@ -67,7 +67,7 @@ TEST(FlutterCompositorTest, TestPresent) {
                                           /*mtl_device*/ nullptr);
 
   bool flag = false;
-  macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content) {
+  macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content, dispatch_block_t) {
     *f = true;
     return true;
   });

@@ -28,7 +28,7 @@ static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID.
   uint64_t viewId = kFlutterDefaultViewId;
-  return [engine.renderer present:viewId];
+  return [engine.renderer present:viewId withBlock:nil];
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -104,12 +104,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return embedderTexture;
 }
 
-- (BOOL)present:(uint64_t)viewId {
+- (BOOL)present:(uint64_t)viewId withBlock:(dispatch_block_t)block {
   FlutterView* view = [_viewProvider getView:viewId];
   if (view == nil) {
     return NO;
   }
-  [view present];
+  [view presentWithBlock:block];
   return YES;
 }
 

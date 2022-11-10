@@ -60,7 +60,9 @@ class FlutterCompositor {
 
   // Callback triggered at the end of the Present function. has_flutter_content
   // is true when Flutter content was rendered, otherwise false.
-  using PresentCallback = std::function<bool(bool has_flutter_content)>;
+  using PresentCallback =
+      std::function<bool(bool has_flutter_content,
+                         dispatch_block_t platfrom_thread_notify)>;
 
   // Registers a callback to be triggered at the end of the Present function.
   // If a callback was previously registered, it will be replaced.
@@ -85,18 +87,22 @@ class FlutterCompositor {
   void SetFrameStatus(FrameStatus frame_status);
   FrameStatus GetFrameStatus();
 
-  // Clears the previous CALayers and updates the frame status to frame started.
+  // Sets frame status to frame started.
   void StartFrame();
+
+  // Clears the previous CALayers.
+  void RemoveOldLayers();
 
   // Calls the present callback and ensures the frame status is updated
   // to frame ended, returning whether the present was successful or not.
-  bool EndFrame(bool has_flutter_content);
+  bool EndFrame(bool has_flutter_content, dispatch_block_t on_notify);
 
   // Creates a CALayer object which is backed by the supplied IOSurface, and
   // adds it to the root CALayer for the given view.
   void InsertCALayerForIOSurface(
       FlutterView* view,
       const IOSurfaceRef& io_surface,
+      size_t layer_position,
       CATransform3D transform = CATransform3DIdentity);
 
  private:

@@ -90,6 +90,12 @@ bool FlutterCompositor::Present(uint64_t view_id,
   SetFrameStatus(FrameStatus::kPresenting);
 
   bool has_flutter_content = false;
+
+  std::vector<dispatch_block_t> actions;
+  actions.push_back(^{
+    RemoveOldLayers();
+  });
+
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     FlutterBackingStore* backing_store = const_cast<FlutterBackingStore*>(layer->backing_store);
@@ -100,19 +106,27 @@ bool FlutterCompositor::Present(uint64_t view_id,
           FlutterIOSurfaceHolder* io_surface_holder =
               (__bridge FlutterIOSurfaceHolder*)backing_store->metal.texture.user_data;
           IOSurfaceRef io_surface = [io_surface_holder ioSurface];
-          InsertCALayerForIOSurface(view, io_surface);
+          actions.push_back(^{
+            InsertCALayerForIOSurface(view, io_surface, i);
+          });
         }
         has_flutter_content = true;
         break;
       }
       case kFlutterLayerContentTypePlatformView: {
-        PresentPlatformView(view, layer, i);
+        actions.push_back(^{
+          PresentPlatformView(view, layer, i);
+        });
         break;
       }
     };
   }
 
-  return EndFrame(has_flutter_content);
+  return EndFrame(has_flutter_content, ^{
+    for (auto& action : actions) {
+      action();
+    }
+  });
 }
 
 void FlutterCompositor::PresentPlatformView(FlutterView* default_base_view,
@@ -143,6 +157,10 @@ void FlutterCompositor::SetPresentCallback(
 }
 
 void FlutterCompositor::StartFrame() {
+  SetFrameStatus(FrameStatus::kStarted);
+}
+
+void FlutterCompositor::RemoveOldLayers() {
   // First remove all CALayers from the superlayer.
   for (auto layer : active_ca_layers_) {
     [layer removeFromSuperlayer];
@@ -150,11 +168,10 @@ void FlutterCompositor::StartFrame() {
 
   // Reset active layers.
   active_ca_layers_.clear();
-  SetFrameStatus(FrameStatus::kStarted);
 }
 
-bool FlutterCompositor::EndFrame(bool has_flutter_content) {
-  bool status = present_callback_(has_flutter_content);
+bool FlutterCompositor::EndFrame(bool has_flutter_content, dispatch_block_t on_notify) {
+  bool status = present_callback_(has_flutter_content, on_notify);
   SetFrameStatus(FrameStatus::kEnded);
   return status;
 }
@@ -173,6 +190,7 @@ FlutterCompositor::FrameStatus FlutterCompositor::GetFrameStatus() {
 
 void FlutterCompositor::InsertCALayerForIOSurface(FlutterView* view,
                                                   const IOSurfaceRef& io_surface,
+                                                  size_t layer_position,
                                                   CATransform3D transform) {
   // FlutterCompositor manages the lifecycle of CALayers.
   CALayer* content_layer = [[CALayer alloc] init];
@@ -180,7 +198,7 @@ void FlutterCompositor::InsertCALayerForIOSurface(FlutterView* view,
   content_layer.frame = view.layer.bounds;
   [content_layer setContents:(__bridge id)io_surface];
   [view.layer addSublayer:content_layer];
-
+  content_layer.zPosition = layer_position;
   active_ca_layers_.push_back(content_layer);
 }
 

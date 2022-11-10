@@ -38,7 +38,7 @@
 /**
  * Called by the engine when the given view's buffers should be swapped.
  */
-- (BOOL)present:(uint64_t)viewId;
+- (BOOL)present:(uint64_t)viewId withBlock:(nullable dispatch_block_t)block;
 
 /**
  * Tells the renderer that there is no Flutter content available for this frame.
