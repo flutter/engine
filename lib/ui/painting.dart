@@ -4263,8 +4263,7 @@ class FragmentShader extends Shader {
   final String? _debugName;
 
   static final Float32List _kEmptyFloat32List = Float32List(0);
-
-  late Float32List _floats;
+  Float32List _floats = _kEmptyFloat32List;
 
   /// Sets the float uniform at [index] to [value].
   void setFloat(int index, double value) {
@@ -4295,6 +4294,7 @@ class FragmentShader extends Shader {
 
   @override
   void _validate() {
+    assert(!debugDisposed, 'Tried to accesss uniforms on a disposed Shader: $this');
     if (!_validateSamplers()) {
       throw Exception('Invalid FragmentShader ${_debugName ?? ''}: missing sampler');
     }
