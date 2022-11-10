@@ -32,7 +32,8 @@ class ReusableFragmentShader : public Shader {
   static Dart_Handle Create(Dart_Handle wrapper,
                             Dart_Handle program,
                             Dart_Handle float_count,
-                            Dart_Handle sampler_count);
+                            Dart_Handle sampler_count,
+                            const std::string& debug_handle);
 
   void SetSampler(Dart_Handle index, Dart_Handle sampler);
 
@@ -46,12 +47,14 @@ class ReusableFragmentShader : public Shader {
  private:
   ReusableFragmentShader(fml::RefPtr<FragmentProgram> program,
                          uint64_t float_count,
-                         uint64_t sampler_count);
+                         uint64_t sampler_count,
+                         const std::string& debug_name);
 
   fml::RefPtr<FragmentProgram> program_;
   sk_sp<SkData> uniform_data_;
   std::vector<std::shared_ptr<DlColorSource>> samplers_;
   size_t float_count_;
+  std::string debug_name_;
 };
 
 }  // namespace flutter

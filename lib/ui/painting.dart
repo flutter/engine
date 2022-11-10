@@ -4257,6 +4257,7 @@ class FragmentShader extends Shader {
       program,
       program._uniformFloatCount,
       program._samplerCount,
+      debugName ?? '',
     );
   }
 
@@ -4300,8 +4301,8 @@ class FragmentShader extends Shader {
     }
   }
 
-  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
-  external Float32List _constructor(FragmentProgram program, int floatUniforms, int samplerUniforms);
+  @FfiNative<Handle Function(Handle, Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
+  external Float32List _constructor(FragmentProgram program, int floatUniforms, int samplerUniforms, String? debugName);
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetSampler')
   external void _setSampler(int index, ImageShader sampler);

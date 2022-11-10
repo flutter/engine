@@ -68,7 +68,7 @@ typedef CanvasPath Path;
   V(Canvas::Create, 6)                                                \
   V(ColorFilter::Create, 1)                                           \
   V(FragmentProgram::Create, 1)                                       \
-  V(ReusableFragmentShader::Create, 4)                                \
+  V(ReusableFragmentShader::Create, 5)                                \
   V(Gradient::Create, 1)                                              \
   V(ImageFilter::Create, 1)                                           \
   V(ImageShader::Create, 1)                                           \
