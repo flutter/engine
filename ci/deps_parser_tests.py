@@ -19,36 +19,35 @@ class TestDepsParserMethods(unittest.TestCase):
   # Extract both mirrored dep names and URLs &
   # upstream names and URLs from DEPs file.
   def setUp(self):  # lower-camel-case for the python unittest framework
-    with open(DEPS) as file:
-      # Read the content.
-      with open(DEPS, 'r') as file:
-        deps_content = file.read()
+    # Read the content.
+    with open(DEPS, 'r') as file:
+      deps_content = file.read()
 
-      local_scope_mirror = {}
-      var = VarImpl(local_scope_mirror)
-      global_scope_mirror = {
-          'Var': var.lookup,
-          'deps_os': {},
-      }
+    local_scope_mirror = {}
+    var = VarImpl(local_scope_mirror)
+    global_scope_mirror = {
+        'Var': var.lookup,
+        'deps_os': {},
+    }
 
-      # Eval the content.
-      exec(deps_content, global_scope_mirror, local_scope_mirror)
+    # Eval the content.
+    exec(deps_content, global_scope_mirror, local_scope_mirror)
 
-      # Extract the upstream URLs
-      # vars contains more than just upstream URLs
-      # however the upstream URLs are prefixed with 'upstream_'
-      upstream = local_scope_mirror.get('vars')
-      self.upstream_urls = upstream
+    # Extract the upstream URLs
+    # vars contains more than just upstream URLs
+    # however the upstream URLs are prefixed with 'upstream_'
+    upstream = local_scope_mirror.get('vars')
+    self.upstream_urls = upstream
 
-      # Extract the deps and filter.
-      deps = local_scope_mirror.get('deps', {})
-      filtered_deps = []
-      for _, dep in deps.items():
-        # We currently do not support packages or cipd which are represented
-        # as dictionaries.
-        if isinstance(dep, str):
-          filtered_deps.append(dep)
-      self.deps = filtered_deps
+    # Extract the deps and filter.
+    deps = local_scope_mirror.get('deps', {})
+    filtered_deps = []
+    for _, dep in deps.items():
+      # We currently do not support packages or cipd which are represented
+      # as dictionaries.
+      if isinstance(dep, str):
+        filtered_deps.append(dep)
+    self.deps = filtered_deps
 
   def test_each_dep_has_upstream_url(self):
     # for each DEP in the deps file, check for an associated upstream URL in deps file
