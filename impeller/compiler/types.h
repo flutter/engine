@@ -37,6 +37,12 @@ enum class TargetPlatform {
   kSkSL,
 };
 
+enum class SourceLanguage {
+  kUnknown,
+  kGLSL,
+  kHLSL,
+};
+
 bool TargetPlatformIsMetal(TargetPlatform platform);
 
 bool TargetPlatformIsOpenGL(TargetPlatform platform);
@@ -47,10 +53,14 @@ std::string SourceTypeToString(SourceType type);
 
 std::string TargetPlatformToString(TargetPlatform platform);
 
+std::string SourceLanguageToString(SourceLanguage source_language);
+
 std::string TargetPlatformSLExtension(TargetPlatform platform);
 
-std::string EntryPointFunctionNameFromSourceName(const std::string& file_name,
-                                                 SourceType type);
+std::string EntryPointFunctionNameFromSourceName(
+    const std::string& file_name,
+    SourceType type,
+    SourceLanguage source_language);
 
 bool TargetPlatformNeedsSL(TargetPlatform platform);
 
@@ -66,10 +76,6 @@ spv::ExecutionModel ToExecutionModel(SourceType type);
 
 spirv_cross::CompilerMSL::Options::Platform TargetPlatformToMSLPlatform(
     TargetPlatform platform);
-
-std::string ToUtf8(const std::wstring& wstring);
-
-std::string ToUtf8(const std::string& string);
 
 }  // namespace compiler
 }  // namespace impeller

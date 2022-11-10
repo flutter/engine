@@ -9,17 +9,12 @@
 #include <iostream>
 #include <vector>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -189,7 +184,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
 
   // The private member for accessibility.
-  std::shared_ptr<flutter::AccessibilityBridge> _bridge;
+  std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
 
   // The project being run by this engine.
   FlutterDartProject* _project;
@@ -252,11 +247,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
 
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
-  } else {
-    _renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
-  }
+  _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -418,8 +409,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     [_renderer setFlutterView:controller.flutterView];
 
     if (_semanticsEnabled && _bridge) {
-      _bridge->UpdateDelegate(
-          std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, _viewController));
+      _bridge->UpdateDefaultViewController(_viewController);
     }
 
     if (!controller && !_allowHeadlessExecution) {
@@ -438,16 +428,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
-    _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-        _viewProvider, _platformViewController, metalRenderer.device);
-  } else {
-    FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
-    [openGLRenderer.openGLContext makeCurrentContext];
-    _macOSCompositor =
-        std::make_unique<flutter::FlutterGLCompositor>(_viewProvider, openGLRenderer.openGLContext);
-  }
+  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
+  _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
+      _viewProvider, _platformViewController, metalRenderer.device);
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
     if (has_flutter_content) {
       return [weakSelf.renderer present] == YES;
@@ -551,7 +534,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _embedderAPI;
 }
 
-- (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
+- (std::weak_ptr<flutter::AccessibilityBridgeMac>)accessibilityBridge {
   return _bridge;
 }
 
@@ -601,10 +584,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   if (!_semanticsEnabled && _bridge) {
     _bridge.reset();
   } else if (_semanticsEnabled && !_bridge) {
-    _bridge = std::make_shared<flutter::AccessibilityBridge>(
-        std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, self.viewController));
+    _bridge = [self createAccessibilityBridge:self viewController:self.viewController];
   }
   _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
+}
+
+- (std::shared_ptr<flutter::AccessibilityBridgeMac>)
+    createAccessibilityBridge:(nonnull FlutterEngine*)engine
+               viewController:(nonnull FlutterViewController*)viewController {
+  return std::make_shared<flutter::AccessibilityBridgeMac>(engine, _viewController);
 }
 
 - (void)dispatchSemanticsAction:(FlutterSemanticsAction)action

@@ -4,10 +4,14 @@
 
 #include "impeller/compiler/switches.h"
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <map>
 
 #include "flutter/fml/file.h"
+#include "impeller/compiler/types.h"
+#include "impeller/compiler/utilities.h"
 
 namespace impeller {
 namespace compiler {
@@ -43,7 +47,7 @@ void Switches::PrintHelp(std::ostream& stream) {
     stream << " --" << platform.first;
   }
   stream << " ]" << std::endl;
-  stream << "--input=<glsl_file>" << std::endl;
+  stream << "--input=<source_file>" << std::endl;
   stream << "[optional] --input-kind={";
   for (const auto& source_type : kKnownSourceTypes) {
     stream << source_type.first << ", ";
@@ -51,6 +55,8 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "}" << std::endl;
   stream << "--sl=<sl_output_file>" << std::endl;
   stream << "--spirv=<spirv_output_file>" << std::endl;
+  stream << "[optional] --source-language=glsl|hlsl (default: glsl)"
+         << std::endl;
   stream << "[optional] --iplr (causes --sl file to be emitted in iplr format)"
          << std::endl;
   stream << "[optional] --reflection-json=<reflection_json_file>" << std::endl;
@@ -99,7 +105,7 @@ static SourceType SourceTypeFromCommandLine(
 Switches::Switches(const fml::CommandLine& command_line)
     : target_platform(TargetPlatformFromCommandLine(command_line)),
       working_directory(std::make_shared<fml::UniqueFD>(fml::OpenDirectory(
-          ToUtf8(std::filesystem::current_path().native()).c_str(),
+          Utf8FromPath(std::filesystem::current_path()).c_str(),
           false,  // create if necessary,
           fml::FilePermission::kRead))),
       source_file_name(command_line.GetOptionValueWithDefault("input", "")),
@@ -119,6 +125,16 @@ Switches::Switches(const fml::CommandLine& command_line)
     return;
   }
 
+  auto language =
+      command_line.GetOptionValueWithDefault("source-language", "glsl");
+  std::transform(language.begin(), language.end(), language.begin(),
+                 [](char x) { return std::tolower(x); });
+  if (language == "glsl") {
+    source_language = SourceLanguage::kGLSL;
+  } else if (language == "hlsl") {
+    source_language = SourceLanguage::kHLSL;
+  }
+
   for (const auto& include_dir_path : command_line.GetOptionValues("include")) {
     if (!include_dir_path.data()) {
       continue;
@@ -126,12 +142,17 @@ Switches::Switches(const fml::CommandLine& command_line)
 
     // fml::OpenDirectoryReadOnly for Windows doesn't handle relative paths
     // beginning with `../` well, so we build an absolute path.
-    auto include_dir_absolute =
-        ToUtf8(std::filesystem::absolute(std::filesystem::current_path() /
-                                         include_dir_path)
-                   .native());
+
+    // Get the current working directory as a utf8 encoded string.
+    // Note that the `include_dir_path` is already utf8 encoded, and so we
+    // mustn't attempt to double-convert it to utf8 lest multi-byte characters
+    // will become mangled.
+    auto cwd = Utf8FromPath(std::filesystem::current_path());
+    auto include_dir_absolute = std::filesystem::absolute(
+        std::filesystem::path(cwd) / include_dir_path);
+
     auto dir = std::make_shared<fml::UniqueFD>(fml::OpenDirectoryReadOnly(
-        *working_directory, include_dir_absolute.c_str()));
+        *working_directory, include_dir_absolute.string().c_str()));
     if (!dir || !dir->is_valid()) {
       continue;
     }
@@ -152,6 +173,11 @@ bool Switches::AreValid(std::ostream& explain) const {
   bool valid = true;
   if (target_platform == TargetPlatform::kUnknown) {
     explain << "The target platform (only one) was not specified." << std::endl;
+    valid = false;
+  }
+
+  if (source_language == SourceLanguage::kUnknown) {
+    explain << "Invalid source language type." << std::endl;
     valid = false;
   }
 
