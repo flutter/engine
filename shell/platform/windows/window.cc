@@ -203,6 +203,15 @@ LRESULT Window::OnGetObject(UINT const message,
   if (is_uia_request && root_view) {
     // TODO(cbracken): https://github.com/flutter/flutter/issues/94782
     // Implement when we adopt UIA support.
+    // Retrieve UIA object for the root view.
+    Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
+    root_view->QueryInterface(
+        IID_PPV_ARGS(&root));
+
+    // Return the UIA object via UiaReturnRawElementProvider(). See:
+    // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
+    reference_result =
+        UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
   } else if (is_msaa_request && root_view) {
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
@@ -212,10 +221,9 @@ LRESULT Window::OnGetObject(UINT const message,
     // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
     accessibility_root_->SetWindow(root_view);
     Microsoft::WRL::ComPtr<IAccessible> root(accessibility_root_);
-    LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
-    return lresult;
+    reference_result = LresultFromObject(IID_IAccessible, wparam, root.Get());
   }
-  return 0;
+  return reference_result;
 }
 
 void Window::OnImeSetContext(UINT const message,
