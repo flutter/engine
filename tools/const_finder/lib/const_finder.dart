@@ -76,15 +76,15 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   @override
   void visitClass(Class node) {
-    // check if this is a class that we should ignore
-    if (_isStaticIconProvider(node)) {
-      inIgnoredClass = true;
+    // Check if this is a class that we should ignore.
+    if (!_isStaticIconProvider(node)) {
+      // Not an ignored class.
       super.visitClass(node);
-      inIgnoredClass = false;
       return;
     }
-    // not an ignored class
+    inIgnoredClass = true;
     super.visitClass(node);
+    inIgnoredClass = false;
   }
 
   // Constants from classes annotated with an instance of StaticIconProvider
