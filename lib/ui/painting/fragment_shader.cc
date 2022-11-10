@@ -56,7 +56,7 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
                                    float_count);
 }
 
-bool ReusableFragmentShader::ValidateSamplers(Dart_Handle wrapper) {
+bool ReusableFragmentShader::ValidateSamplers() {
   std::cerr << ((void*)this) << std::endl;
   for (auto i = 0u; i < samplers_.size(); i += 1) {
     if (samplers_[i] == nullptr) {
