@@ -1229,10 +1229,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         parentView.setVisibility(View.GONE);
       }
     }
-
-    if (!isFrameRenderedUsingImageReaders) {
-      destroyOverlaySurfaces();
-    }
   }
 
   /**
