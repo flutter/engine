@@ -195,10 +195,21 @@ struct ContentContextOptions {
 
 class Tessellator;
 
+class ExternalTexturePipelineProvider {
+ public:
+  virtual std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
+      ContentContextOptions opts) const = 0;
+
+  virtual std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
+      ContentContextOptions opts) const = 0;
+
+ protected:
+  virtual ~ExternalTexturePipelineProvider() = default;
+};
+
 class ContentContext {
  public:
   explicit ContentContext(std::shared_ptr<Context> context);
-
   ~ContentContext();
 
   bool IsValid() const;
@@ -236,12 +247,20 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
-      ContentContextOptions opts) const {
+      ContentContextOptions opts,
+      bool is_external_texture = false) const {
+    if (is_external_texture && external_texture_pipeline_provider_) {
+      return external_texture_pipeline_provider_->GetTexturePipeline(opts);
+    }
     return GetPipeline(texture_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
-      ContentContextOptions opts) const {
+      ContentContextOptions opts,
+      bool is_external_texture = false) const {
+    if (is_external_texture && external_texture_pipeline_provider_) {
+      return external_texture_pipeline_provider_->GetTiledTexturePipeline(opts);
+    }
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
@@ -400,14 +419,55 @@ class ContentContext {
       ISize texture_size,
       const SubpassCallback& subpass_callback) const;
 
- private:
-  std::shared_ptr<Context> context_;
-
   template <class T>
   using Variants = std::unordered_map<ContentContextOptions,
                                       std::unique_ptr<T>,
                                       ContentContextOptions::Hash,
                                       ContentContextOptions::Equal>;
+
+  template <class TypedPipeline>
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
+      Variants<TypedPipeline>& container,
+      ContentContextOptions opts) const {
+    if (!IsValid()) {
+      return nullptr;
+    }
+
+    if (auto found = container.find(opts); found != container.end()) {
+      return found->second->WaitAndGet();
+    }
+
+    auto prototype = container.find({});
+
+    // The prototype must always be initialized in the constructor.
+    FML_CHECK(prototype != container.end());
+
+    auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
+        [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
+          opts.ApplyToPipelineDescriptor(desc);
+          desc.SetLabel(
+              SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
+        });
+    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
+    auto variant_pipeline = variant->WaitAndGet();
+    container[opts] = std::move(variant);
+    return variant_pipeline;
+  }
+
+  template <typename PipelineT>
+  static std::unique_ptr<PipelineT> CreateDefaultPipeline(
+      const Context& context) {
+    auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+    if (!desc.has_value()) {
+      return nullptr;
+    }
+    // Apply default ContentContextOptions to the descriptor.
+    ContentContextOptions{}.ApplyToPipelineDescriptor(*desc);
+    return std::make_unique<PipelineT>(context, desc);
+  }
+
+ private:
+  std::shared_ptr<Context> context_;
 
   // These are mutable because while the prototypes are created eagerly, any
   // variants requested from that are lazily created and cached in the variants
@@ -451,38 +511,11 @@ class ContentContext {
   mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
 
-  template <class TypedPipeline>
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
-      Variants<TypedPipeline>& container,
-      ContentContextOptions opts) const {
-    if (!IsValid()) {
-      return nullptr;
-    }
-
-    if (auto found = container.find(opts); found != container.end()) {
-      return found->second->WaitAndGet();
-    }
-
-    auto prototype = container.find({});
-
-    // The prototype must always be initialized in the constructor.
-    FML_CHECK(prototype != container.end());
-
-    auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
-        [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
-          opts.ApplyToPipelineDescriptor(desc);
-          desc.SetLabel(
-              SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
-        });
-    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
-    auto variant_pipeline = variant->WaitAndGet();
-    container[opts] = std::move(variant);
-    return variant_pipeline;
-  }
-
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
+  std::shared_ptr<ExternalTexturePipelineProvider>
+      external_texture_pipeline_provider_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };

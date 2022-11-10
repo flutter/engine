@@ -38,22 +38,56 @@ HandleType ToHandleType(TextureGLES::Type type) {
   FML_UNREACHABLE();
 }
 
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false) {}
+namespace {
+static std::unique_ptr<TextureInfoGLES> CreateTextureInfo(
+    ReactorGLES::Ref reactor,
+    TextureDescriptor desc,
+    bool is_default_fbo) {
+  auto handle =
+      reactor->CreateHandle(ToHandleType(GetTextureTypeFromDescriptor(desc)));
+  TextureInfoGLES texture_info = {
+      .backing_type = TextureBackingTypeGLES::kAllocatedTexture,
+      .allocated_texture =
+          {
+              .handle = handle,
+              .is_default_fbo = is_default_fbo,
+          },
+  };
+  return std::make_unique<TextureInfoGLES>(texture_info);
+}
+
+static std::unique_ptr<TextureInfoGLES> CreateTextureInfo(
+    WrappedTextureInfoGLES wrapped_texture_info) {
+  TextureInfoGLES texture_info = {
+      .backing_type = TextureBackingTypeGLES::kWrappedTexture,
+      .wrapped_texture = wrapped_texture_info,
+  };
+  return std::make_unique<TextureInfoGLES>(texture_info);
+}
+
+}  // namespace
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
                          TextureDescriptor desc,
-                         enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true) {}
+                         bool is_default_fbo)
+    : TextureGLES(reactor,
+                  desc,
+                  CreateTextureInfo(reactor, desc, is_default_fbo)) {}
 
-TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
                          TextureDescriptor desc,
-                         bool is_wrapped)
+                         WrappedTextureInfoGLES wrapped_texture_info)
+    : TextureGLES(std::move(reactor),
+                  desc,
+                  CreateTextureInfo(wrapped_texture_info)) {}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+                         TextureDescriptor desc,
+                         std::unique_ptr<TextureInfoGLES> texture_info)
     : Texture(desc),
       reactor_(std::move(reactor)),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
-      handle_(reactor_->CreateHandle(ToHandleType(type_))),
-      is_wrapped_(is_wrapped) {
+      texture_info_(std::move(texture_info)) {
   // Ensure the texture descriptor itself is valid.
   if (!GetTextureDescriptor().IsValid()) {
     VALIDATION_LOG << "Invalid texture descriptor.";
@@ -73,7 +107,10 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
 
 // |Texture|
 TextureGLES::~TextureGLES() {
-  reactor_->CollectHandle(handle_);
+  if (texture_info_->backing_type ==
+      TextureBackingTypeGLES::kAllocatedTexture) {
+    reactor_->CollectHandle(texture_info_->allocated_texture.handle);
+  }
 }
 
 // |Texture|
@@ -83,7 +120,11 @@ bool TextureGLES::IsValid() const {
 
 // |Texture|
 void TextureGLES::SetLabel(std::string_view label) {
-  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
+  if (texture_info_->backing_type ==
+      TextureBackingTypeGLES::kAllocatedTexture) {
+    reactor_->SetDebugLabel(texture_info_->allocated_texture.handle,
+                            std::string{label.data(), label.size()});
+  }
 }
 
 struct TexImage2DData {
@@ -185,7 +226,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     return false;
   }
 
-  if (is_wrapped_) {
+  if (IsDefaultFBO() ||
+      texture_info_->backing_type == TextureBackingTypeGLES::kWrappedTexture) {
     VALIDATION_LOG << "Cannot set the contents of a wrapped texture.";
     return false;
   }
@@ -228,7 +270,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     return false;
   }
 
-  ReactorGLES::Operation texture_upload = [handle = handle_,            //
+  auto handle = texture_info_->allocated_texture.handle;
+  ReactorGLES::Operation texture_upload = [handle = handle,             //
                                            data,                        //
                                            size = tex_descriptor.size,  //
                                            texture_type,                //
@@ -299,7 +342,8 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
   contents_initialized_ = true;
 
-  if (is_wrapped_) {
+  if (IsDefaultFBO() ||
+      texture_info_->backing_type == TextureBackingTypeGLES::kWrappedTexture) {
     return;
   }
 
@@ -310,7 +354,7 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 
   const auto& gl = reactor_->GetProcTable();
-  auto handle = reactor_->GetGLHandle(handle_);
+  auto handle = reactor_->GetGLHandle(texture_info_->allocated_texture.handle);
   if (!handle.has_value()) {
     VALIDATION_LOG << "Could not initialize the contents of texture.";
     return;
@@ -363,7 +407,26 @@ std::optional<GLuint> TextureGLES::GetGLHandle() const {
   if (!IsValid()) {
     return std::nullopt;
   }
-  return reactor_->GetGLHandle(handle_);
+
+  switch (texture_info_->backing_type) {
+    case TextureBackingTypeGLES::kAllocatedTexture:
+      return reactor_->GetGLHandle(texture_info_->allocated_texture.handle);
+    case TextureBackingTypeGLES::kWrappedTexture:
+      return texture_info_->wrapped_texture.name;
+  }
+}
+
+std::optional<GLenum> TextureGLES::GetTarget() const {
+  if (!IsValid()) {
+    return std::nullopt;
+  }
+
+  switch (texture_info_->backing_type) {
+    case TextureBackingTypeGLES::kAllocatedTexture:
+      return ToTextureTarget(GetTextureDescriptor().type);
+    case TextureBackingTypeGLES::kWrappedTexture:
+      return texture_info_->wrapped_texture.target;
+  }
 }
 
 bool TextureGLES::Bind() const {
@@ -374,7 +437,7 @@ bool TextureGLES::Bind() const {
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
     case Type::kTexture: {
-      const auto target = ToTextureTarget(GetTextureDescriptor().type);
+      const auto target = GetTarget();
       if (!target.has_value()) {
         VALIDATION_LOG << "Could not bind texture of this type.";
         return false;

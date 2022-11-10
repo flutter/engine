@@ -35,7 +35,7 @@ std::unique_ptr<Surface> SurfaceGLES::WrapFBO(
 
   ColorAttachment color0;
   color0.texture = std::make_shared<TextureGLES>(
-      gl_context.GetReactor(), color0_tex, TextureGLES::IsWrapped::kWrapped);
+      gl_context.GetReactor(), color0_tex, /**is_default_fbo=*/true);
   color0.clear_color = Color::DarkSlateGray();
   color0.load_action = LoadAction::kClear;
   color0.store_action = StoreAction::kStore;
@@ -51,7 +51,7 @@ std::unique_ptr<Surface> SurfaceGLES::WrapFBO(
   StencilAttachment stencil0;
   stencil0.clear_stencil = 0;
   stencil0.texture = std::make_shared<TextureGLES>(
-      gl_context.GetReactor(), stencil0_tex, TextureGLES::IsWrapped::kWrapped);
+      gl_context.GetReactor(), stencil0_tex, /**is_default_fbo=*/true);
   stencil0.load_action = LoadAction::kClear;
   stencil0.store_action = StoreAction::kDontCare;
 

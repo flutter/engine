@@ -4,8 +4,12 @@
 
 #include "impeller/entity/contents/content_context.h"
 
+#include <memory>
 #include <sstream>
 
+#if IMPELLER_ENABLE_OPENGLES
+#include "impeller/entity/contents/external_texture_pipeline_provider_gles.h"
+#endif
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
@@ -131,18 +135,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   desc.SetPrimitiveType(primitive_type);
 }
 
-template <typename PipelineT>
-static std::unique_ptr<PipelineT> CreateDefaultPipeline(
-    const Context& context) {
-  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
-  if (!desc.has_value()) {
-    return nullptr;
-  }
-  // Apply default ContentContextOptions to the descriptor.
-  ContentContextOptions{}.ApplyToPipelineDescriptor(*desc);
-  return std::make_unique<PipelineT>(context, desc);
-}
-
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
@@ -218,6 +210,11 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
+
+#if IMPELLER_ENABLE_OPENGLES
+  external_texture_pipeline_provider_ =
+      std::make_shared<ExternalTexturePipelineProviderGLES>(*this);
+#endif  // IMPELLER_ENABLE_OPENGLES
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
     auto clip_pipeline_descriptor =

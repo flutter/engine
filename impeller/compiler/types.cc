@@ -322,5 +322,9 @@ bool TargetPlatformBundlesSkSL(TargetPlatform platform) {
   FML_UNREACHABLE();
 }
 
+bool IsExternalImageOESFromSourceName(const std::string& file_name) {
+  return StringEndWith(file_name, "external_image_oes.frag");
+}
+
 }  // namespace compiler
 }  // namespace impeller

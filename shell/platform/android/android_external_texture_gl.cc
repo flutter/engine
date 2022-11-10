@@ -4,10 +4,20 @@
 
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 
-#include <GLES/glext.h>
-
+#include <memory>
 #include <utility>
 
+#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/display_list_tile_mode.h"
+#include "flutter/impeller/display_list/display_list_image_impeller.h"
+#include "flutter/impeller/renderer/backend/gles/texture_gles.h"
+#include "fml/logging.h"
+#include "impeller/aiks/aiks_context.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
+#include "include/core/SkTileMode.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
@@ -20,11 +30,13 @@ namespace flutter {
 AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    bool enable_impeller)
     : Texture(id),
       jni_facade_(std::move(jni_facade)),
       surface_texture_(surface_texture),
-      transform(SkMatrix::I()) {}
+      transform(SkMatrix::I()),
+      enable_impeller_(enable_impeller) {}
 
 AndroidExternalTextureGL::~AndroidExternalTextureGL() {
   if (state_ == AttachmentState::attached) {
@@ -56,33 +68,90 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
     Update();
     new_frame_ready_ = false;
   }
+
+  if (enable_impeller_) {
+    DoPaint(context.builder, context.aiks_context, context.dl_paint, bounds,
+            sampling);
+  } else {
+    DoPaint(context.canvas, context.gr_context, context.sk_paint, bounds,
+            sampling);
+  }
+}
+
+void AndroidExternalTextureGL::DoPaint(DisplayListBuilder* builder,
+                                       impeller::AiksContext* aiks_context,
+                                       const DlPaint* dl_paint,
+                                       const SkRect& bounds,
+                                       const SkSamplingOptions& sampling) {
+  auto reactor =
+      impeller::ContextGLES::Cast(*aiks_context->GetContext()).GetReactor();
+  impeller::TextureDescriptor desc;
+
+  desc.storage_mode = impeller::StorageMode::kHostVisible;
+  desc.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+  desc.size = {1, 1};
+  desc.mip_count = 1;
+  impeller::WrappedTextureInfoGLES texture_info{GL_TEXTURE_EXTERNAL_OES,
+                                                texture_name_};
+  auto texture =
+      std::make_shared<impeller::TextureGLES>(reactor, desc, texture_info);
+  texture->SetIntent(impeller::TextureIntent::kUploadFromHost);
+  sk_sp<DlImage> image = impeller::DlImageImpeller::Make(texture);
+
+  if (image) {
+    builder->save();
+    builder->translate(bounds.x(), bounds.y() + bounds.height());
+    builder->scale(bounds.width(), -bounds.height());
+
+    if (!transform.isIdentity()) {
+      auto image_color_source = std::make_shared<DlImageColorSource>(
+          image, DlTileMode::kRepeat, DlTileMode::kRepeat, ToDl(sampling),
+          &transform);
+      DlPaint paint;
+      if (dl_paint) {
+        paint = *dl_paint;
+      }
+      paint.setColorSource(image_color_source);
+      builder->drawRect(SkRect::MakeWH(1, 1), paint);
+    } else {
+      builder->drawImage(image, SkPoint::Make(0, 0), ToDl(sampling), dl_paint);
+    }
+    builder->restore();
+  }
+}
+
+void AndroidExternalTextureGL::DoPaint(SkCanvas* canvas,
+                                       GrDirectContext* gr_context,
+                                       const SkPaint* sk_paint,
+                                       const SkRect& bounds,
+                                       const SkSamplingOptions& sampling) {
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_name_,
                                  GL_RGBA8_OES};
   GrBackendTexture backendTexture(1, 1, GrMipMapped::kNo, textureInfo);
   sk_sp<SkImage> image = SkImage::MakeFromTexture(
-      context.gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
+      gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
   if (image) {
-    SkAutoCanvasRestore autoRestore(context.canvas, true);
+    SkAutoCanvasRestore autoRestore(canvas, true);
 
     // The incoming texture is vertically flipped, so we flip it
     // back. OpenGL's coordinate system has Positive Y equivalent to up, while
     // Skia's coordinate system has Negative Y equvalent to up.
-    context.canvas->translate(bounds.x(), bounds.y() + bounds.height());
-    context.canvas->scale(bounds.width(), -bounds.height());
+    canvas->translate(bounds.x(), bounds.y() + bounds.height());
+    canvas->scale(bounds.width(), -bounds.height());
 
     if (!transform.isIdentity()) {
       sk_sp<SkShader> shader = image->makeShader(
           SkTileMode::kRepeat, SkTileMode::kRepeat, sampling, transform);
 
       SkPaint paintWithShader;
-      if (context.sk_paint) {
-        paintWithShader = *context.sk_paint;
+      if (sk_paint) {
+        paintWithShader = *sk_paint;
       }
       paintWithShader.setShader(shader);
-      context.canvas->drawRect(SkRect::MakeWH(1, 1), paintWithShader);
+      canvas->drawRect(SkRect::MakeWH(1, 1), paintWithShader);
     } else {
-      context.canvas->drawImage(image, 0, 0, sampling, context.sk_paint);
+      canvas->drawImage(image, 0, 0, sampling, sk_paint);
     }
   }
 }

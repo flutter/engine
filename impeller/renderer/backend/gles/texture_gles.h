@@ -12,6 +12,29 @@
 
 namespace impeller {
 
+enum class TextureBackingTypeGLES {
+  kAllocatedTexture,
+  kWrappedTexture,
+};
+
+struct AllocatedTextureInfoGLES {
+  HandleGLES handle;
+  bool is_default_fbo = false;
+};
+
+struct WrappedTextureInfoGLES {
+  GLenum target;
+  GLuint name;
+};
+
+struct TextureInfoGLES {
+  TextureBackingTypeGLES backing_type;
+  union {
+    WrappedTextureInfoGLES wrapped_texture;
+    AllocatedTextureInfoGLES allocated_texture;
+  };
+};
+
 class TextureGLES final : public Texture,
                           public BackendCast<TextureGLES, Texture> {
  public:
@@ -20,20 +43,20 @@ class TextureGLES final : public Texture,
     kRenderBuffer,
   };
 
-  enum class IsWrapped {
-    kWrapped,
-  };
-
-  TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc);
-
   TextureGLES(ReactorGLES::Ref reactor,
               TextureDescriptor desc,
-              IsWrapped wrapped);
+              bool is_default_fbo = false);
+
+  TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+              TextureDescriptor desc,
+              WrappedTextureInfoGLES wrapped_texture_info);
 
   // |Texture|
   ~TextureGLES() override;
 
   std::optional<GLuint> GetGLHandle() const;
+
+  std::optional<GLenum> GetTarget() const;
 
   [[nodiscard]] bool Bind() const;
 
@@ -50,21 +73,28 @@ class TextureGLES final : public Texture,
 
   Type GetType() const;
 
-  bool IsWrapped() const { return is_wrapped_; }
+  bool IsDefaultFBO() const {
+    return texture_info_->backing_type ==
+               TextureBackingTypeGLES::kAllocatedTexture &&
+           texture_info_->allocated_texture.is_default_fbo;
+  }
+
+  bool IsExternalTexture() const override {
+    return texture_info_->backing_type ==
+               TextureBackingTypeGLES::kWrappedTexture &&
+           texture_info_->wrapped_texture.target == GL_TEXTURE_EXTERNAL_OES;
+  }
 
  private:
-  friend class AllocatorMTL;
-
   ReactorGLES::Ref reactor_;
   const Type type_;
-  HandleGLES handle_;
   mutable bool contents_initialized_ = false;
-  const bool is_wrapped_;
   bool is_valid_ = false;
+  std::unique_ptr<TextureInfoGLES> texture_info_;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
               TextureDescriptor desc,
-              bool is_wrapped);
+              std::unique_ptr<TextureInfoGLES> texture_info);
 
   // |Texture|
   void SetLabel(std::string_view label) override;

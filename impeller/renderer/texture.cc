@@ -73,4 +73,8 @@ Scalar Texture::GetYCoordScale() const {
   return 1.0;
 }
 
+bool Texture::IsExternalTexture() const {
+  return false;
+}
+
 }  // namespace impeller

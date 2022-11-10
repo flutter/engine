@@ -47,6 +47,16 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   if (source_options.target_platform == TargetPlatform::kOpenGLES) {
     sl_options.version = 100;
     sl_options.es = true;
+    if (IsExternalImageOESFromSourceName(source_options.file_name)) {
+      gl_compiler->require_extension("GL_OES_EGL_image_external");
+      gl_compiler->set_variable_type_remap_callback(
+          [](const spirv_cross::SPIRType& type, const std::string& var_name,
+             std::string& name_of_type) {
+            if (name_of_type == "sampler2D") {
+              name_of_type = "samplerExternalOES";
+            }
+          });
+    }
   } else {
     sl_options.version = 120;
     sl_options.es = false;

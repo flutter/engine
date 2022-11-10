@@ -64,6 +64,12 @@ impeller_shaders("entity_shaders") {
     "shaders/yuv_to_rgb_filter.frag",
     "shaders/yuv_to_rgb_filter.vert",
   ]
+  if (impeller_enable_opengles) {
+    shaders += [
+      "shaders/texture_fill_external_image_oes.frag",
+      "shaders/tiled_texture_fill_external_image_oes.frag",
+    ]
+  }
 }
 
 impeller_component("entity") {
@@ -151,6 +157,13 @@ impeller_component("entity") {
     "../renderer",
     "../typographer",
   ]
+
+  if (impeller_enable_opengles) {
+    sources += [
+      "contents/external_texture_pipeline_provider_gles.cc",
+      "contents/external_texture_pipeline_provider_gles.h",
+    ]
+  }
 
   deps = [ "//flutter/fml" ]
 }

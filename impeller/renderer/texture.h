@@ -41,6 +41,8 @@ class Texture {
 
   virtual Scalar GetYCoordScale() const;
 
+  virtual bool IsExternalTexture() const;
+
  protected:
   explicit Texture(TextureDescriptor desc);
 

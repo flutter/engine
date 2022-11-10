@@ -65,8 +65,6 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   Command cmd;
   cmd.label = "TiledTextureFill";
-  cmd.pipeline =
-      renderer.GetTiledTexturePipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =
@@ -78,7 +76,8 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetTiledTexturePipeline(options);
+  cmd.pipeline =
+      renderer.GetTiledTexturePipeline(options, texture_->IsExternalTexture());
 
   cmd.BindVertices(geometry_result.vertex_buffer);
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));

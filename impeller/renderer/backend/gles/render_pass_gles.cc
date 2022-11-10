@@ -167,7 +167,7 @@ struct RenderPassData {
   });
 
   const auto is_default_fbo =
-      TextureGLES::Cast(*pass_data.color_attachment).IsWrapped();
+      TextureGLES::Cast(*pass_data.color_attachment).IsDefaultFBO();
 
   if (!is_default_fbo) {
     // Create and bind an offscreen FBO.

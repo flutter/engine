@@ -173,7 +173,8 @@ bool TextureContents::Render(const ContentContext& renderer,
   if (!stencil_enabled_) {
     pipeline_options.stencil_compare = CompareFunction::kAlways;
   }
-  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options,
+                                             texture_->IsExternalTexture());
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));

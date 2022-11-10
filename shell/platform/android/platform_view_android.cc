@@ -269,7 +269,8 @@ void PlatformViewAndroid::RegisterExternalTexture(
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture) {
   if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
     RegisterTexture(std::make_shared<AndroidExternalTextureGL>(
-        texture_id, surface_texture, jni_facade_));
+        texture_id, surface_texture, jni_facade_,
+        delegate_.OnPlatformViewGetSettings().enable_impeller));
   } else {
     FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
   }

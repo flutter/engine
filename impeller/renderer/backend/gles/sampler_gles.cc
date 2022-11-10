@@ -64,7 +64,7 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
     return false;
   }
 
-  auto target = ToTextureTarget(texture.GetTextureDescriptor().type);
+  auto target = texture.GetTarget();
 
   if (!target.has_value()) {
     return false;

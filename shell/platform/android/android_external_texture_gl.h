@@ -17,7 +17,8 @@ class AndroidExternalTextureGL : public flutter::Texture {
   AndroidExternalTextureGL(
       int64_t id,
       const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
-      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+      bool enable_impeller);
 
   ~AndroidExternalTextureGL() override;
 
@@ -43,6 +44,18 @@ class AndroidExternalTextureGL : public flutter::Texture {
 
   void UpdateTransform();
 
+  void DoPaint(DisplayListBuilder* builder,
+               impeller::AiksContext* aiks_context,
+               const DlPaint* dl_paint,
+               const SkRect& bounds,
+               const SkSamplingOptions& sampling);
+
+  void DoPaint(SkCanvas* canvas,
+               GrDirectContext* gr_context,
+               const SkPaint* sk_paint,
+               const SkRect& bounds,
+               const SkSamplingOptions& sampling);
+
   enum class AttachmentState { uninitialized, attached, detached };
 
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
@@ -56,6 +69,8 @@ class AndroidExternalTextureGL : public flutter::Texture {
   GLuint texture_name_ = 0;
 
   SkMatrix transform;
+
+  bool enable_impeller_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidExternalTextureGL);
 };
