@@ -96,10 +96,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
       }
 
       final DartType type = expression.type;
-      if (type is InterfaceType && type.classNode.name == 'StaticIconProvider') {
-        return true;
-      }
-      return false;
+      return type is InterfaceType && type.classNode.name == 'StaticIconProvider';
     });
   }
 

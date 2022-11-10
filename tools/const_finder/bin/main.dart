@@ -42,12 +42,16 @@ void main(List<String> args) {
     ..addOption('kernel-file',
         valueHelp: 'path/to/main.dill',
         help: 'The path to a kernel file to parse, which was created from the '
-            'main-package-uri library.')
+            'main-package-uri library.',
+        mandatory: true)
     ..addOption('class-library-uri',
+        mandatory: true,
         help: 'The package: URI of the class to find.',
         valueHelp: 'package:flutter/src/widgets/icon_data.dart')
     ..addOption('class-name',
-        help: 'The class name for the class to find.', valueHelp: 'IconData')
+        help: 'The class name for the class to find.',
+        valueHelp: 'IconData',
+        mandatory: true)
     ..addSeparator('Optional arguments:')
     ..addFlag('pretty',
         negatable: false,
@@ -58,14 +62,7 @@ void main(List<String> args) {
         help: 'Print usage and exit');
 
   final ArgResults argResults = parser.parse(args);
-  T getArg<T>(String name) {
-    try {
-      return argResults[name] as T;
-    } catch (err) {
-      stderr.writeln('Parsing error trying to parse the argument "$name"');
-      rethrow;
-    }
-  }
+  T getArg<T>(String name) => argResults[name] as T;
 
   if (getArg<bool>('help')) {
     stdout.writeln(parser.usage);
