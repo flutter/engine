@@ -19,9 +19,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "debug",
@@ -60,9 +57,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "profile",
@@ -113,9 +107,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "release",
@@ -152,9 +143,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--mac",
                 "--mac-cpu",
@@ -191,9 +179,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--mac",
                 "--mac-cpu",
@@ -229,9 +214,6 @@
                 "os=Mac-12",
                 "cpu=x86"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--mac",
                 "--mac-cpu",

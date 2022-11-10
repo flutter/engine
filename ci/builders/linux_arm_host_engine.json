@@ -15,9 +15,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "profile",
@@ -53,9 +50,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "debug",
@@ -91,9 +85,6 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "release",

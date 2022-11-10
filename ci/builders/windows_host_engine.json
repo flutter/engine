@@ -21,9 +21,6 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "debug",
@@ -74,9 +71,6 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "gn": [
                 "--runtime-mode",
                 "profile",
@@ -108,9 +102,6 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
             "generators": {},
             "gn": [
                 "--runtime-mode",
