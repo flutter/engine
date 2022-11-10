@@ -1229,6 +1229,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         parentView.setVisibility(View.GONE);
       }
     }
+
+    if (!isFrameRenderedUsingImageReaders) {
+      destroyOverlaySurfaces();
+    }
   }
 
   /**
@@ -1297,5 +1301,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       flutterView.removeView(overlayLayerViews.valueAt(viewId));
     }
     overlayLayerViews.clear();
+  }
+
+  @VisibleForTesting
+  public SparseArray<PlatformOverlayView> getOverlayLayerViews() {
+    return overlayLayerViews;
   }
 }
