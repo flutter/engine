@@ -3,7 +3,92 @@
 
 import 'key_mappings.g.dart';
 
-const int _kUseKeyCode = 1;
+const int kUseKeyCode = 1;
+
+const Map<String, String> _kFullLayoutGoals = <String, String>{
+  'KeyA': 'A',
+  'KeyB': 'B',
+  'KeyC': 'C',
+  'KeyD': 'D',
+  'KeyE': 'E',
+  'KeyF': 'F',
+  'KeyG': 'G',
+  'KeyH': 'H',
+  'KeyI': 'I',
+  'KeyJ': 'J',
+  'KeyK': 'K',
+  'KeyL': 'L',
+  'KeyM': 'M',
+  'KeyN': 'N',
+  'KeyO': 'O',
+  'KeyP': 'P',
+  'KeyQ': 'Q',
+  'KeyR': 'R',
+  'KeyS': 'S',
+  'KeyT': 'T',
+  'KeyU': 'U',
+  'KeyV': 'V',
+  'KeyW': 'W',
+  'KeyX': 'X',
+  'KeyY': 'Y',
+  'KeyZ': 'Z',
+  'Digit1': '1',
+  'Digit2': '2',
+  'Digit3': '3',
+  'Digit4': '4',
+  'Digit5': '5',
+  'Digit6': '6',
+  'Digit7': '7',
+  'Digit8': '8',
+  'Digit9': '9',
+  'Digit0': '0',
+  'Minus': '-',
+  'Equal': '=',
+  'BracketLeft': '[',
+  'BracketRight': ']',
+  'Backslash': r'\',
+  'Semicolon': ';',
+  'Quote': "'",
+  'Backquote': '`',
+  'Comma': ',',
+  'Period': '.',
+  'Slash': '/',
+};
+
+final int _kLowerA = 'a'.codeUnitAt(0);
+final int _kUpperA = 'A'.codeUnitAt(0);
+final int _kLowerZ = 'z'.codeUnitAt(0);
+final int _kUpperZ = 'Z'.codeUnitAt(0);
+final int _k0 = '0'.codeUnitAt(0);
+final int _k9 = '9'.codeUnitAt(0);
+
+bool _isAscii(String key) {
+  if (key.length != 1) {
+    return false;
+  }
+  // 0x20 is the first printable character in ASCII.
+  return key.codeUnitAt(0) >= 0x20 && key.codeUnitAt(0) <= 0x7F;
+}
+
+bool _isAlnum(String char) {
+  if (char.length != 1) {
+    return false;
+  }
+  final int charCode = char.codeUnitAt(0);
+  return (charCode >= _kLowerA && charCode <= _kLowerZ)
+      || (charCode >= _kUpperA && charCode <= _kUpperZ)
+      || (charCode >= _k0 && charCode <= _k9);
+}
+
+int? _heuristicDetector(String code, String key) {
+  if (_isAlnum(key)) {
+    return key.toUpperCase().codeUnitAt(0);
+  }
+  if (!_isAscii(key)) {
+    return _kFullLayoutGoals[code]!.codeUnitAt(0);
+  }
+  return null;
+}
 
 class LayoutMapping {
   LayoutMapping.win() : _mapping = kWinMapping;
@@ -12,8 +97,14 @@ class LayoutMapping {
 
   int? getLogicalKey(String? eventCode, String? eventKey, int eventKeyCode) {
     final int? result = _mapping[eventCode]?[eventKey];
-    if (result == _kUseKeyCode) {
+    if (result == kUseKeyCode) {
       return eventKeyCode;
+    }
+    if (result == null) {
+      final int? heuristicResult = _heuristicDetector(eventCode ?? '', eventKey ?? '');
+      if (heuristicResult != null) {
+        return heuristicResult;
+      }
     }
     return result;
   }
