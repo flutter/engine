@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <iostream>
 #include <memory>
 #include <utility>
-#include <iostream>
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
