@@ -67,6 +67,8 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     // SkString makes a copy.
     SkRuntimeEffect::Result result =
         SkRuntimeEffect::MakeForShader(SkString(sksl, code_size));
+    std::cerr << "Compiled asset " << asset_name << std::endl;
+    std::cerr << sksl << std::endl;
     if (result.effect == nullptr) {
       return std::string("Invalid SkSL:\n") + sksl +
              std::string("\nSkSL Error:\n") + result.errorText.c_str();
