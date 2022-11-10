@@ -79,7 +79,8 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     Dart_PropagateError(ths);
   }
   std::cerr << asset_name << std::endl;
-  std::cerr << "Setting sampled_image_count " << sampled_image_count << std::endl;
+  std::cerr << "Setting sampled_image_count " << sampled_image_count
+            << std::endl;
   Dart_Handle result = Dart_SetField(ths, tonic::ToDart("_samplerCount"),
                                      Dart_NewInteger(sampled_image_count));
   if (Dart_IsError(result)) {
