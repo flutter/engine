@@ -247,12 +247,10 @@ void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
 }
 
 void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
-  project_args_.update_semantics_callback =
-      context_.GetUpdateSemanticsCallbackHook();
   project_args_.update_semantics_node_callback =
-      context_.GetUpdateSemanticsNodeCallbackHook();
+      EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
-      context_.GetUpdateSemanticsCustomActionCallbackHook();
+      EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
