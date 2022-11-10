@@ -4300,7 +4300,7 @@ class FragmentShader extends Shader {
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetSampler')
   external void _setSampler(int index, ImageShader sampler);
 
-  @FfiNative<Bool Function(Handle)>('ReusableFragmentShader::ValidateSamplers')
+  @FfiNative<Bool Function(Pointer<Void>)>('ReusableFragmentShader::ValidateSamplers')
   external bool _validateSamplers();
 
   @FfiNative<Void Function(Pointer<Void>)>('ReusableFragmentShader::Dispose')
