@@ -1410,7 +1410,11 @@ class Paint {
       return true;
     }());
     assert(() {
-      value?._validate();
+      if (value is FragmentShader) {
+        if (!value._validateSamplers()) {
+          throw Exception('Invalid FragmentShader ${value._debugName ?? ''}: missing sampler');
+        }
+      }
       return true;
     }());
     _ensureObjectsInitialized()[_kShaderIndex] = value;
@@ -3736,9 +3740,6 @@ class Shader extends NativeFieldWrapperClass1 {
     return disposed;
   }
 
-  // Validate the shader correctness.
-  void _validate() { }
-
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   ///
@@ -4291,14 +4292,6 @@ class FragmentShader extends Shader {
     super.dispose();
     _floats = _kEmptyFloat32List;
     _dispose();
-  }
-
-  @override
-  void _validate() {
-    assert(!debugDisposed, 'Tried to accesss uniforms on a disposed Shader: $this');
-    if (!_validateSamplers()) {
-      throw Exception('Invalid FragmentShader ${_debugName ?? ''}: missing sampler');
-    }
   }
 
   @FfiNative<Handle Function(Handle, Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
