@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <iostream>
 #include <memory>
 #include <utility>
 
@@ -25,20 +24,17 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ReusableFragmentShader);
 ReusableFragmentShader::ReusableFragmentShader(
     fml::RefPtr<FragmentProgram> program,
     uint64_t float_count,
-    uint64_t sampler_count,
-    const std::string& debug_name)
+    uint64_t sampler_count
     : program_(std::move(program)),
       uniform_data_(SkData::MakeUninitialized(
           (float_count + 2 * sampler_count) * sizeof(float))),
       samplers_(sampler_count),
-      float_count_(float_count),
-      debug_name_(std::move(debug_name)) {}
+      float_count_(float_count) {}
 
 Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
                                            Dart_Handle program,
                                            Dart_Handle float_count_handle,
-                                           Dart_Handle sampler_count_handle,
-                                           const std::string& debug_name) {
+                                           Dart_Handle sampler_count_handle) {
   auto* fragment_program =
       tonic::DartConverter<FragmentProgram*>::FromDart(program);
   uint64_t float_count =
@@ -47,7 +43,7 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
       tonic::DartConverter<uint64_t>::FromDart(sampler_count_handle);
 
   auto res = fml::MakeRefCounted<ReusableFragmentShader>(
-      fml::Ref(fragment_program), float_count, sampler_count, debug_name);
+      fml::Ref(fragment_program), float_count, sampler_count);
   res->AssociateWithDartWrapper(wrapper);
 
   void* raw_uniform_data =
@@ -59,7 +55,6 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
 bool ReusableFragmentShader::ValidateSamplers() {
   for (auto i = 0u; i < samplers_.size(); i += 1) {
     if (samplers_[i] == nullptr) {
-      std::cerr << "Missing Sampler!: " << debug_name_ << std::endl;
       return false;
     }
   }
