@@ -58,7 +58,7 @@ class TestDepsParserMethods(unittest.TestCase):
       # vulkan-deps and khronos do not have one upstream URL
       # all other deps should have an associated upstream URL for vuln scanning purposes
       if dep_name not in ('vulkan-deps', 'khronos'):
-        # add the prefix on the dep name when searching for the upstream entry
+        # Add the prefix on the dep name when searching for the upstream entry.
         self.assertTrue(
             UPSTREAM_PREFIX + dep_name in self.upstream_urls,
             msg=dep_name + ' not found in upstream URL list. ' +
