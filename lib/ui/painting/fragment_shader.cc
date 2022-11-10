@@ -5,7 +5,6 @@
 #include <iostream>
 #include <memory>
 #include <utility>
-#include <iostream>
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
