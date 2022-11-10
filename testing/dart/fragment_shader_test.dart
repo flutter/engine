@@ -68,9 +68,14 @@ void main() async {
     );
     final FragmentShader fragmentShader = program.fragmentShader();
 
-    expect(() => Paint()..shader = fragmentShader, throwsA(isInstanceOf<Exception>()));
-
-    fragmentShader.dispose();
+    try {
+      Paint()..shader = fragmentShader;
+      fail('Expected to throw');
+    } catch (err) {
+      expect(err, contains('Invalid FragmentShader blue_green_sampler.frag.iplr'));
+    } finally {
+      fragmentShader.dispose();
+    }
   });
 
   test('Disposed FragmentShader on Paint', () async {
