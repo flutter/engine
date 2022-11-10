@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <iostream>
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
@@ -56,9 +57,11 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
 bool ReusableFragmentShader::ValidateSamplers(Dart_Handle wrapper) {
   for (auto i = 0u; i < samplers_.size(); i += 1) {
     if (samplers_[i] == nullptr) {
+      std::cerr << "Missing Sampler!" << std::endl;
       return false;
     }
   }
+  std::cerr << "No Missing Samplers" << std::endl;
   return true;
 }
 

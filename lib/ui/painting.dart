@@ -4260,7 +4260,7 @@ class FragmentShader extends Shader {
     );
   }
 
-  String? _debugName;
+  final String? _debugName;
 
   static final Float32List _kEmptyFloat32List = Float32List(0);
 
