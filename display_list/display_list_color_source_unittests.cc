@@ -980,7 +980,7 @@ TEST(DisplayListColorSource, RuntimeEffectWithNullSampler) {
           kTestRuntimeEffect1, {nullptr},
           std::make_shared<std::vector<uint8_t>>());
 
-  ASSERT_EQ(source3->skia_object(), nullptr);
+  ASSERT_EQ(source1->skia_object(), nullptr);
 }
 
 }  // namespace testing
