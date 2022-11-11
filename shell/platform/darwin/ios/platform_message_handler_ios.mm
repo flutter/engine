@@ -58,7 +58,7 @@ void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMe
     }
   }
   if (handler_info.handler) {
-    FlutterBinaryMessageHandler handler = handler_info.handler;
+    FlutterBinaryMessageHandler handler = Block_copy(handler_info.handler);
     NSData* data = nil;
     if (message->hasData()) {
       data = ConvertMappingToNSData(message->releaseData());
@@ -79,6 +79,7 @@ void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMe
           }
         }
       });
+      Block_release(handler);
     };
 
     if (handler_info.task_queue.get()) {
