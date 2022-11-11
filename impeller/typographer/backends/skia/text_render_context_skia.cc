@@ -436,7 +436,8 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   auto old_texture = last_atlas->GetTexture();
   if (old_texture != nullptr &&
-      old_texture->GetTextureDescriptor().size == atlas_size) {
+      old_texture->GetTextureDescriptor().size == atlas_size &&
+      old_texture->GetTextureDescriptor().format == format) {
     if (!UploadGlyphTextureAtlas(old_texture, bitmap)) {
       return nullptr;
     }
