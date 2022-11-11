@@ -40,7 +40,7 @@ HandleType ToHandleType(TextureGLES::Type type) {
 
 namespace {
 static std::unique_ptr<TextureInfoGLES> CreateTextureInfo(
-    ReactorGLES::Ref reactor,
+    const ReactorGLES::Ref& reactor,
     TextureDescriptor desc,
     bool is_default_fbo) {
   auto handle =
@@ -67,25 +67,23 @@ static std::unique_ptr<TextureInfoGLES> CreateTextureInfo(
 
 }  // namespace
 
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+TextureGLES::TextureGLES(const ReactorGLES::Ref& reactor,
                          TextureDescriptor desc,
                          bool is_default_fbo)
     : TextureGLES(reactor,
                   desc,
                   CreateTextureInfo(reactor, desc, is_default_fbo)) {}
 
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+TextureGLES::TextureGLES(const ReactorGLES::Ref& reactor,
                          TextureDescriptor desc,
                          WrappedTextureInfoGLES wrapped_texture_info)
-    : TextureGLES(std::move(reactor),
-                  desc,
-                  CreateTextureInfo(wrapped_texture_info)) {}
+    : TextureGLES(reactor, desc, CreateTextureInfo(wrapped_texture_info)) {}
 
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+TextureGLES::TextureGLES(const ReactorGLES::Ref& reactor,
                          TextureDescriptor desc,
                          std::unique_ptr<TextureInfoGLES> texture_info)
     : Texture(desc),
-      reactor_(std::move(reactor)),
+      reactor_(reactor),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       texture_info_(std::move(texture_info)) {
   // Ensure the texture descriptor itself is valid.

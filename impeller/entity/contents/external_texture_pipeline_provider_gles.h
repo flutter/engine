@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/texture_fill_external_image_oes.frag.h"
 #include "impeller/entity/tiled_texture_fill_external_image_oes.frag.h"
@@ -26,7 +25,6 @@ class ExternalTexturePipelineProviderGLES
 
   ~ExternalTexturePipelineProviderGLES() override;
 
- protected:
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
       ContentContextOptions opts) const override {
     return content_context_.GetPipeline(texture_external_oes_pipelines_, opts);

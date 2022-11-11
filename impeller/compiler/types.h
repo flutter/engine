@@ -79,8 +79,5 @@ spirv_cross::CompilerMSL::Options::Platform TargetPlatformToMSLPlatform(
 
 bool IsExternalImageOESFromSourceName(const std::string& file_name);
 
-std::string ToUtf8(const std::wstring& wstring);
-
-std::string ToUtf8(const std::string& string);
 }  // namespace compiler
 }  // namespace impeller

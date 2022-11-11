@@ -197,14 +197,13 @@ class Tessellator;
 
 class ExternalTexturePipelineProvider {
  public:
+  virtual ~ExternalTexturePipelineProvider() = default;
+
   virtual std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
       ContentContextOptions opts) const = 0;
 
   virtual std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
       ContentContextOptions opts) const = 0;
-
- protected:
-  virtual ~ExternalTexturePipelineProvider() = default;
 };
 
 class ContentContext {
@@ -514,7 +513,7 @@ class ContentContext {
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
-  std::shared_ptr<ExternalTexturePipelineProvider>
+  std::unique_ptr<ExternalTexturePipelineProvider>
       external_texture_pipeline_provider_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);

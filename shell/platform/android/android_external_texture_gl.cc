@@ -4,20 +4,12 @@
 
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 
-#include <memory>
 #include <utility>
 
-#include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_color_source.h"
-#include "flutter/display_list/display_list_image.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/impeller/display_list/display_list_image_impeller.h"
 #include "flutter/impeller/renderer/backend/gles/texture_gles.h"
-#include "fml/logging.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
-#include "include/core/SkTileMode.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"

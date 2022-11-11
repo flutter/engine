@@ -5,7 +5,6 @@
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 
 #include <memory>
-#include <string_view>
 
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"

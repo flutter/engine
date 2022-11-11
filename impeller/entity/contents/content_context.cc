@@ -213,7 +213,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
 
 #if IMPELLER_ENABLE_OPENGLES
   external_texture_pipeline_provider_ =
-      std::make_shared<ExternalTexturePipelineProviderGLES>(*this);
+      std::make_unique<ExternalTexturePipelineProviderGLES>(*this);
 #endif  // IMPELLER_ENABLE_OPENGLES
 
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {

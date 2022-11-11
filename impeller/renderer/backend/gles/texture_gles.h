@@ -43,11 +43,11 @@ class TextureGLES final : public Texture,
     kRenderBuffer,
   };
 
-  TextureGLES(ReactorGLES::Ref reactor,
+  TextureGLES(const ReactorGLES::Ref& reactor,
               TextureDescriptor desc,
               bool is_default_fbo = false);
 
-  TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+  TextureGLES(const ReactorGLES::Ref& reactor,
               TextureDescriptor desc,
               WrappedTextureInfoGLES wrapped_texture_info);
 
@@ -92,7 +92,7 @@ class TextureGLES final : public Texture,
   bool is_valid_ = false;
   std::unique_ptr<TextureInfoGLES> texture_info_;
 
-  TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+  TextureGLES(const ReactorGLES::Ref& reactor,
               TextureDescriptor desc,
               std::unique_ptr<TextureInfoGLES> texture_info);
 
