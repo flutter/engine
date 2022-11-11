@@ -132,12 +132,12 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     } else {
       if (backendFilter is ModeHtmlColorFilter) {
         _svgFilter = backendFilter.makeSvgFilter(_filterElement);
+        /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
+        if (_svgFilter == null) {
+            return;
+        }
       } else if (backendFilter is MatrixHtmlColorFilter) {
         _svgFilter = backendFilter.makeSvgFilter(_filterElement);
-      }
-      /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
-      if (_svgFilter == null) {
-          return;
       }
 
       // CSS uses pixel radius for blur. Flutter & SVG use sigma parameters. For
