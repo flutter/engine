@@ -18,6 +18,7 @@ import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
 import 'util.dart';
+import 'view_embedder/application_dom.dart';
 import 'window.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
@@ -25,6 +26,8 @@ import 'window.dart';
 /// Manages several top-level elements that host Flutter-generated content,
 /// including:
 ///
+/// - [hostElement], the root in which the user wants to place a Flutter app.
+///   (container for the `glassPaneElement`)
 /// - [glassPaneElement], the root element of a Flutter view.
 /// - [glassPaneShadow], the shadow root used to isolate Flutter-rendered
 ///   content from the surrounding page content, including from the platform
@@ -35,33 +38,28 @@ import 'window.dart';
 ///   tree for the [sceneElement].
 /// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
 class FlutterViewEmbedder {
-  FlutterViewEmbedder() {
-    assert(() {
-      _setupHotRestart();
-      return true;
-    }());
+  FlutterViewEmbedder({DomElement? hostElement}) {
+    // Create an appropriate ApplicationDom using its factory...
+    // TODO: Pass the correct object here!
+    _applicationDom = ApplicationDom.create(hostElement: null);
+
     reset();
+
     assert(() {
-      _registerHotRestartCleanUp();
+      // Cleanup the applicationDom before hot-restart.
+      registerHotRestartListener(_applicationDom.onHotRestart);
       return true;
     }());
   }
 
+  late ApplicationDom _applicationDom;
+
   // The tag name for the root view of the flutter app (glass-pane)
   static const String _glassPaneTagName = 'flt-glass-pane';
-
-  /// Listens to window resize events
-  DomSubscription? _resizeSubscription;
-
-  /// Listens to window locale events.
-  DomSubscription? _localeSubscription;
 
   /// Contains Flutter-specific CSS rules, such as default margins and
   /// paddings.
   DomHTMLStyleElement? _styleElement;
-
-  /// Configures the screen, such as scaling.
-  DomHTMLMetaElement? _viewportMeta;
 
   /// The element that contains the [sceneElement].
   ///
@@ -97,50 +95,6 @@ class FlutterViewEmbedder {
   DomElement? get sceneElement => _sceneElement;
   DomElement? _sceneElement;
 
-  /// This is state persistent across hot restarts that indicates what
-  /// to clear.  Delay removal of old visible state to make the
-  /// transition appear smooth.
-  static const String _staleHotRestartStore = '__flutter_state';
-  List<DomElement?>? _staleHotRestartState;
-
-  /// Creates a container for DOM elements that need to be cleaned up between
-  /// hot restarts.
-  ///
-  /// If a contains already exists, reuses the existing one.
-  void _setupHotRestart() {
-    // This persists across hot restarts to clear stale DOM.
-    _staleHotRestartState = getJsProperty<List<DomElement?>?>(domWindow, _staleHotRestartStore);
-    if (_staleHotRestartState == null) {
-      _staleHotRestartState = <DomElement?>[];
-      setJsProperty(
-          domWindow, _staleHotRestartStore, _staleHotRestartState);
-    }
-  }
-
-  /// Registers DOM elements that need to be cleaned up before hot restarting.
-  ///
-  /// [_setupHotRestart] must have been called prior to calling this method.
-  void _registerHotRestartCleanUp() {
-    registerHotRestartListener(() {
-      _resizeSubscription?.cancel();
-      _localeSubscription?.cancel();
-      _staleHotRestartState!.addAll(<DomElement?>[
-        _glassPaneElement,
-        _styleElement,
-        _viewportMeta,
-      ]);
-    });
-  }
-
-  void _clearOnHotRestart() {
-    if (_staleHotRestartState!.isNotEmpty) {
-      for (final DomElement? element in _staleHotRestartState!) {
-        element?.remove();
-      }
-      _staleHotRestartState!.clear();
-    }
-  }
-
   /// Don't unnecessarily move DOM nodes around. If a DOM node is
   /// already in the right place, skip DOM mutation. This is both faster and
   /// more correct, because moving DOM nodes loses internal state, such as
@@ -151,10 +105,6 @@ class FlutterViewEmbedder {
       _sceneElement = sceneElement;
       _sceneHostElement!.append(sceneElement!);
     }
-    assert(() {
-      _clearOnHotRestart();
-      return true;
-    }());
   }
 
   /// The element that captures input events, such as pointer events.
@@ -187,6 +137,7 @@ class FlutterViewEmbedder {
     _resourcesHost?.remove();
     _resourcesHost = null;
     domDocument.head!.append(_styleElement!);
+    _applicationDom.registerElementForCleanup(_styleElement!);
     final DomCSSStyleSheet sheet = _styleElement!.sheet! as DomCSSStyleSheet;
     applyGlobalCssRulesToSheet(
       sheet,
@@ -232,34 +183,8 @@ class FlutterViewEmbedder {
     // engine are complete.
     bodyElement.spellcheck = false;
 
-    for (final DomElement viewportMeta
-        in domDocument.head!.querySelectorAll('meta[name="viewport"]')) {
-      if (assertionsEnabled) {
-        // Filter out the meta tag that the engine placed on the page. This is
-        // to avoid UI flicker during hot restart. Hot restart will clean up the
-        // old meta tag synchronously with the first post-restart frame.
-        if (!viewportMeta.hasAttribute('flt-viewport')) {
-          print(
-            'WARNING: found an existing <meta name="viewport"> tag. Flutter '
-            'Web uses its own viewport configuration for better compatibility '
-            'with Flutter. This tag will be replaced.',
-          );
-        }
-      }
-      viewportMeta.remove();
-    }
-
-    // This removes a previously created meta tag. Note, however, that this does
-    // not remove the meta tag during hot restart. Hot restart resets all static
-    // variables, so this will be null upon hot restart. Instead, this tag is
-    // removed by _clearOnHotRestart.
-    _viewportMeta?.remove();
-    _viewportMeta = createDomHTMLMetaElement()
-      ..setAttribute('flt-viewport', '')
-      ..name = 'viewport'
-      ..content = 'width=device-width, initial-scale=1.0, '
-          'maximum-scale=1.0, user-scalable=no';
-    domDocument.head!.append(_viewportMeta!);
+    // Set meta-viewport
+    _applicationDom.applyViewportMeta();
 
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
@@ -276,6 +201,7 @@ class FlutterViewEmbedder {
     // This must be appended to the body, so the engine can create a host node
     // properly.
     bodyElement.append(glassPaneElement);
+    _applicationDom.registerElementForCleanup(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
@@ -357,15 +283,9 @@ class FlutterViewEmbedder {
       });
     }
 
-    if (domWindow.visualViewport != null) {
-      _resizeSubscription = DomSubscription(domWindow.visualViewport!, 'resize',
-          allowInterop(_metricsDidChange));
-    } else {
-      _resizeSubscription = DomSubscription(domWindow, 'resize',
-          allowInterop(_metricsDidChange));
-    }
-    _localeSubscription = DomSubscription(domWindow, 'languagechange',
-          allowInterop(_languageDidChange));
+    _applicationDom.setMetricsChangeHandler(_metricsDidChange);
+    _applicationDom.setLanguageChangeHandler(_languageDidChange);
+
     EnginePlatformDispatcher.instance.updateLocales();
   }
 
@@ -671,4 +591,5 @@ FlutterViewEmbedder get flutterViewEmbedder {
 FlutterViewEmbedder? _flutterViewEmbedder;
 
 /// Initializes the [FlutterViewEmbedder], if it's not already initialized.
-FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() => _flutterViewEmbedder ??= FlutterViewEmbedder();
+FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() =>
+    _flutterViewEmbedder ??= FlutterViewEmbedder(hostElement: configuration.hostElement);

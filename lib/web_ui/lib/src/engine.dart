@@ -170,4 +170,7 @@ export 'engine/text_editing/text_editing.dart';
 export 'engine/util.dart';
 export 'engine/validators.dart';
 export 'engine/vector_math.dart';
+export 'engine/view_embedder/application_dom.dart';
+export 'engine/view_embedder/custom_element_application_dom.dart';
+export 'engine/view_embedder/full_page_application_dom.dart';
 export 'engine/window.dart';
