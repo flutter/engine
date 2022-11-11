@@ -293,12 +293,10 @@ class CkCanvas {
       [CkPaint? paint]) {
         final CkManagedSkImageFilterConvertible convertible;
         if (filter is ui.ColorFilter) {
-          convertible =
-          (filter as EngineColorFilter).toRendererColorFilter() as CkManagedSkImageFilterConvertible;
+          convertible = (filter as EngineColorFilter).toRendererColorFilter() as CkManagedSkImageFilterConvertible;
         }
         else {
-          convertible =
-          filter as CkManagedSkImageFilterConvertible;
+          convertible = filter as CkManagedSkImageFilterConvertible;
         }
     return skCanvas.saveLayer(
       paint?.skiaObject,
