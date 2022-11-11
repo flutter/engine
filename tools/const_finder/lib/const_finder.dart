@@ -11,6 +11,8 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     this.kernelFilePath,
     this.classLibraryUri,
     this.className,
+    this.annotationClassLibraryUri,
+    this.annotationClassName,
   )  : _visitedInstances = <String>{},
        constantInstances = <Map<String, dynamic>>[],
        nonConstantLocations = <Map<String, dynamic>>[];
@@ -29,6 +31,14 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   final List<Map<String, dynamic>> nonConstantLocations;
 
   bool inIgnoredClass = false;
+
+  /// The name of the name of the class of the annotation marking classes
+  /// whose constant references should be ignored.
+  final String? annotationClassName;
+
+  /// The library URI of the class of the annotation marking classes whose
+  /// constant references should be ignored.
+  final String? annotationClassLibraryUri;
 
   // A cache of previously evaluated classes.
   static final Map<Class, bool> _classHeirarchyCache = <Class, bool>{};
@@ -76,27 +86,27 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   @override
   void visitClass(Class node) {
-    // Check if this is a class that we should ignore.
-    if (!_isStaticIconProvider(node)) {
-      // Not an ignored class.
-      super.visitClass(node);
-      return;
-    }
-    inIgnoredClass = true;
+    // check if this is a class that we should ignore
+    inIgnoredClass = _classShouldBeIgnored(node);
     super.visitClass(node);
     inIgnoredClass = false;
   }
 
-  // Constants from classes annotated with an instance of StaticIconProvider
-  // should be ignored.
-  bool _isStaticIconProvider(Class node) {
+  // If any annotations on the class match annotationClassName AND
+  // annotationClassLibraryUri.
+  bool _classShouldBeIgnored(Class node) {
+    if (annotationClassName == null || annotationClassLibraryUri == null) {
+      return false;
+    }
     return node.annotations.any((Expression expression) {
       if (expression is! ConstantExpression) {
         return false;
       }
 
-      final DartType type = expression.type;
-      return type is InterfaceType && type.classNode.name == 'StaticIconProvider';
+      final Constant constant = expression.constant;
+      return constant is InstanceConstant
+          && constant.classNode.name == annotationClassName
+          && constant.classNode.enclosingLibrary.importUri.toString() == annotationClassLibraryUri;
     });
   }
 
@@ -131,10 +141,14 @@ class ConstFinder {
     required String kernelFilePath,
     required String classLibraryUri,
     required String className,
+    String? annotationClassLibraryUri,
+    String? annotationClassName,
   })  : _visitor = _ConstVisitor(
                     kernelFilePath,
                     classLibraryUri,
                     className,
+                    annotationClassLibraryUri,
+                    annotationClassName,
                   );
 
   final _ConstVisitor _visitor;

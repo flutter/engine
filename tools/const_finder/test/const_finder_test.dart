@@ -122,6 +122,8 @@ void _checkAnnotation(String dillPath, Compiler compiler) {
     kernelFilePath: dillPath,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
+    annotationClassName: 'StaticIconProvider',
+    annotationClassLibraryUri: 'package:const_finder_fixtures/static_icon_provider.dart',
   );
   expectInstances(
     finder.findInstances(),
@@ -262,7 +264,7 @@ Future<void> main(List<String> args) async {
       sdkRoot: sdkRoot,
       librariesSpec: librariesSpec,
       verify: _checkRecursion,
-      compiler: Compiler.frontendServer,
+      compiler: Compiler.aot,
     ),
     _Test(
       name: 'box_web',
@@ -280,7 +282,7 @@ Future<void> main(List<String> args) async {
       sdkRoot: sdkRoot,
       librariesSpec: librariesSpec,
       verify: _checkConsts,
-      compiler: Compiler.frontendServer,
+      compiler: Compiler.aot,
     ),
     _Test(
       name: 'consts_web',
@@ -298,7 +300,7 @@ Future<void> main(List<String> args) async {
       sdkRoot: sdkRoot,
       librariesSpec: librariesSpec,
       verify: _checkNonConstsFrontend,
-      compiler: Compiler.frontendServer,
+      compiler: Compiler.aot,
     ),
     _Test(
       name: 'consts_and_non_web',
@@ -316,7 +318,7 @@ Future<void> main(List<String> args) async {
       sdkRoot: sdkRoot,
       librariesSpec: librariesSpec,
       verify: _checkAnnotation,
-      compiler: Compiler.frontendServer,
+      compiler: Compiler.aot,
     ),
     _Test(
       name: 'static_icon_provider_web',
@@ -347,7 +349,7 @@ Future<void> main(List<String> args) async {
 
 enum Compiler {
   // Uses TFA tree-shaking.
-  frontendServer,
+  aot,
   // Does not have TFA tree-shaking.
   dart2js,
 }
@@ -377,8 +379,8 @@ class _Test {
   void run() {
     stdout.writeln('Compiling $dartSource to $dillPath with $compiler');
 
-    if (compiler == Compiler.frontendServer) {
-      _compileTFADill();
+    if (compiler == Compiler.aot) {
+      _compileAOTDill();
     } else {
       _compileWebDill();
     }
@@ -395,7 +397,7 @@ class _Test {
     }
   }
 
-  void _compileTFADill() {
+  void _compileAOTDill() {
     checkProcessResult(Process.runSync(dart, <String>[
       frontendServer,
       '--sdk-root=$sdkRoot',
