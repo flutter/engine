@@ -102,7 +102,7 @@ bool ImGui_ImplImpeller_Init(
     }
 
     bd->pipeline =
-        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
 
     bd->sampler = context->GetSamplerLibrary()->GetSampler({});
@@ -264,7 +264,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;
-        cmd.primitive_type = impeller::PrimitiveType::kTriangle;
 
         render_pass.AddCommand(std::move(cmd));
       }

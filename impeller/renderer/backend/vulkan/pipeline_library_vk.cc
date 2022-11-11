@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
@@ -60,14 +61,16 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
-        nullptr);
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
   }
 
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
-  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
-  pipelines_[descriptor] = future;
+  auto pipeline_future =
+      PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
+  pipelines_[descriptor] = pipeline_future;
 
   auto weak_this = weak_from_this();
 
@@ -85,7 +88,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
         weak_this, descriptor, std::move(pipeline_create_info)));
   });
 
-  return future;
+  return pipeline_future;
 }
 
 // |PipelineLibrary|
@@ -93,11 +96,9 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
     ComputePipelineDescriptor descriptor) {
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
-  auto future =
-      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
   // TODO(dnfield): implement compute for GLES.
   promise->set_value(nullptr);
-  return future;
+  return {descriptor, promise->get_future()};
 }
 
 static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
@@ -131,6 +132,17 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   return desc;
 }
 
+// |PipelineLibrary|
+void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  Lock lock(pipelines_mutex_);
+
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
+}
+
 //----------------------------------------------------------------------------
 /// Render Pass
 /// We are NOT going to use the same render pass with the framebuffer (later)
@@ -147,8 +159,9 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   std::vector<vk::AttachmentDescription> render_pass_attachments;
   const auto sample_count = desc.GetSampleCount();
   // Set the color attachment.
+  const auto& format = desc.GetColorAttachmentDescriptor(0)->format;
   render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-      vk::Format::eB8G8R8A8Unorm, sample_count, true));
+      ToVKImageFormat(format), sample_count, true));
 
   std::vector<vk::AttachmentReference> color_attachment_references;
   std::vector<vk::AttachmentReference> resolve_attachment_references;
@@ -249,7 +262,7 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
     info.setPName("main");
     info.setModule(
         ShaderFunctionVK::Cast(entrypoint.second.get())->GetModule());
-    shader_stages.push_back(std::move(info));
+    shader_stages.push_back(info);
   }
   pipeline_info.setStages(shader_stages);
 
@@ -280,11 +293,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   //----------------------------------------------------------------------------
   /// Primitive Input Assembly State
-  /// TODO(106379): Move primitive topology to the the pipeline instead of it
-  ///               being on the draw call. This is hard-coded right now.
-  ///
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+  const auto topology = ToVKPrimitiveTopology(desc.GetPrimitiveType());
+  input_assembly.setTopology(topology);
   pipeline_info.setPInputAssemblyState(&input_assembly);
 
   //----------------------------------------------------------------------------

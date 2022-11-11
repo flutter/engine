@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "flutter/fml/logging.h"
+#include "impeller/compiler/utilities.h"
 
 namespace impeller {
 namespace compiler {
@@ -73,11 +74,28 @@ std::string TargetPlatformToString(TargetPlatform platform) {
   FML_UNREACHABLE();
 }
 
-std::string EntryPointFunctionNameFromSourceName(const std::string& file_name,
-                                                 SourceType type) {
+std::string SourceLanguageToString(SourceLanguage source_language) {
+  switch (source_language) {
+    case SourceLanguage::kUnknown:
+      return "Unknown";
+    case SourceLanguage::kGLSL:
+      return "GLSL";
+    case SourceLanguage::kHLSL:
+      return "HLSL";
+  }
+}
+
+std::string EntryPointFunctionNameFromSourceName(
+    const std::string& file_name,
+    SourceType type,
+    SourceLanguage source_language) {
+  if (source_language == SourceLanguage::kHLSL) {
+    return "main";
+  }
+
   std::stringstream stream;
   std::filesystem::path file_path(file_name);
-  stream << ToUtf8(file_path.stem().native()) << "_";
+  stream << Utf8FromPath(file_path.stem()) << "_";
   switch (type) {
     case SourceType::kUnknown:
       stream << "unknown";
@@ -251,15 +269,6 @@ std::string TargetPlatformSLExtension(TargetPlatform platform) {
       return "vk.spirv";
   }
   FML_UNREACHABLE();
-}
-
-std::string ToUtf8(const std::wstring& wstring) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
-  return myconv.to_bytes(wstring);
-}
-
-std::string ToUtf8(const std::string& string) {
-  return string;
 }
 
 bool TargetPlatformIsOpenGL(TargetPlatform platform) {

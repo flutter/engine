@@ -127,6 +127,8 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
   }
+
+  desc.SetPrimitiveType(primitive_type);
 }
 
 template <typename PipelineT>
@@ -214,12 +216,12 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   geometry_position_pipelines_[{}] =
       CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
+  yuv_to_rgb_filter_pipelines_[{}] =
+      CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
-  // Pipelines that are variants of the base pipelines with custom descriptors.
-  // TODO(98684): Rework this API to allow fetching the descriptor without
-  //              waiting for the pipeline to build.
-  if (auto solid_fill_pipeline = solid_fill_pipelines_[{}]->WaitAndGet()) {
-    auto clip_pipeline_descriptor = solid_fill_pipeline->GetDescriptor();
+  if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
+    auto clip_pipeline_descriptor =
+        solid_fill_pipelines_[{}]->GetDescriptor().value();
     clip_pipeline_descriptor.SetLabel("Clip Pipeline");
     // Disable write to all color attachments.
     auto color_attachments =
