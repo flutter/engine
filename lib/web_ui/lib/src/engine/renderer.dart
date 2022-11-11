@@ -121,6 +121,11 @@ abstract class Renderer {
   });
   ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner});
 
+  dynamic createModeColorFilter(ui.ColorFilter creator, ui.Color color, ui.BlendMode blendMode);
+  dynamic createMatrixColorFilter(ui.ColorFilter creator, List<double> matrix);
+  dynamic createLinearToSrgbGammaColorFilter(ui.ColorFilter creator);
+  dynamic createSrgbToLinearGammaColorFilter(ui.ColorFilter creator);
+
   Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
     int? targetWidth,

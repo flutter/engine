@@ -6,7 +6,6 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../color_filter.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'image_filter.dart';
@@ -56,8 +55,8 @@ class ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
 /// Additionally, this class provides the interface for converting itself to a
 /// [ManagedSkiaObject] that manages a skia image filter.
 abstract class CkColorFilter
-    implements CkManagedSkImageFilterConvertible, EngineColorFilter {
-  const CkColorFilter();
+    implements CkManagedSkImageFilterConvertible {
+  const CkColorFilter(this.creator);
 
   /// Called by [ManagedSkiaObject.createDefault] and
   /// [ManagedSkiaObject.resurrect] to create a new [SkImageFilter], when this
@@ -73,10 +72,14 @@ abstract class CkColorFilter
   @override
   ManagedSkiaObject<SkImageFilter> get imageFilter =>
       CkColorFilterImageFilter(colorFilter: this);
+
+  /// Convert the CkColorFilter back into a ui.ColorFilter
+  /// Used in [CkPaint]
+  final ui.ColorFilter creator;
 }
 
 class CkBlendModeColorFilter extends CkColorFilter {
-  const CkBlendModeColorFilter(this.color, this.blendMode);
+  const CkBlendModeColorFilter(super.creator, this.color, this.blendMode);
 
   final ui.Color color;
   final ui.BlendMode blendMode;
@@ -129,7 +132,7 @@ class CkBlendModeColorFilter extends CkColorFilter {
 }
 
 class CkMatrixColorFilter extends CkColorFilter {
-  const CkMatrixColorFilter(this.matrix);
+  const CkMatrixColorFilter(super.creator, this.matrix);
 
   final List<double> matrix;
 
@@ -172,7 +175,7 @@ class CkMatrixColorFilter extends CkColorFilter {
 }
 
 class CkLinearToSrgbGammaColorFilter extends CkColorFilter {
-  const CkLinearToSrgbGammaColorFilter();
+  const CkLinearToSrgbGammaColorFilter(super.creator);
   @override
   SkColorFilter _initRawColorFilter() =>
       canvasKit.ColorFilter.MakeLinearToSRGBGamma();
@@ -188,7 +191,7 @@ class CkLinearToSrgbGammaColorFilter extends CkColorFilter {
 }
 
 class CkSrgbToLinearGammaColorFilter extends CkColorFilter {
-  const CkSrgbToLinearGammaColorFilter();
+  const CkSrgbToLinearGammaColorFilter(super.creator);
   @override
   SkColorFilter _initRawColorFilter() =>
       canvasKit.ColorFilter.MakeSRGBToLinearGamma();
@@ -204,7 +207,7 @@ class CkSrgbToLinearGammaColorFilter extends CkColorFilter {
 }
 
 class CkComposeColorFilter extends CkColorFilter {
-  const CkComposeColorFilter(this.outer, this.inner);
+  const CkComposeColorFilter(super.creator, this.outer, this.inner);
   final ManagedSkColorFilter? outer;
   final ManagedSkColorFilter inner;
 

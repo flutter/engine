@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/ui.dart' as ui;
 
-import 'canvaskit/color_filter.dart';
+enum ColorFilterType {
+  mode,
+  matrix,
+  linearToSrgbGamma,
+  srgbToLinearGamma,
+}
 
 /// A description of a color filter to apply when drawing a shape or compositing
 /// a layer with a particular [Paint]. A color filter is a function that takes
@@ -22,8 +28,11 @@ class EngineColorFilter implements ui.ColorFilter {
   /// The output of this filter is then composited into the background according
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
-  const factory EngineColorFilter.mode(ui.Color color, ui.BlendMode blendMode) =
-      CkBlendModeColorFilter;
+  const EngineColorFilter.mode(ui.Color color, ui.BlendMode blendMode)
+    : _color = color,
+      _blendMode = blendMode,
+      _matrix = null,
+      _type = ColorFilterType.mode;
 
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.
@@ -85,16 +94,70 @@ class EngineColorFilter implements ui.ColorFilter {
   ///   0,      0,      0,      1, 0,
   /// ]);
   /// ```
-  const factory EngineColorFilter.matrix(List<double> matrix) =
-      CkMatrixColorFilter;
+  const EngineColorFilter.matrix(List<double> matrix)
+      : _color = null,
+        _blendMode = null,
+        _matrix = matrix,
+        _type = ColorFilterType.matrix;
 
   /// Construct a color filter that applies the sRGB gamma curve to the RGB
   /// channels.
-  const factory EngineColorFilter.linearToSrgbGamma() =
-      CkLinearToSrgbGammaColorFilter;
+  const EngineColorFilter.linearToSrgbGamma()
+      : _color = null,
+        _blendMode = null,
+        _matrix = null,
+        _type = ColorFilterType.linearToSrgbGamma;
 
   /// Creates a color filter that applies the inverse of the sRGB gamma curve
   /// to the RGB channels.
-  const factory EngineColorFilter.srgbToLinearGamma() =
-      CkSrgbToLinearGammaColorFilter;
+  const EngineColorFilter.srgbToLinearGamma()
+      : _color = null,
+        _blendMode = null,
+        _matrix = null,
+        _type = ColorFilterType.srgbToLinearGamma;
+
+  final ui.Color? _color;
+  final ui.BlendMode? _blendMode;
+  final List<double>? _matrix;
+  final ColorFilterType _type;
+
+  /// Convert the current [ColorFilter] to either a [CkColorFilter] or [HtmlEngineColorFilter]
+  /// depending on the renderer.
+  ///
+  /// After calling this function and getting the renderer specific ColorFilter,
+  /// cast the correct type on the converted ColorFilter based on the renderer backend:
+  ///
+  /// canvaskit: [CkColorFilter]
+  /// Html: [HtmlEngineColorFilter]
+  ///
+  /// ## Example uses:
+  /// ```
+  /// CkColorFilter ckColorFilter =
+  ///   (ColorFilter.mode(Color color, BlendMode blendMode) as EngineColorFilter).toRendererColorFilter() as CkColorFilter;
+  /// ```
+  ///
+  /// This workaround allows ColorFilter to be const constructbile and
+  /// efficiently comparable, so that widgets can check for ColorFilter equality to
+  /// avoid repainting.
+  dynamic toRendererColorFilter() {
+    switch (_type) {
+      case ColorFilterType.mode:
+        if (_color == null || _blendMode == null) {
+          return null;
+        }
+        return renderer.createModeColorFilter(this, _color!, _blendMode!);
+      case ColorFilterType.matrix:
+        if (_matrix == null) {
+          return null;
+        }
+        assert(_matrix!.length == 20, 'Color Matrix must have 20 entries.');
+        return renderer.createMatrixColorFilter(this, _matrix!);
+      case ColorFilterType.linearToSrgbGamma:
+        return renderer.createLinearToSrgbGammaColorFilter(this);
+      case ColorFilterType.srgbToLinearGamma:
+        return renderer.createSrgbToLinearGammaColorFilter(this);
+      default:
+        throw StateError('Unknown mode $_type for ColorFilter.');
+    }
+  }
 }
