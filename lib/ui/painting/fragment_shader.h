@@ -46,8 +46,7 @@ class ReusableFragmentShader : public Shader {
  private:
   ReusableFragmentShader(fml::RefPtr<FragmentProgram> program,
                          uint64_t float_count,
-                         uint64_t sampler_count,
-                         const std::string& debug_name);
+                         uint64_t sampler_count);
 
   fml::RefPtr<FragmentProgram> program_;
   sk_sp<SkData> uniform_data_;
