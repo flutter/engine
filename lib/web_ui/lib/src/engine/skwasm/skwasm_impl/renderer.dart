@@ -71,6 +71,26 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
+  ui.ColorFilter createLinearToSrgbGammaColorFilter(ui.ColorFilter creator) {
+    throw UnimplementedError('Not yet implemented');
+  }
+
+  @override
+  ui.ColorFilter createMatrixColorFilter(ui.ColorFilter creator, List<double> matrix) {
+    throw UnimplementedError('Not yet implemented');
+  }
+
+  @override
+  ui.ColorFilter createModeColorFilter(ui.ColorFilter creator, ui.Color color, ui.BlendMode blendMode) {
+    throw UnimplementedError('Not yet implemented');
+  }
+
+  @override
+  ui.ColorFilter createSrgbToLinearGammaColorFilter(ui.ColorFilter creator) {
+    throw UnimplementedError('Not yet implemented');
+  }
+
+  @override
   ui.Paint createPaint() {
     throw UnimplementedError('Not yet implemented');
   }
