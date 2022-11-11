@@ -114,7 +114,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     VALIDATION_LOG << "Failed to set stage inputs for runtime effect pipeline.";
   }
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
-  desc.SetColorAttachmentDescriptor(0u, {.format = PixelFormat::kDefaultColor});
+  desc.SetColorAttachmentDescriptor(
+      0u, {.format = PixelFormat::kDefaultColor, .blending_enabled = true});
   desc.SetStencilAttachmentDescriptors({});
   desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
 
@@ -126,7 +127,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   options.primitive_type = geometry_result.type;
   options.ApplyToPipelineDescriptor(desc);
 
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).get();
+  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
   if (!pipeline) {
     VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
     return false;
