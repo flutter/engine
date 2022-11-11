@@ -4252,12 +4252,61 @@ class FragmentShader extends Shader {
   late Float32List _floats;
 
   /// Sets the float uniform at [index] to [value].
+  ///
+  /// All uniforms defined in a fragment shader that are not samplers must be
+  /// set through this method. This includes floats, ints, bools, and vectors.
+  /// The correct index for each uniform is determined by the order of the
+  /// uniforms as defined in the fragment program, ignoring any samplers. For
+  /// data types that are composed of multiple floats such as a vec4, more than
+  /// one call to [setFloat] is required.
+  ///
+  /// For example, given the following uniforms in a fragment program:
+  ///
+  /// ```glsl
+  /// uniform float uScale;
+  /// uniform int uPitch;
+  /// uniform bool uEnabled;
+  /// uniform sampler2D uTexture;
+  /// uniform vec2 uMagnitude;
+  /// uniform vec4 uColor;
+  /// ```
+  ///
+  /// Then the corresponding Dart code to correctly initialize these uniforms
+  /// is:
+  ///
+  /// ```dart
+  /// void updateShader(Shader shader, Color color, ImageShader sampler) {
+  ///   shader.setFloat(0, 23);  // uScale
+  ///   shader.setFloat(1, 1);   // uPitch
+  ///   shader.setFloat(2, 0);   // uEnabled
+  ///   shader.setFloat(3, 114); // uMagnitude x
+  ///   shader.setFloat(4, 83);  // uMagnitude y
+  ///
+  ///   // Convert color to premultiplied opacity.
+  ///   shader.setFloat(5, color.red / 255 * color.opacity);   // uColor r
+  ///   shader.setFloat(6, color.green / 255 * color.opacity); // uColor g
+  ///   shader.setFloat(7, color.blue / 255 * color.opacity);  // uColor b
+  ///   shader.setFloat(8, color.opacity);                     // uColor a
+  ///
+  ///   // initialize sampler uniform.
+  ///   shader.setSampler(0, sampler);
+  /// }
+  /// ```
+  ///
+  /// Note how the indexes used does not count the `sampler2D` uniform. This
+  /// uniform will be set separately with [setSampler], with the index starting
+  /// over at 0.
+  ///
+  /// Any float uniforms that are left uninitialized will default to `0`.
   void setFloat(int index, double value) {
     assert(!debugDisposed, 'Tried to accesss uniforms on a disposed Shader: $this');
     _floats[index] = value;
   }
 
   /// Sets the sampler uniform at [index] to [sampler].
+  ///
+  /// The index of the setSampler is the index of the sampler uniform defined
+  /// in the fragment program, excluding all non-sampler uniforms.
   ///
   /// All the sampler uniforms that a shader expects must be provided or the
   /// results will be undefined.
