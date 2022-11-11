@@ -73,8 +73,8 @@ abstract class CkColorFilter
   ManagedSkiaObject<SkImageFilter> get imageFilter =>
       CkColorFilterImageFilter(colorFilter: this);
 
-  /// Convert the CkColorFilter back into a ui.ColorFilter
-  /// Used in [CkPaint]
+  /// Convert the CkColorFilter back into a ui.ColorFilter.
+  /// Used in [CkPaint].
   final ui.ColorFilter creator;
 }
 
