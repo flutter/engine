@@ -69,6 +69,9 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   };
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
+  if (cache) {
+    cache->EvictUnusedCacheEntries();
+  }
 
   return context.surface_needs_readback;
 }
@@ -163,7 +166,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   };
 
   if (cache) {
-    cache->EvictUnusedCacheEntries();
     TryToRasterCache(raster_cache_items_, &context, ignore_raster_cache);
   }
 

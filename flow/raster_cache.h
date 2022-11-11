@@ -101,9 +101,9 @@ struct RasterCacheMetrics {
  *     - RasterCacheItem::PrerollFinalize
  *         At the end of each layer's preroll, may mark cache entries as
  *         encountered by the current frame.
- * - Paint stage
- *   - RasterCache::EvictUnusedCacheEntries
+ *    - RasterCache::EvictUnusedCacheEntries
  *       Evict cached images that are no longer used.
+ * - Paint stage
  *   - LayerTree::TryToPrepareRasterCache
  *       Create cache image for each cache entry if it does not exist.
  *   - LayerTree::Paint - for each layer in the tree:
