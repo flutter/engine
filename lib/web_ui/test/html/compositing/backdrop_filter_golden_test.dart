@@ -152,9 +152,10 @@ Future<void> testMain() async {
     );
     final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
 
+    // current background color is light green, apply a light yellow colorFilter
     const ColorFilter colorFilter = ColorFilter.mode(
-      Color(0xFF00FF00),
-      BlendMode.srcIn
+      Color(0xFFFFFFB1),
+      BlendMode.modulate
     );
     builder.pushBackdropFilter(colorFilter);
     builder.addPicture(Offset.zero, circles1);
