@@ -140,6 +140,17 @@ source_set("txt") {
     "src/cjk/paragraph_builder_ckj.h",
     "src/cjk/paragraph_cjk.cc",
     "src/cjk/paragraph_cjk.h",
+    "src/cjk/otf_cmap.cc",
+    "src/cjk/otf_cmap.h",
+    "src/cjk/cjk_utils.cc",
+    "src/cjk/cjk_utils.h",
+    "src/cjk/jump_table.h",
+    "src/cjk/glyph_run.cc",
+    "src/cjk/glyph_run.h",
+    "src/cjk/glyph_run_paint_record.cc",
+    "src/cjk/glyph_run_paint_record.h",
+    "src/cjk/glyph_itemize.cc",
+    "src/cjk/glyph_itemize.h",
   ]
 
   public_configs = [ ":txt_config" ]

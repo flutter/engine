@@ -1,20 +1,26 @@
 #ifndef FLUTTER_PARAGRAPH_CJK_H
 #define FLUTTER_PARAGRAPH_CJK_H
 
+#include "glyph_itemize.h"
+#include "glyph_run.h"
+#include "glyph_run_paint_record.h"
 #include "txt/font_collection.h"
 #include "txt/paint_record.h"
 #include "txt/paragraph.h"
 #include "txt/styled_runs.h"
 
+#include <unordered_set>
+
 namespace txt {
 
 class ParagraphCJK : public Paragraph {
  public:
-  // TODO jkj inline placeholders
-  ParagraphCJK(std::vector<uint16_t> text,
+  ParagraphCJK(std::vector<uint16_t>&& text,
                const ParagraphStyle& style,
-               StyledRuns runs,
-               std::shared_ptr<FontCollection> font_collection);
+               StyledRuns&& runs,
+               std::shared_ptr<FontCollection> font_collection,
+               std::vector<PlaceholderRun>&& inline_placeholders,
+               std::unordered_set<size_t>&& obj_replacement_char_indexes);
 
   virtual ~ParagraphCJK();
 
@@ -42,17 +48,62 @@ class ParagraphCJK : public Paragraph {
   std::vector<LineMetrics>& GetLineMetrics() override;
 
  private:
-  void LayoutStyledRun(const TextStyle& style);
+  // Strut metrics of zero will have no effect on the layout.
+  struct StrutMetrics {
+    double ascent = 0;  // Positive value to keep signs clear.
+    double descent = 0;
+    double leading = 0;
+    double half_leading = 0;
+    double line_height = 0;
+    bool force_strut = false;
+  };
 
+  void ComputeStyledRuns();
+  SkScalar ItemizeScriptRun(const ScriptRun& run, SkFont& sk_font);
+  void ComputeTextLines(SkFont& sk_font);
+  void UpdateLineMetrics(const SkFontMetrics& metrics,
+                         const TextStyle& style,
+                         double& max_ascent,
+                         double& max_descent,
+                         double& max_unscaled_ascent,
+                         PlaceholderRun* placeholder_run,
+                         size_t line_number,
+                         size_t line_limit);
+  void ComputePlaceholderMetrics(PlaceholderRun* placeholder_run,
+                                 double& ascent,
+                                 double& descent);
+
+  void ComputeStrut(StrutMetrics* strut, SkFont& font);
+  bool IsStrutValid();
+  double GetStrutAscent();
+  double GetStrutDescent();
+  double GetLineXOffset(double line_total_advance, bool justify_line);
+
+  // Get from builder
   std::vector<uint16_t> text_;
-  StyledRuns runs_;
+  StyledRuns styled_runs_;
   ParagraphStyle paragraph_style_;
   std::shared_ptr<FontCollection> font_collection_;
 
+  // A vector of PlaceholderRuns, which detail the sizes, positioning and break
+  // behavior of the empty spaces to leave. Each placeholder span corresponds to
+  // a 0xFFFC (object replacement character) in text_, which indicates the
+  // position in the text where the placeholder will occur. There should be an
+  // equal number of 0xFFFC characters and elements in this vector.
+  std::vector<PlaceholderRun> inline_placeholders_;
+  // The indexes of instances of 0xFFFC that correspond to placeholders. This is
+  // necessary since the user may pass in manually entered 0xFFFC values using
+  // AddText().
+  std::unordered_set<size_t> obj_replacement_char_indexes_;
+  std::vector<size_t> placeholder_run_indexes_;
+
+  std::vector<size_t> hard_break_positions_;
+  std::vector<ScriptRun> script_runs_;
+
   std::vector<LineMetrics> line_metrics_;
-  std::vector<double> line_widths_;
   size_t final_line_count_ = 0;
 
+  StrutMetrics strut_;
   bool did_exceed_max_lines_;
   double width_ = -1.0;
   double longest_line_ = -1.0;
@@ -61,10 +112,12 @@ class ParagraphCJK : public Paragraph {
   double alphabetic_baseline_ = std::numeric_limits<double>::max();
   double ideographic_baseline_ = std::numeric_limits<double>::max();
 
+  bool is_first_layout_ = true;
   bool needs_layout_ = true;
+  std::vector<std::unique_ptr<GlyphRun>> glyph_runs_;
+  std::vector<GlyphRunPaintRecord> paint_records_;
 
-  std::vector<PaintRecord> paint_records_;
-  std::vector<sk_sp<SkTextBlob>> text_blobs_;
+  std::unique_ptr<icu::BreakIterator> word_breaker_;
 };
 
 }  // namespace txt

@@ -54,8 +54,10 @@ void ParagraphBuilderCJK::AddPlaceholder(PlaceholderRun& span) {
 
 std::unique_ptr<Paragraph> ParagraphBuilderCJK::Build() {
   runs_.EndRunIfNeeded(text_.size());
-  auto p = std::make_unique<ParagraphCJK>(std::move(text_), paragraph_style_,
-                                          std::move(runs_), font_collection_);
+  auto p = std::make_unique<ParagraphCJK>(
+      std::move(text_), paragraph_style_, std::move(runs_), font_collection_,
+      std::move(inline_placeholders_),
+      std::move(obj_replacement_char_indexes_));
   return p;
 }
 

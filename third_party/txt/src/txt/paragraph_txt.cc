@@ -1189,6 +1189,25 @@ void ParagraphTxt::Layout(double width) {
             });
 
   longest_line_ = max_right_ - min_left_;
+
+#if 0
+  for (const auto& line_metric : line_metrics_) {
+    FML_DLOG(ERROR) << "metric: [" << line_metric.start_index << ", "
+                    << line_metric.end_index << ", "
+                    << line_metric.end_excluding_whitespace << ", "
+                    << line_metric.end_including_newline << ", "
+                    << line_metric.hard_break << "], ["
+                    << line_metric.line_number << ", " << line_metric.width
+                    << ", " << line_metric.height << "]";
+
+    for (const auto& it : line_metric.run_metrics) {
+      FML_LOG(ERROR) << "\t\t" << it.first << ", "
+                     << it.second.font_metrics.fAscent;
+    }
+  }
+  FML_LOG(ERROR) << "max intrinsic width: " << max_intrinsic_width_
+                 << ", min intrinsic width: " << min_intrinsic_width_;
+#endif
 }
 
 void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
