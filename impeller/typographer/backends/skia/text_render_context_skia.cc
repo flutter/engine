@@ -4,7 +4,6 @@
 
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 
-#include <iostream>
 #include <utility>
 
 #include "flutter/fml/logging.h"
@@ -330,7 +329,6 @@ bool UploadGlyphTextureAtlas(const std::shared_ptr<Texture>& texture,
   auto texture_descriptor = texture->GetTextureDescriptor();
   if (pixmap.rowBytes() * pixmap.height() !=
       texture_descriptor.GetByteSizeOfBaseMipLevel()) {
-    std::cerr << "descriptor mismatch" << std::endl;
     return false;
   }
 
@@ -341,7 +339,6 @@ bool UploadGlyphTextureAtlas(const std::shared_ptr<Texture>& texture,
   );
 
   if (!texture->SetContents(mapping)) {
-    std::cerr << "contents cant be set" << std::endl;
     return false;
   }
   return true;
@@ -440,17 +437,11 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   auto old_texture = last_atlas->GetTexture();
   if (old_texture != nullptr &&
       old_texture->GetTextureDescriptor().size == atlas_size) {
-    std::cerr << "reuse atlas" << std::endl;
     if (!UploadGlyphTextureAtlas(old_texture, bitmap)) {
       return nullptr;
     }
     glyph_atlas->SetTexture(std::move(old_texture));
   } else {
-    std::cerr << "can't reuse "
-              << (old_texture != nullptr
-                      ? old_texture->GetTextureDescriptor().size
-                      : ISize(0, 0))
-              << " : " << atlas_size << std::endl;
     auto texture = CreateGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
                                            atlas_size, format);
     if (!texture || !UploadGlyphTextureAtlas(texture, bitmap)) {
