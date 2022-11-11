@@ -29,19 +29,19 @@ void testMain() {
 
     test('empty string', () {
       expect(split(''), <Line>[
-        Line('', endOfText),
+        Line('', opportunity),
       ]);
     });
 
     test('whitespace', () {
       expect(split('foo bar'), <Line>[
         Line('foo ', opportunity, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('  foo    bar  '), <Line>[
         Line('  ', opportunity, sp: 2),
         Line('foo    ', opportunity, sp: 4),
-        Line('bar  ', endOfText, sp: 2),
+        Line('bar  ', opportunity, sp: 2),
       ]);
     });
 
@@ -49,17 +49,17 @@ void testMain() {
       expect(split('foo a bar'), <Line>[
         Line('foo ', opportunity, sp: 1),
         Line('a ', opportunity, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('a b c'), <Line>[
         Line('a ', opportunity, sp: 1),
         Line('b ', opportunity, sp: 1),
-        Line('c', endOfText),
+        Line('c', opportunity),
       ]);
       expect(split(' a b '), <Line>[
         Line(' ', opportunity, sp: 1),
         Line('a ', opportunity, sp: 1),
-        Line('b ', endOfText, sp: 1),
+        Line('b ', opportunity, sp: 1),
       ]);
     });
 
@@ -68,7 +68,7 @@ void testMain() {
       // Can't have a line break between CR×LF.
       expect(split('foo\r\nbar'), <Line>[
         Line('foo\r\n', mandatory, nl: 2, sp: 2),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
 
       // Any other new line is considered a line break on its own.
@@ -76,107 +76,103 @@ void testMain() {
       expect(split('foo\n\nbar'), <Line>[
         Line('foo\n', mandatory, nl: 1, sp: 1),
         Line('\n', mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('foo\r\rbar'), <Line>[
         Line('foo\r', mandatory, nl: 1, sp: 1),
         Line('\r', mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('foo$bk${bk}bar'), <Line>[
         Line('foo$bk', mandatory, nl: 1, sp: 1),
         Line(bk, mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
 
       expect(split('foo\n\rbar'), <Line>[
         Line('foo\n', mandatory, nl: 1, sp: 1),
         Line('\r', mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('foo$bk\rbar'), <Line>[
         Line('foo$bk', mandatory, nl: 1, sp: 1),
         Line('\r', mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('foo\r${bk}bar'), <Line>[
         Line('foo\r', mandatory, nl: 1, sp: 1),
         Line(bk, mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('foo$bk\nbar'), <Line>[
         Line('foo$bk', mandatory, nl: 1, sp: 1),
         Line('\n', mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
       expect(split('foo\n${bk}bar'), <Line>[
         Line('foo\n', mandatory, nl: 1, sp: 1),
         Line(bk, mandatory, nl: 1, sp: 1),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
 
       // New lines at the beginning and end.
 
       expect(split('foo\n'), <Line>[
         Line('foo\n', mandatory, nl: 1, sp: 1),
-        Line('', endOfText),
       ]);
       expect(split('foo\r'), <Line>[
         Line('foo\r', mandatory, nl: 1, sp: 1),
-        Line('', endOfText),
       ]);
       expect(split('foo$bk'), <Line>[
         Line('foo$bk', mandatory, nl: 1, sp: 1),
-        Line('', endOfText),
       ]);
 
       expect(split('\nfoo'), <Line>[
         Line('\n', mandatory, nl: 1, sp: 1),
-        Line('foo', endOfText),
+        Line('foo', opportunity),
       ]);
       expect(split('\rfoo'), <Line>[
         Line('\r', mandatory, nl: 1, sp: 1),
-        Line('foo', endOfText),
+        Line('foo', opportunity),
       ]);
       expect(split('${bk}foo'), <Line>[
         Line(bk, mandatory, nl: 1, sp: 1),
-        Line('foo', endOfText),
+        Line('foo', opportunity),
       ]);
 
       // Whitespace with new lines.
 
       expect(split('foo  \n'), <Line>[
         Line('foo  \n', mandatory, nl: 1, sp: 3),
-        Line('', endOfText),
       ]);
 
       expect(split('foo  \n   '), <Line>[
         Line('foo  \n', mandatory, nl: 1, sp: 3),
-        Line('   ', endOfText, sp: 3),
+        Line('   ', opportunity, sp: 3),
       ]);
 
       expect(split('foo  \n   bar'), <Line>[
         Line('foo  \n', mandatory, nl: 1, sp: 3),
         Line('   ', opportunity, sp: 3),
-        Line('bar', endOfText),
+        Line('bar', opportunity),
       ]);
 
       expect(split('\n  foo'), <Line>[
         Line('\n', mandatory, nl: 1, sp: 1),
         Line('  ', opportunity, sp: 2),
-        Line('foo', endOfText),
+        Line('foo', opportunity),
       ]);
       expect(split('   \n  foo'), <Line>[
         Line('   \n', mandatory, nl: 1, sp: 4),
         Line('  ', opportunity, sp: 2),
-        Line('foo', endOfText),
+        Line('foo', opportunity),
       ]);
     });
 
     test('trailing spaces and new lines', () {
       expect(split('foo bar  '), <Line>[
           Line('foo ', opportunity, sp: 1),
-          Line('bar  ', endOfText, sp: 2),
+          Line('bar  ', opportunity, sp: 2),
         ],
       );
 
@@ -184,7 +180,6 @@ void testMain() {
           Line('foo  \n', mandatory, nl: 1, sp: 3),
           Line('bar\n', mandatory, nl: 1, sp: 1),
           Line('baz   \n', mandatory, nl: 1, sp: 4),
-          Line('', endOfText),
         ],
       );
     });
@@ -192,27 +187,27 @@ void testMain() {
     test('leading spaces', () {
       expect(split(' foo'), <Line>[
           Line(' ', opportunity, sp: 1),
-          Line('foo', endOfText),
+          Line('foo', opportunity),
         ],
       );
 
       expect(split('   foo'), <Line>[
           Line('   ', opportunity, sp: 3),
-          Line('foo', endOfText),
+          Line('foo', opportunity),
         ],
       );
 
       expect(split('  foo   bar'), <Line>[
           Line('  ', opportunity, sp: 2),
           Line('foo   ', opportunity, sp: 3),
-          Line('bar', endOfText),
+          Line('bar', opportunity),
         ],
       );
 
       expect(split('  \n   foo'), <Line>[
           Line('  \n', mandatory, nl: 1, sp: 3),
           Line('   ', opportunity, sp: 3),
-          Line('foo', endOfText),
+          Line('foo', opportunity),
         ],
       );
     });
@@ -221,7 +216,7 @@ void testMain() {
       expect(split('Lorem sit .'), <Line>[
           Line('Lorem ', opportunity, sp: 1),
           Line('sit ', opportunity, sp: 1),
-          Line('.', endOfText),
+          Line('.', opportunity),
         ],
       );
     });
@@ -253,7 +248,7 @@ void testMain() {
         Line('dolor', opportunity),
         Line('$placeholderChar\n', mandatory, nl: 1, sp: 1),
         Line('sit', opportunity),
-        Line(placeholderChar, endOfText),
+        Line(placeholderChar, opportunity),
       ]);
     });
 
@@ -268,7 +263,7 @@ void testMain() {
       final String placeholderChar = String.fromCharCode(0xFFFC);
 
       expect(split(paragraph.plainText), <Line>[
-        Line(placeholderChar, endOfText),
+        Line(placeholderChar, opportunity),
       ]);
     });
 
@@ -292,7 +287,7 @@ void testMain() {
           Line('$placeholderChar  \n', mandatory, nl: 1, sp: 3),
           Line('ipsum \n', mandatory, nl: 1, sp: 2),
           Line('$placeholderChar\n', mandatory, nl: 1, sp: 1),
-          Line(placeholderChar, endOfText),
+          Line(placeholderChar, opportunity),
         ],
       );
     });
@@ -300,26 +295,26 @@ void testMain() {
     test('surrogates', () {
       expect(split('A\u{1F600}'), <Line>[
           Line('A', opportunity),
-          Line('\u{1F600}', endOfText),
+          Line('\u{1F600}', opportunity),
         ],
       );
 
       expect(split('\u{1F600}A'), <Line>[
           Line('\u{1F600}', opportunity),
-          Line('A', endOfText),
+          Line('A', opportunity),
         ],
       );
 
       expect(split('\u{1F600}\u{1F600}'), <Line>[
           Line('\u{1F600}', opportunity),
-          Line('\u{1F600}', endOfText),
+          Line('\u{1F600}', opportunity),
         ],
       );
 
       expect(split('A \u{1F600} \u{1F600}'), <Line>[
           Line('A ', opportunity, sp: 1),
           Line('\u{1F600} ', opportunity, sp: 1),
-          Line('\u{1F600}', endOfText),
+          Line('\u{1F600}', opportunity),
         ],
       );
     });
@@ -341,7 +336,7 @@ void testMain() {
 
         int surrogateCount = 0;
         // `s` is the index in the `testCase.signs` list.
-        for (int s = 0; s < testCase.signs.length - 1; s++) {
+        for (int s = 0; s < testCase.signs.length; s++) {
           // `i` is the index in the `text`.
           final int i = s + surrogateCount;
           final Sign sign = testCase.signs[s];
@@ -355,7 +350,10 @@ void testMain() {
                   '"$text"\n'
                   '\nExpected fragment to end at {$i} but ended at {${currentFragment.end}}.',
             );
-            currentFragment = fragments[++f];
+            // Only advance to the next fragment if we haven't reached the end yet.
+            if (f < fragments.length - 1) {
+              currentFragment = fragments[++f];
+            }
           } else {
             expect(
               currentFragment.end,
@@ -371,42 +369,6 @@ void testMain() {
             surrogateCount++;
           }
         }
-
-        // Now let's look at the last sign, which requires different handling.
-
-        // The last line break is an endOfText (or a hard break followed by
-        // endOfText if the last character is a hard line break).
-        if (currentFragment.type == mandatory) {
-          // When last character is a hard line break, there should be an
-          // extra fragment to represent the empty line at the end.
-          expect(
-            fragments,
-            hasLength(f + 2),
-            reason: 'Failed at test case number $t:\n'
-                '$testCase\n'
-                '"$text"\n'
-                "\nExpected an extra fragment for endOfText but there wasn't one.",
-          );
-
-          currentFragment = fragments[++f];
-        }
-
-        expect(
-          currentFragment.type,
-          endOfText,
-          reason: 'Failed at test case number $t:\n'
-              '$testCase\n'
-              '"$text"\n\n'
-              'Expected an endOfText fragment but found: $currentFragment',
-        );
-        expect(
-          currentFragment.end,
-          text.length,
-          reason: 'Failed at test case number $t:\n'
-              '$testCase\n'
-              '"$text"\n\n'
-              'Expected an endOfText fragment ending at {${text.length}} but found: $currentFragment',
-        );
       }
     });
   });

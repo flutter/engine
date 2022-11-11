@@ -30,7 +30,7 @@ Future<void> testMain() async {
         (CanvasParagraphBuilder builder) {},
       );
       expect(split(paragraph1), <_Fragment>[
-        _Fragment('', endOfText, null, ffPrevious, defaultStyle),
+        _Fragment('', opportunity, null, ffPrevious, defaultStyle),
       ]);
 
       final CanvasParagraph paragraph2 = rich(
@@ -40,7 +40,7 @@ Future<void> testMain() async {
         },
       );
       expect(split(paragraph2), <_Fragment>[
-        _Fragment('', endOfText, null, ffPrevious, defaultStyle),
+        _Fragment('', opportunity, null, ffPrevious, defaultStyle),
       ]);
 
       final CanvasParagraph paragraph3 = rich(
@@ -51,7 +51,7 @@ Future<void> testMain() async {
         },
       );
       expect(split(paragraph3), <_Fragment>[
-        _Fragment('', endOfText, null, ffPrevious, style1),
+        _Fragment('', opportunity, null, ffPrevious, style1),
       ]);
     });
 
@@ -65,7 +65,7 @@ Future<void> testMain() async {
         _Fragment(' ', opportunity, null, ffSandwich, defaultStyle, sp: 1),
         _Fragment(rtlWord1, prohibited, rtl, ffRtl, defaultStyle),
         _Fragment('   ', opportunity, null, ffSandwich, defaultStyle, sp: 3),
-        _Fragment('ipsum34', endOfText, ltr, ffLtr, defaultStyle),
+        _Fragment('ipsum34', opportunity, ltr, ffLtr, defaultStyle),
       ]);
     });
 
@@ -96,7 +96,7 @@ Future<void> testMain() async {
         _Fragment(rtlWord1, prohibited, rtl, ffRtl, style3),
         _Fragment(' ', opportunity, null, ffSandwich, style3, sp: 1),
         _Fragment('foo', prohibited, ltr, ffLtr, style3),
-        _Fragment('.', endOfText, null, ffSandwich, style3),
+        _Fragment('.', opportunity, null, ffSandwich, style3),
       ]);
     });
 
@@ -135,7 +135,7 @@ Future<void> testMain() async {
         _Fragment(' ', opportunity, null, ffSandwich, style3, sp: 1),
         _Fragment('fo', prohibited, ltr, ffLtr, style3),
         _Fragment('o', prohibited, ltr, ffLtr, style1),
-        _Fragment('.', endOfText, null, ffSandwich, style1),
+        _Fragment('.', opportunity, null, ffSandwich, style1),
       ]);
     });
 
@@ -159,7 +159,6 @@ Future<void> testMain() async {
         _Fragment('  ', opportunity, null, ffSandwich, style2, sp: 2),
         _Fragment('ipsum', prohibited, ltr, ffLtr, style2),
         _Fragment(' \n', mandatory, null, ffSandwich, style2, nl: 1, sp: 2),
-        _Fragment('', endOfText, null, ffSandwich, style2),
       ]);
     });
 
@@ -183,7 +182,7 @@ Future<void> testMain() async {
         _Fragment(' ', prohibited, null, ffSandwich, defaultStyle, sp: 1),
         _Fragment('   ', prohibited, null, ffSandwich, style1, sp: 3),
         _Fragment('  ', opportunity, null, ffSandwich, style2, sp: 2),
-        _Fragment('ipsum', endOfText, ltr, ffLtr, defaultStyle),
+        _Fragment('ipsum', opportunity, ltr, ffLtr, defaultStyle),
       ]);
     });
 
@@ -219,7 +218,7 @@ Future<void> testMain() async {
         _Fragment(placeholderChar, prohibited, ltr, ffLtr, style2),
         _Fragment('\n', mandatory, null, ffSandwich, style2, nl: 1, sp: 1),
         _Fragment('sit', opportunity, ltr, ffLtr, style2),
-        _Fragment(placeholderChar, endOfText, ltr, ffLtr, defaultStyle),
+        _Fragment(placeholderChar, opportunity, ltr, ffLtr, defaultStyle),
       ]);
     });
   });

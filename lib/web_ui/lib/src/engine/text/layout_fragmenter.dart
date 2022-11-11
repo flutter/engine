@@ -167,7 +167,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
   bool get isSpaceOnly => length == trailingSpaces;
   bool get isPlaceholder => span is PlaceholderSpan;
   bool get isBreak => type != LineBreakType.prohibited;
-  bool get isHardBreak => type == LineBreakType.mandatory || type == LineBreakType.endOfText;
+  bool get isHardBreak => type == LineBreakType.mandatory;
   EngineTextStyle get style => span.style;
 
   /// Returns the substring from [paragraph] that corresponds to this fragment,
@@ -600,7 +600,7 @@ class EllipsisFragment extends LayoutFragment {
   ) : super(
           index,
           index,
-          LineBreakType.endOfText,
+          LineBreakType.opportunity,
           null,
           // The ellipsis is always at the end of the line, so it can't be
           // sandwiched. This means it'll always follow the paragraph direction.

@@ -61,17 +61,17 @@ class TextLayoutService {
   /// Performs the layout on a paragraph given the [constraints].
   ///
   /// The function starts by resetting all layout-related properties. Then it
-  /// starts looping through the paragraph to calculate all layout metrics.
+  /// starts looping through the paragraph fragments to calculate all layout
+  /// metrics.
   ///
-  /// It uses a [Spanometer] to perform measurements within spans of the
-  /// paragraph. It also uses [LineBuilders] to generate [ParagraphLine]s as
-  /// it iterates through the paragraph.
+  /// It uses a [Spanometer] to measure paragraph fragments. It also uses
+  /// [LineBuilder] to build [ParagraphLine]s as it iterates through the
+  /// paragraph.
   ///
   /// The main loop keeps going until:
   ///
-  /// 1. The end of the paragraph is reached (i.e. LineBreakType.endOfText).
-  /// 2. Enough lines have been computed to satisfy [maxLines].
-  /// 3. An ellipsis is appended because of an overflow.
+  /// 1. The end of the paragraph is reached.
+  /// 2. An ellipsis is appended because of an overflow.
   void performLayout(ui.ParagraphConstraints constraints) {
     // Reset results from previous layout.
     width = constraints.width;
@@ -91,13 +91,14 @@ class TextLayoutService {
     outerLoop:
     for (int i = 0; i < fragments.length; i++) {
       final LayoutFragment fragment = fragments[i];
+      bool isLastFragment = i == fragments.length - 1;
 
       currentLine.addFragment(fragment);
 
       while (currentLine.isOverflowing) {
         if (currentLine.canHaveEllipsis) {
           currentLine.insertEllipsis();
-          lines.add(currentLine.build());
+          lines.add(currentLine.build(isLastLine: true));
           didExceedMaxLines = true;
           break outerLoop;
         }
@@ -111,13 +112,24 @@ class TextLayoutService {
         }
 
         i += currentLine.appendZeroWidthFragments(fragments, startFrom: i + 1);
-        lines.add(currentLine.build());
+        isLastFragment = i == fragments.length - 1;
+        lines.add(currentLine.build(isLastLine: isLastFragment));
         currentLine = currentLine.nextLine();
       }
 
-      if (currentLine.isHardBreak) {
-        lines.add(currentLine.build());
+      final bool isHardBreak = currentLine.isHardBreak;
+      if (isHardBreak) {
+        lines.add(currentLine.build(isLastLine: false));
         currentLine = currentLine.nextLine();
+      }
+
+      if (isLastFragment) {
+        final bool shouldAddCurrentLine = isHardBreak || currentLine.isNotEmpty;
+        if (shouldAddCurrentLine) {
+          // If the last fragment is a hard break, we need to add an empty line
+          // to the end of the paragraph.
+          lines.add(currentLine.build(isLastLine: true));
+        }
       }
     }
 
@@ -203,13 +215,16 @@ class TextLayoutService {
         case LineBreakType.opportunity:
           minIntrinsicWidth = math.max(minIntrinsicWidth, runningMinIntrinsicWidth);
           runningMinIntrinsicWidth = 0;
+
+          // Don't reset `runningMaxIntrinsicWidth` until we reach a hard break.
+          maxIntrinsicWidth = math.max(maxIntrinsicWidth, runningMaxIntrinsicWidth);
           break;
 
         case LineBreakType.mandatory:
-        case LineBreakType.endOfText:
           minIntrinsicWidth = math.max(minIntrinsicWidth, runningMinIntrinsicWidth);
-          maxIntrinsicWidth = math.max(maxIntrinsicWidth, runningMaxIntrinsicWidth);
           runningMinIntrinsicWidth = 0;
+
+          maxIntrinsicWidth = math.max(maxIntrinsicWidth, runningMaxIntrinsicWidth);
           runningMaxIntrinsicWidth = 0;
           break;
       }
@@ -827,7 +842,7 @@ class LineBuilder {
   }
 
   /// Builds the [ParagraphLine] instance that represents this line.
-  ParagraphLine build() {
+  ParagraphLine build({ required bool isLastLine }) {
     if (_fragmentsForNextLine == null) {
       _fragmentsForNextLine = _fragments.getRange(_lastBreakableFragment + 1, _fragments.length).toList();
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
@@ -841,7 +856,7 @@ class LineBuilder {
       trailingNewlines: trailingNewlines,
       trailingSpaces: _trailingSpaces,
       spaceCount: _spaceCount,
-      hardBreak: isHardBreak,
+      hardBreak: isLastLine || isHardBreak,
       width: width,
       widthWithTrailingSpaces: widthIncludingSpace,
       left: alignOffset,

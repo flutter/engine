@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math' as math;
+
 import '../dom.dart';
 import 'fragmenter.dart';
 import 'line_break_properties.dart';
@@ -31,12 +33,6 @@ enum LineBreakType {
 
   /// Indicates that this is a hard line break that can't be skipped.
   mandatory,
-
-  /// Indicates the end of the text (which is also considered a line break in
-  /// the Unicode spec). This is the same as [mandatory] but it's needed in our
-  /// implementation to distinguish between the universal [endOfText] and the
-  /// line break caused by "\n" at the end of the text.
-  endOfText,
 }
 
 /// Splits [text] into fragments based on line breaks.
@@ -70,7 +66,7 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
 
   @override
   List<LineBreakFragment> fragment() {
-    final List<LineBreakFragment> breaks = <LineBreakFragment>[];
+    final List<LineBreakFragment> fragments = <LineBreakFragment>[];
     int fragmentStart = 0;
 
     final DomV8BreakIterator iterator = createV8BreakIterator();
@@ -95,7 +91,7 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
         } else {
           // Always break after a sequence of spaces.
           if (trailingSpaces > 0) {
-            breaks.add(LineBreakFragment(
+            fragments.add(LineBreakFragment(
               fragmentStart,
               i,
               LineBreakType.opportunity,
@@ -109,7 +105,7 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
         }
       }
 
-      breaks.add(LineBreakFragment(
+      fragments.add(LineBreakFragment(
         fragmentStart,
         fragmentEnd,
         type,
@@ -119,23 +115,19 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
       fragmentStart = fragmentEnd;
     }
 
-    if (breaks.isEmpty || breaks.last.type == LineBreakType.mandatory) {
-      breaks.add(LineBreakFragment(text.length, text.length, LineBreakType.endOfText, trailingNewlines: 0, trailingSpaces: 0));
+    // This is necessary for empty strings.
+    if (fragments.isEmpty) {
+      fragments.add(const LineBreakFragment(0, 0, LineBreakType.opportunity, trailingNewlines: 0, trailingSpaces: 0));
     }
 
-    return breaks;
+    return fragments;
   }
 
   /// Gets break type from v8BreakIterator.
   LineBreakType _getBreakType(DomV8BreakIterator iterator) {
-    final int fragmentEnd = iterator.current().toInt();
-
     // I don't know why v8BreakIterator uses the type "none" to mean "soft break".
     if (iterator.breakType() != 'none') {
       return LineBreakType.mandatory;
-    }
-    if (fragmentEnd == text.length) {
-      return LineBreakType.endOfText;
     }
     return LineBreakType.opportunity;
   }
@@ -245,8 +237,7 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
   int fragmentStart = 0;
 
   void setBreak(LineBreakType type, int debugRuleNumber) {
-    final int fragmentEnd =
-        type == LineBreakType.endOfText ? text.length : index;
+    final int fragmentEnd = math.min(index, text.length);
     assert(fragmentEnd >= fragmentStart);
 
     // Uncomment the following line to help debug line breaking.
@@ -732,7 +723,9 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
 
   // Always break at the end of text.
   // LB3: ! eot
-  setBreak(LineBreakType.endOfText, 3);
+  if (fragments.isEmpty || fragments.last.end < text.length) {
+    setBreak(LineBreakType.opportunity, 3);
+  }
 
   return fragments;
 }

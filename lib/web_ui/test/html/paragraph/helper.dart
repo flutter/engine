@@ -13,7 +13,6 @@ typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 const LineBreakType prohibited = LineBreakType.prohibited;
 const LineBreakType opportunity = LineBreakType.opportunity;
 const LineBreakType mandatory = LineBreakType.mandatory;
-const LineBreakType endOfText = LineBreakType.endOfText;
 
 const TextDirection ltr = TextDirection.ltr;
 const TextDirection rtl = TextDirection.rtl;
