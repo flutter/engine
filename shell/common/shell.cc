@@ -899,6 +899,12 @@ void Shell::OnPlatformViewDestroyed() {
   // Overall, the longer term plan is to remove this implementation once
   // https://github.com/flutter/flutter/issues/96679 is fixed.
   rasterizer_->TeardownExternalViewEmbedder();
+
+  auto ui_task = [engine = engine_->GetWeakPtr()] {
+    if (engine) {
+      engine->NotifyDestroyed();
+    }
+  };
 }
 
 // |PlatformView::Delegate|
