@@ -28,6 +28,11 @@ using flutter::LayoutClue;
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
 
+// A trackpad touch following inertial scrolling should cause an inertia cancel
+// event to be issued. Use a window of 50 milliseconds after the scroll to account
+// for delays in event propagation observed in macOS Ventura.
+static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
+
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
  * events that the embedding API expects.
@@ -843,8 +848,9 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)touchesBeganWithEvent:(NSEvent*)event {
   NSTouch* touch = event.allTouches.anyObject;
   if (touch != nil) {
-    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) < 0.050) {
-      // The trackpad has been touched within 50 ms following a scroll momentum event.
+    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) <
+        kTrackpadTouchInertiaCancelWindowMs) {
+      // The trackpad has been touched following a scroll momentum event.
       // A scroll inertia cancel message should be sent to the framework.
       NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
       NSPoint locationInBackingCoordinates =
