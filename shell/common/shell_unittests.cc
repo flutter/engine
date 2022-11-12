@@ -3948,14 +3948,13 @@ TEST_F(ShellTest, NotifyDestroyed) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 
   fml::CountDownLatch latch(1);
-  AddNativeCallback(
-      "NotifyDestroyedBool", CREATE_NATIVE_ENTRY([&](auto args) {
-        auto runtime_controller = const_cast<RuntimeController*>(
-            shell->GetEngine()->GetRuntimeController());
-        bool success = runtime_controller->NotifyDestroyed();
-        EXPECT_TRUE(success);
-        latch.CountDown();
-      }));
+  AddNativeCallback("NotifyDestroyedBool", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto runtime_controller = const_cast<RuntimeController*>(
+                          shell->GetEngine()->GetRuntimeController());
+                      bool success = runtime_controller->NotifyDestroyed();
+                      EXPECT_TRUE(success);
+                      latch.CountDown();
+                    }));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("callNotifyDestroyed");
