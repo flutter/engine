@@ -333,6 +333,21 @@ abstract class _BaseAdapter {
 mixin _WheelEventListenerMixin on _BaseAdapter {
   static double? _defaultScrollLineHeight;
 
+  bool _isAcceleratedMouseWheelDelta(num delta, num? wheelDelta) {
+    // On macOS, scrolling using a mouse wheel by default uses an acceleration
+    // curve, so delta values ramp up and are not at fixed multiples of 120.
+    // But in this case, the wheelDelta properties of the event still keep
+    // their original values.
+    // For all events without this acceleration curve applied, the wheelDelta
+    // values are by convention three times greater than the delta values and with
+    // the opposite sign.
+    if (wheelDelta == null) {
+      return false;
+    }
+    // Account for observed issues with integer truncation by allowing +-1px error.
+    return (wheelDelta - (-3 * delta)).abs() > 1;
+  }
+
   bool _isTrackpadEvent(DomWheelEvent event) {
     // This function relies on deprecated and non-standard implementation
     // details. Useful reference material can be found below.
@@ -355,15 +370,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       // a trackpad.
       return false;
     }
-    if (((event.wheelDeltaX ?? (-3 * event.deltaX)) != -3 * event.deltaX) ||
-        ((event.wheelDeltaY ?? (-3 * event.deltaY)) != -3 * event.deltaY)) {
-      // On macOS, scrolling using a mouse wheel by default uses an acceleration
-      // curve, so delta values ramp up and are not at fixed multiples of 120.
-      // But in this case, the wheelDelta properties of the event still keep
-      // their original values.
-      // For all events without this acceleration curve applied, the wheelDelta
-      // values are by convention three times greater than the delta values and with
-      // the opposite sign.
+    if (_isAcceleratedMouseWheelDelta(event.deltaX, event.wheelDeltaX) ||
+        _isAcceleratedMouseWheelDelta(event.deltaY, event.wheelDeltaY)) {
       return false;
     }
     return true;
