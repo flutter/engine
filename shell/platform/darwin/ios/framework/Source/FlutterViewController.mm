@@ -33,6 +33,9 @@
 
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
+
+// Calculated based on spring interpolation from https://github.com/CosynPa/RevealSpringAnimation
+// (supports max 120fps)
 static NSArray* const kKeyboardStops = @[
   @0.0104644605808437,
   @0.0378945710726348,
@@ -163,41 +166,6 @@ typedef struct MouseState {
 - (void)deregisterNotifications;
 @end
 
-@interface KeyboardAnimationLayer : CALayer
-@property(nonatomic) CGFloat keyboardAnimationViewInsetBottom;
-@property(nonatomic, copy) void (^updateViewport)(CGFloat* inset);
-@end
-
-@implementation KeyboardAnimationLayer
-@dynamic keyboardAnimationViewInsetBottom;
-
-- (id)initWithLayer:(id)layer {
-  if ((self = [super initWithLayer:layer])) {
-    // Check if it's the right class before casting
-    if ([layer isKindOfClass:[KeyboardAnimationLayer class]]) {
-      // Copy the value of "myProperty" over from the other layer
-      self.updateViewport = ((KeyboardAnimationLayer*)layer).updateViewport;
-    }
-  }
-  return self;
-}
-
-+ (BOOL)needsDisplayForKey:(NSString*)key {
-  if ([key isEqualToString:@"keyboardAnimationViewInsetBottom"])
-    return YES;
-
-  return [super needsDisplayForKey:key];
-}
-
-- (void)drawInContext:(CGContextRef)ctx {
-  CGFloat newViewInsetBottom = self.keyboardAnimationViewInsetBottom;
-
-  if (self.updateViewport) {
-    self.updateViewport(&newViewInsetBottom);
-  }
-}
-@end
-
 @interface KeyboardAnimationView : UIView
 @property(nonatomic) fml::TimePoint startTime;
 @property(nonatomic) NSTimeInterval duration;
@@ -206,14 +174,7 @@ typedef struct MouseState {
 @property(nonatomic) double lastComplete;
 @end
 
-@implementation KeyboardAnimationView
-+ (Class)layerClass {
-  return [KeyboardAnimationLayer class];
-}
-
-- (void)drawRect:(CGRect)rect {
-}
-
+@implementation KeyboardAnimationView : UIView
 @end
 
 @implementation FlutterViewController {
@@ -1312,8 +1273,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  NSLog(@"updating viewport");
-
   if ([_engine.get() viewController] == self) {
     [_engine.get() updateViewportMetrics:_viewportMetrics];
   }
@@ -1329,11 +1288,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)viewDidLayoutSubviews {
-  // if ([self keyboardAnimationView].superview != nil) {
-  //     NSLog(@"escaped subview");
-  //     return;
-  // }
-
   CGRect viewBounds = self.view.bounds;
   CGFloat scale = [UIScreen mainScreen].scale;
 
@@ -1349,8 +1303,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   [self updateViewportPadding];
   [self updateViewportMetrics];
-
-  NSLog(@"updating subviews %@", NSStringFromCGRect(viewBounds));
 
   // There is no guarantee that UIKit will layout subviews when the application is active. Creating
   // the surface when inactive will cause GPU accesses from the background. Only wait for the first
@@ -1381,7 +1333,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)viewSafeAreaInsetsDidChange {
   [self updateViewportPadding];
   [self updateViewportMetrics];
-  NSLog(@"updating safe area");
   [super viewSafeAreaInsetsDidChange];
 }
 
@@ -1487,117 +1438,31 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
   [self setupKeyboardAnimationVsyncClient];
-  // VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
-
-  //    ((KeyboardAnimationLayer *) [self keyboardAnimationView].layer).updateViewport = ^(CGFloat
-  //    *inset) {
-  //        fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
-  //        if (!weakSelf) {
-  //            return;
-  //        }
-  //
-  //        fml::scoped_nsobject<FlutterViewController>
-  //        flutterViewController([(FlutterViewController*)weakSelf.get() retain]);
-  //
-  //        if (!flutterViewController) {
-  //            return;
-  //        }
-  //
-  ////        double smoothedInset = roundf(*inset);
-  ////
-  ////        if (abs(flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom -
-  /// smoothedInset) < 1) { /            NSLog(@"<1"); /            return; /        }
-  //        NSLog(@"drawing %f", *inset);
-  //
-  //        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = *inset;
-  //        [flutterViewController updateViewportMetrics];
-  //    };
-
-  //    double from = [self keyboardAnimationView].layer.presentationLayer.frame.origin.y;
-  //
-  //    ((KeyboardAnimationLayer *) [self
-  //    keyboardAnimationView].layer).keyboardAnimationViewInsetBottom = self.targetViewInsetBottom;
-  //    [CATransaction begin];
-  //    CASpringAnimation *keyboardViewAnimation = [CASpringAnimation
-  //    animationWithKeyPath:@"keyboardAnimationViewInsetBottom"]; keyboardViewAnimation.damping =
-  //    500; keyboardViewAnimation.stiffness = 1000; keyboardViewAnimation.mass = 3;
-  //    keyboardViewAnimation.initialVelocity = 0;
-  //    keyboardViewAnimation.duration = duration * 4;
-  ////    keyboardViewAnimation.fromValue = [NSNumber numberWithFloat:from];
-  //    keyboardViewAnimation.fromValue = [NSNumber
-  //    numberWithFloat:_viewportMetrics.physical_view_inset_bottom]; keyboardViewAnimation.toValue
-  //    = [NSNumber numberWithFloat:self.targetViewInsetBottom]; if (@available(iOS 15, *)) {
-  //        keyboardViewAnimation.preferredFrameRateRange = CAFrameRateRangeMake(120.0, 120.0,
-  //        120.0);
-  //    }
-  //
-  //    NSLog(@"from %f", _viewportMetrics.physical_view_inset_bottom);
-  //    NSLog(@"to %f", self.targetViewInsetBottom);
-  //    [CATransaction setCompletionBlock:^{
-  ////      if (_keyboardAnimationVSyncClient == currentVsyncClient) {
-  //      // Indicates the vsync client captured by this block is the original one, which also
-  //      // indicates the animation has not been interrupted from its beginning. Moreover,
-  //      // indicates the animation is over and there is no more to execute.
-  ////      [self invalidateKeyboardAnimationVSyncClient];
-  ////      [self removeKeyboardAnimationView];
-  ////      [self ensureViewportMetricsIsCorrect];
-  ////      }
-  //    }];
-  //
-  //  [((KeyboardAnimationLayer *) [self keyboardAnimationView].layer)
-  //  addAnimation:keyboardViewAnimation forKey:nil]; [CATransaction commit];
+  VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   [UIView animateWithDuration:duration
-                        delay:0
-                      options:UIViewAnimationOptionPreferredFramesPerSecond60
-                   animations:^{
-                     // Set DisplayLink tracking values
-                     KeyboardAnimationView* keyboardView =
-                         (KeyboardAnimationView*)[self keyboardAnimationView];
-                     double toY = self.targetViewInsetBottom;
-                     double fromY = _viewportMetrics.physical_view_inset_bottom +
-                                    ((toY - _viewportMetrics.physical_view_inset_bottom) * .046);
+      animations:^{
+        // Set DisplayLink tracking values
+        KeyboardAnimationView* keyboardView = (KeyboardAnimationView*)[self keyboardAnimationView];
 
-                     // _viewportMetrics.physical_view_inset_bottom = fromY;
-                     // [self updateViewportMetrics];
+        keyboardView.startTime = fml::TimePoint().Now();
+        keyboardView.duration = duration;
+        keyboardView.from = _viewportMetrics.physical_view_inset_bottom;
+        keyboardView.to = self.targetViewInsetBottom;
 
-                     // fromY += ((toY - fromY) * 0.0268);
-                     fromY = _viewportMetrics.physical_view_inset_bottom;
-
-                     // NSTimeInterval delayInSeconds = 2;
-                     // dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW,
-                     // (int64_t)(delayInSeconds * NSEC_PER_MSEC)); dispatch_after(popTime,
-                     // dispatch_get_main_queue(), ^(void){
-                     //   NSLog(@"delayed");
-                     //    _viewportMetrics.physical_view_inset_bottom = fromY;
-                     //    [self updateViewportMetrics];
-                     // });
-
-                     // keyboardView.startTime = fml::TimePoint();//fml::TimePoint().Now();
-                     keyboardView.startTime = fml::TimePoint().Now();
-                     keyboardView.duration = duration;
-                     keyboardView.from = fromY;
-                     keyboardView.to = toY;
-
-                     // Set end value.
-                     [self keyboardAnimationView].frame =
-                         CGRectMake(0, self.targetViewInsetBottom, 0, 0);
-                   }
-                   completion:^(BOOL finished){
-                       // if (_keyboardAnimationVSyncClient == currentVsyncClient) {
-                       //   // Indicates the vsync client captured by this block is the original
-                       //   one, which also
-                       //   // indicates the animation has not been interrupted from its beginning.
-                       //   Moreover,
-                       //   // indicates the animation is over and there is no more to execute.
-                       //   KeyboardAnimationView* keyboardView = (KeyboardAnimationView *) [self
-                       //   keyboardAnimationView];
-                       //   keyboardView.startTime = fml::TimePoint();
-                       //   [self invalidateKeyboardAnimationVSyncClient];
-                       //   [self removeKeyboardAnimationView];
-                       //   [self ensureViewportMetricsIsCorrect];
-                       // }
-                   }];
+        // Set end value.
+        [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
+      }
+      completion:^(BOOL finished) {
+        if (_keyboardAnimationVSyncClient == currentVsyncClient) {
+          // Indicates the vsync client captured by this block is the original one, which also
+          // indicates the animation has not been interrupted from its beginning. Moreover,
+          // indicates the animation is over and there is no more to execute.
+          [self invalidateKeyboardAnimationVSyncClient];
+          [self removeKeyboardAnimationView];
+          [self ensureViewportMetricsIsCorrect];
+        }
+      }];
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
@@ -1619,18 +1484,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     KeyboardAnimationView* keyboardView =
         (KeyboardAnimationView*)[flutterViewController keyboardAnimationView];
-    // if (keyboardView.startTime == fml::TimePoint()) {
-    //   NSLog(@"first TP");
-    //   keyboardView.startTime = recorder.get() -> GetVsyncTargetTime();
-    // }
+
     fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() - keyboardView.startTime;
-
-    double keyboardAnimationTimeMillis = keyboardView.duration * 2 * 1000;
     double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
-    double expectedFrames = frameRate * keyboardView.duration * 2;
 
-    NSLog(@"timeElapsed %f, duration: %f, rate: %f", timeElapsed.ToMillisecondsF(),
-          keyboardView.duration, frameRate);
+    // Double keyboard animation duration for manual animation synchronization.
+    double keyboardAnimationTimeMillis = keyboardView.duration * 2 * 1000;
+    double expectedFrames = frameRate * keyboardView.duration * 2;
 
     double percentComplete = timeElapsed.ToMillisecondsF() / keyboardAnimationTimeMillis;
     int frameApproximation = roundf(MIN(percentComplete, 1) * expectedFrames);
@@ -1640,22 +1500,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     CGFloat newY =
         keyboardView.from + animationFramePercentage * (keyboardView.to - keyboardView.from);
 
-    NSLog(@"frame %d, expected %f, complete: %f", frameApproximation, expectedFrames,
-          animationFramePercentage);
-
-    CGFloat value =
-        [flutterViewController keyboardAnimationView].layer.presentationLayer.frame.origin.y;
-
-    NSLog(@"oldY %f, newY: %f", value, newY);
-
-    if (animationFramePercentage == keyboardView.lastComplete) {
-      [flutterViewController invalidateKeyboardAnimationVSyncClient];
-      [flutterViewController removeKeyboardAnimationView];
-      [flutterViewController ensureViewportMetricsIsCorrect];
-      return;
-    }
-
-    keyboardView.lastComplete = animationFramePercentage;
     flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = newY;
     [flutterViewController updateViewportMetrics];
   };
@@ -1686,7 +1530,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // Make sure the `physical_view_inset_bottom` is the target value.
     _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
     [self updateViewportMetrics];
-    NSLog(@"updating ensure");
   }
 }
 
