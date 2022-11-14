@@ -1,4 +1,4 @@
-Signature: 95739c9b52943564dffabe8600da0501
+Signature: f605759571f528a9c8fee0b3b7fd6cd0
 
 UNUSED LICENSES:
 
@@ -14109,6 +14109,7 @@ FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.h
 FILE: ../../../third_party/dart/runtime/vm/heap/page.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/page.h
 FILE: ../../../third_party/dart/runtime/vm/instructions.cc
+FILE: ../../../third_party/dart/runtime/vm/kernel_test.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
