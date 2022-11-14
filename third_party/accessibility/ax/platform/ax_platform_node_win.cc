@@ -2155,7 +2155,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
 
     case UIA_ControlTypePropertyId:
       result->vt = VT_I4;
-      result->lVal = UIA_ButtonControlTypeId;// ComputeUIAControlType(); TODO(schectman): replace, for testing
+      result->lVal = ComputeUIAControlType(); //TODO(schectman): replace, for testing
       break;
 
     case UIA_CulturePropertyId: {
@@ -2304,8 +2304,8 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       if (!localized_control_type.empty()) {
         result->vt = VT_BSTR;
         result->bstrVal =
-            //::SysAllocString(base::UTF16ToWide(localized_control_type).c_str()); TODO(schectman): this too
-            ::SysAllocString(base::UTF16ToWide(u"LOCAL").c_str());
+            ::SysAllocString(base::UTF16ToWide(localized_control_type).c_str()); // TODO(schectman): this too
+            //::SysAllocString(base::UTF16ToWide(u"LOCAL").c_str());
       }
       // If a role description has not been provided, leave as VT_EMPTY.
       // UIA core handles Localized Control type for some built-in types and
