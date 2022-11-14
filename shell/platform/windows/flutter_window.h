@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 
-#include <windowsx.h>
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,6 +14,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/window.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
 
 namespace flutter {
 

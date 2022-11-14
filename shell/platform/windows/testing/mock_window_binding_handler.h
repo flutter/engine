@@ -5,9 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_H_
 
-#include <windowsx.h>
-
 #include "flutter/shell/platform/windows/window_binding_handler.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "gmock/gmock.h"
 
 namespace flutter {

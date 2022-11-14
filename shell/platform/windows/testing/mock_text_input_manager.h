@@ -5,11 +5,11 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
 
-#include <windowsx.h>
 #include <cstring>
 #include <optional>
 
 #include "flutter/shell/platform/windows/text_input_manager.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "gmock/gmock.h"
 
 namespace flutter {

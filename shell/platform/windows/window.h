@@ -6,7 +6,6 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WIN32_WINDOW_H_
 
 #include <Windows.h>
-#include <Windowsx.h>
 
 #include <map>
 #include <memory>
@@ -20,14 +19,18 @@
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager.h"
 #include "flutter/shell/platform/windows/windows_proc_table.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "flutter/third_party/accessibility/gfx/native_widget_types.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
 
 namespace flutter {
 
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
 // inherited from by classes that wish to specialize with custom
 // rendering and input handling.
-class Window : public KeyboardManager::WindowDelegate {
+class Window : public KeyboardManager::WindowDelegate,
+               public ui::AXFragmentRootDelegateWin {
  public:
   Window();
   Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
@@ -211,6 +214,15 @@ class Window : public KeyboardManager::WindowDelegate {
   // Check if the high contrast feature is enabled on the OS
   virtual bool GetHighContrastEnabled();
 
+  // | AXFragmentRootDelegateWin |
+  gfx::NativeViewAccessible GetChildOfAXFragmentRoot() override;
+
+  // | AXFragmentRootDelegateWin |
+  gfx::NativeViewAccessible GetParentOfAXFragmentRoot() override;
+
+  // | AXFragmentRootDelegateWin |
+  bool IsAXFragmentRootAControlElement() override;
+
  protected:
   // Win32's DefWindowProc.
   //
@@ -299,6 +311,9 @@ class Window : public KeyboardManager::WindowDelegate {
 
   // Timer identifier for DirectManipulation gesture polling.
   const static int kDirectManipulationTimer = 1;
+
+  // Implements IRawElementProviderFragmentRoot when UIA is enabled.
+  std::unique_ptr<ui::AXFragmentRootWin> ax_fragment_root_;
 };
 
 }  // namespace flutter

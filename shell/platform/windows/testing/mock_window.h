@@ -5,10 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 
-#include <windowsx.h>
-
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/window.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "gmock/gmock.h"
 
 namespace flutter {

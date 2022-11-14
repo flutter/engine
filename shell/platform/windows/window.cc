@@ -59,7 +59,8 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
     : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
       text_input_manager_(std::move(text_input_manager)),
-      accessibility_root_(nullptr) {
+      accessibility_root_(nullptr),
+      ax_fragment_root_(nullptr) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
@@ -201,18 +202,22 @@ LRESULT Window::OnGetObject(UINT const message,
 
   gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
   if (is_uia_request && root_view) {
+    if (!ax_fragment_root_) {
+      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(window_handle_, this);
+    }
+
     // TODO(cbracken): https://github.com/flutter/flutter/issues/94782
     // Implement when we adopt UIA support.
     // Retrieve UIA object for the root view.
     Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
-    if (SUCCEEDED(root_view->QueryInterface(
+    if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
         IID_PPV_ARGS(&root)))) {
       // Return the UIA object via UiaReturnRawElementProvider(). See:
       // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
       reference_result =
           UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
     }
-  } else if (is_msaa_request && root_view && FALSE) { // Disabled this for now to test JUST UIA
+  } else if (is_msaa_request && root_view) {
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
       CreateAccessibilityRootNode();
@@ -664,6 +669,18 @@ void Window::CreateAccessibilityRootNode() {
     accessibility_root_->Release();
   }
   accessibility_root_ = AccessibilityRootNode::Create();
+}
+
+gfx::NativeViewAccessible Window::GetChildOfAXFragmentRoot() {
+  return GetNativeViewAccessible();
+}
+
+gfx::NativeViewAccessible Window::GetParentOfAXFragmentRoot() {
+  return nullptr;
+}
+
+bool Window::IsAXFragmentRootAControlElement() {
+  return true;
 }
 
 }  // namespace flutter
