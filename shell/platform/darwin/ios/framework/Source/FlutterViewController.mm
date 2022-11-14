@@ -1506,7 +1506,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   ////        double smoothedInset = roundf(*inset);
   ////
   ////        if (abs(flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom -
-  ///smoothedInset) < 1) { /            NSLog(@"<1"); /            return; /        }
+  /// smoothedInset) < 1) { /            NSLog(@"<1"); /            return; /        }
   //        NSLog(@"drawing %f", *inset);
   //
   //        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = *inset;
