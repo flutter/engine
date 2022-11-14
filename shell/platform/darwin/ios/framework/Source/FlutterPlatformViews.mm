@@ -586,6 +586,8 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  const std::shared_ptr<IOSContext>& ios_context,
                                                  std::unique_ptr<SurfaceFrame> frame) {
+  TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
+
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (flutter_view_ == nullptr) {
@@ -600,8 +602,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Resolve all pending GPU operations before allocating a new surface.
   background_canvas->flush();
 
-  // Clipping the background canvas before drawing the picture recorders requires to
-  // save and restore the clip context.
+  // Clipping the background canvas before drawing the picture recorders requires
+  // saving and restoring the clip context.
   SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
@@ -734,8 +736,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     int64_t view_id,
     int64_t overlay_id) {
   FML_DCHECK(flutter_view_);
-  std::shared_ptr<FlutterPlatformViewLayer> layer =
-      layer_pool_->GetLayer(gr_context, std::move(ios_context));
+  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
 
   UIView* overlay_view_wrapper = layer->overlay_view_wrapper.get();
   auto screenScale = [UIScreen mainScreen].scale;
