@@ -10,15 +10,11 @@
 #include <vector>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -251,11 +247,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
 
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
-  } else {
-    _renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
-  }
+  _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -307,16 +299,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
-  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
-                                                       void* user_data) {
+  flutterArguments.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
+                                                  void* user_data) {
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [engine updateSemanticsNode:node];
+    [engine updateSemantics:update];
   };
-  flutterArguments.update_semantics_custom_action_callback =
-      [](const FlutterSemanticsCustomAction* action, void* user_data) {
-        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-        [engine updateSemanticsCustomActions:action];
-      };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
@@ -436,16 +423,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
-    _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-        _viewProvider, _platformViewController, metalRenderer.device);
-  } else {
-    FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
-    [openGLRenderer.openGLContext makeCurrentContext];
-    _macOSCompositor =
-        std::make_unique<flutter::FlutterGLCompositor>(_viewProvider, openGLRenderer.openGLContext);
-  }
+  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
+  _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
+      _viewProvider, _platformViewController, metalRenderer.device);
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
     if (has_flutter_content) {
       return [weakSelf.renderer present] == YES;
@@ -928,37 +908,34 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
 }
 
-- (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
+- (void)updateSemantics:(const FlutterSemanticsUpdate*)update {
   NSAssert(_bridge, @"The accessibility bridge must be initialized.");
-  if (node->id == kFlutterSemanticsNodeIdBatchEnd) {
-    return;
+  for (size_t i = 0; i < update->nodes_count; i++) {
+    const FlutterSemanticsNode* node = &update->nodes[i];
+    _bridge->AddFlutterSemanticsNodeUpdate(node);
   }
-  _bridge->AddFlutterSemanticsNodeUpdate(node);
-}
 
-- (void)updateSemanticsCustomActions:(const FlutterSemanticsCustomAction*)action {
-  NSAssert(_bridge, @"The accessibility bridge must be initialized.");
-  if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
-    // Custom action with id = kFlutterSemanticsNodeIdBatchEnd indicates this is
-    // the end of the update batch.
-    _bridge->CommitUpdates();
-    // Accessibility tree can only be used when the view is loaded.
-    if (!self.viewController.viewLoaded) {
-      return;
-    }
-    // Attaches the accessibility root to the flutter view.
-    auto root = _bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    if (root) {
-      if ([self.viewController.flutterView.accessibilityChildren count] == 0) {
-        NSAccessibilityElement* native_root = root->GetNativeViewAccessible();
-        self.viewController.flutterView.accessibilityChildren = @[ native_root ];
-      }
-    } else {
-      self.viewController.flutterView.accessibilityChildren = nil;
-    }
+  for (size_t i = 0; i < update->custom_actions_count; i++) {
+    const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
+    _bridge->AddFlutterSemanticsCustomActionUpdate(action);
+  }
+
+  _bridge->CommitUpdates();
+
+  // Accessibility tree can only be used when the view is loaded.
+  if (!self.viewController.viewLoaded) {
     return;
   }
-  _bridge->AddFlutterSemanticsCustomActionUpdate(action);
+  // Attaches the accessibility root to the flutter view.
+  auto root = _bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  if (root) {
+    if ([self.viewController.flutterView.accessibilityChildren count] == 0) {
+      NSAccessibilityElement* native_root = root->GetNativeViewAccessible();
+      self.viewController.flutterView.accessibilityChildren = @[ native_root ];
+    }
+  } else {
+    self.viewController.flutterView.accessibilityChildren = nil;
+  }
 }
 
 #pragma mark - Task runner integration

@@ -15,8 +15,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -29,6 +27,11 @@ using flutter::LayoutClue;
 // device (mouse v.s. trackpad).
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
+
+// A trackpad touch following inertial scrolling should cause an inertia cancel
+// event to be issued. Use a window of 50 milliseconds after the scroll to account
+// for delays in event propagation observed in macOS Ventura.
+static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
 
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
@@ -93,9 +96,9 @@ struct MouseState {
   bool rotate_gesture_active = false;
 
   /**
-   * System scroll inertia is currently sending us events.
+   * Time of last scroll momentum event.
    */
-  bool system_scroll_inertia_active = false;
+  NSTimeInterval last_scroll_momentum_changed_time = 0;
 
   /**
    * Resets all gesture state to default values.
@@ -361,27 +364,16 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)loadView {
   FlutterView* flutterView;
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
-    id<MTLDevice> device = metalRenderer.device;
-    id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
-    if (!device || !commandQueue) {
-      NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
-      return;
-    }
-    flutterView = [[FlutterView alloc] initWithMTLDevice:device
-                                            commandQueue:commandQueue
-                                         reshapeListener:self];
-  } else {
-    FlutterOpenGLRenderer* openGLRenderer =
-        reinterpret_cast<FlutterOpenGLRenderer*>(_engine.renderer);
-    NSOpenGLContext* mainContext = openGLRenderer.openGLContext;
-    if (!mainContext) {
-      NSLog(@"Unable to create FlutterView; no GL context available.");
-      return;
-    }
-    flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
+  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
+  id<MTLDevice> device = metalRenderer.device;
+  id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
+  if (!device || !commandQueue) {
+    NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
+    return;
   }
+  flutterView = [[FlutterView alloc] initWithMTLDevice:device
+                                          commandQueue:commandQueue
+                                       reshapeListener:self];
   if (_backgroundColor != nil) {
     [flutterView setBackgroundColor:_backgroundColor];
   }
@@ -534,11 +526,11 @@ static void CommonInit(FlutterViewController* controller) {
   } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
     [self dispatchMouseEvent:event phase:kHover];
   } else {
-    if (event.momentumPhase == NSEventPhaseBegan) {
-      _mouseState.system_scroll_inertia_active = true;
-    } else if (event.momentumPhase == NSEventPhaseEnded ||
-               event.momentumPhase == NSEventPhaseCancelled) {
-      _mouseState.system_scroll_inertia_active = false;
+    // Waiting until the first momentum change event is a workaround for an issue where
+    // touchesBegan: is called unexpectedly while in low power mode within the interval between
+    // momentum start and the first momentum change.
+    if (event.momentumPhase == NSEventPhaseChanged) {
+      _mouseState.last_scroll_momentum_changed_time = event.timestamp;
     }
     // Skip momentum update events, the framework will generate scroll momentum.
     NSAssert(event.momentumPhase != NSEventPhaseNone,
@@ -562,6 +554,8 @@ static void CommonInit(FlutterViewController* controller) {
                               _mouseState.rotate_gesture_active;
     if (event.type == NSEventTypeScrollWheel) {
       _mouseState.pan_gesture_active = true;
+      // Ensure scroll inertia cancel event is not sent afterwards.
+      _mouseState.last_scroll_momentum_changed_time = 0;
     } else if (event.type == NSEventTypeMagnify) {
       _mouseState.scale_gesture_active = true;
     } else if (event.type == NSEventTypeRotate) {
@@ -854,8 +848,9 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)touchesBeganWithEvent:(NSEvent*)event {
   NSTouch* touch = event.allTouches.anyObject;
   if (touch != nil) {
-    if (_mouseState.system_scroll_inertia_active) {
-      // The trackpad has been touched and a scroll gesture is still sending inertia events.
+    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) <
+        kTrackpadTouchInertiaCancelWindowMs) {
+      // The trackpad has been touched following a scroll momentum event.
       // A scroll inertia cancel message should be sent to the framework.
       NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
       NSPoint locationInBackingCoordinates =
@@ -871,6 +866,8 @@ static void CommonInit(FlutterViewController* controller) {
       };
 
       [_engine sendPointerEvent:flutterEvent];
+      // Ensure no further scroll inertia cancel event will be sent.
+      _mouseState.last_scroll_momentum_changed_time = 0;
     }
   }
 }

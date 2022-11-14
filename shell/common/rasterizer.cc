@@ -292,7 +292,7 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
 // I can't seem to get the GPU path working on it.
 // https://github.com/flutter/flutter/issues/108835
 #if FML_OS_LINUX
-  return MakeBitmapImage(std::move(display_list), image_info);
+  return MakeBitmapImage(display_list, image_info);
 #endif
 
   std::unique_ptr<SnapshotDelegate::GpuImageResult> result;
@@ -464,6 +464,7 @@ RasterStatus Rasterizer::DoDraw(
 RasterStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
+  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
   RasterStatus raster_status;
