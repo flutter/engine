@@ -205,14 +205,14 @@ LRESULT Window::OnGetObject(UINT const message,
     // Implement when we adopt UIA support.
     // Retrieve UIA object for the root view.
     Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
-    root_view->QueryInterface(
-        IID_PPV_ARGS(&root));
-
-    // Return the UIA object via UiaReturnRawElementProvider(). See:
-    // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
-    reference_result =
-        UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
-  } else if (is_msaa_request && root_view) {
+    if (SUCCEEDED(root_view->QueryInterface(
+        IID_PPV_ARGS(&root)))) {
+      // Return the UIA object via UiaReturnRawElementProvider(). See:
+      // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
+      reference_result =
+          UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
+    }
+  } else if (is_msaa_request && root_view && FALSE) { // Disabled this for now to test JUST UIA
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
       CreateAccessibilityRootNode();
