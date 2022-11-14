@@ -92,7 +92,7 @@ final Map<String, String> _kMandatoryGoalsByChar = Map<String, String>.fromEntri
 
 int? _heuristicDetector(String code, String key) {
   if (_isAlnum(key)) {
-    return key.toUpperCase().codeUnitAt(0);
+    return key.toLowerCase().codeUnitAt(0);
   }
   if (!_isAscii(key)) {
     return _kFullLayoutGoals[code]!.codeUnitAt(0);

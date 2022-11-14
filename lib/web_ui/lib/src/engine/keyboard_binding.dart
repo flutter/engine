@@ -302,29 +302,14 @@ class KeyboardConverter {
            (metaDown ? _kDeadKeyMeta : 0);
   }
 
-  // Whether `event.key` should be considered a key name.
+  // Whether `event.key` is a key name, such as "Shift", or otherwise a
+  // character, such as "S" or "ж".
   //
-  // The `event.key` can either be a key name or the printable character. If the
-  // first character is an alphabet, it must be either 'A' to 'Z' ( and return
-  // true), or be a key name (and return false). Otherwise, return true.
+  // A key name always starts with a capitalized character, and has more than
+  // 1 letter.
   static bool _eventKeyIsKeyname(String key) {
     assert(key.isNotEmpty);
     return isAlphabet(key.codeUnitAt(0)) && key.length > 1;
-  }
-
-  static int _characterToLogicalKey(String key) {
-    // Assume the length being <= 2 to be sufficient in all cases. If not,
-    // extend the algorithm.
-    assert(key.length <= 2);
-    int result = key.codeUnitAt(0) & 0xffff;
-    if (key.length == 2) {
-      result += key.codeUnitAt(1) << 16;
-    }
-    // Convert upper letters to lower letters
-    if (result >= _kCharUpperA && result <= _kCharUpperZ) {
-      result = result + _kCharLowerA - _kCharUpperA;
-    }
-    return result;
   }
 
   static int _deadKeyToLogicalKey(int physicalKey, FlutterHtmlKeyboardEvent event) {
@@ -334,10 +319,6 @@ class KeyboardConverter {
     // Assume they can be told apart with the physical key and the modifiers
     // pressed.
     return physicalKey + _getModifierMask(event) + _kWebKeyIdPlane;
-  }
-
-  static int _otherLogicalKey(String key) {
-    return kWebToLogicalKey[key] ?? (key.hashCode + _kWebKeyIdPlane);
   }
 
   // Map from pressed physical key to corresponding pressed logical key.
@@ -399,24 +380,31 @@ class KeyboardConverter {
 
     final int physicalKey = _getPhysicalCode(event.code!);
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
-    final String? character = logicalKeyIsCharacter ? eventKey : null;
     final int logicalKey = () {
+      // Dead keys.
+      if (eventKey == _kLogicalDead) {
+        return _deadKeyToLogicalKey(physicalKey, event);
+      }
+      // Mapped logical keys, such as ArrowLeft, Escape, AudioVolumeDown.
+      final int? mappedLogicalKey = kWebToLogicalKey[eventKey];
+      if (mappedLogicalKey != null) {
+        return mappedLogicalKey;
+      }
+      // Keys with locations, such as modifier keys (Shift) or numpad keys.
       if (kWebLogicalLocationMap.containsKey(event.key)) {
         final int? result = kWebLogicalLocationMap[event.key!]?[event.location!];
         assert(result != null, 'Invalid modifier location: ${event.key}, ${event.location}');
         return result!;
       }
-      final int? logicalKeyFromMap = _mapping.getLogicalKey(event.code, event.key, event.keyCode);
-      if (logicalKeyFromMap != null) {
-        return logicalKeyFromMap;
+      // Locale-sensitive keys: letters, digits, and certain symbols.
+      if (logicalKeyIsCharacter) {
+        final int? localeLogicalKeys = _mapping.getLogicalKey(event.code, event.key, event.keyCode);
+        if (localeLogicalKeys != null) {
+          return localeLogicalKeys;
+        }
       }
-      if (character != null) {
-        return _characterToLogicalKey(character);
-      }
-      if (eventKey == _kLogicalDead) {
-        return _deadKeyToLogicalKey(physicalKey, event);
-      }
-      return _otherLogicalKey(eventKey);
+      // Minted logical keys.
+      return eventKey.hashCode + _kWebKeyIdPlane;
     }();
 
     assert(event.type == 'keydown' || event.type == 'keyup');
@@ -564,6 +552,7 @@ class KeyboardConverter {
       }
     }
 
+    final String? character = logicalKeyIsCharacter ? eventKey : null;
     final ui.KeyData keyData = ui.KeyData(
       timeStamp: timeStamp,
       type: type,

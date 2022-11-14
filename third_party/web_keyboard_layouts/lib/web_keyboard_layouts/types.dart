@@ -82,7 +82,7 @@ bool _isAlnum(String char) {
 
 int? _heuristicDetector(String code, String key) {
   if (_isAlnum(key)) {
-    return key.toUpperCase().codeUnitAt(0);
+    return key.toLowerCase().codeUnitAt(0);
   }
   if (!_isAscii(key)) {
     return _kFullLayoutGoals[code]!.codeUnitAt(0);
@@ -95,6 +95,15 @@ class LayoutMapping {
   LayoutMapping.linux() : _mapping = kLinuxMapping;
   LayoutMapping.darwin() : _mapping = kDarwinMapping;
 
+  static int? _characterToLogicalKey(String? key) {
+    // We have yet to find a case where length >= 2 is useful.
+    if (key == null || key.length >= 2) {
+      return null;
+    }
+    final int result = key.toLowerCase().codeUnitAt(0);
+    return result;
+  }
+
   int? getLogicalKey(String? eventCode, String? eventKey, int eventKeyCode) {
     final int? result = _mapping[eventCode]?[eventKey];
     if (result == kUseKeyCode) {
@@ -104,6 +113,16 @@ class LayoutMapping {
       final int? heuristicResult = _heuristicDetector(eventCode ?? '', eventKey ?? '');
       if (heuristicResult != null) {
         return heuristicResult;
+      }
+      // Characters: map to unicode zone.
+      //
+      // While characters are usually resolved in the last step, this can happen
+      // in non-latin layouts when a non-latin character is on a symbol key (ru,
+      // Semicolon-ж) or on an alnum key that has been assigned elsewhere (hu,
+      // Digit0-Ö).
+      final int? characterLogicalKey = _characterToLogicalKey(eventKey);
+      if (characterLogicalKey != null) {
+        return characterLogicalKey;
       }
     }
     return result;
