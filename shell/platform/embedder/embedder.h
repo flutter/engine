@@ -636,7 +636,7 @@ typedef struct {
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
   ///
-  /// The `texture` must not be null, or this texture is considered invalid.
+  /// A NULL texture is considered invalid.
   FlutterMetalTextureHandle texture;
   /// A baton that is not interpreted by the engine in any way. It will be given
   /// back to the embedder in the destruction callback below. Embedder resources
