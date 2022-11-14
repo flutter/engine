@@ -307,7 +307,7 @@ if (host_os == "win") {
     output = "$full_target_platform_name-$flutter_runtime_mode/windows-x64.zip"
     files = [
       {
-        source = "$root_out_dir/gen_snapshot.exe"
+        source = "$root_out_dir/gen_snapshot/gen_snapshot.exe"
         destination = "gen_snapshot.exe"
       },
     ]
