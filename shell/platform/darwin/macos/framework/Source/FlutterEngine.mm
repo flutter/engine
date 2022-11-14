@@ -434,7 +434,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     // TODO(dkwingsmt): The compositor only supports single-view for now. As
     // more classes are gradually converted to multi-view, it should get the
     // view ID from somewhere.
-    uint64_t viewId = 0;
+    uint64_t viewId = kFlutterDefaultViewId;
     if (has_flutter_content) {
       return [weakSelf.renderer present:viewId] == YES;
     } else {

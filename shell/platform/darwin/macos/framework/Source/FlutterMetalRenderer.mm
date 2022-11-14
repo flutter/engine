@@ -18,7 +18,7 @@ static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID, or pass the ID via FlutterFrameInfo.
-  uint64_t viewId = 0;
+  uint64_t viewId = kFlutterDefaultViewId;
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
   FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
   return [metalRenderer createTextureForView:viewId size:size];
@@ -29,7 +29,7 @@ static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID.
-  uint64_t viewId = 0;
+  uint64_t viewId = kFlutterDefaultViewId;
   return [engine.renderer present:viewId];
 }
 
