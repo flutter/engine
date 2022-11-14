@@ -155,13 +155,44 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 
   auto image_view = static_cast<vk::ImageView::NativeType>(img_view_res.value);
 
+  // Buffer for staging the image data.
+  auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
+      vk::BufferCreateInfo()
+          .setUsage(vk::BufferUsageFlagBits::eUniformBuffer |
+                    vk::BufferUsageFlagBits::eTransferDst)
+          .setSize(desc.GetByteSizeOfBaseMipLevel())
+          .setSharingMode(vk::SharingMode::eExclusive));
+
+  VmaAllocationCreateInfo allocCreateInfo = {};
+  allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+  allocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                          VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+  VkBuffer staging_buffer;
+  VmaAllocation staging_allocation;
+  VmaAllocationInfo staging_allocation_info;
+  auto staging_result = vk::Result{vmaCreateBuffer(
+      allocator_, &buffer_create_info, &allocCreateInfo, &staging_buffer,
+      &staging_allocation, &staging_allocation_info)};
+
+  if (staging_result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Unable to allocate a staging buffer: "
+                   << vk::to_string(staging_result);
+    return nullptr;
+  }
+
   auto texture_info = std::make_unique<TextureInfoVK>(TextureInfoVK{
       .backing_type = TextureBackingTypeVK::kAllocatedTexture,
       .allocated_texture =
           {
               .allocator = &allocator_,
-              .allocation = allocation,
-              .allocation_info = allocation_info,
+
+              .staging_allocation = staging_allocation,
+              .staging_allocation_info = staging_allocation_info,
+              .staging_buffer = staging_buffer,
+
+              .image_allocation = allocation,
+              .image_allocation_info = allocation_info,
               .image = img,
               .image_view = image_view,
           },

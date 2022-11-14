@@ -16,7 +16,8 @@ TextureVK::TextureVK(TextureDescriptor desc,
 TextureVK::~TextureVK() {
   if (!IsWrapped() && IsValid()) {
     const auto& texture = texture_info_->allocated_texture;
-    vmaDestroyImage(*texture.allocator, texture.image, texture.allocation);
+    vmaDestroyImage(*texture.allocator, texture.image,
+                    texture.image_allocation);
   }
 }
 
@@ -45,7 +46,8 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   }
 
   // currently we are only supporting 2d textures, no cube textures etc.
-  auto mapping = texture_info_->allocated_texture.allocation_info.pMappedData;
+  auto mapping =
+      texture_info_->allocated_texture.staging_allocation_info.pMappedData;
 
   if (mapping) {
     memcpy(mapping, contents, length);

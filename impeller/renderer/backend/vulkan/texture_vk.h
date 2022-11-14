@@ -26,8 +26,17 @@ struct WrappedTextureInfoVK {
 
 struct AllocatedTextureInfoVK {
   VmaAllocator* allocator = nullptr;
-  VmaAllocation allocation = nullptr;
-  VmaAllocationInfo allocation_info = {};
+
+  // This is the buffer that will be used to copy the texture data into before
+  // copying it to the tiled image.
+  VmaAllocation staging_allocation = nullptr;
+  VmaAllocationInfo staging_allocation_info = {};
+  VkBuffer staging_buffer = VK_NULL_HANDLE;
+
+  // This is the image that the buffer will be copied into before being consumed
+  // by the render pass.
+  VmaAllocation image_allocation = nullptr;
+  VmaAllocationInfo image_allocation_info = {};
   VkImage image = VK_NULL_HANDLE;
   VkImageView image_view = VK_NULL_HANDLE;
 };
