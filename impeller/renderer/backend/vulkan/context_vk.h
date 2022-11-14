@@ -40,16 +40,21 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
+    return SetDebugName(*device_, handle, label);
+  }
+
+  template <typename T>
+  static bool SetDebugName(vk::Device dev, T handle, std::string_view label) {
     uint64_t handle_ptr =
         reinterpret_cast<uint64_t>(static_cast<typename T::NativeType>(handle));
 
     std::string label_str = std::string(label);
 
-    auto ret = device_->setDebugUtilsObjectNameEXT(
-        vk::DebugUtilsObjectNameInfoEXT()
-            .setObjectType(T::objectType)
-            .setObjectHandle(handle_ptr)
-            .setPObjectName(label_str.c_str()));
+    auto ret =
+        dev.setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT()
+                                           .setObjectType(T::objectType)
+                                           .setObjectHandle(handle_ptr)
+                                           .setPObjectName(label_str.c_str()));
 
     if (ret != vk::Result::eSuccess) {
       VALIDATION_LOG << "unable to set debug name";
