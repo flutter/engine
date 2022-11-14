@@ -303,7 +303,7 @@ if (is_mac) {
 
 if (host_os == "win") {
   zip_bundle("archive_win_gen_snapshot") {
-    deps = [ "//third_party/dart/runtime/bin:gen_snapshot" ]
+    deps = [ "//flutter:gen_snapshot" ]
     output = "$full_target_platform_name-$flutter_runtime_mode/windows-x64.zip"
     files = [
       {
