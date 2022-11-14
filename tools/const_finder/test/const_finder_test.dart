@@ -393,7 +393,11 @@ class _Test {
   void dispose() {
     for (final String resource in resourcesToDispose) {
       stdout.writeln('Deleting $resource');
-      File(resource).deleteSync();
+      try {
+        File(resource).deleteSync();
+      } on FileSystemException catch (err) {
+        stderr.writeln(err.toString());
+      }
     }
   }
 
