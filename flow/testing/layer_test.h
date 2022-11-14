@@ -104,7 +104,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         } {
     use_null_raster_cache();
-    preroll_state_stack_.set_delegate(&mutators_stack_);
+    preroll_state_stack_.set_preroll_delegate(kGiantRect, SkMatrix::I());
     paint_state_stack_.set_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_delegate(display_list_recorder_);
     checkerboard_state_stack_.set_delegate(&TestT::mock_canvas());
@@ -178,11 +178,12 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
   sk_sp<DisplayList> display_list() {
     if (display_list_ == nullptr) {
-      display_list_ = display_list_recorder_.Build();
       // null out the canvas and recorder fields of the PaintContext
-      // to prevent future use.
+      // and the delegate of the state_stack to prevent future use.
+      display_list_paint_context_.state_stack.clear_delegate();
       display_list_paint_context_.canvas = nullptr;
       display_list_paint_context_.builder = nullptr;
+      display_list_ = display_list_recorder_.Build();
     }
     return display_list_;
   }
@@ -227,7 +228,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   LayerStateStack checkerboard_state_stack_;
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;
-  MutatorsStack mutators_stack_;
   std::shared_ptr<TextureRegistry> texture_registry_;
 
   std::unique_ptr<RasterCache> raster_cache_;

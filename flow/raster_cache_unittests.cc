@@ -14,6 +14,7 @@
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "flutter/flow/testing/skia_gpu_object_layer_test.h"
+#include "flutter/testing/assertions_skia.h"
 #include "gtest/gtest.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
@@ -38,16 +39,20 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
 
   auto display_list = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -94,16 +99,20 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
 
   auto display_list = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -141,11 +150,13 @@ TEST(RasterCache, SetCheckboardCacheImages) {
   SkMatrix matrix = SkMatrix::I();
   auto display_list = GetSampleDisplayList();
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      preroll_state_stack, &cache, &raster_time, &ui_time);
   auto& paint_context = paint_context_holder.paint_context;
   auto dummy_draw_function = [](SkCanvas* canvas) {};
   bool did_draw_checkerboard = false;
@@ -179,16 +190,20 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
 
   auto display_list = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -208,16 +223,20 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
 
   auto display_list = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -237,18 +256,21 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
   SkMatrix matrix = SkMatrix::I();
 
   auto display_list = GetSampleDisplayList();
-  ;
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -275,16 +297,20 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
 
   auto display_list = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -315,16 +341,20 @@ TEST(RasterCache, EvitUnusedCacheEntries) {
   auto display_list_1 = GetSampleDisplayList();
   auto display_list_2 = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -425,16 +455,20 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
   SkMatrix ctm = SkMatrix::MakeAll(1.3312, 0, 233, 0, 1.3312, 206, 0, 0, 1);
   SkPaint paint;
 
-  SkCanvas canvas(100, 100, nullptr);
+  SkCanvas canvas(1000, 1000, nullptr);
   canvas.setMatrix(ctm);
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, ctm);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -468,16 +502,20 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   ASSERT_EQ(display_list->op_count(), 1u);
   ASSERT_EQ(display_list->op_count(true), 36u);
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -515,16 +553,20 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   ASSERT_EQ(display_list->op_count(), 5u);
   ASSERT_FALSE(calculator->ShouldBeCached(complexity_score));
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -581,16 +623,20 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
 
   auto display_list = GetSampleDisplayList();
 
-  SkCanvas dummy_canvas;
+  SkCanvas dummy_canvas(1000, 1000);
   SkPaint paint;
 
-  LayerStateStack state_stack;
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+      preroll_state_stack, &cache, &raster_time, &ui_time);
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
+      paint_state_stack, &cache, &raster_time, &ui_time);
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
@@ -634,22 +680,26 @@ TEST(RasterCache, PrepareLayerTransform) {
 
   size_t threshold = 2;
   MockRasterCache cache(threshold);
-  LayerStateStack state_stack;
+  SkCanvas dummy_canvas(1000, 1000);
+
+  LayerStateStack preroll_state_stack;
+  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
+  LayerStateStack paint_state_stack;
+  preroll_state_stack.set_delegate(&dummy_canvas);
+
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
-  MutatorsStack mutators_stack;
   std::vector<RasterCacheItem*> cache_items;
 
   cache.BeginFrame();
 
-  state_stack.set_delegate(&mutators_stack);
-  auto preroll_holder = GetSamplePrerollContextHolder(state_stack, &cache,
-                                                      &raster_time, &ui_time);
+  auto preroll_holder = GetSamplePrerollContextHolder(
+      preroll_state_stack, &cache, &raster_time, &ui_time);
   preroll_holder.preroll_context.raster_cached_entries = &cache_items;
   transform_layer->Preroll(&preroll_holder.preroll_context);
 
-  auto paint_holder =
-      GetSamplePaintContextHolder(state_stack, &cache, &raster_time, &ui_time);
+  auto paint_holder = GetSamplePaintContextHolder(paint_state_stack, &cache,
+                                                  &raster_time, &ui_time);
 
   cache.EvictUnusedCacheEntries();
   LayerTree::TryToRasterCache(

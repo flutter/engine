@@ -706,7 +706,7 @@ SkRect DisplayListBuilder::getLocalClipBounds() {
     current_layer_->clip_bounds.roundOut(&dev_bounds);
     return inverse.asM33().mapRect(dev_bounds);
   }
-  return kMaxCullRect_;
+  return kMaxCullRect;
 }
 
 bool DisplayListBuilder::quickReject(const SkRect& bounds) const {

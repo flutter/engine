@@ -699,6 +699,9 @@ FILE: ../../../flutter/display_list/display_list_image_skia.h
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.h
 FILE: ../../../flutter/display_list/display_list_mask_filter_unittests.cc
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker.cc
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker.h
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker_unittests.cc
 FILE: ../../../flutter/display_list/display_list_ops.cc
 FILE: ../../../flutter/display_list/display_list_ops.h
 FILE: ../../../flutter/display_list/display_list_paint.cc

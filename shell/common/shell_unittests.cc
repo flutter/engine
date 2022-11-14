@@ -2480,7 +2480,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             display_list.get(), SkPoint(), true, false);
         for (int i = 0; i < 4; i += 1) {
           SkMatrix matrix = SkMatrix::I();
-          state_stack.set_delegate(&mutators_stack);
+          state_stack.set_preroll_delegate(matrix);
           display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
           display_list_raster_cache_item.PrerollFinalize(&preroll_context,
                                                          matrix);

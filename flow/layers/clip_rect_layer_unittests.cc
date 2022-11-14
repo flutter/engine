@@ -62,8 +62,8 @@ TEST_F(ClipRectLayerTest, PaintingCulledLayerDies) {
   layer->Add(mock_layer);
 
   // Cull these children
-  preroll_context()->state_stack.set_initial_state(distant_bounds,
-                                                   initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(distant_bounds,
+                                                      initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -107,10 +107,10 @@ TEST_F(ClipRectLayerTest, ChildOutsideBounds) {
   ASSERT_TRUE(clip_layer_bounds.intersect(clip_rect));
 
   // Set up both contexts to cull clipped child
-  preroll_context()->state_stack.set_initial_state(device_cull_bounds,
-                                                   initial_matrix);
-  paint_context().state_stack.set_initial_state(device_cull_bounds,
-                                                initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
+                                                      initial_matrix);
+  paint_context().canvas->clipRect(device_cull_bounds);
+  paint_context().canvas->concat(initial_matrix);
 
   layer->Preroll(preroll_context());
   // Untouched
@@ -143,7 +143,7 @@ TEST_F(ClipRectLayerTest, FullyContainedChild) {
   auto layer = std::make_shared<ClipRectLayer>(layer_bounds, Clip::hardEdge);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -191,8 +191,8 @@ TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
   ASSERT_TRUE(clip_layer_bounds.intersect(child_bounds));
 
   // Cull child
-  preroll_context()->state_stack.set_initial_state(device_cull_bounds,
-                                                   initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
+                                                      initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -209,8 +209,6 @@ TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(clip_rect)}));
 
-  paint_context().state_stack.set_initial_state(device_cull_bounds,
-                                                initial_matrix);
   layer->Paint(paint_context());
   EXPECT_EQ(
       mock_canvas().draw_calls(),
@@ -491,7 +489,7 @@ TEST_F(ClipRectLayerTest, LayerCached) {
   cache_canvas.setMatrix(cache_ctm);
 
   use_mock_raster_cache();
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
 
   const auto* clip_cache_item = layer->raster_cache_item();
 

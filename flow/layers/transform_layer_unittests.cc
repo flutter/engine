@@ -48,7 +48,7 @@ TEST_F(TransformLayerTest, Identity) {
   auto layer = std::make_shared<TransformLayer>(SkMatrix());  // identity
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_cull_rect(cull_rect);
+  preroll_context()->state_stack.set_preroll_delegate(cull_rect);
   layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
@@ -79,8 +79,8 @@ TEST_F(TransformLayerTest, Simple) {
   auto layer = std::make_shared<TransformLayer>(layer_transform);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_state(device_cull_rect,
-                                                   initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_rect,
+                                                      initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(),
@@ -124,8 +124,8 @@ TEST_F(TransformLayerTest, Nested) {
   layer1->Add(layer2);
   layer2->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_state(device_cull_rect,
-                                                   initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_rect,
+                                                      initial_transform);
   layer1->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer2->paint_bounds(),
@@ -185,8 +185,8 @@ TEST_F(TransformLayerTest, NestedSeparated) {
   layer1->Add(layer2);
   layer2->Add(mock_layer2);
 
-  preroll_context()->state_stack.set_initial_state(device_cull_rect,
-                                                   initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_rect,
+                                                      initial_transform);
   layer1->Preroll(preroll_context());
   SkRect layer1_child_bounds = layer2->paint_bounds();
   layer1_child_bounds.join(mock_layer1->paint_bounds());

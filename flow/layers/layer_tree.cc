@@ -46,9 +46,8 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   LayerStateStack state_stack;
-  state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
-  MutatorsStack stack;
-  state_stack.set_delegate(&stack);
+  state_stack.set_preroll_delegate(cull_rect,
+                                   frame.root_surface_transformation());
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   raster_cache_items_.clear();
@@ -112,9 +111,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     return;
   }
 
-  SkRect cull_rect = SkRect::Make(frame.canvas()->getDeviceClipBounds());
   LayerStateStack state_stack;
-  state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
   if (checkerboard_offscreen_layers_) {
     state_stack.set_checkerboard_func(DrawCheckerboard);
   }
@@ -175,8 +172,6 @@ sk_sp<DisplayList> LayerTree::Flatten(
 
   LayerStateStack state_stack;
   state_stack.set_checkerboard_func(nullptr);
-  // No root surface transformation. So assume identity.
-  state_stack.set_initial_state(kGiantRect, SkMatrix::I());
 
   MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
@@ -217,7 +212,8 @@ sk_sp<DisplayList> LayerTree::Flatten(
   // Even if we don't have a root layer, we still need to create an empty
   // picture.
   if (root_layer_) {
-    state_stack.set_delegate(&unused_stack);
+    // No root surface transformation. So assume identity.
+    state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
     root_layer_->Preroll(&preroll_context);
     FML_DCHECK(state_stack.is_empty());
     FML_DCHECK(state_stack.device_cull_rect() == kGiantRect);

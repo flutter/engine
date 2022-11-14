@@ -65,7 +65,7 @@ TEST_F(BackdropFilterLayerTest, EmptyFilter) {
   auto parent = std::make_shared<ClipRectLayer>(child_bounds, Clip::hardEdge);
   parent->Add(layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
@@ -96,7 +96,7 @@ TEST_F(BackdropFilterLayerTest, SimpleFilter) {
   auto parent = std::make_shared<ClipRectLayer>(child_bounds, Clip::hardEdge);
   parent->Add(layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
@@ -127,7 +127,7 @@ TEST_F(BackdropFilterLayerTest, NonSrcOverBlend) {
   auto parent = std::make_shared<ClipRectLayer>(child_bounds, Clip::hardEdge);
   parent->Add(layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
@@ -169,7 +169,7 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
       std::make_shared<ClipRectLayer>(children_bounds, Clip::hardEdge);
   parent->Add(layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
@@ -219,7 +219,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
       std::make_shared<ClipRectLayer>(children_bounds, Clip::hardEdge);
   parent->Add(layer1);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
 
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
@@ -259,7 +259,7 @@ TEST_F(BackdropFilterLayerTest, Readback) {
   auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter.shared(),
                                                       DlBlendMode::kSrcOver);
   preroll_context()->surface_needs_readback = false;
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer1->Preroll(preroll_context());
   EXPECT_TRUE(preroll_context()->surface_needs_readback);
 

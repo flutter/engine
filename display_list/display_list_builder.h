@@ -28,7 +28,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
                                  public SkRefCnt,
                                  DisplayListOpFlags {
  public:
-  explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect_);
+  static constexpr SkRect kMaxCullRect =
+      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
+
+  explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect);
 
   ~DisplayListBuilder();
 
@@ -364,8 +367,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   int nested_op_count_ = 0;
 
   SkRect cull_rect_;
-  static constexpr SkRect kMaxCullRect_ =
-      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   template <typename T, typename... Args>
   void* Push(size_t extra, int op_inc, Args&&... args);

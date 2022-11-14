@@ -61,7 +61,7 @@ TEST_F(ShaderMaskLayerTest, EmptyFilter) {
                                                  DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
@@ -106,7 +106,7 @@ TEST_F(ShaderMaskLayerTest, SimpleFilter) {
                                                  DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
@@ -156,7 +156,7 @@ TEST_F(ShaderMaskLayerTest, MultipleChildren) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
@@ -219,7 +219,7 @@ TEST_F(ShaderMaskLayerTest, Nested) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer1->Preroll(preroll_context());
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
@@ -313,7 +313,7 @@ TEST_F(ShaderMaskLayerTest, LayerCached) {
   cache_canvas.setMatrix(cache_ctm);
 
   use_mock_raster_cache();
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   const auto* cacheable_shader_masker_item = layer->raster_cache_item();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
@@ -413,7 +413,7 @@ TEST_F(ShaderMaskLayerTest, SimpleFilterWithRasterCache) {
                                                  DlBlendMode::kSrc);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
 
   SkPaint filter_paint;

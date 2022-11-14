@@ -29,7 +29,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
                                                Clip::antiAliasWithSaveLayer);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -99,7 +99,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
       std::make_shared<ClipPathLayer>(layer_path, Clip::antiAliasWithSaveLayer);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -166,7 +166,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
                                                 Clip::antiAliasWithSaveLayer);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
