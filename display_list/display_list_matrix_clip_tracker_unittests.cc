@@ -48,7 +48,7 @@ TEST(DisplayListMatrixClipTracker, Constructor4x4) {
   ASSERT_EQ(tracker.matrix_4x4(), m44);
 }
 
-TEST(DisplayListMatrixClipTracker, UpgradeTo4x4) {
+TEST(DisplayListMatrixClipTracker, TransformTo4x4) {
   const SkRect cull_rect = SkRect::MakeLTRB(20, 20, 60, 60);
   // clang-format off
   const SkM44 m44 = SkM44(4, 0, 0.5, 0,
@@ -62,6 +62,26 @@ TEST(DisplayListMatrixClipTracker, UpgradeTo4x4) {
   ASSERT_FALSE(tracker.using_4x4_matrix());
 
   tracker.transform(m44);
+  ASSERT_TRUE(tracker.using_4x4_matrix());
+  ASSERT_EQ(tracker.device_cull_rect(), cull_rect);
+  ASSERT_EQ(tracker.local_cull_rect(), local_cull_rect);
+  ASSERT_EQ(tracker.matrix_4x4(), m44);
+}
+
+TEST(DisplayListMatrixClipTracker, SetTo4x4) {
+  const SkRect cull_rect = SkRect::MakeLTRB(20, 20, 60, 60);
+  // clang-format off
+  const SkM44 m44 = SkM44(4, 0, 0.5, 0,
+                          0, 4, 0.5, 0,
+                          0, 0, 4.0, 0,
+                          0, 0, 0.0, 1);
+  // clang-format on
+  const SkRect local_cull_rect = SkRect::MakeLTRB(5, 5, 15, 15);
+
+  DisplayListMatrixClipTracker tracker(cull_rect, SkMatrix::I());
+  ASSERT_FALSE(tracker.using_4x4_matrix());
+
+  tracker.setTransform(m44);
   ASSERT_TRUE(tracker.using_4x4_matrix());
   ASSERT_EQ(tracker.device_cull_rect(), cull_rect);
   ASSERT_EQ(tracker.local_cull_rect(), local_cull_rect);

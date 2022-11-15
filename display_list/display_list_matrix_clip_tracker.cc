@@ -161,6 +161,7 @@ void DisplayListMatrixClipTracker::setTransform(const SkM44& m44) {
       return;
     }
     saved_.back() = std::make_unique<Data4x4>(current_);
+    current_ = saved_.back().get();
   }
   current_->setTransform(m44);
 }
