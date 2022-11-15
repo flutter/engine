@@ -115,17 +115,17 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
   render_pass_create.setSubpassCount(1);
   render_pass_create.setPSubpasses(&subpass_desc);
 
-  auto render_pass_create_res =
-      device_.createRenderPassUnique(render_pass_create);
+  auto render_pass_create_res = device_.createRenderPass(render_pass_create);
   if (render_pass_create_res.result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to create render pass: "
                    << vk::to_string(render_pass_create_res.result);
     return nullptr;
   }
 
-  return std::make_shared<RenderPassVK>(
-      context_, device_, std::move(target), std::move(command_buffer_),
-      std::move(render_pass_create_res.value), surface_producer_);
+  vk::RenderPass render_pass = render_pass_create_res.value;
+  return std::make_shared<RenderPassVK>(context_, device_, std::move(target),
+                                        std::move(command_buffer_), render_pass,
+                                        surface_producer_);
 }
 
 std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {

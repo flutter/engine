@@ -18,6 +18,8 @@ impeller_component("vulkan") {
     "command_pool_vk.h",
     "context_vk.cc",
     "context_vk.h",
+    "deletion_queue_vk.cc",
+    "deletion_queue_vk.h",
     "descriptor_pool_vk.cc",
     "descriptor_pool_vk.h",
     "device_buffer_vk.cc",

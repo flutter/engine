@@ -6,6 +6,7 @@
 
 #include <vector>
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -23,7 +24,7 @@ class RenderPassVK final : public RenderPass {
                vk::Device device,
                const RenderTarget& target,
                vk::UniqueCommandBuffer command_buffer,
-               vk::UniqueRenderPass render_pass,
+               vk::RenderPass render_pass,
                SurfaceProducerVK* surface_producer);
 
   // |RenderPass|
@@ -34,7 +35,7 @@ class RenderPassVK final : public RenderPass {
 
   vk::Device device_;
   vk::UniqueCommandBuffer command_buffer_;
-  vk::UniqueRenderPass render_pass_;
+  vk::RenderPass render_pass_;
   SurfaceProducerVK* surface_producer_;
 
   std::string label_ = "";
@@ -76,6 +77,8 @@ class RenderPassVK final : public RenderPass {
                              vk::Image image,
                              vk::ImageLayout layout_old,
                              vk::ImageLayout layout_new) const;
+
+  const ContextVK& GetContextVK() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);
 };

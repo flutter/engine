@@ -29,12 +29,12 @@ RenderPassVK::RenderPassVK(std::weak_ptr<const Context> context,
                            vk::Device device,
                            const RenderTarget& target,
                            vk::UniqueCommandBuffer command_buffer,
-                           vk::UniqueRenderPass render_pass,
+                           vk::RenderPass render_pass,
                            SurfaceProducerVK* surface_producer)
     : RenderPass(std::move(context), target),
       device_(device),
       command_buffer_(std::move(command_buffer)),
-      render_pass_(std::move(render_pass)),
+      render_pass_(render_pass),
       surface_producer_(surface_producer) {
   is_valid_ = true;
 }
@@ -97,7 +97,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
           .setOffset(vk::Offset2D(0, 0))
           .setExtent(vk::Extent2D(size.width, size.height));
   auto rp_begin_info = vk::RenderPassBeginInfo()
-                           .setRenderPass(*render_pass_)
+                           .setRenderPass(render_pass_)
                            .setFramebuffer(framebuffer)
                            .setRenderArea(render_area)
                            .setClearValues(clear_value);
@@ -138,7 +138,11 @@ bool RenderPassVK::EndCommandBuffer(uint32_t frame_num) {
       return false;
     }
 
-    surface_producer_->StashRP(frame_num, std::move(render_pass_));
+    const auto& context_vk = GetContextVK();
+    context_vk.GetDeletionQueue(frame_num)->Push(
+        [device = device_, render_pass = render_pass_]() {
+          device.destroyRenderPass(render_pass);
+        });
 
     return surface_producer_->QueueCommandBuffer(frame_num,
                                                  std::move(command_buffer_));
@@ -211,8 +215,13 @@ bool RenderPassVK::AllocateAndBindDescriptorSets(
   vk::PipelineLayout pipeline_layout =
       pipeline_create_info->GetPipelineLayout();
 
-  const auto& context_vk = ContextVK::Cast(context);
-  const auto& pool = context_vk.GetDescriptorPool();
+  const auto& context_vk = GetContextVK();
+  const auto& pool = context_vk.CreateDescriptorPool();
+
+  context_vk.GetDeletionQueue(frame_num)->Push(
+      [pool = pool->GetPool(), device = device_]() {
+        device.destroyDescriptorPool(pool);
+      });
 
   vk::DescriptorSetAllocateInfo alloc_info;
   std::array<vk::DescriptorSetLayout, 1> dsls = {
@@ -365,7 +374,7 @@ vk::Framebuffer RenderPassVK::CreateFrameBuffer(
   auto img_view = wrapped_texture_info.swapchain_image->GetImageView();
   auto size = wrapped_texture_info.swapchain_image->GetSize();
   vk::FramebufferCreateInfo fb_create_info = vk::FramebufferCreateInfo()
-                                                 .setRenderPass(*render_pass_)
+                                                 .setRenderPass(render_pass_)
                                                  .setAttachmentCount(1)
                                                  .setPAttachments(&img_view)
                                                  .setWidth(size.width)
@@ -431,6 +440,15 @@ bool RenderPassVK::TransitionImageLayout(uint32_t frame_num,
 
   surface_producer_->QueueCommandBuffer(frame_num, std::move(transition_cmd));
   return true;
+}
+
+const ContextVK& RenderPassVK::GetContextVK() const {
+  if (auto context = context_.lock()) {
+    const auto& context_vk = ContextVK::Cast(*context);
+    return context_vk;
+  }
+
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller

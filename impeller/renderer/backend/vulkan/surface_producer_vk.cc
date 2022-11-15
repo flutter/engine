@@ -7,6 +7,7 @@
 #include <array>
 #include <utility>
 
+#include "fml/closure.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -196,16 +197,22 @@ bool SurfaceProducerVK::Present(size_t frame_num, uint32_t image_index) {
   std::array<uint32_t, 1> image_indices = {image_index};
   present_info.setImageIndices(image_indices);
 
+  fml::ScopedCleanupClosure cleanup([frame_num, weak_context = context_]() {
+    if (auto context = weak_context.lock()) {
+      ContextVK* context_vk = reinterpret_cast<ContextVK*>(context.get());
+      DeletionQueueVK* deletions = context_vk->GetDeletionQueue(frame_num);
+      deletions->Flush();
+    }
+  });
+
   auto present_res = create_info_.present_queue.presentKHR(present_info);
   if ((present_res != vk::Result::eSuccess) &&
       (present_res != vk::Result::eSuboptimalKHR)) {
     command_buffers_[frame_num].clear();
-    stash_rp_[frame_num].clear();
     return false;
   }
 
   command_buffers_[frame_num].clear();
-  stash_rp_[frame_num].clear();
   return true;
 }
 

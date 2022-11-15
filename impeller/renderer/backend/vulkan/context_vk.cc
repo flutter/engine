@@ -21,6 +21,7 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
@@ -491,7 +492,11 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   graphics_command_pool_ =
       CommandPoolVK::Create(*device_, graphics_queue->index);
-  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
+
+  for (size_t i = 0; i < kMaxFramesInFlight; i++) {
+    deletion_queues_.push_back(std::make_unique<DeletionQueueVK>());
+  }
+
   is_valid_ = true;
 }
 
@@ -588,12 +593,17 @@ bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
 }
 
-std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
-  return descriptor_pool_;
+std::unique_ptr<DescriptorPoolVK> ContextVK::CreateDescriptorPool() const {
+  return std::make_unique<DescriptorPoolVK>(*device_);
 }
 
 PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
   return ToPixelFormat(surface_format_);
+}
+
+DeletionQueueVK* ContextVK::GetDeletionQueue(size_t frame_num) const {
+  size_t idx = frame_num % kMaxFramesInFlight;
+  return deletion_queues_[idx].get();
 }
 
 }  // namespace impeller
