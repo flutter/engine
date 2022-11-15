@@ -27,7 +27,7 @@ String _fromCharCode(int? logicalKey) {
   return String.fromCharCode(logicalKey);
 }
 
-void verifyEntry(LayoutMapping mapping, String eventCode, List<String> eventKeys, String mappedResult) {
+void verifyEntry(LocaleKeymap mapping, String eventCode, List<String> eventKeys, String mappedResult) {
   // If the first two entry of KeyboardEvent.key are letter keys such as "a" and
   // "A", then KeyboardEvent.keyCode is the upper letter such as "A". Otherwise,
   // this field must not be used (in reality this field may or may not be

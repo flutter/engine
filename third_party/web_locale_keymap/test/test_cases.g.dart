@@ -19,7 +19,7 @@ import 'package:test/test.dart';
 import 'package:web_locale_keymap/web_locale_keymap.dart';
 import 'testing.dart';
 
-void testWin(LayoutMapping mapping) {
+void testWin(LocaleKeymap mapping) {
   group('cz', () {
     verifyEntry(mapping, 'Digit0', <String>['é', '0', '˝', ''], '0');
     verifyEntry(mapping, 'Digit1', <String>['+', '1', '~', ''], '1');
@@ -879,7 +879,7 @@ void testWin(LayoutMapping mapping) {
   });
 }
 
-void testLinux(LayoutMapping mapping) {
+void testLinux(LocaleKeymap mapping) {
   group('de', () {
     verifyEntry(mapping, 'Digit0', <String>['0', '=', '}', '°'], '0');
     verifyEntry(mapping, 'Digit1', <String>['1', '!', '¹', '¡'], '1');
@@ -1076,7 +1076,7 @@ void testLinux(LayoutMapping mapping) {
   });
 }
 
-void testDarwin(LayoutMapping mapping) {
+void testDarwin(LocaleKeymap mapping) {
   group('de', () {
     verifyEntry(mapping, 'Digit0', <String>['0', '=', '≠', '¯'], '0');
     verifyEntry(mapping, 'Digit1', <String>['1', '!', '¡', '¬'], '1');

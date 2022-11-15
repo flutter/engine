@@ -11,14 +11,14 @@ import 'test_cases.g.dart';
 
 void main() {
   group('Win', () {
-    testWin(LayoutMapping.win());
+    testWin(LocaleKeymap.win());
   });
 
   group('Linux', () {
-    testLinux(LayoutMapping.linux());
+    testLinux(LocaleKeymap.linux());
   });
 
   group('Darwin', () {
-    testDarwin(LayoutMapping.darwin());
+    testDarwin(LocaleKeymap.darwin());
   });
 }
