@@ -124,7 +124,8 @@ void CursorHandler::HandleMethodCall(
     }
     // push the cursor into the cache vector of this handler.
     custom_cursors_.emplace_back(std::move(cursor));
-    result->Success(flutter::EncodableValue(custom_cursors_.size() - 1));
+    int64_t key = custom_cursors_.size() - 1;
+    result->Success(flutter::EncodableValue(key));
   } else if (method.compare(kSetCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
     auto key_iter =
@@ -134,7 +135,7 @@ void CursorHandler::HandleMethodCall(
                     "Missing argument key while trying to set a custom cursor");
       return;
     }
-    auto key = std::get<int>(key_iter->second);
+    auto key = std::get<int64_t>(key_iter->second);
     if (key < 0 || key >= custom_cursors_.size()) {
       result->Error("Argument error", "The argument key must be valid");
       return;
@@ -152,7 +153,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument key while trying to delete a custom cursor");
       return;
     }
-    auto key = std::get<int>(key_iter->second);
+    auto key = std::get<int64_t>(key_iter->second);
     if (key < 0 || key >= custom_cursors_.size()) {
       result->Error("Argument error", "The argument key must be valid");
       return;
