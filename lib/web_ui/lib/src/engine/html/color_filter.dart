@@ -73,8 +73,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void apply() {
     flutterViewEmbedder.removeResource(_filterElement);
     _filterElement = null;
-    final EngineHtmlColorFilter? engineValue =
-    (filter as EngineColorFilter).toRendererColorFilter() as EngineHtmlColorFilter?;
+    final EngineHtmlColorFilter? engineValue = createHtmlColorFilter(filter as EngineColorFilter);
     if (engineValue == null) {
       rootElement!.style.backgroundColor = '';
       childContainer?.style.visibility = 'visible';

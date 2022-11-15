@@ -41,7 +41,7 @@ class PersistedImageFilter extends PersistedContainerSurface
   void apply() {
     EngineImageFilter backendFilter;
     if (filter is ui.ColorFilter) {
-      backendFilter = (filter as EngineColorFilter).toRendererColorFilter() as EngineHtmlColorFilter;
+      backendFilter = createHtmlColorFilter(filter as EngineColorFilter)!;
     } else {
       backendFilter = filter as EngineImageFilter;
     }

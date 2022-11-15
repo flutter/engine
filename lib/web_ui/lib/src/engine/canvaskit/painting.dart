@@ -132,11 +132,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
         _effectiveColorFilter = _invertColorFilter;
       } else {
         _effectiveColorFilter = ManagedSkColorFilter(
-          CkComposeColorFilter(
-            _effectiveColorFilter!.colorFilter.creator,
-            _invertColorFilter,
-            _effectiveColorFilter!
-            )
+          CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!)
         );
       }
     }
@@ -207,22 +203,22 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
   }
 
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
+  EngineColorFilter? _engineColorFilter;
 
   @override
-  ui.ColorFilter? get colorFilter {
-    return _effectiveColorFilter?.colorFilter.creator;
-  }
+  ui.ColorFilter? get colorFilter => _engineColorFilter;
+
   @override
   set colorFilter(ui.ColorFilter? value) {
-    if (colorFilter == value) {
+    if (_engineColorFilter == value) {
       return;
     }
-
+    _engineColorFilter = value as EngineColorFilter?;
     _originalColorFilter = null;
     if (value == null) {
       _effectiveColorFilter = null;
     } else {
-      final CkColorFilter ckColorFilter = (value as EngineColorFilter).toRendererColorFilter() as CkColorFilter;
+      final CkColorFilter ckColorFilter = createCkColorFilter(value)!;
       _effectiveColorFilter = ManagedSkColorFilter(ckColorFilter);
     }
 
@@ -232,11 +228,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
         _effectiveColorFilter = _invertColorFilter;
       } else {
         _effectiveColorFilter = ManagedSkColorFilter(
-          CkComposeColorFilter(
-            _effectiveColorFilter!.colorFilter.creator,
-            _invertColorFilter,
-            _effectiveColorFilter!
-          )
+          CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!)
         );
       }
     }
@@ -270,7 +262,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
       return;
     }
     if (value is ui.ColorFilter) {
-      _imageFilter = (value as EngineColorFilter).toRendererColorFilter() as CkManagedSkImageFilterConvertible?;
+      _imageFilter = createCkColorFilter(value as EngineColorFilter);
     }
     else {
       _imageFilter = value as CkManagedSkImageFilterConvertible?;
@@ -323,12 +315,7 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
   1.0, 1.0, 1.0, 1.0, 0
 ]);
 
-final ManagedSkColorFilter _invertColorFilter = createInvertedColorFilter(_invertColorMatrix);
-
-ManagedSkColorFilter createInvertedColorFilter(Float32List invertColorMatrix) {
-  final ui.ColorFilter creator = ui.ColorFilter.matrix(invertColorMatrix);
-  return ManagedSkColorFilter(CkMatrixColorFilter(creator, invertColorMatrix));
-}
+final ManagedSkColorFilter _invertColorFilter = ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
 
 class UniformData {
   const UniformData({

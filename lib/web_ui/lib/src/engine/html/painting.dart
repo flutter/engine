@@ -6,7 +6,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../color_filter.dart';
 import '../util.dart';
-import 'shaders/shader.dart';
 
 /// Implementation of [ui.Paint] used by the HTML rendering backend.
 class SurfacePaint implements ui.Paint {
@@ -143,9 +142,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.ColorFilter? get colorFilter {
-    return _paintData.colorFilter?.creator;
-  }
+  ui.ColorFilter? get colorFilter => _paintData.colorFilter;
 
   @override
   set colorFilter(ui.ColorFilter? value) {
@@ -153,11 +150,7 @@ class SurfacePaint implements ui.Paint {
       _paintData = _paintData.clone();
       _frozen = false;
     }
-    if (value != null) {
-      final EngineHtmlColorFilter htmlColorFilter =
-      (value as EngineColorFilter).toRendererColorFilter() as EngineHtmlColorFilter;
-      _paintData.colorFilter = htmlColorFilter;
-    }
+    _paintData.colorFilter = value as EngineColorFilter?;
   }
 
   // TODO(ferhat): see https://github.com/flutter/flutter/issues/33605
@@ -236,7 +229,7 @@ class SurfacePaintData {
   ui.Shader? shader;
   ui.MaskFilter? maskFilter;
   ui.FilterQuality? filterQuality;
-  EngineHtmlColorFilter? colorFilter;
+  EngineColorFilter? colorFilter;
 
   // Internal for recording canvas use.
   SurfacePaintData clone() {
